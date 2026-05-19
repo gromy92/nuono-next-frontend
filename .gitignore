@@ -1,5 +1,11 @@
 node_modules/
 dist/
+playwright-report/
+test-results/
+.local-run/
+*.log
+*.pid
+tmp-*.png
 .DS_Store
 .idea/
 .vscode/

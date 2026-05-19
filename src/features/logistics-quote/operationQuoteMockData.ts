@@ -1,0 +1,210 @@
+import type {
+  LogisticsQuoteOperationPriceItemDto,
+  LogisticsQuoteOperationPriceItemsResponse
+} from './types'
+
+const mockItems: LogisticsQuoteOperationPriceItemDto[] = [
+  {
+    targetId: -101,
+    targetType: 'BASE_PRICE',
+    numericField: 'unit_price',
+    quoteVersionNo: 'YT-SEA-DEMO',
+    forwarderName: '义特物流',
+    serviceName: '沙特海运双清',
+    transportMode: 'SEA',
+    targetPlatform: 'FBN',
+    deliveryCity: '利雅得/RUH',
+    cargoCategoryName: '运费（A）/ 普货',
+    categoryLevel2: '纯纺织类、衣服、家居、日用百货等；不涉及用电、侵权、美妆等敏感产品。',
+    currency: 'RMB',
+    standardValue: 1190,
+    effectiveValue: 1190,
+    billingUnit: 'CBM',
+    minBillableUnit: null,
+    priceStatus: 'NORMAL',
+    remark: '义特海运账单样例中的 A 档主运费。'
+  },
+  {
+    targetId: -102,
+    targetType: 'BASE_PRICE',
+    numericField: 'unit_price',
+    quoteVersionNo: 'YT-SEA-DEMO',
+    forwarderName: '义特物流',
+    serviceName: '沙特海运双清',
+    transportMode: 'SEA',
+    targetPlatform: 'FBN',
+    deliveryCity: '利雅得/RUH',
+    cargoCategoryName: '运费（B）/ 带电带插带磁类',
+    categoryLevel2: '小家电、数据线、车充、转换器、转接头、游戏手柄等。',
+    currency: 'RMB',
+    standardValue: 1640,
+    effectiveValue: 1640,
+    billingUnit: 'CBM',
+    priceStatus: 'NORMAL',
+    remark: '义特海运账单样例中的 B 档主运费。'
+  },
+  {
+    targetId: -103,
+    targetType: 'BASE_PRICE',
+    numericField: 'unit_price',
+    quoteVersionNo: 'YT-SEA-DEMO',
+    forwarderName: '义特物流',
+    serviceName: '沙特海运双清',
+    transportMode: 'SEA',
+    targetPlatform: 'FBN',
+    deliveryCity: '利雅得/RUH',
+    cargoCategoryName: '运费（C）/ 灯具、卫浴类',
+    categoryLevel2: '卫浴、家用灯具、LED、太阳能类；灯具类要清装，不能混箱。',
+    currency: 'RMB',
+    standardValue: 1740,
+    effectiveValue: 1740,
+    billingUnit: 'CBM',
+    priceStatus: 'NORMAL',
+    remark: '义特海运账单样例中的 C 档主运费。'
+  },
+  {
+    targetId: -104,
+    targetType: 'BASE_PRICE',
+    numericField: 'unit_price',
+    quoteVersionNo: 'YT-SEA-DEMO',
+    forwarderName: '义特物流',
+    serviceName: '沙特海运双清',
+    transportMode: 'SEA',
+    targetPlatform: 'FBN',
+    deliveryCity: '利雅得/RUH',
+    cargoCategoryName: '运费（D）/ 一般敏感货',
+    categoryLevel2: '行车记录仪、笔类、橡皮泥玩具、按摩类、手表类、测温仪、雾化器等。',
+    currency: 'RMB',
+    standardValue: 2140,
+    effectiveValue: 2140,
+    billingUnit: 'CBM',
+    priceStatus: 'NORMAL',
+    remark: '义特海运账单样例中的 D 档主运费。'
+  },
+  {
+    targetId: -105,
+    targetType: 'BASE_PRICE',
+    numericField: 'unit_price',
+    quoteVersionNo: 'ZD-20260411',
+    forwarderName: '众鸫供应链',
+    serviceName: '沙特空运专线 FBN利雅得',
+    transportMode: 'AIR',
+    targetPlatform: 'FBN',
+    deliveryCity: '利雅得/RUH',
+    cargoCategoryName: '沙特空运（普货）',
+    categoryLevel2: '普货空运报价，适用于人工确认后的普通商品。',
+    currency: 'RMB',
+    standardValue: 67,
+    effectiveValue: 67,
+    billingUnit: 'KG',
+    minBillableUnit: 10,
+    priceStatus: 'NORMAL',
+    remark: '时效 4-8 天；最低 10KG 起计。'
+  },
+  {
+    targetId: -201,
+    targetType: 'TRANSPORT_FEE',
+    numericField: 'amount',
+    quoteVersionNo: 'YT-SEA-DEMO',
+    forwarderName: '义特物流',
+    serviceName: '沙特海运双清',
+    transportMode: 'SEA',
+    targetPlatform: 'FBN',
+    deliveryCity: '利雅得/RUH',
+    cargoCategoryName: '海外派送运费',
+    categoryLevel1: '派送费',
+    categoryLevel2: '按整票计费方收取。',
+    currency: 'RMB',
+    standardValue: 200,
+    effectiveValue: 200,
+    billingUnit: 'CBM',
+    priceStatus: 'NORMAL',
+    remark: '义特海运账单样例：200 RMB/立方。'
+  },
+  {
+    targetId: -202,
+    targetType: 'TRANSPORT_FEE',
+    numericField: 'amount',
+    quoteVersionNo: 'YT-SEA-DEMO',
+    forwarderName: '义特物流',
+    serviceName: '沙特海运双清',
+    transportMode: 'SEA',
+    targetPlatform: 'FBN',
+    deliveryCity: '利雅得/RUH',
+    cargoCategoryName: '国内卸货费',
+    categoryLevel1: '卸货费',
+    categoryLevel2: '按箱数收取。',
+    currency: 'RMB',
+    standardValue: 1,
+    effectiveValue: 1,
+    billingUnit: '箱',
+    priceStatus: 'NORMAL',
+    remark: '义特海运账单样例：1 RMB/箱。'
+  },
+  {
+    targetId: -203,
+    targetType: 'TRANSPORT_FEE',
+    numericField: 'amount',
+    quoteVersionNo: 'YT-SAU-UNDATED-001',
+    forwarderName: '义特物流',
+    serviceName: '义特沙特海运双清包税 + FBN利雅得送仓',
+    transportMode: 'SEA',
+    targetPlatform: 'FBN',
+    deliveryCity: '利雅得/RUH',
+    cargoCategoryName: 'FBN送仓费-利雅得',
+    categoryLevel1: '送仓费',
+    categoryLevel2: '适用于利雅得 FBN 送仓。',
+    currency: 'RMB',
+    standardValue: 3,
+    effectiveValue: 3,
+    billingUnit: 'KG',
+    minCharge: 300,
+    priceStatus: 'NORMAL',
+    remark: '最低消费 300 RMB/票。'
+  },
+  {
+    targetId: -204,
+    targetType: 'WAREHOUSE_PROCESSING_FEE',
+    numericField: 'amount',
+    quoteVersionNo: 'ZD-20260411',
+    forwarderName: '众鸫供应链',
+    serviceName: '众鸫沙特海外仓商品处理服务',
+    transportMode: 'WAREHOUSE',
+    targetPlatform: 'FBN',
+    deliveryCity: '利雅得/RUH',
+    cargoCategoryName: '拣货费',
+    categoryLevel1: '拣货费',
+    categoryLevel2: '海外仓库存送 FBN 拣货打包。',
+    currency: 'RMB',
+    standardValue: 0,
+    effectiveValue: 0,
+    billingUnit: '件',
+    priceStatus: 'FREE',
+    remark: '本阶段只记录商品处理相关费用。'
+  }
+]
+
+export function buildMockOperationPriceItemsResponse(
+  transportMode: string,
+  reason?: string
+): LogisticsQuoteOperationPriceItemsResponse {
+  const items = transportMode === 'ALL'
+    ? mockItems
+    : mockItems.filter((item) => item.transportMode === transportMode)
+
+  return {
+    mode: 'mock-demo',
+    ready: false,
+    message: reason
+      ? `真实接口暂不可用，当前展示前端样例。原因：${reason}`
+      : '当前展示前端样例。',
+    summary: {
+      totalItems: items.length,
+      airItemCount: items.filter((item) => item.transportMode === 'AIR').length,
+      seaItemCount: items.filter((item) => item.transportMode === 'SEA').length,
+      warehouseItemCount: items.filter((item) => item.transportMode === 'WAREHOUSE').length,
+      adjustedItemCount: items.filter((item) => item.hasAdjustment).length
+    },
+    items
+  }
+}
