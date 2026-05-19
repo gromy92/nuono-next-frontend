@@ -1,0 +1,257 @@
+import type {
+  ProductHistoryPayload,
+  ProductListDatasetPayload,
+  ProductMasterSnapshotPayload,
+  ProductPublishTaskPayload,
+  ProductWorkbenchPayload,
+  StoreInitializationPayload
+} from './types';
+
+export type ProductStoreInitializationStatusRequest = {
+  ownerUserId: number;
+  storeCode: string;
+};
+
+export type ProductStoreInitializationStartRequest = ProductStoreInitializationStatusRequest;
+
+export type ProductListDatasetRequest = ProductStoreInitializationStatusRequest;
+
+export type ProductWorkbenchOpenRequest = {
+  ownerUserId: number;
+  storeCode: string;
+  noonUser?: string;
+  noonPassword?: string;
+  skuParent: string;
+  partnerSku?: string;
+  pskuCode?: string;
+};
+
+export type ProductWorkbenchActionRequest = ProductWorkbenchOpenRequest & {
+  action: 'save' | 'publish-current' | 'pull' | 'rollback-draft';
+  currentSiteCode?: string;
+  syncMergePolicy?: 'keep_draft' | 'use_noon';
+  publishConflictResolution?: 'use_local';
+  snapshot: ProductMasterSnapshotPayload;
+};
+
+export type ProductHistoryRequest = {
+  ownerUserId: number;
+  storeCode: string;
+  skuParent: string;
+};
+
+export type ProductGroupCandidatesRequest = ProductHistoryRequest;
+
+export type ProductClassificationOptionsRequest = {
+  ownerUserId: number;
+  storeCode: string;
+  brandQuery?: string;
+  fulltypeQuery?: string;
+  limit?: number;
+};
+
+export type ProductContentTranslateRequest = {
+  text: string;
+  targetLang: 'ZH' | 'EN' | 'AR';
+};
+
+export type ProductContentTranslateResponse = {
+  ready?: boolean;
+  source?: 'ai' | string;
+  warnings?: string[];
+  data?: {
+    translation?: {
+      text?: string;
+    };
+  };
+  msg?: string;
+  message?: string;
+};
+
+export type ProductImageAssetUploadResponse = {
+  url?: string;
+  filename?: string;
+  contentType?: string;
+  size?: number;
+  assetId?: number;
+  warnings?: string[];
+};
+
+export type ProductGroupCandidatesResponse = {
+  ready: boolean;
+  source?: string;
+  message?: string;
+  warnings: string[];
+  ownerUserId?: number;
+  storeCode?: string;
+  skuParent?: string;
+  items: ProductListDatasetPayload['items'];
+};
+
+export type ProductClassificationOptionPayload = {
+  value?: string;
+  label?: string;
+  family?: string;
+  productType?: string;
+  productSubtype?: string;
+  usageCount?: number;
+};
+
+export type ProductClassificationOptionsResponse = {
+  ready: boolean;
+  source?: string;
+  message?: string;
+  warnings: string[];
+  brands: ProductClassificationOptionPayload[];
+  fulltypes: ProductClassificationOptionPayload[];
+};
+
+type BackendErrorPayload = {
+  error?: string;
+  message?: string;
+};
+
+async function readBackendError(response: Response, fallback: string) {
+  try {
+    const payload = (await response.json()) as BackendErrorPayload;
+    return payload.message || payload.error || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+async function postJson<TResponse>(url: string, body: unknown, fallbackError: string): Promise<TResponse> {
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, fallbackError));
+  }
+
+  return (await response.json()) as TResponse;
+}
+
+export async function fetchProductListDataset(request: ProductListDatasetRequest) {
+  return postJson<ProductListDatasetPayload>('/api/product-master/list', request, '商品接口当前不可用');
+}
+
+export async function deleteLocalProduct(request: ProductWorkbenchOpenRequest) {
+  return postJson<ProductListDatasetPayload>('/api/product-master/delete', request, '删除商品失败');
+}
+
+export async function fetchStoreInitializationStatus({
+  ownerUserId,
+  storeCode
+}: ProductStoreInitializationStatusRequest) {
+  const query = `?ownerUserId=${ownerUserId}&storeCode=${encodeURIComponent(storeCode)}`;
+  const response = await fetch(`/api/store-sync/init-status${query}`);
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, `后端返回 ${response.status}`));
+  }
+
+  return (await response.json()) as StoreInitializationPayload;
+}
+
+export async function startStoreInitializationRequest(request: ProductStoreInitializationStartRequest) {
+  return postJson<StoreInitializationPayload>('/api/store-sync/init-start', request, '启动店铺初始化失败');
+}
+
+export async function openProductWorkbenchSnapshot(request: ProductWorkbenchOpenRequest) {
+  return postJson<ProductWorkbenchPayload>('/api/product-master/open', request, '读取商品主档失败');
+}
+
+export async function executeProductWorkbenchAction(request: ProductWorkbenchActionRequest) {
+  return postJson<ProductWorkbenchPayload>('/api/product-master/action', request, '商品详情动作执行失败');
+}
+
+export async function fetchProductPublishTask(taskId: number, ownerUserId: number) {
+  const query = `?ownerUserId=${ownerUserId}`;
+  const response = await fetch(`/api/product-master/publish-tasks/${taskId}${query}`);
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, `发布任务返回 ${response.status}`));
+  }
+
+  return (await response.json()) as ProductPublishTaskPayload;
+}
+
+export async function retryProductPublishTask(taskId: number, ownerUserId: number) {
+  const query = `?ownerUserId=${ownerUserId}`;
+  return postJson<ProductPublishTaskPayload>(
+    `/api/product-master/publish-tasks/${taskId}/retry${query}`,
+    {},
+    '重试发布任务失败'
+  );
+}
+
+export async function cancelProductPublishTask(taskId: number, ownerUserId: number) {
+  const query = `?ownerUserId=${ownerUserId}`;
+  return postJson<ProductPublishTaskPayload>(
+    `/api/product-master/publish-tasks/${taskId}/cancel${query}`,
+    {},
+    '取消发布任务失败'
+  );
+}
+
+export async function fetchProductHistory(request: ProductHistoryRequest) {
+  return postJson<ProductHistoryPayload>('/api/product-master/history', request, '商品修改历史暂时不可用');
+}
+
+export async function fetchProductGroupCandidates(request: ProductGroupCandidatesRequest) {
+  return postJson<ProductGroupCandidatesResponse>('/api/product-master/group-candidates', request, '读取同类目商品失败');
+}
+
+export async function fetchProductClassificationOptions(request: ProductClassificationOptionsRequest) {
+  return postJson<ProductClassificationOptionsResponse>(
+    '/api/product-master/classification-options',
+    request,
+    '读取品牌和类目候选失败'
+  );
+}
+
+export async function uploadProductImageAsset(file: File, context?: Partial<ProductGroupCandidatesRequest>) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (context?.ownerUserId) {
+    formData.append('ownerUserId', String(context.ownerUserId));
+  }
+  if (context?.storeCode) {
+    formData.append('storeCode', context.storeCode);
+  }
+  if (context?.skuParent) {
+    formData.append('skuParent', context.skuParent);
+  }
+
+  const response = await fetch('/api/product-master/image-assets', {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, '上传图片失败'));
+  }
+
+  return (await response.json()) as ProductImageAssetUploadResponse;
+}
+
+export async function translateProductContentText(request: ProductContentTranslateRequest) {
+  const response = await fetch('/api/product-master/translate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, `翻译服务返回 ${response.status}`));
+  }
+
+  return (await response.json()) as ProductContentTranslateResponse;
+}

@@ -8,19 +8,36 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "product:workspace-smoke": "node scripts/product_workspace_smoke.mjs",
+    "product-management:08-smoke": "node scripts/product_management_08_api_smoke.mjs",
+    "product-management:10-page-acceptance": "node scripts/product_management_10_page_acceptance.mjs",
+    "procurement:dual-channel-smoke": "node scripts/procurement_dual_channel_smoke.mjs",
+    "procurement:ali-ai-result-smoke": "node scripts/procurement_ali_ai_result_read_smoke.mjs",
+    "procurement:ali-ai-create-smoke": "node scripts/procurement_ali_ai_create_probe_smoke.mjs",
+    "procurement:ali-ai-page-smoke": "node scripts/procurement_ali_ai_create_page_probe_smoke.mjs",
+    "procurement:ali-unpaid-order-smoke": "node scripts/procurement_ali_unpaid_order_create_probe_smoke.mjs",
+    "profit:pending-smoke": "node scripts/profit_pending_page_smoke.mjs",
+    "master-data:replica-smoke": "node scripts/master_data_replica_smoke.mjs",
+    "master-data:page-acceptance": "node scripts/master_data_page_acceptance.mjs",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:write": "E2E_ALLOW_WRITE_TESTS=true playwright test"
   },
   "dependencies": {
+    "@ant-design/icons": "5.6.1",
     "antd": "5.24.1",
     "dayjs": "1.11.13",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.55.0",
     "@types/node": "22.13.5",
     "@types/react": "19.0.10",
     "@types/react-dom": "19.0.4",
     "@vitejs/plugin-react": "4.3.4",
+    "playwright-core": "1.55.0",
     "typescript": "5.7.3",
     "vite": "6.1.1"
   }
