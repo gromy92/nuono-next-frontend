@@ -6,6 +6,7 @@ export type AppMenuKey =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'noon-call-store-data'
   | 'system-file-management'
   | 'user-account'
   | 'user-store-noon'
@@ -22,6 +23,7 @@ export type WorkspaceSectionKey =
   | 'campaign'
   | 'task'
   | 'data'
+  | 'noon-call'
   | 'user'
   | 'ai-model'
   | 'system'
@@ -35,6 +37,7 @@ export type WorkspaceSectionIconKey =
   | 'campaign'
   | 'task'
   | 'data'
+  | 'noon-call'
   | 'user'
   | 'ai-model'
   | 'system'
@@ -47,6 +50,7 @@ export type WorkspaceContentKind =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'noon-call-store-data'
   | 'system-file-management'
   | 'user-account'
   | 'user-role'
@@ -158,6 +162,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '物流 / 货代管理',
     tabLabel: '货代管理',
     contentKind: 'purchase-logistics-quote',
+    closable: true
+  },
+  'noon-call-store-data': {
+    key: 'noon-call-store-data',
+    label: '店铺数据',
+    path: '/noon-call/store-data',
+    sectionKey: 'noon-call',
+    pathLabel: 'Noon调用 / 店铺数据',
+    tabLabel: 'Noon店铺数据',
+    contentKind: 'noon-call-store-data',
     closable: true
   },
   'system-file-management': {
@@ -290,6 +304,12 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     ]
   },
   {
+    key: 'noon-call',
+    label: 'Noon调用',
+    iconKey: 'noon-call',
+    entries: [{ type: 'workspace', key: 'noon-call-store-data' }]
+  },
+  {
     key: 'user',
     label: '用户',
     iconKey: 'user',
@@ -377,6 +397,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
+    keys: ['noon-call-store-data'],
+    urlPaths: ['/noon-call/store-data', '/api/noon-call/store-data'],
+    urlPathPrefixes: ['/api/noon-call/store-data/'],
+    menuNames: ['Noon调用', 'Noon店铺数据', '店铺数据']
+  },
+  {
     keys: ['system-file-management'],
     urlPaths: ['/system/file-management', '/system/ai-file-parse'],
     urlPathPrefixes: ['/system/ai-file-parse/'],
@@ -393,7 +419,8 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-ali1688-collection',
   'purchase-order',
   'purchase-profit',
-  'purchase-logistics-quote'
+  'purchase-logistics-quote',
+  'noon-call-store-data'
 ]
 
 export const MANAGEMENT_MENU_KEYS: AppMenuKey[] = [

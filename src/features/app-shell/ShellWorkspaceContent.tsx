@@ -46,6 +46,11 @@ const ProcurementRequirementConfirmationPage = lazy(() =>
     default: module.ProcurementRequirementConfirmationPage
   }))
 );
+const NoonCallStoreDataPage = lazy(() =>
+  import('../system-reports/NoonCallStoreDataPage').then((module) => ({
+    default: module.NoonCallStoreDataPage
+  }))
+);
 
 type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
 
@@ -181,6 +186,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <AiFileParseBoard />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'noon-call-store-data') {
+    return (
+      <LazyWorkspaceBoundary>
+        <NoonCallStoreDataPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

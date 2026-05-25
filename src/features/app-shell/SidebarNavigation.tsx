@@ -40,6 +40,7 @@ const sectionIconMap: Record<WorkspaceSectionIconKey, ReactNode> = {
   campaign: <CalendarOutlined />,
   task: <FileTextOutlined />,
   data: <BarChartOutlined />,
+  'noon-call': <BarChartOutlined />,
   user: <TeamOutlined />,
   'ai-model': <RobotOutlined />,
   system: <SettingOutlined />
