@@ -146,11 +146,11 @@ export function AiFileParseBoard() {
         supportedInputs: fallbackStandard?.supportedInputs ?? ['EXCEL', 'PDF', 'IMAGE', 'OCR_TEXT', 'MANUAL_TEXT'],
         businessScopeFields: fallbackStandard?.businessScopeFields ?? [],
         resultFields,
-        itemTypes: fallbackStandard?.itemTypes ?? [],
+        itemTypes: selectedTargetPlan?.itemTypes?.length ? selectedTargetPlan.itemTypes : (fallbackStandard?.itemTypes ?? []),
         publishAdapterLabel: fallbackStandard?.publishAdapterLabel ?? '解析版本'
       };
     },
-    [resultFields, selectedTargetPlan?.standardId, selectedTask?.documentName, selectedTask?.documentType, selectedTask?.standardVersion, selectedTask?.targetPlanId]
+    [resultFields, selectedTargetPlan?.itemTypes, selectedTargetPlan?.standardId, selectedTask?.documentName, selectedTask?.documentType, selectedTask?.standardVersion, selectedTask?.targetPlanId]
   );
   const selectedItems = useMemo(
     () => items.filter((item) => item.taskId === selectedTask?.id),
@@ -416,7 +416,7 @@ export function AiFileParseBoard() {
       })
       .catch((error) => {
         if (active) {
-          messageApi.error(error instanceof Error ? error.message : '加载物流渠道生效配置失败');
+          messageApi.error(error instanceof Error ? error.message : '加载物流服务线生效配置失败');
           setLogisticsActivation(null);
           setSelectedLogisticsChannelKeys([]);
         }
@@ -864,7 +864,7 @@ export function AiFileParseBoard() {
       return;
     }
     if (!permission.canActivateLogisticsChannels) {
-      messageApi.warning('当前角色没有物流渠道生效权限');
+      messageApi.warning('当前角色没有物流服务线生效权限');
       return;
     }
     setActionLoading(true);
@@ -880,9 +880,9 @@ export function AiFileParseBoard() {
           ? payload.selectedChannelKeys
           : payload.channels.filter((channel) => channel.selected).map((channel) => channel.channelKey)
       );
-      messageApi.success('已保存物流渠道生效选择');
+      messageApi.success('已保存物流服务线生效选择');
     } catch (error) {
-      messageApi.error(error instanceof Error ? error.message : '保存物流渠道生效选择失败');
+      messageApi.error(error instanceof Error ? error.message : '保存物流服务线生效选择失败');
     } finally {
       setActionLoading(false);
     }

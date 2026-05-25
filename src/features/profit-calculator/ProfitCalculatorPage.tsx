@@ -121,6 +121,68 @@ function CarryoverNotice(props: {
   );
 }
 
+function OfficialOutboundFeeNotice(props: { value?: ProfitCalculationPayload['officialOutboundFee'] }) {
+  const { value } = props;
+  if (!value) {
+    return null;
+  }
+
+  if (value.status === 'CALCULATED') {
+    const shippingWeight = value.evidence?.shippingWeightGrams;
+    return (
+      <Alert
+        type="success"
+        showIcon
+        message={`官方 FBN 出仓费：${formatMoney(value.feeAmount)} ${value.currency || ''}`}
+        description={
+          <Space direction="vertical" size={4}>
+            <Text>
+              命中分类：{value.matchedClassificationName || '-'} / 来源版本：{value.sourceVersionId || '-'}
+            </Text>
+            <Text type="secondary">
+              重量段：{value.matchedSlabNaturalKey || '-'} / 计费重量：
+              {formatEvidenceValue(shippingWeight)}
+            </Text>
+          </Space>
+        }
+      />
+    );
+  }
+
+  if (value.status === 'MANUAL_OVERRIDE') {
+    return (
+      <Alert
+        type="info"
+        showIcon
+        message={`手工 FBN 出仓费：${formatMoney(value.feeAmount)} ${value.currency || ''}`}
+        description={value.message || '本次使用用户明确输入的手工费用。'}
+      />
+    );
+  }
+
+  return (
+    <Alert
+      type="warning"
+      showIcon
+      message="FBN 出仓费未计算"
+      description={`${value.message || '官方 FBN 出仓费暂时无法计算。'}${value.failureCode ? `（${value.failureCode}）` : ''}`}
+    />
+  );
+}
+
+function formatEvidenceValue(value: unknown) {
+  if (typeof value === 'number') {
+    return `${formatMoney(value, 0)} g`;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value instanceof Array) {
+    return value.join(' / ');
+  }
+  return '-';
+}
+
 export function ProfitCalculatorPage(props: ProfitCalculatorPageProps) {
   const {
     form,
@@ -208,11 +270,13 @@ export function ProfitCalculatorPage(props: ProfitCalculatorPageProps) {
           }
           style={{ border: '1px solid #dbe4ea' }}
         >
+          <OfficialOutboundFeeNotice value={result.officialOutboundFee} />
           <Table
             rowKey="code"
             columns={scenarioColumns}
             dataSource={result.scenarios}
             pagination={false}
+            style={{ marginTop: result.officialOutboundFee ? 12 : 0 }}
             scroll={{ x: 900 }}
           />
           {result.notes.length ? (

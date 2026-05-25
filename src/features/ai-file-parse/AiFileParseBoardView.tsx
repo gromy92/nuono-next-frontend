@@ -79,6 +79,32 @@ import type {
 
 const { Text, Title } = Typography;
 
+const LOGISTICS_RELATED_ITEM_LABELS: Record<string, string> = {
+  logistics_cargo_category: '分类',
+  logistics_base_price: '基础价',
+  logistics_surcharge: '附加费',
+  logistics_billing_rule: '计费',
+  logistics_warehouse_service_fee: '仓费',
+  logistics_restriction: '限制'
+};
+
+function renderLogisticsRelatedQuoteContext(record: FileParseLogisticsChannelPayload) {
+  const counts = record.fields?.relatedItemCounts ?? {};
+  const entries = Object.entries(counts)
+    .map(([itemType, count]) => [itemType, Number(count)] as const)
+    .filter(([, count]) => Number.isFinite(count) && count > 0);
+  if (!entries.length) {
+    return '-';
+  }
+  return (
+    <Space size={[4, 4]} wrap>
+      {entries.map(([itemType, count]) => (
+        <Tag key={itemType}>{`${LOGISTICS_RELATED_ITEM_LABELS[itemType] ?? itemType} ${count}`}</Tag>
+      ))}
+    </Space>
+  );
+}
+
 type AiFileParseBoardViewProps = {
   actionLoading: boolean;
   aiChunks: FileParseAiChunkPayload[];
@@ -439,6 +465,12 @@ export function AiFileParseBoardView({
       fixed: 'left',
       render: (_, __, index) => index + 1
     },
+    {
+      title: '结果类型',
+      dataIndex: 'itemTypeLabel',
+      width: 150,
+      fixed: 'left'
+    },
     ...allResultFields.map<ColumnsType<AiParseResultItem>[number]>((field) => ({
       title: field.label,
       width: Math.max(field.width ?? 130, 120),
@@ -446,7 +478,7 @@ export function AiFileParseBoardView({
     }))
   ];
   const resultOverviewScrollX =
-    70 + allResultFields.reduce((total, field) => total + Math.max(field.width ?? 130, 120), 0);
+    220 + allResultFields.reduce((total, field) => total + Math.max(field.width ?? 130, 120), 0);
 
   const versionColumns: ColumnsType<AiParseVersion> = [
     { title: '版本号', dataIndex: 'versionNo', width: 210 },
@@ -489,23 +521,24 @@ export function AiFileParseBoardView({
         />
       )
     },
-    { title: '渠道标识', dataIndex: 'channelKey', width: 220 },
+    { title: '服务线标识', dataIndex: 'channelKey', width: 220 },
     { title: '国家', dataIndex: 'country', width: 90, render: (value) => value || '-' },
-    { title: '城市', dataIndex: 'city', width: 110, render: (value) => value || '-' },
+    { title: '目的节点', dataIndex: 'city', width: 150, render: (value) => value || '-' },
     { title: '运输方式', dataIndex: 'shippingMethod', width: 120, render: (value) => value || '-' },
-    { title: '费用项', dataIndex: 'feeItem', width: 160, render: (value) => value || '-' },
-    { title: '计费内容', dataIndex: 'billingRule', width: 220, render: (value) => value || '-' },
-    { title: '时效', dataIndex: 'leadTime', width: 120, render: (value) => value || '-' }
+    { title: '服务范围', dataIndex: 'feeItem', width: 170, render: (value) => value || '-' },
+    { title: '计费/班次', dataIndex: 'billingRule', width: 180, render: (value) => value || '-' },
+    { title: '时效', dataIndex: 'leadTime', width: 120, render: (value) => value || '-' },
+    { title: '关联报价包', width: 260, render: (_, record) => renderLogisticsRelatedQuoteContext(record) }
   ];
 
   const renderList = () => (
     <Space direction="vertical" size={12} style={{ width: '100%' }}>
-      <Card variant="borderless" className="ai-file-parse-section ai-file-parse-list-card">
-      <div className="ai-file-parse-list-toolbar">
-        <Button type="primary" icon={<PlusOutlined />} onClick={onOpenCreate}>
-          新建解析文档
-        </Button>
-      </div>
+      <Card data-testid="file-parse-task-list" variant="borderless" className="ai-file-parse-section ai-file-parse-list-card">
+        <div className="ai-file-parse-list-toolbar">
+          <Button data-testid="file-parse-create-button" type="primary" icon={<PlusOutlined />} onClick={onOpenCreate}>
+            新建解析文档
+          </Button>
+        </div>
         <Table
           className="ai-file-parse-list-table"
           rowKey="id"
@@ -848,7 +881,7 @@ export function AiFileParseBoardView({
       <Card variant="borderless" className="ai-file-parse-section">
         <div className="ai-file-parse-table-head">
           <Space wrap>
-            <Text strong>物流渠道生效</Text>
+            <Text strong>物流服务线生效</Text>
             <Select
               className="ai-file-parse-version-select"
               value={logisticsVersionId || undefined}
@@ -869,7 +902,7 @@ export function AiFileParseBoardView({
             disabled={!permission.canActivateLogisticsChannels || !logisticsVersionId}
             onClick={onSaveLogisticsActivation}
           >
-            保存生效渠道
+            保存生效服务线
           </Button>
         </div>
         <Table
@@ -879,7 +912,7 @@ export function AiFileParseBoardView({
           loading={logisticsLoading}
           pagination={false}
           size="middle"
-          scroll={{ x: 1220 }}
+          scroll={{ x: 1400 }}
         />
       </Card>
     );
@@ -922,7 +955,7 @@ export function AiFileParseBoardView({
       { key: 'versions', label: '版本历史', children: renderVersionsTab() }
     ];
     return (
-      <Space direction="vertical" size={14} style={{ width: '100%' }}>
+      <Space data-testid="file-parse-detail" direction="vertical" size={14} style={{ width: '100%' }}>
         {renderDetailSummary()}
         <Tabs
           className="ai-file-parse-detail-tabs"
@@ -935,7 +968,7 @@ export function AiFileParseBoardView({
   };
 
   return (
-    <Space className="ai-file-parse-page" direction="vertical" size={16}>
+    <Space data-testid="file-parse-workbench" className="ai-file-parse-page" direction="vertical" size={16}>
       {viewMode === 'list' ? renderList() : renderDetail()}
 
       <CreateBatchDrawer

@@ -16,6 +16,17 @@ export type ProfitCalculationPayload = {
   warehouseDeliveryFeeRmb: number;
   airFirstLegFeeRmb: number;
   oceanFirstLegFeeRmb: number;
+  officialOutboundFee?: {
+    status?: 'CALCULATED' | 'FAILED' | 'MANUAL_OVERRIDE';
+    failureCode?: string;
+    message?: string;
+    feeAmount?: number;
+    currency?: string;
+    matchedClassificationName?: string;
+    matchedSlabNaturalKey?: string;
+    sourceVersionId?: number;
+    evidence?: Record<string, unknown>;
+  };
   notes: string[];
   scenarios: Array<{
     code: string;

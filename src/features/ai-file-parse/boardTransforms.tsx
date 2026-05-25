@@ -211,6 +211,7 @@ export function mapTargetPlan(plan: FileParseTargetPlanPayload): AiParseTargetOu
     businessScope: {},
     currentVersion: plan.currentVersion || '未发布',
     description: plan.description || '',
+    itemTypes: plan.itemTypes,
     availableActions: plan.availableActions
   };
 }
@@ -304,8 +305,18 @@ function itemTypeLabel(itemType: string) {
     commission_rule: '佣金规则',
     platform_fee: '平台费用',
     outbound_fee_rule: '出仓费规则',
+    outbound_size_classification_rule: '出仓费规格分级',
+    outbound_fee_weight_slab_rule: '出仓费重量费用',
+    outbound_fee_calculation_policy: '出仓费计算策略',
     outbound_fee_exception: '出仓费例外',
     logistics_channel_rule: '物流渠道规则',
+    logistics_service_line: '物流服务线路',
+    logistics_cargo_category: '物流货物分类',
+    logistics_base_price: '物流基础价格',
+    logistics_surcharge: '物流附加费',
+    logistics_billing_rule: '物流计费规则',
+    logistics_warehouse_service_fee: '海外仓服务费',
+    logistics_restriction: '物流禁限运与合规',
     base_price: '基础价格',
     surcharge: '附加费用',
     calculation_rule: '计费规则'

@@ -1,468 +1,685 @@
 import { expect, Page, test } from '@playwright/test';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { execFileSync } from 'node:child_process';
 import { ensureLoggedInAsAdmin } from '../utils/auth';
 import { e2eEnv } from '../utils/env';
+import { appPath } from '../utils/navigation';
 
-const TEST_PREFIX = `${e2eEnv.dataPrefix}文件管理`;
-const TEMPLATE_PATH = path.resolve(process.cwd(), 'public/templates/file-parse-template.xlsx');
-const ORIGINAL_DOWNLOAD_PATTERN = /\/api\/system\/file-management\/files\/\d+\/original/;
-const PARSED_DOWNLOAD_PATTERN = /\/api\/system\/file-management\/files\/\d+\/parsed/;
-const OFFICIAL_STORAGE_UAE_URL =
-  'https://support.noon.partners/portal/en/kb/articles/fulfilled-by-noon-fbn-fees-in-uae-11-3-2024#3_Monthly_Storage_Fees';
-const STATIC_PARSE_TEMPLATES = [
-  '/templates/file-parse-template.xlsx',
-  '/templates/official-commission-fee-parse-template.xlsx',
-  '/templates/official-fbn-outbound-fee-parse-template.xlsx',
-  '/templates/official-storage-fee-parse-template.xlsx',
-  '/templates/forwarder-document-parse-template.xlsx'
-];
-
-type CreatedFile = {
-  name: string;
-  originalPath?: string;
-  parsedPath?: string;
-};
-
-test.describe.configure({ mode: 'serial' });
-
-test.describe('系统文件管理', () => {
-  let tempDir: string;
-
-  test.beforeAll(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nuono-file-management-e2e-'));
-    cleanupTestRecords();
-  });
-
-  test.afterAll(() => {
-    cleanupTestRecords();
-    fs.rmSync(tempDir, { recursive: true, force: true });
-  });
-
+test.describe('系统文件管理解析中心', () => {
   test.beforeEach(async ({ page }) => {
-    test.skip(!e2eEnv.allowWriteTests, 'Set E2E_ALLOW_WRITE_TESTS=true to run file-management write tests.');
+    await mockParseCenterApis(page);
     await ensureLoggedInAsAdmin(page);
   });
 
-  test('TC-FM-001 列表页加载并展示指定列', async ({ page }) => {
+  test('TC-FM-001 正式入口展示目标输出方案驱动的解析文档列表', async ({ page }) => {
     await gotoFileManagement(page);
 
-    await expect(page.getByTestId('workspace-tabs-bar')).toBeVisible();
     await expect(page.getByTestId('workspace-tabs-bar').getByRole('tab', { name: '文件管理' })).toBeVisible();
-    await expect(page.locator('h3', { hasText: '文件管理' })).toHaveCount(0);
-    await expect(page.locator('h4', { hasText: '文件列表' })).toHaveCount(0);
-    await expect(page.getByText('维护官方与货代文件的原始件、解析件和生效状态。')).toHaveCount(0);
-    await expect(page.getByText(/上传、下载和规则生成在详情页操作。/)).toHaveCount(0);
-    await expect(page.getByRole('columnheader', { name: '文件类型' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: '名称 / 版本' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: '文件', exact: true })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: '官方发布时间' })).toHaveCount(0);
+    await expect(page.getByTestId('file-parse-workbench')).toBeVisible();
+    await expect(page.getByTestId('file-parse-task-list')).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '文档名称' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '目标输出方案' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '输入项' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '解析状态' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '当前生效版本' })).toBeVisible();
+
+    await expect(page.getByText('佣金-KSA 解析中心验收')).toBeVisible();
+    await expect(page.getByRole('cell', { name: '佣金-KSA' }).first()).toBeVisible();
+    await expect(page.getByText('解析中').first()).toBeVisible();
+    await expect(page.getByText('失败').first()).toBeVisible();
+    await expect(page.getByText('等待重试').first()).toBeVisible();
+    await expect(page.getByText('待处理').first()).toBeVisible();
+
+    await expect(page.getByRole('columnheader', { name: '文件类型' })).toHaveCount(0);
     await expect(page.getByRole('columnheader', { name: '原始文件' })).toHaveCount(0);
-    await expect(page.getByRole('columnheader', { name: '解析模板' })).toHaveCount(0);
     await expect(page.getByRole('columnheader', { name: '解析后文件' })).toHaveCount(0);
-    await expect(page.getByRole('columnheader', { name: '文件状态' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: '文件更新时间' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: '上传日期' })).toHaveCount(0);
-    await expect(page.getByTestId('file-management-create-button')).toBeVisible();
-    await expect(page.getByTestId('file-management-type-filter')).toBeVisible();
-    await expect(page.getByTestId('file-management-status-filter')).toBeVisible();
-
-    const yiteRow = page.locator('tr', { hasText: '义特' }).first();
-    await expect(yiteRow.locator('td').nth(0)).toHaveText('货代文档');
+    await expect(page.getByText('生成规则')).toHaveCount(0);
+    await expect(page.getByText('/api/system/file-management/files')).toHaveCount(0);
   });
 
-  test('TC-FM-002 新建页必填校验阻止空表单提交', async ({ page }) => {
-    await gotoFileManagement(page);
-    await page.getByTestId('file-management-create-button').click();
-    await expect(page.getByTestId('file-management-create')).toBeVisible();
+  test('TC-FM-002 兼容 AI 文件解析入口进入同一个解析中心', async ({ page }) => {
+    await page.goto(appPath(withDevSession('/system/ai-file-parse')));
 
-    await page.getByTestId('file-management-create-submit').click();
-
-    await expect(page.getByText('请输入名称')).toBeVisible();
-    await expect(page.getByText('请输入版本')).toBeVisible();
-    await expect(page.getByText('请输入范围')).toBeVisible();
-    await expect(page.getByTestId('file-management-create')).toBeVisible();
+    await expect(page.getByTestId('workspace-tabs-bar').getByRole('tab', { name: '文件管理' })).toBeVisible();
+    await expect(page.getByTestId('file-parse-workbench')).toBeVisible();
+    await expect(page.getByTestId('file-parse-task-list')).toBeVisible();
+    await expect(page.getByText('佣金-KSA 解析中心验收')).toBeVisible();
+    await expect(page.getByText('AI 文件解析')).toHaveCount(0);
   });
 
-  test('TC-FM-003 可只创建元信息，详情页保持待补状态且不能生成规则', async ({ page }) => {
-    const fileName = `${TEST_PREFIX} 只建元信息`;
-
+  test('TC-FM-003 新建解析文档使用目标输出方案和统一输入项', async ({ page }) => {
     await gotoFileManagement(page);
-    await createFileMetadata(page, {
-      name: fileName,
-      fileType: '货代文档',
-      version: 'meta-only',
-      scope: '空运 / 附加费'
-    });
 
-    await expect(page.getByTestId('file-management-detail')).toBeVisible();
-    await expect(page.locator('h3', { hasText: '文件详情' })).toHaveCount(0);
-    await expect(
-      page.getByText('解析由人工完成。系统在这里保留原始文件和解析后文件的上传、下载入口，并由管理员确认后生成规则。')
-    ).toHaveCount(0);
-    await expect(page.getByText(fileName)).toBeVisible();
-    await page.getByTestId('file-management-detail-official-published-at-input').fill('2026-01-02');
-    await page.getByTestId('file-management-detail-official-published-at-save').click();
-    await expect(page.getByTestId('file-management-detail-official-published-at-input')).toHaveValue('2026-01-02');
-    await expect(page.getByText('官方更新时间')).toHaveCount(0);
-    await expect(page.getByText('原始文件更新时间')).toBeVisible();
-    await expect(page.getByText('解析文件更新时间')).toBeVisible();
-    await expect(page.getByTestId('file-management-parsed-section').getByText('待上传解析文件')).toBeVisible();
-    await expect(page.getByTestId('file-management-generate-rules-button')).toBeDisabled();
-    await expect(page.getByTestId('file-management-original-section-download-button')).toBeDisabled();
-    await expect(page.getByTestId('file-management-parsed-section-download-button')).toBeDisabled();
+    await page.getByTestId('file-parse-create-button').click();
+
+    await expect(page.getByText('新建解析文档').first()).toBeVisible();
+    await expect(page.getByText('当前可用目标输出方案')).toBeVisible();
+    await expect(page.getByRole('button', { name: /佣金-KSA/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /物流-义特/ })).toBeVisible();
+    await expect(page.getByText('上传文件、图片、PDF 或 Excel')).toBeVisible();
+    await expect(page.getByLabel('OCR 文本')).toBeVisible();
+    await expect(page.getByLabel('人工补充文案')).toBeVisible();
+
+    await expect(page.getByText('原始文件')).toHaveCount(0);
+    await expect(page.getByText('解析后文件')).toHaveCount(0);
+    await expect(page.getByText('生成规则')).toHaveCount(0);
   });
 
-  test('TC-FM-004 新建时上传原始文件，详情页保留系统下载地址', async ({ page }) => {
-    const originalPath = copyTemplate('tc004-original.xlsx');
-    const fileName = `${TEST_PREFIX} 新建带原始文件`;
-
+  test('TC-FM-004 详情页展示解析处理和过程数据，而不是文件归档详情', async ({ page }) => {
     await gotoFileManagement(page);
-    await createFileMetadata(page, {
-      name: fileName,
-      fileType: '货代文档',
-      version: 'create-original',
-      scope: '空运 / 附加费',
-      originalPath
-    });
 
-    await expect(page.getByTestId('file-management-detail')).toBeVisible();
-    await expect(page.getByTestId('file-management-original-section')).toContainText('tc004-original.xlsx');
-    const originalDownload = page.getByTestId('file-management-original-section-download-button');
-    await expect(originalDownload).toHaveAttribute('href', ORIGINAL_DOWNLOAD_PATTERN);
-    await expect(originalDownload).toHaveText('点击下载');
-    await expect(page.getByTestId('file-management-generate-rules-button')).toBeDisabled();
+    const row = page.locator('tr', { hasText: '佣金-KSA 解析中心验收' });
+    await row.getByRole('button', { name: '详情' }).click();
 
-    await page.getByTestId('file-management-back-to-list').click();
-    await expect(page.getByTestId('file-management-list')).toBeVisible();
-    const row = page.locator('tr', { hasText: fileName });
-    await expect(row).toHaveCount(1);
-    await expect(row.locator('a[href*="/original"]')).toHaveAttribute('href', ORIGINAL_DOWNLOAD_PATTERN);
-    await expect(row.locator('a[href*="/original"]')).toHaveText('原始文件');
-    await expect(row.locator('a[href="/templates/forwarder-document-parse-template.xlsx"]')).toHaveText('解析模板');
-    await expect(row.getByText('解析后文件')).toBeVisible();
-    await expect(row).not.toContainText('/api/system/file-management/files/');
+    await expect(page.getByTestId('file-parse-detail')).toBeVisible();
+    await expect(page.getByRole('tab', { name: '解析处理' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '解析总览' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '解析过程' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '版本对比' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '版本历史' })).toBeVisible();
+    await expect(page.getByText('来源证据')).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'Noon佣金表.xlsx / Sheet1 / 第 12 行' }).first()).toBeVisible();
+
+    await page.getByRole('tab', { name: '解析总览' }).click();
+    await expect(page.getByRole('columnheader', { name: '结果类型' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: '佣金规则' }).first()).toBeVisible();
+
+    await page.getByRole('tab', { name: '解析过程' }).click();
+    await expect(page.getByText('源内容行').first()).toBeVisible();
+    await expect(page.getByText('AI 分块').first()).toBeVisible();
+    await expect(page.getByText('结构化校验问题').first()).toBeVisible();
+    await expect(page.getByText('SOURCE_ROW_ID=8001')).toBeVisible();
+
+    await expect(page.getByText('原始文件更新时间')).toHaveCount(0);
+    await expect(page.getByText('解析文件更新时间')).toHaveCount(0);
+    await expect(page.getByText('生成规则')).toHaveCount(0);
   });
 
-  test('TC-FM-005 详情页上传解析后文件后可生成规则并显示生效中', async ({ page }) => {
-    const originalPath = copyTemplate('tc005-original.xlsx');
-    const parsedPath = copyTemplate('tc005-parsed.xlsx');
-    const fileName = `${TEST_PREFIX} 生成规则`;
-
-    await gotoFileManagement(page);
-    await createFileMetadata(page, {
-      name: fileName,
-      fileType: '货代文档',
-      version: 'generate-ready',
-      scope: '空运 / 附加费',
-      originalPath
-    });
-    await uploadParsedFile(page, parsedPath);
-    await page.getByTestId('file-management-generate-rules-button').click();
-
-    await expect(page.getByText('生效中').first()).toBeVisible();
-    await expect(page.getByText('规则已生成')).toBeVisible();
-    await expect(page.getByTestId('file-management-parsed-section-download-button')).toHaveAttribute(
-      'href',
-      PARSED_DOWNLOAD_PATTERN
-    );
-    await expect(page.getByTestId('file-management-parsed-section-download-button')).toHaveText('点击下载');
-  });
-
-  test('TC-FM-006 同类型同范围新版本生效后，旧生效版本自动失效', async ({ page, request }) => {
-    const listResponse = await request.get('/api/system/file-management/files');
-    const listPayload = await listResponse.json();
-    const activeForwarderFiles = (listPayload.files ?? []).filter(
-      (file: { fileType: string; fileScope: string; status: string; name: string }) =>
-        file.fileType === '货代文档' &&
-        file.fileScope === '空运 / 附加费' &&
-        file.status === 'active' &&
-        !file.name.startsWith(TEST_PREFIX)
-    );
-    test.skip(activeForwarderFiles.length > 0, '当前已有非测试同范围货代文档生效中，跳过互斥生效测试以避免影响用户数据。');
-
-    const oldFile: CreatedFile = {
-      name: `${TEST_PREFIX} 旧版本`,
-      originalPath: copyTemplate('tc006-old-original.xlsx'),
-      parsedPath: copyTemplate('tc006-old-parsed.xlsx')
-    };
-    const newFile: CreatedFile = {
-      name: `${TEST_PREFIX} 新版本`,
-      originalPath: copyTemplate('tc006-new-original.xlsx'),
-      parsedPath: copyTemplate('tc006-new-parsed.xlsx')
-    };
-
-    await gotoFileManagement(page);
-    await createAndGenerateForwarderFile(page, oldFile);
-    await page.getByTestId('file-management-back-to-list').click();
-    await expect(page.getByTestId('file-management-list')).toBeVisible();
-
-    await createAndGenerateForwarderFile(page, newFile);
-    await page.getByTestId('file-management-back-to-list').click();
-    await openRowDetail(page, oldFile.name);
-
-    await expect(page.getByText('失效').first()).toBeVisible();
-    await expect(page.getByText('历史规则')).toBeVisible();
-  });
-
-  test('TC-FM-007 同类型不同范围可以同时生效', async ({ page }) => {
-    const commissionFile: CreatedFile = {
-      name: `${TEST_PREFIX} 佣金费率`,
-      originalPath: copyTemplate('tc007-commission-original.xlsx'),
-      parsedPath: copyTemplate('tc007-commission-parsed.xlsx')
-    };
-    const outboundFile: CreatedFile = {
-      name: `${TEST_PREFIX} 出仓费率`,
-      originalPath: copyTemplate('tc007-outbound-original.xlsx'),
-      parsedPath: copyTemplate('tc007-outbound-parsed.xlsx')
-    };
-
-    await gotoFileManagement(page);
-    await createAndGenerateFile(page, {
-      file: commissionFile,
-      fileType: '货代文档',
-      version: 'commission-active',
-      scope: 'E2E 佣金费率'
-    });
-    await page.getByTestId('file-management-back-to-list').click();
-    await expect(page.getByTestId('file-management-list')).toBeVisible();
-
-    await createAndGenerateFile(page, {
-      file: outboundFile,
-      fileType: '货代文档',
-      version: 'outbound-active',
-      scope: 'E2E FBN 出仓费'
-    });
-    await page.getByTestId('file-management-back-to-list').click();
-
-    await openRowDetail(page, commissionFile.name);
-    await expect(page.getByText('生效中').first()).toBeVisible();
-    await expect(page.getByText('规则已生成')).toBeVisible();
-    await page.getByTestId('file-management-back-to-list').click();
-
-    await openRowDetail(page, outboundFile.name);
-    await expect(page.getByText('生效中').first()).toBeVisible();
-    await expect(page.getByText('规则已生成')).toBeVisible();
-  });
-
-  test('TC-FM-008 不支持的文件类型上传失败并给出错误提示', async ({ page }) => {
-    const badPath = path.join(tempDir, 'tc007-bad.exe');
-    fs.writeFileSync(badPath, 'bad file');
-    const fileName = `${TEST_PREFIX} 非法文件`;
-
-    await gotoFileManagement(page);
-    await createFileMetadata(page, {
-      name: fileName,
-      fileType: '货代文档',
-      version: 'bad-extension',
-      scope: '空运 / 附加费'
-    });
-
-    await page.locator('input[type="file"]').nth(0).setInputFiles(badPath);
-
-    await expect(page.getByText('文件类型不支持')).toBeVisible();
-    await expect(page.getByTestId('file-management-original-section-download-button')).toBeDisabled();
-  });
-
-  test('TC-FM-009 下载解析模板指向前端静态模板且是真实 xlsx', async ({ page, request }) => {
-    await gotoFileManagement(page);
-    await page.getByTestId('file-management-create-button').click();
-
-    const templateLink = page.getByTestId('file-management-template-download');
-    await expect(templateLink).toHaveAttribute('href', '/templates/file-parse-template.xlsx');
-    await expect(templateLink).toHaveText('下载通用解析模板');
-    for (const templateUrl of STATIC_PARSE_TEMPLATES) {
-      const response = await request.get(templateUrl);
-      expect(response.status(), templateUrl).toBe(200);
-      const body = await response.body();
-      expect(body.subarray(0, 4).toString('hex'), templateUrl).toBe('504b0304');
-    }
-  });
-
-  test('TC-FM-010 列表和详情按官方费用类型提供解析模板下载', async ({ page }) => {
+  test('TC-FM-005 物流版本页按服务线展示生效选择和关联报价包', async ({ page }) => {
     await gotoFileManagement(page);
 
-    const commissionRow = page.locator('tr', { hasText: '佣金费率 / EGY' }).first();
-    await expect(
-      commissionRow.locator('a[href="/templates/official-commission-fee-parse-template.xlsx"]')
-    ).toHaveText('解析模板');
+    const row = page.locator('tr', { hasText: '物流-义特等待重试样本' });
+    await row.getByRole('button', { name: '详情' }).click();
+    await expect(page.getByTestId('file-parse-detail')).toBeVisible();
 
-    const fbnRow = page.locator('tr', { hasText: 'FBN 出仓费 / EGY' }).first();
-    await expect(
-      fbnRow.locator('a[href="/templates/official-fbn-outbound-fee-parse-template.xlsx"]')
-    ).toHaveText('解析模板');
+    await page.getByRole('tab', { name: '版本历史' }).click();
 
-    const storageRow = page.locator('tr', { hasText: '仓储费 / EGY' }).first();
-    await expect(
-      storageRow.locator('a[href="/templates/official-storage-fee-parse-template.xlsx"]')
-    ).toHaveText('解析模板');
-    await expect(storageRow.getByText('原始文件')).toBeVisible();
-    await expect(storageRow.getByText('解析后文件')).toBeVisible();
+    await expect(page.getByText('物流服务线生效')).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '服务线标识' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '目的节点' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: '关联报价包' })).toBeVisible();
+    await expect(page.getByText('ET KSA cargo air')).toBeVisible();
+    await expect(page.getByText('Riyadh FBN warehouse')).toBeVisible();
+    await expect(page.getByText('分类 1')).toBeVisible();
+    await expect(page.getByText('基础价 1')).toBeVisible();
+    await expect(page.getByText('附加费 1')).toBeVisible();
+    await expect(page.getByText('计费 1')).toBeVisible();
+    await expect(page.getByText('仓费 1')).toBeVisible();
+    await expect(page.getByText('限制 1')).toBeVisible();
 
-    const storageUaeRow = page.locator('tr', { hasText: '仓储费 / UAE' }).first();
-    await storageUaeRow.locator('button').first().click();
-    await expect(page.getByTestId('file-management-detail')).toBeVisible();
-    await expect(page.locator(`a[href="${OFFICIAL_STORAGE_UAE_URL}"]`)).toBeVisible();
-    await page.getByTestId('file-management-back-to-list').click();
-    await expect(page.getByTestId('file-management-list')).toBeVisible();
-
-    await storageRow.locator('button').first().click();
-    await expect(page.getByTestId('file-management-detail')).toBeVisible();
-    await expect(page.getByTestId('file-management-parsed-section-template-download')).toHaveAttribute(
-      'href',
-      '/templates/official-storage-fee-parse-template.xlsx'
-    );
-
-    await page.getByTestId('file-management-back-to-list').click();
-    await expect(page.getByTestId('file-management-list')).toBeVisible();
-    await fbnRow.locator('button').first().click();
-    await expect(page.getByTestId('file-management-detail')).toBeVisible();
-    await expect(page.getByTestId('file-management-parsed-section-template-download')).toHaveAttribute(
-      'href',
-      '/templates/official-fbn-outbound-fee-parse-template.xlsx'
-    );
-  });
-
-  test('TC-FM-011 删除文件记录后列表不再展示', async ({ page, request }) => {
-    const fileName = `${TEST_PREFIX} 删除记录`;
-
-    await gotoFileManagement(page);
-    await createFileMetadata(page, {
-      name: fileName,
-      fileType: '货代文档',
-      version: 'delete-case',
-      scope: '空运 / 附加费'
-    });
-
-    await page.getByTestId('file-management-back-to-list').click();
-    await expect(page.getByTestId('file-management-list')).toBeVisible();
-    const row = page.locator('tr', { hasText: fileName });
-    await expect(row).toHaveCount(1);
-    await row.locator('button').nth(1).click();
-    await expect(page.getByText('确认删除这条文件记录？')).toBeVisible();
-    await page.locator('.ant-modal-confirm-btns button').last().click();
-    await expect(row).toHaveCount(0);
-
-    const listResponse = await request.get('/api/system/file-management/files');
-    const listPayload = await listResponse.json();
-    expect((listPayload.files ?? []).some((file: { name: string }) => file.name === fileName)).toBe(false);
+    await page.getByRole('button', { name: '保存生效服务线' }).click();
+    await expect(page.getByText('已保存物流服务线生效选择')).toBeVisible();
   });
 });
 
 async function gotoFileManagement(page: Page) {
-  await page.goto('/system/file-management?devSession=1');
-  await expect(page.getByTestId('file-management-list')).toBeVisible();
+  await page.goto(appPath(withDevSession('/system/file-management')));
+  await expect(page.getByTestId('file-parse-workbench')).toBeVisible();
 }
 
-async function createFileMetadata(
-  page: Page,
-  options: {
-    name: string;
-    fileType: '官方文档' | '货代文档';
-    version: string;
-    scope: string;
-    officialPublishedAt?: string;
-    originalPath?: string;
+function withDevSession(path: string): string {
+  if (!e2eEnv.useDevSession) {
+    return path;
   }
-) {
-  await page.getByTestId('file-management-create-button').click();
-  await expect(page.getByTestId('file-management-create')).toBeVisible();
-  await selectFileType(page, options.fileType);
-  await page.getByTestId('file-management-name-input').fill(options.name);
-  await page.getByTestId('file-management-version-input').fill(options.version);
-  await page.getByTestId('file-management-scope-input').fill(options.scope);
-  if (options.officialPublishedAt) {
-    await page.getByTestId('file-management-official-published-at-input').fill(options.officialPublishedAt);
-  }
-  await page.getByTestId('file-management-remark-input').fill('Playwright 自动测试，结束后清理');
-  if (options.originalPath) {
-    await page.locator('input[type="file"]').setInputFiles(options.originalPath);
-    await expect(page.getByText(`已选择：${path.basename(options.originalPath)}`)).toBeVisible();
-  }
-  await page.getByTestId('file-management-create-submit').click();
-  await expect(page.getByTestId('file-management-detail')).toBeVisible();
-  await expect(page.getByText(options.name)).toBeVisible();
+  return `${path}${path.includes('?') ? '&' : '?'}devSession=1`;
 }
 
-async function selectFileType(page: Page, fileType: '官方文档' | '货代文档') {
-  if (fileType === '官方文档') {
-    return;
-  }
-  await page.getByTestId('file-management-type-select').locator('.ant-select-selector').click();
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
-}
+async function mockParseCenterApis(page: Page) {
+  await page.route('**/api/system/file-management**', async (route) => {
+    throw new Error(`Unexpected legacy file-management API request: ${route.request().url()}`);
+  });
 
-async function uploadParsedFile(page: Page, parsedPath: string) {
-  await page.locator('input[type="file"]').nth(1).setInputFiles(parsedPath);
-  await expect(page.getByTestId('file-management-parsed-section')).toContainText(path.basename(parsedPath));
-}
+  await page.route('**/api/store-sync/overview?**', async (route) => {
+    await route.fulfill({
+      json: {
+        summary: { totalStores: 0, connectedStores: 0, disconnectedStores: 0 },
+        stores: []
+      }
+    });
+  });
 
-async function createAndGenerateForwarderFile(page: Page, file: CreatedFile) {
-  await createAndGenerateFile(page, {
-    file,
-    fileType: '货代文档',
-    version: file.name.includes('旧') ? 'old-version' : 'new-version',
-    scope: '空运 / 附加费'
+  await page.route('**/api/file-management/parse/target-plans', async (route) => {
+    await route.fulfill({
+      json: [
+        {
+          id: 4001,
+          code: 'commission_ksa',
+          label: '佣金-KSA',
+          documentType: 'official_fee',
+          documentName: '佣金规则',
+          standardVersion: 'STD-COMMISSION-2026-05',
+          currentVersion: 'V2026.05',
+          description: 'Noon KSA Referral Fees',
+          availableActions: {
+            canCreateTask: true,
+            canProcess: true,
+            canPublish: true,
+            canManageStandard: true
+          }
+        },
+        {
+          id: 4005,
+          code: 'logistics_yite',
+          label: '物流-义特',
+          documentType: 'logistics_rule',
+          documentName: '物流渠道规则',
+          standardVersion: 'STD-LOGISTICS-2026-05',
+          currentVersion: 'V2026.05',
+          description: '义特物流渠道方案',
+          availableActions: {
+            canCreateTask: true,
+            canProcess: true,
+            canPublish: true,
+            canActivateLogisticsChannels: true
+          }
+        }
+      ]
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks?**', async (route) => {
+    await route.fulfill({
+      json: {
+        total: 4,
+        page: 1,
+        pageSize: 50,
+        items: [
+          buildTask({ id: 2001, title: '佣金-KSA 解析中心验收', status: 'review_required', resultId: 9001, totalCount: 2, pendingCount: 1 }),
+          buildTask({ id: 2002, title: '佣金-UAE 解析中样本', status: 'parsing' }),
+          buildTask({ id: 2003, title: '出仓费失败样本', status: 'failed', failureMessage: 'AI provider timeout' }),
+          buildTask({ id: 2004, title: '物流-义特等待重试样本', status: 'failed', nextRunAt: '2026-05-20T18:30:00' })
+        ]
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2001', async (route) => {
+    await route.fulfill({
+      json: {
+        ...buildTask({ id: 2001, title: '佣金-KSA 解析中心验收', status: 'review_required', resultId: 9001, totalCount: 2, pendingCount: 1 }),
+        inputItems: [
+          {
+            id: 7001,
+            inputType: 'excel',
+            inputRole: 'primary_source',
+            fileAssetId: 6001,
+            displayName: 'Noon佣金表.xlsx',
+            downloadUrl: '/api/file-management/parse/tasks/2001/inputs/7001/download',
+            sortNo: 1
+          }
+        ],
+        remark: 'Parse center acceptance fixture'
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2004', async (route) => {
+    await route.fulfill({
+      json: {
+        ...buildTask({ id: 2004, title: '物流-义特等待重试样本', status: 'failed', nextRunAt: '2026-05-20T18:30:00' }),
+        inputItems: [
+          {
+            id: 7041,
+            inputType: 'pdf',
+            inputRole: 'primary_source',
+            fileAssetId: 6041,
+            displayName: 'ET物流报价-20260414入仓生效.pdf',
+            downloadUrl: '/api/file-management/parse/tasks/2004/inputs/7041/download',
+            sortNo: 1
+          }
+        ],
+        remark: 'Logistics activation fixture'
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2004/workflow', async (route) => {
+    await route.fulfill({
+      json: {
+        taskId: 2004,
+        status: 'failed',
+        steps: [
+          { key: 'source_extract', label: '源内容抽取', status: 'succeeded', count: 1 },
+          { key: 'ai_parse', label: 'AI解析', status: 'failed', count: 1 }
+        ],
+        coverage: {
+          sourceRows: 1,
+          processedSourceRows: 0,
+          unprocessedSourceRows: 1,
+          resultItems: 0,
+          hardErrors: 0
+        }
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2004/source-rows?**', async (route) => {
+    await route.fulfill({
+      json: {
+        taskId: 2004,
+        total: 0,
+        page: 1,
+        pageSize: 100,
+        items: []
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2004/ai-chunks?**', async (route) => {
+    await route.fulfill({
+      json: {
+        taskId: 2004,
+        total: 0,
+        page: 1,
+        pageSize: 100,
+        items: []
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2004/validation-issues?**', async (route) => {
+    await route.fulfill({
+      json: {
+        taskId: 2004,
+        total: 0,
+        page: 1,
+        pageSize: 100,
+        items: []
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2001/workflow', async (route) => {
+    await route.fulfill({
+      json: {
+        taskId: 2001,
+        status: 'review_required',
+        steps: [
+          { key: 'source_extract', label: '源内容抽取', status: 'succeeded', count: 1 },
+          { key: 'ai_parse', label: 'AI解析', status: 'succeeded', count: 1 },
+          { key: 'validation', label: '结构化校验', status: 'succeeded', count: 1 }
+        ],
+        coverage: {
+          sourceRows: 1,
+          processedSourceRows: 1,
+          unprocessedSourceRows: 0,
+          resultItems: 2,
+          hardErrors: 0
+        }
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2001/source-rows?**', async (route) => {
+    await route.fulfill({
+      json: {
+        taskId: 2001,
+        total: 1,
+        page: 1,
+        pageSize: 100,
+        items: [
+          {
+            id: 8001,
+            taskId: 2001,
+            inputId: 7001,
+            fileAssetId: 6001,
+            sourceType: 'excel_row',
+            sourceLocator: 'SOURCE_ROW_ID=8001',
+            sheetName: 'Sheet1',
+            rowNo: 12,
+            rawText: 'Colour Cosmetics Generic brand 15%',
+            sortNo: 1
+          }
+        ]
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2001/ai-chunks?**', async (route) => {
+    await route.fulfill({
+      json: {
+        taskId: 2001,
+        total: 1,
+        page: 1,
+        pageSize: 100,
+        items: [
+          {
+            id: 8101,
+            taskId: 2001,
+            resultId: 9001,
+            chunkNo: 1,
+            chunkType: 'source_rows',
+            sourceRowCount: 1,
+            promptHash: 'prompt-hash',
+            inputHash: 'input-hash',
+            modelProvider: 'openai',
+            modelName: 'parse-fixture',
+            status: 'succeeded',
+            outputItemCount: 2,
+            responseHash: 'response-hash'
+          }
+        ]
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2001/validation-issues?**', async (route) => {
+    await route.fulfill({
+      json: {
+        taskId: 2001,
+        total: 1,
+        page: 1,
+        pageSize: 100,
+        items: [
+          {
+            id: 8201,
+            taskId: 2001,
+            resultId: 9001,
+            resultItemId: 9102,
+            sourceRowId: 8001,
+            aiChunkId: 8101,
+            issueType: 'needs_review',
+            severity: 'warning',
+            fieldKey: 'commissionRate',
+            message: '品牌限制需要人工确认',
+            resolvedStatus: 'open'
+          }
+        ]
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2001/processing-items?**', async (route) => {
+    await route.fulfill({
+      json: {
+        taskId: 2001,
+        resultId: 9001,
+        revisionNo: 1,
+        total: 2,
+        page: 1,
+        pageSize: 100,
+        columns: commissionColumns(),
+        items: [
+          {
+            itemId: 9101,
+            taskId: 2001,
+            resultId: 9001,
+            itemType: 'commission_rule',
+            naturalKey: 'KSA|Colour Cosmetics|Generic brand|ALL|2026-05-20',
+            changeType: 'added',
+            reviewStatus: 'confirmed',
+            confidence: 'high',
+            validationStatus: 'pass',
+            fields: {
+              country: 'KSA',
+              categoryPath: 'Beauty / Colour Cosmetics',
+              brandRestriction: 'Generic brand',
+              commissionRate: '15%',
+              effectiveDate: '2026-05-20'
+            },
+            changedFieldKeys: ['commissionRate'],
+            evidence: { source: 'Noon佣金表.xlsx', sheet: 'Sheet1', quote: '第 12 行' },
+            validationError: null,
+            sortNo: 1
+          },
+          {
+            itemId: 9102,
+            taskId: 2001,
+            resultId: 9001,
+            itemType: 'commission_rule',
+            naturalKey: 'KSA|Colour Cosmetics|All other brands|ALL|2026-05-20',
+            changeType: 'added',
+            reviewStatus: 'pending',
+            confidence: 'medium',
+            validationStatus: 'warning',
+            fields: {
+              country: 'KSA',
+              categoryPath: 'Beauty / Colour Cosmetics',
+              brandRestriction: 'All other brands',
+              commissionRate: '10%',
+              effectiveDate: '2026-05-20'
+            },
+            changedFieldKeys: ['commissionRate'],
+            evidence: { source: 'Noon佣金表.xlsx', sheet: 'Sheet1', quote: '第 12 行' },
+            validationError: { message: '品牌限制需要人工确认' },
+            sortNo: 2
+          }
+        ]
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2001/overview-items?**', async (route) => {
+    await route.fulfill({
+      json: {
+        taskId: 2001,
+        resultId: 9001,
+        total: 1,
+        page: 1,
+        pageSize: 100,
+        columns: commissionColumns(),
+        items: [
+          {
+            itemId: 9101,
+            taskId: 2001,
+            resultId: 9001,
+            itemType: 'commission_rule',
+            naturalKey: 'KSA|Colour Cosmetics|Generic brand|ALL|2026-05-20',
+            fields: {
+              country: 'KSA',
+              categoryPath: 'Beauty / Colour Cosmetics',
+              brandRestriction: 'Generic brand',
+              commissionRate: '15%',
+              effectiveDate: '2026-05-20'
+            },
+            sourceResultItemId: 9101,
+            sortNo: 1
+          }
+        ]
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/target-plans/4001/versions?**', async (route) => {
+    await route.fulfill({
+      json: {
+        targetPlanId: 4001,
+        total: 1,
+        page: 1,
+        pageSize: 100,
+        items: [
+          {
+            versionId: 3001,
+            versionNo: 'V2026.05',
+            targetPlanId: 4001,
+            sourceTaskId: 2001,
+            sourceResultId: 9001,
+            status: 'active',
+            publishedAt: '2026-05-20T12:00:00',
+            publishedBy: 1,
+            summary: { itemCount: 1, inputSummary: 'Noon佣金表.xlsx' }
+          }
+        ]
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/target-plans/4005/versions?**', async (route) => {
+    await route.fulfill({
+      json: {
+        targetPlanId: 4005,
+        total: 1,
+        page: 1,
+        pageSize: 100,
+        items: [
+          {
+            versionId: 5005,
+            versionNo: 'ET-KSA-FBN-2026-05',
+            targetPlanId: 4005,
+            sourceTaskId: 2004,
+            sourceResultId: 9401,
+            status: 'active',
+            publishedAt: '2026-05-20T12:30:00',
+            publishedBy: 1,
+            summary: { itemCount: 5, inputSummary: 'ET物流报价-20260414入仓生效.pdf' }
+          }
+        ]
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/versions/3001/items?**', async (route) => {
+    await route.fulfill({
+      json: {
+        versionId: 3001,
+        versionNo: 'V2026.05',
+        targetPlanId: 4001,
+        total: 1,
+        page: 1,
+        pageSize: 100,
+        columns: commissionColumns(),
+        items: [
+          {
+            versionItemId: 3101,
+            versionId: 3001,
+            itemType: 'commission_rule',
+            naturalKey: 'KSA|Colour Cosmetics|Generic brand|ALL|2026-05-20',
+            fields: {
+              country: 'KSA',
+              categoryPath: 'Beauty / Colour Cosmetics',
+              brandRestriction: 'Generic brand',
+              commissionRate: '15%',
+              effectiveDate: '2026-05-20'
+            },
+            sourceResultItemId: 9101,
+            sortNo: 1
+          }
+        ]
+      }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/logistics-channel-activations?**', async (route) => {
+    await route.fulfill({
+      json: logisticsActivationFixture()
+    });
+  });
+
+  await page.route('**/api/file-management/parse/logistics-channel-activations', async (route) => {
+    expect(route.request().method()).toBe('POST');
+    const body = route.request().postDataJSON() as { targetPlanId: number; versionId: number; selectedChannelKeys: string[] };
+    expect(body).toEqual({
+      targetPlanId: 4005,
+      versionId: 5005,
+      selectedChannelKeys: ['ET KSA cargo air']
+    });
+    await route.fulfill({
+      json: logisticsActivationFixture()
+    });
   });
 }
 
-async function createAndGenerateFile(
-  page: Page,
-  options: {
-    file: CreatedFile;
-    fileType: '官方文档' | '货代文档';
-    version: string;
-    scope: string;
-  }
-) {
-  await createFileMetadata(page, {
-    name: options.file.name,
-    fileType: options.fileType,
-    version: options.version,
-    scope: options.scope,
-    originalPath: options.file.originalPath
-  });
-  await uploadParsedFile(page, options.file.parsedPath!);
-  await page.getByTestId('file-management-generate-rules-button').click();
-  await expect(page.getByText('生效中').first()).toBeVisible();
-  await expect(page.getByText('规则已生成')).toBeVisible();
+function logisticsActivationFixture() {
+  return {
+    targetPlanId: 4005,
+    targetPlanCode: 'logistics_yite',
+    targetPlanLabel: '物流-义特',
+    versionId: 5005,
+    versionNo: 'ET-KSA-FBN-2026-05',
+    ownerUserId: 1,
+    selectedChannelKeys: ['ET KSA cargo air'],
+    channels: [
+      {
+        versionItemId: 5101,
+        naturalKey: 'ET|KSA|FBN|cargo_air|warehouse_to_fbn|Riyadh FBN warehouse',
+        channelKey: 'ET KSA cargo air',
+        country: 'KSA',
+        city: 'Riyadh FBN warehouse',
+        shippingMethod: 'cargo_air',
+        feeItem: 'warehouse_to_fbn',
+        billingRule: 'weekly',
+        leadTime: '3-5 days',
+        selected: true,
+        fields: {
+          itemType: 'logistics_service_line',
+          relatedItemCounts: {
+            logistics_cargo_category: 1,
+            logistics_base_price: 1,
+            logistics_surcharge: 1,
+            logistics_billing_rule: 1,
+            logistics_warehouse_service_fee: 1,
+            logistics_restriction: 1
+          }
+        }
+      }
+    ]
+  };
 }
 
-async function openRowDetail(page: Page, rowText: string) {
-  const row = page.locator('tr', { hasText: rowText });
-  await expect(row).toHaveCount(1);
-  await row.locator('button').first().click();
-  await expect(page.getByTestId('file-management-detail')).toBeVisible();
-  await expect(page.getByText(rowText)).toBeVisible();
+function buildTask(options: {
+  id: number;
+  title: string;
+  status: string;
+  resultId?: number;
+  totalCount?: number;
+  pendingCount?: number;
+  failureMessage?: string;
+  nextRunAt?: string;
+}) {
+  return {
+    id: options.id,
+    taskNo: `TASK-${options.id}`,
+    documentTitle: options.title,
+    targetPlanId: options.title.includes('物流') ? 4005 : 4001,
+    targetPlanCode: options.title.includes('物流') ? 'logistics_yite' : 'commission_ksa',
+    targetPlanLabel: options.title.includes('物流') ? '物流-义特' : '佣金-KSA',
+    documentType: options.title.includes('物流') ? 'logistics_rule' : 'official_fee',
+    documentName: options.title.includes('物流') ? '物流渠道规则' : '佣金规则',
+    standardVersion: options.title.includes('物流') ? 'STD-LOGISTICS-2026-05' : 'STD-COMMISSION-2026-05',
+    currentVersion: 'V2026.05',
+    status: options.status,
+    dataScopeType: 'global',
+    dataScopeKey: 'global',
+    documentGroupId: options.id,
+    iterationNo: 1,
+    resultId: options.resultId ?? null,
+    failureMessage: options.failureMessage ?? null,
+    nextRunAt: options.nextRunAt ?? null,
+    totalCount: options.totalCount ?? 0,
+    pendingCount: options.pendingCount ?? 0,
+    needsFixCount: 0,
+    hardErrorCount: 0,
+    conflictCount: 0,
+    deleteSuspectedCount: 0,
+    confirmedCount: options.totalCount ? Math.max(options.totalCount - (options.pendingCount ?? 0), 0) : 0,
+    rejectedCount: 0,
+    keepOldCount: 0,
+    createdAt: '2026-05-20T10:00:00',
+    updatedAt: '2026-05-20T10:30:00',
+    availableActions: {
+      canCreateTask: true,
+      canProcess: true,
+      canPublish: true,
+      canManageStandard: true,
+      canActivateLogisticsChannels: true
+    }
+  };
 }
 
-function copyTemplate(fileName: string) {
-  const target = path.join(os.tmpdir(), fileName);
-  fs.copyFileSync(TEMPLATE_PATH, target);
-  return target;
-}
-
-function cleanupTestRecords() {
-  const idsOutput = execFileSync('mysql', [
-    '-uroot',
-    '-proot',
-    '-N',
-    '-e',
-    `SELECT id FROM nuono_new_dev.system_managed_file WHERE name LIKE '${TEST_PREFIX}%';`
-  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  const ids = idsOutput.split('\n').map((id) => id.trim()).filter(Boolean);
-
-  execFileSync('mysql', [
-    '-uroot',
-    '-proot',
-    '-e',
-    `DELETE FROM nuono_new_dev.system_managed_file WHERE name LIKE '${TEST_PREFIX}%';`
-  ], { stdio: 'ignore' });
-
-  for (const id of ids) {
-    fs.rmSync(path.join(os.tmpdir(), 'nuono-next-system-files', id), { recursive: true, force: true });
-  }
+function commissionColumns() {
+  return [
+    { key: 'country', label: '国家', type: 'text', tableVisible: true, width: 100 },
+    { key: 'categoryPath', label: '类目路径', type: 'text', tableVisible: true, width: 220 },
+    { key: 'brandRestriction', label: '品牌限制', type: 'text', tableVisible: true, width: 160 },
+    { key: 'commissionRate', label: '佣金率', type: 'text', tableVisible: true, width: 100 },
+    { key: 'effectiveDate', label: '生效日期', type: 'date', tableVisible: true, width: 140 }
+  ];
 }
