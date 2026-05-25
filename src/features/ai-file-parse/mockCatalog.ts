@@ -73,7 +73,7 @@ export const aiParseStandards: AiParseDocumentStandard[] = [
     documentType: 'OFFICIAL_OUTBOUND_FEE',
     documentName: '官方出仓费方案',
     standardVersion: 'STD-2026.05',
-    description: '按国家、平台、履约方式和费用项归一官方出仓费规则。',
+    description: '按国家、平台、履约方式、规格分类、重量费用和计算策略归一官方出仓费规则。',
     active: true,
     supportedInputs: ['EXCEL', 'PDF', 'IMAGE', 'OCR_TEXT', 'MANUAL_TEXT'],
     businessScopeFields: [
@@ -83,15 +83,22 @@ export const aiParseStandards: AiParseDocumentStandard[] = [
     ],
     resultFields: [
       { key: 'country', label: '国家', type: 'enum', options: ['SA', 'AE'], tableVisible: true, width: 88 },
-      { key: 'feeItem', label: '费用项', type: 'text', required: true, tableVisible: true, width: 150 },
-      { key: 'chargeMode', label: '计费方式', type: 'enum', options: ['按件', '按重量', '按体积'], tableVisible: true, width: 110 },
-      { key: 'amount', label: '金额', type: 'money', required: true, tableVisible: true, width: 96 },
+      { key: 'classificationName', label: '规格分类', type: 'text', required: true, tableVisible: true, width: 140 },
+      { key: 'longestSideMaxCm', label: '最长边上限', type: 'number', tableVisible: true, width: 120 },
+      { key: 'maxShippingWeightGrams', label: '最大发货重量', type: 'number', tableVisible: true, width: 140 },
+      { key: 'packagingWeightGrams', label: '包装重量', type: 'number', tableVisible: true, width: 110 },
+      { key: 'weightMaxGrams', label: '重量上限', type: 'number', tableVisible: true, width: 110 },
+      { key: 'standardFeeAmount', label: '标准费用', type: 'money', required: true, tableVisible: true, width: 110 },
+      { key: 'highAspFeeAmount', label: '高客单价费用', type: 'money', tableVisible: true, width: 130 },
       { key: 'currency', label: '币种', type: 'enum', options: ['SAR', 'AED'], tableVisible: true, width: 86 },
+      { key: 'shippingWeightFormula', label: '发货重量公式', type: 'text', tableVisible: true, width: 180 },
       { key: 'effectiveDate', label: '生效日期', type: 'date', tableVisible: false }
     ],
     itemTypes: [
       { value: 'outbound_fee_rule', label: '出仓费规则' },
-      { value: 'outbound_fee_exception', label: '出仓费例外' }
+      { value: 'outbound_size_classification_rule', label: '出仓费规格分级' },
+      { value: 'outbound_fee_weight_slab_rule', label: '出仓费重量费用' },
+      { value: 'outbound_fee_calculation_policy', label: '出仓费计算策略' }
     ],
     publishAdapterLabel: '官方出仓费版本'
   }

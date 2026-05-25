@@ -252,7 +252,7 @@ export function AiFileParseProcessPanel({
       <Card
         variant="borderless"
         className="ai-file-parse-section"
-        title={<Text strong>校验问题</Text>}
+        title={<Text strong>结构化校验问题</Text>}
       >
         <Table
           rowKey="id"

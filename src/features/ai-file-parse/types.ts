@@ -69,6 +69,7 @@ export type AiParseTargetOutputPlan = {
   businessScope: Record<string, string>;
   currentVersion: string;
   description: string;
+  itemTypes?: Array<{ value: string; label: string }>;
   availableActions?: {
     canCreateTask?: boolean;
     canProcess?: boolean;

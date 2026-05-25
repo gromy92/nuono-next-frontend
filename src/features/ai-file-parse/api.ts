@@ -15,6 +15,7 @@ export type FileParseTargetPlanPayload = {
   standardVersion: string;
   currentVersion?: string | null;
   description?: string | null;
+  itemTypes?: Array<{ value: string; label: string }>;
   availableActions?: FileParseAvailableActionsPayload;
 };
 
@@ -334,7 +335,10 @@ export type FileParseLogisticsChannelPayload = {
   billingRule?: string | null;
   leadTime?: string | null;
   selected: boolean;
-  fields?: Record<string, unknown> | null;
+  fields?: (Record<string, unknown> & {
+    itemType?: string;
+    relatedItemCounts?: Record<string, number>;
+  }) | null;
 };
 
 export type FileParseLogisticsActivationPayload = {
