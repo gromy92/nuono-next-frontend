@@ -19,6 +19,7 @@ export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
+export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
 export const SYSTEM_FILE_MANAGEMENT_PATH = workspaceMenuPath('system-file-management')
 export const USER_ACCOUNT_PATH = workspaceMenuPath('user-account')
 export const USER_STORE_NOON_PATH = workspaceMenuPath('user-store-noon')
@@ -64,6 +65,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantLogisticsQuote',
   'grantManualSelection',
   'grantPurchase',
+  'grantSystemReports',
   'grantRoleAssignment',
   'grantSystemRole'
 ])
@@ -225,6 +227,7 @@ export function resolveSessionLandingMenuKey(
         'system-menu',
         'purchase-profit',
         'purchase-order',
+        'noon-call-store-data',
         'product-manual-selection',
         'product-manage'
       ] as AppMenuKey[])
@@ -236,6 +239,7 @@ export function resolveSessionLandingMenuKey(
           'product-manage',
           'purchase-profit',
           'purchase-logistics-quote',
+          'noon-call-store-data',
           'product-manual-selection'
         ] as AppMenuKey[])
       : ([
@@ -245,6 +249,7 @@ export function resolveSessionLandingMenuKey(
           'user-role',
           'purchase-profit',
           'purchase-logistics-quote',
+          'noon-call-store-data',
           'product-manual-selection'
         ] as AppMenuKey[])
 

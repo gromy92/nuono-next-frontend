@@ -6,6 +6,7 @@ import {
   PRODUCT_WORKSPACE_PATH,
   PRODUCT_MANUAL_SELECTION_PATH,
   PURCHASE_1688_COLLECTION_PATH,
+  NOON_CALL_STORE_DATA_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
 } from './WorkspaceRouting'
@@ -63,6 +64,9 @@ function readDevSessionOverride(): AuthSession | null {
   const includeLogisticsQuoteDevMenu =
     currentAppPathname().startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
     search.get('grantLogisticsQuote') === '1'
+  const includeSystemReportsDevMenu =
+    currentAppPathname().startsWith(NOON_CALL_STORE_DATA_PATH) ||
+    search.get('grantSystemReports') === '1'
   const includeFileManagementDevMenu =
     currentAppPathname().startsWith(SYSTEM_FILE_MANAGEMENT_PATH) ||
     currentAppPathname().startsWith('/system/ai-file-parse') ||
@@ -157,6 +161,9 @@ function readDevSessionOverride(): AuthSession | null {
   }
   if (includeLogisticsQuoteDevMenu) {
     grantedMenus.push({ menuId: 9201, menuName: '货代管理', urlPath: PURCHASE_LOGISTICS_QUOTE_PATH })
+  }
+  if (includeSystemReportsDevMenu) {
+    grantedMenus.push({ menuId: 9600, menuName: 'Noon店铺数据', urlPath: NOON_CALL_STORE_DATA_PATH })
   }
   if (includeFileManagementDevMenu && !useBossDevSession) {
     grantedMenus.push({ menuId: 9202, menuName: '文件管理', urlPath: SYSTEM_FILE_MANAGEMENT_PATH })
