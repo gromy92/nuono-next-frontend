@@ -149,7 +149,7 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
     <div data-testid="noon-call-store-data-workbench" style={{ padding: 20, display: 'grid', gap: 12 }}>
       <NoonDataReportHeader
         title="店铺数据"
-        subtitle="Noon调用 / 店铺数据"
+        subtitle="系统报表 / 店铺数据"
         generatedAt={view?.generatedAt}
         extra={
           <Button icon={<ReloadOutlined />} loading={state.status === 'loading'} onClick={load}>
