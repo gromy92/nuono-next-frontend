@@ -1,5 +1,50 @@
 import { expect, test } from '@playwright/test';
 
+test('system reports store data route renders Noon store data without legacy overview API', async ({ page }) => {
+  const legacyOverviewCalls: string[] = [];
+  await page.route('**/api/noon-call/store-data', async (route) => {
+    await route.fulfill({
+      json: {
+        title: '店铺数据',
+        generatedAt: '2026-05-26T11:00:00',
+        metrics: [{ key: 'store_count', title: '店铺站点', value: 1, unit: '个', state: 'ready' }],
+        rows: [
+          {
+            ownerUserId: 307,
+            storeCode: 'STR108065-NAE',
+            siteCode: 'AE',
+            overallMarker: 'PENDING_SYNC',
+            categories: [
+              {
+                category: 'PRODUCT_LIST',
+                label: '商品列表信息',
+                marker: 'PENDING_SYNC',
+                latestStatus: 'INCOMPLETE',
+                historyStatus: 'NOT_REQUIRED',
+                syncable: true
+              }
+            ]
+          }
+        ]
+      }
+    });
+  });
+  await page.route('**/api/system-reports/store-data/overview**', async (route) => {
+    legacyOverviewCalls.push(route.request().url());
+    await route.fulfill({
+      status: 404,
+      json: { message: 'No message available' }
+    });
+  });
+
+  await page.goto('/system-reports/store-data?devSession=1&grantSystemReports=1');
+
+  await expect(page.getByTestId('noon-call-store-data-workbench')).toBeVisible();
+  await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('Noon调用');
+  await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('STR108065-NAE');
+  expect(legacyOverviewCalls).toHaveLength(0);
+});
+
 test('noon call store data shows four sync cells and posts category-specific sync actions', async ({ page }) => {
   const syncCalls: string[] = [];
   await page.route('**/api/noon-call/store-data', async (route) => {
