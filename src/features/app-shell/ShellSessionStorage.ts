@@ -7,6 +7,8 @@ import {
   PRODUCT_MANUAL_SELECTION_PATH,
   PURCHASE_1688_COLLECTION_PATH,
   NOON_CALL_STORE_DATA_PATH,
+  SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH,
+  SYSTEM_REPORT_NOON_DATA_GAPS_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
 } from './WorkspaceRouting'
@@ -66,6 +68,8 @@ function readDevSessionOverride(): AuthSession | null {
     search.get('grantLogisticsQuote') === '1'
   const includeSystemReportsDevMenu =
     currentAppPathname().startsWith(NOON_CALL_STORE_DATA_PATH) ||
+    currentAppPathname().startsWith(SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH) ||
+    currentAppPathname().startsWith(SYSTEM_REPORT_NOON_DATA_GAPS_PATH) ||
     search.get('grantSystemReports') === '1'
   const includeFileManagementDevMenu =
     currentAppPathname().startsWith(SYSTEM_FILE_MANAGEMENT_PATH) ||
@@ -164,6 +168,8 @@ function readDevSessionOverride(): AuthSession | null {
   }
   if (includeSystemReportsDevMenu) {
     grantedMenus.push({ menuId: 9600, menuName: '系统报表', urlPath: NOON_CALL_STORE_DATA_PATH })
+    grantedMenus.push({ menuId: 9602, menuName: '数据完整度', urlPath: SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH })
+    grantedMenus.push({ menuId: 9603, menuName: '数据缺口巡检', urlPath: SYSTEM_REPORT_NOON_DATA_GAPS_PATH })
   }
   if (includeFileManagementDevMenu && !useBossDevSession) {
     grantedMenus.push({ menuId: 9202, menuName: '文件管理', urlPath: SYSTEM_FILE_MANAGEMENT_PATH })

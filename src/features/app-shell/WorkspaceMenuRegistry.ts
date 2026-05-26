@@ -7,6 +7,8 @@ export type AppMenuKey =
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'noon-call-store-data'
+  | 'system-report-noon-data-completeness'
+  | 'system-report-noon-data-gaps'
   | 'system-file-management'
   | 'user-account'
   | 'user-store-noon'
@@ -51,6 +53,8 @@ export type WorkspaceContentKind =
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'noon-call-store-data'
+  | 'system-report-noon-data-completeness'
+  | 'system-report-noon-data-gaps'
   | 'system-file-management'
   | 'user-account'
   | 'user-role'
@@ -174,6 +178,26 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'noon-call-store-data',
     closable: true,
     routeAliases: ['/noon-call/store-data']
+  },
+  'system-report-noon-data-completeness': {
+    key: 'system-report-noon-data-completeness',
+    label: '数据完整度',
+    path: '/system-reports/noon-data-completeness',
+    sectionKey: 'system-reports',
+    pathLabel: '系统报表 / 数据完整度',
+    tabLabel: '数据完整度',
+    contentKind: 'system-report-noon-data-completeness',
+    closable: true
+  },
+  'system-report-noon-data-gaps': {
+    key: 'system-report-noon-data-gaps',
+    label: '数据缺口巡检',
+    path: '/system-reports/noon-data-gaps',
+    sectionKey: 'system-reports',
+    pathLabel: '系统报表 / 数据缺口巡检',
+    tabLabel: '数据缺口巡检',
+    contentKind: 'system-report-noon-data-gaps',
+    closable: true
   },
   'system-file-management': {
     key: 'system-file-management',
@@ -308,7 +332,11 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     key: 'system-reports',
     label: '系统报表',
     iconKey: 'system-reports',
-    entries: [{ type: 'workspace', key: 'noon-call-store-data' }]
+    entries: [
+      { type: 'workspace', key: 'noon-call-store-data' },
+      { type: 'workspace', key: 'system-report-noon-data-completeness' },
+      { type: 'workspace', key: 'system-report-noon-data-gaps' }
+    ]
   },
   {
     key: 'user',
@@ -398,10 +426,17 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
-    keys: ['noon-call-store-data'],
-    urlPaths: ['/system-reports/store-data', '/noon-call/store-data', '/api/noon-call/store-data'],
-    urlPathPrefixes: ['/api/noon-call/store-data/'],
-    menuNames: ['系统报表', 'Noon调用', 'Noon店铺数据', '店铺数据']
+    keys: ['noon-call-store-data', 'system-report-noon-data-completeness', 'system-report-noon-data-gaps'],
+    urlPaths: [
+      '/system-reports/store-data',
+      '/noon-call/store-data',
+      '/api/noon-call/store-data',
+      '/system-reports/noon-data-completeness',
+      '/system-reports/noon-data-gaps',
+      '/api/system-reports/noon-data-completeness'
+    ],
+    urlPathPrefixes: ['/api/noon-call/store-data/', '/api/system-reports/noon-data-completeness/'],
+    menuNames: ['系统报表', 'Noon调用', 'Noon店铺数据', '店铺数据', '数据完整度', '数据缺口巡检']
   },
   {
     keys: ['system-file-management'],
@@ -421,7 +456,9 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-order',
   'purchase-profit',
   'purchase-logistics-quote',
-  'noon-call-store-data'
+  'noon-call-store-data',
+  'system-report-noon-data-completeness',
+  'system-report-noon-data-gaps'
 ]
 
 export const MANAGEMENT_MENU_KEYS: AppMenuKey[] = [
