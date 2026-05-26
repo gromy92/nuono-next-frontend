@@ -9,6 +9,7 @@ import {
   batchAcceptFileParseItems,
   createFileParseIdempotencyKey,
   createFileParseTask,
+  deleteFileParseTask,
   downloadFileParseOverview,
   fetchFileParseAiChunks,
   fetchFileParseLogisticsActivations,
@@ -59,12 +60,28 @@ import type {
   AiParseReviewStatus,
   AiParseRolePermission,
   AiParseStandardField,
+  AiParseTaskFilters,
   AiParseTargetOutputPlan,
   AiParseTask,
   AiParseVersion,
   AiParseVersionSnapshotItem
 } from './types';
 import './aiFileParse.css';
+
+const EMPTY_TASK_FILTERS: AiParseTaskFilters = {
+  targetPlanId: '',
+  status: '',
+  keyword: ''
+};
+
+function taskFiltersToQuery(filters: AiParseTaskFilters) {
+  const keyword = filters.keyword.trim();
+  return {
+    targetPlanId: filters.targetPlanId ? Number(filters.targetPlanId) : undefined,
+    status: filters.status || undefined,
+    keyword: keyword || undefined
+  };
+}
 
 export function AiFileParseBoard() {
   const { message: messageApi, modal } = AntdApp.useApp();
@@ -86,6 +103,7 @@ export function AiFileParseBoard() {
   const [actionLoading, setActionLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [selectedTaskId, setSelectedTaskId] = useState('');
+  const [taskFilters, setTaskFilters] = useState<AiParseTaskFilters>(EMPTY_TASK_FILTERS);
   const [detailTab, setDetailTab] = useState('processing');
   const [reviewFilter, setReviewFilter] = useState<AiParseReviewStatus | 'ALL'>('ALL');
   const [selectedProcessingItemIds, setSelectedProcessingItemIds] = useState<string[]>([]);
@@ -195,8 +213,12 @@ export function AiFileParseBoard() {
     [allResultFields, selectedBaseVersion, selectedTargetVersion, versionSnapshots]
   );
 
-  const loadTasks = async (nextSelectedTaskId?: string) => {
-    const taskList = await fetchFileParseTasks({ page: 1, pageSize: 50 });
+  const loadTasks = async (nextSelectedTaskId?: string, filtersOverride = taskFilters) => {
+    const taskList = await fetchFileParseTasks({
+      ...taskFiltersToQuery(filtersOverride),
+      page: 1,
+      pageSize: 50
+    });
     const mappedTasks = taskList.items.map(mapTaskFromList);
     setTasks((currentTasks) =>
       mappedTasks.map((task) => ({
@@ -204,9 +226,18 @@ export function AiFileParseBoard() {
         inputItems: currentTasks.find((currentTask) => currentTask.id === task.id)?.inputItems ?? task.inputItems
       }))
     );
-    const resolvedSelectedId = nextSelectedTaskId || selectedTaskId || mappedTasks[0]?.id || '';
+    const requestedSelectedId = nextSelectedTaskId && mappedTasks.some((task) => task.id === nextSelectedTaskId)
+      ? nextSelectedTaskId
+      : '';
+    const currentSelectedId = selectedTaskId && mappedTasks.some((task) => task.id === selectedTaskId)
+      ? selectedTaskId
+      : '';
+    const resolvedSelectedId = requestedSelectedId || currentSelectedId || mappedTasks[0]?.id || '';
     if (resolvedSelectedId) {
       setSelectedTaskId(resolvedSelectedId);
+    } else {
+      setSelectedTaskId('');
+      setViewMode('list');
     }
     return mappedTasks;
   };
@@ -603,6 +634,51 @@ export function AiFileParseBoard() {
     setEditingItem(item);
   };
 
+  const reloadTasksWithFilters = async (nextFilters: AiParseTaskFilters) => {
+    setTaskFilters(nextFilters);
+    setPageLoading(true);
+    try {
+      await loadTasks(undefined, nextFilters);
+    } catch (error) {
+      messageApi.error(error instanceof Error ? error.message : '加载解析文档列表失败');
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  const handleTaskFiltersChange = (nextFilters: AiParseTaskFilters) => {
+    void reloadTasksWithFilters(nextFilters);
+  };
+
+  const handleTaskFiltersReset = () => {
+    void reloadTasksWithFilters({ ...EMPTY_TASK_FILTERS });
+  };
+
+  const handleDeleteTask = (task: AiParseTask) => {
+    modal.confirm({
+      title: '删除解析文档',
+      content: '只会从文件列表删除，不会回滚已经发布或生效的业务结果。',
+      okText: '确认删除',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        setActionLoading(true);
+        try {
+          await deleteFileParseTask(task.id);
+          if (selectedTaskId === task.id) {
+            setViewMode('list');
+          }
+          await loadTasks();
+          messageApi.success('已删除解析文档');
+        } catch (error) {
+          messageApi.error(error instanceof Error ? error.message : '删除解析文档失败');
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    });
+  };
+
   const handleReviewItem = async (
     item: AiParseResultItem,
     action: 'accept' | 'reject' | 'keep-old',
@@ -949,6 +1025,7 @@ export function AiFileParseBoard() {
       onCreateClose={closeCreateDrawer}
       onCreateSubmit={() => void handleSubmitCreate()}
       onCreateTargetPlanChange={setCreateTargetPlanId}
+      onDeleteTask={handleDeleteTask}
       onDetailTabChange={setDetailTab}
       onEditClose={closeEditDrawer}
       onEditSave={() => void handleSaveEdit()}
@@ -964,6 +1041,8 @@ export function AiFileParseBoard() {
       onReviewFilterChange={setReviewFilter}
       onRunSelectedTask={() => void handleRunSelectedTask()}
       onSaveLogisticsActivation={() => void handleSaveLogisticsActivation()}
+      onTaskFiltersChange={handleTaskFiltersChange}
+      onTaskFiltersReset={handleTaskFiltersReset}
       onToggleLogisticsChannel={handleToggleLogisticsChannel}
       onProcessingSelectionChange={setSelectedProcessingItemIds}
         onUploadFilesChange={setUploadFiles}
@@ -980,6 +1059,7 @@ export function AiFileParseBoard() {
         selectedTask={selectedTask}
         sourceRows={sourceRows}
         sortedSelectedVersions={sortedSelectedVersions}
+        taskFilters={taskFilters}
         targetPlans={targetPlans}
         tasks={tasks}
         uploadFiles={uploadFiles}

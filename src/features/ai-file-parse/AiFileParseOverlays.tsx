@@ -31,7 +31,6 @@ type CreateBatchDrawerProps = {
   form: FormInstance<CreateBatchFormValues>;
   open: boolean;
   targetPlans: AiParseTargetOutputPlan[];
-  selectedPlan: AiParseTargetOutputPlan | undefined;
   parentTask?: AiParseTask | null;
   submitting: boolean;
   uploadFiles: UploadFile[];
@@ -45,7 +44,6 @@ export function CreateBatchDrawer({
   form,
   open,
   targetPlans,
-  selectedPlan,
   parentTask,
   submitting,
   uploadFiles,
@@ -92,6 +90,7 @@ export function CreateBatchDrawer({
 
         <Form.Item label="目标输出方案" name="targetPlanId" rules={[{ required: true, message: '请选择目标输出方案' }]}>
           <Select
+            data-testid="file-parse-create-target-plan-select"
             disabled={Boolean(parentTask)}
             options={targetPlans.map((item) => ({
               label: `${item.label} / ${item.documentName}`,
@@ -100,23 +99,6 @@ export function CreateBatchDrawer({
             onChange={selectTargetPlan}
           />
         </Form.Item>
-
-        {!parentTask ? <div className="ai-file-parse-target-plan-list">
-          <Text type="secondary">当前可用目标输出方案</Text>
-          <div className="ai-file-parse-target-plan-grid">
-            {targetPlans.map((plan) => (
-              <button
-                key={plan.id}
-                className={plan.id === selectedPlan?.id ? 'ai-file-parse-target-plan active' : 'ai-file-parse-target-plan'}
-                type="button"
-                onClick={() => selectTargetPlan(plan.id)}
-              >
-                <span>{plan.label}</span>
-                <small>{plan.documentName}</small>
-              </button>
-            ))}
-          </div>
-        </div> : null}
 
         <Form.Item label="输入项">
           <Upload.Dragger
