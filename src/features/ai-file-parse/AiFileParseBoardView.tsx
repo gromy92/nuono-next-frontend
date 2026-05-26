@@ -29,14 +29,10 @@ import {
 import type { FormInstance, UploadFile } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type {
-  FileParseAiChunkPayload,
   FileParseLogisticsActivationPayload,
   FileParseLogisticsChannelPayload,
-  FileParseSourceRowPayload,
-  FileParseValidationIssuePayload,
   FileParseWorkflowPayload
 } from './api';
-import { AiFileParseProcessPanel } from './AiFileParseProcessPanel';
 import {
   CreateBatchDrawer,
   EditResultDrawer,
@@ -120,8 +116,6 @@ function renderLogisticsRelatedQuoteContext(record: FileParseLogisticsChannelPay
 
 type AiFileParseBoardViewProps = {
   actionLoading: boolean;
-  aiChunks: FileParseAiChunkPayload[];
-  aiChunksError: string;
   allResultFields: AiParseStandardField[];
   blockingItems: AiParseResultItem[];
   comparingItem: AiParseResultItem | null;
@@ -169,7 +163,6 @@ type AiFileParseBoardViewProps = {
   overviewItems: AiParseResultItem[];
   pageLoading: boolean;
   permission: AiParseRolePermission;
-  processLoading: boolean;
   reviewFilter: AiParseReviewStatus | 'ALL';
   selectedBaseVersion: AiParseVersion | undefined;
   selectedProcessingItemIds: string[];
@@ -177,13 +170,11 @@ type AiFileParseBoardViewProps = {
   selectedStandard: AiParseDocumentStandard | undefined;
   selectedTargetVersion: AiParseVersion | undefined;
   selectedTask: AiParseTask | undefined;
-  sourceRows: FileParseSourceRowPayload[];
   sortedSelectedVersions: AiParseVersion[];
   taskFilters: AiParseTaskFilters;
   targetPlans: AiParseTargetOutputPlan[];
   tasks: AiParseTask[];
   uploadFiles: UploadFile[];
-  validationIssues: FileParseValidationIssuePayload[];
   versionCompareRows: VersionCompareRow[];
   viewMode: 'list' | 'detail';
   visibleFields: AiParseStandardField[];
@@ -195,8 +186,6 @@ type AiFileParseBoardViewProps = {
 
 export function AiFileParseBoardView({
   actionLoading,
-  aiChunks,
-  aiChunksError,
   allResultFields,
   blockingItems,
   comparingItem,
@@ -247,7 +236,6 @@ export function AiFileParseBoardView({
   overviewItems,
   pageLoading,
   permission,
-  processLoading,
   reviewFilter,
   selectedBaseVersion,
   selectedProcessingItemIds,
@@ -255,13 +243,11 @@ export function AiFileParseBoardView({
   selectedStandard,
   selectedTargetVersion,
   selectedTask,
-  sourceRows,
   sortedSelectedVersions,
   taskFilters,
   targetPlans,
   tasks,
   uploadFiles,
-  validationIssues,
   versionCompareRows,
   viewMode,
   visibleFields,
@@ -847,17 +833,6 @@ export function AiFileParseBoardView({
     </Card>
   );
 
-  const renderProcessTab = () => (
-    <AiFileParseProcessPanel
-      aiChunks={aiChunks}
-      aiChunksError={aiChunksError}
-      loading={processLoading}
-      sourceRows={sourceRows}
-      validationIssues={validationIssues}
-      workflow={workflow}
-    />
-  );
-
   const renderDiffTab = () => (
     <Card variant="borderless" className="ai-file-parse-section">
       <div className="ai-file-parse-table-head">
@@ -1034,18 +1009,18 @@ export function AiFileParseBoardView({
         ? [
             { key: 'processing', label: '解析处理', children: renderProcessingTab() },
             { key: 'overview', label: '解析总览', children: renderResultOverviewTab() },
-            { key: 'process', label: '解析过程', children: renderProcessTab() },
             { key: 'diff', label: '版本对比', children: renderDiffTab() }
           ]
-        : [{ key: 'process', label: '解析过程', children: renderProcessTab() }]),
+        : [{ key: 'processing', label: '解析处理', children: renderProcessingTab() }]),
       { key: 'versions', label: '版本历史', children: renderVersionsTab() }
     ];
+    const activeDetailTab = detailTabs.some((tab) => tab.key === detailTab) ? detailTab : 'processing';
     return (
       <Space data-testid="file-parse-detail" direction="vertical" size={14} style={{ width: '100%' }}>
         {renderDetailSummary()}
         <Tabs
           className="ai-file-parse-detail-tabs"
-          activeKey={hasGeneratedResults ? detailTab : detailTab === 'versions' ? 'versions' : 'process'}
+          activeKey={activeDetailTab}
           onChange={onDetailTabChange}
           items={detailTabs}
         />

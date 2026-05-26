@@ -95,14 +95,14 @@ test.describe('系统文件管理解析中心', () => {
     await expect(page.getByText('出仓费失败样本')).toBeVisible();
   });
 
-  test('TC-FM-007 文件列表允许删除已发布解析文档并提示不回滚生效结果', async ({ page }) => {
+  test('TC-FM-007 文件列表允许删除已发布解析文档并提示会删除生效结果', async ({ page }) => {
     await gotoFileManagement(page);
 
     const row = page.locator('tr', { hasText: '已发布佣金文档' });
     await row.getByRole('button', { name: '删除' }).click();
 
     await expect(page.getByText('删除解析文档')).toBeVisible();
-    await expect(page.getByText('只会从文件列表删除，不会回滚已经发布或生效的业务结果。')).toBeVisible();
+    await expect(page.getByText('会删除该文档及其解析记录、已发布版本和当前生效业务结果，删除后不会自动恢复上一版。')).toBeVisible();
 
     const deleteRequest = page.waitForRequest((request) =>
       request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2005')
@@ -132,7 +132,7 @@ test.describe('系统文件管理解析中心', () => {
     expect(deleteRequests).toHaveLength(0);
   });
 
-  test('TC-FM-004 详情页展示解析处理和过程数据，而不是文件归档详情', async ({ page }) => {
+  test('TC-FM-004 详情页展示解析处理和版本数据，不展示解析过程', async ({ page }) => {
     await gotoFileManagement(page);
 
     const row = page.locator('tr', { hasText: '佣金-KSA 解析中心验收' });
@@ -141,7 +141,7 @@ test.describe('系统文件管理解析中心', () => {
     await expect(page.getByTestId('file-parse-detail')).toBeVisible();
     await expect(page.getByRole('tab', { name: '解析处理' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '解析总览' })).toBeVisible();
-    await expect(page.getByRole('tab', { name: '解析过程' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '解析过程' })).toHaveCount(0);
     await expect(page.getByRole('tab', { name: '版本对比' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '版本历史' })).toBeVisible();
     await expect(page.getByText('来源证据')).toBeVisible();
@@ -151,11 +151,7 @@ test.describe('系统文件管理解析中心', () => {
     await expect(page.getByRole('columnheader', { name: '结果类型' })).toBeVisible();
     await expect(page.getByRole('cell', { name: '佣金规则' }).first()).toBeVisible();
 
-    await page.getByRole('tab', { name: '解析过程' }).click();
-    await expect(page.getByText('源内容行').first()).toBeVisible();
-    await expect(page.getByText('AI 分块').first()).toBeVisible();
-    await expect(page.getByText('结构化校验问题').first()).toBeVisible();
-    await expect(page.getByText('SOURCE_ROW_ID=8001')).toBeVisible();
+    await expect(page.getByText('SOURCE_ROW_ID=8001')).toHaveCount(0);
 
     await expect(page.getByText('原始文件更新时间')).toHaveCount(0);
     await expect(page.getByText('解析文件更新时间')).toHaveCount(0);
@@ -344,39 +340,15 @@ async function mockParseCenterApis(page: Page) {
   });
 
   await page.route('**/api/file-management/parse/tasks/2004/source-rows?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2004,
-        total: 0,
-        page: 1,
-        pageSize: 100,
-        items: []
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2004/ai-chunks?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2004,
-        total: 0,
-        page: 1,
-        pageSize: 100,
-        items: []
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2004/validation-issues?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2004,
-        total: 0,
-        page: 1,
-        pageSize: 100,
-        items: []
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2001/workflow', async (route) => {
@@ -401,82 +373,15 @@ async function mockParseCenterApis(page: Page) {
   });
 
   await page.route('**/api/file-management/parse/tasks/2001/source-rows?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2001,
-        total: 1,
-        page: 1,
-        pageSize: 100,
-        items: [
-          {
-            id: 8001,
-            taskId: 2001,
-            inputId: 7001,
-            fileAssetId: 6001,
-            sourceType: 'excel_row',
-            sourceLocator: 'SOURCE_ROW_ID=8001',
-            sheetName: 'Sheet1',
-            rowNo: 12,
-            rawText: 'Colour Cosmetics Generic brand 15%',
-            sortNo: 1
-          }
-        ]
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2001/ai-chunks?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2001,
-        total: 1,
-        page: 1,
-        pageSize: 100,
-        items: [
-          {
-            id: 8101,
-            taskId: 2001,
-            resultId: 9001,
-            chunkNo: 1,
-            chunkType: 'source_rows',
-            sourceRowCount: 1,
-            promptHash: 'prompt-hash',
-            inputHash: 'input-hash',
-            modelProvider: 'openai',
-            modelName: 'parse-fixture',
-            status: 'succeeded',
-            outputItemCount: 2,
-            responseHash: 'response-hash'
-          }
-        ]
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2001/validation-issues?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2001,
-        total: 1,
-        page: 1,
-        pageSize: 100,
-        items: [
-          {
-            id: 8201,
-            taskId: 2001,
-            resultId: 9001,
-            resultItemId: 9102,
-            sourceRowId: 8001,
-            aiChunkId: 8101,
-            issueType: 'needs_review',
-            severity: 'warning',
-            fieldKey: 'commissionRate',
-            message: '品牌限制需要人工确认',
-            resolvedStatus: 'open'
-          }
-        ]
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2001/processing-items?**', async (route) => {
