@@ -5,6 +5,7 @@ import {
   Card,
   Checkbox,
   Dropdown,
+  Input,
   Segmented,
   Select,
   Space,
@@ -16,6 +17,7 @@ import {
 } from 'antd';
 import {
   CheckCircleOutlined,
+  DeleteOutlined,
   DiffOutlined,
   EditOutlined,
   EyeOutlined,
@@ -71,6 +73,7 @@ import type {
   AiParseReviewStatus,
   AiParseRolePermission,
   AiParseStandardField,
+  AiParseTaskFilters,
   AiParseTargetOutputPlan,
   AiParseTask,
   AiParseTaskStatus,
@@ -78,6 +81,16 @@ import type {
 } from './types';
 
 const { Text, Title } = Typography;
+
+const TASK_STATUS_FILTERS: AiParseTaskStatus[] = [
+  'reading',
+  'parsing',
+  'retry_waiting',
+  'review_required',
+  'ready_to_publish',
+  'published',
+  'failed'
+];
 
 const LOGISTICS_RELATED_ITEM_LABELS: Record<string, string> = {
   logistics_cargo_category: '分类',
@@ -133,6 +146,7 @@ type AiFileParseBoardViewProps = {
   onCreateClose: () => void;
   onCreateSubmit: () => void;
   onCreateTargetPlanChange: (targetPlanId: string) => void;
+  onDeleteTask: (task: AiParseTask) => void;
   onDetailTabChange: (tab: string) => void;
   onEditClose: () => void;
   onEditSave: () => void;
@@ -148,6 +162,8 @@ type AiFileParseBoardViewProps = {
   onReviewFilterChange: (value: AiParseReviewStatus | 'ALL') => void;
   onRunSelectedTask: () => void;
   onSaveLogisticsActivation: () => void;
+  onTaskFiltersChange: (filters: AiParseTaskFilters) => void;
+  onTaskFiltersReset: () => void;
   onToggleLogisticsChannel: (channelKey: string, checked: boolean) => void;
   onUploadFilesChange: Dispatch<SetStateAction<UploadFile[]>>;
   overviewItems: AiParseResultItem[];
@@ -163,6 +179,7 @@ type AiFileParseBoardViewProps = {
   selectedTask: AiParseTask | undefined;
   sourceRows: FileParseSourceRowPayload[];
   sortedSelectedVersions: AiParseVersion[];
+  taskFilters: AiParseTaskFilters;
   targetPlans: AiParseTargetOutputPlan[];
   tasks: AiParseTask[];
   uploadFiles: UploadFile[];
@@ -206,6 +223,7 @@ export function AiFileParseBoardView({
   onCreateClose,
   onCreateSubmit,
   onCreateTargetPlanChange,
+  onDeleteTask,
   onDetailTabChange,
   onEditClose,
   onEditSave,
@@ -222,6 +240,8 @@ export function AiFileParseBoardView({
   onReviewFilterChange,
   onRunSelectedTask,
   onSaveLogisticsActivation,
+  onTaskFiltersChange,
+  onTaskFiltersReset,
   onToggleLogisticsChannel,
   onUploadFilesChange,
   overviewItems,
@@ -237,6 +257,7 @@ export function AiFileParseBoardView({
   selectedTask,
   sourceRows,
   sortedSelectedVersions,
+  taskFilters,
   targetPlans,
   tasks,
   uploadFiles,
@@ -328,11 +349,20 @@ export function AiFileParseBoardView({
     { title: '更新时间', dataIndex: 'updatedAt', width: 150 },
     {
       title: '操作',
-      width: 105,
+      width: 170,
       render: (_, record) => (
         <Space>
           <Button size="small" icon={<EyeOutlined />} onClick={() => onOpenDetail(record, 'processing')}>
             详情
+          </Button>
+          <Button
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            disabled={actionLoading || !record.availableActions?.canCreateTask}
+            onClick={() => onDeleteTask(record)}
+          >
+            删除
           </Button>
         </Space>
       )
@@ -535,6 +565,62 @@ export function AiFileParseBoardView({
     <Space direction="vertical" size={12} style={{ width: '100%' }}>
       <Card data-testid="file-parse-task-list" variant="borderless" className="ai-file-parse-section ai-file-parse-list-card">
         <div className="ai-file-parse-list-toolbar">
+          <Space data-testid="file-parse-task-filter-bar" className="ai-file-parse-task-filters" wrap>
+            <Select
+              aria-label="目标输出方案筛选"
+              className="ai-file-parse-filter-select"
+              data-testid="file-parse-target-plan-filter"
+              value={taskFilters.targetPlanId || 'ALL'}
+              options={[
+                { label: '全部目标输出方案', value: 'ALL' },
+                ...targetPlans.map((plan) => ({ label: plan.label, value: plan.id }))
+              ]}
+              onChange={(value) =>
+                onTaskFiltersChange({
+                  ...taskFilters,
+                  targetPlanId: value === 'ALL' ? '' : value
+                })
+              }
+            />
+            <Select
+              aria-label="解析状态筛选"
+              className="ai-file-parse-filter-select"
+              data-testid="file-parse-status-filter"
+              value={taskFilters.status || 'ALL'}
+              options={[
+                { label: '全部状态', value: 'ALL' },
+                ...TASK_STATUS_FILTERS.map((status) => ({
+                  label: taskStatusMeta[status].label,
+                  value: status
+                }))
+              ]}
+              onChange={(value) =>
+                onTaskFiltersChange({
+                  ...taskFilters,
+                  status: value === 'ALL' ? '' : (value as AiParseTaskStatus)
+                })
+              }
+            />
+            <Input.Search
+              allowClear
+              className="ai-file-parse-keyword-filter"
+              placeholder="搜索文档名或任务号"
+              value={taskFilters.keyword}
+              onChange={(event) =>
+                onTaskFiltersChange({
+                  ...taskFilters,
+                  keyword: event.target.value
+                })
+              }
+              onSearch={(keyword) =>
+                onTaskFiltersChange({
+                  ...taskFilters,
+                  keyword
+                })
+              }
+            />
+            <Button onClick={onTaskFiltersReset}>重置筛选</Button>
+          </Space>
           <Button data-testid="file-parse-create-button" type="primary" icon={<PlusOutlined />} onClick={onOpenCreate}>
             新建解析文档
           </Button>
@@ -975,7 +1061,6 @@ export function AiFileParseBoardView({
         form={createForm}
         open={createOpen}
         targetPlans={targetPlans.filter((plan) => plan.availableActions?.canCreateTask)}
-        selectedPlan={createTargetPlan}
         parentTask={createParentTask}
         submitting={actionLoading}
         uploadFiles={uploadFiles}

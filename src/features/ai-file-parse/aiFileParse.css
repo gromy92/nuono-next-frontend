@@ -41,8 +41,24 @@
 
 .ai-file-parse-list-toolbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.ai-file-parse-task-filters {
+  flex: 1 1 620px;
+  min-width: 0;
+}
+
+.ai-file-parse-filter-select {
+  width: 190px;
+}
+
+.ai-file-parse-keyword-filter {
+  width: 240px;
 }
 
 .ai-file-parse-list-table .ant-table-thead > tr > th {

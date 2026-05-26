@@ -13,6 +13,12 @@ export type AiParseTaskStatus =
   | 'published'
   | 'failed';
 
+export type AiParseTaskFilters = {
+  targetPlanId: string;
+  status: '' | AiParseTaskStatus;
+  keyword: string;
+};
+
 export type AiParseChangeType = 'added' | 'changed' | 'delete_suspected' | 'conflict' | 'unchanged';
 
 export type AiParseReviewStatus = 'pending' | 'needs_fix' | 'confirmed' | 'rejected' | 'keep_old' | 'hard_error';
