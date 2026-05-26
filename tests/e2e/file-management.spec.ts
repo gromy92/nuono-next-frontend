@@ -64,6 +64,28 @@ test.describe('系统文件管理解析中心', () => {
     await expect(page.getByText('生成规则')).toHaveCount(0);
   });
 
+  test('TC-FM-011 新建文档发起解析后允许再次打开创建弹窗', async ({ page }) => {
+    await gotoFileManagement(page);
+
+    await page.getByTestId('file-parse-create-button').click();
+    await page.getByLabel('文档名称').fill('佣金二次创建样本');
+    await page.getByTestId('file-parse-create-target-plan-select').click();
+    await page.locator('.ant-select-item-option[title="佣金-KSA / 佣金规则"]').click();
+    await page.getByLabel('人工补充文案').fill('Beauty / Colour Cosmetics Generic brand 15% effective 2026-05-20');
+
+    const runRequest = page.waitForRequest((request) =>
+      request.method() === 'POST' && request.url().includes('/api/file-management/parse/tasks/2010/run')
+    );
+    await page.locator('.ant-drawer').getByRole('button', { name: '创建解析文档' }).click();
+    await runRequest;
+
+    await page.getByRole('button', { name: '返回列表' }).click();
+    await page.getByTestId('file-parse-create-button').click();
+    const submitButton = page.locator('.ant-drawer').getByRole('button', { name: '创建解析文档' });
+    await expect(submitButton).toBeEnabled();
+    await expect(submitButton.locator('.ant-btn-loading-icon')).toHaveCount(0);
+  });
+
   test('TC-FM-006 文件列表支持目标方案、状态和关键词筛选', async ({ page }) => {
     await gotoFileManagement(page);
 
@@ -247,6 +269,7 @@ function withDevSession(path: string): string {
 
 async function mockParseCenterApis(page: Page) {
   const deletedTaskIds = new Set<number>();
+  const createdTasks: Array<ReturnType<typeof buildTask>> = [];
 
   await page.route('**/api/system/file-management**', async (route) => {
     throw new Error(`Unexpected legacy file-management API request: ${route.request().url()}`);
@@ -305,7 +328,7 @@ async function mockParseCenterApis(page: Page) {
     const targetPlanId = url.searchParams.get('targetPlanId');
     const status = url.searchParams.get('status');
     const keyword = url.searchParams.get('keyword')?.trim();
-    const items = taskFixtures().filter((task) => !deletedTaskIds.has(Number(task.id))).filter((task) => {
+    const items = [...createdTasks, ...taskFixtures()].filter((task) => !deletedTaskIds.has(Number(task.id))).filter((task) => {
       if (targetPlanId && String(task.targetPlanId) !== targetPlanId) {
         return false;
       }
@@ -325,6 +348,26 @@ async function mockParseCenterApis(page: Page) {
         items
       }
     });
+  });
+
+  await page.route('**/api/file-management/parse/tasks', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    const body = route.request().postDataJSON() as { documentTitle: string; targetPlanId: number };
+    const created = buildTask({
+      id: 2010 + createdTasks.length,
+      title: body.documentTitle || '新建解析文档',
+      status: 'reading'
+    });
+    created.targetPlanId = body.targetPlanId;
+    createdTasks.unshift(created);
+    await route.fulfill({ json: created });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2010/run', async () => {
+    await new Promise(() => undefined);
   });
 
   await page.route('**/api/file-management/parse/tasks/2001', async (route) => {
