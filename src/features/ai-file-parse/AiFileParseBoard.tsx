@@ -11,15 +11,12 @@ import {
   createFileParseTask,
   deleteFileParseTask,
   downloadFileParseOverview,
-  fetchFileParseAiChunks,
   fetchFileParseLogisticsActivations,
   fetchFileParseOverviewItems,
   fetchFileParseProcessingItems,
-  fetchFileParseSourceRows,
   fetchFileParseTargetPlans,
   fetchFileParseTaskDetail,
   fetchFileParseTasks,
-  fetchFileParseValidationIssues,
   fetchFileParseVersionItems,
   fetchFileParseVersions,
   fetchFileParseWorkflow,
@@ -28,10 +25,7 @@ import {
   runFileParseTask,
   saveFileParseLogisticsActivations,
   uploadFileParseInput,
-  type FileParseAiChunkPayload,
   type FileParseLogisticsActivationPayload,
-  type FileParseSourceRowPayload,
-  type FileParseValidationIssuePayload,
   type FileParseWorkflowPayload
 } from './api';
 import type { CreateBatchFormValues, EditResultFormValues } from './AiFileParseOverlays';
@@ -92,14 +86,9 @@ export function AiFileParseBoard() {
   const [versions, setVersions] = useState<AiParseVersion[]>([]);
   const [versionSnapshots, setVersionSnapshots] = useState<AiParseVersionSnapshotItem[]>([]);
   const [workflow, setWorkflow] = useState<FileParseWorkflowPayload | null>(null);
-  const [sourceRows, setSourceRows] = useState<FileParseSourceRowPayload[]>([]);
-  const [aiChunks, setAiChunks] = useState<FileParseAiChunkPayload[]>([]);
-  const [aiChunksError, setAiChunksError] = useState('');
-  const [validationIssues, setValidationIssues] = useState<FileParseValidationIssuePayload[]>([]);
   const [resultFields, setResultFields] = useState<AiParseStandardField[]>([]);
   const [pageLoading, setPageLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [processLoading, setProcessLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [selectedTaskId, setSelectedTaskId] = useState('');
@@ -244,7 +233,6 @@ export function AiFileParseBoard() {
 
   const loadDetailData = async (taskId: string) => {
     setDetailLoading(true);
-    setProcessLoading(true);
     setSelectedProcessingItemIds([]);
     try {
       const detail = await fetchFileParseTaskDetail(taskId);
@@ -256,24 +244,8 @@ export function AiFileParseBoard() {
           : [detailTask, ...currentTasks];
       });
 
-      const [workflowView, sourceRowsView, aiChunksView, validationIssuesView] = await Promise.all([
-        fetchFileParseWorkflow(taskId).catch(() => null),
-        fetchFileParseSourceRows(taskId).catch(() => null),
-        fetchFileParseAiChunks(taskId).then(
-          (payload) => ({ payload, error: '' }),
-          (error) => ({
-            payload: null,
-            error: error instanceof Error ? error.message : '当前账号无权查看 AI 分块记录'
-          })
-        ),
-        fetchFileParseValidationIssues(taskId).catch(() => null)
-      ]);
+      const workflowView = await fetchFileParseWorkflow(taskId).catch(() => null);
       setWorkflow(workflowView);
-      setSourceRows(sourceRowsView?.items ?? []);
-      setAiChunks(aiChunksView.payload?.items ?? []);
-      setAiChunksError(aiChunksView.error);
-      setValidationIssues(validationIssuesView?.items ?? []);
-      setProcessLoading(false);
 
       const shouldLoadResultTabs = !['reading', 'parsing', 'retry_waiting', 'failed'].includes(detailTask.status);
       if (shouldLoadResultTabs) {
@@ -334,13 +306,8 @@ export function AiFileParseBoard() {
       }
     } catch (error) {
       setWorkflow(null);
-      setSourceRows([]);
-      setAiChunks([]);
-      setAiChunksError('');
-      setValidationIssues([]);
       messageApi.error(error instanceof Error ? error.message : '加载解析详情失败');
     } finally {
-      setProcessLoading(false);
       setDetailLoading(false);
     }
   };
@@ -657,7 +624,7 @@ export function AiFileParseBoard() {
   const handleDeleteTask = (task: AiParseTask) => {
     modal.confirm({
       title: '删除解析文档',
-      content: '只会从文件列表删除，不会回滚已经发布或生效的业务结果。',
+      content: '会删除该文档及其解析记录、已发布版本和当前生效业务结果，删除后不会自动恢复上一版。',
       okText: '确认删除',
       okButtonProps: { danger: true },
       cancelText: '取消',
@@ -995,13 +962,11 @@ export function AiFileParseBoard() {
   };
 
   return (
-      <AiFileParseBoardView
-        actionLoading={actionLoading}
-        aiChunks={aiChunks}
-        aiChunksError={aiChunksError}
-        allResultFields={allResultFields}
-        blockingItems={blockingItems}
-        comparingItem={comparingItem}
+    <AiFileParseBoardView
+      actionLoading={actionLoading}
+      allResultFields={allResultFields}
+      blockingItems={blockingItems}
+      comparingItem={comparingItem}
       createForm={createForm}
       createOpen={createOpen}
       createParentTask={createParentTask}
@@ -1045,29 +1010,26 @@ export function AiFileParseBoard() {
       onTaskFiltersReset={handleTaskFiltersReset}
       onToggleLogisticsChannel={handleToggleLogisticsChannel}
       onProcessingSelectionChange={setSelectedProcessingItemIds}
-        onUploadFilesChange={setUploadFiles}
-        overviewItems={overviewItems}
-        pageLoading={pageLoading}
-        permission={permission}
-        processLoading={processLoading}
-        reviewFilter={reviewFilter}
-        selectedBaseVersion={selectedBaseVersion}
-        selectedProcessingItemIds={selectedProcessingItemIds}
+      onUploadFilesChange={setUploadFiles}
+      overviewItems={overviewItems}
+      pageLoading={pageLoading}
+      permission={permission}
+      reviewFilter={reviewFilter}
+      selectedBaseVersion={selectedBaseVersion}
+      selectedProcessingItemIds={selectedProcessingItemIds}
       selectedLogisticsChannelKeys={selectedLogisticsChannelKeys}
       selectedStandard={selectedStandard}
       selectedTargetVersion={selectedTargetVersion}
-        selectedTask={selectedTask}
-        sourceRows={sourceRows}
-        sortedSelectedVersions={sortedSelectedVersions}
-        taskFilters={taskFilters}
-        targetPlans={targetPlans}
-        tasks={tasks}
-        uploadFiles={uploadFiles}
-        validationIssues={validationIssues}
-        versionCompareRows={versionCompareRows}
-        viewMode={viewMode}
-        visibleFields={visibleFields}
-        workflow={workflow}
-      />
+      selectedTask={selectedTask}
+      sortedSelectedVersions={sortedSelectedVersions}
+      taskFilters={taskFilters}
+      targetPlans={targetPlans}
+      tasks={tasks}
+      uploadFiles={uploadFiles}
+      versionCompareRows={versionCompareRows}
+      viewMode={viewMode}
+      visibleFields={visibleFields}
+      workflow={workflow}
+    />
   );
 }
