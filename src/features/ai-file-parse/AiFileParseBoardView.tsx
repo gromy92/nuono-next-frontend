@@ -122,6 +122,7 @@ type AiFileParseBoardViewProps = {
   createForm: FormInstance<CreateBatchFormValues>;
   createOpen: boolean;
   createParentTask: AiParseTask | null;
+  createSubmitting: boolean;
   createTargetPlan: AiParseTargetOutputPlan | undefined;
   detailLoading: boolean;
   detailTab: string;
@@ -195,6 +196,7 @@ export function AiFileParseBoardView({
   createForm,
   createOpen,
   createParentTask,
+  createSubmitting,
   createTargetPlan,
   detailLoading,
   detailTab,
@@ -1064,7 +1066,7 @@ export function AiFileParseBoardView({
         open={createOpen}
         targetPlans={targetPlans.filter((plan) => plan.availableActions?.canCreateTask)}
         parentTask={createParentTask}
-        submitting={actionLoading}
+        submitting={createSubmitting}
         uploadFiles={uploadFiles}
         onClose={onCreateClose}
         onSubmit={onCreateSubmit}

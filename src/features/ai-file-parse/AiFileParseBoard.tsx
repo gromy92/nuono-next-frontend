@@ -97,6 +97,7 @@ export function AiFileParseBoard() {
   const [reviewFilter, setReviewFilter] = useState<AiParseReviewStatus | 'ALL'>('ALL');
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [selectedProcessingItemIds, setSelectedProcessingItemIds] = useState<string[]>([]);
+  const [createSubmitting, setCreateSubmitting] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createParentTask, setCreateParentTask] = useState<AiParseTask | null>(null);
   const [createTargetPlanId, setCreateTargetPlanId] = useState('');
@@ -467,12 +468,53 @@ export function AiFileParseBoard() {
     setCreateOpen(true);
   };
 
+  const runCreatedTask = async (taskId: string) => {
+    messageApi.open({
+      key: 'file-parse-create-run',
+      type: 'loading',
+      content: '已创建解析文档，正在解析...',
+      duration: 0
+    });
+    try {
+      const runResult = await runFileParseTask(taskId);
+      await loadTasks(taskId);
+      await loadDetailData(taskId);
+      if (runResult.status === 'failed') {
+        messageApi.open({
+          key: 'file-parse-create-run',
+          type: 'error',
+          content: runResult.message || '解析失败，请稍后重试',
+          duration: 5
+        });
+        return;
+      }
+      if (runResult.status === 'parsing' || runResult.status === 'retry_waiting') {
+        messageApi.open({
+          key: 'file-parse-create-run',
+          type: 'info',
+          content: runResult.message || '文档正在解析中',
+          duration: 4
+        });
+        return;
+      }
+      messageApi.open({
+        key: 'file-parse-create-run',
+        type: 'success',
+        content: '解析完成，请处理结果',
+        duration: 3
+      });
+    } catch (error) {
+      messageApi.destroy('file-parse-create-run');
+      messageApi.error(error instanceof Error ? error.message : '解析失败，请稍后重试');
+    }
+  };
+
   const handleSubmitCreate = async () => {
-    if (actionLoading || createSubmittingRef.current) {
+    if (createSubmittingRef.current) {
       return;
     }
     createSubmittingRef.current = true;
-    setActionLoading(true);
+    setCreateSubmitting(true);
     try {
       const values = await createForm.validateFields();
       if (!uploadFiles.length && !values.ocrText?.trim() && !values.manualText?.trim()) {
@@ -549,39 +591,7 @@ export function AiFileParseBoard() {
       setSelectedTaskId(String(created.id));
       setViewMode('detail');
       setDetailTab('processing');
-      messageApi.open({
-        key: 'file-parse-create-run',
-        type: 'loading',
-        content: '已创建解析文档，正在解析...',
-        duration: 0
-      });
-      const runResult = await runFileParseTask(created.id);
-      await loadTasks(String(created.id));
-      await loadDetailData(String(created.id));
-      if (runResult.status === 'failed') {
-        messageApi.open({
-          key: 'file-parse-create-run',
-          type: 'error',
-          content: runResult.message || '解析失败，请稍后重试',
-          duration: 5
-        });
-        return;
-      }
-      if (runResult.status === 'parsing') {
-        messageApi.open({
-          key: 'file-parse-create-run',
-          type: 'info',
-          content: runResult.message || '文档正在解析中',
-          duration: 4
-        });
-        return;
-      }
-      messageApi.open({
-        key: 'file-parse-create-run',
-        type: 'success',
-        content: '解析完成，请处理结果',
-        duration: 3
-      });
+      void runCreatedTask(String(created.id));
     } catch (error) {
       messageApi.destroy('file-parse-create-run');
       if (Array.isArray((error as { errorFields?: unknown[] }).errorFields)) {
@@ -590,7 +600,7 @@ export function AiFileParseBoard() {
       messageApi.error(error instanceof Error ? error.message : '创建解析文档失败');
     } finally {
       createSubmittingRef.current = false;
-      setActionLoading(false);
+      setCreateSubmitting(false);
     }
   };
 
@@ -828,7 +838,7 @@ export function AiFileParseBoard() {
         });
         return;
       }
-      if (runResult.status === 'parsing') {
+      if (runResult.status === 'parsing' || runResult.status === 'retry_waiting') {
         messageApi.open({
           key: 'file-parse-rerun',
           type: 'info',
@@ -1020,6 +1030,7 @@ export function AiFileParseBoard() {
       createForm={createForm}
       createOpen={createOpen}
       createParentTask={createParentTask}
+      createSubmitting={createSubmitting}
       createTargetPlan={createTargetPlan}
       detailLoading={detailLoading}
       detailTab={detailTab}
