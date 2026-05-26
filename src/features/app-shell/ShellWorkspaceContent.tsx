@@ -51,6 +51,16 @@ const NoonCallStoreDataPage = lazy(() =>
     default: module.NoonCallStoreDataPage
   }))
 );
+const NoonDataCompletenessPage = lazy(() =>
+  import('../system-reports/NoonDataCompletenessPage').then((module) => ({
+    default: module.NoonDataCompletenessPage
+  }))
+);
+const NoonDataGapPatrolPage = lazy(() =>
+  import('../system-reports/NoonDataGapPatrolPage').then((module) => ({
+    default: module.NoonDataGapPatrolPage
+  }))
+);
 
 type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
 
@@ -194,6 +204,22 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <NoonCallStoreDataPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'system-report-noon-data-completeness') {
+    return (
+      <LazyWorkspaceBoundary>
+        <NoonDataCompletenessPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'system-report-noon-data-gaps') {
+    return (
+      <LazyWorkspaceBoundary>
+        <NoonDataGapPatrolPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

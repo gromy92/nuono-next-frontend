@@ -20,6 +20,8 @@ export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
+export const SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH = workspaceMenuPath('system-report-noon-data-completeness')
+export const SYSTEM_REPORT_NOON_DATA_GAPS_PATH = workspaceMenuPath('system-report-noon-data-gaps')
 export const SYSTEM_FILE_MANAGEMENT_PATH = workspaceMenuPath('system-file-management')
 export const USER_ACCOUNT_PATH = workspaceMenuPath('user-account')
 export const USER_STORE_NOON_PATH = workspaceMenuPath('user-store-noon')
@@ -228,6 +230,8 @@ export function resolveSessionLandingMenuKey(
         'purchase-profit',
         'purchase-order',
         'noon-call-store-data',
+        'system-report-noon-data-completeness',
+        'system-report-noon-data-gaps',
         'product-manual-selection',
         'product-manage'
       ] as AppMenuKey[])
@@ -240,6 +244,8 @@ export function resolveSessionLandingMenuKey(
           'purchase-profit',
           'purchase-logistics-quote',
           'noon-call-store-data',
+          'system-report-noon-data-completeness',
+          'system-report-noon-data-gaps',
           'product-manual-selection'
         ] as AppMenuKey[])
       : ([
@@ -250,6 +256,8 @@ export function resolveSessionLandingMenuKey(
           'purchase-profit',
           'purchase-logistics-quote',
           'noon-call-store-data',
+          'system-report-noon-data-completeness',
+          'system-report-noon-data-gaps',
           'product-manual-selection'
         ] as AppMenuKey[])
 
