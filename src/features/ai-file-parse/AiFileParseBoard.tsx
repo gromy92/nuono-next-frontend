@@ -95,6 +95,7 @@ export function AiFileParseBoard() {
   const [taskFilters, setTaskFilters] = useState<AiParseTaskFilters>(EMPTY_TASK_FILTERS);
   const [detailTab, setDetailTab] = useState('processing');
   const [reviewFilter, setReviewFilter] = useState<AiParseReviewStatus | 'ALL'>('ALL');
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [selectedProcessingItemIds, setSelectedProcessingItemIds] = useState<string[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [createParentTask, setCreateParentTask] = useState<AiParseTask | null>(null);
@@ -209,6 +210,8 @@ export function AiFileParseBoard() {
       pageSize: 50
     });
     const mappedTasks = taskList.items.map(mapTaskFromList);
+    const visibleTaskIds = new Set(mappedTasks.map((task) => task.id));
+    setSelectedTaskIds((current) => current.filter((taskId) => visibleTaskIds.has(taskId)));
     setTasks((currentTasks) =>
       mappedTasks.map((task) => ({
         ...task,
@@ -646,6 +649,53 @@ export function AiFileParseBoard() {
     });
   };
 
+  const handleBatchDeleteTasks = (selectedTasks: AiParseTask[]) => {
+    const deletableTasks = selectedTasks.filter((task) => task.availableActions?.canCreateTask);
+    if (!deletableTasks.length) {
+      messageApi.warning('请先选择可删除的解析文档');
+      return;
+    }
+    modal.confirm({
+      title: '批量删除解析文档',
+      content: `会删除选中的 ${deletableTasks.length} 个文档及其解析记录、已发布版本和当前生效业务结果，删除后不会自动恢复上一版。`,
+      okText: '确认批量删除',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        setActionLoading(true);
+        try {
+          const results = await Promise.all(
+            deletableTasks.map(async (task) => {
+              try {
+                await deleteFileParseTask(task.id);
+                return { task, success: true as const };
+              } catch (error) {
+                return { task, success: false as const, error };
+              }
+            })
+          );
+          const succeeded = results.filter((result) => result.success);
+          const failed = results.filter((result) => !result.success);
+          const succeededTaskIds = new Set(succeeded.map((result) => result.task.id));
+          if (selectedTaskId && succeededTaskIds.has(selectedTaskId)) {
+            setViewMode('list');
+          }
+          setSelectedTaskIds((current) => current.filter((taskId) => !succeededTaskIds.has(taskId)));
+          await loadTasks();
+          if (failed.length) {
+            const firstError = failed[0]?.error;
+            const firstMessage = firstError instanceof Error ? firstError.message : '失败项已保留';
+            messageApi.warning(`删除成功 ${succeeded.length} 个，失败 ${failed.length} 个：${firstMessage}`);
+            return;
+          }
+          messageApi.success(`删除成功 ${succeeded.length} 个，失败 0 个`);
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    });
+  };
+
   const handleReviewItem = async (
     item: AiParseResultItem,
     action: 'accept' | 'reject' | 'keep-old',
@@ -986,6 +1036,7 @@ export function AiFileParseBoard() {
       onCompareItem={setComparingItem}
       onCompareTargetVersionChange={setCompareTargetVersionId}
       onBatchConfirmItems={handleBatchConfirmItems}
+      onBatchDeleteTasks={handleBatchDeleteTasks}
       onConfirmItem={handleConfirmItem}
       onCreateClose={closeCreateDrawer}
       onCreateSubmit={() => void handleSubmitCreate()}
@@ -1008,6 +1059,7 @@ export function AiFileParseBoard() {
       onSaveLogisticsActivation={() => void handleSaveLogisticsActivation()}
       onTaskFiltersChange={handleTaskFiltersChange}
       onTaskFiltersReset={handleTaskFiltersReset}
+      onTaskSelectionChange={setSelectedTaskIds}
       onToggleLogisticsChannel={handleToggleLogisticsChannel}
       onProcessingSelectionChange={setSelectedProcessingItemIds}
       onUploadFilesChange={setUploadFiles}
@@ -1016,6 +1068,7 @@ export function AiFileParseBoard() {
       permission={permission}
       reviewFilter={reviewFilter}
       selectedBaseVersion={selectedBaseVersion}
+      selectedTaskIds={selectedTaskIds}
       selectedProcessingItemIds={selectedProcessingItemIds}
       selectedLogisticsChannelKeys={selectedLogisticsChannelKeys}
       selectedStandard={selectedStandard}

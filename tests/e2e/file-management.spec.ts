@@ -132,6 +132,54 @@ test.describe('系统文件管理解析中心', () => {
     expect(deleteRequests).toHaveLength(0);
   });
 
+  test('TC-FM-009 文件列表支持批量删除多个解析文档', async ({ page }) => {
+    await gotoFileManagement(page);
+
+    await page.locator('tr', { hasText: '佣金-KSA 解析中心验收' }).getByRole('checkbox').check();
+    await page.locator('tr', { hasText: '已发布佣金文档' }).getByRole('checkbox').check();
+
+    await expect(page.getByText('已选择 2 个')).toBeVisible();
+    await page.getByRole('button', { name: '批量删除' }).click();
+
+    await expect(page.getByText('批量删除解析文档')).toBeVisible();
+    await expect(page.getByText('会删除选中的 2 个文档及其解析记录、已发布版本和当前生效业务结果，删除后不会自动恢复上一版。')).toBeVisible();
+
+    const deleteTask2001 = page.waitForRequest((request) =>
+      request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2001')
+    );
+    const deleteTask2005 = page.waitForRequest((request) =>
+      request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2005')
+    );
+    await page.getByRole('button', { name: '确认批量删除' }).click();
+    await Promise.all([deleteTask2001, deleteTask2005]);
+
+    await expect(page.getByText('删除成功 2 个，失败 0 个')).toBeVisible();
+    await expect(page.getByText('佣金-KSA 解析中心验收')).toHaveCount(0);
+    await expect(page.getByText('已发布佣金文档')).toHaveCount(0);
+  });
+
+  test('TC-FM-010 批量删除部分失败时继续删除成功项并保留失败项', async ({ page }) => {
+    await gotoFileManagement(page);
+
+    await page.locator('tr', { hasText: '出仓费失败样本' }).getByRole('checkbox').check();
+    await page.locator('tr', { hasText: '已发布佣金文档' }).getByRole('checkbox').check();
+
+    await page.getByRole('button', { name: '批量删除' }).click();
+
+    const deleteTask2003 = page.waitForRequest((request) =>
+      request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2003')
+    );
+    const deleteTask2005 = page.waitForRequest((request) =>
+      request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2005')
+    );
+    await page.getByRole('button', { name: '确认批量删除' }).click();
+    await Promise.all([deleteTask2003, deleteTask2005]);
+
+    await expect(page.getByText('删除成功 1 个，失败 1 个')).toBeVisible();
+    await expect(page.getByText('已发布佣金文档')).toHaveCount(0);
+    await expect(page.getByText('出仓费失败样本')).toBeVisible();
+  });
+
   test('TC-FM-004 详情页展示解析处理和版本数据，不展示解析过程', async ({ page }) => {
     await gotoFileManagement(page);
 
@@ -280,6 +328,11 @@ async function mockParseCenterApis(page: Page) {
   });
 
   await page.route('**/api/file-management/parse/tasks/2001', async (route) => {
+    if (route.request().method() === 'DELETE') {
+      deletedTaskIds.add(2001);
+      await route.fulfill({ status: 204 });
+      return;
+    }
     await route.fulfill({
       json: {
         ...buildTask({ id: 2001, title: '佣金-KSA 解析中心验收', status: 'review_required', resultId: 9001, totalCount: 2, pendingCount: 1 }),
@@ -316,6 +369,17 @@ async function mockParseCenterApis(page: Page) {
         ],
         remark: 'Logistics activation fixture'
       }
+    });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2003', async (route) => {
+    if (route.request().method() !== 'DELETE') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 500,
+      json: { message: '删除解析文档失败' }
     });
   });
 

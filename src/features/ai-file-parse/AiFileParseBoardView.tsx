@@ -134,6 +134,7 @@ type AiFileParseBoardViewProps = {
   logisticsVersionId: string;
   onBackToList: () => void;
   onBatchConfirmItems: () => void;
+  onBatchDeleteTasks: (tasks: AiParseTask[]) => void;
   onCompareBaseVersionChange: (versionId: string) => void;
   onCompareItem: (item: AiParseResultItem) => void;
   onCompareTargetVersionChange: (versionId: string) => void;
@@ -158,6 +159,7 @@ type AiFileParseBoardViewProps = {
   onSaveLogisticsActivation: () => void;
   onTaskFiltersChange: (filters: AiParseTaskFilters) => void;
   onTaskFiltersReset: () => void;
+  onTaskSelectionChange: (taskIds: string[]) => void;
   onToggleLogisticsChannel: (channelKey: string, checked: boolean) => void;
   onUploadFilesChange: Dispatch<SetStateAction<UploadFile[]>>;
   overviewItems: AiParseResultItem[];
@@ -165,6 +167,7 @@ type AiFileParseBoardViewProps = {
   permission: AiParseRolePermission;
   reviewFilter: AiParseReviewStatus | 'ALL';
   selectedBaseVersion: AiParseVersion | undefined;
+  selectedTaskIds: string[];
   selectedProcessingItemIds: string[];
   selectedLogisticsChannelKeys: string[];
   selectedStandard: AiParseDocumentStandard | undefined;
@@ -204,6 +207,7 @@ export function AiFileParseBoardView({
   logisticsVersionId,
   onBackToList,
   onBatchConfirmItems,
+  onBatchDeleteTasks,
   onCompareBaseVersionChange,
   onCompareClose,
   onCompareItem,
@@ -231,6 +235,7 @@ export function AiFileParseBoardView({
   onSaveLogisticsActivation,
   onTaskFiltersChange,
   onTaskFiltersReset,
+  onTaskSelectionChange,
   onToggleLogisticsChannel,
   onUploadFilesChange,
   overviewItems,
@@ -238,6 +243,7 @@ export function AiFileParseBoardView({
   permission,
   reviewFilter,
   selectedBaseVersion,
+  selectedTaskIds,
   selectedProcessingItemIds,
   selectedLogisticsChannelKeys,
   selectedStandard,
@@ -264,6 +270,8 @@ export function AiFileParseBoardView({
   const selectedConfirmableCount = filteredItems.filter(
     (item) => selectedProcessingItemIds.includes(item.id) && canBatchConfirmItem(item)
   ).length;
+  const selectedTaskIdSet = new Set(selectedTaskIds);
+  const selectedListTasks = tasks.filter((task) => selectedTaskIdSet.has(task.id));
   const overviewNaturalKeyCounts = overviewItems.reduce((accumulator, item) => {
     if (item.naturalKey) {
       accumulator.set(item.naturalKey, (accumulator.get(item.naturalKey) ?? 0) + 1);
@@ -607,13 +615,32 @@ export function AiFileParseBoardView({
             />
             <Button onClick={onTaskFiltersReset}>重置筛选</Button>
           </Space>
-          <Button data-testid="file-parse-create-button" type="primary" icon={<PlusOutlined />} onClick={onOpenCreate}>
-            新建解析文档
-          </Button>
+          <Space className="ai-file-parse-list-actions" wrap>
+            {selectedListTasks.length ? <Text type="secondary">已选择 {selectedListTasks.length} 个</Text> : null}
+            <Button
+              danger
+              data-testid="file-parse-bulk-delete-button"
+              disabled={actionLoading || selectedListTasks.length === 0}
+              icon={<DeleteOutlined />}
+              onClick={() => onBatchDeleteTasks(selectedListTasks)}
+            >
+              批量删除
+            </Button>
+            <Button data-testid="file-parse-create-button" type="primary" icon={<PlusOutlined />} onClick={onOpenCreate}>
+              新建解析文档
+            </Button>
+          </Space>
         </div>
         <Table
           className="ai-file-parse-list-table"
           rowKey="id"
+          rowSelection={{
+            selectedRowKeys: selectedTaskIds,
+            onChange: (keys) => onTaskSelectionChange(keys.map(String)),
+            getCheckboxProps: (record) => ({
+              disabled: actionLoading || !record.availableActions?.canCreateTask
+            })
+          }}
           columns={taskColumns}
           dataSource={tasks}
           loading={pageLoading}
