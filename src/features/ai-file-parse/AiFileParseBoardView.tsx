@@ -45,7 +45,7 @@ import {
   rejectHelp,
   renderActionHelp,
   renderDetailInputItems,
-  summarizeInputs,
+  renderTaskListInputItems,
   targetOutputPlanLabel,
   type VersionCompareRow
 } from './boardTransforms';
@@ -312,7 +312,7 @@ export function AiFileParseBoardView({
     {
       title: '输入项',
       width: 190,
-      render: (_, record) => summarizeInputs(record)
+      render: (_, record) => renderTaskListInputItems(record)
     },
     {
       title: '解析状态',
@@ -323,18 +323,26 @@ export function AiFileParseBoardView({
     {
       title: '待处理',
       width: 340,
-      render: (_, record) =>
-        record.stats.total || record.stats.deleteSuspected ? (
+      render: (_, record) => {
+        const statTags = [
+          { label: '解析结果', value: record.stats.total, color: 'default' },
+          { label: '待确认', value: record.stats.pending, color: 'warning' },
+          { label: '硬错误', value: record.stats.hardErrors, color: 'error' },
+          { label: '冲突', value: record.stats.conflicts, color: 'red' },
+          { label: '疑似删除', value: record.stats.deleteSuspected, color: 'orange' }
+        ].filter((item) => item.value > 0);
+        return statTags.length ? (
           <Space size={[4, 6]} wrap className="ai-file-parse-stat-tags-inline">
-            <Tag color="default">解析结果 {record.stats.total}</Tag>
-            <Tag color="warning">待确认 {record.stats.pending}</Tag>
-            <Tag color="error">硬错误 {record.stats.hardErrors}</Tag>
-            <Tag color="red">冲突 {record.stats.conflicts}</Tag>
-            {record.stats.deleteSuspected ? <Tag color="orange">疑似删除 {record.stats.deleteSuspected}</Tag> : null}
+            {statTags.map((item) => (
+              <Tag key={item.label} color={item.color}>
+                {item.label} {item.value}
+              </Tag>
+            ))}
           </Space>
         ) : (
           <Text type="secondary">-</Text>
-        )
+        );
+      }
     },
     {
       title: '当前生效版本',
@@ -673,7 +681,7 @@ export function AiFileParseBoardView({
       { label: '冲突', value: selectedTask.stats.conflicts, tone: 'error' },
       { label: '硬错误', value: selectedTask.stats.hardErrors, tone: 'error' },
       { label: '已确认', value: selectedTask.stats.confirmed, tone: 'success' }
-    ];
+    ].filter((item) => item.label === '解析结果' || item.value > 0);
     return (
       <Card variant="borderless" className="ai-file-parse-section ai-file-parse-detail-summary">
         <div className="ai-file-parse-detail-head">
@@ -780,7 +788,7 @@ export function AiFileParseBoardView({
     <Card variant="borderless" className="ai-file-parse-section">
       <div className="ai-file-parse-table-head">
         <Space wrap>
-          <Text strong>解析处理</Text>
+          <Text strong>结果处理</Text>
           <Text type="secondary">查看变动、校验和人工处理状态</Text>
         </Space>
         <Space wrap>
@@ -838,14 +846,14 @@ export function AiFileParseBoardView({
       <Space size={8} wrap className="ai-file-parse-stat-tags ai-file-parse-overview-stats">
         <Tag color="default">总览结果 {overviewItems.length}</Tag>
         <Tag color="blue">自然键 {overviewNaturalKeyCounts.size}</Tag>
-        <Tag color={overviewDuplicateNaturalKeyCount ? 'red' : 'success'}>
-          重复自然键 {overviewDuplicateNaturalKeyCount}
-        </Tag>
-        <Tag color="success">通过 {overviewValidationStats.pass}</Tag>
-        <Tag color="warning">警告 {overviewValidationStats.warning}</Tag>
-        <Tag color="red">硬错误 {overviewValidationStats.hard_error}</Tag>
-        <Tag color="warning">待确认 {selectedTask?.stats.pending ?? 0}</Tag>
-        <Tag color="success">已确认 {selectedTask?.stats.confirmed ?? 0}</Tag>
+        {overviewDuplicateNaturalKeyCount > 0 ? (
+          <Tag color="red">重复自然键 {overviewDuplicateNaturalKeyCount}</Tag>
+        ) : null}
+        {overviewValidationStats.pass > 0 ? <Tag color="success">通过 {overviewValidationStats.pass}</Tag> : null}
+        {overviewValidationStats.warning > 0 ? <Tag color="warning">警告 {overviewValidationStats.warning}</Tag> : null}
+        {overviewValidationStats.hard_error > 0 ? <Tag color="red">硬错误 {overviewValidationStats.hard_error}</Tag> : null}
+        {(selectedTask?.stats.pending ?? 0) > 0 ? <Tag color="warning">待确认 {selectedTask?.stats.pending}</Tag> : null}
+        {(selectedTask?.stats.confirmed ?? 0) > 0 ? <Tag color="success">已确认 {selectedTask?.stats.confirmed}</Tag> : null}
         {selectedTask?.stats.deleteSuspected ? (
           <Tag color="orange">疑似删除 {selectedTask.stats.deleteSuspected}</Tag>
         ) : null}
@@ -1036,11 +1044,11 @@ export function AiFileParseBoardView({
     const detailTabs = [
       ...(hasGeneratedResults
         ? [
-            { key: 'processing', label: '解析处理', children: renderProcessingTab() },
+            { key: 'processing', label: '结果处理', children: renderProcessingTab() },
             { key: 'overview', label: '解析总览', children: renderResultOverviewTab() },
             { key: 'diff', label: '版本对比', children: renderDiffTab() }
           ]
-        : [{ key: 'processing', label: '解析处理', children: renderProcessingTab() }]),
+        : [{ key: 'processing', label: '结果处理', children: renderProcessingTab() }]),
       { key: 'versions', label: '版本历史', children: renderVersionsTab() }
     ];
     const activeDetailTab = detailTabs.some((tab) => tab.key === detailTab) ? detailTab : 'processing';

@@ -27,6 +27,11 @@ test.describe('系统文件管理解析中心', () => {
     await expect(page.getByText('失败').first()).toBeVisible();
     await expect(page.getByText('等待重试').first()).toBeVisible();
     await expect(page.getByText('待处理').first()).toBeVisible();
+    await expect(page.getByRole('row', { name: /佣金-KSA 解析中心验收/ }).getByRole('link', { name: 'Noon佣金表.xlsx' })).toBeVisible();
+    await expect(page.getByRole('row', { name: /已发布佣金文档/ }).getByRole('link', { name: '已发布佣金表.xlsx' })).toBeVisible();
+    await expect(page.getByRole('row', { name: /已发布佣金文档/ }).getByText('待确认 0')).toHaveCount(0);
+    await expect(page.getByRole('row', { name: /已发布佣金文档/ }).getByText('硬错误 0')).toHaveCount(0);
+    await expect(page.getByRole('row', { name: /已发布佣金文档/ }).getByText('冲突 0')).toHaveCount(0);
 
     await expect(page.getByRole('columnheader', { name: '文件类型' })).toHaveCount(0);
     await expect(page.getByRole('columnheader', { name: '原始文件' })).toHaveCount(0);
@@ -202,14 +207,15 @@ test.describe('系统文件管理解析中心', () => {
     await expect(page.getByText('出仓费失败样本')).toBeVisible();
   });
 
-  test('TC-FM-004 详情页展示解析处理和版本数据，不展示解析过程', async ({ page }) => {
+  test('TC-FM-004 详情页展示结果处理和版本数据，不展示解析过程', async ({ page }) => {
     await gotoFileManagement(page);
 
     const row = page.locator('tr', { hasText: '佣金-KSA 解析中心验收' });
     await row.getByRole('button', { name: '详情' }).click();
 
     await expect(page.getByTestId('file-parse-detail')).toBeVisible();
-    await expect(page.getByRole('tab', { name: '解析处理' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '结果处理' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '解析处理' })).toHaveCount(0);
     await expect(page.getByRole('tab', { name: '解析总览' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '解析过程' })).toHaveCount(0);
     await expect(page.getByRole('tab', { name: '版本对比' })).toBeVisible();
@@ -368,6 +374,11 @@ async function mockParseCenterApis(page: Page) {
 
   await page.route('**/api/file-management/parse/tasks/2010/run', async () => {
     await new Promise(() => undefined);
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2010', async (route) => {
+    const created = createdTasks.find((task) => Number(task.id) === 2010);
+    await route.fulfill({ json: created ?? buildTask({ id: 2010, title: '新建解析文档', status: 'reading' }) });
   });
 
   await page.route('**/api/file-management/parse/tasks/2001', async (route) => {
@@ -779,12 +790,29 @@ function buildTask(options: {
 
 function taskFixtures() {
   return [
-    buildTask({ id: 2001, title: '佣金-KSA 解析中心验收', status: 'review_required', resultId: 9001, totalCount: 2, pendingCount: 1 }),
-    buildTask({ id: 2002, title: '佣金-UAE 解析中样本', status: 'parsing' }),
+    withInputItems(buildTask({ id: 2001, title: '佣金-KSA 解析中心验收', status: 'review_required', resultId: 9001, totalCount: 2, pendingCount: 1 }), 'Noon佣金表.xlsx'),
+    withInputItems(buildTask({ id: 2002, title: '佣金-UAE 解析中样本', status: 'parsing' }), 'Noon UAE 佣金表.pdf'),
     buildTask({ id: 2003, title: '出仓费失败样本', status: 'failed', failureMessage: 'AI provider timeout' }),
-    buildTask({ id: 2004, title: '物流-义特等待重试样本', status: 'failed', nextRunAt: '2026-05-20T18:30:00' }),
-    buildTask({ id: 2005, title: '已发布佣金文档', status: 'published', resultId: 9005, totalCount: 1, pendingCount: 0 })
+    withInputItems(buildTask({ id: 2004, title: '物流-义特等待重试样本', status: 'failed', nextRunAt: '2026-05-20T18:30:00' }), 'ET物流报价-20260414入仓生效.pdf'),
+    withInputItems(buildTask({ id: 2005, title: '已发布佣金文档', status: 'published', resultId: 9005, totalCount: 1, pendingCount: 0 }), '已发布佣金表.xlsx')
   ];
+}
+
+function withInputItems(task: ReturnType<typeof buildTask>, displayName: string) {
+  return {
+    ...task,
+    inputItems: [
+      {
+        id: Number(task.id) + 5000,
+        inputType: displayName.endsWith('.pdf') ? 'pdf' : 'excel',
+        inputRole: 'primary_source',
+        fileAssetId: Number(task.id) + 6000,
+        displayName,
+        downloadUrl: `/api/file-management/parse/files/${Number(task.id) + 6000}/download`,
+        sortNo: 1
+      }
+    ]
+  };
 }
 
 function commissionColumns() {
