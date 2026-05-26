@@ -1,5 +1,6 @@
 import { Space, Tag, Tooltip, Typography } from 'antd';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { withPublicBasePath } from '../../runtimePaths';
 import {
   aiParseStandards,
   inputTypeLabel
@@ -52,6 +53,37 @@ export type VersionCompareRow = {
 
 export function summarizeInputs(task: AiParseTask) {
   return summarizeTaskInputs(task, inputTypeLabel);
+}
+
+function inputDownloadHref(input: AiParseTask['inputItems'][number]) {
+  return input.downloadUrl ? withPublicBasePath(input.downloadUrl) : '';
+}
+
+export function renderTaskListInputItems(task: AiParseTask) {
+  if (!task.inputItems.length) {
+    return <Text type="secondary">{summarizeInputs(task)}</Text>;
+  }
+  return (
+    <Space direction="vertical" size={4} className="ai-file-parse-input-list">
+      {task.inputItems.map((input) => {
+        const label = inputTypeLabel(input.inputType);
+        const isTextInput = input.inputType === 'OCR_TEXT' || input.inputType === 'MANUAL_TEXT';
+        const href = inputDownloadHref(input);
+        return (
+          <div key={input.id} className="ai-file-parse-input-item">
+            <Tag>{label}</Tag>
+            {isTextInput || !href ? (
+              <Text strong>{input.displayName}</Text>
+            ) : (
+              <Typography.Link href={href} download={input.displayName}>
+                {input.displayName}
+              </Typography.Link>
+            )}
+          </div>
+        );
+      })}
+    </Space>
+  );
 }
 
 export function renderActionHelp(text: string) {
@@ -238,7 +270,6 @@ export function mapTaskFromList(task: FileParseTaskListItemPayload): AiParseTask
     storeId: 'global',
     storeLabel: '全局',
     businessScope: {},
-    inputItems: [],
     resultId: task.resultId ? String(task.resultId) : '',
     status: normalizeTaskStatusWithRetry(task.status, task.nextRunAt),
     documentGroupId: task.documentGroupId ? String(task.documentGroupId) : String(task.id),
@@ -259,6 +290,7 @@ export function mapTaskFromList(task: FileParseTaskListItemPayload): AiParseTask
     failureCode: task.failureCode || undefined,
     failureMessage: task.failureMessage || undefined,
     nextRunAt: toDisplayDate(task.nextRunAt),
+    inputItems: (task.inputItems ?? []).map(mapTaskInput),
     availableActions: task.availableActions
   };
 }
@@ -421,9 +453,13 @@ export function renderDetailInputItems(task: AiParseTask) {
         return (
           <div key={input.id} className="ai-file-parse-input-item">
             <Tag>{label}</Tag>
-            <Typography.Link href={input.downloadUrl} download={input.displayName}>
-              {input.displayName}
-            </Typography.Link>
+            {input.downloadUrl ? (
+              <Typography.Link href={inputDownloadHref(input)} download={input.displayName}>
+                {input.displayName}
+              </Typography.Link>
+            ) : (
+              <Text strong>{input.displayName}</Text>
+            )}
             {input.detail ? <Text type="secondary">{input.detail}</Text> : null}
           </div>
         );

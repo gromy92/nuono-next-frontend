@@ -811,7 +811,7 @@ export function AiFileParseBoard() {
       return;
     }
     if (!permission.canDraftEdit) {
-      messageApi.warning('当前角色没有解析处理权限');
+      messageApi.warning('当前角色没有结果处理权限');
       return;
     }
     if (selectedTask.status !== 'failed' && selectedTask.status !== 'reading') {

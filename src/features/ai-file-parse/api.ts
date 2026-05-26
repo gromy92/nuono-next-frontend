@@ -62,6 +62,7 @@ export type FileParseTaskListItemPayload = {
   createdAt?: string | null;
   updatedAt?: string | null;
   availableActions?: FileParseAvailableActionsPayload;
+  inputItems?: FileParseTaskInputPayload[];
 };
 
 export type FileParseTaskListPayload = {
