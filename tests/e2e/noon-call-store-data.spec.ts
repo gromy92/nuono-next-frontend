@@ -40,7 +40,7 @@ test('system reports store data route renders Noon store data without legacy ove
   await page.goto('/system-reports/store-data?devSession=1&grantSystemReports=1');
 
   await expect(page.getByTestId('noon-call-store-data-workbench')).toBeVisible();
-  await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('Noon调用');
+  await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('系统报表');
   await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('STR108065-NAE');
   expect(legacyOverviewCalls).toHaveLength(0);
 });
@@ -133,7 +133,7 @@ test('noon call store data shows four sync cells and posts category-specific syn
   await page.goto('/noon-call/store-data?devSession=1&devRole=boss&grantSystemReports=1');
 
   await expect(page.getByTestId('noon-call-store-data-workbench')).toBeVisible();
-  await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('Noon调用');
+  await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('系统报表');
   await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('STR108065-NAE');
   await expect(page.getByTestId('noon-call-store-data-marker-chart')).toBeVisible();
   await expect(page.getByTestId('noon-call-store-data-category-status-chart')).toBeVisible();

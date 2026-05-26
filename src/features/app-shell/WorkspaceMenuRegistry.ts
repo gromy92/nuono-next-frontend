@@ -169,8 +169,8 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     label: '店铺数据',
     path: '/system-reports/store-data',
     sectionKey: 'system-reports',
-    pathLabel: 'Noon调用 / 店铺数据',
-    tabLabel: 'Noon店铺数据',
+    pathLabel: '系统报表 / 店铺数据',
+    tabLabel: '店铺数据',
     contentKind: 'noon-call-store-data',
     closable: true,
     routeAliases: ['/noon-call/store-data']
@@ -306,7 +306,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
   },
   {
     key: 'system-reports',
-    label: 'Noon调用',
+    label: '系统报表',
     iconKey: 'system-reports',
     entries: [{ type: 'workspace', key: 'noon-call-store-data' }]
   },
@@ -401,7 +401,7 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     keys: ['noon-call-store-data'],
     urlPaths: ['/system-reports/store-data', '/noon-call/store-data', '/api/noon-call/store-data'],
     urlPathPrefixes: ['/api/noon-call/store-data/'],
-    menuNames: ['Noon调用', 'Noon店铺数据', '店铺数据']
+    menuNames: ['系统报表', 'Noon调用', 'Noon店铺数据', '店铺数据']
   },
   {
     keys: ['system-file-management'],

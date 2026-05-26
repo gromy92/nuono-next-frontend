@@ -163,7 +163,7 @@ function readDevSessionOverride(): AuthSession | null {
     grantedMenus.push({ menuId: 9201, menuName: '货代管理', urlPath: PURCHASE_LOGISTICS_QUOTE_PATH })
   }
   if (includeSystemReportsDevMenu) {
-    grantedMenus.push({ menuId: 9600, menuName: 'Noon店铺数据', urlPath: NOON_CALL_STORE_DATA_PATH })
+    grantedMenus.push({ menuId: 9600, menuName: '系统报表', urlPath: NOON_CALL_STORE_DATA_PATH })
   }
   if (includeFileManagementDevMenu && !useBossDevSession) {
     grantedMenus.push({ menuId: 9202, menuName: '文件管理', urlPath: SYSTEM_FILE_MANAGEMENT_PATH })
