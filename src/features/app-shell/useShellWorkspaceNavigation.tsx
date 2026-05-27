@@ -33,6 +33,10 @@ function nextWorkspaceMenuKeyAfterClose(keys: AppMenuKey[], targetKey: AppMenuKe
   return remainingKeys[Math.min(Math.max(targetIndex, 0), remainingKeys.length - 1)];
 }
 
+function shouldShowActiveMenuPathLabel(menuKey: AppMenuKey) {
+  return menuKey !== 'noon-call-store-data' && menuKey !== 'system-report-noon-data-gaps';
+}
+
 type UseShellWorkspaceNavigationParams = {
   activeMenuKey: AppMenuKey;
   goBackToProductManage: () => void;
@@ -70,10 +74,11 @@ export function useShellWorkspaceNavigation({
     'product-manage'
   ]);
 
-  const activeMenuPathLabel =
-    activeMenuKey === 'product-manage' && resolvedProductWorkspaceTabKey === 'product-detail'
+  const activeMenuPathLabel = shouldShowActiveMenuPathLabel(activeMenuKey)
+    ? activeMenuKey === 'product-manage' && resolvedProductWorkspaceTabKey === 'product-detail'
       ? '商品 / 商品详情'
-      : workspaceMenuPathLabel(activeMenuKey);
+      : workspaceMenuPathLabel(activeMenuKey)
+    : null;
 
   const workspaceTabItems = useMemo(() => {
     const items: Array<{ key: string; label: ReactNode; closable: boolean }> = openedWorkspaceTabKeys

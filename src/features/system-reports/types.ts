@@ -162,6 +162,7 @@ export type NoonCallStoreCategoryCell = {
 
 export type NoonCallStoreDataRow = {
   ownerUserId: number
+  storeName?: string | null
   storeCode: string
   siteCode: string
   overallMarker?: string | null

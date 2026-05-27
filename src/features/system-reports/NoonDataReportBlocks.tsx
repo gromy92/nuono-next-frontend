@@ -10,27 +10,32 @@ export function NoonDataReportHeader({
   generatedAt,
   extra
 }: {
-  title: string
-  subtitle: string
+  title?: string | null
+  subtitle?: string | null
   generatedAt?: string | null
   extra?: ReactNode
 }) {
+  const hasHeading = Boolean(title || subtitle)
   return (
     <div
       style={{
         display: 'flex',
-        justifyContent: 'space-between',
+        justifyContent: hasHeading ? 'space-between' : 'flex-end',
         gap: 12,
         alignItems: 'center',
         flexWrap: 'wrap'
       }}
     >
-      <Space direction="vertical" size={2}>
-        <Title level={4} style={{ margin: 0 }}>
-          {title}
-        </Title>
-        <Text type="secondary">{subtitle}</Text>
-      </Space>
+      {hasHeading ? (
+        <Space direction="vertical" size={2}>
+          {title ? (
+            <Title level={4} style={{ margin: 0 }}>
+              {title}
+            </Title>
+          ) : null}
+          {subtitle ? <Text type="secondary">{subtitle}</Text> : null}
+        </Space>
+      ) : null}
       <Space wrap>
         {generatedAt ? <Text type="secondary">更新时间 {formatDateTime(generatedAt)}</Text> : null}
         {extra}
@@ -89,7 +94,8 @@ export function NoonDataReportSection({
         background: '#ffffff',
         padding: 16,
         display: 'grid',
-        gap: 12
+        gap: 12,
+        minWidth: 0
       }}
     >
       <Title level={5} style={{ margin: 0 }}>

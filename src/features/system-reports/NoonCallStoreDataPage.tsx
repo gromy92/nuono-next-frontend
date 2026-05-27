@@ -14,7 +14,8 @@ import {
   NoonDataReportSection,
   StatusTag,
   formatDate,
-  formatDateTime
+  formatDateTime,
+  statusLabel
 } from './NoonDataReportBlocks'
 import type { NoonCallStoreCategoryCell, NoonCallStoreDataRow, NoonCallStoreDataView } from './types'
 
@@ -34,9 +35,13 @@ const CATEGORY_ORDER = ['PRODUCT_LIST', 'PRODUCT_DETAIL', 'SALES_ORDER', 'SALES_
 export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
   const [state, setState] = useState<LoadState>({ status: 'idle' })
   const [actingKey, setActingKey] = useState<string | null>(null)
+  const [syncingKeys, setSyncingKeys] = useState<Set<string>>(() => new Set())
   const canAct = session.activeRoleView === 'boss' || isSystemAdminSession(session)
 
-  const load = async () => {
+  const load = async (options?: { preserveOptimisticSyncing?: boolean }) => {
+    if (!options?.preserveOptimisticSyncing) {
+      setSyncingKeys(new Set())
+    }
     setState((current) => ({ status: 'loading', data: current.data }))
     try {
       const data = await fetchNoonCallStoreData()
@@ -57,14 +62,16 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
     if (!row.ownerUserId || !row.storeCode || !row.siteCode || !cell.category) {
       return
     }
-    const nextActingKey = `${row.ownerUserId}:${row.storeCode}:${row.siteCode}:${cell.category}`
+    const nextActingKey = rowCategoryKey(row, cell)
     setActingKey(nextActingKey)
+    setSyncingKeys((current) => addSyncingKey(current, nextActingKey))
     try {
       const result = await syncNoonCallStoreDataCategory(row.ownerUserId, row.storeCode, row.siteCode, cell.category)
       message.success(result.message || '同步任务已提交')
-      await load()
+      await load({ preserveOptimisticSyncing: true })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '同步任务提交失败'
+      setSyncingKeys((current) => removeSyncingKey(current, nextActingKey))
       message.error(errorMessage)
     } finally {
       setActingKey(null)
@@ -78,10 +85,12 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
         dataIndex: 'storeCode',
         key: 'storeCode',
         fixed: 'left',
-        width: 190,
+        width: 170,
         render: (_value, row) => (
-          <Space direction="vertical" size={0}>
-            <Text strong>{row.storeCode || '-'}</Text>
+          <Space direction="vertical" size={0} style={{ maxWidth: 146, minWidth: 0 }}>
+            <Text strong ellipsis={{ tooltip: row.storeName || '未命名店铺' }} style={{ maxWidth: 146 }}>
+              {row.storeName || '未命名店铺'}
+            </Text>
             <Text type="secondary">{row.siteCode || '-'}</Text>
           </Space>
         )
@@ -90,13 +99,13 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
         title: '整体标记',
         dataIndex: 'overallMarker',
         key: 'overallMarker',
-        width: 120,
+        width: 88,
         render: (value) => <MarkerTag value={value} />
       },
       ...CATEGORY_ORDER.map((category) => ({
         title: categoryTitle(category),
         key: category,
-        width: 250,
+        width: 160,
         render: (_value: unknown, row: NoonCallStoreDataRow) => {
           const cell = row.categories.find((item) => item.category === category)
           return cell ? (
@@ -116,7 +125,7 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
         title: '最近同步',
         dataIndex: 'lastSyncAt',
         key: 'lastSyncAt',
-        width: 150,
+        width: 130,
         render: formatDateTime
       }
     ],
@@ -125,9 +134,10 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
 
   const view = state.data
   const rows = view?.rows ?? []
-  const markerDistribution = useMemo(() => buildMarkerDistribution(rows), [rows])
-  const categoryStatusDistribution = useMemo(() => buildCategoryMarkerDistribution(rows), [rows])
-  const categoryGapDistribution = useMemo(() => buildCategoryGapDistribution(rows), [rows])
+  const displayRows = useMemo(() => applyOptimisticSyncing(rows, syncingKeys), [rows, syncingKeys])
+  const markerDistribution = useMemo(() => buildMarkerDistribution(displayRows), [displayRows])
+  const categoryStatusDistribution = useMemo(() => buildCategoryMarkerDistribution(displayRows), [displayRows])
+  const categoryGapDistribution = useMemo(() => buildCategoryGapDistribution(displayRows), [displayRows])
   const markerChartOption = useMemo(
     () => buildDistributionPieOption(markerDistribution, { seriesName: '整体标记', unit: '个' }),
     [markerDistribution]
@@ -146,13 +156,14 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
     state.status === 'loading' ? 'loading' : categoryGapDistribution.some((item) => item.value > 0) ? 'ready' : 'empty'
 
   return (
-    <div data-testid="noon-call-store-data-workbench" style={{ padding: 20, display: 'grid', gap: 12 }}>
+    <div
+      data-testid="noon-call-store-data-workbench"
+      style={{ padding: 20, display: 'grid', gap: 12, minWidth: 0, overflowX: 'hidden', width: '100%' }}
+    >
       <NoonDataReportHeader
-        title="店铺数据"
-        subtitle="系统报表 / 店铺数据"
         generatedAt={view?.generatedAt}
         extra={
-          <Button icon={<ReloadOutlined />} loading={state.status === 'loading'} onClick={load}>
+          <Button icon={<ReloadOutlined />} loading={state.status === 'loading'} onClick={() => void load()}>
             刷新
           </Button>
         }
@@ -162,7 +173,7 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
 
       <NoonDataReportSection title="同步概览" testId="noon-call-store-data-overview">
         <NoonDataMetricGrid metrics={view?.metrics ?? []} />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(260px, 100%), 1fr))', gap: 12, minWidth: 0 }}>
           <EChartPanel title="整体标记分布" testId="noon-call-store-data-marker-chart" ariaLabel="Noon 店铺整体标记分布图表" state={markerChartState} emptyText="暂无整体标记分布" option={markerChartOption} />
           <EChartPanel title="数据项状态分布" testId="noon-call-store-data-category-status-chart" ariaLabel="Noon 店铺数据项状态分布图表" state={categoryStatusChartState} emptyText="暂无数据项状态分布" option={categoryStatusChartOption} />
           <EChartPanel title="活跃缺口排行" testId="noon-call-store-data-gap-chart" ariaLabel="Noon 店铺数据活跃缺口排行图表" state={categoryGapChartState} emptyText="暂无活跃缺口" option={categoryGapChartOption} />
@@ -170,14 +181,14 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
       </NoonDataReportSection>
 
       <NoonDataReportSection title="店铺列表" testId="noon-call-store-data-table">
-        {rows.length ? (
+        {displayRows.length ? (
           <Table<NoonCallStoreDataRow>
             size="small"
             rowKey={(row) => `${row.ownerUserId}-${row.storeCode}-${row.siteCode}`}
             columns={columns}
-            dataSource={rows}
+            dataSource={displayRows}
             pagination={{ pageSize: 20, showSizeChanger: false }}
-            scroll={{ x: 1420 }}
+            scroll={{ x: 1040 }}
           />
         ) : (
           <NoonDataEmpty testId="noon-call-store-data-empty" description="暂无 Noon 店铺同步数据" />
@@ -201,29 +212,111 @@ function CategorySyncCell({
   onSync: (row: NoonCallStoreDataRow, cell: NoonCallStoreCategoryCell) => void
 }) {
   const disabled = !canAct || cell.syncable === false
+  const markerText = markerLabel(cell.marker)
+  const statusValues = displayStatuses(cell, markerText)
   return (
-    <div data-testid={`noon-call-cell-${cell.category}`} style={{ display: 'grid', gap: 6, minWidth: 220 }}>
+    <div data-testid={`noon-call-cell-${cell.category}`} style={{ display: 'grid', gap: 4, minWidth: 0 }}>
       <Space size={6} wrap>
-        <Text strong>{cell.label || categoryTitle(cell.category)}</Text>
+        <Text strong ellipsis={{ tooltip: cell.label || categoryTitle(cell.category) }} style={{ maxWidth: 132 }}>
+          {cell.label || categoryTitle(cell.category)}
+        </Text>
         <MarkerTag value={cell.marker} />
       </Space>
-      <Space size={[4, 4]} wrap>
-        <StatusTag value={cell.latestStatus} />
-        <StatusTag value={cell.historyStatus} />
-      </Space>
+      {statusValues.length ? (
+        <Space size={[4, 4]} wrap>
+          {statusValues.map((status) => (
+            <StatusTag key={status} value={status} />
+          ))}
+        </Space>
+      ) : null}
       <Space direction="vertical" size={0}>
-        <Text type="secondary">数据日 {formatDate(cell.latestDataDate)}</Text>
-        <Text type="secondary">
-          task {cell.latestTaskId ?? '-'} {cell.latestTaskStatus ? `/${cell.latestTaskStatus}` : ''}
-        </Text>
-        <Text type="secondary">同步 {formatDateTime(cell.lastSyncAt)}</Text>
+        {cell.latestDataDate ? <Text type="secondary">数据截至 {formatDate(cell.latestDataDate)}</Text> : null}
+        {cell.latestTaskId ? (
+          <Text type="secondary">
+            task {cell.latestTaskId} {cell.latestTaskStatus ? `/${cell.latestTaskStatus}` : ''}
+          </Text>
+        ) : null}
+        {cell.lastSyncAt ? <Text type="secondary">同步 {formatDateTime(cell.lastSyncAt)}</Text> : null}
         {cell.failureType ? <Text type="danger">{cell.failureType}</Text> : null}
       </Space>
-      <Button size="small" disabled={disabled} loading={loading} onClick={() => onSync(row, cell)}>
+      <Button
+        size="small"
+        autoInsertSpace={false}
+        disabled={disabled}
+        loading={loading}
+        style={{ justifySelf: 'start', whiteSpace: 'nowrap' }}
+        onClick={() => onSync(row, cell)}
+      >
         同步
       </Button>
     </div>
   )
+}
+
+function rowCategoryKey(row: NoonCallStoreDataRow, cell: Pick<NoonCallStoreCategoryCell, 'category'>) {
+  return `${row.ownerUserId}:${row.storeCode}:${row.siteCode}:${cell.category}`
+}
+
+function addSyncingKey(current: Set<string>, key: string) {
+  const next = new Set(current)
+  next.add(key)
+  return next
+}
+
+function removeSyncingKey(current: Set<string>, key: string) {
+  const next = new Set(current)
+  next.delete(key)
+  return next
+}
+
+function applyOptimisticSyncing(rows: NoonCallStoreDataRow[], syncingKeys: Set<string>): NoonCallStoreDataRow[] {
+  if (!syncingKeys.size) {
+    return rows
+  }
+  return rows.map((row) => {
+    let changed = false
+    const categories = row.categories.map((cell) => {
+      if (!syncingKeys.has(rowCategoryKey(row, cell))) {
+        return cell
+      }
+      changed = true
+      return {
+        ...cell,
+        marker: 'SYNCING',
+        latestTaskStatus: cell.latestTaskStatus || 'QUEUED'
+      }
+    })
+    return changed ? { ...row, overallMarker: 'SYNCING', categories } : row
+  })
+}
+
+function uniqueStatuses(...values: Array<string | null | undefined>) {
+  const seen = new Set<string>()
+  const statuses: string[] = []
+  values.forEach((value) => {
+    const normalized = (value || '').trim()
+    if (!normalized || seen.has(normalized)) {
+      return
+    }
+    seen.add(normalized)
+    statuses.push(normalized)
+  })
+  return statuses
+}
+
+function displayStatuses(cell: NoonCallStoreCategoryCell, markerText: string) {
+  return uniqueStatuses(cell.latestStatus, cell.historyStatus).filter((status) => {
+    if (statusLabel(status) === markerText) {
+      return false
+    }
+    if (status === 'NOT_REQUIRED') {
+      return false
+    }
+    if (cell.marker === 'COMPLETE' && (status === 'READY' || status === 'COMPLETE')) {
+      return false
+    }
+    return true
+  })
 }
 
 function MarkerTag({ value }: { value?: string | null }) {
