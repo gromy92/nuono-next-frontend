@@ -24,6 +24,9 @@ export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
 export const SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH = workspaceMenuPath('system-report-noon-data-completeness')
 export const SYSTEM_REPORT_NOON_DATA_GAPS_PATH = workspaceMenuPath('system-report-noon-data-gaps')
+export const OPERATIONS_CONFIG_VERSIONS_PATH = workspaceMenuPath('operations-config-versions')
+export const DATA_ACTIVITY_CONFIG_PATH = workspaceMenuPath('data-activity-config')
+export const OPERATIONS_LIFECYCLE_RULES_PATH = workspaceMenuPath('operations-lifecycle-rules')
 export const SYSTEM_FILE_MANAGEMENT_PATH = workspaceMenuPath('system-file-management')
 export const USER_ACCOUNT_PATH = workspaceMenuPath('user-account')
 export const USER_STORE_NOON_PATH = workspaceMenuPath('user-store-noon')
@@ -74,6 +77,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantSalesAnalytics',
   'grantSalesForecast',
   'grantSystemReports',
+  'grantOperationsConfig',
   'grantRoleAssignment',
   'grantSystemRole'
 ])
@@ -240,6 +244,8 @@ export function resolveSessionLandingMenuKey(
         'noon-call-store-data',
         'system-report-noon-data-completeness',
         'system-report-noon-data-gaps',
+        'data-activity-config',
+        'operations-lifecycle-rules',
         'product-manual-selection',
         'product-manage'
       ] as AppMenuKey[])
@@ -256,6 +262,8 @@ export function resolveSessionLandingMenuKey(
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
+          'data-activity-config',
+          'operations-lifecycle-rules',
           'product-manual-selection'
         ] as AppMenuKey[])
       : ([
@@ -270,6 +278,8 @@ export function resolveSessionLandingMenuKey(
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
+          'data-activity-config',
+          'operations-lifecycle-rules',
           'product-manual-selection'
         ] as AppMenuKey[])
 

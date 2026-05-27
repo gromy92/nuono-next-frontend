@@ -208,7 +208,7 @@ export function useShellWorkspaceNavigation({
     }
     return activeSectionKey ? [activeSectionKey] : [];
   }, [activeMenuKey, sessionAllowedMenuKeySet]);
-  const shouldRenderWorkspaceTabs = true;
+  const shouldRenderWorkspaceTabs = shouldShowWorkspaceMenuInTabs(normalizeWorkspaceTabMenuKey(activeMenuKey));
   const [sidebarOpenKeys, setSidebarOpenKeys] = useState<string[]>(activeSidebarOpenKeys);
   const activeSidebarRootKey = activeSidebarOpenKeys[0];
 

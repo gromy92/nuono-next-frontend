@@ -99,6 +99,21 @@ const SalesAnalyticsPage = lazyWorkspace(() =>
 const SalesForecastPage = lazyWorkspace(() =>
   import('../sales-forecast/SalesForecastPage').then((module) => ({ default: module.SalesForecastPage }))
 );
+const OperationConfigSuiteVersionPage = lazyWorkspace(() =>
+  import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
+    default: module.OperationConfigSuiteVersionPage
+  }))
+);
+const BusinessCalendarVersionLibraryPage = lazyWorkspace(() =>
+  import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
+    default: module.BusinessCalendarVersionLibraryPage
+  }))
+);
+const LifecycleVersionLibraryPage = lazyWorkspace(() =>
+  import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
+    default: module.LifecycleVersionLibraryPage
+  }))
+);
 
 type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
 
@@ -274,6 +289,30 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <SalesForecastPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'operations-business-calendar') {
+    return (
+      <LazyWorkspaceBoundary>
+        <BusinessCalendarVersionLibraryPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'operations-config-versions') {
+    return (
+      <LazyWorkspaceBoundary>
+        <OperationConfigSuiteVersionPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'operations-lifecycle-rules') {
+    return (
+      <LazyWorkspaceBoundary>
+        <LifecycleVersionLibraryPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }
