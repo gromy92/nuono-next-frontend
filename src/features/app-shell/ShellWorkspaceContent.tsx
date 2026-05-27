@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 import { Alert, Card, Spin } from 'antd';
 import type { AuthSession } from '../auth/session';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
@@ -8,58 +8,96 @@ import type { StoreSyncOverviewState } from '../store-sync/types';
 import type { AppMenuKey } from './WorkspaceRouting';
 import { workspaceMenuContentKind } from './WorkspaceMenuRegistry';
 
-const AiFileParseBoard = lazy(() =>
+const DYNAMIC_IMPORT_RELOAD_KEY = 'nuono:dynamic-import-reload';
+
+function isDynamicImportLoadFailure(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || '');
+  return message.includes('Failed to fetch dynamically imported module') || message.includes('Importing a module script failed');
+}
+
+function lazyWorkspace<T extends ComponentType<any>>(
+  loader: () => Promise<{ default: T }>
+) {
+  return lazy(() =>
+    loader()
+      .then((module) => {
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.removeItem(DYNAMIC_IMPORT_RELOAD_KEY);
+        }
+        return module;
+      })
+      .catch((error) => {
+        if (
+          isDynamicImportLoadFailure(error) &&
+          typeof window !== 'undefined' &&
+          window.sessionStorage.getItem(DYNAMIC_IMPORT_RELOAD_KEY) !== '1'
+        ) {
+          window.sessionStorage.setItem(DYNAMIC_IMPORT_RELOAD_KEY, '1');
+          window.location.reload();
+        }
+        throw error;
+      })
+  );
+}
+
+const AiFileParseBoard = lazyWorkspace(() =>
   import('../ai-file-parse/AiFileParseBoard').then((module) => ({ default: module.AiFileParseBoard }))
 );
-const LogisticsQuoteBoard = lazy(() =>
+const LogisticsQuoteBoard = lazyWorkspace(() =>
   import('../logistics-quote/LogisticsQuoteBoard').then((module) => ({ default: module.LogisticsQuoteBoard }))
 );
-const ManualSelectionPage = lazy(() =>
+const ManualSelectionPage = lazyWorkspace(() =>
   import('../manual-selection/ManualSelectionPage').then((module) => ({ default: module.ManualSelectionPage }))
 );
-const Ali1688CollectionPage = lazy(() =>
+const Ali1688CollectionPage = lazyWorkspace(() =>
   import('../ali1688-collection/Ali1688CollectionPage').then((module) => ({
     default: module.Ali1688CollectionPage
   }))
 );
-const MasterDataBoard = lazy(() =>
+const MasterDataBoard = lazyWorkspace(() =>
   import('../master-data/MasterDataBoard').then((module) => ({ default: module.MasterDataBoard }))
 );
-const RoleManagementWorkspace = lazy(() =>
+const RoleManagementWorkspace = lazyWorkspace(() =>
   import('../master-data/RoleManagementWorkspace').then((module) => ({ default: module.RoleManagementWorkspace }))
 );
-const ProductManagementWorkspacePage = lazy(() =>
+const ProductManagementWorkspacePage = lazyWorkspace(() =>
   import('../product-management/ProductManagementWorkspacePage').then((module) => ({
     default: module.ProductManagementWorkspacePage
   }))
 );
-const ProductGroupManagementPage = lazy(() =>
+const ProductGroupManagementPage = lazyWorkspace(() =>
   import('../product-management/groups/ProductGroupManagementPage').then((module) => ({
     default: module.ProductGroupManagementPage
   }))
 );
-const ProcurementWorkspace = lazy(() =>
+const ProcurementWorkspace = lazyWorkspace(() =>
   import('../procurement/ProcurementWorkspace').then((module) => ({ default: module.ProcurementWorkspace }))
 );
-const ProcurementRequirementConfirmationPage = lazy(() =>
+const ProcurementRequirementConfirmationPage = lazyWorkspace(() =>
   import('../procurement-confirmation/ProcurementRequirementConfirmationPage').then((module) => ({
     default: module.ProcurementRequirementConfirmationPage
   }))
 );
-const NoonCallStoreDataPage = lazy(() =>
+const NoonCallStoreDataPage = lazyWorkspace(() =>
   import('../system-reports/NoonCallStoreDataPage').then((module) => ({
     default: module.NoonCallStoreDataPage
   }))
 );
-const NoonDataCompletenessPage = lazy(() =>
+const NoonDataCompletenessPage = lazyWorkspace(() =>
   import('../system-reports/NoonDataCompletenessPage').then((module) => ({
     default: module.NoonDataCompletenessPage
   }))
 );
-const NoonDataGapPatrolPage = lazy(() =>
+const NoonDataGapPatrolPage = lazyWorkspace(() =>
   import('../system-reports/NoonDataGapPatrolPage').then((module) => ({
     default: module.NoonDataGapPatrolPage
   }))
+);
+const SalesAnalyticsPage = lazyWorkspace(() =>
+  import('../sales-analytics/SalesAnalyticsPage').then((module) => ({ default: module.SalesAnalyticsPage }))
+);
+const SalesForecastPage = lazyWorkspace(() =>
+  import('../sales-forecast/SalesForecastPage').then((module) => ({ default: module.SalesForecastPage }))
 );
 
 type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
@@ -220,6 +258,22 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <NoonDataGapPatrolPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'sales-analytics') {
+    return (
+      <LazyWorkspaceBoundary>
+        <SalesAnalyticsPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'sales-forecast') {
+    return (
+      <LazyWorkspaceBoundary>
+        <SalesForecastPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

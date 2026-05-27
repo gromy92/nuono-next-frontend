@@ -19,6 +19,8 @@ export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
+export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
+export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
 export const SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH = workspaceMenuPath('system-report-noon-data-completeness')
 export const SYSTEM_REPORT_NOON_DATA_GAPS_PATH = workspaceMenuPath('system-report-noon-data-gaps')
@@ -61,12 +63,16 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'devSession',
   'devRole',
   'role',
+  'devOwner',
+  'devAccount',
   'previewAli1688',
   'grantAiFileParse',
   'grantFileManagement',
   'grantLogisticsQuote',
   'grantManualSelection',
   'grantPurchase',
+  'grantSalesAnalytics',
+  'grantSalesForecast',
   'grantSystemReports',
   'grantRoleAssignment',
   'grantSystemRole'
@@ -229,6 +235,8 @@ export function resolveSessionLandingMenuKey(
         'system-menu',
         'purchase-profit',
         'purchase-order',
+        'data-sales-analysis',
+        'data-sales-forecast',
         'noon-call-store-data',
         'system-report-noon-data-completeness',
         'system-report-noon-data-gaps',
@@ -243,6 +251,8 @@ export function resolveSessionLandingMenuKey(
           'product-manage',
           'purchase-profit',
           'purchase-logistics-quote',
+          'data-sales-analysis',
+          'data-sales-forecast',
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
@@ -255,6 +265,8 @@ export function resolveSessionLandingMenuKey(
           'user-role',
           'purchase-profit',
           'purchase-logistics-quote',
+          'data-sales-analysis',
+          'data-sales-forecast',
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',

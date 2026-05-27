@@ -20,6 +20,7 @@
     "profit:pending-smoke": "node scripts/profit_pending_page_smoke.mjs",
     "master-data:replica-smoke": "node scripts/master_data_replica_smoke.mjs",
     "master-data:page-acceptance": "node scripts/master_data_page_acceptance.mjs",
+    "shared-charts:contract-check": "node scripts/shared_charts_contract_check.mjs",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
     "e2e:write": "E2E_ALLOW_WRITE_TESTS=true playwright test"
