@@ -6,6 +6,16 @@ import {
   PRODUCT_WORKSPACE_PATH,
   PRODUCT_MANUAL_SELECTION_PATH,
   PURCHASE_1688_COLLECTION_PATH,
+  OPERATIONS_CONFIG_VERSIONS_PATH,
+  DATA_ACTIVITY_CONFIG_PATH,
+  OPERATIONS_LIFECYCLE_RULES_PATH,
+  DATA_SALES_FORECAST_PATH,
+  DATA_SALES_ANALYTICS_PATH,
+  OPERATIONS_DASHBOARD_PATH,
+  NOON_CALL_STORE_DATA_PATH,
+  SYSTEM_REPORT_STORE_DATA_PATH,
+  SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH,
+  SYSTEM_REPORT_NOON_DATA_GAPS_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
 } from './WorkspaceRouting'
@@ -49,31 +59,63 @@ function readDevSessionOverride(): AuthSession | null {
   if (search.get('devSession') !== '1') {
     return null
   }
+  const pathname = currentAppPathname()
   const includeProductDevMenu =
-    currentAppPathname().startsWith('/product-manage') ||
-    currentAppPathname().startsWith(PRODUCT_WORKSPACE_PATH) ||
-    currentAppPathname().startsWith(PRODUCT_GROUPS_PATH)
+    pathname.startsWith('/product-manage') ||
+    pathname.startsWith(PRODUCT_WORKSPACE_PATH) ||
+    pathname.startsWith(PRODUCT_GROUPS_PATH)
   const includeProductManualSelectionDevMenu =
-    currentAppPathname().startsWith(PRODUCT_MANUAL_SELECTION_PATH) ||
+    pathname.startsWith(PRODUCT_MANUAL_SELECTION_PATH) ||
     search.get('grantManualSelection') === '1'
   const includePurchaseDevMenu =
-    currentAppPathname().startsWith('/purchase/order') ||
-    currentAppPathname().startsWith(PURCHASE_1688_COLLECTION_PATH) ||
+    pathname.startsWith('/purchase/order') ||
+    pathname.startsWith(PURCHASE_1688_COLLECTION_PATH) ||
     search.get('grantPurchase') === '1'
   const includeLogisticsQuoteDevMenu =
-    currentAppPathname().startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
+    pathname.startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
     search.get('grantLogisticsQuote') === '1'
+  const includeOperationsDashboardDevMenu =
+    pathname.startsWith(OPERATIONS_DASHBOARD_PATH) ||
+    search.get('grantOperationsDashboard') === '1'
+  const includeSystemReportsDevMenu =
+    pathname.startsWith(NOON_CALL_STORE_DATA_PATH) ||
+    pathname.startsWith(SYSTEM_REPORT_STORE_DATA_PATH) ||
+    pathname.startsWith(SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH) ||
+    pathname.startsWith(SYSTEM_REPORT_NOON_DATA_GAPS_PATH) ||
+    search.get('grantSystemReports') === '1'
+  const isSalesWorkspacePath =
+    pathname.startsWith(DATA_SALES_ANALYTICS_PATH) ||
+    pathname.startsWith(DATA_SALES_FORECAST_PATH) ||
+    pathname.startsWith('/data/activity-config')
+  const isOperationsConfigWorkspacePath =
+    pathname.startsWith(OPERATIONS_CONFIG_VERSIONS_PATH) ||
+    pathname.startsWith(DATA_ACTIVITY_CONFIG_PATH) ||
+    pathname.startsWith(OPERATIONS_LIFECYCLE_RULES_PATH) ||
+    pathname.startsWith('/operation-config/holiday')
+  const includeSalesAnalyticsDevMenu =
+    isSalesWorkspacePath || search.get('grantSalesAnalytics') === '1' || search.get('grantSalesForecast') === '1'
+  const includeOperationsConfigDevMenu =
+    isOperationsConfigWorkspacePath ||
+    search.get('grantOperationsConfig') === '1' ||
+    search.get('grantSalesAnalytics') === '1'
   const includeFileManagementDevMenu =
-    currentAppPathname().startsWith(SYSTEM_FILE_MANAGEMENT_PATH) ||
-    currentAppPathname().startsWith('/system/ai-file-parse') ||
+    pathname.startsWith(SYSTEM_FILE_MANAGEMENT_PATH) ||
+    pathname.startsWith('/system/ai-file-parse') ||
     search.get('grantFileManagement') === '1' ||
     search.get('grantAiFileParse') === '1'
   const includeRoleAssignmentDevMenu = search.get('grantRoleAssignment') === '1'
   const includeSystemRoleDevMenu = search.get('grantSystemRole') === '1'
   const devRole = (search.get('devRole') || search.get('role') || '').trim().toLowerCase()
   const useBossDevSession = devRole === 'boss' || devRole === 'laoban' || devRole === '老板'
+  const useOpsManagerDevSession =
+    devRole === 'ops-manager' ||
+    devRole === 'operations-manager' ||
+    devRole === 'manager' ||
+    devRole === '运营主管'
+  const useOperatorDevSession = devRole === 'operator' || devRole === 'ops' || devRole === '运营'
+  const useBusinessDevSession = useBossDevSession || useOpsManagerDevSession || useOperatorDevSession
 
-  const adminDevStores: AuthSessionStore[] = [
+  const xingyaoDevStores: AuthSessionStore[] = [
     {
       id: 101,
       orgCode: 'ORG-XY',
@@ -93,7 +135,11 @@ function readDevSessionOverride(): AuthSession | null {
       storeCode: 'STR245027-NSA',
       site: 'SA',
       authorized: true
-    },
+    }
+  ]
+
+  const adminDevStores: AuthSessionStore[] = [
+    ...xingyaoDevStores,
     {
       id: 103,
       orgCode: 'ORG-MZ',
@@ -106,7 +152,13 @@ function readDevSessionOverride(): AuthSession | null {
     }
   ]
 
-  const bossDevStores: AuthSessionStore[] = [
+  const requestedDevOwner = (search.get('devOwner') || search.get('devAccount') || '').trim().toLowerCase()
+  const useXingyaoBossDevSession =
+    useBossDevSession &&
+    (['xingyao', 'xy', '10002', 'prj245027', 'str245027-nae'].includes(requestedDevOwner) ||
+      (!requestedDevOwner && includeProductDevMenu))
+
+  const canmanBossDevStores: AuthSessionStore[] = [
     {
       id: 301,
       orgCode: 'ORG-CANMAN',
@@ -129,12 +181,20 @@ function readDevSessionOverride(): AuthSession | null {
     }
   ]
 
-  const devStores = useBossDevSession ? bossDevStores : adminDevStores
-  const grantedMenus: NonNullable<AuthSession['grantedMenus']> = useBossDevSession
-    ? [
+  const bossDevStores = useXingyaoBossDevSession ? xingyaoDevStores : canmanBossDevStores
+  const businessDevStores = useOperatorDevSession ? canmanBossDevStores.slice(0, 1) : bossDevStores
+  const devStores = useBusinessDevSession ? businessDevStores : adminDevStores
+  const currentStore =
+    useBusinessDevSession && (isSalesWorkspacePath || isOperationsConfigWorkspacePath)
+      ? (devStores.find((store) => store.storeCode === 'STR108065-NSA') ?? devStores[0])
+      : devStores[0]
+  const grantedMenus: NonNullable<AuthSession['grantedMenus']> = useBusinessDevSession
+    ? useBossDevSession
+      ? [
         { menuId: 10, menuName: '用户管理', urlPath: '/api/user/manage' },
         { menuId: 25, menuName: '角色分配', urlPath: '/api/user/role' }
       ]
+      : []
     : [
         { menuId: 10, menuName: '用户管理', urlPath: '/api/user/manage' },
         { menuId: 9002, menuName: '菜单维护', urlPath: '/system/menu' }
@@ -158,26 +218,74 @@ function readDevSessionOverride(): AuthSession | null {
   if (includeLogisticsQuoteDevMenu) {
     grantedMenus.push({ menuId: 9201, menuName: '货代管理', urlPath: PURCHASE_LOGISTICS_QUOTE_PATH })
   }
-  if (includeFileManagementDevMenu && !useBossDevSession) {
+  if (includeOperationsDashboardDevMenu) {
+    grantedMenus.push({ menuId: 9403, menuName: 'AI运营看板', urlPath: OPERATIONS_DASHBOARD_PATH })
+  }
+  if (includeSystemReportsDevMenu) {
+    grantedMenus.push({ menuId: 9600, menuName: 'Noon店铺数据', urlPath: NOON_CALL_STORE_DATA_PATH })
+    grantedMenus.push({ menuId: 9601, menuName: '店铺数据', urlPath: SYSTEM_REPORT_STORE_DATA_PATH })
+    grantedMenus.push({ menuId: 9602, menuName: '数据完整度', urlPath: SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH })
+    grantedMenus.push({ menuId: 9603, menuName: '数据缺口巡检', urlPath: SYSTEM_REPORT_NOON_DATA_GAPS_PATH })
+  }
+  if (includeSalesAnalyticsDevMenu) {
+    grantedMenus.push({ menuId: 9401, menuName: '销量分析', urlPath: DATA_SALES_ANALYTICS_PATH })
+    grantedMenus.push({ menuId: 9402, menuName: '销量预测', urlPath: DATA_SALES_FORECAST_PATH })
+  }
+  if (includeOperationsConfigDevMenu) {
+    grantedMenus.push({ menuId: 9503, menuName: '运营配置版本', urlPath: OPERATIONS_CONFIG_VERSIONS_PATH })
+    grantedMenus.push({ menuId: 9501, menuName: '业务日历', urlPath: DATA_ACTIVITY_CONFIG_PATH })
+    grantedMenus.push({ menuId: 9502, menuName: '生命周期配置', urlPath: OPERATIONS_LIFECYCLE_RULES_PATH })
+  }
+  if (includeFileManagementDevMenu && !useBusinessDevSession) {
     grantedMenus.push({ menuId: 9202, menuName: '文件管理', urlPath: SYSTEM_FILE_MANAGEMENT_PATH })
   }
   const adminDevUserId = 10003
+  const bossDevUser = useXingyaoBossDevSession
+    ? {
+        userId: 10002,
+        accountNo: 'xingyaoqw',
+        realName: 'xingyao测试店',
+        companyName: 'xingyao',
+        defaultOwnerUserId: 10002
+      }
+    : {
+        userId: 307,
+        accountNo: '毕翠红',
+        realName: '毕翠红',
+        companyName: 'canman',
+        defaultOwnerUserId: 307
+      }
+  const opsManagerDevUser = {
+    userId: 601,
+    accountNo: 'ops.manager',
+    realName: '运营主管',
+    companyName: 'canman',
+    defaultOwnerUserId: 307
+  }
+  const operatorDevUser = {
+    userId: 602,
+    accountNo: 'operator',
+    realName: '运营',
+    companyName: 'canman',
+    defaultOwnerUserId: 307
+  }
+  const businessDevUser = useBossDevSession ? bossDevUser : useOpsManagerDevSession ? opsManagerDevUser : operatorDevUser
 
   return {
-    userId: useBossDevSession ? 307 : adminDevUserId,
-    accountNo: useBossDevSession ? '毕翠红' : 'adminBI',
-    realName: useBossDevSession ? '毕翠红' : 'adminBI',
-    roleId: useBossDevSession ? 2 : 1,
-    roleName: useBossDevSession ? '老板' : '管理员',
-    companyName: useBossDevSession ? 'canman' : 'Nuono',
+    userId: useBusinessDevSession ? businessDevUser.userId : adminDevUserId,
+    accountNo: useBusinessDevSession ? businessDevUser.accountNo : 'adminBI',
+    realName: useBusinessDevSession ? businessDevUser.realName : 'adminBI',
+    roleId: useBossDevSession ? 2 : useOpsManagerDevSession ? 3 : useOperatorDevSession ? 4 : 1,
+    roleName: useBossDevSession ? '老板' : useOpsManagerDevSession ? '运营主管' : useOperatorDevSession ? '运营' : '管理员',
+    companyName: useBusinessDevSession ? businessDevUser.companyName : 'Nuono',
     status: 1,
-    level: useBossDevSession ? 1 : 0,
+    level: useBossDevSession ? 1 : useOpsManagerDevSession ? 2 : useOperatorDevSession ? 3 : 0,
     storeCount: devStores.length,
     authorizedStoreCount: devStores.filter((store) => store.authorized).length,
     bindingStatus: 'PROJECT_BOUND',
-    defaultOwnerUserId: useBossDevSession ? 307 : 10002,
+    defaultOwnerUserId: useBusinessDevSession ? businessDevUser.defaultOwnerUserId : 10002,
     activeRoleView: useBossDevSession ? 'boss' : undefined,
-    currentStore: devStores[0],
+    currentStore,
     userStores: devStores,
     grantedMenus
   }

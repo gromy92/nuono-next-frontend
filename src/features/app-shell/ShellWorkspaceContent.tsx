@@ -46,6 +46,56 @@ const ProcurementRequirementConfirmationPage = lazy(() =>
     default: module.ProcurementRequirementConfirmationPage
   }))
 );
+const SalesAnalyticsPage = lazy(() =>
+  import('../sales-analytics/SalesAnalyticsPage').then((module) => ({
+    default: module.SalesAnalyticsPage
+  }))
+);
+const SalesForecastPage = lazy(() =>
+  import('../sales-forecast/SalesForecastPage').then((module) => ({
+    default: module.SalesForecastPage
+  }))
+);
+const StoreDataReportPage = lazy(() =>
+  import('../system-reports/StoreDataReportPage').then((module) => ({
+    default: module.StoreDataReportPage
+  }))
+);
+const NoonDataCompletenessPage = lazy(() =>
+  import('../system-reports/NoonDataCompletenessPage').then((module) => ({
+    default: module.NoonDataCompletenessPage
+  }))
+);
+const NoonDataGapPatrolPage = lazy(() =>
+  import('../system-reports/NoonDataGapPatrolPage').then((module) => ({
+    default: module.NoonDataGapPatrolPage
+  }))
+);
+const NoonCallStoreDataPage = lazy(() =>
+  import('../system-reports/NoonCallStoreDataPage').then((module) => ({
+    default: module.NoonCallStoreDataPage
+  }))
+);
+const OperationConfigSuiteVersionPage = lazy(() =>
+  import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
+    default: module.OperationConfigSuiteVersionPage
+  }))
+);
+const BusinessCalendarVersionLibraryPage = lazy(() =>
+  import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
+    default: module.BusinessCalendarVersionLibraryPage
+  }))
+);
+const LifecycleVersionLibraryPage = lazy(() =>
+  import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
+    default: module.LifecycleVersionLibraryPage
+  }))
+);
+const AiOperationsDashboardPage = lazy(() =>
+  import('../ai-operations-dashboard/AiOperationsDashboardPage').then((module) => ({
+    default: module.AiOperationsDashboardPage
+  }))
+);
 
 type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
 
@@ -173,6 +223,86 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <LogisticsQuoteBoard />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'sales-analytics') {
+    return (
+      <LazyWorkspaceBoundary>
+        <SalesAnalyticsPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'sales-forecast') {
+    return (
+      <LazyWorkspaceBoundary>
+        <SalesForecastPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'system-report-store-data') {
+    return (
+      <LazyWorkspaceBoundary>
+        <StoreDataReportPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'noon-call-store-data') {
+    return (
+      <LazyWorkspaceBoundary>
+        <NoonCallStoreDataPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'system-report-noon-data-completeness') {
+    return (
+      <LazyWorkspaceBoundary>
+        <NoonDataCompletenessPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'system-report-noon-data-gaps') {
+    return (
+      <LazyWorkspaceBoundary>
+        <NoonDataGapPatrolPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'operations-business-calendar') {
+    return (
+      <LazyWorkspaceBoundary>
+        <BusinessCalendarVersionLibraryPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'operations-config-versions') {
+    return (
+      <LazyWorkspaceBoundary>
+        <OperationConfigSuiteVersionPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'operations-lifecycle-rules') {
+    return (
+      <LazyWorkspaceBoundary>
+        <LifecycleVersionLibraryPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'operations-dashboard') {
+    return (
+      <LazyWorkspaceBoundary>
+        <AiOperationsDashboardPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

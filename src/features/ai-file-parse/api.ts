@@ -512,6 +512,14 @@ export function fetchFileParseTaskDetail(taskId: string | number) {
   return parseResponse<FileParseTaskDetailPayload>(fileParseFetch(`/api/file-management/parse/tasks/${taskId}`));
 }
 
+export function deleteFileParseTask(taskId: string | number) {
+  return parseResponse<void>(
+    fileParseFetch(`/api/file-management/parse/tasks/${taskId}`, {
+      method: 'DELETE'
+    })
+  );
+}
+
 export function uploadFileParseInput(targetPlanId: string | number, file: File) {
   const formData = new FormData();
   formData.set('targetPlanId', String(targetPlanId));

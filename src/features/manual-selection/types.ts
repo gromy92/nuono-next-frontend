@@ -14,6 +14,20 @@ export type ManualSelectionSearchValues = {
   collectStatus?: SourceCollectionStatus
 }
 
+export type ManualSelectionPagination = {
+  current: number
+  pageSize: number
+  total: number
+}
+
+export type ManualSelectionLoadOptions = {
+  page?: number
+  pageSize?: number
+  filters?: ManualSelectionSearchValues
+  silent?: boolean
+  mergeCollectingOnly?: boolean
+}
+
 export type NewCollectionValues = {
   titleCn?: string
   siteLink?: string
@@ -34,7 +48,9 @@ export type ManualSelectionToolbarProps = {
 export type ManualSelectionTableProps = {
   dataSource: ProductSelectionSourceCollection[]
   loading: boolean
+  pagination: ManualSelectionPagination
   recollecting: boolean
   onOpenDetail: (record: ProductSelectionSourceCollection) => void
+  onPageChange: (page: number, pageSize: number) => void
   onRecollect: (record: ProductSelectionSourceCollection) => void
 }

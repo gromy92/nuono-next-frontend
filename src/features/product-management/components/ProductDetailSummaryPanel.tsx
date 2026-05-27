@@ -7,6 +7,7 @@ import {
   formatSnapshotValue,
   isProductPublishTaskActive,
   isProductPublishTaskNeedsAttention,
+  productSummaryTitle,
   productSourceTypeMeta
 } from '../utils';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
@@ -46,6 +47,20 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
   const partnerSku = formatSnapshotValue(
     currentProductSummarySurface?.partnerSku ?? productSnapshotView?.identity.partnerSku
   );
+  const sku = formatSnapshotValue(
+    currentProductSummarySurface?.skuParent ??
+      productSnapshotView?.identity.skuParent ??
+      productSnapshotView?.identity.parentSku
+  );
+  const productTitle = currentProductSummarySurface
+    ? productSummaryTitle(currentProductSummarySurface)
+    : formatSnapshotValue(
+        productSnapshotView?.content.titleEn ??
+          productSnapshotView?.identity.titleEn ??
+          productSnapshotView?.identity.title ??
+          productSnapshotView?.identity.productTitle ??
+          productSnapshotView?.identity.skuParent
+      );
   const sourceTypeMeta = productSourceTypeMeta(
     currentProductSummarySurface?.productSourceType ?? productSnapshotView?.identity.productSourceType
   );
@@ -153,9 +168,15 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
 
           <Col flex="auto" style={{ minWidth: 0 }}>
             <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              <Text strong ellipsis={{ tooltip: productTitle }} style={{ color: 'var(--pm-text-primary)' }}>
+                {productTitle}
+              </Text>
               <Space size={12} wrap>
                 <Text style={{ color: 'var(--pm-text-muted)', fontSize: 12 }}>
                   Partner SKU：<Text copyable>{partnerSku}</Text>
+                </Text>
+                <Text style={{ color: 'var(--pm-text-muted)', fontSize: 12 }}>
+                  SKU：<Text copyable>{sku}</Text>
                 </Text>
                 <Tooltip title={sourceTypeMeta.description}>
                   <Tag color={sourceTypeMeta.color} style={{ marginInlineEnd: 0 }}>

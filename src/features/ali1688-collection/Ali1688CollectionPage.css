@@ -35,6 +35,11 @@
   overflow-x: auto;
 }
 
+.ali1688-candidate-gate-filter {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 .ali1688-toolbar > .ant-btn {
   margin-left: auto;
 }
@@ -166,6 +171,11 @@
   margin-top: 0;
 }
 
+.ali1688-candidate-section > .ant-alert,
+.ali1688-plugin-assignment {
+  margin-bottom: 12px;
+}
+
 .ali1688-section-head {
   margin-bottom: 12px;
 }
@@ -265,6 +275,55 @@
 .ali1688-pending-slot .ant-typography {
   margin: 6px 0 0;
   font-size: 12px;
+}
+
+.ali1688-plugin-assignment {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.ali1688-plugin-assignment-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ali1688-plugin-assignment-head strong {
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.ali1688-plugin-assignment-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ali1688-plugin-assignment-grid > div {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.ali1688-plugin-assignment-grid span {
+  display: block;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.ali1688-plugin-assignment-grid strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #0f172a;
+  font-size: 13px;
 }
 
 .ali1688-candidate-card {
@@ -443,6 +502,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ali1688-candidate-price-line .ali1688-price-state-tag {
+  margin-inline-end: 0;
+  color: #475569;
 }
 
 .ali1688-score-panel {

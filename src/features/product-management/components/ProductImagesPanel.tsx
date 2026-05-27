@@ -1,6 +1,7 @@
 import { EditOutlined } from '@ant-design/icons';
 import { Button, Space, Typography, message } from 'antd';
 import { useState } from 'react';
+import { ImageGalleryDisplay } from '../../../shared/components/ImageGalleryDisplay';
 import { uploadProductImageAsset } from '../api';
 import type { ProductFieldDomainSurface, ProductMasterSnapshotPayload } from '../types';
 import { textInputValue } from '../utils';
@@ -52,64 +53,12 @@ export function ProductImagesPanel(props: {
       }
     >
       {productImageUrls.length ? (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-            gap: 12
-          }}
-        >
-          {productImageUrls.map((item, index) => (
-            <div
-              key={`${item}-${index}`}
-              role="button"
-              tabIndex={0}
-              onClick={() => openCurrentProductGallery(index)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  openCurrentProductGallery(index);
-                }
-              }}
-              style={{
-                padding: 0,
-                border: '1px solid var(--pm-subtle-border)',
-                borderRadius: 8,
-                overflow: 'hidden',
-                background: 'var(--pm-subtle-bg)',
-                cursor: 'pointer',
-                textAlign: 'left'
-              }}
-            >
-              <div
-                style={{
-                  position: 'relative',
-                  width: '100%',
-                  minHeight: 220,
-                  background: 'var(--pm-subtle-bg)'
-                }}
-              >
-                <img
-                  src={item}
-                  alt={`商品图 ${index + 1}`}
-                  style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }}
-                />
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 'auto 0 0 0',
-                    padding: '8px 10px',
-                    background: 'rgba(15, 23, 42, 0.62)',
-                    color: '#ffffff',
-                    fontSize: 12
-                  }}
-                >
-                  {index === 0 ? '头图' : `商品图 ${index + 1}`}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <ImageGalleryDisplay
+          images={productImageUrls}
+          altPrefix="商品图"
+          getLabel={(index) => (index === 0 ? '头图' : `商品图 ${index + 1}`)}
+          onOpenImage={openCurrentProductGallery}
+        />
       ) : (
         <Space>
           <Text style={{ color: 'var(--pm-text-faint)' }}>暂无图片</Text>

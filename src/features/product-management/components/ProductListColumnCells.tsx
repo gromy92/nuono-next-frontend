@@ -4,6 +4,7 @@ export {
   InventoryCell,
   LiveStatusCell,
   PerformanceCell,
+  ProductLifecycleCell,
   ProductListColumnInfoTitle,
   PublishStatusCell,
   SellerStatusCell

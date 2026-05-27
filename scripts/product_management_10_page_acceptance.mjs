@@ -468,10 +468,16 @@ async function verifyOfferTab(page) {
   const fbnLink = page.locator('a[href*="fbn.noon.partners"][href*="project=PRJ245027"]').first();
   await fbnLink.waitFor({ timeout: 10000 });
 
-  const liveLink = page.locator('a[href*="noon.com"]', { hasText: 'Live' }).first();
-  await liveLink.waitFor({ timeout: 10000 });
-  const liveHref = await liveLink.getAttribute('href');
-  assert(liveHref?.includes(CLEAN_SKU_PARENT), `Offer Live 前台链接应包含 SKU：${liveHref}`);
+  const storefrontLink = page.getByRole('link', { name: '打开前台详情' }).first();
+  await storefrontLink.waitFor({ timeout: 10000 });
+  const storefrontHref = await storefrontLink.getAttribute('href');
+  assert(storefrontHref?.includes(CLEAN_SKU_PARENT), `前台详情链接应包含 SKU：${storefrontHref}`);
+
+  const catalogLink = page.getByRole('link', { name: '打开后台详情' }).first();
+  await catalogLink.waitFor({ timeout: 10000 });
+  const catalogHref = await catalogLink.getAttribute('href');
+  assert(catalogHref?.includes('noon-catalog.noon.partners'), `后台详情链接应跳转 Noon catalog：${catalogHref}`);
+  assert(catalogHref?.includes('code='), `后台详情链接必须包含 child SKU / offer code 参数：${catalogHref}`);
 }
 
 async function verifyContentTab(page) {
@@ -481,7 +487,8 @@ async function verifyContentTab(page) {
   await assertBodyIncludes(page, '卖点', 'Content');
   await assertBodyIncludes(page, '长描述', 'Content');
   await assertBodyIncludes(page, '中文', 'Content');
-  await assertBodyIncludes(page, 'Product Images', 'Content');
+  await assertBodyIncludes(page, 'Long Description English', 'Content');
+  await assertBodyIncludes(page, '阿语只读', 'Content');
   await assertBodyIncludes(page, '品牌与类目', 'Content');
   await assertBodyIncludes(page, 'Product Fulltype（官方类目）', 'Content');
   await assertBodyIncludes(page, 'Detailed Content', 'Content');
@@ -493,13 +500,15 @@ async function verifyContentTab(page) {
     'QC 状态(只读)',
     'product_title',
     'feature_bullet',
-	    'Other Information',
-	    'id_partner',
-	    'external_qc_rejection_reason_fatal',
-	    'pending_virtual_attributes',
-	    'grade',
-	    "Add this content to enhance your product's discoverability on noon."
-	  ]) {
+    'Other Information',
+    'id_partner',
+    'external_qc_rejection_reason_fatal',
+    'pending_virtual_attributes',
+    'grade',
+    'Product Images',
+    'Arabic (Optional)',
+    "Add this content to enhance your product's discoverability on noon."
+  ]) {
     await assertBodyExcludes(page, text, 'Content');
   }
 
@@ -521,12 +530,6 @@ async function verifyContentTab(page) {
   } else {
     await page.waitForTimeout(500);
   }
-
-  await clickButton(page, '管理图片');
-  await page.getByText('图片管理').first().waitFor({ timeout: 15000 });
-  await page.getByRole('button', { name: '上传本地图片' }).first().waitFor({ timeout: 10000 });
-  await page.getByText('编号').first().waitFor({ timeout: 10000 });
-  await closeDrawer(page);
 }
 
 async function verifySizesTab(page) {

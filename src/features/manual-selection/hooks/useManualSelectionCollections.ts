@@ -1,5 +1,4 @@
-import { useMemo, useState } from 'react'
-import { filterManualSelectionCollections } from '../collectionFilters'
+import { useCallback, useState } from 'react'
 import type {
   ManualSelectionPageProps,
   ManualSelectionSearchValues
@@ -13,6 +12,7 @@ export function useManualSelectionCollections(props: ManualSelectionPageProps) {
     collections,
     setCollections,
     loading,
+    pagination,
     loadCollections
   } = useManualSelectionCollectionData(props)
   const {
@@ -24,19 +24,38 @@ export function useManualSelectionCollections(props: ManualSelectionPageProps) {
     setCollections
   })
 
-  const filteredCollections = useMemo(
-    () => filterManualSelectionCollections(collections, filters),
-    [collections, filters]
+  const searchCollections = useCallback(
+    (values: ManualSelectionSearchValues) => {
+      setFilters(values)
+      void loadCollections({
+        page: 1,
+        filters: values
+      })
+    },
+    [loadCollections]
+  )
+
+  const changePage = useCallback(
+    (page: number, pageSize: number) => {
+      void loadCollections({
+        page,
+        pageSize,
+        filters
+      })
+    },
+    [filters, loadCollections]
   )
 
   return {
     collections,
-    filteredCollections,
+    filteredCollections: collections,
     loading,
+    pagination,
     submitting,
+    changePage,
     createNewCollection,
     loadCollections,
     recollect,
-    setFilters
+    setFilters: searchCollections
   }
 }

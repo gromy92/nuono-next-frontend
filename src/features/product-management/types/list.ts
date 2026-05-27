@@ -13,12 +13,25 @@ export type ProductLastPublishTaskPayload = {
   changes?: Array<Record<string, unknown>>;
 };
 
+export type ProductLifecycleStatePayload = {
+  code?: string;
+  label?: string;
+  ruleVersion?: string;
+  analysisDate?: string;
+  listingDate?: string;
+  listingDateSource?: string;
+  qualityState?: string;
+  explanation?: string;
+  evidenceJson?: string;
+};
+
 export type ProductListFilters = {
   skuQuery: string;
   titleQuery: string;
   brandQuery: string;
   issueFilter: string;
   liveFilter: string;
+  lifecycleFilter: string;
   syncFilter: string;
   stockFilter: string;
 };
@@ -118,6 +131,7 @@ export type StoreInitializationPayload = {
     unitsSold?: number;
     salesAmount?: string;
     salesCurrency?: string;
+    lifecycleState?: ProductLifecycleStatePayload;
     lastPublishTask?: ProductLastPublishTaskPayload;
   }>;
 };
@@ -208,6 +222,7 @@ export type ProductListSummaryPayload = {
   unitsSold?: number;
   salesAmount?: string;
   salesCurrency?: string;
+  lifecycleState?: ProductLifecycleStatePayload;
   lastPublishTask?: ProductLastPublishTaskPayload;
 };
 
@@ -252,4 +267,5 @@ export type ProductSummarySurface = {
   unitsSold?: number;
   salesAmount?: string;
   salesCurrency?: string;
+  lifecycleState?: ProductLifecycleStatePayload;
 };

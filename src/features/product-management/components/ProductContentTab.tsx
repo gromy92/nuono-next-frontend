@@ -3,21 +3,18 @@ import { ProductAttributesPanel } from './ProductAttributesPanel';
 import { ProductBasicContentPanel } from './ProductBasicContentPanel';
 import { ProductClassificationEditor } from './ProductClassificationEditor';
 import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
-import { ProductImagesPanel } from './ProductImagesPanel';
 
 export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
   const {
     productContentDomain,
     productContentProgressDone,
     productContentProgressTotal,
-    productImageUrls,
     productAttributesDomain,
     productMainDomain,
     productSnapshotView,
     updateProductSectionField,
     updateProductMultilineField,
-    updateProductAttributeField,
-    openCurrentProductGallery
+    updateProductAttributeField
   } = props;
 
   return (
@@ -35,14 +32,6 @@ export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
         productSnapshotView={productSnapshotView}
         updateProductSectionField={updateProductSectionField}
         updateProductMultilineField={updateProductMultilineField}
-      />
-
-      <ProductImagesPanel
-        productContentDomain={productContentDomain}
-        productSnapshotView={productSnapshotView}
-        productImageUrls={productImageUrls}
-        openCurrentProductGallery={openCurrentProductGallery}
-        onImagesChange={(images) => updateProductSectionField('content', 'images', images)}
       />
 
       <ProductAttributesPanel

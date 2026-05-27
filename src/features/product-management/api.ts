@@ -1,3 +1,4 @@
+import { apiFetch } from '../../shared/api';
 import type {
   ProductHistoryPayload,
   ProductListDatasetPayload,
@@ -121,7 +122,7 @@ async function readBackendError(response: Response, fallback: string) {
 }
 
 async function postJson<TResponse>(url: string, body: unknown, fallbackError: string): Promise<TResponse> {
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -149,7 +150,7 @@ export async function fetchStoreInitializationStatus({
   storeCode
 }: ProductStoreInitializationStatusRequest) {
   const query = `?ownerUserId=${ownerUserId}&storeCode=${encodeURIComponent(storeCode)}`;
-  const response = await fetch(`/api/store-sync/init-status${query}`);
+  const response = await apiFetch(`/api/store-sync/init-status${query}`);
 
   if (!response.ok) {
     throw new Error(await readBackendError(response, `后端返回 ${response.status}`));
@@ -172,7 +173,7 @@ export async function executeProductWorkbenchAction(request: ProductWorkbenchAct
 
 export async function fetchProductPublishTask(taskId: number, ownerUserId: number) {
   const query = `?ownerUserId=${ownerUserId}`;
-  const response = await fetch(`/api/product-master/publish-tasks/${taskId}${query}`);
+  const response = await apiFetch(`/api/product-master/publish-tasks/${taskId}${query}`);
 
   if (!response.ok) {
     throw new Error(await readBackendError(response, `发布任务返回 ${response.status}`));
@@ -228,7 +229,7 @@ export async function uploadProductImageAsset(file: File, context?: Partial<Prod
     formData.append('skuParent', context.skuParent);
   }
 
-  const response = await fetch('/api/product-master/image-assets', {
+  const response = await apiFetch('/api/product-master/image-assets', {
     method: 'POST',
     body: formData
   });
@@ -241,7 +242,7 @@ export async function uploadProductImageAsset(file: File, context?: Partial<Prod
 }
 
 export async function translateProductContentText(request: ProductContentTranslateRequest) {
-  const response = await fetch('/api/product-master/translate', {
+  const response = await apiFetch('/api/product-master/translate', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

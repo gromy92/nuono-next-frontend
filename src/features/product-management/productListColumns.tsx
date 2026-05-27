@@ -4,6 +4,7 @@ import {
   LiveStatusCell,
   PriceCell,
   ProductDetailsCell,
+  ProductLifecycleCell,
   ProductListColumnInfoTitle,
   PublishStatusCell,
   SellerStatusCell
@@ -64,6 +65,12 @@ export function createProductListColumns({
       key: 'inventory',
       width: 120,
       render: (_: unknown, record) => <InventoryCell record={record} />
+    },
+    {
+      title: <ProductListColumnInfoTitle label="生命周期" />,
+      key: 'lifecycle',
+      width: 126,
+      render: (_: unknown, record) => <ProductLifecycleCell record={record} />
     },
     {
       title: <ProductListColumnInfoTitle label="同步状态" />,

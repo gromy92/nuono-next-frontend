@@ -5,7 +5,6 @@ import type { ProductMasterSnapshotPayload } from '../types';
 import { normalizeStringList, textInputValue } from '../utils';
 import {
   FIELD_LABEL_STYLE,
-  type LangCode,
   type LoadingMap,
   type TranslationNotice,
   listWithValueAt,
@@ -15,6 +14,7 @@ import {
 } from './ProductContentTranslationEditor.helpers';
 
 const { Text } = Typography;
+type EditableTranslationLang = 'ZH' | 'EN';
 
 export function ProductContentTranslationEditor(props: {
   productSnapshotView?: ProductMasterSnapshotPayload;
@@ -52,7 +52,7 @@ export function ProductContentTranslationEditor(props: {
     updateProductSectionField('content', 'titleCn', value);
   };
 
-  const translate = async (text: string, targetLang: LangCode, loadingKey: string) => {
+  const translate = async (text: string, targetLang: EditableTranslationLang, loadingKey: string) => {
     return translateProductTextWithFeedback({
       text,
       targetLang,
@@ -63,7 +63,7 @@ export function ProductContentTranslationEditor(props: {
     });
   };
 
-  const translateTitle = async (sourceText: string, targetLang: LangCode, loadingKey: string) => {
+  const translateTitle = async (sourceText: string, targetLang: EditableTranslationLang, loadingKey: string) => {
     const translatedText = await translate(sourceText, targetLang, loadingKey);
     if (!translatedText) {
       return;
@@ -72,7 +72,7 @@ export function ProductContentTranslationEditor(props: {
       updateTitleZh(translatedText);
       return;
     }
-    updateProductSectionField('content', targetLang === 'EN' ? 'titleEn' : 'titleAr', translatedText);
+    updateProductSectionField('content', 'titleEn', translatedText);
   };
 
   const setHighlightZhValues = (values: string[]) => {
@@ -81,20 +81,19 @@ export function ProductContentTranslationEditor(props: {
     updateProductSectionField('content', 'highlightsZh', nextValues);
   };
 
-  const setHighlightValues = (lang: 'EN' | 'AR', values: string[]) => {
-    updateProductMultilineField(lang === 'EN' ? 'highlightsEn' : 'highlightsAr', trimTrailingEmpty(values).join('\n'));
+  const setHighlightEnValues = (values: string[]) => {
+    updateProductMultilineField('highlightsEn', trimTrailingEmpty(values).join('\n'));
   };
 
-  const updateHighlight = (lang: LangCode, index: number, value: string) => {
+  const updateHighlight = (lang: EditableTranslationLang, index: number, value: string) => {
     if (lang === 'ZH') {
       setHighlightZhValues(listWithValueAt(highlightsZh, index, value));
       return;
     }
-    const sourceValues = lang === 'EN' ? highlightsEn : highlightsAr;
-    setHighlightValues(lang, listWithValueAt(sourceValues, index, value));
+    setHighlightEnValues(listWithValueAt(highlightsEn, index, value));
   };
 
-  const translateHighlight = async (index: number, sourceText: string, targetLang: LangCode, loadingKey: string) => {
+  const translateHighlight = async (index: number, sourceText: string, targetLang: EditableTranslationLang, loadingKey: string) => {
     const translatedText = await translate(sourceText, targetLang, loadingKey);
     if (translatedText) {
       updateHighlight(targetLang, index, translatedText);
@@ -103,8 +102,7 @@ export function ProductContentTranslationEditor(props: {
 
   const removeHighlight = (index: number) => {
     setHighlightZhValues(highlightsZh.filter((_, currentIndex) => currentIndex !== index));
-    setHighlightValues('EN', highlightsEn.filter((_, currentIndex) => currentIndex !== index));
-    setHighlightValues('AR', highlightsAr.filter((_, currentIndex) => currentIndex !== index));
+    setHighlightEnValues(highlightsEn.filter((_, currentIndex) => currentIndex !== index));
   };
 
   const highlightRowCount = resolveHighlightRows(highlightsZh, highlightsEn, highlightsAr);
@@ -143,14 +141,6 @@ export function ProductContentTranslationEditor(props: {
               >
                 英语
               </Button>
-              <Button
-                aria-label="翻译标题中文到阿语"
-                size="small"
-                loading={loading['title-zh-ar']}
-                onClick={() => void translateTitle(titleZh, 'AR', 'title-zh-ar')}
-              >
-                阿语
-              </Button>
             </Space>
           </Col>
           <Col xs={24} md={8}>
@@ -172,22 +162,13 @@ export function ProductContentTranslationEditor(props: {
             </Button>
           </Col>
           <Col xs={24} md={9}>
-            <Text style={FIELD_LABEL_STYLE}>阿拉伯语</Text>
+            <Text style={FIELD_LABEL_STYLE}>阿语只读</Text>
             <Input.TextArea
               aria-label="标题阿语"
               autoSize={{ minRows: 3, maxRows: 6 }}
+              readOnly
               value={titleAr}
-              onChange={(event) => updateProductSectionField('content', 'titleAr', event.target.value)}
             />
-            <Button
-              aria-label="翻译标题阿语到中文"
-              size="small"
-              loading={loading['title-ar-zh']}
-              style={{ marginTop: 8 }}
-              onClick={() => void translateTitle(titleAr, 'ZH', 'title-ar-zh')}
-            >
-              中文
-            </Button>
           </Col>
         </Row>
       </div>
@@ -220,14 +201,6 @@ export function ProductContentTranslationEditor(props: {
                     >
                       英语
                     </Button>
-                    <Button
-                      aria-label={`翻译卖点 ${index + 1} 中文到阿语`}
-                      size="small"
-                      loading={loading[`highlight-${index}-zh-ar`]}
-                      onClick={() => void translateHighlight(index, highlightsZh[index] ?? '', 'AR', `highlight-${index}-zh-ar`)}
-                    >
-                      阿语
-                    </Button>
                   </Space>
                 </Col>
                 <Col xs={24} md={8}>
@@ -252,19 +225,10 @@ export function ProductContentTranslationEditor(props: {
                   <Input.TextArea
                     aria-label={`卖点 ${index + 1} 阿语`}
                     autoSize={{ minRows: 3, maxRows: 6 }}
-                    placeholder="阿拉伯语"
+                    placeholder="阿语只读"
+                    readOnly
                     value={highlightsAr[index] ?? ''}
-                    onChange={(event) => updateHighlight('AR', index, event.target.value)}
                   />
-                  <Button
-                    aria-label={`翻译卖点 ${index + 1} 阿语到中文`}
-                    size="small"
-                    loading={loading[`highlight-${index}-ar-zh`]}
-                    style={{ marginTop: 8 }}
-                    onClick={() => void translateHighlight(index, highlightsAr[index] ?? '', 'ZH', `highlight-${index}-ar-zh`)}
-                  >
-                    中文
-                  </Button>
                 </Col>
                 <Col xs={24} md={1}>
                   {highlightRowCount > 1 ? (

@@ -1,21 +1,14 @@
-import { Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import type {
-  ProductSelectionSourceCollection,
-  SourceCollectionStatus
-} from '../../source-collection/types'
-import { formatManualSelectionCollectedAt } from '../utils'
+import type { ProductSelectionSourceCollection } from '../../source-collection/types'
 import { ActionCell } from './ManualSelectionTable.actions'
 import {
   Ali1688StatusCell,
-  CompletenessCell,
+  CollectedAtCell,
+  CollectionStatusCell,
   SkuCountCell,
   SourceImageCell,
-  SourceStatusCell,
-  SourceTitleCell
+  SourceNameCell,
 } from './ManualSelectionTable.cells'
-
-const { Text } = Typography
 
 type ManualSelectionTableColumnOptions = {
   recollecting: boolean
@@ -31,67 +24,45 @@ export function buildManualSelectionTableColumns(
       title: '主图',
       dataIndex: 'sourceImageUrl',
       key: 'sourceImageUrl',
-      width: 130,
+      width: 132,
       render: (value: string, record) => <SourceImageCell value={value} record={record} />
     },
     {
-      title: '三方渠道',
-      dataIndex: 'sourcePlatform',
-      key: 'sourcePlatform',
-      width: 130,
-      render: (value: string) => <Text>{value || '-'}</Text>
+      title: '名称',
+      key: 'sourceName',
+      width: 430,
+      render: (_value, record) => <SourceNameCell record={record} />
     },
     {
-      title: '英文名',
-      dataIndex: 'sourceTitle',
-      key: 'sourceTitle',
-      width: 330,
-      render: (value: string, record) => <SourceTitleCell value={value} record={record} />
+      title: '采集状态',
+      key: 'collectionStatus',
+      width: 198,
+      render: (_value, record) => <CollectionStatusCell record={record} />
     },
     {
-      title: '中文名',
-      dataIndex: 'sourceTitleCn',
-      key: 'sourceTitleCn',
-      width: 170,
-      render: (value: string, record) => value || record.selectedText || '-'
-    },
-    {
-      title: '采集完整度',
-      key: 'collectedCompleteness',
-      width: 150,
-      render: (_value, record) => <CompletenessCell record={record} />
+      title: '1688查询',
+      key: 'ali1688Query',
+      width: 224,
+      render: (_value, record) => <Ali1688StatusCell record={record} />
     },
     {
       title: '采集时间',
       dataIndex: 'collectedAt',
       key: 'collectedAt',
-      width: 170,
-      render: (value: string) => formatManualSelectionCollectedAt(value)
-    },
-    {
-      title: '源头采集',
-      dataIndex: 'status',
-      key: 'status',
-      width: 150,
-      render: (value: SourceCollectionStatus, record) => <SourceStatusCell value={value} record={record} />
-    },
-    {
-      title: '1688查询',
-      key: 'ali1688Query',
-      width: 240,
-      render: (_value, record) => <Ali1688StatusCell record={record} />
+      width: 176,
+      render: (value: string, record) => <CollectedAtCell value={value} record={record} />
     },
     {
       title: 'sku数量',
       key: 'skuNum',
-      width: 110,
+      width: 80,
       align: 'center',
       render: (_value, record) => <SkuCountCell record={record} />
     },
     {
       title: '操作',
       key: 'action',
-      width: 160,
+      width: 112,
       fixed: 'right',
       render: (_value, record) => <ActionCell record={record} {...options} />
     }

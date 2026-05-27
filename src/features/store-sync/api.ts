@@ -1,4 +1,4 @@
-import { parseApiResponse } from '../../shared/api';
+import { apiFetch, parseApiResponse } from '../../shared/api';
 import type {
   StoreBindPayload,
   StoreConnectionTestResult,
@@ -8,12 +8,12 @@ import type {
 
 export async function fetchStoreSyncOverview(ownerUserId?: number) {
   const query = ownerUserId ? `?ownerUserId=${ownerUserId}` : '';
-  return parseApiResponse<StoreSyncOverviewPayload>(await fetch(`/api/store-sync/overview${query}`));
+  return parseApiResponse<StoreSyncOverviewPayload>(await apiFetch(`/api/store-sync/overview${query}`));
 }
 
 export async function bindStoreSyncStore(payload: StoreBindPayload) {
   return parseApiResponse<{ message?: string }>(
-    await fetch('/api/store-sync/bind', {
+    await apiFetch('/api/store-sync/bind', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -25,7 +25,7 @@ export async function bindStoreSyncStore(payload: StoreBindPayload) {
 
 export async function createStoreSyncStore(payload: StoreCreatePayload) {
   return parseApiResponse<{ message?: string }>(
-    await fetch('/api/store-sync/create-store', {
+    await apiFetch('/api/store-sync/create-store', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -37,7 +37,7 @@ export async function createStoreSyncStore(payload: StoreCreatePayload) {
 
 export async function testStoreSyncConnection(ownerUserId: number, storeCode: string) {
   return parseApiResponse<StoreConnectionTestResult>(
-    await fetch(
+    await apiFetch(
       `/api/store-sync/test-connection?ownerUserId=${ownerUserId}&storeCode=${encodeURIComponent(storeCode)}`,
       { signal: AbortSignal.timeout(15000) }
     )

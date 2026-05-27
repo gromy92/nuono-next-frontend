@@ -45,6 +45,8 @@ export function filterAndSortProductListItems({
     const matchesTitle = !titleQuery || String(item.title ?? '').toLowerCase().includes(titleQuery);
     const matchesBrand = !brandQuery || String(item.brand ?? '').toLowerCase().includes(brandQuery);
     const matchesIssue = filters.issueFilter === 'all' || productListIssueTags(item).includes(filters.issueFilter);
+    const lifecycleCode = String(item.lifecycleState?.code ?? 'pending');
+    const matchesLifecycle = filters.lifecycleFilter === 'all' || lifecycleCode === filters.lifecycleFilter;
     const online = isProductListRowOnline(item);
     const matchesLive =
       filters.liveFilter === 'all' ||
@@ -60,7 +62,7 @@ export function filterAndSortProductListItems({
       (filters.stockFilter === 'supermall' && Number(item.totalSupermallStock ?? 0) > 0) ||
       (filters.stockFilter === 'fbp' && Number(item.totalFbpStock ?? 0) > 0);
 
-    return matchesSku && matchesTitle && matchesBrand && matchesIssue && matchesLive && matchesSync && matchesStock;
+    return matchesSku && matchesTitle && matchesBrand && matchesIssue && matchesLifecycle && matchesLive && matchesSync && matchesStock;
   });
 
   return [...filteredItems].sort((left, right) => {

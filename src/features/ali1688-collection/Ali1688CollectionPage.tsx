@@ -5,17 +5,31 @@ import {
   ReloadOutlined,
   SearchOutlined
 } from '@ant-design/icons'
-import { Button, Empty, Input, Progress, Segmented, Select, Spin, Tag, Typography, message } from 'antd'
+import { Alert, Button, Empty, Input, Progress, Segmented, Select, Spin, Tag, Typography, message } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type {
+  Ali1688CandidateGateState,
   Ali1688CandidateLevel,
   Ali1688CandidatePreview,
   Ali1688CollectionStatus,
   Ali1688CollectionView,
+  Ali1688PluginAssignmentView,
   ProductSelectionSourceCollection
 } from '../source-collection/types'
-import { buildSourceCollectionAli1688View } from '../source-collection/ali1688'
-import { loadAli1688Collections, recollectAli1688Collection, retryAli1688Collection } from '../source-collection/api'
+import {
+  buildSourceCollectionAli1688View,
+  canCreateAli1688PluginAssignment,
+  resolveAli1688FieldRestriction,
+  resolveAli1688GatewayBanner,
+  resolveAli1688PluginStatusLabel,
+  type Ali1688FieldRestriction
+} from '../source-collection/ali1688'
+import {
+  createAli1688PluginAssignment,
+  loadAli1688Collections,
+  recollectAli1688Collection,
+  retryAli1688Collection
+} from '../source-collection/api'
 import { inquiryStatusMeta } from '../procurement-confirmation/statusMeta'
 import type { ProcurementInquiryStatus } from '../procurement-confirmation/types'
 import './Ali1688CollectionPage.css'
@@ -23,6 +37,7 @@ import './Ali1688CollectionPage.css'
 const { Paragraph, Text } = Typography
 
 type Ali1688TaskFilter = 'all' | 'collecting' | 'review' | 'ready' | 'exception'
+type Ali1688CandidateGateFilter = 'all' | 'ai' | 'mismatch' | 'spec' | 'pricePending' | 'priceFailed' | 'eligible'
 
 type Ali1688Task = {
   record: ProductSelectionSourceCollection
@@ -40,7 +55,7 @@ type StatusMeta = {
 }
 
 type ProcurementStageMeta = {
-  status: ProcurementInquiryStatus
+  status: ProcurementInquiryStatus | 'PRICE_CONFIRMATION_REQUIRED' | Ali1688CandidateGateState
   label: string
   color: string
   description: string
@@ -83,6 +98,27 @@ const CANDIDATE_LEVEL_META: Record<Ali1688CandidateLevel, StatusMeta> = {
   reject: { label: '淘汰', color: 'default', tone: 'neutral' }
 }
 
+const CANDIDATE_GATE_FILTER_LABELS: Record<Ali1688CandidateGateFilter, string> = {
+  all: '全部',
+  ai: '待AI',
+  mismatch: '低匹配',
+  spec: '规格确认',
+  pricePending: '待取价',
+  priceFailed: '价格异常',
+  eligible: '可询盘'
+}
+
+const CANDIDATE_GATE_COLORS: Record<string, string> = {
+  ai_pending: 'default',
+  ai_failed: 'error',
+  mismatch_rejected: 'error',
+  spec_uncertain: 'warning',
+  price_probe_pending: 'warning',
+  price_probe_failed: 'error',
+  price_confirmed: 'blue',
+  inquiry_eligible: 'success'
+}
+
 const PROCUREMENT_STAGE_LABELS: Record<ProcurementInquiryStatus, string> = {
   BACKUP_POOL: '待入Top5',
   IN_POOL_WAITING_SEND: '待自动询盘',
@@ -122,7 +158,7 @@ const SCORE_BREAKDOWN_ITEMS: Array<{
 }> = [
   { key: 'matchScore', label: '匹配', max: 35 },
   { key: 'specScore', label: '规格', max: 20 },
-  { key: 'priceScore', label: '价格', max: 15 },
+  { key: 'priceScore', label: '价格线索', max: 15 },
   { key: 'moqScore', label: 'MOQ', max: 10 },
   { key: 'supplierScore', label: '供应商', max: 12 },
   { key: 'deliveryScore', label: '物流', max: 8 }
@@ -147,6 +183,7 @@ export function Ali1688CollectionPage(props: Ali1688CollectionPageProps) {
   const [sourceFilter, setSourceFilter] = useState('all')
   const [taskFilter, setTaskFilter] = useState<Ali1688TaskFilter>('all')
   const [actionKey, setActionKey] = useState<string>()
+  const [pluginAssignments, setPluginAssignments] = useState<Record<string, Ali1688PluginAssignmentView>>({})
 
   const loadCollections = useCallback(async () => {
     setLoading(true)
@@ -266,6 +303,27 @@ export function Ali1688CollectionPage(props: Ali1688CollectionPageProps) {
     }
   }, [loadCollections])
 
+  const handleCreatePluginAssignment = useCallback(async (task: Ali1688Task) => {
+    const taskId = getTaskId(task)
+    if (!taskId) {
+      message.warning('缺少1688任务ID，无法创建插件任务。')
+      return
+    }
+    setActionKey(`plugin:${taskId}`)
+    try {
+      const assignment = await createAli1688PluginAssignment(taskId)
+      setPluginAssignments((current) => ({
+        ...current,
+        [taskId]: assignment
+      }))
+      message.success('已创建插件采集任务。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '创建插件采集任务失败')
+    } finally {
+      setActionKey(undefined)
+    }
+  }, [])
+
   const filterOptions = (Object.keys(TASK_FILTER_LABELS) as Ali1688TaskFilter[]).map((key) => ({
     label: `${TASK_FILTER_LABELS[key]} ${key === 'all' ? tasks.length : tasks.filter((task) => task.group === key).length}`,
     value: key
@@ -321,8 +379,10 @@ export function Ali1688CollectionPage(props: Ali1688CollectionPageProps) {
               <TaskDetail
                 task={selectedTask}
                 actionKey={actionKey}
+                pluginAssignment={pluginAssignments[getTaskId(selectedTask) || '']}
                 onRecollect={handleRecollectTask}
                 onRetry={handleRetryTask}
+                onCreatePluginAssignment={handleCreatePluginAssignment}
               />
             ) : (
               <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请选择查询记录" />
@@ -378,18 +438,29 @@ function TaskCard(props: {
 function TaskDetail(props: {
   task: Ali1688Task
   actionKey?: string
+  pluginAssignment?: Ali1688PluginAssignmentView
   onRecollect: (task: Ali1688Task) => void
   onRetry: (task: Ali1688Task) => void
+  onCreatePluginAssignment: (task: Ali1688Task) => void
 }) {
   const { task } = props
   const { record, view } = task
   const candidates = view.candidates || []
+  const [candidateGateFilter, setCandidateGateFilter] = useState<Ali1688CandidateGateFilter>('all')
   const primaryImage = record.sourceImageUrl || record.imageUrls?.[0]
   const pendingSlotCount = resolvePendingSlotCount(view, candidates.length)
   const taskId = getTaskId(task)
   const sourceCollectionId = getSourceCollectionId(task)
   const canRetry = view.status === 'failed' && Boolean(taskId)
   const canRecollect = view.status !== 'queued' && view.status !== 'running' && Boolean(sourceCollectionId)
+  const pluginAssignment = props.pluginAssignment || view.pluginAssignment
+  const canCreatePluginAssignment = canCreateAli1688PluginAssignment(view, taskId)
+  const detailBlocked = view.detailCompletionStatus === 'blocked_by_captcha'
+  const gatewayBanner = resolveAli1688GatewayBanner(view)
+  const fieldRestriction = resolveAli1688FieldRestriction(view)
+  const hasGate = candidates.some((candidate) => Boolean(candidate.gate?.state))
+  const candidateGateFilterOptions = buildCandidateGateFilterOptions(candidates)
+  const filteredCandidates = filterCandidatesByGate(candidates, candidateGateFilter)
 
   return (
     <>
@@ -400,7 +471,7 @@ function TaskDetail(props: {
             <span>
               {pendingSlotCount
                 ? `查询过程中预留 ${pendingSlotCount} 个待选位`
-                : `共 ${view.candidateCount ?? candidates.length} 个，推荐 ${view.recommendedCount ?? 0} 个`}
+                : buildCandidatePoolSummary(view, candidates)}
             </span>
           </div>
           <div className="ali1688-task-actions">
@@ -424,16 +495,59 @@ function TaskDetail(props: {
                 重跑
               </Button>
             ) : null}
+            {canCreatePluginAssignment ? (
+              <Button
+                size="small"
+                type="primary"
+                loading={props.actionKey === `plugin:${taskId}`}
+                onClick={() => props.onCreatePluginAssignment(task)}
+              >
+                用浏览器插件采集
+              </Button>
+            ) : null}
           </div>
         </div>
 
+        {gatewayBanner ? (
+          <Alert
+            showIcon
+            type="warning"
+            message={gatewayBanner.message}
+            description={gatewayBanner.description}
+          />
+        ) : null}
+
+        {detailBlocked ? (
+          <Alert
+            showIcon
+            type="warning"
+            message="部分详情字段因 1688 详情页受限待补充"
+            description={view.detailCompletionMessage || '候选商品已保留，价格、起订和发货地等待详情页恢复后补充。'}
+          />
+        ) : null}
+
+        {pluginAssignment || canCreatePluginAssignment ? (
+          <PluginAssignmentPanel assignment={pluginAssignment} />
+        ) : null}
+
+        {hasGate ? (
+          <Segmented
+            className="ali1688-candidate-gate-filter"
+            data-testid="ali1688-candidate-gate-filter"
+            options={candidateGateFilterOptions}
+            value={candidateGateFilter}
+            onChange={(value) => setCandidateGateFilter(value as Ali1688CandidateGateFilter)}
+          />
+        ) : null}
+
         {candidates.length ? (
           <div className="ali1688-candidate-grid">
-            {candidates.map((candidate) => (
+            {filteredCandidates.map((candidate) => (
               <CandidateCard
                 key={candidate.id}
                 candidate={candidate}
                 fallbackImage={primaryImage}
+                fieldRestriction={fieldRestriction}
               />
             ))}
           </div>
@@ -474,12 +588,16 @@ function PendingCandidateSlots(props: { count: number; status: Ali1688Collection
 function CandidateCard(props: {
   candidate: Ali1688CandidatePreview
   fallbackImage?: string
+  fieldRestriction?: Ali1688FieldRestriction
 }) {
   const { candidate } = props
   const levelMeta = CANDIDATE_LEVEL_META[candidate.level]
   const stage = resolveCandidateStage(candidate)
   const scoring = resolveCandidateScoring(candidate)
   const images = buildCandidateImages(candidate, props.fallbackImage)
+  const missingDetailText = resolveMissingDetailText(props.fieldRestriction, '待解析')
+  const missingLocationText = resolveMissingDetailText(props.fieldRestriction, '地区待解析')
+  const priceDisplay = resolveCandidatePriceDisplay(candidate, missingDetailText)
   return (
     <article className={`ali1688-candidate-card is-${levelMeta.tone}`}>
       <CandidateImageCarousel title={candidate.title} rankNo={candidate.rankNo} images={images} />
@@ -487,7 +605,7 @@ function CandidateCard(props: {
         <div className="ali1688-candidate-topline">
           <div className="ali1688-candidate-tags">
             <Tag color={levelMeta.color}>{levelMeta.label}</Tag>
-            <Text type="secondary">{candidate.locationText || '地区待解析'}</Text>
+            <Text type="secondary">{candidate.locationText || missingLocationText}</Text>
           </div>
           <ScoreBadge score={scoring.totalScore} label={scoring.label} />
         </div>
@@ -497,8 +615,9 @@ function CandidateCard(props: {
         <div className="ali1688-candidate-supplier">{candidate.supplierName}</div>
         <CandidateStageLine stage={stage} />
         <div className="ali1688-candidate-price-line">
-          <span>价格 {candidate.priceText || '待解析'}</span>
-          <span>起订 {candidate.moqText || '待解析'}</span>
+          <span>{priceDisplay.label} {priceDisplay.text}</span>
+          {priceDisplay.badge ? <Tag className="ali1688-price-state-tag">{priceDisplay.badge}</Tag> : null}
+          <span>起订 {candidate.moqText || missingDetailText}</span>
         </div>
         <ScoreBreakdownPanel scoring={scoring} />
         <div className="ali1688-candidate-actions">
@@ -511,25 +630,115 @@ function CandidateCard(props: {
   )
 }
 
+function resolveMissingDetailText(restriction: Ali1688FieldRestriction | undefined, fallback: string) {
+  if (restriction === 'detail_blocked') {
+    return '详情页受限 / 待补充'
+  }
+  if (restriction === 'gateway_blocked' || restriction === 'plugin_assisted') {
+    return '待补充'
+  }
+  return fallback
+}
+
+function PluginAssignmentPanel(props: { assignment?: Ali1688PluginAssignmentView }) {
+  const { assignment } = props
+  return (
+    <div className="ali1688-plugin-assignment" data-testid="ali1688-plugin-assignment-panel">
+      <div className="ali1688-plugin-assignment-head">
+        <strong>{resolveAli1688PluginStatusLabel(assignment?.status)}</strong>
+        {assignment?.status ? <Tag color={pluginAssignmentStatusColor(assignment.status)}>{assignment.status}</Tag> : null}
+      </div>
+      <div className="ali1688-plugin-assignment-grid">
+        {assignment?.assignmentCode ? (
+          <div>
+            <span>插件任务码</span>
+            <strong>{assignment.assignmentCode}</strong>
+          </div>
+        ) : null}
+        {assignment?.assignmentId ? (
+          <div>
+            <span>任务ID</span>
+            <strong>任务ID {assignment.assignmentId}</strong>
+          </div>
+        ) : null}
+        {assignment?.expiresAt ? (
+          <div>
+            <span>过期时间</span>
+            <strong>{assignment.expiresAt}</strong>
+          </div>
+        ) : null}
+      </div>
+      <Text type="secondary">
+        请先登录插件。任务码只用于定位任务，插件仍需使用 Nuono 系统账号登录后提交候选。
+      </Text>
+      {assignment?.message ? <Text type="secondary">{assignment.message}</Text> : null}
+      {assignment?.failureMessage ? <Text type="danger">{assignment.failureMessage}</Text> : null}
+    </div>
+  )
+}
+
+function pluginAssignmentStatusColor(status?: string) {
+  if (status === 'accepted') {
+    return 'success'
+  }
+  if (status === 'failed' || status === 'expired' || status === 'cancelled') {
+    return 'error'
+  }
+  if (status === 'running') {
+    return 'processing'
+  }
+  return 'blue'
+}
+
 function CandidateImageCarousel(props: { title: string; rankNo: number; images: string[] }) {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const activeImage = props.images[currentIndex]
+  const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set())
+  const imageKey = props.images.join('\n')
+  const visibleImages = props.images.filter((image) => !failedImages.has(image))
+  const safeIndex = visibleImages.length ? Math.min(currentIndex, visibleImages.length - 1) : 0
+  const activeImage = visibleImages[safeIndex]
+
+  useEffect(() => {
+    setCurrentIndex(0)
+    setFailedImages(new Set())
+  }, [imageKey])
+
   const goPrevious = () => {
-    setCurrentIndex((current) => (current === 0 ? props.images.length - 1 : current - 1))
+    setCurrentIndex((current) => (current === 0 ? visibleImages.length - 1 : current - 1))
   }
   const goNext = () => {
-    setCurrentIndex((current) => (current + 1) % props.images.length)
+    setCurrentIndex((current) => (current + 1) % visibleImages.length)
+  }
+  const markActiveImageFailed = () => {
+    if (!activeImage) {
+      return
+    }
+    setFailedImages((current) => {
+      if (current.has(activeImage)) {
+        return current
+      }
+      const next = new Set(current)
+      next.add(activeImage)
+      return next
+    })
+    setCurrentIndex(0)
   }
 
   return (
     <div className="ali1688-candidate-carousel">
       {activeImage ? (
-        <img src={activeImage} alt={`${props.title} ${currentIndex + 1}`} />
+        <img
+          src={buildDisplayCandidateImageUrl(activeImage)}
+          alt={`${props.title} ${safeIndex + 1}`}
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onError={markActiveImageFailed}
+        />
       ) : (
         <div className="ali1688-image-placeholder">NO IMAGE</div>
       )}
       <span className="ali1688-candidate-rank">#{props.rankNo}</span>
-      {props.images.length > 1 ? (
+      {visibleImages.length > 1 ? (
         <>
           <button type="button" className="ali1688-carousel-arrow is-left" aria-label="上一张" onClick={goPrevious}>
             <LeftOutlined />
@@ -537,15 +746,23 @@ function CandidateImageCarousel(props: { title: string; rankNo: number; images: 
           <button type="button" className="ali1688-carousel-arrow is-right" aria-label="下一张" onClick={goNext}>
             <RightOutlined />
           </button>
-          <div className="ali1688-carousel-dots" aria-label={`${props.images.length} 张图片`}>
-            {props.images.map((image, index) => (
-              <i key={`${image}-${index}`} className={index === currentIndex ? 'is-active' : undefined} />
+          <div className="ali1688-carousel-dots" aria-label={`${visibleImages.length} 张图片`}>
+            {visibleImages.map((image, index) => (
+              <i key={`${image}-${index}`} className={index === safeIndex ? 'is-active' : undefined} />
             ))}
           </div>
         </>
       ) : null}
     </div>
   )
+}
+
+function buildDisplayCandidateImageUrl(imageUrl: string) {
+  if (!/alicdn\.com/i.test(imageUrl)) {
+    return imageUrl
+  }
+
+  return `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}nuono_img=1`
 }
 
 function ScoreBadge(props: { score?: number; label: CandidateScoring['label'] }) {
@@ -644,6 +861,13 @@ function resolvePendingSlotStage(_status: Ali1688CollectionStatus, _index: numbe
 }
 
 function resolveCandidateStage(candidate: Ali1688CandidatePreview): ProcurementStageMeta {
+  if (candidate.gate?.state) {
+    return getCandidateGateStageMeta(
+      candidate.gate.state,
+      candidate.gate.label,
+      candidate.inquiryEligibility?.reason || candidate.gate.reason
+    )
+  }
   const candidateWithStage = candidate as Ali1688CandidatePreview & {
     inquiryStatus?: string
     procurementInquiryStatus?: string
@@ -655,6 +879,13 @@ function resolveCandidateStage(candidate: Ali1688CandidatePreview): ProcurementS
     candidateWithStage.poolInquiryStatus
   ].find(isProcurementInquiryStatus)
 
+  if (
+    candidateWithStage.procurementInquiryStatus === 'PRICE_CONFIRMATION_REQUIRED'
+    || candidate.priceState === 'list_hint_only'
+    || candidate.autoInquiryEligible === false
+  ) {
+    return getPriceConfirmationRequiredStageMeta()
+  }
   if (explicitStatus) {
     return getProcurementStageMeta(explicitStatus)
   }
@@ -667,13 +898,127 @@ function resolveCandidateStage(candidate: Ali1688CandidatePreview): ProcurementS
   return getProcurementStageMeta('BACKUP_POOL')
 }
 
+function buildCandidatePoolSummary(view: Ali1688CollectionView, candidates: Ali1688CandidatePreview[]) {
+  const candidateCount = view.candidateCount ?? candidates.length
+  const recommendedCount = view.recommendedCount ?? 0
+  if (view.inquiryEligibleCount == null && view.inquiryBlockedCount == null) {
+    return `共 ${candidateCount} 个，推荐 ${recommendedCount} 个`
+  }
+  const eligibleCount = view.inquiryEligibleCount ?? candidates.filter((candidate) => candidate.autoInquiryEligible).length
+  const blockedCount = view.inquiryBlockedCount ?? Math.max(0, candidateCount - eligibleCount)
+  return `共 ${candidateCount} 个，推荐 ${recommendedCount} 个，可询盘池 ${eligibleCount} 个，待复核 ${blockedCount} 个`
+}
+
+function buildCandidateGateFilterOptions(candidates: Ali1688CandidatePreview[]) {
+  const counts: Record<Ali1688CandidateGateFilter, number> = {
+    all: candidates.length,
+    ai: 0,
+    mismatch: 0,
+    spec: 0,
+    pricePending: 0,
+    priceFailed: 0,
+    eligible: 0
+  }
+  candidates.forEach((candidate) => {
+    const filter = resolveCandidateGateFilter(candidate)
+    if (filter !== 'all') {
+      counts[filter] += 1
+    }
+  })
+  return (Object.keys(CANDIDATE_GATE_FILTER_LABELS) as Ali1688CandidateGateFilter[]).map((key) => ({
+    label: `${CANDIDATE_GATE_FILTER_LABELS[key]} ${counts[key]}`,
+    value: key
+  }))
+}
+
+function filterCandidatesByGate(candidates: Ali1688CandidatePreview[], filter: Ali1688CandidateGateFilter) {
+  if (filter === 'all') {
+    return candidates
+  }
+  return candidates.filter((candidate) => resolveCandidateGateFilter(candidate) === filter)
+}
+
+function resolveCandidateGateFilter(candidate: Ali1688CandidatePreview): Ali1688CandidateGateFilter {
+  switch (candidate.gate?.state) {
+    case 'ai_pending':
+    case 'ai_failed':
+      return 'ai'
+    case 'mismatch_rejected':
+      return 'mismatch'
+    case 'spec_uncertain':
+      return 'spec'
+    case 'price_probe_pending':
+    case 'price_confirmed':
+      return 'pricePending'
+    case 'price_probe_failed':
+      return 'priceFailed'
+    case 'inquiry_eligible':
+      return 'eligible'
+    default:
+      return 'all'
+  }
+}
+
+function getCandidateGateStageMeta(
+  state: Ali1688CandidateGateState,
+  label?: string,
+  reason?: string
+): ProcurementStageMeta {
+  return {
+    status: state,
+    label: label || CANDIDATE_GATE_FILTER_LABELS[resolveCandidateGateFilterFromState(state)] || '门禁待确认',
+    color: CANDIDATE_GATE_COLORS[state] || 'default',
+    description: reason || '候选门禁状态待确认。'
+  }
+}
+
+function resolveCandidateGateFilterFromState(state: Ali1688CandidateGateState): Ali1688CandidateGateFilter {
+  switch (state) {
+    case 'ai_pending':
+    case 'ai_failed':
+      return 'ai'
+    case 'mismatch_rejected':
+      return 'mismatch'
+    case 'spec_uncertain':
+      return 'spec'
+    case 'price_probe_pending':
+    case 'price_confirmed':
+      return 'pricePending'
+    case 'price_probe_failed':
+      return 'priceFailed'
+    case 'inquiry_eligible':
+      return 'eligible'
+    default:
+      return 'all'
+  }
+}
+
 function buildCandidateImages(candidate: Ali1688CandidatePreview, fallbackImage?: string) {
   const candidateWithImages = candidate as Ali1688CandidatePreview & {
     imageUrls?: string[]
   }
-  return Array.from(
-    new Set([candidate.imageUrl, ...(candidateWithImages.imageUrls || []), fallbackImage].filter(Boolean) as string[])
-  )
+  const candidateImages = Array.from(new Set([candidate.imageUrl, ...(candidateWithImages.imageUrls || [])].filter(Boolean) as string[]))
+
+  if (candidateImages.length) {
+    return candidateImages
+  }
+
+  return fallbackImage ? [fallbackImage] : []
+}
+
+function resolveCandidatePriceDisplay(candidate: Ali1688CandidatePreview, fallback: string) {
+  if (candidate.priceState === 'price_confirmed' && candidate.confirmedPriceText) {
+    return {
+      label: '确认采购价',
+      text: candidate.confirmedPriceText,
+      badge: undefined
+    }
+  }
+  return {
+    label: '价格线索',
+    text: candidate.listPriceHintText || candidate.priceText || fallback,
+    badge: candidate.listPriceHintText || candidate.priceText ? '非真实采购价' : undefined
+  }
 }
 
 function resolveCandidateScoring(candidate: Ali1688CandidatePreview): CandidateScoring {
@@ -695,6 +1040,15 @@ function resolveCandidateScoring(candidate: Ali1688CandidatePreview): CandidateS
   return {
     label: '待评分',
     breakdown
+  }
+}
+
+function getPriceConfirmationRequiredStageMeta(): ProcurementStageMeta {
+  return {
+    status: 'PRICE_CONFIRMATION_REQUIRED',
+    label: '待真实价格',
+    color: 'warning',
+    description: '需真实价格确认后才可自动询盘'
   }
 }
 

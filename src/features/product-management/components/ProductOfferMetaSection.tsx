@@ -4,6 +4,7 @@ import type { ProductMasterSnapshotPayload, ProductSummarySurface } from '../typ
 import { siteOfferCode, textInputValue } from '../utils';
 
 const { Text } = Typography;
+const LOCAL_BARCODE_ATTRIBUTE_CODE = 'barcode';
 
 const WARRANTY_OPTIONS = [
   { value: '0', label: 'No warranty' },
@@ -16,7 +17,7 @@ const WARRANTY_OPTIONS = [
 function findBarcodeAttribute(productSnapshotView?: ProductMasterSnapshotPayload) {
   return productSnapshotView?.keyAttributes.find((item) => {
     const code = textInputValue(item.code).toLowerCase();
-    return ['barcode', 'gtin', 'ean', 'upc'].some((keyword) => code.includes(keyword));
+    return !Boolean(item.localOnly) && ['barcode', 'gtin', 'ean', 'upc'].some((keyword) => code.includes(keyword));
   });
 }
 
@@ -98,8 +99,8 @@ export function ProductOfferMetaSection(props: {
   );
   const primaryBarcode = barcodes[0] ?? '';
   const barcodeAttribute = useMemo(() => findBarcodeAttribute(productSnapshotView), [productSnapshotView]);
-  const barcodeAttributeCode = textInputValue(barcodeAttribute?.code);
-  const canAddBarcode = Boolean(barcodeAttributeCode);
+  const officialBarcodeAttributeCode = textInputValue(barcodeAttribute?.code);
+  const barcodeAttributeCode = officialBarcodeAttributeCode || LOCAL_BARCODE_ATTRIBUTE_CODE;
   const [barcodeDraft, setBarcodeDraft] = useState('');
   const warrantyValue = textInputValue(activeProductSiteOffer?.idWarranty ?? productSnapshotView?.pricing.idWarranty ?? '0') || '0';
 
@@ -121,16 +122,15 @@ export function ProductOfferMetaSection(props: {
     }
 
     const nextBarcodes = Array.from(new Set([...barcodes, nextBarcode]));
-    if (!barcodeAttributeCode) {
-      message.warning('当前官方模板没有 Barcode 写回字段，只能展示已有 Barcode。');
-      return;
-    }
-
     updateProductAttributeField(barcodeAttributeCode, 'commonValue', nextBarcodes.join(','));
     updateProductSectionField('identity', 'barcode', nextBarcodes[0] ?? nextBarcode);
     updateProductSectionField('identity', 'barcodes', nextBarcodes);
     setBarcodeDraft('');
-    message.warning('Barcode 已加入当前草稿；当前 Barcode 暂不支持发布到 Noon。');
+    message.warning(
+      officialBarcodeAttributeCode
+        ? 'Barcode 已加入当前草稿；当前 Barcode 暂不支持发布到 Noon。'
+        : 'Barcode 已作为本地草稿保存；当前官方模板没有 Barcode 写回字段，发布前会被阻断。'
+    );
   };
 
   return (
@@ -158,20 +158,19 @@ export function ProductOfferMetaSection(props: {
               placeholder="Enter Barcode"
               value={barcodeDraft}
               style={{ width: 'calc(100% - 112px)' }}
-              disabled={!canAddBarcode}
               onChange={(event) => setBarcodeDraft(event.target.value)}
             />
-            <Tooltip title={canAddBarcode ? undefined : '当前官方模板没有 Barcode 写回字段，只能展示已有 Barcode'}>
+            <Tooltip title={officialBarcodeAttributeCode ? undefined : '当前官方模板没有 Barcode 写回字段，新增值会作为本地草稿保存'}>
               <span style={{ width: 112 }}>
-                <Button disabled={!barcodeDraft.trim() || !canAddBarcode} style={{ width: '100%' }} onClick={submitBarcode}>
+                <Button disabled={!barcodeDraft.trim()} style={{ width: '100%' }} onClick={submitBarcode}>
                   添加 Barcode
                 </Button>
               </span>
             </Tooltip>
           </Space.Compact>
-          {!canAddBarcode ? (
+          {!officialBarcodeAttributeCode ? (
             <Text style={{ color: 'var(--pm-text-muted)', fontSize: 12 }}>
-              当前商品模板未提供 Barcode 写回字段，已有值仅作展示。
+              当前商品模板未提供 Barcode 写回字段，新增值会保存为本地草稿并在发布前阻断。
             </Text>
           ) : null}
         </Space>

@@ -1,10 +1,11 @@
 import { expect, Page } from '@playwright/test';
+import { appPath } from '../utils/navigation';
 
 export class LoginPage {
   constructor(private readonly page: Page) {}
 
   async goto() {
-    await this.page.goto('/login');
+    await this.page.goto(appPath('/login'));
     await this.expectLoaded();
   }
 

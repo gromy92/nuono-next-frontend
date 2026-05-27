@@ -125,6 +125,25 @@ export function ProductCatalogFilterBar({ workspace, activeOwnerId }: ProductCat
         />
         <Select
           allowClear
+          placeholder="生命周期"
+          value={productListDraftFilters.lifecycleFilter}
+          onChange={(value) =>
+            setProductListDraftFilters((currentValue) => ({ ...currentValue, lifecycleFilter: value ?? 'all' }))
+          }
+          style={{ flex: '1 1 122px', minWidth: 116, maxWidth: 150 }}
+          options={[
+            { label: '全部生命周期', value: 'all' },
+            { label: '新品', value: 'new' },
+            { label: '增长', value: 'growth' },
+            { label: '稳定', value: 'stable' },
+            { label: '衰退', value: 'decline' },
+            { label: '长尾期', value: 'longTail' },
+            { label: '数据不足', value: 'data_insufficient' },
+            { label: '待计算', value: 'pending' }
+          ]}
+        />
+        <Select
+          allowClear
           placeholder="库存"
           value={productListDraftFilters.stockFilter}
           onChange={(value) => setProductListDraftFilters((currentValue) => ({ ...currentValue, stockFilter: value ?? 'all' }))}

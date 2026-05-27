@@ -21,7 +21,9 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
   const {
     filteredCollections,
     loading,
+    pagination,
     submitting,
+    changePage,
     createNewCollection,
     loadCollections,
     recollect,
@@ -37,6 +39,10 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
     if (created) {
       newCollectionForm.resetFields()
       setNewCollectionModalOpen(false)
+      void loadCollections({
+        page: 1,
+        filters: searchForm.getFieldsValue()
+      })
     }
   }
 
@@ -53,8 +59,10 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
         <ManualSelectionTable
           dataSource={filteredCollections}
           loading={loading}
+          pagination={pagination}
           recollecting={submitting}
           onOpenDetail={setSelectedCollection}
+          onPageChange={changePage}
           onRecollect={(record) => void recollect(record)}
         />
       </Card>

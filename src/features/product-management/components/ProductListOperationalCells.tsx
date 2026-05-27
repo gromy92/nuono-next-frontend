@@ -76,6 +76,112 @@ export function InventoryCell({ record }: { record: ProductListRowPayload }) {
   );
 }
 
+function lifecycleColor(code?: string): 'success' | 'processing' | 'warning' | 'error' | 'default' | 'blue' {
+  if (code === 'growth') {
+    return 'blue';
+  }
+  if (code === 'stable') {
+    return 'success';
+  }
+  if (code === 'decline') {
+    return 'error';
+  }
+  if (code === 'new') {
+    return 'processing';
+  }
+  if (code === 'data_insufficient') {
+    return 'warning';
+  }
+  return 'default';
+}
+
+function parseLifecycleEvidence(evidenceJson?: string) {
+  if (!evidenceJson) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(evidenceJson);
+    return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {};
+  } catch {
+    return { raw: evidenceJson };
+  }
+}
+
+function ProductLifecyclePopoverContent({ record }: { record: ProductListRowPayload }) {
+  const lifecycle = record.lifecycleState;
+  const evidence = parseLifecycleEvidence(lifecycle?.evidenceJson);
+  const reason = String(evidence.reason ?? evidence.raw ?? '').trim();
+  const qualityReasons = Array.isArray(evidence.qualityReasons)
+    ? evidence.qualityReasons.map((value) => String(value)).filter(Boolean)
+    : [];
+
+  return (
+    <Space direction="vertical" size={8} style={{ minWidth: 300, maxWidth: 440 }}>
+      <Space wrap size={[6, 6]}>
+        <Tag color={lifecycleColor(lifecycle?.code)} style={{ marginInlineEnd: 0 }}>
+          {lifecycle?.label || '待计算'}
+        </Tag>
+        {lifecycle?.qualityState ? <Tag style={{ marginInlineEnd: 0 }}>{lifecycle.qualityState}</Tag> : null}
+      </Space>
+      <Space direction="vertical" size={4}>
+        <Text style={{ fontSize: 12 }}>规则版本：{lifecycle?.ruleVersion || 'DEFAULT_V1'}</Text>
+        {lifecycle?.analysisDate ? <Text style={{ fontSize: 12 }}>分析日期：{lifecycle.analysisDate}</Text> : null}
+        {lifecycle?.listingDate ? <Text style={{ fontSize: 12 }}>上架时间：{lifecycle.listingDate}</Text> : null}
+        {lifecycle?.listingDateSource ? <Text style={{ fontSize: 12 }}>上架来源：{lifecycle.listingDateSource}</Text> : null}
+      </Space>
+      {lifecycle?.explanation ? (
+        <Text style={{ fontSize: 12, lineHeight: '18px' }}>{lifecycle.explanation}</Text>
+      ) : null}
+      {reason ? <Text style={{ fontSize: 12 }}>证据：{reason}</Text> : null}
+      {qualityReasons.length ? (
+        <Space wrap size={[6, 4]}>
+          {qualityReasons.map((reasonItem) => (
+            <Tag key={reasonItem} color="default" style={{ marginInlineEnd: 0 }}>
+              {reasonItem}
+            </Tag>
+          ))}
+        </Space>
+      ) : null}
+    </Space>
+  );
+}
+
+export function ProductLifecycleCell({ record }: { record: ProductListRowPayload }) {
+  const lifecycle = record.lifecycleState;
+  const label = lifecycle?.label || '待计算';
+
+  return (
+    <Popover
+      trigger={['hover', 'click']}
+      title="生命周期证据"
+      content={<ProductLifecyclePopoverContent record={record} />}
+    >
+      <button
+        data-testid={`product-lifecycle-cell-${record.skuParent}`}
+        type="button"
+        style={{
+          width: '100%',
+          minHeight: 40,
+          padding: '7px 8px',
+          border: '1px solid #e5e7eb',
+          borderRadius: 6,
+          background: '#fff',
+          cursor: 'pointer',
+          textAlign: 'left'
+        }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <Tag color={lifecycleColor(lifecycle?.code)} style={{ marginInlineEnd: 0, fontWeight: 600 }}>
+          {label}
+        </Tag>
+        <Text type="secondary" style={{ display: 'block', marginTop: 4, fontSize: 11, lineHeight: '14px' }}>
+          {lifecycle?.qualityState || 'pending'}
+        </Text>
+      </button>
+    </Popover>
+  );
+}
+
 export function PerformanceCell() {
   return (
     <Space direction="vertical" size={3}>

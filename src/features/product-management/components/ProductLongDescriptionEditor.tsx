@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import type { ProductMasterSnapshotPayload } from '../types';
 import { textInputValue } from '../utils';
 import {
-  type LangCode,
   type LoadingMap,
   type TranslationNotice,
   translateProductTextWithFeedback
@@ -11,6 +10,7 @@ import {
 import { ProductRichTextEditor } from './ProductRichTextEditor';
 
 const { Text } = Typography;
+type EditableTranslationLang = 'ZH' | 'EN';
 
 function longDescriptionZh(productSnapshotView?: ProductMasterSnapshotPayload) {
   return (
@@ -45,7 +45,7 @@ export function ProductLongDescriptionEditor(props: {
     updateProductSectionField('content', 'descriptionCn', value);
   };
 
-  const translate = async (text: string, targetLang: LangCode, loadingKey: string) => {
+  const translate = async (text: string, targetLang: EditableTranslationLang, loadingKey: string) => {
     return translateProductTextWithFeedback({
       text,
       targetLang,
@@ -56,7 +56,7 @@ export function ProductLongDescriptionEditor(props: {
     });
   };
 
-  const translateDescription = async (sourceText: string, targetLang: LangCode, loadingKey: string) => {
+  const translateDescription = async (sourceText: string, targetLang: EditableTranslationLang, loadingKey: string) => {
     const translatedText = await translate(sourceText, targetLang, loadingKey);
     if (!translatedText) {
       return;
@@ -65,7 +65,7 @@ export function ProductLongDescriptionEditor(props: {
       updateDescriptionZh(translatedText);
       return;
     }
-    updateProductSectionField('content', targetLang === 'EN' ? 'descriptionEn' : 'descriptionAr', translatedText);
+    updateProductSectionField('content', 'descriptionEn', translatedText);
   };
 
   return (
@@ -102,9 +102,6 @@ export function ProductLongDescriptionEditor(props: {
             <Button size="small" loading={loading['description-zh-en']} onClick={() => void translateDescription(descriptionZh, 'EN', 'description-zh-en')}>
               英语
             </Button>
-            <Button size="small" loading={loading['description-zh-ar']} onClick={() => void translateDescription(descriptionZh, 'AR', 'description-zh-ar')}>
-              阿语
-            </Button>
           </Space>
         </Col>
         <Col xs={24} xl={8}>
@@ -125,21 +122,20 @@ export function ProductLongDescriptionEditor(props: {
           </Button>
         </Col>
         <Col xs={24} xl={8}>
-          <ProductRichTextEditor
-            {...richTextEditorSize}
-            label="阿拉伯语"
+          <Text style={{ display: 'block', color: 'var(--pm-text-muted)', marginBottom: 6 }}>阿语只读</Text>
+          <Input.TextArea
+            aria-label="长描述阿语只读"
+            autoSize={false}
+            placeholder="阿语只读"
+            readOnly
             value={descriptionAr}
-            placeholder="Arabic Description"
-            onChange={(nextValue) => updateProductSectionField('content', 'descriptionAr', nextValue)}
+            style={{
+              minHeight: richTextEditorSize.minHeight,
+              maxHeight: richTextEditorSize.maxHeight,
+              height: richTextEditorSize.maxHeight,
+              resize: 'vertical'
+            }}
           />
-          <Button
-            size="small"
-            loading={loading['description-ar-zh']}
-            style={{ marginTop: 8 }}
-            onClick={() => void translateDescription(descriptionAr, 'ZH', 'description-ar-zh')}
-          >
-            中文
-          </Button>
         </Col>
       </Row>
     </div>

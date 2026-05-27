@@ -6,6 +6,7 @@ export const defaultProductListFilters: ProductListFilters = {
   brandQuery: '',
   issueFilter: 'all',
   liveFilter: 'all',
+  lifecycleFilter: 'all',
   syncFilter: 'all',
   stockFilter: 'all'
 };

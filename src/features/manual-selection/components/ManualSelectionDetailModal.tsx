@@ -1,6 +1,5 @@
-import { Image, Modal, Progress, Typography } from 'antd'
+import { Modal, Progress, Typography } from 'antd'
 import type { ProductSelectionSourceCollection } from '../../source-collection/types'
-import { MANUAL_SELECTION_IMAGE_FALLBACK } from '../constants'
 import { manualSelectionCollectionUrl } from '../utils'
 import {
   DetailMetric,
@@ -47,7 +46,6 @@ export function ManualSelectionDetailModal({ record, onCancel }: ManualSelection
     <Modal
       title="采集详情"
       open={Boolean(record)}
-      data-testid="manual-selection-detail-modal"
       width={1080}
       className="manual-selection-detail-modal"
       footer={null}
@@ -66,16 +64,8 @@ export function ManualSelectionDetailModal({ record, onCancel }: ManualSelection
       onCancel={onCancel}
     >
       {record ? (
-        <div className="manual-selection-detail-content">
+        <div className="manual-selection-detail-content" data-testid="manual-selection-detail-modal">
           <div className="manual-selection-detail-hero">
-            <Image
-              alt={record.sourceTitle || sourceTitleCn || '源头商品主图'}
-              width={132}
-              height={132}
-              src={record.sourceImageUrl || MANUAL_SELECTION_IMAGE_FALLBACK}
-              fallback={MANUAL_SELECTION_IMAGE_FALLBACK}
-              className="manual-selection-detail-main-image"
-            />
             <div className="manual-selection-detail-hero-main">
               <div className="manual-selection-detail-progress">
                 <div className="manual-selection-detail-progress-head">

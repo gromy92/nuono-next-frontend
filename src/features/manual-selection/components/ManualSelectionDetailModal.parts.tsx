@@ -1,4 +1,5 @@
-import { Image, Typography } from 'antd'
+import { CopyOutlined } from '@ant-design/icons'
+import { Button, Image, Tooltip, Typography, message } from 'antd'
 import type { ReactNode } from 'react'
 import type { ProductSelectionSourceCollection } from '../../source-collection/types'
 import { MANUAL_SELECTION_IMAGE_FALLBACK } from '../constants'
@@ -199,22 +200,40 @@ export function isLikelyChineseTitle(value?: string) {
 
 export function TitleBlock(props: { label: string; value?: string; href?: string; rtl?: boolean }) {
   const content = displayDetailText(props.value)
+  const canCopy = Boolean(props.value)
+  const copyTitle = () => {
+    if (!props.value) return
+    void navigator.clipboard.writeText(props.value).then(
+      () => message.success('已复制'),
+      () => message.error('复制失败')
+    )
+  }
   return (
     <div className={`manual-selection-detail-title-block${props.rtl ? ' is-rtl' : ''}`}>
       <div className="manual-selection-detail-title-label">{props.label}</div>
-      <Paragraph
-        copyable={props.value ? { text: props.value } : false}
-        ellipsis={{ rows: props.rtl ? 2 : 3 }}
-        className="manual-selection-detail-title-text"
-      >
-        {props.href && props.value ? (
-          <Typography.Link href={props.href} target="_blank" rel="noreferrer noopener">
-            {props.value}
-          </Typography.Link>
-        ) : (
-          content
-        )}
-      </Paragraph>
+      <div className="manual-selection-detail-title-row">
+        <Tooltip title={props.value || ''}>
+          <div className={`manual-selection-detail-title-text${props.rtl ? ' is-rtl' : ''}`}>
+            {props.href && props.value ? (
+              <Typography.Link href={props.href} target="_blank" rel="noreferrer noopener">
+                {props.value}
+              </Typography.Link>
+            ) : (
+              content
+            )}
+          </div>
+        </Tooltip>
+        {canCopy ? (
+          <Button
+            aria-label={`复制${props.label}`}
+            className="manual-selection-detail-title-copy"
+            icon={<CopyOutlined />}
+            size="small"
+            type="text"
+            onClick={copyTitle}
+          />
+        ) : null}
+      </div>
     </div>
   )
 }

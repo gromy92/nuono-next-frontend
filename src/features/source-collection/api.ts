@@ -1,6 +1,9 @@
 import type {
   Ali1688CollectionView,
+  Ali1688PluginAssignmentView,
   ProductSelectionSourceCollection,
+  ProductSelectionSourceCollectionPage,
+  SourceCollectionListQuery,
   SourceCollectionFormValue
 } from './types'
 
@@ -49,6 +52,47 @@ export function loadSourceCollections(
     params.set('storeCode', storeCode)
   }
   return getJson(`/api/product-selection/source-collections?${params.toString()}`)
+}
+
+export async function loadSourceCollectionsPage(
+  storeName: string,
+  storeCode: string | undefined,
+  query: SourceCollectionListQuery
+): Promise<ProductSelectionSourceCollectionPage> {
+  const page = Math.max(1, query.page || 1)
+  const pageSize = Math.max(1, query.pageSize || 50)
+  const params = new URLSearchParams({
+    storeName,
+    page: String(page),
+    pageSize: String(pageSize)
+  })
+  if (storeCode) {
+    params.set('storeCode', storeCode)
+  }
+  if (query.sourcePlatform) {
+    params.set('sourcePlatform', query.sourcePlatform)
+  }
+  if (query.sourceTitle) {
+    params.set('sourceTitle', query.sourceTitle)
+  }
+  if (query.sourceTitleCn) {
+    params.set('sourceTitleCn', query.sourceTitleCn)
+  }
+  if (query.status) {
+    params.set('status', query.status)
+  }
+  const payload = await getJson<ProductSelectionSourceCollection[] | ProductSelectionSourceCollectionPage>(
+    `/api/product-selection/source-collections?${params.toString()}`
+  )
+  if (Array.isArray(payload)) {
+    return {
+      items: payload,
+      total: payload.length,
+      page,
+      pageSize
+    }
+  }
+  return payload
 }
 
 export function loadAli1688Collections(
@@ -126,6 +170,10 @@ export function recollectAli1688Collection(collectionId: string): Promise<Ali168
 
 export function retryAli1688Collection(taskId: string): Promise<Ali1688CollectionView> {
   return sendJson(`/api/product-selection/ali1688-collections/${encodeURIComponent(taskId)}/retry`, 'POST', {})
+}
+
+export function createAli1688PluginAssignment(taskId: string): Promise<Ali1688PluginAssignmentView> {
+  return sendJson(`/api/product-selection/ali1688-collections/${encodeURIComponent(taskId)}/plugin-assignment`, 'POST', {})
 }
 
 async function parseResponse<TResponse>(response: Response): Promise<TResponse> {

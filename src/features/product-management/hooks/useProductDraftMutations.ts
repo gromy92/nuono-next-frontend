@@ -15,6 +15,8 @@ import type {
   ProductWorkbenchSurfaceReadyState
 } from '../types';
 
+const LOCAL_BARCODE_ATTRIBUTE_CODE = 'barcode';
+
 type ReadyWorkbenchUpdater = (
   updater: (current: ProductWorkbenchSurfaceReadyState) => {
     workbench: ProductWorkbenchState;
@@ -155,16 +157,30 @@ export function useProductDraftMutations({
   const updateProductAttributeField = useCallback(
     (code: string, field: string, value: string) => {
       updateProductDraft((draft) => {
-        draft.keyAttributes = cloneRecordList(draft.keyAttributes).map((item) => {
-          if (String(item.code) !== code) {
+        const normalizedCode = textInputValue(code).trim();
+        if (!normalizedCode) {
+          return;
+        }
+        let didUpdateAttribute = false;
+        const nextAttributes = cloneRecordList(draft.keyAttributes).map((item) => {
+          if (textInputValue(item.code).trim() !== normalizedCode) {
             return item;
           }
 
+          didUpdateAttribute = true;
           return {
             ...item,
             [field]: value
           };
         });
+        if (!didUpdateAttribute) {
+          nextAttributes.push({
+            code: normalizedCode,
+            localOnly: normalizedCode === LOCAL_BARCODE_ATTRIBUTE_CODE,
+            [field]: value
+          });
+        }
+        draft.keyAttributes = nextAttributes;
       });
     },
     [updateProductDraft]

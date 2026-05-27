@@ -45,7 +45,7 @@ type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspac
 
 type ShellFrameProps = {
   activeMenuKey: AppMenuKey;
-  activeMenuPathLabel: string;
+  activeMenuPathLabel: string | null;
   activeOwnerId?: number;
   activeSidebarOpenKeys: string[];
   activeSidebarRootKey?: string;
