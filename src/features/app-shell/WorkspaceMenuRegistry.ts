@@ -6,9 +6,14 @@ export type AppMenuKey =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'data-sales-analysis'
+  | 'data-sales-forecast'
   | 'noon-call-store-data'
   | 'system-report-noon-data-completeness'
   | 'system-report-noon-data-gaps'
+  | 'operations-config-versions'
+  | 'data-activity-config'
+  | 'operations-lifecycle-rules'
   | 'system-file-management'
   | 'user-account'
   | 'user-store-noon'
@@ -23,6 +28,7 @@ export type WorkspaceSectionKey =
   | 'logistics'
   | 'warehouse'
   | 'campaign'
+  | 'operation-config'
   | 'task'
   | 'data'
   | 'system-reports'
@@ -37,6 +43,7 @@ export type WorkspaceSectionIconKey =
   | 'logistics'
   | 'warehouse'
   | 'campaign'
+  | 'operation-config'
   | 'task'
   | 'data'
   | 'system-reports'
@@ -52,9 +59,14 @@ export type WorkspaceContentKind =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'sales-analytics'
+  | 'sales-forecast'
   | 'noon-call-store-data'
   | 'system-report-noon-data-completeness'
   | 'system-report-noon-data-gaps'
+  | 'operations-config-versions'
+  | 'operations-business-calendar'
+  | 'operations-lifecycle-rules'
   | 'system-file-management'
   | 'user-account'
   | 'user-role'
@@ -168,6 +180,26 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'purchase-logistics-quote',
     closable: true
   },
+  'data-sales-analysis': {
+    key: 'data-sales-analysis',
+    label: '销量分析',
+    path: '/data/sales-analysis',
+    sectionKey: 'data',
+    pathLabel: '数据 / 销量分析',
+    tabLabel: '销量分析',
+    contentKind: 'sales-analytics',
+    closable: true
+  },
+  'data-sales-forecast': {
+    key: 'data-sales-forecast',
+    label: '销量预测',
+    path: '/data/sales-forecast',
+    sectionKey: 'data',
+    pathLabel: '数据 / 销量预测',
+    tabLabel: '销量预测',
+    contentKind: 'sales-forecast',
+    closable: true
+  },
   'noon-call-store-data': {
     key: 'noon-call-store-data',
     label: '店铺数据',
@@ -200,6 +232,39 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'system-report-noon-data-gaps',
     closable: true,
     visibleInWorkspaceTabs: false
+  },
+  'operations-config-versions': {
+    key: 'operations-config-versions',
+    label: '运营配置版本',
+    path: '/operations/config/versions',
+    sectionKey: 'operation-config',
+    pathLabel: '运营配置 / 运营配置版本',
+    tabLabel: '运营配置版本',
+    contentKind: 'operations-config-versions',
+    closable: true,
+    visibleInSidebar: false,
+    visibleInWorkspaceTabs: false
+  },
+  'data-activity-config': {
+    key: 'data-activity-config',
+    label: '业务日历',
+    path: '/operations/config/business-calendar',
+    sectionKey: 'operation-config',
+    pathLabel: '运营配置 / 业务日历',
+    tabLabel: '业务日历',
+    contentKind: 'operations-business-calendar',
+    closable: true,
+    routeAliases: ['/operation-config/holiday', '/data/activity-config']
+  },
+  'operations-lifecycle-rules': {
+    key: 'operations-lifecycle-rules',
+    label: '生命周期配置',
+    path: '/operations/config/lifecycle-rules',
+    sectionKey: 'operation-config',
+    pathLabel: '运营配置 / 生命周期配置',
+    tabLabel: '生命周期配置',
+    contentKind: 'operations-lifecycle-rules',
+    closable: true
   },
   'system-file-management': {
     key: 'system-file-management',
@@ -315,6 +380,15 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     entries: [{ type: 'placeholder', key: 'campaign-list', label: '活动列表', disabled: true }]
   },
   {
+    key: 'operation-config',
+    label: '运营配置',
+    iconKey: 'operation-config',
+    entries: [
+      { type: 'workspace', key: 'data-activity-config' },
+      { type: 'workspace', key: 'operations-lifecycle-rules' }
+    ]
+  },
+  {
     key: 'task',
     label: '任务',
     iconKey: 'task',
@@ -325,9 +399,9 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     label: '数据',
     iconKey: 'data',
     entries: [
-      { type: 'placeholder', key: 'data-sales', label: '商品销量', disabled: true },
-      { type: 'placeholder', key: 'data-board', label: '约仓看板', disabled: true },
-      { type: 'placeholder', key: 'data-analysis', label: '销量分析', disabled: true }
+      { type: 'workspace', key: 'data-sales-analysis' },
+      { type: 'workspace', key: 'data-sales-forecast' },
+      { type: 'placeholder', key: 'data-board', label: '约仓看板', disabled: true }
     ]
   },
   {
@@ -428,6 +502,18 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
+    keys: ['data-sales-analysis', 'data-sales-forecast'],
+    urlPaths: [
+      '/data/sales-analysis',
+      '/data/sales-forecast',
+      '/api/sales-data/analytics',
+      '/api/sales-data/activity-windows',
+      '/api/sales-forecast/overview'
+    ],
+    urlPathPrefixes: ['/api/sales-data/analytics/', '/api/sales-data/activity-windows/', '/api/sales-forecast/'],
+    menuNames: ['销量分析', '销量预测', '销售分析', '销量数据']
+  },
+  {
     keys: ['noon-call-store-data', 'system-report-noon-data-completeness', 'system-report-noon-data-gaps'],
     urlPaths: [
       '/system-reports/store-data',
@@ -439,6 +525,19 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     ],
     urlPathPrefixes: ['/api/noon-call/store-data/', '/api/system-reports/noon-data-completeness/'],
     menuNames: ['系统报表', 'Noon调用', 'Noon店铺数据', '店铺数据', '数据完整度', '数据缺口巡检']
+  },
+  {
+    keys: ['operations-config-versions', 'data-activity-config', 'operations-lifecycle-rules'],
+    urlPaths: [
+      '/operations/config/versions',
+      '/operations/config/business-calendar',
+      '/operations/config/lifecycle-rules',
+      '/operation-config/holiday',
+      '/data/activity-config',
+      '/api/operations-config/scope'
+    ],
+    urlPathPrefixes: ['/api/operations-config/'],
+    menuNames: ['运营配置', '运营配置版本', '业务日历', '生命周期配置', '业务日历与活动因子', '生命周期规则配置', '节日配置', '节日/活动配置', '活动配置']
   },
   {
     keys: ['system-file-management'],
@@ -458,9 +557,13 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-order',
   'purchase-profit',
   'purchase-logistics-quote',
+  'data-sales-analysis',
+  'data-sales-forecast',
   'noon-call-store-data',
   'system-report-noon-data-completeness',
-  'system-report-noon-data-gaps'
+  'system-report-noon-data-gaps',
+  'data-activity-config',
+  'operations-lifecycle-rules'
 ]
 
 export const MANAGEMENT_MENU_KEYS: AppMenuKey[] = [

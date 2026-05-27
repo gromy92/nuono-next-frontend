@@ -27,6 +27,11 @@ test.describe('系统文件管理解析中心', () => {
     await expect(page.getByText('失败').first()).toBeVisible();
     await expect(page.getByText('等待重试').first()).toBeVisible();
     await expect(page.getByText('待处理').first()).toBeVisible();
+    await expect(page.getByRole('row', { name: /佣金-KSA 解析中心验收/ }).getByRole('link', { name: 'Noon佣金表.xlsx' })).toBeVisible();
+    await expect(page.getByRole('row', { name: /已发布佣金文档/ }).getByRole('link', { name: '已发布佣金表.xlsx' })).toBeVisible();
+    await expect(page.getByRole('row', { name: /已发布佣金文档/ }).getByText('待确认 0')).toHaveCount(0);
+    await expect(page.getByRole('row', { name: /已发布佣金文档/ }).getByText('硬错误 0')).toHaveCount(0);
+    await expect(page.getByRole('row', { name: /已发布佣金文档/ }).getByText('冲突 0')).toHaveCount(0);
 
     await expect(page.getByRole('columnheader', { name: '文件类型' })).toHaveCount(0);
     await expect(page.getByRole('columnheader', { name: '原始文件' })).toHaveCount(0);
@@ -51,9 +56,10 @@ test.describe('系统文件管理解析中心', () => {
     await page.getByTestId('file-parse-create-button').click();
 
     await expect(page.getByText('新建解析文档').first()).toBeVisible();
-    await expect(page.getByText('当前可用目标输出方案')).toBeVisible();
-    await expect(page.getByRole('button', { name: /佣金-KSA/ })).toBeVisible();
-    await expect(page.getByRole('button', { name: /物流-义特/ })).toBeVisible();
+    await expect(page.getByTestId('file-parse-create-target-plan-select')).toBeVisible();
+    await expect(page.getByText('当前可用目标输出方案')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /佣金-KSA/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /物流-义特/ })).toHaveCount(0);
     await expect(page.getByText('上传文件、图片、PDF 或 Excel')).toBeVisible();
     await expect(page.getByLabel('OCR 文本')).toBeVisible();
     await expect(page.getByLabel('人工补充文案')).toBeVisible();
@@ -63,16 +69,155 @@ test.describe('系统文件管理解析中心', () => {
     await expect(page.getByText('生成规则')).toHaveCount(0);
   });
 
-  test('TC-FM-004 详情页展示解析处理和过程数据，而不是文件归档详情', async ({ page }) => {
+  test('TC-FM-011 新建文档发起解析后允许再次打开创建弹窗', async ({ page }) => {
+    await gotoFileManagement(page);
+
+    await page.getByTestId('file-parse-create-button').click();
+    await page.getByLabel('文档名称').fill('佣金二次创建样本');
+    await page.getByTestId('file-parse-create-target-plan-select').click();
+    await page.locator('.ant-select-item-option[title="佣金-KSA / 佣金规则"]').click();
+    await page.getByLabel('人工补充文案').fill('Beauty / Colour Cosmetics Generic brand 15% effective 2026-05-20');
+
+    const runRequest = page.waitForRequest((request) =>
+      request.method() === 'POST' && request.url().includes('/api/file-management/parse/tasks/2010/run')
+    );
+    await page.locator('.ant-drawer').getByRole('button', { name: '创建解析文档' }).click();
+    await runRequest;
+
+    await page.getByRole('button', { name: '返回列表' }).click();
+    await page.getByTestId('file-parse-create-button').click();
+    const submitButton = page.locator('.ant-drawer').getByRole('button', { name: '创建解析文档' });
+    await expect(submitButton).toBeEnabled();
+    await expect(submitButton.locator('.ant-btn-loading-icon')).toHaveCount(0);
+  });
+
+  test('TC-FM-006 文件列表支持目标方案、状态和关键词筛选', async ({ page }) => {
+    await gotoFileManagement(page);
+
+    await expect(page.getByTestId('file-parse-task-filter-bar')).toBeVisible();
+
+    await page.getByTestId('file-parse-target-plan-filter').click();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('物流-义特等待重试样本')).toBeVisible();
+    await expect(page.getByText('佣金-KSA 解析中心验收')).toHaveCount(0);
+
+    await page.getByTestId('file-parse-status-filter').click();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+    await page.getByPlaceholder('搜索文档名或任务号').fill('等待');
+
+    await expect(page.getByText('物流-义特等待重试样本')).toBeVisible();
+    await expect(page.getByText('出仓费失败样本')).toHaveCount(0);
+
+    await page.getByRole('button', { name: '重置筛选' }).click();
+    await expect(page.getByText('佣金-KSA 解析中心验收')).toBeVisible();
+    await expect(page.getByText('出仓费失败样本')).toBeVisible();
+  });
+
+  test('TC-FM-007 文件列表允许删除已发布解析文档并提示会删除生效结果', async ({ page }) => {
+    await gotoFileManagement(page);
+
+    const row = page.locator('tr', { hasText: '已发布佣金文档' });
+    await row.getByRole('button', { name: '删除' }).click();
+
+    await expect(page.getByText('删除解析文档')).toBeVisible();
+    await expect(page.getByText('会删除该文档及其解析记录、已发布版本和当前生效业务结果，删除后不会自动恢复上一版。')).toBeVisible();
+
+    const deleteRequest = page.waitForRequest((request) =>
+      request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2005')
+    );
+    await page.getByRole('button', { name: '确认删除' }).click();
+    await deleteRequest;
+
+    await expect(page.getByText('已删除解析文档')).toBeVisible();
+    await expect(page.getByText('已发布佣金文档')).toHaveCount(0);
+  });
+
+  test('TC-FM-008 取消删除不会发送删除请求也不会移除列表行', async ({ page }) => {
+    const deleteRequests: string[] = [];
+    page.on('request', (request) => {
+      if (request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2005')) {
+        deleteRequests.push(request.url());
+      }
+    });
+    await gotoFileManagement(page);
+
+    const row = page.locator('tr', { hasText: '已发布佣金文档' });
+    await row.getByRole('button', { name: '删除' }).click();
+    await page.getByRole('button', { name: /取\s*消/ }).click();
+
+    await expect(page.getByText('删除解析文档')).toHaveCount(0);
+    await expect(row).toBeVisible();
+    expect(deleteRequests).toHaveLength(0);
+  });
+
+  test('TC-FM-009 文件列表支持批量删除多个解析文档', async ({ page }) => {
+    await gotoFileManagement(page);
+
+    await page.locator('tr', { hasText: '佣金-KSA 解析中心验收' }).getByRole('checkbox').check();
+    await page.locator('tr', { hasText: '已发布佣金文档' }).getByRole('checkbox').check();
+
+    await expect(page.getByText('已选择 2 个')).toBeVisible();
+    await page.getByRole('button', { name: '批量删除' }).click();
+
+    await expect(page.getByText('批量删除解析文档')).toBeVisible();
+    await expect(page.getByText('会删除选中的 2 个文档及其解析记录、已发布版本和当前生效业务结果，删除后不会自动恢复上一版。')).toBeVisible();
+
+    const deleteTask2001 = page.waitForRequest((request) =>
+      request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2001')
+    );
+    const deleteTask2005 = page.waitForRequest((request) =>
+      request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2005')
+    );
+    await page.getByRole('button', { name: '确认批量删除' }).click();
+    await Promise.all([deleteTask2001, deleteTask2005]);
+
+    await expect(page.getByText('删除成功 2 个，失败 0 个')).toBeVisible();
+    await expect(page.getByText('佣金-KSA 解析中心验收')).toHaveCount(0);
+    await expect(page.getByText('已发布佣金文档')).toHaveCount(0);
+  });
+
+  test('TC-FM-010 批量删除部分失败时继续删除成功项并保留失败项', async ({ page }) => {
+    await gotoFileManagement(page);
+
+    await page.locator('tr', { hasText: '出仓费失败样本' }).getByRole('checkbox').check();
+    await page.locator('tr', { hasText: '已发布佣金文档' }).getByRole('checkbox').check();
+
+    await page.getByRole('button', { name: '批量删除' }).click();
+
+    const deleteTask2003 = page.waitForRequest((request) =>
+      request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2003')
+    );
+    const deleteTask2005 = page.waitForRequest((request) =>
+      request.method() === 'DELETE' && request.url().includes('/api/file-management/parse/tasks/2005')
+    );
+    await page.getByRole('button', { name: '确认批量删除' }).click();
+    await Promise.all([deleteTask2003, deleteTask2005]);
+
+    await expect(page.getByText('删除成功 1 个，失败 1 个')).toBeVisible();
+    await expect(page.getByText('已发布佣金文档')).toHaveCount(0);
+    await expect(page.getByText('出仓费失败样本')).toBeVisible();
+  });
+
+  test('TC-FM-004 详情页展示结果处理和版本数据，不展示解析过程', async ({ page }) => {
     await gotoFileManagement(page);
 
     const row = page.locator('tr', { hasText: '佣金-KSA 解析中心验收' });
     await row.getByRole('button', { name: '详情' }).click();
 
     await expect(page.getByTestId('file-parse-detail')).toBeVisible();
-    await expect(page.getByRole('tab', { name: '解析处理' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '结果处理' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '解析处理' })).toHaveCount(0);
     await expect(page.getByRole('tab', { name: '解析总览' })).toBeVisible();
-    await expect(page.getByRole('tab', { name: '解析过程' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: '解析过程' })).toHaveCount(0);
     await expect(page.getByRole('tab', { name: '版本对比' })).toBeVisible();
     await expect(page.getByRole('tab', { name: '版本历史' })).toBeVisible();
     await expect(page.getByText('来源证据')).toBeVisible();
@@ -82,11 +227,7 @@ test.describe('系统文件管理解析中心', () => {
     await expect(page.getByRole('columnheader', { name: '结果类型' })).toBeVisible();
     await expect(page.getByRole('cell', { name: '佣金规则' }).first()).toBeVisible();
 
-    await page.getByRole('tab', { name: '解析过程' }).click();
-    await expect(page.getByText('源内容行').first()).toBeVisible();
-    await expect(page.getByText('AI 分块').first()).toBeVisible();
-    await expect(page.getByText('结构化校验问题').first()).toBeVisible();
-    await expect(page.getByText('SOURCE_ROW_ID=8001')).toBeVisible();
+    await expect(page.getByText('SOURCE_ROW_ID=8001')).toHaveCount(0);
 
     await expect(page.getByText('原始文件更新时间')).toHaveCount(0);
     await expect(page.getByText('解析文件更新时间')).toHaveCount(0);
@@ -133,6 +274,9 @@ function withDevSession(path: string): string {
 }
 
 async function mockParseCenterApis(page: Page) {
+  const deletedTaskIds = new Set<number>();
+  const createdTasks: Array<ReturnType<typeof buildTask>> = [];
+
   await page.route('**/api/system/file-management**', async (route) => {
     throw new Error(`Unexpected legacy file-management API request: ${route.request().url()}`);
   });
@@ -186,22 +330,63 @@ async function mockParseCenterApis(page: Page) {
   });
 
   await page.route('**/api/file-management/parse/tasks?**', async (route) => {
+    const url = new URL(route.request().url());
+    const targetPlanId = url.searchParams.get('targetPlanId');
+    const status = url.searchParams.get('status');
+    const keyword = url.searchParams.get('keyword')?.trim();
+    const items = [...createdTasks, ...taskFixtures()].filter((task) => !deletedTaskIds.has(Number(task.id))).filter((task) => {
+      if (targetPlanId && String(task.targetPlanId) !== targetPlanId) {
+        return false;
+      }
+      if (status && task.status !== status) {
+        return false;
+      }
+      if (keyword && !`${task.documentTitle} ${task.taskNo}`.includes(keyword)) {
+        return false;
+      }
+      return true;
+    });
     await route.fulfill({
       json: {
-        total: 4,
+        total: items.length,
         page: 1,
         pageSize: 50,
-        items: [
-          buildTask({ id: 2001, title: '佣金-KSA 解析中心验收', status: 'review_required', resultId: 9001, totalCount: 2, pendingCount: 1 }),
-          buildTask({ id: 2002, title: '佣金-UAE 解析中样本', status: 'parsing' }),
-          buildTask({ id: 2003, title: '出仓费失败样本', status: 'failed', failureMessage: 'AI provider timeout' }),
-          buildTask({ id: 2004, title: '物流-义特等待重试样本', status: 'failed', nextRunAt: '2026-05-20T18:30:00' })
-        ]
+        items
       }
     });
   });
 
+  await page.route('**/api/file-management/parse/tasks', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    const body = route.request().postDataJSON() as { documentTitle: string; targetPlanId: number };
+    const created = buildTask({
+      id: 2010 + createdTasks.length,
+      title: body.documentTitle || '新建解析文档',
+      status: 'reading'
+    });
+    created.targetPlanId = body.targetPlanId;
+    createdTasks.unshift(created);
+    await route.fulfill({ json: created });
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2010/run', async () => {
+    await new Promise(() => undefined);
+  });
+
+  await page.route('**/api/file-management/parse/tasks/2010', async (route) => {
+    const created = createdTasks.find((task) => Number(task.id) === 2010);
+    await route.fulfill({ json: created ?? buildTask({ id: 2010, title: '新建解析文档', status: 'reading' }) });
+  });
+
   await page.route('**/api/file-management/parse/tasks/2001', async (route) => {
+    if (route.request().method() === 'DELETE') {
+      deletedTaskIds.add(2001);
+      await route.fulfill({ status: 204 });
+      return;
+    }
     await route.fulfill({
       json: {
         ...buildTask({ id: 2001, title: '佣金-KSA 解析中心验收', status: 'review_required', resultId: 9001, totalCount: 2, pendingCount: 1 }),
@@ -241,6 +426,17 @@ async function mockParseCenterApis(page: Page) {
     });
   });
 
+  await page.route('**/api/file-management/parse/tasks/2003', async (route) => {
+    if (route.request().method() !== 'DELETE') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 500,
+      json: { message: '删除解析文档失败' }
+    });
+  });
+
   await page.route('**/api/file-management/parse/tasks/2004/workflow', async (route) => {
     await route.fulfill({
       json: {
@@ -262,39 +458,15 @@ async function mockParseCenterApis(page: Page) {
   });
 
   await page.route('**/api/file-management/parse/tasks/2004/source-rows?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2004,
-        total: 0,
-        page: 1,
-        pageSize: 100,
-        items: []
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2004/ai-chunks?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2004,
-        total: 0,
-        page: 1,
-        pageSize: 100,
-        items: []
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2004/validation-issues?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2004,
-        total: 0,
-        page: 1,
-        pageSize: 100,
-        items: []
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2001/workflow', async (route) => {
@@ -319,82 +491,15 @@ async function mockParseCenterApis(page: Page) {
   });
 
   await page.route('**/api/file-management/parse/tasks/2001/source-rows?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2001,
-        total: 1,
-        page: 1,
-        pageSize: 100,
-        items: [
-          {
-            id: 8001,
-            taskId: 2001,
-            inputId: 7001,
-            fileAssetId: 6001,
-            sourceType: 'excel_row',
-            sourceLocator: 'SOURCE_ROW_ID=8001',
-            sheetName: 'Sheet1',
-            rowNo: 12,
-            rawText: 'Colour Cosmetics Generic brand 15%',
-            sortNo: 1
-          }
-        ]
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2001/ai-chunks?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2001,
-        total: 1,
-        page: 1,
-        pageSize: 100,
-        items: [
-          {
-            id: 8101,
-            taskId: 2001,
-            resultId: 9001,
-            chunkNo: 1,
-            chunkType: 'source_rows',
-            sourceRowCount: 1,
-            promptHash: 'prompt-hash',
-            inputHash: 'input-hash',
-            modelProvider: 'openai',
-            modelName: 'parse-fixture',
-            status: 'succeeded',
-            outputItemCount: 2,
-            responseHash: 'response-hash'
-          }
-        ]
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2001/validation-issues?**', async (route) => {
-    await route.fulfill({
-      json: {
-        taskId: 2001,
-        total: 1,
-        page: 1,
-        pageSize: 100,
-        items: [
-          {
-            id: 8201,
-            taskId: 2001,
-            resultId: 9001,
-            resultItemId: 9102,
-            sourceRowId: 8001,
-            aiChunkId: 8101,
-            issueType: 'needs_review',
-            severity: 'warning',
-            fieldKey: 'commissionRate',
-            message: '品牌限制需要人工确认',
-            resolvedStatus: 'open'
-          }
-        ]
-      }
-    });
+    throw new Error(`Unexpected parse process API request: ${route.request().url()}`);
   });
 
   await page.route('**/api/file-management/parse/tasks/2001/processing-items?**', async (route) => {
@@ -585,6 +690,15 @@ async function mockParseCenterApis(page: Page) {
       json: logisticsActivationFixture()
     });
   });
+
+  await page.route('**/api/file-management/parse/tasks/2005', async (route) => {
+    if (route.request().method() !== 'DELETE') {
+      await route.fallback();
+      return;
+    }
+    deletedTaskIds.add(2005);
+    await route.fulfill({ status: 204 });
+  });
 }
 
 function logisticsActivationFixture() {
@@ -671,6 +785,33 @@ function buildTask(options: {
       canManageStandard: true,
       canActivateLogisticsChannels: true
     }
+  };
+}
+
+function taskFixtures() {
+  return [
+    withInputItems(buildTask({ id: 2001, title: '佣金-KSA 解析中心验收', status: 'review_required', resultId: 9001, totalCount: 2, pendingCount: 1 }), 'Noon佣金表.xlsx'),
+    withInputItems(buildTask({ id: 2002, title: '佣金-UAE 解析中样本', status: 'parsing' }), 'Noon UAE 佣金表.pdf'),
+    buildTask({ id: 2003, title: '出仓费失败样本', status: 'failed', failureMessage: 'AI provider timeout' }),
+    withInputItems(buildTask({ id: 2004, title: '物流-义特等待重试样本', status: 'failed', nextRunAt: '2026-05-20T18:30:00' }), 'ET物流报价-20260414入仓生效.pdf'),
+    withInputItems(buildTask({ id: 2005, title: '已发布佣金文档', status: 'published', resultId: 9005, totalCount: 1, pendingCount: 0 }), '已发布佣金表.xlsx')
+  ];
+}
+
+function withInputItems(task: ReturnType<typeof buildTask>, displayName: string) {
+  return {
+    ...task,
+    inputItems: [
+      {
+        id: Number(task.id) + 5000,
+        inputType: displayName.endsWith('.pdf') ? 'pdf' : 'excel',
+        inputRole: 'primary_source',
+        fileAssetId: Number(task.id) + 6000,
+        displayName,
+        downloadUrl: `/api/file-management/parse/files/${Number(task.id) + 6000}/download`,
+        sortNo: 1
+      }
+    ]
   };
 }
 

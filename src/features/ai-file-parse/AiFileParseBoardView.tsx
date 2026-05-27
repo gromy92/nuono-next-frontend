@@ -5,6 +5,7 @@ import {
   Card,
   Checkbox,
   Dropdown,
+  Input,
   Segmented,
   Select,
   Space,
@@ -16,6 +17,7 @@ import {
 } from 'antd';
 import {
   CheckCircleOutlined,
+  DeleteOutlined,
   DiffOutlined,
   EditOutlined,
   EyeOutlined,
@@ -27,14 +29,10 @@ import {
 import type { FormInstance, UploadFile } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type {
-  FileParseAiChunkPayload,
   FileParseLogisticsActivationPayload,
   FileParseLogisticsChannelPayload,
-  FileParseSourceRowPayload,
-  FileParseValidationIssuePayload,
   FileParseWorkflowPayload
 } from './api';
-import { AiFileParseProcessPanel } from './AiFileParseProcessPanel';
 import {
   CreateBatchDrawer,
   EditResultDrawer,
@@ -47,7 +45,7 @@ import {
   rejectHelp,
   renderActionHelp,
   renderDetailInputItems,
-  summarizeInputs,
+  renderTaskListInputItems,
   targetOutputPlanLabel,
   type VersionCompareRow
 } from './boardTransforms';
@@ -71,6 +69,7 @@ import type {
   AiParseReviewStatus,
   AiParseRolePermission,
   AiParseStandardField,
+  AiParseTaskFilters,
   AiParseTargetOutputPlan,
   AiParseTask,
   AiParseTaskStatus,
@@ -78,6 +77,16 @@ import type {
 } from './types';
 
 const { Text, Title } = Typography;
+
+const TASK_STATUS_FILTERS: AiParseTaskStatus[] = [
+  'reading',
+  'parsing',
+  'retry_waiting',
+  'review_required',
+  'ready_to_publish',
+  'published',
+  'failed'
+];
 
 const LOGISTICS_RELATED_ITEM_LABELS: Record<string, string> = {
   logistics_cargo_category: '分类',
@@ -107,14 +116,13 @@ function renderLogisticsRelatedQuoteContext(record: FileParseLogisticsChannelPay
 
 type AiFileParseBoardViewProps = {
   actionLoading: boolean;
-  aiChunks: FileParseAiChunkPayload[];
-  aiChunksError: string;
   allResultFields: AiParseStandardField[];
   blockingItems: AiParseResultItem[];
   comparingItem: AiParseResultItem | null;
   createForm: FormInstance<CreateBatchFormValues>;
   createOpen: boolean;
   createParentTask: AiParseTask | null;
+  createSubmitting: boolean;
   createTargetPlan: AiParseTargetOutputPlan | undefined;
   detailLoading: boolean;
   detailTab: string;
@@ -127,12 +135,14 @@ type AiFileParseBoardViewProps = {
   logisticsVersionId: string;
   onBackToList: () => void;
   onBatchConfirmItems: () => void;
+  onBatchDeleteTasks: (tasks: AiParseTask[]) => void;
   onCompareBaseVersionChange: (versionId: string) => void;
   onCompareItem: (item: AiParseResultItem) => void;
   onCompareTargetVersionChange: (versionId: string) => void;
   onCreateClose: () => void;
   onCreateSubmit: () => void;
   onCreateTargetPlanChange: (targetPlanId: string) => void;
+  onDeleteTask: (task: AiParseTask) => void;
   onDetailTabChange: (tab: string) => void;
   onEditClose: () => void;
   onEditSave: () => void;
@@ -148,25 +158,27 @@ type AiFileParseBoardViewProps = {
   onReviewFilterChange: (value: AiParseReviewStatus | 'ALL') => void;
   onRunSelectedTask: () => void;
   onSaveLogisticsActivation: () => void;
+  onTaskFiltersChange: (filters: AiParseTaskFilters) => void;
+  onTaskFiltersReset: () => void;
+  onTaskSelectionChange: (taskIds: string[]) => void;
   onToggleLogisticsChannel: (channelKey: string, checked: boolean) => void;
   onUploadFilesChange: Dispatch<SetStateAction<UploadFile[]>>;
   overviewItems: AiParseResultItem[];
   pageLoading: boolean;
   permission: AiParseRolePermission;
-  processLoading: boolean;
   reviewFilter: AiParseReviewStatus | 'ALL';
   selectedBaseVersion: AiParseVersion | undefined;
+  selectedTaskIds: string[];
   selectedProcessingItemIds: string[];
   selectedLogisticsChannelKeys: string[];
   selectedStandard: AiParseDocumentStandard | undefined;
   selectedTargetVersion: AiParseVersion | undefined;
   selectedTask: AiParseTask | undefined;
-  sourceRows: FileParseSourceRowPayload[];
   sortedSelectedVersions: AiParseVersion[];
+  taskFilters: AiParseTaskFilters;
   targetPlans: AiParseTargetOutputPlan[];
   tasks: AiParseTask[];
   uploadFiles: UploadFile[];
-  validationIssues: FileParseValidationIssuePayload[];
   versionCompareRows: VersionCompareRow[];
   viewMode: 'list' | 'detail';
   visibleFields: AiParseStandardField[];
@@ -178,14 +190,13 @@ type AiFileParseBoardViewProps = {
 
 export function AiFileParseBoardView({
   actionLoading,
-  aiChunks,
-  aiChunksError,
   allResultFields,
   blockingItems,
   comparingItem,
   createForm,
   createOpen,
   createParentTask,
+  createSubmitting,
   createTargetPlan,
   detailLoading,
   detailTab,
@@ -198,6 +209,7 @@ export function AiFileParseBoardView({
   logisticsVersionId,
   onBackToList,
   onBatchConfirmItems,
+  onBatchDeleteTasks,
   onCompareBaseVersionChange,
   onCompareClose,
   onCompareItem,
@@ -206,6 +218,7 @@ export function AiFileParseBoardView({
   onCreateClose,
   onCreateSubmit,
   onCreateTargetPlanChange,
+  onDeleteTask,
   onDetailTabChange,
   onEditClose,
   onEditSave,
@@ -222,25 +235,27 @@ export function AiFileParseBoardView({
   onReviewFilterChange,
   onRunSelectedTask,
   onSaveLogisticsActivation,
+  onTaskFiltersChange,
+  onTaskFiltersReset,
+  onTaskSelectionChange,
   onToggleLogisticsChannel,
   onUploadFilesChange,
   overviewItems,
   pageLoading,
   permission,
-  processLoading,
   reviewFilter,
   selectedBaseVersion,
+  selectedTaskIds,
   selectedProcessingItemIds,
   selectedLogisticsChannelKeys,
   selectedStandard,
   selectedTargetVersion,
   selectedTask,
-  sourceRows,
   sortedSelectedVersions,
+  taskFilters,
   targetPlans,
   tasks,
   uploadFiles,
-  validationIssues,
   versionCompareRows,
   viewMode,
   visibleFields,
@@ -257,6 +272,8 @@ export function AiFileParseBoardView({
   const selectedConfirmableCount = filteredItems.filter(
     (item) => selectedProcessingItemIds.includes(item.id) && canBatchConfirmItem(item)
   ).length;
+  const selectedTaskIdSet = new Set(selectedTaskIds);
+  const selectedListTasks = tasks.filter((task) => selectedTaskIdSet.has(task.id));
   const overviewNaturalKeyCounts = overviewItems.reduce((accumulator, item) => {
     if (item.naturalKey) {
       accumulator.set(item.naturalKey, (accumulator.get(item.naturalKey) ?? 0) + 1);
@@ -295,7 +312,7 @@ export function AiFileParseBoardView({
     {
       title: '输入项',
       width: 190,
-      render: (_, record) => summarizeInputs(record)
+      render: (_, record) => renderTaskListInputItems(record)
     },
     {
       title: '解析状态',
@@ -306,18 +323,26 @@ export function AiFileParseBoardView({
     {
       title: '待处理',
       width: 340,
-      render: (_, record) =>
-        record.stats.total || record.stats.deleteSuspected ? (
+      render: (_, record) => {
+        const statTags = [
+          { label: '解析结果', value: record.stats.total, color: 'default' },
+          { label: '待确认', value: record.stats.pending, color: 'warning' },
+          { label: '硬错误', value: record.stats.hardErrors, color: 'error' },
+          { label: '冲突', value: record.stats.conflicts, color: 'red' },
+          { label: '疑似删除', value: record.stats.deleteSuspected, color: 'orange' }
+        ].filter((item) => item.value > 0);
+        return statTags.length ? (
           <Space size={[4, 6]} wrap className="ai-file-parse-stat-tags-inline">
-            <Tag color="default">解析结果 {record.stats.total}</Tag>
-            <Tag color="warning">待确认 {record.stats.pending}</Tag>
-            <Tag color="error">硬错误 {record.stats.hardErrors}</Tag>
-            <Tag color="red">冲突 {record.stats.conflicts}</Tag>
-            {record.stats.deleteSuspected ? <Tag color="orange">疑似删除 {record.stats.deleteSuspected}</Tag> : null}
+            {statTags.map((item) => (
+              <Tag key={item.label} color={item.color}>
+                {item.label} {item.value}
+              </Tag>
+            ))}
           </Space>
         ) : (
           <Text type="secondary">-</Text>
-        )
+        );
+      }
     },
     {
       title: '当前生效版本',
@@ -328,11 +353,20 @@ export function AiFileParseBoardView({
     { title: '更新时间', dataIndex: 'updatedAt', width: 150 },
     {
       title: '操作',
-      width: 105,
+      width: 170,
       render: (_, record) => (
         <Space>
           <Button size="small" icon={<EyeOutlined />} onClick={() => onOpenDetail(record, 'processing')}>
             详情
+          </Button>
+          <Button
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            disabled={actionLoading || !record.availableActions?.canCreateTask}
+            onClick={() => onDeleteTask(record)}
+          >
+            删除
           </Button>
         </Space>
       )
@@ -535,13 +569,88 @@ export function AiFileParseBoardView({
     <Space direction="vertical" size={12} style={{ width: '100%' }}>
       <Card data-testid="file-parse-task-list" variant="borderless" className="ai-file-parse-section ai-file-parse-list-card">
         <div className="ai-file-parse-list-toolbar">
-          <Button data-testid="file-parse-create-button" type="primary" icon={<PlusOutlined />} onClick={onOpenCreate}>
-            新建解析文档
-          </Button>
+          <Space data-testid="file-parse-task-filter-bar" className="ai-file-parse-task-filters" wrap>
+            <Select
+              aria-label="目标输出方案筛选"
+              className="ai-file-parse-filter-select"
+              data-testid="file-parse-target-plan-filter"
+              value={taskFilters.targetPlanId || 'ALL'}
+              options={[
+                { label: '全部目标输出方案', value: 'ALL' },
+                ...targetPlans.map((plan) => ({ label: plan.label, value: plan.id }))
+              ]}
+              onChange={(value) =>
+                onTaskFiltersChange({
+                  ...taskFilters,
+                  targetPlanId: value === 'ALL' ? '' : value
+                })
+              }
+            />
+            <Select
+              aria-label="解析状态筛选"
+              className="ai-file-parse-filter-select"
+              data-testid="file-parse-status-filter"
+              value={taskFilters.status || 'ALL'}
+              options={[
+                { label: '全部状态', value: 'ALL' },
+                ...TASK_STATUS_FILTERS.map((status) => ({
+                  label: taskStatusMeta[status].label,
+                  value: status
+                }))
+              ]}
+              onChange={(value) =>
+                onTaskFiltersChange({
+                  ...taskFilters,
+                  status: value === 'ALL' ? '' : (value as AiParseTaskStatus)
+                })
+              }
+            />
+            <Input.Search
+              allowClear
+              className="ai-file-parse-keyword-filter"
+              placeholder="搜索文档名或任务号"
+              value={taskFilters.keyword}
+              onChange={(event) =>
+                onTaskFiltersChange({
+                  ...taskFilters,
+                  keyword: event.target.value
+                })
+              }
+              onSearch={(keyword) =>
+                onTaskFiltersChange({
+                  ...taskFilters,
+                  keyword
+                })
+              }
+            />
+            <Button onClick={onTaskFiltersReset}>重置筛选</Button>
+          </Space>
+          <Space className="ai-file-parse-list-actions" wrap>
+            {selectedListTasks.length ? <Text type="secondary">已选择 {selectedListTasks.length} 个</Text> : null}
+            <Button
+              danger
+              data-testid="file-parse-bulk-delete-button"
+              disabled={actionLoading || selectedListTasks.length === 0}
+              icon={<DeleteOutlined />}
+              onClick={() => onBatchDeleteTasks(selectedListTasks)}
+            >
+              批量删除
+            </Button>
+            <Button data-testid="file-parse-create-button" type="primary" icon={<PlusOutlined />} onClick={onOpenCreate}>
+              新建解析文档
+            </Button>
+          </Space>
         </div>
         <Table
           className="ai-file-parse-list-table"
           rowKey="id"
+          rowSelection={{
+            selectedRowKeys: selectedTaskIds,
+            onChange: (keys) => onTaskSelectionChange(keys.map(String)),
+            getCheckboxProps: (record) => ({
+              disabled: actionLoading || !record.availableActions?.canCreateTask
+            })
+          }}
           columns={taskColumns}
           dataSource={tasks}
           loading={pageLoading}
@@ -572,7 +681,7 @@ export function AiFileParseBoardView({
       { label: '冲突', value: selectedTask.stats.conflicts, tone: 'error' },
       { label: '硬错误', value: selectedTask.stats.hardErrors, tone: 'error' },
       { label: '已确认', value: selectedTask.stats.confirmed, tone: 'success' }
-    ];
+    ].filter((item) => item.label === '解析结果' || item.value > 0);
     return (
       <Card variant="borderless" className="ai-file-parse-section ai-file-parse-detail-summary">
         <div className="ai-file-parse-detail-head">
@@ -679,7 +788,7 @@ export function AiFileParseBoardView({
     <Card variant="borderless" className="ai-file-parse-section">
       <div className="ai-file-parse-table-head">
         <Space wrap>
-          <Text strong>解析处理</Text>
+          <Text strong>结果处理</Text>
           <Text type="secondary">查看变动、校验和人工处理状态</Text>
         </Space>
         <Space wrap>
@@ -737,14 +846,14 @@ export function AiFileParseBoardView({
       <Space size={8} wrap className="ai-file-parse-stat-tags ai-file-parse-overview-stats">
         <Tag color="default">总览结果 {overviewItems.length}</Tag>
         <Tag color="blue">自然键 {overviewNaturalKeyCounts.size}</Tag>
-        <Tag color={overviewDuplicateNaturalKeyCount ? 'red' : 'success'}>
-          重复自然键 {overviewDuplicateNaturalKeyCount}
-        </Tag>
-        <Tag color="success">通过 {overviewValidationStats.pass}</Tag>
-        <Tag color="warning">警告 {overviewValidationStats.warning}</Tag>
-        <Tag color="red">硬错误 {overviewValidationStats.hard_error}</Tag>
-        <Tag color="warning">待确认 {selectedTask?.stats.pending ?? 0}</Tag>
-        <Tag color="success">已确认 {selectedTask?.stats.confirmed ?? 0}</Tag>
+        {overviewDuplicateNaturalKeyCount > 0 ? (
+          <Tag color="red">重复自然键 {overviewDuplicateNaturalKeyCount}</Tag>
+        ) : null}
+        {overviewValidationStats.pass > 0 ? <Tag color="success">通过 {overviewValidationStats.pass}</Tag> : null}
+        {overviewValidationStats.warning > 0 ? <Tag color="warning">警告 {overviewValidationStats.warning}</Tag> : null}
+        {overviewValidationStats.hard_error > 0 ? <Tag color="red">硬错误 {overviewValidationStats.hard_error}</Tag> : null}
+        {(selectedTask?.stats.pending ?? 0) > 0 ? <Tag color="warning">待确认 {selectedTask?.stats.pending}</Tag> : null}
+        {(selectedTask?.stats.confirmed ?? 0) > 0 ? <Tag color="success">已确认 {selectedTask?.stats.confirmed}</Tag> : null}
         {selectedTask?.stats.deleteSuspected ? (
           <Tag color="orange">疑似删除 {selectedTask.stats.deleteSuspected}</Tag>
         ) : null}
@@ -759,17 +868,6 @@ export function AiFileParseBoardView({
         scroll={{ x: resultOverviewScrollX }}
       />
     </Card>
-  );
-
-  const renderProcessTab = () => (
-    <AiFileParseProcessPanel
-      aiChunks={aiChunks}
-      aiChunksError={aiChunksError}
-      loading={processLoading}
-      sourceRows={sourceRows}
-      validationIssues={validationIssues}
-      workflow={workflow}
-    />
   );
 
   const renderDiffTab = () => (
@@ -946,20 +1044,20 @@ export function AiFileParseBoardView({
     const detailTabs = [
       ...(hasGeneratedResults
         ? [
-            { key: 'processing', label: '解析处理', children: renderProcessingTab() },
+            { key: 'processing', label: '结果处理', children: renderProcessingTab() },
             { key: 'overview', label: '解析总览', children: renderResultOverviewTab() },
-            { key: 'process', label: '解析过程', children: renderProcessTab() },
             { key: 'diff', label: '版本对比', children: renderDiffTab() }
           ]
-        : [{ key: 'process', label: '解析过程', children: renderProcessTab() }]),
+        : [{ key: 'processing', label: '结果处理', children: renderProcessingTab() }]),
       { key: 'versions', label: '版本历史', children: renderVersionsTab() }
     ];
+    const activeDetailTab = detailTabs.some((tab) => tab.key === detailTab) ? detailTab : 'processing';
     return (
       <Space data-testid="file-parse-detail" direction="vertical" size={14} style={{ width: '100%' }}>
         {renderDetailSummary()}
         <Tabs
           className="ai-file-parse-detail-tabs"
-          activeKey={hasGeneratedResults ? detailTab : detailTab === 'versions' ? 'versions' : 'process'}
+          activeKey={activeDetailTab}
           onChange={onDetailTabChange}
           items={detailTabs}
         />
@@ -975,9 +1073,8 @@ export function AiFileParseBoardView({
         form={createForm}
         open={createOpen}
         targetPlans={targetPlans.filter((plan) => plan.availableActions?.canCreateTask)}
-        selectedPlan={createTargetPlan}
         parentTask={createParentTask}
-        submitting={actionLoading}
+        submitting={createSubmitting}
         uploadFiles={uploadFiles}
         onClose={onCreateClose}
         onSubmit={onCreateSubmit}

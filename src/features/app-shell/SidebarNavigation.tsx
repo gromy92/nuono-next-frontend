@@ -38,6 +38,7 @@ const sectionIconMap: Record<WorkspaceSectionIconKey, ReactNode> = {
   logistics: <TruckOutlined />,
   warehouse: <TruckOutlined />,
   campaign: <CalendarOutlined />,
+  'operation-config': <SettingOutlined />,
   task: <FileTextOutlined />,
   data: <BarChartOutlined />,
   'system-reports': <BarChartOutlined />,

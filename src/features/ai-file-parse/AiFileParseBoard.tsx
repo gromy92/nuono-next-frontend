@@ -9,16 +9,14 @@ import {
   batchAcceptFileParseItems,
   createFileParseIdempotencyKey,
   createFileParseTask,
+  deleteFileParseTask,
   downloadFileParseOverview,
-  fetchFileParseAiChunks,
   fetchFileParseLogisticsActivations,
   fetchFileParseOverviewItems,
   fetchFileParseProcessingItems,
-  fetchFileParseSourceRows,
   fetchFileParseTargetPlans,
   fetchFileParseTaskDetail,
   fetchFileParseTasks,
-  fetchFileParseValidationIssues,
   fetchFileParseVersionItems,
   fetchFileParseVersions,
   fetchFileParseWorkflow,
@@ -27,10 +25,7 @@ import {
   runFileParseTask,
   saveFileParseLogisticsActivations,
   uploadFileParseInput,
-  type FileParseAiChunkPayload,
   type FileParseLogisticsActivationPayload,
-  type FileParseSourceRowPayload,
-  type FileParseValidationIssuePayload,
   type FileParseWorkflowPayload
 } from './api';
 import type { CreateBatchFormValues, EditResultFormValues } from './AiFileParseOverlays';
@@ -59,12 +54,28 @@ import type {
   AiParseReviewStatus,
   AiParseRolePermission,
   AiParseStandardField,
+  AiParseTaskFilters,
   AiParseTargetOutputPlan,
   AiParseTask,
   AiParseVersion,
   AiParseVersionSnapshotItem
 } from './types';
 import './aiFileParse.css';
+
+const EMPTY_TASK_FILTERS: AiParseTaskFilters = {
+  targetPlanId: '',
+  status: '',
+  keyword: ''
+};
+
+function taskFiltersToQuery(filters: AiParseTaskFilters) {
+  const keyword = filters.keyword.trim();
+  return {
+    targetPlanId: filters.targetPlanId ? Number(filters.targetPlanId) : undefined,
+    status: filters.status || undefined,
+    keyword: keyword || undefined
+  };
+}
 
 export function AiFileParseBoard() {
   const { message: messageApi, modal } = AntdApp.useApp();
@@ -75,20 +86,18 @@ export function AiFileParseBoard() {
   const [versions, setVersions] = useState<AiParseVersion[]>([]);
   const [versionSnapshots, setVersionSnapshots] = useState<AiParseVersionSnapshotItem[]>([]);
   const [workflow, setWorkflow] = useState<FileParseWorkflowPayload | null>(null);
-  const [sourceRows, setSourceRows] = useState<FileParseSourceRowPayload[]>([]);
-  const [aiChunks, setAiChunks] = useState<FileParseAiChunkPayload[]>([]);
-  const [aiChunksError, setAiChunksError] = useState('');
-  const [validationIssues, setValidationIssues] = useState<FileParseValidationIssuePayload[]>([]);
   const [resultFields, setResultFields] = useState<AiParseStandardField[]>([]);
   const [pageLoading, setPageLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [processLoading, setProcessLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
   const [selectedTaskId, setSelectedTaskId] = useState('');
+  const [taskFilters, setTaskFilters] = useState<AiParseTaskFilters>(EMPTY_TASK_FILTERS);
   const [detailTab, setDetailTab] = useState('processing');
   const [reviewFilter, setReviewFilter] = useState<AiParseReviewStatus | 'ALL'>('ALL');
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [selectedProcessingItemIds, setSelectedProcessingItemIds] = useState<string[]>([]);
+  const [createSubmitting, setCreateSubmitting] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [createParentTask, setCreateParentTask] = useState<AiParseTask | null>(null);
   const [createTargetPlanId, setCreateTargetPlanId] = useState('');
@@ -195,25 +204,39 @@ export function AiFileParseBoard() {
     [allResultFields, selectedBaseVersion, selectedTargetVersion, versionSnapshots]
   );
 
-  const loadTasks = async (nextSelectedTaskId?: string) => {
-    const taskList = await fetchFileParseTasks({ page: 1, pageSize: 50 });
+  const loadTasks = async (nextSelectedTaskId?: string, filtersOverride = taskFilters) => {
+    const taskList = await fetchFileParseTasks({
+      ...taskFiltersToQuery(filtersOverride),
+      page: 1,
+      pageSize: 50
+    });
     const mappedTasks = taskList.items.map(mapTaskFromList);
+    const visibleTaskIds = new Set(mappedTasks.map((task) => task.id));
+    setSelectedTaskIds((current) => current.filter((taskId) => visibleTaskIds.has(taskId)));
     setTasks((currentTasks) =>
       mappedTasks.map((task) => ({
         ...task,
         inputItems: currentTasks.find((currentTask) => currentTask.id === task.id)?.inputItems ?? task.inputItems
       }))
     );
-    const resolvedSelectedId = nextSelectedTaskId || selectedTaskId || mappedTasks[0]?.id || '';
+    const requestedSelectedId = nextSelectedTaskId && mappedTasks.some((task) => task.id === nextSelectedTaskId)
+      ? nextSelectedTaskId
+      : '';
+    const currentSelectedId = selectedTaskId && mappedTasks.some((task) => task.id === selectedTaskId)
+      ? selectedTaskId
+      : '';
+    const resolvedSelectedId = requestedSelectedId || currentSelectedId || mappedTasks[0]?.id || '';
     if (resolvedSelectedId) {
       setSelectedTaskId(resolvedSelectedId);
+    } else {
+      setSelectedTaskId('');
+      setViewMode('list');
     }
     return mappedTasks;
   };
 
   const loadDetailData = async (taskId: string) => {
     setDetailLoading(true);
-    setProcessLoading(true);
     setSelectedProcessingItemIds([]);
     try {
       const detail = await fetchFileParseTaskDetail(taskId);
@@ -225,24 +248,8 @@ export function AiFileParseBoard() {
           : [detailTask, ...currentTasks];
       });
 
-      const [workflowView, sourceRowsView, aiChunksView, validationIssuesView] = await Promise.all([
-        fetchFileParseWorkflow(taskId).catch(() => null),
-        fetchFileParseSourceRows(taskId).catch(() => null),
-        fetchFileParseAiChunks(taskId).then(
-          (payload) => ({ payload, error: '' }),
-          (error) => ({
-            payload: null,
-            error: error instanceof Error ? error.message : '当前账号无权查看 AI 分块记录'
-          })
-        ),
-        fetchFileParseValidationIssues(taskId).catch(() => null)
-      ]);
+      const workflowView = await fetchFileParseWorkflow(taskId).catch(() => null);
       setWorkflow(workflowView);
-      setSourceRows(sourceRowsView?.items ?? []);
-      setAiChunks(aiChunksView.payload?.items ?? []);
-      setAiChunksError(aiChunksView.error);
-      setValidationIssues(validationIssuesView?.items ?? []);
-      setProcessLoading(false);
 
       const shouldLoadResultTabs = !['reading', 'parsing', 'retry_waiting', 'failed'].includes(detailTask.status);
       if (shouldLoadResultTabs) {
@@ -303,13 +310,8 @@ export function AiFileParseBoard() {
       }
     } catch (error) {
       setWorkflow(null);
-      setSourceRows([]);
-      setAiChunks([]);
-      setAiChunksError('');
-      setValidationIssues([]);
       messageApi.error(error instanceof Error ? error.message : '加载解析详情失败');
     } finally {
-      setProcessLoading(false);
       setDetailLoading(false);
     }
   };
@@ -466,12 +468,53 @@ export function AiFileParseBoard() {
     setCreateOpen(true);
   };
 
+  const runCreatedTask = async (taskId: string) => {
+    messageApi.open({
+      key: 'file-parse-create-run',
+      type: 'loading',
+      content: '已创建解析文档，正在解析...',
+      duration: 0
+    });
+    try {
+      const runResult = await runFileParseTask(taskId);
+      await loadTasks(taskId);
+      await loadDetailData(taskId);
+      if (runResult.status === 'failed') {
+        messageApi.open({
+          key: 'file-parse-create-run',
+          type: 'error',
+          content: runResult.message || '解析失败，请稍后重试',
+          duration: 5
+        });
+        return;
+      }
+      if (runResult.status === 'parsing' || runResult.status === 'retry_waiting') {
+        messageApi.open({
+          key: 'file-parse-create-run',
+          type: 'info',
+          content: runResult.message || '文档正在解析中',
+          duration: 4
+        });
+        return;
+      }
+      messageApi.open({
+        key: 'file-parse-create-run',
+        type: 'success',
+        content: '解析完成，请处理结果',
+        duration: 3
+      });
+    } catch (error) {
+      messageApi.destroy('file-parse-create-run');
+      messageApi.error(error instanceof Error ? error.message : '解析失败，请稍后重试');
+    }
+  };
+
   const handleSubmitCreate = async () => {
-    if (actionLoading || createSubmittingRef.current) {
+    if (createSubmittingRef.current) {
       return;
     }
     createSubmittingRef.current = true;
-    setActionLoading(true);
+    setCreateSubmitting(true);
     try {
       const values = await createForm.validateFields();
       if (!uploadFiles.length && !values.ocrText?.trim() && !values.manualText?.trim()) {
@@ -548,39 +591,7 @@ export function AiFileParseBoard() {
       setSelectedTaskId(String(created.id));
       setViewMode('detail');
       setDetailTab('processing');
-      messageApi.open({
-        key: 'file-parse-create-run',
-        type: 'loading',
-        content: '已创建解析文档，正在解析...',
-        duration: 0
-      });
-      const runResult = await runFileParseTask(created.id);
-      await loadTasks(String(created.id));
-      await loadDetailData(String(created.id));
-      if (runResult.status === 'failed') {
-        messageApi.open({
-          key: 'file-parse-create-run',
-          type: 'error',
-          content: runResult.message || '解析失败，请稍后重试',
-          duration: 5
-        });
-        return;
-      }
-      if (runResult.status === 'parsing') {
-        messageApi.open({
-          key: 'file-parse-create-run',
-          type: 'info',
-          content: runResult.message || '文档正在解析中',
-          duration: 4
-        });
-        return;
-      }
-      messageApi.open({
-        key: 'file-parse-create-run',
-        type: 'success',
-        content: '解析完成，请处理结果',
-        duration: 3
-      });
+      void runCreatedTask(String(created.id));
     } catch (error) {
       messageApi.destroy('file-parse-create-run');
       if (Array.isArray((error as { errorFields?: unknown[] }).errorFields)) {
@@ -589,7 +600,7 @@ export function AiFileParseBoard() {
       messageApi.error(error instanceof Error ? error.message : '创建解析文档失败');
     } finally {
       createSubmittingRef.current = false;
-      setActionLoading(false);
+      setCreateSubmitting(false);
     }
   };
 
@@ -601,6 +612,98 @@ export function AiFileParseBoard() {
 
   const openEditDrawer = (item: AiParseResultItem) => {
     setEditingItem(item);
+  };
+
+  const reloadTasksWithFilters = async (nextFilters: AiParseTaskFilters) => {
+    setTaskFilters(nextFilters);
+    setPageLoading(true);
+    try {
+      await loadTasks(undefined, nextFilters);
+    } catch (error) {
+      messageApi.error(error instanceof Error ? error.message : '加载解析文档列表失败');
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  const handleTaskFiltersChange = (nextFilters: AiParseTaskFilters) => {
+    void reloadTasksWithFilters(nextFilters);
+  };
+
+  const handleTaskFiltersReset = () => {
+    void reloadTasksWithFilters({ ...EMPTY_TASK_FILTERS });
+  };
+
+  const handleDeleteTask = (task: AiParseTask) => {
+    modal.confirm({
+      title: '删除解析文档',
+      content: '会删除该文档及其解析记录、已发布版本和当前生效业务结果，删除后不会自动恢复上一版。',
+      okText: '确认删除',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        setActionLoading(true);
+        try {
+          await deleteFileParseTask(task.id);
+          if (selectedTaskId === task.id) {
+            setViewMode('list');
+          }
+          await loadTasks();
+          messageApi.success('已删除解析文档');
+        } catch (error) {
+          messageApi.error(error instanceof Error ? error.message : '删除解析文档失败');
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    });
+  };
+
+  const handleBatchDeleteTasks = (selectedTasks: AiParseTask[]) => {
+    const deletableTasks = selectedTasks.filter((task) => task.availableActions?.canCreateTask);
+    if (!deletableTasks.length) {
+      messageApi.warning('请先选择可删除的解析文档');
+      return;
+    }
+    modal.confirm({
+      title: '批量删除解析文档',
+      content: `会删除选中的 ${deletableTasks.length} 个文档及其解析记录、已发布版本和当前生效业务结果，删除后不会自动恢复上一版。`,
+      okText: '确认批量删除',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        setActionLoading(true);
+        try {
+          const results = await Promise.all(
+            deletableTasks.map(async (task) => {
+              try {
+                await deleteFileParseTask(task.id);
+                return { task, success: true as const };
+              } catch (error) {
+                return { task, success: false as const, error };
+              }
+            })
+          );
+          const succeeded = results.filter((result) => result.success);
+          const failed = results.filter((result) => !result.success);
+          const succeededTaskIds = new Set(succeeded.map((result) => result.task.id));
+          if (selectedTaskId && succeededTaskIds.has(selectedTaskId)) {
+            setViewMode('list');
+          }
+          setSelectedTaskIds((current) => current.filter((taskId) => !succeededTaskIds.has(taskId)));
+          await loadTasks();
+          if (failed.length) {
+            const firstError = failed[0]?.error;
+            const firstMessage = firstError instanceof Error ? firstError.message : '失败项已保留';
+            messageApi.warning(`删除成功 ${succeeded.length} 个，失败 ${failed.length} 个：${firstMessage}`);
+            return;
+          }
+          messageApi.success(`删除成功 ${succeeded.length} 个，失败 0 个`);
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    });
   };
 
   const handleReviewItem = async (
@@ -708,7 +811,7 @@ export function AiFileParseBoard() {
       return;
     }
     if (!permission.canDraftEdit) {
-      messageApi.warning('当前角色没有解析处理权限');
+      messageApi.warning('当前角色没有结果处理权限');
       return;
     }
     if (selectedTask.status !== 'failed' && selectedTask.status !== 'reading') {
@@ -735,7 +838,7 @@ export function AiFileParseBoard() {
         });
         return;
       }
-      if (runResult.status === 'parsing') {
+      if (runResult.status === 'parsing' || runResult.status === 'retry_waiting') {
         messageApi.open({
           key: 'file-parse-rerun',
           type: 'info',
@@ -919,16 +1022,15 @@ export function AiFileParseBoard() {
   };
 
   return (
-      <AiFileParseBoardView
-        actionLoading={actionLoading}
-        aiChunks={aiChunks}
-        aiChunksError={aiChunksError}
-        allResultFields={allResultFields}
-        blockingItems={blockingItems}
-        comparingItem={comparingItem}
+    <AiFileParseBoardView
+      actionLoading={actionLoading}
+      allResultFields={allResultFields}
+      blockingItems={blockingItems}
+      comparingItem={comparingItem}
       createForm={createForm}
       createOpen={createOpen}
       createParentTask={createParentTask}
+      createSubmitting={createSubmitting}
       createTargetPlan={createTargetPlan}
       detailLoading={detailLoading}
       detailTab={detailTab}
@@ -945,10 +1047,12 @@ export function AiFileParseBoard() {
       onCompareItem={setComparingItem}
       onCompareTargetVersionChange={setCompareTargetVersionId}
       onBatchConfirmItems={handleBatchConfirmItems}
+      onBatchDeleteTasks={handleBatchDeleteTasks}
       onConfirmItem={handleConfirmItem}
       onCreateClose={closeCreateDrawer}
       onCreateSubmit={() => void handleSubmitCreate()}
       onCreateTargetPlanChange={setCreateTargetPlanId}
+      onDeleteTask={handleDeleteTask}
       onDetailTabChange={setDetailTab}
       onEditClose={closeEditDrawer}
       onEditSave={() => void handleSaveEdit()}
@@ -964,30 +1068,32 @@ export function AiFileParseBoard() {
       onReviewFilterChange={setReviewFilter}
       onRunSelectedTask={() => void handleRunSelectedTask()}
       onSaveLogisticsActivation={() => void handleSaveLogisticsActivation()}
+      onTaskFiltersChange={handleTaskFiltersChange}
+      onTaskFiltersReset={handleTaskFiltersReset}
+      onTaskSelectionChange={setSelectedTaskIds}
       onToggleLogisticsChannel={handleToggleLogisticsChannel}
       onProcessingSelectionChange={setSelectedProcessingItemIds}
-        onUploadFilesChange={setUploadFiles}
-        overviewItems={overviewItems}
-        pageLoading={pageLoading}
-        permission={permission}
-        processLoading={processLoading}
-        reviewFilter={reviewFilter}
-        selectedBaseVersion={selectedBaseVersion}
-        selectedProcessingItemIds={selectedProcessingItemIds}
+      onUploadFilesChange={setUploadFiles}
+      overviewItems={overviewItems}
+      pageLoading={pageLoading}
+      permission={permission}
+      reviewFilter={reviewFilter}
+      selectedBaseVersion={selectedBaseVersion}
+      selectedTaskIds={selectedTaskIds}
+      selectedProcessingItemIds={selectedProcessingItemIds}
       selectedLogisticsChannelKeys={selectedLogisticsChannelKeys}
       selectedStandard={selectedStandard}
       selectedTargetVersion={selectedTargetVersion}
-        selectedTask={selectedTask}
-        sourceRows={sourceRows}
-        sortedSelectedVersions={sortedSelectedVersions}
-        targetPlans={targetPlans}
-        tasks={tasks}
-        uploadFiles={uploadFiles}
-        validationIssues={validationIssues}
-        versionCompareRows={versionCompareRows}
-        viewMode={viewMode}
-        visibleFields={visibleFields}
-        workflow={workflow}
-      />
+      selectedTask={selectedTask}
+      sortedSelectedVersions={sortedSelectedVersions}
+      taskFilters={taskFilters}
+      targetPlans={targetPlans}
+      tasks={tasks}
+      uploadFiles={uploadFiles}
+      versionCompareRows={versionCompareRows}
+      viewMode={viewMode}
+      visibleFields={visibleFields}
+      workflow={workflow}
+    />
   );
 }

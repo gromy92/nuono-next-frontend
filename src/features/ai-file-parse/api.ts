@@ -62,6 +62,7 @@ export type FileParseTaskListItemPayload = {
   createdAt?: string | null;
   updatedAt?: string | null;
   availableActions?: FileParseAvailableActionsPayload;
+  inputItems?: FileParseTaskInputPayload[];
 };
 
 export type FileParseTaskListPayload = {
@@ -510,6 +511,14 @@ export function fetchFileParseTasks(params?: {
 
 export function fetchFileParseTaskDetail(taskId: string | number) {
   return parseResponse<FileParseTaskDetailPayload>(fileParseFetch(`/api/file-management/parse/tasks/${taskId}`));
+}
+
+export function deleteFileParseTask(taskId: string | number) {
+  return parseResponse<void>(
+    fileParseFetch(`/api/file-management/parse/tasks/${taskId}`, {
+      method: 'DELETE'
+    })
+  );
 }
 
 export function uploadFileParseInput(targetPlanId: string | number, file: File) {
