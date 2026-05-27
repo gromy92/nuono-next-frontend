@@ -177,6 +177,7 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     tabLabel: '店铺数据',
     contentKind: 'noon-call-store-data',
     closable: true,
+    visibleInWorkspaceTabs: false,
     routeAliases: ['/noon-call/store-data']
   },
   'system-report-noon-data-completeness': {
@@ -197,7 +198,8 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '系统报表 / 数据缺口巡检',
     tabLabel: '数据缺口巡检',
     contentKind: 'system-report-noon-data-gaps',
-    closable: true
+    closable: true,
+    visibleInWorkspaceTabs: false
   },
   'system-file-management': {
     key: 'system-file-management',
