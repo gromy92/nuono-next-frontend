@@ -93,6 +93,12 @@ const NoonDataGapPatrolPage = lazyWorkspace(() =>
     default: module.NoonDataGapPatrolPage
   }))
 );
+const SalesAnalyticsPage = lazyWorkspace(() =>
+  import('../sales-analytics/SalesAnalyticsPage').then((module) => ({ default: module.SalesAnalyticsPage }))
+);
+const SalesForecastPage = lazyWorkspace(() =>
+  import('../sales-forecast/SalesForecastPage').then((module) => ({ default: module.SalesForecastPage }))
+);
 const OperationConfigSuiteVersionPage = lazyWorkspace(() =>
   import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
     default: module.OperationConfigSuiteVersionPage
@@ -267,6 +273,22 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <NoonDataGapPatrolPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'sales-analytics') {
+    return (
+      <LazyWorkspaceBoundary>
+        <SalesAnalyticsPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'sales-forecast') {
+    return (
+      <LazyWorkspaceBoundary>
+        <SalesForecastPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

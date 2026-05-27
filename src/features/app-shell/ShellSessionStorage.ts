@@ -6,6 +6,8 @@ import {
   PRODUCT_WORKSPACE_PATH,
   PRODUCT_MANUAL_SELECTION_PATH,
   PURCHASE_1688_COLLECTION_PATH,
+  DATA_SALES_ANALYTICS_PATH,
+  DATA_SALES_FORECAST_PATH,
   NOON_CALL_STORE_DATA_PATH,
   SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH,
   SYSTEM_REPORT_NOON_DATA_GAPS_PATH,
@@ -75,6 +77,11 @@ function readDevSessionOverride(): AuthSession | null {
     pathname.startsWith(SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH) ||
     pathname.startsWith(SYSTEM_REPORT_NOON_DATA_GAPS_PATH) ||
     search.get('grantSystemReports') === '1'
+  const includeSalesAnalyticsDevMenu =
+    pathname.startsWith(DATA_SALES_ANALYTICS_PATH) ||
+    pathname.startsWith(DATA_SALES_FORECAST_PATH) ||
+    search.get('grantSalesAnalytics') === '1' ||
+    search.get('grantSalesForecast') === '1'
   const includeOperationsConfigDevMenu =
     pathname.startsWith(OPERATIONS_CONFIG_VERSIONS_PATH) ||
     pathname.startsWith(DATA_ACTIVITY_CONFIG_PATH) ||
@@ -180,6 +187,10 @@ function readDevSessionOverride(): AuthSession | null {
     grantedMenus.push({ menuId: 9600, menuName: '系统报表', urlPath: NOON_CALL_STORE_DATA_PATH })
     grantedMenus.push({ menuId: 9602, menuName: '数据完整度', urlPath: SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH })
     grantedMenus.push({ menuId: 9603, menuName: '数据缺口巡检', urlPath: SYSTEM_REPORT_NOON_DATA_GAPS_PATH })
+  }
+  if (includeSalesAnalyticsDevMenu) {
+    grantedMenus.push({ menuId: 9401, menuName: '销量分析', urlPath: DATA_SALES_ANALYTICS_PATH })
+    grantedMenus.push({ menuId: 9402, menuName: '销量预测', urlPath: DATA_SALES_FORECAST_PATH })
   }
   if (includeOperationsConfigDevMenu) {
     grantedMenus.push({ menuId: 9503, menuName: '运营配置版本', urlPath: OPERATIONS_CONFIG_VERSIONS_PATH })

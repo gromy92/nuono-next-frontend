@@ -6,6 +6,8 @@ export type AppMenuKey =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'data-sales-analysis'
+  | 'data-sales-forecast'
   | 'noon-call-store-data'
   | 'system-report-noon-data-completeness'
   | 'system-report-noon-data-gaps'
@@ -57,6 +59,8 @@ export type WorkspaceContentKind =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'sales-analytics'
+  | 'sales-forecast'
   | 'noon-call-store-data'
   | 'system-report-noon-data-completeness'
   | 'system-report-noon-data-gaps'
@@ -174,6 +178,26 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '物流 / 货代管理',
     tabLabel: '货代管理',
     contentKind: 'purchase-logistics-quote',
+    closable: true
+  },
+  'data-sales-analysis': {
+    key: 'data-sales-analysis',
+    label: '销量分析',
+    path: '/data/sales-analysis',
+    sectionKey: 'data',
+    pathLabel: '数据 / 销量分析',
+    tabLabel: '销量分析',
+    contentKind: 'sales-analytics',
+    closable: true
+  },
+  'data-sales-forecast': {
+    key: 'data-sales-forecast',
+    label: '销量预测',
+    path: '/data/sales-forecast',
+    sectionKey: 'data',
+    pathLabel: '数据 / 销量预测',
+    tabLabel: '销量预测',
+    contentKind: 'sales-forecast',
     closable: true
   },
   'noon-call-store-data': {
@@ -375,9 +399,9 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     label: '数据',
     iconKey: 'data',
     entries: [
-      { type: 'placeholder', key: 'data-sales', label: '商品销量', disabled: true },
-      { type: 'placeholder', key: 'data-board', label: '约仓看板', disabled: true },
-      { type: 'placeholder', key: 'data-analysis', label: '销量分析', disabled: true }
+      { type: 'workspace', key: 'data-sales-analysis' },
+      { type: 'workspace', key: 'data-sales-forecast' },
+      { type: 'placeholder', key: 'data-board', label: '约仓看板', disabled: true }
     ]
   },
   {
@@ -478,6 +502,18 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
+    keys: ['data-sales-analysis', 'data-sales-forecast'],
+    urlPaths: [
+      '/data/sales-analysis',
+      '/data/sales-forecast',
+      '/api/sales-data/analytics',
+      '/api/sales-data/activity-windows',
+      '/api/sales-forecast/overview'
+    ],
+    urlPathPrefixes: ['/api/sales-data/analytics/', '/api/sales-data/activity-windows/', '/api/sales-forecast/'],
+    menuNames: ['销量分析', '销量预测', '销售分析', '销量数据']
+  },
+  {
     keys: ['noon-call-store-data', 'system-report-noon-data-completeness', 'system-report-noon-data-gaps'],
     urlPaths: [
       '/system-reports/store-data',
@@ -521,6 +557,8 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-order',
   'purchase-profit',
   'purchase-logistics-quote',
+  'data-sales-analysis',
+  'data-sales-forecast',
   'noon-call-store-data',
   'system-report-noon-data-completeness',
   'system-report-noon-data-gaps',
