@@ -52,6 +52,10 @@ const statusLabels: Record<string, string> = {
 };
 
 const missingFieldLabels: Record<string, string> = {
+  spec_not_found: '未维护',
+  dimensions: '尺寸',
+  weight: '重量',
+  logistics_attribute: '物流属性',
   product_length_cm: '产品长',
   product_width_cm: '产品宽',
   product_height_cm: '产品高',
