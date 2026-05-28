@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { message } from 'antd';
 import { fetchProductPublishTask } from './api';
 import { createProductListColumns } from './productListColumns';
@@ -17,6 +17,7 @@ import { useProductWorkbenchDerivedState } from './hooks/useProductWorkbenchDeri
 import { useProductWorkbenchSurfaceActions } from './hooks/useProductWorkbenchSurfaceActions';
 import { useProductWorkspaceNavigation } from './hooks/useProductWorkspaceNavigation';
 import { useProductWorkspaceState } from './hooks/useProductWorkspaceState';
+import type { ProductListRowPayload } from './types';
 import type { UseProductManagementWorkspaceParams } from './workspaceContracts';
 import { storeInitializationStepColor } from './workspaceHelpers';
 import { isProductPublishTaskActive } from './utils';
@@ -63,6 +64,7 @@ export function useProductManagementWorkspace({
     setProductListFilters,
     setProductListUiStates,
     setProductSnapshotSubmitting,
+    setProductVariantSpecModalState,
     setProductWorkbenchSurfaceState,
     setSelectedInitializationStoreCodeOverride,
     setSelectedProductRowKeys,
@@ -205,6 +207,30 @@ export function useProductManagementWorkspace({
   });
   const { openProductListGallery, openProductHistoryModal, openProductSiteCompareModal } = mediaAndHistoryActions;
 
+  const openProductVariantSpecModal = useCallback(
+    (record: ProductListRowPayload) => {
+      const ownerUserId = activeOwnerId ?? session?.defaultOwnerUserId;
+      const storeCode = selectedInitializationStoreCode ?? record.referenceStoreCode;
+      const skuParent = record.skuParent;
+
+      if (!ownerUserId || !storeCode || !skuParent) {
+        message.warning('缺少老板、店铺或商品 SKU 上下文，暂时不能维护规格。');
+        return;
+      }
+
+      setProductVariantSpecModalState({
+        open: true,
+        ownerUserId,
+        storeCode,
+        skuParent,
+        title: record.title || record.partnerSku || skuParent,
+        partnerSku: record.partnerSku,
+        imageUrl: record.imageUrl
+      });
+    },
+    [activeOwnerId, selectedInitializationStoreCode, session?.defaultOwnerUserId, setProductVariantSpecModalState]
+  );
+
   const draftMutations = useProductDraftMutations({
     activeSiteOfferCode,
     dirtySiteOfferCodes,
@@ -330,6 +356,7 @@ export function useProductManagementWorkspace({
     openProductListGallery,
     openProductWorkbenchInPageTab: navigation.openProductWorkbenchInPageTab,
     openProductHistoryModal,
+    openProductVariantSpecModal,
     openProductSiteCompareModal,
     requestDeleteLocalProduct: productLocalDeletion.requestDeleteLocalProduct,
     updateProductListLiveStatus

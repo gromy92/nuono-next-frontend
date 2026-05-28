@@ -26,18 +26,18 @@ function assertNotIncludes(source, needle, label) {
 const sizesTab = read('src/features/product-management/components/ProductSizesTab.tsx')
 const specTable = read('src/features/product-management/components/ProductVariantSpecTable.tsx')
 const productApi = read('src/features/product-management/api.ts')
+const listCells = read('src/features/product-management/components/ProductListIdentityCells.tsx')
+const workspace = read('src/features/product-management/useProductManagementWorkspace.tsx')
+const modals = read('src/features/product-management/ProductManagementWorkspaceModals.tsx')
 const workbenchTypes = read('src/features/product-management/types/workbench.ts')
 
-assertIncludes(
-  sizesTab,
-  "import { ProductVariantSpecTable } from './ProductVariantSpecTable'",
-  'ProductSizesTab'
-)
-assertIncludes(
-  sizesTab,
-  '<ProductVariantSpecTable productSnapshotView={productSnapshotView} />',
-  'ProductSizesTab'
-)
+assertNotIncludes(sizesTab, 'ProductVariantSpecTable', 'ProductSizesTab')
+assertNotIncludes(sizesTab, '规格 / 箱规', 'ProductSizesTab')
+
+assertIncludes(listCells, 'openProductVariantSpecModal', 'Product list spec action')
+assertIncludes(listCells, '规格', 'Product list spec action')
+assertIncludes(workspace, 'openProductVariantSpecModal', 'Product management workspace')
+assertIncludes(modals, 'ProductVariantSpecModal', 'Product management modals')
 
 assertIncludes(specTable, '规格已保存', 'ProductVariantSpecTable')
 assertIncludes(specTable, 'fetchProductVariantSpecs', 'ProductVariantSpecTable')
@@ -45,12 +45,13 @@ assertIncludes(specTable, 'saveProductVariantSpec', 'ProductVariantSpecTable')
 assertIncludes(specTable, 'setLoading(false)', 'ProductVariantSpecTable loading reset')
 assertNotIncludes(specTable, 'publish-current', 'ProductVariantSpecTable')
 
-assertIncludes(productApi, '/api/product-master/variant-specs', 'product management API')
+assertIncludes(productApi, '/api/product-variant-specs', 'product management API')
 assertIncludes(productApi, 'export async function fetchProductVariantSpecs', 'product management API')
 assertIncludes(productApi, 'export async function saveProductVariantSpec', 'product management API')
 assertIncludes(productApi, "import { apiFetch } from '../../shared/api'", 'product management API auth headers')
-assertIncludes(productApi, 'const response = await apiFetch(`/api/product-master/variant-specs?', 'product management API auth headers')
+assertIncludes(productApi, 'const response = await apiFetch(`/api/product-variant-specs?', 'product management API auth headers')
 assertIncludes(productApi, 'const response = await apiFetch(url, {', 'product management API auth headers')
+assertNotIncludes(productApi, '/api/product-master/variant-specs', 'product management API')
 assertNotIncludes(productApi, 'variant-specs/publish', 'product management API')
 
 assertIncludes(workbenchTypes, 'ProductVariantSpecPayload', 'product management workbench types')

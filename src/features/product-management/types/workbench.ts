@@ -129,6 +129,16 @@ export type ProductVariantSpecSaveRequest = ProductVariantSpecPayload & {
   partnerSku: string;
 };
 
+export type ProductVariantSpecModalState = {
+  open: boolean;
+  ownerUserId?: number;
+  storeCode?: string;
+  skuParent?: string;
+  title?: string;
+  partnerSku?: string;
+  imageUrl?: string;
+};
+
 export type ProductWorkbenchPayload = ProductMasterSnapshotPayload & {
   baselineSnapshot?: ProductMasterSnapshotPayload;
   draftSnapshot?: ProductMasterSnapshotPayload;

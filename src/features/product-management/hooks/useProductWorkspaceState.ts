@@ -4,6 +4,7 @@ import { defaultProductListFilters } from '../config';
 import type {
   ProductListDatasetState,
   ProductListUiState,
+  ProductVariantSpecModalState,
   ProductSiteCompareModalState,
   ProductSummarySurface,
   ProductWorkbenchSurfaceState,
@@ -51,6 +52,9 @@ export function useProductWorkspaceState() {
   const [productSiteCompareModalState, setProductSiteCompareModalState] = useState<ProductSiteCompareModalState>(
     closedProductSiteCompareModalState()
   );
+  const [productVariantSpecModalState, setProductVariantSpecModalState] = useState<ProductVariantSpecModalState>({
+    open: false
+  });
   const [showInitializationDiagnostics, setShowInitializationDiagnostics] = useState(false);
   const [productSnapshotForm] = Form.useForm();
   const productWorkbenchRef = useRef<HTMLDivElement | null>(null);
@@ -125,6 +129,8 @@ export function useProductWorkspaceState() {
     setProductHistoryModalPendingVisibleAfter,
     productSiteCompareModalState,
     setProductSiteCompareModalState,
+    productVariantSpecModalState,
+    setProductVariantSpecModalState,
     showInitializationDiagnostics,
     setShowInitializationDiagnostics,
     productSnapshotForm,

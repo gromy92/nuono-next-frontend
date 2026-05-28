@@ -2,7 +2,6 @@ import { Space, Table } from 'antd';
 import { createProductSizeColumns } from '../productDetailColumns';
 import { ProductDetailSection } from './ProductDetailSection';
 import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
-import { ProductVariantSpecTable } from './ProductVariantSpecTable';
 
 export function ProductSizesTab(props: ProductDetailOfficialTabsProps) {
   const {
@@ -27,9 +26,6 @@ export function ProductSizesTab(props: ProductDetailOfficialTabsProps) {
             removeProductVariant
           })}
         />
-      </ProductDetailSection>
-      <ProductDetailSection title="规格 / 箱规">
-        <ProductVariantSpecTable productSnapshotView={productSnapshotView} />
       </ProductDetailSection>
     </Space>
   );

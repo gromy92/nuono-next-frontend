@@ -1,4 +1,4 @@
-import { BranchesOutlined, DeleteOutlined, HistoryOutlined } from '@ant-design/icons';
+import { BranchesOutlined, DeleteOutlined, HistoryOutlined, ProfileOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { Button, Popconfirm, Space, Tag, Tooltip, Typography } from 'antd';
 import type { ProductListRowPayload } from '../types';
@@ -84,6 +84,7 @@ export function ProductDetailsCell(props: {
   openProductListGallery: ProductListRowAction;
   openProductWorkbenchInPageTab: ProductListRowAction;
   openProductHistoryModal: ProductListRowAction;
+  openProductVariantSpecModal: ProductListRowAction;
   openProductSiteCompareModal: ProductListRowAction;
   requestDeleteLocalProduct: ProductListRowAction;
 }) {
@@ -94,6 +95,7 @@ export function ProductDetailsCell(props: {
     openProductListGallery,
     openProductWorkbenchInPageTab,
     openProductHistoryModal,
+    openProductVariantSpecModal,
     openProductSiteCompareModal,
     requestDeleteLocalProduct
   } = props;
@@ -242,6 +244,18 @@ export function ProductDetailsCell(props: {
             style={{ height: 20, padding: 0, fontSize: 12 }}
           >
             历史
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<ProfileOutlined />}
+            onClick={(event) => {
+              event.stopPropagation();
+              openProductVariantSpecModal(record);
+            }}
+            style={{ height: 20, padding: 0, fontSize: 12 }}
+          >
+            规格
           </Button>
           <Button
             type="link"

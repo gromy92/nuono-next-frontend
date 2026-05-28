@@ -176,7 +176,7 @@ export async function fetchProductVariantSpecs(request: ProductHistoryRequest) {
     storeCode: request.storeCode,
     skuParent: request.skuParent
   });
-  const response = await apiFetch(`/api/product-master/variant-specs?${query.toString()}`);
+  const response = await apiFetch(`/api/product-variant-specs?${query.toString()}`);
 
   if (!response.ok) {
     throw new Error(await readBackendError(response, `商品规格返回 ${response.status}`));
@@ -186,7 +186,7 @@ export async function fetchProductVariantSpecs(request: ProductHistoryRequest) {
 }
 
 export async function saveProductVariantSpec(request: ProductVariantSpecSaveRequest) {
-  return postJson<ProductVariantSpecPayload>('/api/product-master/variant-specs', request, '保存商品规格失败');
+  return postJson<ProductVariantSpecPayload>('/api/product-variant-specs', request, '保存商品规格失败');
 }
 
 export async function executeProductWorkbenchAction(request: ProductWorkbenchActionRequest) {

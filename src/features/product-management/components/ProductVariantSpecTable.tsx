@@ -2,17 +2,19 @@ import { Button, InputNumber, Select, Space, Table, Tag, Typography, message } f
 import type { ColumnsType } from 'antd/es/table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchProductVariantSpecs, saveProductVariantSpec } from '../api';
-import type {
-  ProductMasterSnapshotPayload,
-  ProductVariantSpecLogisticsValue,
-  ProductVariantSpecPayload
-} from '../types';
+import type { ProductVariantSpecLogisticsValue, ProductVariantSpecPayload } from '../types';
 import { formatSnapshotValue, textInputValue } from '../utils/common';
 
 const { Text } = Typography;
 
+export type ProductVariantSpecScope = {
+  ownerUserId?: number;
+  storeCode?: string;
+  skuParent?: string;
+};
+
 type ProductVariantSpecTableProps = {
-  productSnapshotView?: ProductMasterSnapshotPayload;
+  scope?: ProductVariantSpecScope;
 };
 
 type NumericSpecField =
@@ -69,14 +71,14 @@ const missingFieldLabels: Record<string, string> = {
   liquid_powder_type: '液体/粉末'
 };
 
-export function ProductVariantSpecTable({ productSnapshotView }: ProductVariantSpecTableProps) {
+export function ProductVariantSpecTable({ scope }: ProductVariantSpecTableProps) {
   const [rows, setRows] = useState<ProductVariantSpecPayload[]>([]);
   const [loading, setLoading] = useState(false);
   const [savingKey, setSavingKey] = useState<string>();
 
-  const ownerUserId = Number(textInputValue(productSnapshotView?.storeContext.ownerUserId)) || undefined;
-  const storeCode = textInputValue(productSnapshotView?.storeContext.storeCode).trim();
-  const skuParent = textInputValue(productSnapshotView?.identity.skuParent).trim();
+  const ownerUserId = Number(scope?.ownerUserId) || undefined;
+  const storeCode = textInputValue(scope?.storeCode).trim();
+  const skuParent = textInputValue(scope?.skuParent).trim();
 
   useEffect(() => {
     if (!ownerUserId || !storeCode || !skuParent) {
