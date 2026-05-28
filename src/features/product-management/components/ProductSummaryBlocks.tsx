@@ -1,7 +1,10 @@
 import { Button, List, Space, Tag, Typography } from 'antd';
 import type { ProductSummarySurface } from '../types';
 import {
+  formatDateTimeParts,
+  isProductNotListedSource,
   isLiveStatusActive,
+  productListingStartedSourceLabel,
   productLiveStatusLabel,
   productSummaryIdentityLine,
   productSummaryPriceLine,
@@ -77,6 +80,10 @@ export function ProductSummaryMetricTags({
   summary: ProductSummarySurface;
   includeLastSynced?: boolean;
 }) {
+  const listingStartedParts = formatDateTimeParts(summary.listingStartedAt);
+  const listingStartedSourceLabel = productListingStartedSourceLabel(summary.listingStartedSource);
+  const productNotListed = isProductNotListedSource(summary.listingStartedSource);
+
   return (
     <Space wrap size={[8, 8]}>
       <Tag color="success" style={{ marginInlineEnd: 0 }}>
@@ -100,6 +107,16 @@ export function ProductSummaryMetricTags({
       {summary.siteOfferCount !== undefined ? (
         <Tag color="default" style={{ marginInlineEnd: 0 }}>
           站点 {summary.siteOfferCount}
+        </Tag>
+      ) : null}
+      {productNotListed ? (
+        <Tag color="warning" style={{ marginInlineEnd: 0 }}>
+          未上架
+        </Tag>
+      ) : listingStartedParts ? (
+        <Tag color="default" style={{ marginInlineEnd: 0 }}>
+          上架 {listingStartedParts.date}
+          {listingStartedSourceLabel ? ` · ${listingStartedSourceLabel}` : ''}
         </Tag>
       ) : null}
       {includeLastSynced && summary.lastSyncedAt ? (

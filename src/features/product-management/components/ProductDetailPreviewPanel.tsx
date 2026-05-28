@@ -1,6 +1,8 @@
 import { Alert, Col, Descriptions, Row, Space, Spin, Tag, Typography } from 'antd';
 import type { ProductSummarySurface } from '../types';
 import {
+  isProductNotListedSource,
+  productListingStartedSourceLabel,
   formatSnapshotValue,
   productSummaryIdentityLine,
   productSummaryPriceLine,
@@ -18,6 +20,8 @@ type ProductDetailPreviewPanelProps = {
 
 export function ProductDetailPreviewPanel({ message, summary, status = 'loading' }: ProductDetailPreviewPanelProps) {
   const loading = status === 'loading';
+  const listingStartedSourceLabel = productListingStartedSourceLabel(summary.listingStartedSource);
+  const productNotListed = isProductNotListedSource(summary.listingStartedSource);
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
       <Alert
@@ -83,6 +87,11 @@ export function ProductDetailPreviewPanel({ message, summary, status = 'loading'
                   <Descriptions.Item label="参考价">{productSummaryPriceLine(summary)}</Descriptions.Item>
                   <Descriptions.Item label="经营站点">{summary.siteOfferCount ?? summary.siteLabels.length}</Descriptions.Item>
                   <Descriptions.Item label="变体/尺码">{summary.variantCount ?? '-'}</Descriptions.Item>
+                  <Descriptions.Item label="上架时间">
+                    {productNotListed
+                      ? '未上架'
+                      : `${formatSnapshotValue(summary.listingStartedAt)}${listingStartedSourceLabel ? ` · ${listingStartedSourceLabel}` : ''}`}
+                  </Descriptions.Item>
                   <Descriptions.Item label="最近同步">{formatSnapshotValue(summary.lastSyncedAt)}</Descriptions.Item>
                 </Descriptions>
               </Space>

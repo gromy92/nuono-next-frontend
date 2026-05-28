@@ -96,6 +96,8 @@ export type StoreInitializationPayload = {
     liveStatus?: string;
     statusCode?: string;
     isActive?: boolean;
+    listingStartedAt?: string;
+    listingStartedSource?: string;
     syncStatus?: ProductSyncStatus;
     lastSyncedAt?: string;
     lastDraftSavedAt?: string;
@@ -187,6 +189,8 @@ export type ProductListSummaryPayload = {
   isActive?: boolean;
   liveStatus?: string;
   statusCode?: string;
+  listingStartedAt?: string;
+  listingStartedSource?: string;
   syncStatus?: ProductSyncStatus;
   lastSyncedAt?: string;
   lastDraftSavedAt?: string;
@@ -235,6 +239,8 @@ export type ProductSummarySurface = {
   liveStatus?: string;
   statusCode?: string;
   isActive?: boolean;
+  listingStartedAt?: string;
+  listingStartedSource?: string;
   syncStatus?: ProductSyncStatus;
   lastSyncedAt?: string;
   lastDraftSavedAt?: string;

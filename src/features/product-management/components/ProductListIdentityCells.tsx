@@ -5,7 +5,10 @@ import type { ProductListRowPayload } from '../types';
 import {
   buildNoonProductUrl,
   buildProductSummarySurfaceFromListItem,
+  formatDateTimeParts,
+  isProductNotListedSource,
   mergeGalleryImageUrls,
+  productListingStartedSourceLabel,
   productSourceTypeMeta,
   productSummaryTitle
 } from '../utils';
@@ -100,6 +103,9 @@ export function ProductDetailsCell(props: {
   const visiblePsku = summary.partnerSku || summary.pskuCode || '-';
   const noonProductUrl = buildNoonProductUrl(summary);
   const sourceTypeMeta = productSourceTypeMeta(summary.productSourceType);
+  const listingStartedParts = formatDateTimeParts(summary.listingStartedAt);
+  const listingStartedSourceLabel = productListingStartedSourceLabel(summary.listingStartedSource);
+  const productNotListed = isProductNotListedSource(summary.listingStartedSource);
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0 }}>
@@ -193,6 +199,21 @@ export function ProductDetailsCell(props: {
         {summary.barcode ? (
           <div style={{ color: '#9ca3af', fontSize: 12, lineHeight: '18px' }}>
             Barcode: {summary.barcode}
+          </div>
+        ) : null}
+        {listingStartedParts || productNotListed ? (
+          <div style={{ color: '#6b7280', fontSize: 12, lineHeight: '18px', marginTop: summary.barcode ? 0 : 2 }}>
+            <Text style={{ color: '#9ca3af', fontSize: 12 }}>上架: </Text>
+            <Text style={{ color: productNotListed ? '#b45309' : '#6b7280', fontSize: 12 }}>
+              {productNotListed
+                ? '未上架'
+                : `${listingStartedParts?.date ?? ''}${listingStartedParts?.time ? ` ${listingStartedParts.time}` : ''}`}
+            </Text>
+            {listingStartedSourceLabel && !productNotListed ? (
+              <Tag color="default" style={{ marginInlineStart: 6, marginInlineEnd: 0, fontSize: 11, lineHeight: '16px' }}>
+                {listingStartedSourceLabel}
+              </Tag>
+            ) : null}
           </div>
         ) : null}
         <Space wrap size={[8, 4]} style={{ marginTop: 5 }}>
