@@ -3,6 +3,9 @@ import type {
   ProductListDatasetPayload,
   ProductMasterSnapshotPayload,
   ProductPublishTaskPayload,
+  ProductVariantSpecListPayload,
+  ProductVariantSpecPayload,
+  ProductVariantSpecSaveRequest,
   ProductWorkbenchPayload,
   StoreInitializationPayload
 } from './types';
@@ -164,6 +167,25 @@ export async function startStoreInitializationRequest(request: ProductStoreIniti
 
 export async function openProductWorkbenchSnapshot(request: ProductWorkbenchOpenRequest) {
   return postJson<ProductWorkbenchPayload>('/api/product-master/open', request, '读取商品主档失败');
+}
+
+export async function fetchProductVariantSpecs(request: ProductHistoryRequest) {
+  const query = new URLSearchParams({
+    ownerUserId: String(request.ownerUserId),
+    storeCode: request.storeCode,
+    skuParent: request.skuParent
+  });
+  const response = await fetch(`/api/product-master/variant-specs?${query.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, `商品规格返回 ${response.status}`));
+  }
+
+  return (await response.json()) as ProductVariantSpecListPayload;
+}
+
+export async function saveProductVariantSpec(request: ProductVariantSpecSaveRequest) {
+  return postJson<ProductVariantSpecPayload>('/api/product-master/variant-specs', request, '保存商品规格失败');
 }
 
 export async function executeProductWorkbenchAction(request: ProductWorkbenchActionRequest) {

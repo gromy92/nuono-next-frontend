@@ -2,6 +2,7 @@ import { Space, Table } from 'antd';
 import { createProductSizeColumns } from '../productDetailColumns';
 import { ProductDetailSection } from './ProductDetailSection';
 import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
+import { ProductVariantSpecTable } from './ProductVariantSpecTable';
 
 export function ProductSizesTab(props: ProductDetailOfficialTabsProps) {
   const {
@@ -17,9 +18,7 @@ export function ProductSizesTab(props: ProductDetailOfficialTabsProps) {
         <Table
           size="small"
           pagination={false}
-          rowKey={(record) =>
-            String(record.childSku ?? record.partnerSku ?? record.sizeEn ?? record.sizeAr ?? Math.random())
-          }
+          rowKey={(record) => String(record.childSku ?? record.partnerSku ?? record.sizeEn ?? record.sizeAr ?? 'size-row')}
           dataSource={productSnapshotView?.variants ?? []}
           scroll={{ x: 900 }}
           columns={createProductSizeColumns({
@@ -28,6 +27,9 @@ export function ProductSizesTab(props: ProductDetailOfficialTabsProps) {
             removeProductVariant
           })}
         />
+      </ProductDetailSection>
+      <ProductDetailSection title="规格 / 箱规">
+        <ProductVariantSpecTable productSnapshotView={productSnapshotView} />
       </ProductDetailSection>
     </Space>
   );

@@ -72,6 +72,63 @@ export type ProductMasterSnapshotPayload = {
   siteOffers: Array<Record<string, unknown>>;
 };
 
+export type ProductVariantSpecLogisticsValue =
+  | 'unknown'
+  | 'none'
+  | 'battery'
+  | 'magnetic'
+  | 'battery_and_magnetic'
+  | 'liquid'
+  | 'powder'
+  | 'liquid_and_powder';
+
+export type ProductVariantSpecPayload = {
+  variantId?: number;
+  partnerSku?: string;
+  childSku?: string;
+  sizeEn?: string;
+  sizeAr?: string;
+  productLengthCm?: number;
+  productWidthCm?: number;
+  productHeightCm?: number;
+  productWeightG?: number;
+  cartonLengthCm?: number;
+  cartonWidthCm?: number;
+  cartonHeightCm?: number;
+  cartonWeightKg?: number;
+  cartonQuantity?: number;
+  batteryMagneticType?: 'unknown' | 'none' | 'battery' | 'magnetic' | 'battery_and_magnetic';
+  liquidPowderType?: 'unknown' | 'none' | 'liquid' | 'powder' | 'liquid_and_powder';
+  completenessStatus?: string;
+  missingFields?: string[];
+  sourceType?: string;
+  confirmedAt?: string;
+  confirmedBy?: number;
+  createdBy?: number;
+  updatedBy?: number;
+  gmtCreate?: string;
+  gmtUpdated?: string;
+  isDeleted?: boolean;
+};
+
+export type ProductVariantSpecListPayload = {
+  ready: boolean;
+  source?: string;
+  message?: string;
+  ownerUserId?: number;
+  storeCode?: string;
+  skuParent?: string;
+  warnings?: string[];
+  items: ProductVariantSpecPayload[];
+};
+
+export type ProductVariantSpecSaveRequest = ProductVariantSpecPayload & {
+  ownerUserId?: number;
+  storeCode: string;
+  skuParent: string;
+  partnerSku: string;
+};
+
 export type ProductWorkbenchPayload = ProductMasterSnapshotPayload & {
   baselineSnapshot?: ProductMasterSnapshotPayload;
   draftSnapshot?: ProductMasterSnapshotPayload;
