@@ -177,6 +177,10 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
                     上架 {listingStartedParts.date}
                     {listingStartedSourceLabel ? ` · ${listingStartedSourceLabel}` : ''}
                   </Tag>
+                ) : listingStartedSourceLabel ? (
+                  <Tag color="warning" style={{ marginInlineEnd: 0 }}>
+                    {listingStartedSourceLabel}
+                  </Tag>
                 ) : null}
                 {productUrl ? (
                   <Button

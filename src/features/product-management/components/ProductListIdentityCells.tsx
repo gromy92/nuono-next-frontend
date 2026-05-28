@@ -201,15 +201,17 @@ export function ProductDetailsCell(props: {
             Barcode: {summary.barcode}
           </div>
         ) : null}
-        {listingStartedParts || productNotListed ? (
+        {listingStartedParts || productNotListed || listingStartedSourceLabel ? (
           <div style={{ color: '#6b7280', fontSize: 12, lineHeight: '18px', marginTop: summary.barcode ? 0 : 2 }}>
             <Text style={{ color: '#9ca3af', fontSize: 12 }}>上架: </Text>
-            <Text style={{ color: productNotListed ? '#b45309' : '#6b7280', fontSize: 12 }}>
+            <Text style={{ color: productNotListed || !listingStartedParts ? '#b45309' : '#6b7280', fontSize: 12 }}>
               {productNotListed
                 ? '未上架'
-                : `${listingStartedParts?.date ?? ''}${listingStartedParts?.time ? ` ${listingStartedParts.time}` : ''}`}
+                : listingStartedParts
+                  ? `${listingStartedParts.date}${listingStartedParts.time ? ` ${listingStartedParts.time}` : ''}`
+                  : listingStartedSourceLabel}
             </Text>
-            {listingStartedSourceLabel && !productNotListed ? (
+            {listingStartedSourceLabel && listingStartedParts && !productNotListed ? (
               <Tag color="default" style={{ marginInlineStart: 6, marginInlineEnd: 0, fontSize: 11, lineHeight: '16px' }}>
                 {listingStartedSourceLabel}
               </Tag>

@@ -90,7 +90,9 @@ export function ProductDetailPreviewPanel({ message, summary, status = 'loading'
                   <Descriptions.Item label="上架时间">
                     {productNotListed
                       ? '未上架'
-                      : `${formatSnapshotValue(summary.listingStartedAt)}${listingStartedSourceLabel ? ` · ${listingStartedSourceLabel}` : ''}`}
+                      : summary.listingStartedAt
+                        ? `${formatSnapshotValue(summary.listingStartedAt)}${listingStartedSourceLabel ? ` · ${listingStartedSourceLabel}` : ''}`
+                        : listingStartedSourceLabel || '-'}
                   </Descriptions.Item>
                   <Descriptions.Item label="最近同步">{formatSnapshotValue(summary.lastSyncedAt)}</Descriptions.Item>
                 </Descriptions>

@@ -60,6 +60,9 @@ export function productListingStartedSourceLabel(source?: string) {
   if (normalized === 'not_listed') {
     return '未上架';
   }
+  if (normalized === 'data_missing') {
+    return '数据缺失';
+  }
   if (normalized === 'pv') {
     return 'PV';
   }

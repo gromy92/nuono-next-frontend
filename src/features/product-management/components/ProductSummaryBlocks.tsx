@@ -118,6 +118,10 @@ export function ProductSummaryMetricTags({
           上架 {listingStartedParts.date}
           {listingStartedSourceLabel ? ` · ${listingStartedSourceLabel}` : ''}
         </Tag>
+      ) : listingStartedSourceLabel ? (
+        <Tag color="warning" style={{ marginInlineEnd: 0 }}>
+          {listingStartedSourceLabel}
+        </Tag>
       ) : null}
       {includeLastSynced && summary.lastSyncedAt ? (
         <Tag color="default" style={{ marginInlineEnd: 0 }}>
