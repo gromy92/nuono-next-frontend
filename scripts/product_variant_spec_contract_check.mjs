@@ -48,6 +48,8 @@ assertIncludes(specTable, 'product-spec-layout-row', 'ProductVariantSpecTable co
 assertIncludes(specTable, '产品规格', 'ProductVariantSpecTable compact layout')
 assertIncludes(specTable, '箱规', 'ProductVariantSpecTable compact layout')
 assertIncludes(specTable, '物流属性', 'ProductVariantSpecTable compact layout')
+assertIncludes(specTable, 'savedKey', 'ProductVariantSpecTable save feedback')
+assertIncludes(specTable, '已保存', 'ProductVariantSpecTable save feedback')
 assertNotIncludes(specTable, '<Table', 'ProductVariantSpecTable compact layout')
 assertNotIncludes(specTable, "title: 'SKU'", 'ProductVariantSpecTable compact layout')
 

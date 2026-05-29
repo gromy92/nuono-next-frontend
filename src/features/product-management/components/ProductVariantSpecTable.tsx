@@ -96,6 +96,7 @@ export function ProductVariantSpecTable({ scope }: ProductVariantSpecTableProps)
   const [rows, setRows] = useState<ProductVariantSpecPayload[]>([]);
   const [loading, setLoading] = useState(false);
   const [savingKey, setSavingKey] = useState<string>();
+  const [savedKey, setSavedKey] = useState<string>();
 
   const ownerUserId = Number(scope?.ownerUserId) || undefined;
   const storeCode = textInputValue(scope?.storeCode).trim();
@@ -146,6 +147,7 @@ export function ProductVariantSpecTable({ scope }: ProductVariantSpecTableProps)
       }
 
       const rowKey = specRowKey(row);
+      setSavedKey(undefined);
       setSavingKey(rowKey);
       try {
         const saved = await saveProductVariantSpec({
@@ -156,6 +158,7 @@ export function ProductVariantSpecTable({ scope }: ProductVariantSpecTableProps)
           partnerSku
         });
         updateRow(rowKey, saved);
+        setSavedKey(rowKey);
         message.success('规格已保存');
       } catch (error) {
         message.error(error instanceof Error ? error.message : '保存商品规格失败');
@@ -165,6 +168,14 @@ export function ProductVariantSpecTable({ scope }: ProductVariantSpecTableProps)
     },
     [ownerUserId, skuParent, storeCode, updateRow]
   );
+
+  useEffect(() => {
+    if (!savedKey) {
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setSavedKey(undefined), 1800);
+    return () => window.clearTimeout(timer);
+  }, [savedKey]);
 
   return (
     <Spin spinning={loading}>
@@ -176,6 +187,7 @@ export function ProductVariantSpecTable({ scope }: ProductVariantSpecTableProps)
               row={row}
               showVariantHeader={rows.length > 1}
               savingKey={savingKey}
+              savedKey={savedKey}
               updateRow={updateRow}
               saveRow={saveRow}
             />
@@ -192,12 +204,14 @@ function ProductVariantSpecEditor(props: {
   row: ProductVariantSpecPayload;
   showVariantHeader: boolean;
   savingKey?: string;
+  savedKey?: string;
   updateRow: (rowKey: string, patch: Partial<ProductVariantSpecPayload>) => void;
   saveRow: (row: ProductVariantSpecPayload) => void | Promise<void>;
 }) {
-  const { row, showVariantHeader, savingKey, updateRow, saveRow } = props;
+  const { row, showVariantHeader, savingKey, savedKey, updateRow, saveRow } = props;
   const rowKey = specRowKey(row);
   const disabled = Boolean(savingKey);
+  const justSaved = savedKey === rowKey && savingKey !== rowKey;
 
   return (
     <div
@@ -287,7 +301,7 @@ function ProductVariantSpecEditor(props: {
             disabled={Boolean(savingKey)}
             onClick={() => void saveRow(row)}
           >
-            保存
+            {justSaved ? '已保存' : '保存'}
           </Button>
         </div>
       </div>
