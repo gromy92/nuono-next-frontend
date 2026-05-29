@@ -16,6 +16,8 @@ export const PRODUCT_WORKSPACE_PATH = workspaceMenuPath('product-manage')
 export const PRODUCT_GROUPS_PATH = workspaceMenuPath('product-groups')
 export const PRODUCT_MANUAL_SELECTION_PATH = workspaceMenuPath('product-manual-selection')
 export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688-collection')
+export const PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH = workspaceMenuPath('purchase-ali1688-historical-orders')
+export const PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH = workspaceMenuPath('purchase-ali1688-sku-purchase-history')
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
@@ -72,6 +74,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantAiFileParse',
   'grantFileManagement',
   'grantLogisticsQuote',
+  'grantAli1688HistoricalOrders',
   'grantManualSelection',
   'grantPurchase',
   'grantSalesAnalytics',
@@ -252,6 +255,8 @@ export function resolveSessionLandingMenuKey(
     : isBossManagementSession(session)
       ? ([
           'user-role',
+          'purchase-ali1688-historical-orders',
+          'purchase-ali1688-sku-purchase-history',
           'purchase-ali1688-collection',
           'purchase-order',
           'product-manage',
@@ -267,6 +272,8 @@ export function resolveSessionLandingMenuKey(
           'product-manual-selection'
         ] as AppMenuKey[])
       : ([
+          'purchase-ali1688-historical-orders',
+          'purchase-ali1688-sku-purchase-history',
           'purchase-ali1688-collection',
           'purchase-order',
           'product-manage',
