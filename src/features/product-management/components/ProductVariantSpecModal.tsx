@@ -1,4 +1,4 @@
-import { Modal, Space, Typography } from 'antd';
+import { App as AntdApp, Modal, Space, Typography } from 'antd';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 import { formatSnapshotValue } from '../utils';
 import { ProductVariantSpecTable } from './ProductVariantSpecTable';
@@ -10,6 +10,7 @@ type ProductVariantSpecModalProps = {
 };
 
 export function ProductVariantSpecModal({ workspace }: ProductVariantSpecModalProps) {
+  const { message: messageApi } = AntdApp.useApp();
   const {
     productVariantSpecModalState,
     setProductVariantSpecModalState
@@ -26,6 +27,11 @@ export function ProductVariantSpecModal({ workspace }: ProductVariantSpecModalPr
 
   const closeModal = () => {
     setProductVariantSpecModalState({ open: false });
+  };
+
+  const handleSaved = () => {
+    messageApi.success('保存成功');
+    window.setTimeout(closeModal, 0);
   };
 
   return (
@@ -97,7 +103,7 @@ export function ProductVariantSpecModal({ workspace }: ProductVariantSpecModalPr
             </Text>
           </div>
         </div>
-        <ProductVariantSpecTable scope={{ ownerUserId, storeCode, skuParent }} />
+        <ProductVariantSpecTable scope={{ ownerUserId, storeCode, skuParent }} onSaved={handleSaved} />
       </Space>
     </Modal>
   );

@@ -14,6 +14,7 @@ export type ProductVariantSpecScope = {
 
 type ProductVariantSpecTableProps = {
   scope?: ProductVariantSpecScope;
+  onSaved?: (saved: ProductVariantSpecPayload) => void;
 };
 
 type NumericSpecField =
@@ -92,7 +93,7 @@ const cartonSpecFields: NumericSpecConfig[] = [
   { label: '箱装数', field: 'cartonQuantity', unit: '件', precision: 0 }
 ];
 
-export function ProductVariantSpecTable({ scope }: ProductVariantSpecTableProps) {
+export function ProductVariantSpecTable({ scope, onSaved }: ProductVariantSpecTableProps) {
   const [rows, setRows] = useState<ProductVariantSpecPayload[]>([]);
   const [loading, setLoading] = useState(false);
   const [savingKey, setSavingKey] = useState<string>();
@@ -159,14 +160,14 @@ export function ProductVariantSpecTable({ scope }: ProductVariantSpecTableProps)
         });
         updateRow(rowKey, saved);
         setSavedKey(rowKey);
-        message.success('规格已保存');
+        onSaved?.(saved);
       } catch (error) {
         message.error(error instanceof Error ? error.message : '保存商品规格失败');
       } finally {
         setSavingKey(undefined);
       }
     },
-    [ownerUserId, skuParent, storeCode, updateRow]
+    [onSaved, ownerUserId, skuParent, storeCode, updateRow]
   );
 
   useEffect(() => {
