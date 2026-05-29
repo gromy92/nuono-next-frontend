@@ -19,6 +19,7 @@ export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
+export const PURCHASE_IN_TRANSIT_GOODS_PATH = workspaceMenuPath('purchase-in-transit-goods')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
 export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
@@ -72,6 +73,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantAiFileParse',
   'grantFileManagement',
   'grantLogisticsQuote',
+  'grantInTransitGoods',
   'grantManualSelection',
   'grantPurchase',
   'grantSalesAnalytics',
@@ -254,6 +256,7 @@ export function resolveSessionLandingMenuKey(
           'user-role',
           'purchase-ali1688-collection',
           'purchase-order',
+          'purchase-in-transit-goods',
           'product-manage',
           'purchase-profit',
           'purchase-logistics-quote',
@@ -269,6 +272,7 @@ export function resolveSessionLandingMenuKey(
       : ([
           'purchase-ali1688-collection',
           'purchase-order',
+          'purchase-in-transit-goods',
           'product-manage',
           'user-role',
           'purchase-profit',
