@@ -439,8 +439,24 @@
   font-size: 12px;
 }
 
-.ali1688-candidate-price-line span {
+.ali1688-candidate-price-line span,
+.ali1688-candidate-price-line strong {
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ali1688-candidate-price-line strong {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.ali1688-candidate-price-warning.ant-typography {
+  display: block;
+  overflow: hidden;
+  margin: -2px 0 0;
+  color: #b45309;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

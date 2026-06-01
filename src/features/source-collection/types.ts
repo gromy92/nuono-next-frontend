@@ -37,6 +37,17 @@ export type Ali1688CandidatePreview = {
   scoreStatus?: 'pending' | 'partial' | 'final' | string
   scoreBreakdown?: Ali1688CandidateScoreBreakdown
   aiAssessmentStatus?: 'pending' | 'running' | 'success' | 'failed' | string
+  detailEnrichmentStatus?: 'not_requested' | 'pending' | 'completed' | 'failed' | 'unavailable' | string
+  detailTitle?: string
+  detailImageUrls?: string[]
+  pricePreviewStatus?: 'price_probe_pending' | 'price_probe_failed' | 'price_confirmed' | string
+  confirmedRealPriceText?: string
+  pricePreviewFailureCode?: string
+  pricePreviewFailureMessage?: string
+  pricePreviewSafetyMode?: string
+  candidateGateStatus?: string
+  autoInquiryEligible?: boolean
+  autoInquiryBlockReasons?: string[]
   reasons?: string[]
   warnings?: string[]
   procurementInquiryStatus?: string
