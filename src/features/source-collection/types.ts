@@ -40,6 +40,14 @@ export type Ali1688CandidatePreview = {
   detailEnrichmentStatus?: 'not_requested' | 'pending' | 'completed' | 'failed' | 'unavailable' | string
   detailTitle?: string
   detailImageUrls?: string[]
+  detailUnit?: string
+  detailSkuCount?: number
+  detailServiceLabels?: string[]
+  detailAttributes?: Array<{ name: string; values: string[]; source?: string }>
+  detailSkuOptions?: Array<{ name: string; values: string[] }>
+  detailPagePriceHint?: Record<string, unknown>
+  detailSupplierProfile?: Record<string, unknown>
+  detailShippingSnapshot?: Record<string, unknown>
   pricePreviewStatus?: 'price_probe_pending' | 'price_probe_failed' | 'price_confirmed' | string
   confirmedRealPriceText?: string
   pricePreviewFailureCode?: string

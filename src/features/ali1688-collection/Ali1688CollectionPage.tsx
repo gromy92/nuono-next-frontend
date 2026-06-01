@@ -538,6 +538,7 @@ function CandidateCard(props: {
           </Text>
         ) : null}
         <ScoreBreakdownPanel scoring={scoring} />
+        <DetailEnrichmentPanel candidate={candidate} />
         <div className="ali1688-candidate-actions">
           <Button size="small" icon={<LinkOutlined />} onClick={() => openUrl(candidate.candidateUrl)}>
             打开1688
@@ -545,6 +546,81 @@ function CandidateCard(props: {
         </div>
       </div>
     </article>
+  )
+}
+
+function DetailEnrichmentPanel(props: { candidate: Ali1688CandidatePreview }) {
+  const { candidate } = props
+  const attributes = candidate.detailAttributes || []
+  const skuOptions = candidate.detailSkuOptions || []
+  const serviceLabels = candidate.detailServiceLabels || []
+  const supplier = (candidate.detailSupplierProfile || {}) as Record<string, unknown>
+  const priceHint = (candidate.detailPagePriceHint || {}) as Record<string, unknown>
+  const shipping = (candidate.detailShippingSnapshot || {}) as Record<string, unknown>
+  const text = (value: unknown) => (value == null || value === '' ? undefined : String(value))
+  const hasV2 =
+    attributes.length > 0 ||
+    skuOptions.length > 0 ||
+    serviceLabels.length > 0 ||
+    Boolean(candidate.detailSkuCount) ||
+    Object.keys(supplier).length > 0 ||
+    Object.keys(priceHint).length > 0 ||
+    Object.keys(shipping).length > 0
+
+  if (!hasV2) {
+    return null
+  }
+
+  const priceClue = text(priceHint.priceScale) || text(priceHint.offerPriceDisplay)
+  const shipFrom = text(shipping.shipFrom)
+  const shipTo = text(shipping.shipToText)
+
+  return (
+    <div className="ali1688-detail-v2" data-testid="ali1688-detail-v2">
+      <div className="ali1688-detail-v2-title">
+        详情补全 v2
+        {candidate.detailUnit ? ` · 单位 ${candidate.detailUnit}` : ''}
+        {candidate.detailSkuCount ? ` · SKU ${candidate.detailSkuCount}` : ''}
+      </div>
+      {attributes.length ? (
+        <div className="ali1688-detail-v2-attrs">
+          {attributes.slice(0, 8).map((attr) => (
+            <Tag key={attr.name}>{attr.name}: {(attr.values || []).join(' / ')}</Tag>
+          ))}
+        </div>
+      ) : null}
+      {skuOptions.length ? (
+        <div className="ali1688-detail-v2-line">规格维度：{skuOptions.map((option) => option.name).join('、')}</div>
+      ) : null}
+      {priceClue ? (
+        <div className="ali1688-detail-v2-line">
+          价格线索：{priceClue}
+          {text(priceHint.originalPriceScale) ? `（原价 ${text(priceHint.originalPriceScale)}）` : ''}
+        </div>
+      ) : null}
+      {Object.keys(supplier).length ? (
+        <div className="ali1688-detail-v2-line">
+          供应商：{text(supplier.companyName) || candidate.supplierName}
+          {text(supplier.sellerServiceScore) ? ` · 服务 ${text(supplier.sellerServiceScore)}` : ''}
+          {text(supplier.goodRates) ? ` · 好评 ${text(supplier.goodRates)}` : ''}
+          {text(supplier.buyerRepeatRate) ? ` · 回购 ${text(supplier.buyerRepeatRate)}` : ''}
+        </div>
+      ) : null}
+      {shipFrom || shipTo ? (
+        <div className="ali1688-detail-v2-line">
+          物流线索：{shipFrom || '-'}
+          {shipTo ? ` → ${shipTo}` : ''}
+          {text(shipping.unitWeight) ? ` · ${text(shipping.unitWeight)}kg` : ''}
+          {text(shipping.freightText) ? ` · 运费 ${text(shipping.freightText)}` : ''}
+        </div>
+      ) : null}
+      {serviceLabels.length ? (
+        <div className="ali1688-detail-v2-line">服务：{serviceLabels.slice(0, 6).join('、')}</div>
+      ) : null}
+      <Text type="secondary" className="ali1688-detail-v2-note">
+        页面价/物流价仅作 AI 线索，真实价以价格预览或未支付订单为准
+      </Text>
+    </div>
   )
 }
 
