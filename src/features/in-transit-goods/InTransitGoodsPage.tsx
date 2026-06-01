@@ -8,6 +8,7 @@ import {
   Form,
   Input,
   InputNumber,
+  Modal,
   Select,
   Space,
   Table,
@@ -22,6 +23,7 @@ import {
   DeleteOutlined,
   DownloadOutlined,
   EditOutlined,
+  EyeOutlined,
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
@@ -61,12 +63,22 @@ import './InTransitGoodsPage.css'
 
 const { RangePicker } = DatePicker
 const { Text, Title } = Typography
-const DEFAULT_FILTERS: InTransitBatchFilters = { statusScope: 'active' }
+const DEFAULT_FILTERS: InTransitBatchFilters = { statusScope: 'all' }
 
 type PageState =
   | { status: 'idle' | 'loading'; data?: InTransitBatch[]; message?: string }
   | { status: 'success'; data: InTransitBatch[]; message?: string }
   | { status: 'error'; data?: InTransitBatch[]; message: string }
+
+type InTransitBoxGroup = {
+  boxNo: string
+  lines: InTransitGoodsLine[]
+  skuCount: number
+  shippedQuantityTotal: number
+  receivedQuantityTotal: number
+  remainingQuantityTotal: number
+  cartonCountTotal: number | null
+}
 
 const DEFAULT_CONTRACT: InTransitContract = {
   transportModes: [
@@ -155,6 +167,10 @@ export function InTransitGoodsPage() {
   const [lineEditorOpen, setLineEditorOpen] = useState(false)
   const [editingLine, setEditingLine] = useState<InTransitGoodsLine | null>(null)
   const [submittingLine, setSubmittingLine] = useState(false)
+  const [boxModalOpen, setBoxModalOpen] = useState(false)
+  const [boxModalBatch, setBoxModalBatch] = useState<InTransitBatch | null>(null)
+  const [boxLines, setBoxLines] = useState<InTransitGoodsLine[]>([])
+  const [loadingBoxLines, setLoadingBoxLines] = useState(false)
   const [nodes, setNodes] = useState<InTransitLogisticsNode[]>([])
   const [loadingNodes, setLoadingNodes] = useState(false)
   const [nodeEditorOpen, setNodeEditorOpen] = useState(false)
@@ -226,6 +242,28 @@ export function InTransitGoodsPage() {
 
   const rows = state.data ?? []
 
+  const boxGroups = useMemo<InTransitBoxGroup[]>(() => {
+    const groups = new Map<string, InTransitGoodsLine[]>()
+    boxLines.forEach((line) => {
+      const boxNo = line.boxNo?.trim() || '未填写箱号'
+      const current = groups.get(boxNo) ?? []
+      current.push(line)
+      groups.set(boxNo, current)
+    })
+    return Array.from(groups.entries()).map(([boxNo, groupLines]) => {
+      const cartonValues = groupLines.map((line) => line.cartonCount).filter((value): value is number => value !== null && value !== undefined)
+      return {
+        boxNo,
+        lines: groupLines,
+        skuCount: groupLines.length,
+        shippedQuantityTotal: groupLines.reduce((total, line) => total + (line.shippedQuantity ?? 0), 0),
+        receivedQuantityTotal: groupLines.reduce((total, line) => total + (line.receivedQuantity ?? 0), 0),
+        remainingQuantityTotal: groupLines.reduce((total, line) => total + (line.remainingQuantity ?? 0), 0),
+        cartonCountTotal: cartonValues.length ? cartonValues.reduce((total, value) => total + value, 0) : null
+      }
+    })
+  }, [boxLines])
+
   const openCreate = () => {
     setEditingBatch(null)
     setLines([])
@@ -250,6 +288,22 @@ export function InTransitGoodsPage() {
       setLines([])
     } finally {
       setLoadingLines(false)
+    }
+  }
+
+  const openBoxModal = async (row: InTransitBatch) => {
+    setBoxModalBatch(row)
+    setBoxLines([])
+    setBoxModalOpen(true)
+    setLoadingBoxLines(true)
+    try {
+      const nextLines = await fetchInTransitGoodsLines(row.batchId)
+      setBoxLines(nextLines.items ?? [])
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '箱子明细加载失败')
+      setBoxLines([])
+    } finally {
+      setLoadingBoxLines(false)
     }
   }
 
@@ -592,11 +646,16 @@ export function InTransitGoodsPage() {
         title: '操作',
         key: 'actions',
         fixed: 'right',
-        width: 86,
+        width: 180,
         render: (_value, row) => (
-          <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(row)}>
-            编辑
-          </Button>
+          <Space size={6}>
+            <Button size="small" icon={<EyeOutlined />} onClick={() => void openBoxModal(row)}>
+              查看箱子
+            </Button>
+            <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(row)}>
+              编辑
+            </Button>
+          </Space>
         )
       }
     ],
@@ -679,6 +738,87 @@ export function InTransitGoodsPage() {
       }
     ],
     [editingBatch, filters, submittingLine]
+  )
+
+  const boxColumns = useMemo<ColumnsType<InTransitBoxGroup>>(
+    () => [
+      {
+        title: '箱号',
+        dataIndex: 'boxNo',
+        key: 'boxNo',
+        width: 180,
+        render: (value) => <Text strong>{value}</Text>
+      },
+      {
+        title: 'SKU数',
+        dataIndex: 'skuCount',
+        key: 'skuCount',
+        width: 90
+      },
+      {
+        title: '数量汇总',
+        key: 'quantity',
+        width: 260,
+        render: (_value, row) => (
+          <Space size={10} wrap>
+            <span className="in-transit-page__stat">发货 {row.shippedQuantityTotal}</span>
+            <span className="in-transit-page__stat">入仓 {row.receivedQuantityTotal}</span>
+            <span className="in-transit-page__stat">剩余 {row.remainingQuantityTotal}</span>
+            <span className="in-transit-page__stat">箱数 {row.cartonCountTotal ?? '-'}</span>
+          </Space>
+        )
+      }
+    ],
+    []
+  )
+
+  const boxLineColumns = useMemo<ColumnsType<InTransitGoodsLine>>(
+    () => [
+      {
+        title: 'SKU',
+        key: 'sku',
+        width: 220,
+        render: (_value, row) => (
+          <Space direction="vertical" size={0}>
+            <Text strong>{row.sku}</Text>
+            <Text type="secondary">{[row.msku, row.psku].filter(Boolean).join(' / ') || '-'}</Text>
+            <Text type="secondary">{row.productName || '-'}</Text>
+          </Space>
+        )
+      },
+      {
+        title: '店铺',
+        key: 'store',
+        width: 150,
+        render: (_value, row) => [row.storeCode, row.siteCode].filter(Boolean).join(' / ') || '-'
+      },
+      {
+        title: '数量',
+        key: 'quantity',
+        width: 180,
+        render: (_value, row) => (
+          <Space size={8} wrap>
+            <span>发货 {row.shippedQuantity ?? '-'}</span>
+            <span>入仓 {row.receivedQuantity ?? '-'}</span>
+            <span>剩余 {row.remainingQuantity ?? '-'}</span>
+          </Space>
+        )
+      },
+      {
+        title: '箱规',
+        key: 'carton',
+        width: 220,
+        render: (_value, row) => (
+          <Space size={8} wrap>
+            <span>箱数 {row.cartonCount ?? '-'}</span>
+            <span>单箱 {row.unitsPerCarton ?? '-'}</span>
+            <span>重量 {row.cartonWeightKg ?? '-'}</span>
+            <span>体积 {row.cartonVolumeCbm ?? '-'}</span>
+          </Space>
+        )
+      }
+    ],
+    []
   )
 
   const importIssueColumns = useMemo<ColumnsType<InTransitImportIssue>>(
@@ -950,10 +1090,42 @@ export function InTransitGoodsPage() {
           dataSource={rows}
           loading={state.status === 'loading'}
           locale={{ emptyText: '暂无在途批次' }}
-          scroll={{ x: 1390 }}
+          scroll={{ x: 1484 }}
           pagination={{ pageSize: 20, showSizeChanger: false }}
         />
       </div>
+
+      <Modal
+        title={`查看箱子${boxModalBatch?.batchReferenceNo ? ` - ${boxModalBatch.batchReferenceNo}` : ''}`}
+        open={boxModalOpen}
+        width={980}
+        footer={<Button onClick={() => setBoxModalOpen(false)}>关闭</Button>}
+        onCancel={() => setBoxModalOpen(false)}
+      >
+        <Table
+          rowKey="boxNo"
+          columns={boxColumns}
+          dataSource={boxGroups}
+          loading={loadingBoxLines}
+          locale={{ emptyText: '暂无箱子明细' }}
+          pagination={false}
+          size="small"
+          scroll={{ x: 560 }}
+          expandable={{
+            expandedRowKeys: boxGroups.map((box) => box.boxNo),
+            expandedRowRender: (box) => (
+              <Table
+                rowKey="lineId"
+                columns={boxLineColumns}
+                dataSource={box.lines}
+                pagination={false}
+                size="small"
+                scroll={{ x: 770 }}
+              />
+            )
+          }}
+        />
+      </Modal>
 
       <Drawer
         title="历史数据导入预览"

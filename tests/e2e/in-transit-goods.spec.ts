@@ -122,6 +122,26 @@ const lineResponse = {
       cartonWeightKg: null,
       cartonVolumeCbm: null,
       remark: '第一箱'
+    },
+    {
+      lineId: 54009,
+      batchId: 53002,
+      packageId: 58001,
+      boxNo: 'XGGEUAE04029-1',
+      sku: 'SKU-AE-009',
+      msku: 'MSKU-AE-009',
+      psku: 'PSKU-AE-009',
+      productName: '折叠手机膜',
+      storeCode: 'STR245027-NSA',
+      siteCode: 'SA',
+      shippedQuantity: 60,
+      receivedQuantity: 0,
+      remainingQuantity: 60,
+      cartonCount: 3,
+      unitsPerCarton: 20,
+      cartonWeightKg: null,
+      cartonVolumeCbm: null,
+      remark: '第一箱第二个SKU'
     }
   ]
 }
@@ -168,7 +188,7 @@ test('renders real empty in-transit batch state without mock rows', async ({ pag
   await expect(pageRoot).not.toContainText('BATCH-001')
   await expect(pageRoot).not.toContainText('义特物流')
   expect(batchListRequestedUrl).toContain('/api/in-transit-goods/batches')
-  expect(batchListRequestedUrl).toContain('statusScope=active')
+  expect(batchListRequestedUrl).toContain('statusScope=all')
 })
 
 test('maintains in-transit batch basics without expanded fields', async ({ page }) => {
@@ -430,6 +450,17 @@ test('maintains in-transit batch basics without expanded fields', async ({ page 
   await expect(pageRoot.getByText('清关资料已提交')).toBeVisible()
   await expect(pageRoot).not.toContainText('采购单')
   await expect(pageRoot).not.toContainText('费用')
+  expect(lastBatchListUrl).toContain('statusScope=all')
+
+  await page.getByRole('row', { name: /BATCH-002/ }).getByRole('button', { name: /查看箱子/ }).click()
+  const boxModal = page.getByRole('dialog', { name: /查看箱子 - BATCH-002/ })
+  await expect(boxModal).toBeVisible()
+  await expect(boxModal.getByText('XGGEUAE04029-1')).toBeVisible()
+  await expect(boxModal.getByText('SKU-AE-001', { exact: true })).toBeVisible()
+  await expect(boxModal.getByText('SKU-AE-009', { exact: true })).toBeVisible()
+  await expect(boxModal.getByText('发货 160')).toBeVisible()
+  await boxModal.getByRole('button', { name: /关\s*闭/ }).click()
+  await expect(boxModal).toBeHidden()
 
   await page.getByRole('button', { name: '导入预览' }).click()
   const importDrawer = page.locator('.ant-drawer').filter({ hasText: '历史数据导入预览' })
@@ -495,10 +526,10 @@ test('maintains in-transit batch basics without expanded fields', async ({ page 
   const drawer = page.locator('.ant-drawer')
   await expect(drawer.getByText('商品明细')).toBeVisible()
   await expect(drawer.getByText('SKU-AE-001', { exact: true })).toBeVisible()
-  await expect(drawer.getByText('XGGEUAE04029-1')).toBeVisible()
+  await expect(drawer.getByText('XGGEUAE04029-1').first()).toBeVisible()
   await expect(drawer.getByText('发货 100')).toBeVisible()
   await expect(drawer.getByText('入仓 40')).toBeVisible()
-  await expect(drawer.getByText('剩余 60')).toBeVisible()
+  await expect(drawer.getByText('剩余 60').first()).toBeVisible()
   await expect(drawer.getByText('物流时间线')).toBeVisible()
   await expect(drawer.getByText('清关资料已提交')).toBeVisible()
   await expect(drawer.getByText('海上运输')).toBeVisible()
