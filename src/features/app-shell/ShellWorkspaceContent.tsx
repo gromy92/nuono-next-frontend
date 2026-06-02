@@ -46,6 +46,9 @@ const AiFileParseBoard = lazyWorkspace(() =>
 const LogisticsQuoteBoard = lazyWorkspace(() =>
   import('../logistics-quote/LogisticsQuoteBoard').then((module) => ({ default: module.LogisticsQuoteBoard }))
 );
+const InTransitGoodsPage = lazyWorkspace(() =>
+  import('../in-transit-goods/InTransitGoodsPage').then((module) => ({ default: module.InTransitGoodsPage }))
+);
 const ManualSelectionPage = lazyWorkspace(() =>
   import('../manual-selection/ManualSelectionPage').then((module) => ({ default: module.ManualSelectionPage }))
 );
@@ -241,6 +244,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <LogisticsQuoteBoard />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'purchase-in-transit-goods') {
+    return (
+      <LazyWorkspaceBoundary>
+        <InTransitGoodsPage />
       </LazyWorkspaceBoundary>
     );
   }

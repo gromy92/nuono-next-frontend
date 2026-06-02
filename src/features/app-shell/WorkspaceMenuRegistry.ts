@@ -6,6 +6,7 @@ export type AppMenuKey =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'purchase-in-transit-goods'
   | 'data-sales-analysis'
   | 'data-sales-forecast'
   | 'noon-call-store-data'
@@ -59,6 +60,7 @@ export type WorkspaceContentKind =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'purchase-in-transit-goods'
   | 'sales-analytics'
   | 'sales-forecast'
   | 'noon-call-store-data'
@@ -178,6 +180,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '物流 / 货代管理',
     tabLabel: '货代管理',
     contentKind: 'purchase-logistics-quote',
+    closable: true
+  },
+  'purchase-in-transit-goods': {
+    key: 'purchase-in-transit-goods',
+    label: '在途商品',
+    path: '/purchase/in-transit-goods',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / 在途商品',
+    tabLabel: '在途商品',
+    contentKind: 'purchase-in-transit-goods',
     closable: true
   },
   'data-sales-analysis': {
@@ -358,6 +370,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
       { type: 'placeholder', key: 'purchase-listing', label: '商品上架', disabled: true },
       { type: 'workspace', key: 'purchase-profit' },
       { type: 'workspace', key: 'purchase-ali1688-collection' },
+      { type: 'workspace', key: 'purchase-in-transit-goods' },
       { type: 'workspace', key: 'purchase-order' }
     ]
   },
@@ -483,13 +496,19 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['人工选品', '商品采集']
   },
   {
-    keys: ['purchase-order', 'purchase-ali1688-collection'],
+    keys: ['purchase-order', 'purchase-ali1688-collection', 'purchase-in-transit-goods'],
     urlPaths: ['/api/purchase/order']
   },
   {
     keys: ['purchase-ali1688-collection'],
     urlPaths: ['/purchase/1688-collection'],
     menuNames: ['1688查询展示', '1688查询']
+  },
+  {
+    keys: ['purchase-in-transit-goods'],
+    urlPaths: ['/purchase/in-transit-goods', '/api/in-transit-goods'],
+    urlPathPrefixes: ['/api/in-transit-goods/'],
+    menuNames: ['在途商品', '在途批次']
   },
   {
     keys: ['purchase-profit'],
@@ -557,6 +576,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-order',
   'purchase-profit',
   'purchase-logistics-quote',
+  'purchase-in-transit-goods',
   'data-sales-analysis',
   'data-sales-forecast',
   'noon-call-store-data',

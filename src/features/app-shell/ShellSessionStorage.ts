@@ -15,6 +15,7 @@ import {
   DATA_ACTIVITY_CONFIG_PATH,
   OPERATIONS_LIFECYCLE_RULES_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
+  PURCHASE_IN_TRANSIT_GOODS_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
 } from './WorkspaceRouting'
 
@@ -72,6 +73,9 @@ function readDevSessionOverride(): AuthSession | null {
   const includeLogisticsQuoteDevMenu =
     pathname.startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
     search.get('grantLogisticsQuote') === '1'
+  const includeInTransitGoodsDevMenu =
+    pathname.startsWith(PURCHASE_IN_TRANSIT_GOODS_PATH) ||
+    search.get('grantInTransitGoods') === '1'
   const includeSystemReportsDevMenu =
     pathname.startsWith(NOON_CALL_STORE_DATA_PATH) ||
     pathname.startsWith(SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH) ||
@@ -97,6 +101,8 @@ function readDevSessionOverride(): AuthSession | null {
   const includeSystemRoleDevMenu = search.get('grantSystemRole') === '1'
   const devRole = (search.get('devRole') || search.get('role') || '').trim().toLowerCase()
   const useBossDevSession = devRole === 'boss' || devRole === 'laoban' || devRole === '老板'
+  const useBicuihongDevSession =
+    devRole === 'bicuihong' || devRole === 'bi' || devRole === 'bch' || devRole === '毕翠红'
 
   const adminDevStores: AuthSessionStore[] = [
     {
@@ -133,29 +139,52 @@ function readDevSessionOverride(): AuthSession | null {
 
   const bossDevStores: AuthSessionStore[] = [
     {
-      id: 301,
-      orgCode: 'ORG-CANMAN',
-      orgName: '毕翠红运营中心',
-      projectCode: 'PRJ108065',
-      projectName: 'canman',
-      storeCode: 'STR108065-NAE',
+      id: 101,
+      orgCode: 'ORG-XY',
+      orgName: '星耀运营中心',
+      projectCode: 'PRJ245027',
+      projectName: 'xingyao',
+      storeCode: 'STR245027-NAE',
       site: 'AE',
       authorized: true
     },
     {
-      id: 302,
-      orgCode: 'ORG-CANMAN',
-      orgName: '毕翠红运营中心',
-      projectCode: 'PRJ108065',
-      projectName: 'canman',
-      storeCode: 'STR108065-NSA',
+      id: 102,
+      orgCode: 'ORG-XY',
+      orgName: '星耀运营中心',
+      projectCode: 'PRJ245027',
+      projectName: 'xingyao',
+      storeCode: 'STR245027-NSA',
       site: 'SA',
       authorized: true
     }
   ]
 
-  const devStores = useBossDevSession ? bossDevStores : adminDevStores
-  const grantedMenus: NonNullable<AuthSession['grantedMenus']> = useBossDevSession
+  const bicuihongDevStores: AuthSessionStore[] = [
+    {
+      id: 301,
+      orgCode: 'ORG-QIKE-LOCAL',
+      orgName: '启客本地验收',
+      projectCode: 'QIKe-JED01',
+      projectName: '启客 AE 本地验收',
+      storeCode: 'STORE-JED01',
+      site: 'AE',
+      authorized: true
+    },
+    {
+      id: 302,
+      orgCode: 'ORG-QIKE-LOCAL',
+      orgName: '启客本地验收',
+      projectCode: 'QIKe-RUH01S',
+      projectName: '启客 SA 本地验收',
+      storeCode: 'STORE-RUH01S',
+      site: 'SA',
+      authorized: true
+    }
+  ]
+
+  const devStores = useBicuihongDevSession ? bicuihongDevStores : useBossDevSession ? bossDevStores : adminDevStores
+  const grantedMenus: NonNullable<AuthSession['grantedMenus']> = useBossDevSession || useBicuihongDevSession
     ? [
         { menuId: 10, menuName: '用户管理', urlPath: '/api/user/manage' },
         { menuId: 25, menuName: '角色分配', urlPath: '/api/user/role' }
@@ -183,6 +212,9 @@ function readDevSessionOverride(): AuthSession | null {
   if (includeLogisticsQuoteDevMenu) {
     grantedMenus.push({ menuId: 9201, menuName: '货代管理', urlPath: PURCHASE_LOGISTICS_QUOTE_PATH })
   }
+  if (includeInTransitGoodsDevMenu) {
+    grantedMenus.push({ menuId: 9302, menuName: '在途商品', urlPath: PURCHASE_IN_TRANSIT_GOODS_PATH })
+  }
   if (includeSystemReportsDevMenu) {
     grantedMenus.push({ menuId: 9600, menuName: '系统报表', urlPath: NOON_CALL_STORE_DATA_PATH })
     grantedMenus.push({ menuId: 9602, menuName: '数据完整度', urlPath: SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH })
@@ -201,21 +233,27 @@ function readDevSessionOverride(): AuthSession | null {
     grantedMenus.push({ menuId: 9202, menuName: '文件管理', urlPath: SYSTEM_FILE_MANAGEMENT_PATH })
   }
   const adminDevUserId = 10003
+  const devUserId = useBicuihongDevSession ? 307 : useBossDevSession ? 10002 : adminDevUserId
+  const devAccountNo = useBicuihongDevSession ? '毕翠红' : useBossDevSession ? 'xingyaoqw' : 'adminBI'
+  const devRealName = useBicuihongDevSession ? '毕翠红' : useBossDevSession ? 'xingyaoqw' : 'adminBI'
+  const devCompanyName = useBicuihongDevSession ? '松果果儿' : useBossDevSession ? 'xingyao' : 'Nuono'
+  const devRoleId = useBicuihongDevSession || useBossDevSession ? 2 : 1
+  const devLevel = useBicuihongDevSession || useBossDevSession ? 1 : 0
 
   return {
-    userId: useBossDevSession ? 307 : adminDevUserId,
-    accountNo: useBossDevSession ? '毕翠红' : 'adminBI',
-    realName: useBossDevSession ? '毕翠红' : 'adminBI',
-    roleId: useBossDevSession ? 2 : 1,
-    roleName: useBossDevSession ? '老板' : '管理员',
-    companyName: useBossDevSession ? 'canman' : 'Nuono',
+    userId: devUserId,
+    accountNo: devAccountNo,
+    realName: devRealName,
+    roleId: devRoleId,
+    roleName: devRoleId === 2 ? '老板' : '管理员',
+    companyName: devCompanyName,
     status: 1,
-    level: useBossDevSession ? 1 : 0,
+    level: devLevel,
     storeCount: devStores.length,
     authorizedStoreCount: devStores.filter((store) => store.authorized).length,
     bindingStatus: 'PROJECT_BOUND',
-    defaultOwnerUserId: useBossDevSession ? 307 : 10002,
-    activeRoleView: useBossDevSession ? 'boss' : undefined,
+    defaultOwnerUserId: devRoleId === 2 ? devUserId : 10002,
+    activeRoleView: devRoleId === 2 ? 'boss' : undefined,
     currentStore: devStores[0],
     userStores: devStores,
     grantedMenus
