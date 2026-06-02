@@ -3,9 +3,14 @@ import type {
   ProductListDatasetPayload,
   ProductMasterSnapshotPayload,
   ProductPublishTaskPayload,
+  ProductVariantSpecDetailPayload,
+  ProductVariantSpecEffectiveSourceRequest,
   ProductVariantSpecListPayload,
+  ProductVariantSpecOverviewPayload,
   ProductVariantSpecPayload,
   ProductVariantSpecSaveRequest,
+  ProductVariantSpecSourcePayload,
+  ProductVariantSpecSourceSaveRequest,
   ProductWorkbenchPayload,
   StoreInitializationPayload
 } from './types';
@@ -187,6 +192,73 @@ export async function fetchProductVariantSpecs(request: ProductHistoryRequest) {
 
 export async function saveProductVariantSpec(request: ProductVariantSpecSaveRequest) {
   return postJson<ProductVariantSpecPayload>('/api/product-variant-specs', request, '保存商品规格失败');
+}
+
+export type ProductSpecsOverviewRequest = {
+  ownerUserId?: number;
+  storeCode: string;
+  keyword?: string;
+};
+
+export async function fetchProductSpecsOverview(request: ProductSpecsOverviewRequest) {
+  const query = new URLSearchParams({
+    ...(request.ownerUserId ? { ownerUserId: String(request.ownerUserId) } : {}),
+    storeCode: request.storeCode,
+    ...(request.keyword ? { keyword: request.keyword } : {})
+  });
+  const response = await apiFetch(`/api/product-specs?${query.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, `商品规格返回 ${response.status}`));
+  }
+
+  return (await response.json()) as ProductVariantSpecOverviewPayload;
+}
+
+export type ProductSpecDetailRequest = {
+  ownerUserId?: number;
+  storeCode: string;
+  variantId: number;
+};
+
+export async function fetchProductSpecDetail(request: ProductSpecDetailRequest) {
+  const query = new URLSearchParams({
+    ...(request.ownerUserId ? { ownerUserId: String(request.ownerUserId) } : {}),
+    storeCode: request.storeCode
+  });
+  const response = await apiFetch(`/api/product-specs/${request.variantId}?${query.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, `商品规格详情返回 ${response.status}`));
+  }
+
+  return (await response.json()) as ProductVariantSpecDetailPayload;
+}
+
+export async function saveProductSpecSource(request: ProductVariantSpecSourceSaveRequest) {
+  const { variantId, sourceType, ...body } = request;
+  const response = await apiFetch(`/api/product-specs/${variantId}/sources/${sourceType}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, '保存规格来源失败'));
+  }
+
+  return (await response.json()) as ProductVariantSpecSourcePayload;
+}
+
+export async function selectProductSpecEffectiveSource(request: ProductVariantSpecEffectiveSourceRequest) {
+  const { variantId, ...body } = request;
+  return postJson<ProductVariantSpecDetailPayload>(
+    `/api/product-specs/${variantId}/effective-source`,
+    body,
+    '切换生效规格失败'
+  );
 }
 
 export async function executeProductWorkbenchAction(request: ProductWorkbenchActionRequest) {

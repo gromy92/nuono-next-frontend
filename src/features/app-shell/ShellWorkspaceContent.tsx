@@ -70,6 +70,11 @@ const ProductGroupManagementPage = lazyWorkspace(() =>
     default: module.ProductGroupManagementPage
   }))
 );
+const ProductSpecsPage = lazyWorkspace(() =>
+  import('../product-specs/ProductSpecsPage').then((module) => ({
+    default: module.ProductSpecsPage
+  }))
+);
 const ProcurementWorkspace = lazyWorkspace(() =>
   import('../procurement/ProcurementWorkspace').then((module) => ({ default: module.ProcurementWorkspace }))
 );
@@ -209,6 +214,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <ProductGroupManagementPage workspace={productWorkspace} activeOwnerId={activeOwnerId} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'product-specs') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ProductSpecsPage session={shellSession} activeOwnerId={activeOwnerId} />
       </LazyWorkspaceBoundary>
     );
   }

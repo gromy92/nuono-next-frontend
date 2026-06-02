@@ -104,6 +104,10 @@ export type StoreInitializationPayload = {
     detailBaselineStatus?: 'ready' | 'missing' | 'preparing' | 'failed' | string;
     detailBaselineMessage?: string;
     detailBaselineSyncedAt?: string;
+    productVariantSpecStatus?: 'ready' | 'incomplete' | 'not_found' | string;
+    productVariantSpecTotalCount?: number;
+    productVariantSpecReadyCount?: number;
+    productVariantSpecMaintainedCount?: number;
     variantCount?: number;
     siteOfferCount?: number;
     historyMetaReady?: boolean;
@@ -197,6 +201,10 @@ export type ProductListSummaryPayload = {
   detailBaselineStatus?: 'ready' | 'missing' | 'preparing' | 'failed' | string;
   detailBaselineMessage?: string;
   detailBaselineSyncedAt?: string;
+  productVariantSpecStatus?: 'ready' | 'incomplete' | 'not_found' | string;
+  productVariantSpecTotalCount?: number;
+  productVariantSpecReadyCount?: number;
+  productVariantSpecMaintainedCount?: number;
   variantCount?: number;
   siteOfferCount?: number;
   siteLabels: string[];
@@ -247,6 +255,10 @@ export type ProductSummarySurface = {
   detailBaselineStatus?: 'ready' | 'missing' | 'preparing' | 'failed' | string;
   detailBaselineMessage?: string;
   detailBaselineSyncedAt?: string;
+  productVariantSpecStatus?: 'ready' | 'incomplete' | 'not_found' | string;
+  productVariantSpecTotalCount?: number;
+  productVariantSpecReadyCount?: number;
+  productVariantSpecMaintainedCount?: number;
   variantCount?: number;
   siteOfferCount?: number;
   siteLabels: string[];

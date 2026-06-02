@@ -14,6 +14,7 @@ export type { AppMenuKey } from './WorkspaceMenuRegistry'
 
 export const PRODUCT_WORKSPACE_PATH = workspaceMenuPath('product-manage')
 export const PRODUCT_GROUPS_PATH = workspaceMenuPath('product-groups')
+export const PRODUCT_SPECS_PATH = workspaceMenuPath('product-specs')
 export const PRODUCT_MANUAL_SELECTION_PATH = workspaceMenuPath('product-manual-selection')
 export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688-collection')
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
@@ -247,6 +248,7 @@ export function resolveSessionLandingMenuKey(
         'data-activity-config',
         'operations-lifecycle-rules',
         'product-manual-selection',
+        'product-specs',
         'product-manage'
       ] as AppMenuKey[])
     : isBossManagementSession(session)
@@ -255,6 +257,7 @@ export function resolveSessionLandingMenuKey(
           'purchase-ali1688-collection',
           'purchase-order',
           'product-manage',
+          'product-specs',
           'purchase-profit',
           'purchase-logistics-quote',
           'data-sales-analysis',
@@ -270,6 +273,7 @@ export function resolveSessionLandingMenuKey(
           'purchase-ali1688-collection',
           'purchase-order',
           'product-manage',
+          'product-specs',
           'user-role',
           'purchase-profit',
           'purchase-logistics-quote',

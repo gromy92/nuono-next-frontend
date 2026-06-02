@@ -1,6 +1,7 @@
 export type AppMenuKey =
   | 'product-manage'
   | 'product-groups'
+  | 'product-specs'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
   | 'purchase-order'
@@ -54,6 +55,7 @@ export type WorkspaceSectionIconKey =
 export type WorkspaceContentKind =
   | 'product-management'
   | 'product-groups'
+  | 'product-specs'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
   | 'purchase-order'
@@ -128,6 +130,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '商品 / 商品分组',
     tabLabel: '商品分组',
     contentKind: 'product-groups',
+    closable: true
+  },
+  'product-specs': {
+    key: 'product-specs',
+    label: '商品规格',
+    path: '/product/specs',
+    sectionKey: 'product',
+    pathLabel: '商品 / 商品规格',
+    tabLabel: '商品规格',
+    contentKind: 'product-specs',
     closable: true
   },
   'product-manual-selection': {
@@ -346,6 +358,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     entries: [
       { type: 'workspace', key: 'product-manage' },
       { type: 'workspace', key: 'product-groups' },
+      { type: 'workspace', key: 'product-specs' },
       { type: 'placeholder', key: 'product-category-collect', label: '类目采集', disabled: true },
       { type: 'workspace', key: 'product-manual-selection' }
     ]
@@ -468,9 +481,15 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['菜单维护']
   },
   {
-    keys: ['product-manage', 'product-groups'],
+    keys: ['product-manage', 'product-groups', 'product-specs'],
     urlPaths: ['/api/sku/manage'],
     menuNames: ['商品管理']
+  },
+  {
+    keys: ['product-specs'],
+    urlPaths: ['/product/specs', '/api/product-specs'],
+    urlPathPrefixes: ['/api/product-specs/'],
+    menuNames: ['商品规格']
   },
   {
     keys: ['product-groups'],
@@ -552,6 +571,7 @@ export const ALL_WORKSPACE_MENU_KEYS = Object.keys(WORKSPACE_MENU_DEFINITIONS) a
 export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'product-manage',
   'product-groups',
+  'product-specs',
   'product-manual-selection',
   'purchase-ali1688-collection',
   'purchase-order',
