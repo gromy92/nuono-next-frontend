@@ -31,6 +31,7 @@ export function ProductVariantSpecModal({ workspace }: ProductVariantSpecModalPr
 
   const handleSaved = () => {
     messageApi.success('保存成功');
+    workspace.refreshProductWorkspaceSurface();
     window.setTimeout(closeModal, 0);
   };
 

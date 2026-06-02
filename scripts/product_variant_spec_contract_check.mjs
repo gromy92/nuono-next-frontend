@@ -31,12 +31,17 @@ const workspace = read('src/features/product-management/useProductManagementWork
 const modals = read('src/features/product-management/ProductManagementWorkspaceModals.tsx')
 const specModal = read('src/features/product-management/components/ProductVariantSpecModal.tsx')
 const workbenchTypes = read('src/features/product-management/types/workbench.ts')
+const listTypes = read('src/features/product-management/types/list.ts')
 
 assertNotIncludes(sizesTab, 'ProductVariantSpecTable', 'ProductSizesTab')
 assertNotIncludes(sizesTab, '规格 / 箱规', 'ProductSizesTab')
 
 assertIncludes(listCells, 'openProductVariantSpecModal', 'Product list spec action')
 assertIncludes(listCells, '规格', 'Product list spec action')
+assertIncludes(listCells, 'productVariantSpecStatus', 'Product list spec action missing-state marker')
+assertIncludes(listCells, 'productVariantSpecActionStyle', 'Product list spec action missing-state marker')
+assertIncludes(listCells, '#d97706', 'Product list spec action missing-state marker')
+assertIncludes(listCells, '商品规格缺失', 'Product list spec action missing-state tooltip')
 assertIncludes(workspace, 'openProductVariantSpecModal', 'Product management workspace')
 assertIncludes(modals, 'ProductVariantSpecModal', 'Product management modals')
 
@@ -69,5 +74,8 @@ assertNotIncludes(productApi, 'variant-specs/publish', 'product management API')
 assertIncludes(workbenchTypes, 'ProductVariantSpecPayload', 'product management workbench types')
 assertIncludes(workbenchTypes, 'batteryMagneticType', 'product management workbench types')
 assertIncludes(workbenchTypes, 'liquidPowderType', 'product management workbench types')
+assertIncludes(listTypes, 'productVariantSpecStatus', 'product management list types')
+assertIncludes(listTypes, 'productVariantSpecTotalCount', 'product management list types')
+assertIncludes(listTypes, 'productVariantSpecReadyCount', 'product management list types')
 
 console.log('product variant spec contract check passed')

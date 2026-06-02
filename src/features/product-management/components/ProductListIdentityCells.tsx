@@ -77,6 +77,24 @@ function productName(record: ProductListRowPayload) {
   return record.title || record.partnerSku || record.skuParent || '当前商品';
 }
 
+function productVariantSpecMissing(record: ProductListRowPayload) {
+  const status = record.productVariantSpecStatus;
+  return Boolean(status && status !== 'ready');
+}
+
+function productVariantSpecTooltip(record: ProductListRowPayload) {
+  if (!productVariantSpecMissing(record)) {
+    return '商品规格';
+  }
+  const totalCount = record.productVariantSpecTotalCount ?? record.variantCount ?? 0;
+  const readyCount = record.productVariantSpecReadyCount ?? 0;
+  const maintainedCount = record.productVariantSpecMaintainedCount ?? 0;
+  if (totalCount > 0) {
+    return `商品规格缺失：${readyCount}/${totalCount} 个 SKU 完整，已维护 ${maintainedCount} 个`;
+  }
+  return '商品规格缺失';
+}
+
 export function ProductDetailsCell(props: {
   record: ProductListRowPayload;
   productSnapshotSubmitting: boolean;
@@ -108,6 +126,9 @@ export function ProductDetailsCell(props: {
   const listingStartedParts = formatDateTimeParts(summary.listingStartedAt);
   const listingStartedSourceLabel = productListingStartedSourceLabel(summary.listingStartedSource);
   const productNotListed = isProductNotListedSource(summary.listingStartedSource);
+  const productVariantSpecActionStyle = productVariantSpecMissing(record)
+    ? { height: 20, padding: 0, fontSize: 12, color: '#d97706' }
+    : { height: 20, padding: 0, fontSize: 12 };
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0 }}>
@@ -245,18 +266,20 @@ export function ProductDetailsCell(props: {
           >
             历史
           </Button>
-          <Button
-            type="link"
-            size="small"
-            icon={<ProfileOutlined />}
-            onClick={(event) => {
-              event.stopPropagation();
-              openProductVariantSpecModal(record);
-            }}
-            style={{ height: 20, padding: 0, fontSize: 12 }}
-          >
-            规格
-          </Button>
+          <Tooltip title={productVariantSpecTooltip(record)}>
+            <Button
+              type="link"
+              size="small"
+              icon={<ProfileOutlined />}
+              onClick={(event) => {
+                event.stopPropagation();
+                openProductVariantSpecModal(record);
+              }}
+              style={productVariantSpecActionStyle}
+            >
+              规格
+            </Button>
+          </Tooltip>
           <Button
             type="link"
             size="small"

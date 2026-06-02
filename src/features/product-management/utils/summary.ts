@@ -51,6 +51,11 @@ export function mergeProductListItemWithSummary(
     syncStatus: normalizeProductSyncStatus(summary.syncStatus) ?? current.syncStatus,
     lastSyncedAt: summary.lastSyncedAt ?? current.lastSyncedAt,
     lastDraftSavedAt: summary.lastDraftSavedAt ?? current.lastDraftSavedAt,
+    productVariantSpecStatus: summary.productVariantSpecStatus ?? current.productVariantSpecStatus,
+    productVariantSpecTotalCount: summary.productVariantSpecTotalCount ?? current.productVariantSpecTotalCount,
+    productVariantSpecReadyCount: summary.productVariantSpecReadyCount ?? current.productVariantSpecReadyCount,
+    productVariantSpecMaintainedCount:
+      summary.productVariantSpecMaintainedCount ?? current.productVariantSpecMaintainedCount,
     variantCount: summary.variantCount ?? current.variantCount,
     siteOfferCount: summary.siteOfferCount ?? current.siteOfferCount,
     historyMetaReady:
