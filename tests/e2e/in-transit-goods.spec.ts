@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test'
 
+const productImageDataUri =
+  'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2244%22 height=%2244%22%3E%3Crect width=%2244%22 height=%2244%22 fill=%22%230ea5e9%22/%3E%3C/svg%3E'
+
 const contractResponse = {
   transportModes: [
     { code: 'SEA', label: '海运' },
@@ -112,6 +115,10 @@ const lineResponse = {
       msku: 'MSKU-AE-001',
       psku: 'PSKU-AE-001',
       productName: '折叠手机壳',
+      matchedProductId: 62001,
+      productSkuParent: 'PARENT-AE-001',
+      productTitle: 'Noon 折叠手机壳',
+      productImageUrl: productImageDataUri,
       storeCode: 'STR245027-NSA',
       siteCode: 'SA',
       shippedQuantity: 100,
@@ -456,8 +463,12 @@ test('maintains in-transit batch basics without expanded fields', async ({ page 
   const boxModal = page.getByRole('dialog', { name: /查看箱子 - BATCH-002/ })
   await expect(boxModal).toBeVisible()
   await expect(boxModal.getByText('XGGEUAE04029-1')).toBeVisible()
+  await expect(boxModal.getByAltText('Noon 折叠手机壳')).toBeVisible()
+  await expect(boxModal.getByText('Noon 折叠手机壳')).toBeVisible()
+  await expect(boxModal.getByText('商品 PARENT-AE-001')).toBeVisible()
   await expect(boxModal.getByText('SKU-AE-001', { exact: true })).toBeVisible()
   await expect(boxModal.getByText('SKU-AE-009', { exact: true })).toBeVisible()
+  await expect(boxModal.getByText('无图')).toBeVisible()
   await expect(boxModal.getByText('发货 160')).toBeVisible()
   await boxModal.getByRole('button', { name: /关\s*闭/ }).click()
   await expect(boxModal).toBeHidden()

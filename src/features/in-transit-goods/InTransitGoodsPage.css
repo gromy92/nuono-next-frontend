@@ -42,6 +42,33 @@
   gap: 4px;
 }
 
+.in-transit-product-cell {
+  min-width: 0;
+}
+
+.in-transit-product-cell__body {
+  min-width: 0;
+}
+
+.in-transit-product-thumb {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.in-transit-product-thumb--empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1;
+}
+
 .in-transit-drawer__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

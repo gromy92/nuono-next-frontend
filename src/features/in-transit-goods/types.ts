@@ -107,6 +107,10 @@ export type InTransitGoodsLine = {
   cartonWeightKg?: number | null
   cartonVolumeCbm?: number | null
   remark?: string | null
+  matchedProductId?: number | null
+  productSkuParent?: string | null
+  productTitle?: string | null
+  productImageUrl?: string | null
 }
 
 export type InTransitGoodsLineList = {

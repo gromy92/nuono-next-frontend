@@ -80,6 +80,22 @@ type InTransitBoxGroup = {
   cartonCountTotal: number | null
 }
 
+function InTransitProductThumb({ imageUrl, title }: { imageUrl?: string | null; title: string }) {
+  const [failed, setFailed] = useState(false)
+  if (!imageUrl || failed) {
+    return <span className="in-transit-product-thumb in-transit-product-thumb--empty">无图</span>
+  }
+  return (
+    <img
+      className="in-transit-product-thumb"
+      src={imageUrl}
+      alt={title}
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
 const DEFAULT_CONTRACT: InTransitContract = {
   transportModes: [
     { code: 'SEA', label: '海运' },
@@ -777,14 +793,25 @@ export function InTransitGoodsPage() {
       {
         title: 'SKU',
         key: 'sku',
-        width: 220,
-        render: (_value, row) => (
-          <Space direction="vertical" size={0}>
-            <Text strong>{row.sku}</Text>
-            <Text type="secondary">{[row.msku, row.psku].filter(Boolean).join(' / ') || '-'}</Text>
-            <Text type="secondary">{row.productName || '-'}</Text>
-          </Space>
-        )
+        width: 320,
+        render: (_value, row) => {
+          const productTitle = row.productTitle || row.productName || row.sku
+          return (
+            <Space align="start" size={10} className="in-transit-product-cell">
+              <InTransitProductThumb imageUrl={row.productImageUrl} title={productTitle} />
+              <Space direction="vertical" size={0} className="in-transit-product-cell__body">
+                <Text strong>{productTitle}</Text>
+                <Text>{row.sku}</Text>
+                <Text type="secondary">{[row.msku, row.psku].filter(Boolean).join(' / ') || '-'}</Text>
+                {row.productSkuParent ? (
+                  <Text type="secondary">商品 {row.productSkuParent}</Text>
+                ) : row.productTitle && row.productName ? (
+                  <Text type="secondary">{row.productName}</Text>
+                ) : null}
+              </Space>
+            </Space>
+          )
+        }
       },
       {
         title: '店铺',
