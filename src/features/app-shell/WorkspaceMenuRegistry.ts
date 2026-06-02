@@ -221,7 +221,6 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     tabLabel: '店铺数据',
     contentKind: 'noon-call-store-data',
     closable: true,
-    visibleInWorkspaceTabs: false,
     routeAliases: ['/noon-call/store-data']
   },
   'system-report-noon-data-completeness': {
