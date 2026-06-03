@@ -1,10 +1,12 @@
-import { Alert, Avatar, Card, Empty, Select, Space, Spin, Statistic, Table, Tag, Typography, type TableColumnsType } from 'antd'
+import { Alert, Avatar, Button, Card, Empty, Select, Space, Spin, Statistic, Table, Tag, Typography, type TableColumnsType } from 'antd'
+import { SyncOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState, type HTMLAttributes } from 'react'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
-import { fetchProductLifecycleAnalysisOverview } from './api'
+import { fetchProductLifecycleAnalysisOverview, recalculateProductLifecycleAnalysis } from './api'
 import type {
   ProductLifecycleAnalysisOverview,
   ProductLifecycleAnalysisQuery,
+  ProductLifecycleAnalysisRecalculation,
   ProductLifecycleAnalysisRow
 } from './types'
 
@@ -114,7 +116,9 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
   const [selectedStoreKey, setSelectedStoreKey] = useState(() => storeKey(currentStore))
   const [overview, setOverview] = useState<ProductLifecycleAnalysisOverview | null>(null)
   const [loading, setLoading] = useState(false)
+  const [recalculating, setRecalculating] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [runStatus, setRunStatus] = useState<ProductLifecycleAnalysisRecalculation | null>(null)
 
   const allowedStores = useMemo(() => uniqueStores(session.userStores, currentStore), [currentStore, session.userStores])
 
@@ -157,6 +161,22 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
       setLoading(false)
     }
   }, [query])
+
+  const handleRecalculate = useCallback(async () => {
+    if (!query) return
+    setRecalculating(true)
+    setErrorMessage('')
+    try {
+      const result = await recalculateProductLifecycleAnalysis(query)
+      setRunStatus(result)
+      await loadOverview()
+    } catch (error) {
+      setRunStatus(null)
+      setErrorMessage(error instanceof Error ? error.message : '商品生命周期同步失败')
+    } finally {
+      setRecalculating(false)
+    }
+  }, [loadOverview, query])
 
   useEffect(() => {
     void loadOverview()
@@ -313,19 +333,37 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
           </Title>
           <Text type="secondary">数据 / 商品分析</Text>
         </Space>
-        <Select
-          value={selectedStoreKey || undefined}
-          style={{ minWidth: 240 }}
-          placeholder="选择店铺"
-          onChange={setSelectedStoreKey}
-          options={allowedStores.map((store) => ({
-            value: storeKey(store),
-            label: `${store.projectName || store.projectCode || store.storeCode} / ${store.storeCode}`
-          }))}
-        />
+        <Space size={8}>
+          <Button
+            icon={<SyncOutlined />}
+            onClick={() => void handleRecalculate()}
+            loading={recalculating}
+            disabled={!query}
+          >
+            同步生命周期
+          </Button>
+          <Select
+            value={selectedStoreKey || undefined}
+            style={{ minWidth: 240 }}
+            placeholder="选择店铺"
+            onChange={setSelectedStoreKey}
+            options={allowedStores.map((store) => ({
+              value: storeKey(store),
+              label: `${store.projectName || store.projectCode || store.storeCode} / ${store.storeCode}`
+            }))}
+          />
+        </Space>
       </Space>
 
       {errorMessage ? <Alert type="error" showIcon message={errorMessage} /> : null}
+      {runStatus ? (
+        <Alert
+          type={runStatus.status === 'succeeded' ? 'success' : 'warning'}
+          showIcon
+          message={runStatus.message || '生命周期计算已执行。'}
+          description={`已处理 ${runStatus.processedCount}，变化 ${runStatus.changedCount}，保持 ${runStatus.heldCount}，数据不足 ${runStatus.dataInsufficientCount}`}
+        />
+      ) : null}
 
       <Space size={12} wrap>
         <Card variant="borderless" style={{ minWidth: 160 }}>

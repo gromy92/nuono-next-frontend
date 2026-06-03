@@ -53,3 +53,16 @@ export type ProductLifecycleAnalysisOverview = {
   summary: ProductLifecycleAnalysisSummary
   rows: ProductLifecycleAnalysisRow[]
 }
+
+export type ProductLifecycleAnalysisRecalculation = {
+  jobId?: number | null
+  status: string
+  message?: string | null
+  storeCode: string
+  siteCode: string
+  anchorDate?: string | null
+  processedCount: number
+  changedCount: number
+  heldCount: number
+  dataInsufficientCount: number
+}

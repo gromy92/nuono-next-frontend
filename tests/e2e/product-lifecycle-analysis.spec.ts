@@ -19,7 +19,7 @@ test('product lifecycle analysis opens from data menu with backend empty state',
     });
   });
 
-  await page.goto('/data/product-analysis/lifecycle?devSession=1&devRole=boss&grantSalesAnalytics=1');
+  await page.goto('/data/product-analysis/lifecycle?devSession=1&devRole=boss&grantProductAnalysis=1');
 
   const pageRoot = page.getByTestId('product-lifecycle-analysis-page');
   await expect(pageRoot).toBeVisible();
@@ -260,4 +260,109 @@ test('product lifecycle analysis explains missing listing date', async ({ page }
   await expect(pageRoot).toContainText('缺失上架日/未上架');
   await expect(pageRoot).not.toContainText('上架日 -');
   await expect(pageRoot).not.toContainText('上架日 2026-05-13');
+});
+
+test('product lifecycle analysis can recalculate lifecycle and refresh overview', async ({ page }) => {
+  let overviewCallCount = 0;
+  let recalculateRequestedUrl = '';
+  let recalculateMethod = '';
+
+  await page.route('**/api/product-analysis/lifecycle/overview?**', async (route) => {
+    overviewCallCount += 1;
+    await route.fulfill({
+      json: overviewCallCount === 1
+        ? {
+            summary: {
+              storeCode: 'STR245027-NAE',
+              siteCode: 'AE',
+              totalProductCount: 0,
+              readyProductCount: 0,
+              missingParameterProductCount: 0,
+              expectedLifecycleChangeProductCount: 0,
+              forecastWindowDays: 90
+            },
+            rows: []
+          }
+        : {
+            summary: {
+              storeCode: 'STR245027-NAE',
+              siteCode: 'AE',
+              totalProductCount: 1,
+              readyProductCount: 1,
+              missingParameterProductCount: 0,
+              expectedLifecycleChangeProductCount: 1,
+              forecastWindowDays: 90
+            },
+            rows: [
+              {
+                partnerSku: 'MILKYWAYA09',
+                sku: 'z580978e7ed8f9491b50bz-1',
+                productTitle: 'Galaxy Star Projector',
+                imageUrl: null,
+                brand: 'milkyway',
+                productFulltype: 'home_decor-lighting-table_lamps',
+                lifecycleCode: 'stable',
+                lifecycleLabel: '稳定',
+                analysisState: 'ready',
+                analysisStateLabel: '可分析',
+                analysisDate: '2026-05-22',
+                listingDate: '2026-03-01',
+                currentStageStartDate: '2026-05-01',
+                listingDateSource: 'official',
+                ruleVersion: 'DEFAULT_V1',
+                currentStock: 21,
+                recent30DaySales: 15,
+                latestFactDate: '2026-05-21',
+                projectionState: 'ready',
+                projectionMessage: '生命周期时间线已生成。',
+                projectionMissingRequirements: [],
+                currentStageElapsedDays: 22,
+                currentStageRemainingDays: 158,
+                nextLifecycleCode: 'decline',
+                nextLifecycleLabel: '衰退期',
+                nextTransitionDate: '2026-10-28',
+                futureTimeline: [
+                  { date: '2026-05-23', lifecycleCode: 'stable', lifecycleLabel: '稳定期' }
+                ]
+              }
+            ]
+          }
+    });
+  });
+
+  await page.route('**/api/product-analysis/lifecycle/recalculate?**', async (route) => {
+    recalculateRequestedUrl = route.request().url();
+    recalculateMethod = route.request().method();
+    await route.fulfill({
+      json: {
+        jobId: 72010,
+        status: 'succeeded',
+        message: '生命周期计算完成。',
+        storeCode: 'STR245027-NAE',
+        siteCode: 'AE',
+        anchorDate: '2026-05-22',
+        processedCount: 37,
+        changedCount: 2,
+        heldCount: 1,
+        dataInsufficientCount: 12
+      }
+    });
+  });
+
+  await page.goto('/data/product-analysis/lifecycle?devSession=1&devAccount=xingyaoqw&grantProductAnalysis=1');
+
+  const pageRoot = page.getByTestId('product-lifecycle-analysis-page');
+  await expect(pageRoot).toContainText('暂无商品生命周期分析结果');
+
+  await page.getByRole('button', { name: '同步生命周期' }).click();
+
+  await expect(pageRoot).toContainText('生命周期计算完成。');
+  await expect(pageRoot).toContainText('已处理 37');
+  await expect(pageRoot).toContainText('变化 2');
+  await expect(pageRoot).toContainText('MILKYWAYA09');
+  expect(recalculateMethod).toBe('POST');
+  expect(recalculateRequestedUrl).toContain('/api/product-analysis/lifecycle/recalculate?');
+  expect(recalculateRequestedUrl).toContain('storeCode=STR245027-NAE');
+  expect(recalculateRequestedUrl).toContain('siteCode=AE');
+  expect(overviewCallCount).toBe(2);
 });
