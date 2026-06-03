@@ -43,6 +43,36 @@ function shouldSkipStoredSessionRestore() {
   return currentAppPathname().startsWith('/login')
 }
 
+function readStoredCurrentStore() {
+  try {
+    const rawValue = window.localStorage.getItem(SESSION_STORAGE_KEY)
+    if (!rawValue) {
+      return null
+    }
+    const storedSession = JSON.parse(rawValue) as AuthSession
+    return storedSession.currentStore ?? null
+  } catch {
+    return null
+  }
+}
+
+function resolveDevCurrentStore(devStores: AuthSessionStore[]) {
+  const storedCurrentStore = readStoredCurrentStore()
+  if (!storedCurrentStore?.storeCode) {
+    return devStores[0]
+  }
+
+  return (
+    devStores.find(
+      (store) =>
+        store.storeCode === storedCurrentStore.storeCode &&
+        String(store.site || '') === String(storedCurrentStore.site || '')
+    ) ??
+    devStores.find((store) => store.storeCode === storedCurrentStore.storeCode) ??
+    devStores[0]
+  )
+}
+
 function readDevSessionOverride(): AuthSession | null {
   if (typeof window === 'undefined') {
     return null
@@ -201,6 +231,7 @@ function readDevSessionOverride(): AuthSession | null {
     grantedMenus.push({ menuId: 9202, menuName: '文件管理', urlPath: SYSTEM_FILE_MANAGEMENT_PATH })
   }
   const adminDevUserId = 10003
+  const currentStore = resolveDevCurrentStore(devStores)
 
   return {
     userId: useBossDevSession ? 307 : adminDevUserId,
@@ -216,7 +247,7 @@ function readDevSessionOverride(): AuthSession | null {
     bindingStatus: 'PROJECT_BOUND',
     defaultOwnerUserId: useBossDevSession ? 307 : 10002,
     activeRoleView: useBossDevSession ? 'boss' : undefined,
-    currentStore: devStores[0],
+    currentStore,
     userStores: devStores,
     grantedMenus
   }

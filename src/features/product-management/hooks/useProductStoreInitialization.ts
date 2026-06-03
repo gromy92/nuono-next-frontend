@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { message } from 'antd';
 import type { AuthSession } from '../../auth/session';
@@ -56,6 +56,8 @@ export function useProductStoreInitialization({
   storeSyncOwnerId,
   storeSyncState
 }: UseProductStoreInitializationParams) {
+  const storeInitializationRequestSeqRef = useRef(0);
+
   useEffect(() => {
     if (!session?.currentStore?.storeCode) {
       return;
@@ -67,18 +69,27 @@ export function useProductStoreInitialization({
     async (storeCode: string, ownerUserId?: number) => {
       const effectiveOwnerUserId = ownerUserId ?? storeSyncOwnerId ?? session?.defaultOwnerUserId;
       if (!effectiveOwnerUserId || !storeCode) {
+        storeInitializationRequestSeqRef.current += 1;
         setStoreInitializationState({ status: 'idle' });
         return;
       }
 
+      const requestSeq = (storeInitializationRequestSeqRef.current += 1);
+      const isLatestRequest = () => storeInitializationRequestSeqRef.current === requestSeq;
       setStoreInitializationState({ status: 'loading' });
       try {
         const payload = await fetchStoreInitializationStatus({
           ownerUserId: effectiveOwnerUserId,
           storeCode
         });
+        if (!isLatestRequest()) {
+          return;
+        }
         setStoreInitializationState({ status: 'success', data: payload });
       } catch (error) {
+        if (!isLatestRequest()) {
+          return;
+        }
         const errorMessage = error instanceof Error ? error.message : '店铺初始化状态暂时不可用';
         if (
           errorMessage.includes('当前店铺不在选中的老板名下') ||
@@ -156,6 +167,7 @@ export function useProductStoreInitialization({
     }
 
     lastInitializationStoreCodeRef.current = selectedInitializationStoreCode;
+    storeInitializationRequestSeqRef.current += 1;
     setSelectedProductRowKeys([]);
     setStoreInitializationState({ status: 'idle' });
     setProductListDatasetState({ status: 'idle' });
