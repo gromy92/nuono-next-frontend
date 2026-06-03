@@ -105,6 +105,11 @@ function projectionUnavailableMessage(row: ProductLifecycleAnalysisRow) {
   return row.projectionMessage || '生命周期预测暂不可用。'
 }
 
+function salesFactRangeText(row: ProductLifecycleAnalysisRow) {
+  if (!row.earliestFactDate && !row.latestFactDate) return '-'
+  return `${row.earliestFactDate || '-'} 至 ${row.latestFactDate || '-'}`
+}
+
 function includesKeyword(value: string | null | undefined, keyword: string) {
   return (value || '').toLowerCase().includes(keyword)
 }
@@ -354,7 +359,8 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
           <Space direction="vertical" size={2}>
             <Text>库存 {row.currentStock ?? '-'}</Text>
             <Text>近30天销量 {row.recent30DaySales ?? 0}</Text>
-            <Text type="secondary">销量数据至 {row.latestFactDate || '-'}</Text>
+            <Text type="secondary">最新销量数据 {row.latestFactDate || '-'}</Text>
+            <Text type="secondary">历史销量跨度 {salesFactRangeText(row)}</Text>
           </Space>
         )
       },

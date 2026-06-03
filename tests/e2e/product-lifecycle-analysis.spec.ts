@@ -95,6 +95,7 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
             ruleVersion: 'LIFECYCLE_CONFIG_88009',
             currentStock: 21,
             recent30DaySales: 15,
+            earliestFactDate: '2025-06-23',
             latestFactDate: '2026-05-20',
             projectionState: 'ready',
             projectionMessage: '生命周期时间线已生成。',
@@ -176,7 +177,9 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
   await expect(pageRoot).not.toContainText('z580978e7ed8f9491b50bz-1');
   await expect(pageRoot).toContainText('库存 21');
   await expect(pageRoot).toContainText('近30天销量 15');
-  await expect(pageRoot).toContainText('销量数据至 2026-05-20');
+  await expect(pageRoot).toContainText('最新销量数据 2026-05-20');
+  await expect(pageRoot).toContainText('历史销量跨度 2025-06-23 至 2026-05-20');
+  await expect(pageRoot).not.toContainText('销量数据至');
   await expect(pageRoot).toContainText('已处 21 天');
   await expect(pageRoot).toContainText('剩余 9 天');
   await expect(pageRoot).toContainText('下阶段 成长期');

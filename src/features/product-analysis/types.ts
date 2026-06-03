@@ -37,6 +37,7 @@ export type ProductLifecycleAnalysisRow = {
   ruleVersion?: string | null
   currentStock?: number | null
   recent30DaySales?: number | null
+  earliestFactDate?: string | null
   latestFactDate?: string | null
   projectionState?: string | null
   projectionMessage?: string | null
