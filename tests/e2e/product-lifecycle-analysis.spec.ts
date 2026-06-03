@@ -71,9 +71,9 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
         summary: {
           storeCode: 'STR245027-NAE',
           siteCode: 'AE',
-          totalProductCount: 37,
-          readyProductCount: 25,
-          missingParameterProductCount: 12,
+          totalProductCount: 3,
+          readyProductCount: 2,
+          missingParameterProductCount: 1,
           expectedLifecycleChangeProductCount: 1,
           forecastWindowDays: 90
         },
@@ -167,7 +167,7 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
 
   const pageRoot = page.getByTestId('product-lifecycle-analysis-page');
   await expect(pageRoot.getByTestId('product-lifecycle-analysis-row')).toHaveCount(3);
-  await expect(pageRoot).toContainText('共 37 个商品，可分析 25 个，参数缺失 12 个，未来3个月预计变化 1 个');
+  await expect(pageRoot).toContainText('共 3 个商品，直接判定 2 个，保持前态可预测 0 个，数据不足 1 个，未来3个月预计变化 1 个');
   await expect(pageRoot).toContainText('MILKYWAYA09');
   await expect(pageRoot).toContainText('Galaxy Star Projector');
   await expect(pageRoot).toContainText('稳定');

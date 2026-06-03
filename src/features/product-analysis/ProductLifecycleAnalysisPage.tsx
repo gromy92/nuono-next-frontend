@@ -109,6 +109,17 @@ function includesKeyword(value: string | null | undefined, keyword: string) {
   return (value || '').toLowerCase().includes(keyword)
 }
 
+function lifecycleSummaryText(overview: ProductLifecycleAnalysisOverview | null) {
+  const rows = overview?.rows || []
+  const summary = overview?.summary
+  const directReadyCount = rows.filter((row) => row.analysisState === 'ready').length
+  const heldProjectableCount = rows.filter(
+    (row) => row.projectionState === 'ready' && row.analysisState !== 'ready'
+  ).length
+  const dataInsufficientCount = rows.filter((row) => row.analysisState === 'data_insufficient').length
+  return `共 ${summary?.totalProductCount ?? rows.length} 个商品，直接判定 ${directReadyCount} 个，保持前态可预测 ${heldProjectableCount} 个，数据不足 ${dataInsufficientCount} 个，未来3个月预计变化 ${summary?.expectedLifecycleChangeProductCount ?? 0} 个`
+}
+
 export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalysisPageProps) {
   const currentStore = session.currentStore
   const [selectedStoreKey, setSelectedStoreKey] = useState(() => storeKey(currentStore))
@@ -182,7 +193,6 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
   }, [loadOverview])
 
   const rows = overview?.rows || []
-  const summary = overview?.summary
   const normalizedSearchKeyword = searchKeyword.trim().toLowerCase()
   const filteredRows = useMemo(() => {
     if (!normalizedSearchKeyword) return rows
@@ -198,7 +208,7 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
     )
   }, [normalizedSearchKeyword, rows])
 
-  const summaryText = `共 ${summary?.totalProductCount ?? 0} 个商品，可分析 ${summary?.readyProductCount ?? 0} 个，参数缺失 ${summary?.missingParameterProductCount ?? 0} 个，未来3个月预计变化 ${summary?.expectedLifecycleChangeProductCount ?? 0} 个`
+  const summaryText = lifecycleSummaryText(overview)
 
   const columns = useMemo<TableColumnsType<ProductLifecycleAnalysisRow>>(
     () => [
