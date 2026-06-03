@@ -384,7 +384,7 @@ test('product lifecycle analysis can recalculate lifecycle and refresh overview'
   const pageRoot = page.getByTestId('product-lifecycle-analysis-page');
   await expect(pageRoot).toContainText('暂无商品生命周期分析结果');
 
-  await page.getByRole('button', { name: '同步生命周期' }).click();
+  await page.getByRole('button', { name: '重新批量计算生命周期' }).click();
 
   await expect(pageRoot).toContainText('生命周期计算完成。');
   await expect(pageRoot).toContainText('已处理 37');

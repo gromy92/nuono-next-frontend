@@ -389,7 +389,7 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
           loading={recalculating}
           disabled={!query}
         >
-          同步生命周期
+          重新批量计算生命周期
         </Button>
         <Select
           value={selectedStoreKey || undefined}
