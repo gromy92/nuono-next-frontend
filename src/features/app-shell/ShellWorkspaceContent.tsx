@@ -101,6 +101,9 @@ const NoonDataGapPatrolPage = lazyWorkspace(() =>
 const SalesAnalyticsPage = lazyWorkspace(() =>
   import('../sales-analytics/SalesAnalyticsPage').then((module) => ({ default: module.SalesAnalyticsPage }))
 );
+const OrderFinancePage = lazyWorkspace(() =>
+  import('../order-finance/OrderFinancePage').then((module) => ({ default: module.OrderFinancePage }))
+);
 const SalesForecastPage = lazyWorkspace(() =>
   import('../sales-forecast/SalesForecastPage').then((module) => ({ default: module.SalesForecastPage }))
 );
@@ -294,6 +297,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <SalesAnalyticsPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'order-finance') {
+    return (
+      <LazyWorkspaceBoundary>
+        <OrderFinancePage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }
