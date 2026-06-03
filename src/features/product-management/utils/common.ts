@@ -169,20 +169,24 @@ export function normalizeNoonImageUrl(value: unknown) {
   }
 
   let normalized = raw;
-  if (/^original\/pzsku\//i.test(normalized)) {
-    normalized = normalized.replace(/^original\/pzsku\//i, 'https://f.nooncdn.com/p/pzsku/');
-  } else if (/^pzsku\//i.test(normalized)) {
+  if (/^original\/p[zn]sku\//i.test(normalized)) {
+    normalized = normalized.replace(/^original\/(p[zn]sku\/)/i, 'https://f.nooncdn.com/p/$1');
+  } else if (/^p[zn]sku\//i.test(normalized)) {
     normalized = `https://f.nooncdn.com/p/${normalized}`;
-  } else if (/^https:\/\/f\.nooncdn\.com\/p\/original\/pzsku\//i.test(normalized)) {
+  } else if (/^[^/]+\|p[zn]sku\//i.test(normalized)) {
+    normalized = `https://f.nooncdn.com/p/${normalized}`;
+  } else if (/^https:\/\/f\.nooncdn\.com\/p\/original\/p[zn]sku\//i.test(normalized)) {
     normalized = normalized.replace(
-      /^https:\/\/f\.nooncdn\.com\/p\/original\/pzsku\//i,
-      'https://f.nooncdn.com/p/pzsku/'
+      /^https:\/\/f\.nooncdn\.com\/p\/original\/(p[zn]sku\/)/i,
+      'https://f.nooncdn.com/p/$1'
     );
-  } else if (/^https:\/\/f\.nooncdn\.com\/pzsku\//i.test(normalized)) {
-    normalized = normalized.replace(/^https:\/\/f\.nooncdn\.com\/pzsku\//i, 'https://f.nooncdn.com/p/pzsku/');
+  } else if (/^https:\/\/f\.nooncdn\.com\/p[zn]sku\//i.test(normalized)) {
+    normalized = normalized.replace(/^https:\/\/f\.nooncdn\.com\/(p[zn]sku\/)/i, 'https://f.nooncdn.com/p/$1');
+  } else if (/^https:\/\/f\.nooncdn\.com\/[^/]+\|p[zn]sku\//i.test(normalized)) {
+    normalized = normalized.replace(/^https:\/\/f\.nooncdn\.com\//i, 'https://f.nooncdn.com/p/');
   }
 
-  if (/^https:\/\/f\.nooncdn\.com\/p\/pzsku\//i.test(normalized) && !hasImageExtension(normalized)) {
+  if (/^https:\/\/f\.nooncdn\.com\/p\/(?:[^/]+\|)?p[zn]sku\//i.test(normalized) && !hasImageExtension(normalized)) {
     return `${normalized}.jpg`;
   }
   return normalized;

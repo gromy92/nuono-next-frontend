@@ -82,7 +82,7 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
             partnerSku: 'MILKYWAYA09',
             sku: 'z580978e7ed8f9491b50bz-1',
             productTitle: 'Galaxy Star Projector',
-            imageUrl: 'https://example.test/product.jpeg',
+            imageUrl: 'https://f.nooncdn.com/pzsku/Z8615770F50CCD3CDC379Z/45/1752936344/8819be50-7ca7-436d-b9bc-a2cd0a4cf02a',
             brand: 'milkyway',
             productFulltype: 'home_decor-lighting-table_lamps',
             lifecycleCode: 'stable',
@@ -114,7 +114,7 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
             partnerSku: 'MILKYWAYA10',
             sku: 'z580978e7ed8f9491b50bz-2',
             productTitle: 'Galaxy Star Projector Pro',
-            imageUrl: null,
+            imageUrl: 'https://f.nooncdn.com/pnsku/N13036202A/45/_/1767608204/990f8be8-6829-401e-ad3d-ddc34fecc6f0',
             brand: 'milkyway',
             productFulltype: 'home_decor-lighting-table_lamps',
             lifecycleCode: 'growth',
@@ -138,7 +138,7 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
             partnerSku: 'MILKYWAYA01',
             sku: 'zbd2a2638dca8ecc9337bz-1',
             productTitle: 'Galaxy Projector',
-            imageUrl: null,
+            imageUrl: 'https://f.nooncdn.com/54aaafcfc1665b1dbf751298162896f6|pzsku/Z0F154F289E1563B85699Z/45/1769686316/2e4ceef9-b33b-46de-ad64-2aaf70d6d660',
             brand: 'milkyway',
             productFulltype: 'home_decor-lighting-table_lamps',
             lifecycleCode: 'data_insufficient',
@@ -187,7 +187,15 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
   await expect(pageRoot).toContainText('当前生命周期为数据不足，暂不预测。');
   await expect(pageRoot.getByTestId('product-lifecycle-image').first()).toHaveAttribute(
     'src',
-    'https://example.test/product.jpeg'
+    'https://f.nooncdn.com/p/pzsku/Z8615770F50CCD3CDC379Z/45/1752936344/8819be50-7ca7-436d-b9bc-a2cd0a4cf02a.jpg'
+  );
+  await expect(pageRoot.getByTestId('product-lifecycle-image').nth(1)).toHaveAttribute(
+    'src',
+    'https://f.nooncdn.com/p/pnsku/N13036202A/45/_/1767608204/990f8be8-6829-401e-ad3d-ddc34fecc6f0.jpg'
+  );
+  await expect(pageRoot.getByTestId('product-lifecycle-image').nth(2)).toHaveAttribute(
+    'src',
+    'https://f.nooncdn.com/p/54aaafcfc1665b1dbf751298162896f6|pzsku/Z0F154F289E1563B85699Z/45/1769686316/2e4ceef9-b33b-46de-ad64-2aaf70d6d660.jpg'
   );
   const titleLineClamp = await pageRoot.getByTestId('product-lifecycle-title').first().evaluate((node) =>
     window.getComputedStyle(node).getPropertyValue('-webkit-line-clamp')

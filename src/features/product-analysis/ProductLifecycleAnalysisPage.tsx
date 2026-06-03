@@ -2,6 +2,7 @@ import { Alert, Button, Card, Empty, Input, Select, Space, Spin, Table, Tag, Too
 import { SyncOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState, type HTMLAttributes } from 'react'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
+import { normalizeNoonImageUrl } from '../product-management/utils'
 import { fetchProductLifecycleAnalysisOverview, recalculateProductLifecycleAnalysis } from './api'
 import type {
   ProductLifecycleAnalysisOverview,
@@ -205,69 +206,72 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
         title: '商品',
         dataIndex: 'partnerSku',
         width: 330,
-        render: (_value, row) => (
-          <Space align="start" size={10}>
-            {row.imageUrl ? (
-              <img
-                data-testid="product-lifecycle-image"
-                src={row.imageUrl}
-                alt={row.productTitle || row.partnerSku || '商品图片'}
-                referrerPolicy="no-referrer"
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 6,
-                  objectFit: 'cover',
-                  background: '#f1f5f9',
-                  flex: '0 0 auto'
-                }}
-              />
-            ) : (
-              <span
-                aria-label="商品图片缺失"
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 6,
-                  display: 'grid',
-                  placeItems: 'center',
-                  background: '#e2e8f0',
-                  color: '#475569',
-                  fontWeight: 600,
-                  flex: '0 0 auto'
-                }}
-              >
-                {row.partnerSku?.slice(0, 1) || '-'}
-              </span>
-            )}
-            <Space direction="vertical" size={2}>
-              <Tooltip title={row.productTitle || row.partnerSku || '-'}>
-                <div
-                  data-testid="product-lifecycle-title"
+        render: (_value, row) => {
+          const imageUrl = normalizeNoonImageUrl(row.imageUrl)
+          return (
+            <Space align="start" size={10}>
+              {imageUrl ? (
+                <img
+                  data-testid="product-lifecycle-image"
+                  src={imageUrl}
+                  alt={row.productTitle || row.partnerSku || '商品图片'}
+                  referrerPolicy="no-referrer"
                   style={{
-                    display: '-webkit-box',
-                    width: 230,
-                    overflow: 'hidden',
-                    WebkitBoxOrient: 'vertical',
-                    WebkitLineClamp: 2,
-                    whiteSpace: 'normal',
-                    lineHeight: '20px',
+                    width: 56,
+                    height: 56,
+                    borderRadius: 6,
+                    objectFit: 'cover',
+                    background: '#f1f5f9',
+                    flex: '0 0 auto'
+                  }}
+                />
+              ) : (
+                <span
+                  aria-label="商品图片缺失"
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 6,
+                    display: 'grid',
+                    placeItems: 'center',
+                    background: '#e2e8f0',
+                    color: '#475569',
                     fontWeight: 600,
-                    color: '#0f172a'
+                    flex: '0 0 auto'
                   }}
                 >
-                  {row.productTitle || row.partnerSku || '-'}
-                </div>
-              </Tooltip>
-              <Text type="secondary">PSKU {row.partnerSku || '-'}</Text>
-              {row.brand || row.productFulltype ? (
-                <Text type="secondary" style={{ maxWidth: 230 }} ellipsis={{ tooltip: true }}>
-                  {[row.brand, row.productFulltype].filter(Boolean).join(' / ')}
-                </Text>
-              ) : null}
+                  {row.partnerSku?.slice(0, 1) || '-'}
+                </span>
+              )}
+              <Space direction="vertical" size={2}>
+                <Tooltip title={row.productTitle || row.partnerSku || '-'}>
+                  <div
+                    data-testid="product-lifecycle-title"
+                    style={{
+                      display: '-webkit-box',
+                      width: 230,
+                      overflow: 'hidden',
+                      WebkitBoxOrient: 'vertical',
+                      WebkitLineClamp: 2,
+                      whiteSpace: 'normal',
+                      lineHeight: '20px',
+                      fontWeight: 600,
+                      color: '#0f172a'
+                    }}
+                  >
+                    {row.productTitle || row.partnerSku || '-'}
+                  </div>
+                </Tooltip>
+                <Text type="secondary">PSKU {row.partnerSku || '-'}</Text>
+                {row.brand || row.productFulltype ? (
+                  <Text type="secondary" style={{ maxWidth: 230 }} ellipsis={{ tooltip: true }}>
+                    {[row.brand, row.productFulltype].filter(Boolean).join(' / ')}
+                  </Text>
+                ) : null}
+              </Space>
             </Space>
-          </Space>
-        )
+          )
+        }
       },
       {
         title: '未来3个月',
