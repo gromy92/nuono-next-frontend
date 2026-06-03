@@ -21,6 +21,7 @@ export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
+export const DATA_PRODUCT_ANALYSIS_PATH = workspaceMenuPath('data-product-analysis')
 export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
 export const SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH = workspaceMenuPath('system-report-noon-data-completeness')
@@ -76,6 +77,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantManualSelection',
   'grantPurchase',
   'grantSalesAnalytics',
+  'grantProductAnalysis',
   'grantSalesForecast',
   'grantSystemReports',
   'grantOperationsConfig',
