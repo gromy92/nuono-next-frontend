@@ -1,4 +1,4 @@
-import { Alert, Avatar, Button, Card, Empty, Select, Space, Spin, Statistic, Table, Tag, Typography, type TableColumnsType } from 'antd'
+import { Alert, Button, Card, Empty, Input, Select, Space, Spin, Table, Tag, Tooltip, Typography, type TableColumnsType } from 'antd'
 import { SyncOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState, type HTMLAttributes } from 'react'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
@@ -11,6 +11,7 @@ import type {
 } from './types'
 
 const { Text, Title } = Typography
+const { Search } = Input
 
 type ProductLifecycleAnalysisPageProps = {
   session: AuthSession
@@ -103,12 +104,8 @@ function projectionUnavailableMessage(row: ProductLifecycleAnalysisRow) {
   return row.projectionMessage || '生命周期预测暂不可用。'
 }
 
-function projectionStateLabel(row: ProductLifecycleAnalysisRow) {
-  if (row.projectionState === 'ready') return '可预测'
-  if (row.projectionState === 'lifecycle_data_insufficient') return '数据不足'
-  if (row.projectionState === 'lifecycle_stage_start_date_missing') return '缺阶段起点'
-  if (row.projectionState === 'lifecycle_rule_config_missing') return '缺规则配置'
-  return '缺参数'
+function includesKeyword(value: string | null | undefined, keyword: string) {
+  return (value || '').toLowerCase().includes(keyword)
 }
 
 export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalysisPageProps) {
@@ -119,6 +116,7 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
   const [recalculating, setRecalculating] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [runStatus, setRunStatus] = useState<ProductLifecycleAnalysisRecalculation | null>(null)
+  const [searchKeyword, setSearchKeyword] = useState('')
 
   const allowedStores = useMemo(() => uniqueStores(session.userStores, currentStore), [currentStore, session.userStores])
 
@@ -184,74 +182,90 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
 
   const rows = overview?.rows || []
   const summary = overview?.summary
+  const normalizedSearchKeyword = searchKeyword.trim().toLowerCase()
+  const filteredRows = useMemo(() => {
+    if (!normalizedSearchKeyword) return rows
+    return rows.filter((row) =>
+      [
+        row.partnerSku,
+        row.productTitle,
+        row.lifecycleLabel,
+        row.analysisStateLabel,
+        row.brand,
+        row.productFulltype
+      ].some((value) => includesKeyword(value, normalizedSearchKeyword))
+    )
+  }, [normalizedSearchKeyword, rows])
+
+  const summaryText = `共 ${summary?.totalProductCount ?? 0} 个商品，可分析 ${summary?.readyProductCount ?? 0} 个，参数缺失 ${summary?.missingParameterProductCount ?? 0} 个，未来3个月预计变化 ${summary?.expectedLifecycleChangeProductCount ?? 0} 个`
 
   const columns = useMemo<TableColumnsType<ProductLifecycleAnalysisRow>>(
     () => [
       {
         title: '商品',
         dataIndex: 'partnerSku',
-        width: 360,
+        width: 330,
         render: (_value, row) => (
           <Space align="start" size={10}>
-            <Avatar shape="square" size={48} src={row.imageUrl || undefined}>
-              {row.partnerSku?.slice(0, 1) || '-'}
-            </Avatar>
+            {row.imageUrl ? (
+              <img
+                data-testid="product-lifecycle-image"
+                src={row.imageUrl}
+                alt={row.productTitle || row.partnerSku || '商品图片'}
+                referrerPolicy="no-referrer"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 6,
+                  objectFit: 'cover',
+                  background: '#f1f5f9',
+                  flex: '0 0 auto'
+                }}
+              />
+            ) : (
+              <span
+                aria-label="商品图片缺失"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 6,
+                  display: 'grid',
+                  placeItems: 'center',
+                  background: '#e2e8f0',
+                  color: '#475569',
+                  fontWeight: 600,
+                  flex: '0 0 auto'
+                }}
+              >
+                {row.partnerSku?.slice(0, 1) || '-'}
+              </span>
+            )}
             <Space direction="vertical" size={2}>
-              <Text strong>{row.productTitle || row.partnerSku || '-'}</Text>
-              <Text type="secondary">{row.partnerSku || '-'}</Text>
-              <Text type="secondary">{row.sku || '-'}</Text>
+              <Tooltip title={row.productTitle || row.partnerSku || '-'}>
+                <div
+                  data-testid="product-lifecycle-title"
+                  style={{
+                    display: '-webkit-box',
+                    width: 230,
+                    overflow: 'hidden',
+                    WebkitBoxOrient: 'vertical',
+                    WebkitLineClamp: 2,
+                    whiteSpace: 'normal',
+                    lineHeight: '20px',
+                    fontWeight: 600,
+                    color: '#0f172a'
+                  }}
+                >
+                  {row.productTitle || row.partnerSku || '-'}
+                </div>
+              </Tooltip>
+              <Text type="secondary">PSKU {row.partnerSku || '-'}</Text>
               {row.brand || row.productFulltype ? (
-                <Text type="secondary">
+                <Text type="secondary" style={{ maxWidth: 230 }} ellipsis={{ tooltip: true }}>
                   {[row.brand, row.productFulltype].filter(Boolean).join(' / ')}
                 </Text>
               ) : null}
             </Space>
-          </Space>
-        )
-      },
-      {
-        title: '当前生命周期',
-        dataIndex: 'lifecycleLabel',
-        width: 160,
-        render: (value, row) => (
-          <Space direction="vertical" size={4}>
-            <Tag color={row.lifecycleCode === 'data_insufficient' ? 'default' : 'blue'}>{value || '-'}</Tag>
-            <Text type="secondary">{row.lifecycleCode || '-'}</Text>
-          </Space>
-        )
-      },
-      {
-        title: '分析状态',
-        dataIndex: 'analysisStateLabel',
-        width: 180,
-        render: (value, row) => (
-          <Space direction="vertical" size={4}>
-            <Tag color={row.analysisState === 'ready' ? 'green' : 'orange'}>{value || row.analysisState || '-'}</Tag>
-            <Text type="secondary">{row.ruleVersion || '-'}</Text>
-          </Space>
-        )
-      },
-      {
-        title: '库存/销量',
-        dataIndex: 'currentStock',
-        width: 190,
-        render: (_value, row) => (
-          <Space direction="vertical" size={2}>
-            <Text>库存 {row.currentStock ?? '-'}</Text>
-            <Text>近30天销量 {row.recent30DaySales ?? 0}</Text>
-            <Text type="secondary">数据日 {row.latestFactDate || '-'}</Text>
-          </Space>
-        )
-      },
-      {
-        title: '生命周期日期',
-        dataIndex: 'analysisDate',
-        width: 180,
-        render: (_value, row) => (
-          <Space direction="vertical" size={2}>
-            <Text>分析日 {row.analysisDate || '-'}</Text>
-            <Text type="secondary">{listingDateText(row)}</Text>
-            <Text type="secondary">阶段起点 {row.currentStageStartDate || '-'}</Text>
           </Space>
         )
       },
@@ -308,15 +322,37 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
         }
       },
       {
-        title: '预测状态',
-        dataIndex: 'projectionMessage',
-        width: 180,
-        render: (_value, row) => (
+        title: '生命周期/状态',
+        dataIndex: 'lifecycleLabel',
+        width: 170,
+        render: (value, row) => (
           <Space direction="vertical" size={4}>
-            <Tag color={row.projectionState === 'ready' ? 'green' : 'orange'}>
-              {projectionStateLabel(row)}
-            </Tag>
-            <Text type="secondary">{row.projectionMessage || '-'}</Text>
+            <Tag color={row.lifecycleCode === 'data_insufficient' ? 'default' : 'blue'}>{value || '-'}</Tag>
+            <Tag color={row.analysisState === 'ready' ? 'green' : 'orange'}>{row.analysisStateLabel || row.analysisState || '-'}</Tag>
+          </Space>
+        )
+      },
+      {
+        title: '库存/销量',
+        dataIndex: 'currentStock',
+        width: 170,
+        render: (_value, row) => (
+          <Space direction="vertical" size={2}>
+            <Text>库存 {row.currentStock ?? '-'}</Text>
+            <Text>近30天销量 {row.recent30DaySales ?? 0}</Text>
+            <Text type="secondary">数据日 {row.latestFactDate || '-'}</Text>
+          </Space>
+        )
+      },
+      {
+        title: '生命周期日期',
+        dataIndex: 'analysisDate',
+        width: 190,
+        render: (_value, row) => (
+          <Space direction="vertical" size={2}>
+            <Text>分析日 {row.analysisDate || '-'}</Text>
+            <Text type="secondary">{listingDateText(row)}</Text>
+            <Text type="secondary">阶段起点 {row.currentStageStartDate || '-'}</Text>
           </Space>
         )
       }
@@ -365,32 +401,27 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
         />
       ) : null}
 
-      <Space size={12} wrap>
-        <Card variant="borderless" style={{ minWidth: 160 }}>
-          <Statistic title="商品数" value={summary?.totalProductCount ?? 0} />
-        </Card>
-        <Card variant="borderless" style={{ minWidth: 160 }}>
-          <Statistic title="可分析" value={summary?.readyProductCount ?? 0} />
-        </Card>
-        <Card variant="borderless" style={{ minWidth: 160 }}>
-          <Statistic title="参数缺失" value={summary?.missingParameterProductCount ?? 0} />
-        </Card>
-        <Card variant="borderless" style={{ minWidth: 180 }}>
-          <Statistic
-            title={`${summary?.forecastWindowDays ?? 90}天内预计变化`}
-            value={summary?.expectedLifecycleChangeProductCount ?? 0}
-          />
-        </Card>
+      <Space align="center" style={{ justifyContent: 'space-between', width: '100%' }} wrap>
+        <Text data-testid="product-lifecycle-summary" type="secondary">
+          {summaryText}
+        </Text>
+        <Search
+          value={searchKeyword}
+          onChange={(event) => setSearchKeyword(event.target.value)}
+          placeholder="搜索PSKU/标题/生命周期"
+          allowClear
+          style={{ width: 320 }}
+        />
       </Space>
 
       <Card variant="borderless" style={{ boxShadow: 'none' }}>
         <Spin spinning={loading}>
           <Table<ProductLifecycleAnalysisRow>
             columns={columns}
-            dataSource={rows}
+            dataSource={filteredRows}
             rowKey={rowKey}
             pagination={false}
-            scroll={{ x: 1350 }}
+            scroll={{ x: 1130 }}
             onRow={() => ({ 'data-testid': 'product-lifecycle-analysis-row' } as HTMLAttributes<HTMLElement>)}
             locale={{
               emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无商品生命周期分析结果" />

@@ -91,7 +91,7 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
             analysisDate: '2026-05-21',
             listingDate: '2026-05-01',
             listingDateSource: 'official',
-            ruleVersion: 'DEFAULT_V1',
+            ruleVersion: 'LIFECYCLE_CONFIG_88009',
             currentStock: 21,
             recent30DaySales: 15,
             latestFactDate: '2026-05-20',
@@ -166,13 +166,13 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
 
   const pageRoot = page.getByTestId('product-lifecycle-analysis-page');
   await expect(pageRoot.getByTestId('product-lifecycle-analysis-row')).toHaveCount(3);
-  await expect(pageRoot).toContainText('37');
-  await expect(pageRoot).toContainText('25');
-  await expect(pageRoot).toContainText('90天内预计变化');
+  await expect(pageRoot).toContainText('共 37 个商品，可分析 25 个，参数缺失 12 个，未来3个月预计变化 1 个');
   await expect(pageRoot).toContainText('MILKYWAYA09');
   await expect(pageRoot).toContainText('Galaxy Star Projector');
   await expect(pageRoot).toContainText('稳定');
   await expect(pageRoot).toContainText('可分析');
+  await expect(pageRoot).not.toContainText('LIFECYCLE_CONFIG_88009');
+  await expect(pageRoot).not.toContainText('z580978e7ed8f9491b50bz-1');
   await expect(pageRoot).toContainText('库存 21');
   await expect(pageRoot).toContainText('近30天销量 15');
   await expect(pageRoot).toContainText('数据日 2026-05-20');
@@ -184,6 +184,24 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
   await expect(pageRoot).toContainText('生命周期预测参数缺失，无法计算。');
   await expect(pageRoot).toContainText('growth.durationDays');
   await expect(pageRoot).toContainText('当前生命周期为数据不足，暂不预测。');
+  await expect(pageRoot.getByTestId('product-lifecycle-image').first()).toHaveAttribute(
+    'src',
+    'https://example.test/product.jpeg'
+  );
+  const titleLineClamp = await pageRoot.getByTestId('product-lifecycle-title').first().evaluate((node) =>
+    window.getComputedStyle(node).getPropertyValue('-webkit-line-clamp')
+  );
+  expect(titleLineClamp).toBe('2');
+  const headers = await pageRoot.locator('thead th').allTextContents();
+  expect(headers.indexOf('未来3个月')).toBeLessThan(headers.indexOf('生命周期/状态'));
+  expect(headers).not.toContain('预测状态');
+  expect(headers).not.toContain('当前生命周期');
+  expect(headers).not.toContain('分析状态');
+
+  await page.getByPlaceholder('搜索PSKU/标题/生命周期').fill('MILKYWAYA10');
+  await expect(pageRoot.getByTestId('product-lifecycle-analysis-row')).toHaveCount(1);
+  await expect(pageRoot).toContainText('MILKYWAYA10');
+  await expect(pageRoot).not.toContainText('MILKYWAYA09');
 });
 
 test('product lifecycle analysis explains missing listing date', async ({ page }) => {
