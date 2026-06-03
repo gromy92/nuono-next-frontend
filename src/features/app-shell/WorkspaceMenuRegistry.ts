@@ -8,6 +8,7 @@ export type AppMenuKey =
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'data-sales-analysis'
+  | 'data-product-analysis'
   | 'data-sales-forecast'
   | 'noon-call-store-data'
   | 'system-report-noon-data-completeness'
@@ -62,6 +63,7 @@ export type WorkspaceContentKind =
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'sales-analytics'
+  | 'product-lifecycle-analysis'
   | 'sales-forecast'
   | 'noon-call-store-data'
   | 'system-report-noon-data-completeness'
@@ -200,6 +202,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '数据 / 销量分析',
     tabLabel: '销量分析',
     contentKind: 'sales-analytics',
+    closable: true
+  },
+  'data-product-analysis': {
+    key: 'data-product-analysis',
+    label: '商品分析',
+    path: '/data/product-analysis/lifecycle',
+    sectionKey: 'data',
+    pathLabel: '数据 / 商品分析',
+    tabLabel: '商品分析',
+    contentKind: 'product-lifecycle-analysis',
     closable: true
   },
   'data-sales-forecast': {
@@ -413,6 +425,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     iconKey: 'data',
     entries: [
       { type: 'workspace', key: 'data-sales-analysis' },
+      { type: 'workspace', key: 'data-product-analysis' },
       { type: 'workspace', key: 'data-sales-forecast' },
       { type: 'placeholder', key: 'data-board', label: '约仓看板', disabled: true }
     ]
@@ -521,16 +534,23 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
-    keys: ['data-sales-analysis', 'data-sales-forecast'],
+    keys: ['data-sales-analysis', 'data-product-analysis', 'data-sales-forecast'],
     urlPaths: [
       '/data/sales-analysis',
+      '/data/product-analysis/lifecycle',
       '/data/sales-forecast',
       '/api/sales-data/analytics',
       '/api/sales-data/activity-windows',
+      '/api/product-analysis/lifecycle/overview',
       '/api/sales-forecast/overview'
     ],
-    urlPathPrefixes: ['/api/sales-data/analytics/', '/api/sales-data/activity-windows/', '/api/sales-forecast/'],
-    menuNames: ['销量分析', '销量预测', '销售分析', '销量数据']
+    urlPathPrefixes: [
+      '/api/sales-data/analytics/',
+      '/api/sales-data/activity-windows/',
+      '/api/product-analysis/lifecycle/',
+      '/api/sales-forecast/'
+    ],
+    menuNames: ['销量分析', '商品分析', '销量预测', '销售分析', '销量数据']
   },
   {
     keys: ['noon-call-store-data', 'system-report-noon-data-completeness', 'system-report-noon-data-gaps'],
@@ -578,6 +598,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-profit',
   'purchase-logistics-quote',
   'data-sales-analysis',
+  'data-product-analysis',
   'data-sales-forecast',
   'noon-call-store-data',
   'system-report-noon-data-completeness',

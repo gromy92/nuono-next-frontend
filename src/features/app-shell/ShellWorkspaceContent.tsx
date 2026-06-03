@@ -101,6 +101,11 @@ const NoonDataGapPatrolPage = lazyWorkspace(() =>
 const SalesAnalyticsPage = lazyWorkspace(() =>
   import('../sales-analytics/SalesAnalyticsPage').then((module) => ({ default: module.SalesAnalyticsPage }))
 );
+const ProductLifecycleAnalysisPage = lazyWorkspace(() =>
+  import('../product-analysis/ProductLifecycleAnalysisPage').then((module) => ({
+    default: module.ProductLifecycleAnalysisPage
+  }))
+);
 const SalesForecastPage = lazyWorkspace(() =>
   import('../sales-forecast/SalesForecastPage').then((module) => ({ default: module.SalesForecastPage }))
 );
@@ -294,6 +299,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <SalesAnalyticsPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'product-lifecycle-analysis') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ProductLifecycleAnalysisPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

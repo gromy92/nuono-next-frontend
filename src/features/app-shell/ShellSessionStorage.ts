@@ -8,6 +8,7 @@ import {
   PRODUCT_MANUAL_SELECTION_PATH,
   PURCHASE_1688_COLLECTION_PATH,
   DATA_SALES_ANALYTICS_PATH,
+  DATA_PRODUCT_ANALYSIS_PATH,
   DATA_SALES_FORECAST_PATH,
   NOON_CALL_STORE_DATA_PATH,
   SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH,
@@ -81,8 +82,10 @@ function readDevSessionOverride(): AuthSession | null {
     search.get('grantSystemReports') === '1'
   const includeSalesAnalyticsDevMenu =
     pathname.startsWith(DATA_SALES_ANALYTICS_PATH) ||
+    pathname.startsWith(DATA_PRODUCT_ANALYSIS_PATH) ||
     pathname.startsWith(DATA_SALES_FORECAST_PATH) ||
     search.get('grantSalesAnalytics') === '1' ||
+    search.get('grantProductAnalysis') === '1' ||
     search.get('grantSalesForecast') === '1'
   const includeOperationsConfigDevMenu =
     pathname.startsWith(OPERATIONS_CONFIG_VERSIONS_PATH) ||
@@ -98,7 +101,10 @@ function readDevSessionOverride(): AuthSession | null {
   const includeRoleAssignmentDevMenu = search.get('grantRoleAssignment') === '1'
   const includeSystemRoleDevMenu = search.get('grantSystemRole') === '1'
   const devRole = (search.get('devRole') || search.get('role') || '').trim().toLowerCase()
+  const devAccount = (search.get('devAccount') || '').trim().toLowerCase()
+  const useXingyaoOwnerDevSession = devAccount === 'xingyaoqw' || devAccount === '10002' || search.get('devOwner') === '10002'
   const useBossDevSession = devRole === 'boss' || devRole === 'laoban' || devRole === '老板'
+  const useBusinessBossDevSession = useXingyaoOwnerDevSession || useBossDevSession
 
   const adminDevStores: AuthSessionStore[] = [
     {
@@ -156,8 +162,9 @@ function readDevSessionOverride(): AuthSession | null {
     }
   ]
 
-  const devStores = useBossDevSession ? bossDevStores : adminDevStores
-  const grantedMenus: NonNullable<AuthSession['grantedMenus']> = useBossDevSession
+  const xingyaoOwnerDevStores = adminDevStores.filter((store) => store.storeCode?.startsWith('STR245027-'))
+  const devStores = useXingyaoOwnerDevSession ? xingyaoOwnerDevStores : useBossDevSession ? bossDevStores : adminDevStores
+  const grantedMenus: NonNullable<AuthSession['grantedMenus']> = useBusinessBossDevSession
     ? [
         { menuId: 10, menuName: '用户管理', urlPath: '/api/user/manage' },
         { menuId: 25, menuName: '角色分配', urlPath: '/api/user/role' }
@@ -193,6 +200,7 @@ function readDevSessionOverride(): AuthSession | null {
   }
   if (includeSalesAnalyticsDevMenu) {
     grantedMenus.push({ menuId: 9401, menuName: '销量分析', urlPath: DATA_SALES_ANALYTICS_PATH })
+    grantedMenus.push({ menuId: 9403, menuName: '商品分析', urlPath: DATA_PRODUCT_ANALYSIS_PATH })
     grantedMenus.push({ menuId: 9402, menuName: '销量预测', urlPath: DATA_SALES_FORECAST_PATH })
   }
   if (includeOperationsConfigDevMenu) {
@@ -206,19 +214,19 @@ function readDevSessionOverride(): AuthSession | null {
   const adminDevUserId = 10003
 
   return {
-    userId: useBossDevSession ? 307 : adminDevUserId,
-    accountNo: useBossDevSession ? '毕翠红' : 'adminBI',
-    realName: useBossDevSession ? '毕翠红' : 'adminBI',
-    roleId: useBossDevSession ? 2 : 1,
-    roleName: useBossDevSession ? '老板' : '管理员',
-    companyName: useBossDevSession ? 'canman' : 'Nuono',
+    userId: useXingyaoOwnerDevSession ? 10002 : useBossDevSession ? 307 : adminDevUserId,
+    accountNo: useXingyaoOwnerDevSession ? 'xingyaoqw' : useBossDevSession ? '毕翠红' : 'adminBI',
+    realName: useXingyaoOwnerDevSession ? '星耀店主' : useBossDevSession ? '毕翠红' : 'adminBI',
+    roleId: useBusinessBossDevSession ? 2 : 1,
+    roleName: useBusinessBossDevSession ? '老板' : '管理员',
+    companyName: useXingyaoOwnerDevSession ? 'xingyao' : useBossDevSession ? 'canman' : 'Nuono',
     status: 1,
-    level: useBossDevSession ? 1 : 0,
+    level: useBusinessBossDevSession ? 1 : 0,
     storeCount: devStores.length,
     authorizedStoreCount: devStores.filter((store) => store.authorized).length,
     bindingStatus: 'PROJECT_BOUND',
-    defaultOwnerUserId: useBossDevSession ? 307 : 10002,
-    activeRoleView: useBossDevSession ? 'boss' : undefined,
+    defaultOwnerUserId: useXingyaoOwnerDevSession ? 10002 : useBossDevSession ? 307 : 10002,
+    activeRoleView: useBusinessBossDevSession ? 'boss' : undefined,
     currentStore: devStores[0],
     userStores: devStores,
     grantedMenus

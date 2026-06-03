@@ -1,0 +1,263 @@
+import { expect, test } from '@playwright/test';
+
+test('product lifecycle analysis opens from data menu with backend empty state', async ({ page }) => {
+  let overviewRequestedUrl = '';
+
+  await page.route('**/api/product-analysis/lifecycle/overview?**', async (route) => {
+    overviewRequestedUrl = route.request().url();
+    await route.fulfill({
+      json: {
+        summary: {
+          storeCode: 'STR108065-NAE',
+          siteCode: 'AE',
+          totalProductCount: 0,
+          readyProductCount: 0,
+          missingParameterProductCount: 0
+        },
+        rows: []
+      }
+    });
+  });
+
+  await page.goto('/data/product-analysis/lifecycle?devSession=1&devRole=boss&grantSalesAnalytics=1');
+
+  const pageRoot = page.getByTestId('product-lifecycle-analysis-page');
+  await expect(pageRoot).toBeVisible();
+  await expect(page.getByTestId('workspace-tabs-bar').getByRole('tab', { name: '商品分析' })).toBeVisible();
+  await expect(pageRoot).toContainText('生命周期分析');
+  await expect(pageRoot).toContainText('暂无商品生命周期分析结果');
+  await expect(pageRoot).not.toContainText('SAMPLE-SKU');
+  await expect(pageRoot.getByTestId('product-lifecycle-analysis-row')).toHaveCount(0);
+
+  expect(overviewRequestedUrl).toContain('/api/product-analysis/lifecycle/overview?');
+  expect(overviewRequestedUrl).toContain('storeCode=');
+  expect(overviewRequestedUrl).toContain('siteCode=');
+});
+
+test('product lifecycle analysis dev account can target the local xingyao owner', async ({ page }) => {
+  let devSessionUserId = '';
+  let overviewRequestedUrl = '';
+
+  await page.route('**/api/product-analysis/lifecycle/overview?**', async (route) => {
+    overviewRequestedUrl = route.request().url();
+    devSessionUserId = route.request().headers()['x-nuono-dev-session-user-id'] || '';
+    await route.fulfill({
+      json: {
+        summary: {
+          storeCode: 'STR245027-NAE',
+          siteCode: 'AE',
+          totalProductCount: 0,
+          readyProductCount: 0,
+          missingParameterProductCount: 0
+        },
+        rows: []
+      }
+    });
+  });
+
+  await page.goto('/data/product-analysis/lifecycle?devSession=1&devAccount=xingyaoqw&grantProductAnalysis=1');
+
+  await expect(page.getByTestId('product-lifecycle-analysis-page')).toBeVisible();
+  expect(devSessionUserId).toBe('10002');
+  expect(overviewRequestedUrl).toContain('storeCode=STR245027-NAE');
+  expect(overviewRequestedUrl).toContain('siteCode=AE');
+});
+
+test('product lifecycle analysis renders real lifecycle rows from api', async ({ page }) => {
+  await page.route('**/api/product-analysis/lifecycle/overview?**', async (route) => {
+    await route.fulfill({
+      json: {
+        summary: {
+          storeCode: 'STR245027-NAE',
+          siteCode: 'AE',
+          totalProductCount: 37,
+          readyProductCount: 25,
+          missingParameterProductCount: 12,
+          expectedLifecycleChangeProductCount: 1,
+          forecastWindowDays: 90
+        },
+        rows: [
+          {
+            partnerSku: 'MILKYWAYA09',
+            sku: 'z580978e7ed8f9491b50bz-1',
+            productTitle: 'Galaxy Star Projector',
+            imageUrl: 'https://example.test/product.jpeg',
+            brand: 'milkyway',
+            productFulltype: 'home_decor-lighting-table_lamps',
+            lifecycleCode: 'stable',
+            lifecycleLabel: '稳定',
+            analysisState: 'ready',
+            analysisStateLabel: '可分析',
+            analysisDate: '2026-05-21',
+            listingDate: '2026-05-01',
+            listingDateSource: 'official',
+            ruleVersion: 'DEFAULT_V1',
+            currentStock: 21,
+            recent30DaySales: 15,
+            latestFactDate: '2026-05-20',
+            projectionState: 'ready',
+            projectionMessage: '生命周期时间线已生成。',
+            projectionMissingRequirements: [],
+            currentStageStartDate: '2026-05-01',
+            currentStageElapsedDays: 21,
+            currentStageRemainingDays: 9,
+            nextLifecycleCode: 'growth',
+            nextLifecycleLabel: '成长期',
+            nextTransitionDate: '2026-05-31',
+            futureTimeline: [
+              { date: '2026-05-22', lifecycleCode: 'new', lifecycleLabel: '新品期' },
+              { date: '2026-05-31', lifecycleCode: 'growth', lifecycleLabel: '成长期' }
+            ]
+          },
+          {
+            partnerSku: 'MILKYWAYA10',
+            sku: 'z580978e7ed8f9491b50bz-2',
+            productTitle: 'Galaxy Star Projector Pro',
+            imageUrl: null,
+            brand: 'milkyway',
+            productFulltype: 'home_decor-lighting-table_lamps',
+            lifecycleCode: 'growth',
+            lifecycleLabel: '成长期',
+            analysisState: 'ready',
+            analysisStateLabel: '可分析',
+            analysisDate: '2026-05-21',
+            listingDate: '2026-04-01',
+            currentStageStartDate: '2026-05-01',
+            listingDateSource: 'official',
+            ruleVersion: 'DEFAULT_V1',
+            currentStock: 18,
+            recent30DaySales: 20,
+            latestFactDate: '2026-05-20',
+            projectionState: 'lifecycle_period_config_missing',
+            projectionMessage: '生命周期周期参数缺失，无法计算。',
+            projectionMissingRequirements: ['growth.durationDays'],
+            futureTimeline: []
+          },
+          {
+            partnerSku: 'MILKYWAYA01',
+            sku: 'zbd2a2638dca8ecc9337bz-1',
+            productTitle: 'Galaxy Projector',
+            imageUrl: null,
+            brand: 'milkyway',
+            productFulltype: 'home_decor-lighting-table_lamps',
+            lifecycleCode: 'data_insufficient',
+            lifecycleLabel: '数据不足',
+            analysisState: 'data_insufficient',
+            analysisStateLabel: '数据不足',
+            analysisDate: '2026-05-21',
+            listingDate: '2026-05-13',
+            currentStageStartDate: null,
+            listingDateSource: 'official',
+            ruleVersion: 'DEFAULT_V1',
+            currentStock: 2,
+            recent30DaySales: 0,
+            latestFactDate: '2026-05-20',
+            projectionState: 'lifecycle_data_insufficient',
+            projectionMessage: '当前生命周期为数据不足，不能生成未来阶段时间线。',
+            projectionMissingRequirements: ['currentLifecycle=data_insufficient'],
+            futureTimeline: []
+          }
+        ]
+      }
+    });
+  });
+
+  await page.goto('/data/product-analysis/lifecycle?devSession=1&devAccount=xingyaoqw&grantProductAnalysis=1');
+
+  const pageRoot = page.getByTestId('product-lifecycle-analysis-page');
+  await expect(pageRoot.getByTestId('product-lifecycle-analysis-row')).toHaveCount(3);
+  await expect(pageRoot).toContainText('37');
+  await expect(pageRoot).toContainText('25');
+  await expect(pageRoot).toContainText('90天内预计变化');
+  await expect(pageRoot).toContainText('MILKYWAYA09');
+  await expect(pageRoot).toContainText('Galaxy Star Projector');
+  await expect(pageRoot).toContainText('稳定');
+  await expect(pageRoot).toContainText('可分析');
+  await expect(pageRoot).toContainText('库存 21');
+  await expect(pageRoot).toContainText('近30天销量 15');
+  await expect(pageRoot).toContainText('数据日 2026-05-20');
+  await expect(pageRoot).toContainText('已处 21 天');
+  await expect(pageRoot).toContainText('剩余 9 天');
+  await expect(pageRoot).toContainText('下阶段 成长期');
+  await expect(pageRoot).toContainText('变更日 2026-05-31');
+  await expect(pageRoot).toContainText('未来3个月');
+  await expect(pageRoot).toContainText('生命周期预测参数缺失，无法计算。');
+  await expect(pageRoot).toContainText('growth.durationDays');
+  await expect(pageRoot).toContainText('当前生命周期为数据不足，暂不预测。');
+});
+
+test('product lifecycle analysis explains missing listing date', async ({ page }) => {
+  await page.route('**/api/product-analysis/lifecycle/overview?**', async (route) => {
+    await route.fulfill({
+      json: {
+        summary: {
+          storeCode: 'STR245027-NAE',
+          siteCode: 'AE',
+          totalProductCount: 2,
+          readyProductCount: 0,
+          missingParameterProductCount: 2,
+          expectedLifecycleChangeProductCount: 0,
+          forecastWindowDays: 90
+        },
+        rows: [
+          {
+            partnerSku: 'MILKYWAYA06',
+            sku: 'zb432f2cac4d3162612b8z-1',
+            productTitle: 'Astronaut Star Space Projector',
+            imageUrl: null,
+            brand: 'milkyway',
+            productFulltype: 'home_decor-lighting-table_lamps',
+            lifecycleCode: 'data_insufficient',
+            lifecycleLabel: '数据不足',
+            analysisState: 'data_insufficient',
+            analysisStateLabel: '数据不足',
+            analysisDate: '2026-05-21',
+            listingDate: null,
+            currentStageStartDate: null,
+            listingDateSource: 'missing',
+            ruleVersion: 'DEFAULT_V1',
+            currentStock: 0,
+            recent30DaySales: 0,
+            latestFactDate: null,
+            projectionState: 'lifecycle_data_insufficient',
+            projectionMessage: '当前生命周期为数据不足，不能生成未来阶段时间线。',
+            projectionMissingRequirements: ['currentLifecycle=data_insufficient'],
+            futureTimeline: []
+          },
+          {
+            partnerSku: 'MILKYWAYA07',
+            sku: 'z730634a7f9a2fa1ad551z-1',
+            productTitle: 'Legacy Pulled Listing Projector',
+            imageUrl: null,
+            brand: 'milkyway',
+            productFulltype: 'home_decor-lighting-table_lamps',
+            lifecycleCode: 'data_insufficient',
+            lifecycleLabel: '数据不足',
+            analysisState: 'data_insufficient',
+            analysisStateLabel: '数据不足',
+            analysisDate: '2026-05-21',
+            listingDate: '2026-05-13',
+            currentStageStartDate: null,
+            listingDateSource: 'pulled',
+            ruleVersion: 'DEFAULT_V1',
+            currentStock: 0,
+            recent30DaySales: 0,
+            latestFactDate: null,
+            projectionState: 'lifecycle_data_insufficient',
+            projectionMessage: '当前生命周期为数据不足，不能生成未来阶段时间线。',
+            projectionMissingRequirements: ['currentLifecycle=data_insufficient'],
+            futureTimeline: []
+          }
+        ]
+      }
+    });
+  });
+
+  await page.goto('/data/product-analysis/lifecycle?devSession=1&devAccount=xingyaoqw&grantProductAnalysis=1');
+
+  const pageRoot = page.getByTestId('product-lifecycle-analysis-page');
+  await expect(pageRoot.getByTestId('product-lifecycle-analysis-row')).toHaveCount(2);
+  await expect(pageRoot).toContainText('缺失上架日/未上架');
+  await expect(pageRoot).not.toContainText('上架日 -');
+  await expect(pageRoot).not.toContainText('上架日 2026-05-13');
+});
