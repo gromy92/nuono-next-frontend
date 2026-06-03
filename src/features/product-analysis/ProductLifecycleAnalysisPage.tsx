@@ -10,7 +10,7 @@ import type {
   ProductLifecycleAnalysisRow
 } from './types'
 
-const { Text, Title } = Typography
+const { Text } = Typography
 const { Search } = Input
 
 type ProductLifecycleAnalysisPageProps = {
@@ -340,7 +340,7 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
           <Space direction="vertical" size={2}>
             <Text>库存 {row.currentStock ?? '-'}</Text>
             <Text>近30天销量 {row.recent30DaySales ?? 0}</Text>
-            <Text type="secondary">数据日 {row.latestFactDate || '-'}</Text>
+            <Text type="secondary">销量数据至 {row.latestFactDate || '-'}</Text>
           </Space>
         )
       },
@@ -362,33 +362,25 @@ export function ProductLifecycleAnalysisPage({ session }: ProductLifecycleAnalys
 
   return (
     <div data-testid="product-lifecycle-analysis-page" style={{ display: 'grid', gap: 16 }}>
-      <Space align="start" style={{ justifyContent: 'space-between', width: '100%' }}>
-        <Space direction="vertical" size={2}>
-          <Title level={3} style={{ margin: 0 }}>
-            生命周期分析
-          </Title>
-          <Text type="secondary">数据 / 商品分析</Text>
-        </Space>
-        <Space size={8}>
-          <Button
-            icon={<SyncOutlined />}
-            onClick={() => void handleRecalculate()}
-            loading={recalculating}
-            disabled={!query}
-          >
-            同步生命周期
-          </Button>
-          <Select
-            value={selectedStoreKey || undefined}
-            style={{ minWidth: 240 }}
-            placeholder="选择店铺"
-            onChange={setSelectedStoreKey}
-            options={allowedStores.map((store) => ({
-              value: storeKey(store),
-              label: `${store.projectName || store.projectCode || store.storeCode} / ${store.storeCode}`
-            }))}
-          />
-        </Space>
+      <Space align="center" style={{ justifyContent: 'flex-end', width: '100%' }} wrap>
+        <Button
+          icon={<SyncOutlined />}
+          onClick={() => void handleRecalculate()}
+          loading={recalculating}
+          disabled={!query}
+        >
+          同步生命周期
+        </Button>
+        <Select
+          value={selectedStoreKey || undefined}
+          style={{ minWidth: 240 }}
+          placeholder="选择店铺"
+          onChange={setSelectedStoreKey}
+          options={allowedStores.map((store) => ({
+            value: storeKey(store),
+            label: `${store.projectName || store.projectCode || store.storeCode} / ${store.storeCode}`
+          }))}
+        />
       </Space>
 
       {errorMessage ? <Alert type="error" showIcon message={errorMessage} /> : null}

@@ -24,7 +24,8 @@ test('product lifecycle analysis opens from data menu with backend empty state',
   const pageRoot = page.getByTestId('product-lifecycle-analysis-page');
   await expect(pageRoot).toBeVisible();
   await expect(page.getByTestId('workspace-tabs-bar').getByRole('tab', { name: '商品分析' })).toBeVisible();
-  await expect(pageRoot).toContainText('生命周期分析');
+  await expect(pageRoot.getByRole('heading', { name: '生命周期分析' })).toHaveCount(0);
+  await expect(pageRoot).not.toContainText('数据 / 商品分析');
   await expect(pageRoot).toContainText('暂无商品生命周期分析结果');
   await expect(pageRoot).not.toContainText('SAMPLE-SKU');
   await expect(pageRoot.getByTestId('product-lifecycle-analysis-row')).toHaveCount(0);
@@ -175,7 +176,7 @@ test('product lifecycle analysis renders real lifecycle rows from api', async ({
   await expect(pageRoot).not.toContainText('z580978e7ed8f9491b50bz-1');
   await expect(pageRoot).toContainText('库存 21');
   await expect(pageRoot).toContainText('近30天销量 15');
-  await expect(pageRoot).toContainText('数据日 2026-05-20');
+  await expect(pageRoot).toContainText('销量数据至 2026-05-20');
   await expect(pageRoot).toContainText('已处 21 天');
   await expect(pageRoot).toContainText('剩余 9 天');
   await expect(pageRoot).toContainText('下阶段 成长期');
