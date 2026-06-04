@@ -7,6 +7,7 @@ import {
   PRODUCT_WORKSPACE_PATH,
   PRODUCT_MANUAL_SELECTION_PATH,
   PURCHASE_1688_COLLECTION_PATH,
+  PURCHASE_LISTING_PATH,
   DATA_SALES_ANALYTICS_PATH,
   DATA_SALES_FORECAST_PATH,
   NOON_CALL_STORE_DATA_PATH,
@@ -70,6 +71,7 @@ function readDevSessionOverride(): AuthSession | null {
   const includePurchaseDevMenu =
     pathname.startsWith('/purchase/order') ||
     pathname.startsWith(PURCHASE_1688_COLLECTION_PATH) ||
+    pathname.startsWith(PURCHASE_LISTING_PATH) ||
     search.get('grantPurchase') === '1'
   const includeLogisticsQuoteDevMenu =
     pathname.startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
@@ -182,6 +184,7 @@ function readDevSessionOverride(): AuthSession | null {
   }
   if (includePurchaseDevMenu) {
     grantedMenus.push({ menuId: 24, menuName: '采购', urlPath: '/api/purchase/order' })
+    grantedMenus.push({ menuId: 2401, menuName: '商品上架', urlPath: PURCHASE_LISTING_PATH })
   }
   if (includeLogisticsQuoteDevMenu) {
     grantedMenus.push({ menuId: 9201, menuName: '货代管理', urlPath: PURCHASE_LOGISTICS_QUOTE_PATH })

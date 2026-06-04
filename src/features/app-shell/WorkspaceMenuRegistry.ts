@@ -4,6 +4,7 @@ export type AppMenuKey =
   | 'product-specs'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
+  | 'purchase-listing'
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
@@ -58,6 +59,7 @@ export type WorkspaceContentKind =
   | 'product-specs'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
+  | 'product-listing'
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
@@ -160,6 +162,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '采购 / 1688查询展示',
     tabLabel: '1688查询展示',
     contentKind: 'purchase-ali1688-collection',
+    closable: true
+  },
+  'purchase-listing': {
+    key: 'purchase-listing',
+    label: '商品上架',
+    path: '/purchase/listing',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / 商品上架',
+    tabLabel: '商品上架',
+    contentKind: 'product-listing',
     closable: true
   },
   'purchase-order': {
@@ -368,7 +380,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     label: '采购',
     iconKey: 'purchase',
     entries: [
-      { type: 'placeholder', key: 'purchase-listing', label: '商品上架', disabled: true },
+      { type: 'workspace', key: 'purchase-listing' },
       { type: 'workspace', key: 'purchase-profit' },
       { type: 'workspace', key: 'purchase-ali1688-collection' },
       { type: 'workspace', key: 'purchase-order' }
@@ -511,6 +523,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['1688查询展示', '1688查询']
   },
   {
+    keys: ['purchase-listing'],
+    urlPaths: ['/purchase/listing', '/api/product-listing'],
+    urlPathPrefixes: ['/api/product-listing/'],
+    menuNames: ['商品上架', '利润计算与上架']
+  },
+  {
     keys: ['purchase-profit'],
     urlPaths: ['/api/sku/cost'],
     menuNames: ['利润计算与上架']
@@ -574,6 +592,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'product-specs',
   'product-manual-selection',
   'purchase-ali1688-collection',
+  'purchase-listing',
   'purchase-order',
   'purchase-profit',
   'purchase-logistics-quote',
