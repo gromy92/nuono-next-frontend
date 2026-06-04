@@ -21,6 +21,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { normalizeError } from '../../shared/api'
 import { confirmProductListingRealRun, saveProductListingDraft, submitProductListingDryRun } from './api'
+import { readProductListingSourcePrefill, type ProductListingSourcePrefill } from './sourcePrefill'
 import type {
   ProductListingDraftPayload,
   ProductListingDraftView,
@@ -36,6 +37,8 @@ type ProductListingPageProps = {
 type ProductListingFormValues = {
   draftId?: number
   storeCode?: string
+  sourceType?: string
+  sourceRefId?: number
   psku?: string
   idProductFullType?: number
   productFullType?: string
@@ -75,11 +78,25 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [draftView, setDraftView] = useState<ProductListingDraftView>()
   const [taskView, setTaskView] = useState<ProductListingTaskView>()
   const [realRunTaskView, setRealRunTaskView] = useState<ProductListingTaskView>()
+  const [sourcePrefill, setSourcePrefill] = useState<ProductListingSourcePrefill>()
 
   useEffect(() => {
     if (storeCode && !form.getFieldValue('storeCode')) {
       form.setFieldValue('storeCode', storeCode)
     }
+  }, [form, storeCode])
+
+  useEffect(() => {
+    const prefill = readProductListingSourcePrefill()
+    if (!prefill) {
+      return
+    }
+    setSourcePrefill(prefill)
+    form.setFieldsValue({
+      ...prefill.draft,
+      storeCode: prefill.draft.storeCode || storeCode,
+      imageUrlsText: prefill.draft.imageUrls?.join('\n') ?? ''
+    })
   }, [form, storeCode])
 
   const validationIssues = useMemo(() => {
@@ -186,7 +203,33 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
 
       <Alert type="info" showIcon message="保存草稿和 dry-run 不会写入 Noon；真实上架必须由人工确认，并通过后端开关和任务锁。" />
 
+      {sourcePrefill ? (
+        <Alert
+          type="success"
+          showIcon
+          message="来源：人工采集"
+          description={
+            <Space wrap size={[8, 4]}>
+              <Text>{sourcePrefill.collectionNo || sourcePrefill.sourceCollectionId}</Text>
+              {sourcePrefill.sourcePlatform ? <Tag>{sourcePrefill.sourcePlatform}</Tag> : null}
+              {sourcePrefill.sourceTitleCn ? <Text type="secondary">{sourcePrefill.sourceTitleCn}</Text> : null}
+              {sourcePrefill.sourceUrl ? (
+                <Typography.Link href={sourcePrefill.sourceUrl} target="_blank" rel="noreferrer">
+                  查看来源
+                </Typography.Link>
+              ) : null}
+            </Space>
+          }
+        />
+      ) : null}
+
       <Form form={form} layout="vertical" initialValues={{ fbp: true, storeCode }}>
+        <Form.Item name="sourceType" hidden>
+          <Input />
+        </Form.Item>
+        <Form.Item name="sourceRefId" hidden>
+          <InputNumber />
+        </Form.Item>
         <Row gutter={[16, 16]}>
           <Col xs={24} xl={12}>
             <Card title="基础信息" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
@@ -448,6 +491,8 @@ function formValuesToPayload(values: ProductListingFormValues, currentDraftId?: 
   return {
     draftId: values.draftId ?? currentDraftId,
     storeCode: text(values.storeCode),
+    sourceType: optionalText(values.sourceType),
+    sourceRefId: values.sourceRefId,
     psku: text(values.psku),
     idProductFullType: values.idProductFullType,
     productFullType: optionalText(values.productFullType),

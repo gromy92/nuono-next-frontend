@@ -3,11 +3,12 @@ import type { ManualSelectionTableProps } from '../types'
 import { buildManualSelectionTableColumns } from './ManualSelectionTable.columns'
 
 export function ManualSelectionTable(props: ManualSelectionTableProps) {
-  const { dataSource, loading, recollecting, onOpenDetail, onRecollect } = props
+  const { dataSource, loading, recollecting, onOpenDetail, onOpenListing, onRecollect } = props
 
   const columns = buildManualSelectionTableColumns({
     recollecting,
     onOpenDetail,
+    onOpenListing,
     onRecollect
   })
 
