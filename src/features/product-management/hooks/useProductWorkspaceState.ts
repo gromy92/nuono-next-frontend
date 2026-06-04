@@ -16,7 +16,6 @@ export function useProductWorkspaceState() {
   const [storeInitializationForm] = Form.useForm();
   const [storeInitializationSubmitting, setStoreInitializationSubmitting] = useState(false);
   const [selectedInitializationStoreCodeOverride, setSelectedInitializationStoreCodeOverride] = useState<string>();
-  const [autoInitializationStoreCode, setAutoInitializationStoreCode] = useState<string>();
   const [storeInitializationState, setStoreInitializationState] = useState<StoreInitializationState>({ status: 'idle' });
   const [productListDatasetState, setProductListDatasetState] = useState<ProductListDatasetState>({ status: 'idle' });
   const [productListDraftFilters, setProductListDraftFilters] = useState({ ...defaultProductListFilters });
@@ -67,8 +66,6 @@ export function useProductWorkspaceState() {
     setStoreInitializationSubmitting,
     selectedInitializationStoreCodeOverride,
     setSelectedInitializationStoreCodeOverride,
-    autoInitializationStoreCode,
-    setAutoInitializationStoreCode,
     storeInitializationState,
     setStoreInitializationState,
     productListDatasetState,

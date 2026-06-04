@@ -38,7 +38,6 @@ export function useProductManagementWorkspace({
   const workspaceState = useProductWorkspaceState();
   const {
     activeSiteOfferCode,
-    autoInitializationStoreCode,
     productDetailTabHandledRef,
     productListDatasetState,
     productListDraftFilters,
@@ -52,7 +51,6 @@ export function useProductManagementWorkspace({
     selectedInitializationStoreCodeOverride,
     selectedProductRowKeys,
     setActiveSiteOfferCode,
-    setAutoInitializationStoreCode,
     setProductActionSubmitting,
     setProductGalleryImages,
     setProductGalleryIndex,
@@ -84,8 +82,6 @@ export function useProductManagementWorkspace({
 
   const storeInitialization = useProductStoreInitialization({
     activeOwnerId,
-    autoInitializationStoreCode,
-    enableProductBootAutoInit: enabled,
     enableProductBootDataset: enabled,
     enableProductBootInitStatus: enabled,
     enableProductBootStoreSelection: enabled,
@@ -93,7 +89,6 @@ export function useProductManagementWorkspace({
     loadProductListDataset,
     selectedInitializationStoreCodeOverride,
     session,
-    setAutoInitializationStoreCode,
     setProductListDatasetState,
     setSelectedInitializationStoreCodeOverride,
     setSelectedProductRowKeys,
@@ -320,7 +315,6 @@ export function useProductManagementWorkspace({
     setActiveProductMenu,
     setActiveProductWorkspaceTabKey,
     setActiveSiteOfferCode,
-    setAutoInitializationStoreCode,
     setProductDetailTabRequest,
     setProductGalleryImages,
     setProductGalleryOpen,
