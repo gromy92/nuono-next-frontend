@@ -1,5 +1,10 @@
 import { apiFetch, parseApiResponse } from '../../shared/api'
-import type { ProductListingDraftPayload, ProductListingDraftView, ProductListingTaskView } from './types'
+import type {
+  ProductListingDraftPayload,
+  ProductListingDraftView,
+  ProductListingRealRunCommand,
+  ProductListingTaskView
+} from './types'
 
 export function saveProductListingDraft(payload: ProductListingDraftPayload) {
   return postJson<ProductListingDraftView>('/api/product-listing/drafts', payload, '保存上架草稿失败')
@@ -7,6 +12,14 @@ export function saveProductListingDraft(payload: ProductListingDraftPayload) {
 
 export function submitProductListingDryRun(payload: { draftId: number; storeCode: string }) {
   return postJson<ProductListingTaskView>('/api/product-listing/dry-run', payload, '提交上架 dry-run 失败')
+}
+
+export function confirmProductListingRealRun(taskId: number, payload: ProductListingRealRunCommand) {
+  return postJson<ProductListingTaskView>(
+    `/api/product-listing/tasks/${taskId}/confirm-real-run`,
+    payload,
+    '确认真实上架失败'
+  )
 }
 
 export function fetchProductListingTask(taskId: number) {
