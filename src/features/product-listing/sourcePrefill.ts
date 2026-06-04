@@ -1,5 +1,5 @@
 import type { ProductSelectionSourceCollection } from '../source-collection/types'
-import type { ProductListingDraftPayload } from './types'
+import type { ProductListingEditorDraft } from './productDetailAdapter'
 
 const PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY = 'nuono:product-listing:source-prefill'
 
@@ -10,7 +10,7 @@ export type ProductListingSourcePrefill = {
   sourcePlatform?: string
   sourceTitleCn?: string
   sourceUrl?: string
-  draft: Partial<ProductListingDraftPayload>
+  draft: Partial<ProductListingEditorDraft>
 }
 
 export function saveManualSelectionListingPrefill(record: ProductSelectionSourceCollection, storeCode?: string) {
@@ -62,8 +62,13 @@ function buildManualSelectionListingPrefill(
     sourceUrl: record.pageUrl || record.sourceUrl,
     draft: {
       storeCode: record.storeCode || storeCode || '',
+      productTitleCn: text(record.sourceTitleCn || record.selectedText),
       productTitleEn: text(record.sourceTitle),
       productTitleAr: text(record.sourceTitleAr),
+      productDescriptionEn: text(record.sourceDescriptionEn),
+      productDescriptionAr: text(record.sourceDescriptionAr || record.selectedTextAr),
+      productHighlightsEn: uniqueTexts(record.sourceSellingPointsEn || []),
+      productHighlightsAr: uniqueTexts(record.sourceSellingPointsAr || []),
       productBrand: text(record.brandName),
       imageUrls: uniqueTexts([record.sourceImageUrl, ...(record.imageUrls || [])]),
       supplyEvidenceType: 'OTHER',

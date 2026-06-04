@@ -132,11 +132,17 @@ test('manual selection row opens product listing editor with source prefill', as
   await expect(page).toHaveURL(/\/purchase\/listing/);
   await expect(page.getByText('来源：人工采集')).toBeVisible();
   await expect(page.getByText('PSC-20260514-LISTING')).toBeVisible();
-  await expect(page.getByLabel('英文标题')).toHaveValue('DUYONE Artificial Flowers 6 Stems Poppy Silk Bouquet');
-  await expect(page.getByLabel('阿文标题')).toHaveValue('باقة زهور صناعية');
-  await expect(page.getByLabel('品牌', { exact: true })).toHaveValue('DUYONE');
+  await expect(page.getByRole('tab', { name: 'Offer' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Content' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'Sizes' })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: '标题英语' })).toHaveValue('DUYONE Artificial Flowers 6 Stems Poppy Silk Bouquet');
+  await expect(page.getByRole('textbox', { name: '标题阿语' })).toHaveValue('باقة زهور صناعية');
+  await expect(page.getByRole('textbox', { name: '卖点 1 英语' })).toHaveValue('[Home decor]- Artificial flowers for home decoration.');
+  await expect(page.getByRole('combobox', { name: '品牌' })).toHaveValue('DUYONE');
+  await expect(page.getByRole('button', { name: '管理图片' })).toBeVisible();
   await expect(page.getByLabel('供应凭证 ID')).toHaveValue('86001');
-  await expect(page.getByLabel('图片 URL')).toHaveValue(/https:\/\/images\.example\.com\/main\.jpg[\s\S]*https:\/\/images\.example\.com\/detail\.jpg/);
+  await expect(page.locator('img[src="https://images.example.com/main.jpg"]')).toBeVisible();
+  await expect(page.locator('img[src="https://images.example.com/detail.jpg"]')).toBeVisible();
 });
 
 test('manual selection collection page closes the first phase workflow', async ({ page }) => {
