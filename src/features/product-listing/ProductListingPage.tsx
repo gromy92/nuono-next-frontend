@@ -20,10 +20,18 @@ import {
 } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { normalizeError } from '../../shared/api'
+import { ProductListingDetailEditor } from './ProductListingDetailEditor'
 import { confirmProductListingRealRun, saveProductListingDraft, submitProductListingDryRun } from './api'
+import {
+  createProductListingEditorDraft,
+  normalizeProductListingEditorDraft,
+  productListingEditorDraftToMetadataValues,
+  productListingEditorDraftToPayload,
+  type ProductListingEditorDraft,
+  type ProductListingMetadataFormValues
+} from './productDetailAdapter'
 import { readProductListingSourcePrefill, type ProductListingSourcePrefill } from './sourcePrefill'
 import type {
-  ProductListingDraftPayload,
   ProductListingDraftView,
   ProductListingTaskView
 } from './types'
@@ -34,34 +42,6 @@ type ProductListingPageProps = {
   storeCode?: string
 }
 
-type ProductListingFormValues = {
-  draftId?: number
-  storeCode?: string
-  sourceType?: string
-  sourceRefId?: number
-  psku?: string
-  idProductFullType?: number
-  productFullType?: string
-  family?: string
-  productType?: string
-  productSubType?: string
-  productBrand?: string
-  productBrandCode?: string
-  productTitleEn?: string
-  productTitleAr?: string
-  imageUrlsText?: string
-  price?: number
-  purchasePrice?: number
-  supplyEvidenceType?: string
-  supplyEvidenceRefId?: number
-  optionalPurchaseOrderId?: number
-  fbp?: boolean
-  warehouseId?: string
-  quantity?: number
-  idWarranty?: number
-  barcode?: string
-}
-
 const SUPPLY_EVIDENCE_OPTIONS = [
   { label: '1688 报价', value: '1688_OFFER' },
   { label: '人工报价', value: 'MANUAL_QUOTE' },
@@ -70,7 +50,10 @@ const SUPPLY_EVIDENCE_OPTIONS = [
 ]
 
 export function ProductListingPage({ storeCode }: ProductListingPageProps) {
-  const [form] = Form.useForm<ProductListingFormValues>()
+  const [form] = Form.useForm<ProductListingMetadataFormValues>()
+  const [listingDraft, setListingDraft] = useState<ProductListingEditorDraft>(() =>
+    createProductListingEditorDraft(storeCode)
+  )
   const [saving, setSaving] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [confirmingRealRun, setConfirmingRealRun] = useState(false)
@@ -81,10 +64,12 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [sourcePrefill, setSourcePrefill] = useState<ProductListingSourcePrefill>()
 
   useEffect(() => {
-    if (storeCode && !form.getFieldValue('storeCode')) {
-      form.setFieldValue('storeCode', storeCode)
+    if (storeCode && !listingDraft.storeCode) {
+      const nextDraft = normalizeProductListingEditorDraft({ ...listingDraft, storeCode }, storeCode)
+      setListingDraft(nextDraft)
+      form.setFieldsValue(productListingEditorDraftToMetadataValues(nextDraft))
     }
-  }, [form, storeCode])
+  }, [form, listingDraft, storeCode])
 
   useEffect(() => {
     const prefill = readProductListingSourcePrefill()
@@ -92,11 +77,17 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
       return
     }
     setSourcePrefill(prefill)
-    form.setFieldsValue({
-      ...prefill.draft,
-      storeCode: prefill.draft.storeCode || storeCode,
-      imageUrlsText: prefill.draft.imageUrls?.join('\n') ?? ''
-    })
+    const nextDraft = normalizeProductListingEditorDraft(
+      {
+        ...listingDraft,
+        ...prefill.draft,
+        storeCode: prefill.draft.storeCode || listingDraft.storeCode || storeCode
+      },
+      storeCode
+    )
+    setListingDraft(nextDraft)
+    form.setFieldsValue(productListingEditorDraftToMetadataValues(nextDraft))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, storeCode])
 
   const validationIssues = useMemo(() => {
@@ -110,12 +101,29 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const saveDraftFromForm = async (options?: { silent?: boolean }) => {
     setSaving(true)
     try {
-      const payload = formValuesToPayload(form.getFieldsValue(), draftView?.draftId)
+      const currentDraft = normalizeProductListingEditorDraft(
+        {
+          ...listingDraft,
+          ...form.getFieldsValue()
+        },
+        storeCode
+      )
+      setListingDraft(currentDraft)
+      const payload = productListingEditorDraftToPayload(currentDraft, draftView?.draftId)
       const saved = await saveProductListingDraft(payload)
       setDraftView(saved)
       setTaskView(undefined)
       setRealRunTaskView(undefined)
-      applyDraftToForm(form, saved.draft ?? payload)
+      const nextDraft = normalizeProductListingEditorDraft(
+        {
+          ...currentDraft,
+          ...(saved.draft ?? payload),
+          draftId: saved.draftId
+        },
+        storeCode
+      )
+      setListingDraft(nextDraft)
+      form.setFieldsValue(productListingEditorDraftToMetadataValues(nextDraft))
       if (!options?.silent) {
         message.success('上架草稿已保存')
       }
@@ -223,153 +231,86 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         />
       ) : null}
 
-      <Form form={form} layout="vertical" initialValues={{ fbp: true, storeCode }}>
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={productListingEditorDraftToMetadataValues(listingDraft)}
+        onValuesChange={(_changedValues, values) => {
+          setListingDraft((currentDraft) =>
+            normalizeProductListingEditorDraft({ ...currentDraft, ...values }, storeCode)
+          )
+        }}
+      >
         <Form.Item name="sourceType" hidden>
           <Input />
         </Form.Item>
         <Form.Item name="sourceRefId" hidden>
           <InputNumber />
         </Form.Item>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} xl={12}>
-            <Card title="基础信息" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
-              <Row gutter={12}>
-                <Col xs={24} md={12}>
-                  <Form.Item label="店铺编码" name="storeCode">
-                    <Input placeholder="STR245027-NAE" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="PSKU" name="psku">
-                    <Input placeholder="NN-PSKU-001" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="采购单 ID（可选）" name="optionalPurchaseOrderId">
-                    <InputNumber min={1} precision={0} style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="条码" name="barcode">
-                    <Input placeholder="6290000000001" />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-
-          <Col xs={24} xl={12}>
-            <Card title="Noon 内容" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
-              <Row gutter={12}>
-                <Col xs={24} md={12}>
-                  <Form.Item label="品牌" name="productBrand">
-                    <Input placeholder="Generic" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="品牌编码" name="productBrandCode">
-                    <Input placeholder="generic" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="Fulltype ID" name="idProductFullType">
-                    <InputNumber min={1} precision={0} style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="Fulltype" name="productFullType">
-                    <Input placeholder="family-type-subtype" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={8}>
-                  <Form.Item label="Family" name="family">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={8}>
-                  <Form.Item label="Type" name="productType">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={8}>
-                  <Form.Item label="SubType" name="productSubType">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col xs={24}>
-                  <Form.Item label="英文标题" name="productTitleEn">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col xs={24}>
-                  <Form.Item label="阿文标题" name="productTitleAr">
-                    <Input />
-                  </Form.Item>
-                </Col>
-                <Col xs={24}>
-                  <Form.Item label="图片 URL" name="imageUrlsText">
-                    <Input.TextArea autoSize={{ minRows: 3, maxRows: 6 }} placeholder="每行一个 URL" />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-
-          <Col xs={24} xl={12}>
-            <Card title="成本与供应" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
-              <Row gutter={12}>
-                <Col xs={24} md={12}>
-                  <Form.Item label="销售价" name="price">
-                    <InputNumber min={0} precision={2} style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="采购价" name="purchasePrice">
-                    <InputNumber min={0} precision={2} style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="供应凭证" name="supplyEvidenceType">
-                    <Select options={SUPPLY_EVIDENCE_OPTIONS} allowClear />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="供应凭证 ID" name="supplyEvidenceRefId">
-                    <InputNumber min={1} precision={0} style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-
-          <Col xs={24} xl={12}>
-            <Card title="履约" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
-              <Row gutter={12}>
-                <Col xs={24} md={12}>
-                  <Form.Item label="FBP" name="fbp" valuePropName="checked">
-                    <Switch />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="仓库 ID" name="warehouseId">
-                    <Input placeholder="W00752151SA" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="数量" name="quantity">
-                    <InputNumber min={0} precision={0} style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item label="质保 ID" name="idWarranty">
-                    <InputNumber min={1} precision={0} style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-              </Row>
-            </Card>
-          </Col>
-        </Row>
+        <Card title="上架参数" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
+          <Row gutter={12}>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="店铺编码" name="storeCode">
+                <Input placeholder="STR245027-NAE" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="PSKU" name="psku">
+                <Input placeholder="NN-PSKU-001" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="Fulltype ID" name="idProductFullType">
+                <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="品牌编码" name="productBrandCode">
+                <Input placeholder="generic" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="采购单 ID（可选）" name="optionalPurchaseOrderId">
+                <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="采购价" name="purchasePrice">
+                <InputNumber min={0} precision={2} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="供应凭证" name="supplyEvidenceType">
+                <Select options={SUPPLY_EVIDENCE_OPTIONS} allowClear />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="供应凭证 ID" name="supplyEvidenceRefId">
+                <InputNumber min={1} precision={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="FBP" name="fbp" valuePropName="checked">
+                <Switch />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="仓库 ID" name="warehouseId">
+                <Input placeholder="W00752151SA" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
+              <Form.Item label="数量" name="quantity">
+                <InputNumber min={0} precision={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
       </Form>
+
+      <Card title="商品详情编辑" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
+        <ProductListingDetailEditor draft={listingDraft} onDraftChange={setListingDraft} />
+      </Card>
 
       <Space>
         <Button icon={<SaveOutlined />} loading={saving} onClick={() => void saveDraftFromForm()}>
@@ -485,59 +426,6 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
       </Row>
     </Space>
   )
-}
-
-function formValuesToPayload(values: ProductListingFormValues, currentDraftId?: number): ProductListingDraftPayload {
-  return {
-    draftId: values.draftId ?? currentDraftId,
-    storeCode: text(values.storeCode),
-    sourceType: optionalText(values.sourceType),
-    sourceRefId: values.sourceRefId,
-    psku: text(values.psku),
-    idProductFullType: values.idProductFullType,
-    productFullType: optionalText(values.productFullType),
-    family: optionalText(values.family),
-    productType: optionalText(values.productType),
-    productSubType: optionalText(values.productSubType),
-    productBrand: optionalText(values.productBrand),
-    productBrandCode: optionalText(values.productBrandCode),
-    productTitleEn: optionalText(values.productTitleEn),
-    productTitleAr: optionalText(values.productTitleAr),
-    imageUrls: parseImageUrls(values.imageUrlsText),
-    price: values.price,
-    purchasePrice: values.purchasePrice,
-    supplyEvidenceType: optionalText(values.supplyEvidenceType),
-    supplyEvidenceRefId: values.supplyEvidenceRefId,
-    optionalPurchaseOrderId: values.optionalPurchaseOrderId,
-    fbp: values.fbp,
-    warehouseId: optionalText(values.warehouseId),
-    quantity: values.quantity,
-    idWarranty: values.idWarranty,
-    barcode: optionalText(values.barcode)
-  }
-}
-
-function applyDraftToForm(form: ReturnType<typeof Form.useForm<ProductListingFormValues>>[0], draft: ProductListingDraftPayload) {
-  form.setFieldsValue({
-    ...draft,
-    imageUrlsText: draft.imageUrls?.join('\n') ?? ''
-  })
-}
-
-function parseImageUrls(value?: string) {
-  return (value || '')
-    .split(/\r?\n|,/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
-
-function text(value?: string) {
-  return (value || '').trim()
-}
-
-function optionalText(value?: string) {
-  const trimmed = text(value)
-  return trimmed || undefined
 }
 
 function statusColor(status: string) {

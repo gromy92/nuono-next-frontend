@@ -8,6 +8,7 @@ import type {
 } from '../types';
 
 export type ProductDetailOfficialTabsProps = {
+  defaultActiveKey?: 'offer' | 'content' | 'sizes' | 'product-insights';
   productSiteDomain?: ProductFieldDomainSurface;
   productSharedDomainDirtyCount: number;
   productActionSubmitting: boolean;
