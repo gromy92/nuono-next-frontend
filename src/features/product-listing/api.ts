@@ -3,7 +3,8 @@ import type {
   ProductListingDraftPayload,
   ProductListingDraftView,
   ProductListingRealRunCommand,
-  ProductListingTaskView
+  ProductListingTaskView,
+  ProductListingWarehouseView
 } from './types'
 
 export function saveProductListingDraft(payload: ProductListingDraftPayload) {
@@ -29,6 +30,14 @@ export function fetchProductListingTask(taskId: number) {
 export function fetchRecentProductListingTasks(storeCode: string, limit = 20) {
   const params = new URLSearchParams({ storeCode, limit: String(limit) })
   return getJson<ProductListingTaskView[]>(`/api/product-listing/tasks/recent?${params.toString()}`, '读取上架任务失败')
+}
+
+export function fetchProductListingWarehouses(storeCode: string) {
+  const params = new URLSearchParams({ storeCode })
+  return getJson<ProductListingWarehouseView[]>(
+    `/api/product-listing/warehouses?${params.toString()}`,
+    '读取 Noon 仓库列表失败'
+  )
 }
 
 async function getJson<TResponse>(url: string, fallback: string) {

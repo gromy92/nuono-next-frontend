@@ -56,6 +56,7 @@ export type ProductListingMetadataFormValues = Pick<
   | 'optionalPurchaseOrderId'
   | 'fbp'
   | 'warehouseId'
+  | 'warehouseCode'
   | 'quantity'
 >
 
@@ -100,6 +101,7 @@ export function productListingEditorDraftToMetadataValues(
     optionalPurchaseOrderId: draft.optionalPurchaseOrderId,
     fbp: draft.fbp,
     warehouseId: draft.warehouseId,
+    warehouseCode: draft.warehouseCode,
     quantity: draft.quantity
   }
 }
@@ -131,6 +133,7 @@ export function productListingEditorDraftToPayload(
     optionalPurchaseOrderId: optionalInteger(draft.optionalPurchaseOrderId),
     fbp: draft.fbp,
     warehouseId: optionalText(draft.warehouseId),
+    warehouseCode: optionalText(draft.warehouseCode),
     quantity: optionalInteger(draft.quantity),
     idWarranty: optionalInteger(draft.idWarranty),
     barcode: optionalText(draft.barcode)
@@ -218,6 +221,7 @@ export function productListingEditorDraftToSnapshot(draft: ProductListingEditorD
     stock: {
       fbp: draft.fbp,
       warehouseId: text(draft.warehouseId),
+      warehouseCode: text(draft.warehouseCode),
       quantity: draft.quantity
     },
     siteOffers: [productListingEditorDraftToSiteOffer(draft)]
@@ -271,13 +275,14 @@ export function productListingEditorDraftToSummary(draft: ProductListingEditorDr
 
 export function productListingEditorDraftToStockRows(draft: ProductListingEditorDraft): Array<Record<string, unknown>> {
   const warehouseId = text(draft.warehouseId)
+  const warehouseCode = text(draft.warehouseCode)
   const quantity = optionalInteger(draft.quantity)
-  if (!warehouseId && quantity === undefined) {
+  if (!warehouseId && !warehouseCode && quantity === undefined) {
     return []
   }
   return [
     {
-      warehouseCode: warehouseId,
+      warehouseCode: warehouseCode || warehouseId,
       stockType: draft.fbp ? 'FBP' : 'Seller',
       stockTransferred: '-',
       stockReserved: '-',
