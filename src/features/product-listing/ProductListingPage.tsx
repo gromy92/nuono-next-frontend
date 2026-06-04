@@ -88,6 +88,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     }
     return draftView?.validationIssues ?? []
   }, [draftView?.validationIssues, taskView?.validationIssues])
+  const realWriteAttemptLocked = hasRealWriteAttempt(realRunTaskView)
 
   const saveDraftFromForm = async (options?: { silent?: boolean }) => {
     setSaving(true)
@@ -132,14 +133,14 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   }
 
   const handleConfirmRealRun = () => {
-    if (!taskView?.taskId || taskView.status !== 'validated') {
+    if (!taskView?.taskId || taskView.status !== 'validated' || realWriteAttemptLocked) {
       return
     }
     setRealRunConfirmOpen(true)
   }
 
   const handleConfirmRealRunOk = async () => {
-    if (!taskView?.taskId || taskView.status !== 'validated') {
+    if (!taskView?.taskId || taskView.status !== 'validated' || realWriteAttemptLocked) {
       return
     }
     setConfirmingRealRun(true)
@@ -350,6 +351,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
                 danger
                 icon={<CheckCircleOutlined />}
                 loading={confirmingRealRun}
+                disabled={realWriteAttemptLocked}
                 onClick={() => void handleConfirmRealRun()}
               >
                 确认真实上架
@@ -357,6 +359,9 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
             </Space>
             {realRunTaskView?.failureCode === 'real_write_disabled' ? (
               <Alert type="warning" showIcon message="后端真实写入开关未开启，本次确认已记录为 rejected 任务。" />
+            ) : null}
+            {realRunTaskView?.failureCode === 'real_run_already_attempted' ? (
+              <Alert type="warning" showIcon message="该 dry-run 已提交过真实上架尝试，请重新 dry-run 后再操作。" />
             ) : null}
             {realRunTaskView ? (
               <Descriptions size="small" column={{ xs: 1, md: 2 }}>
@@ -504,4 +509,15 @@ function statusColor(status: string) {
     return 'orange'
   }
   return 'default'
+}
+
+function hasRealWriteAttempt(task?: ProductListingTaskView) {
+  if (!task) {
+    return false
+  }
+  return (
+    ['running', 'submitted', 'succeeded', 'failed'].includes(task.status) ||
+    task.failureCode === 'real_run_already_active' ||
+    task.failureCode === 'real_run_already_attempted'
+  )
 }
