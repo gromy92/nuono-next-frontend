@@ -162,6 +162,7 @@ export function productListingEditorDraftToSnapshot(draft: ProductListingEditorD
       skuParent: psku || 'NEW-LISTING',
       partnerSku: psku,
       pskuCode: psku,
+      productSourceType: 'SELF_BUILT',
       brand: text(draft.productBrand),
       brandCode: text(draft.productBrandCode),
       barcode,
@@ -244,6 +245,7 @@ export function productListingEditorDraftToSummary(draft: ProductListingEditorDr
   const images = normalizeStringList(draft.imageUrls)
   return {
     skuParent: text(draft.psku) || 'NEW-LISTING',
+    productSourceType: 'SELF_BUILT',
     partnerSku: text(draft.psku),
     pskuCode: text(draft.psku),
     storeCode: text(draft.storeCode),
@@ -256,6 +258,7 @@ export function productListingEditorDraftToSummary(draft: ProductListingEditorDr
     referencePrice: valueText(draft.price),
     productFulltype: text(draft.productFullType),
     isActive: draft.isActive ?? true,
+    listingStartedSource: 'not_listed',
     liveStatus: 'not_live',
     syncStatus: 'draft',
     detailBaselineStatus: 'ready',

@@ -1,18 +1,11 @@
 import { useState } from 'react';
-import { ExportOutlined } from '@ant-design/icons';
-import { Button, Col, Modal, Row, Space, Tag, Tooltip, Typography } from 'antd';
+import { Button, Modal, Space, Typography } from 'antd';
 import {
-  buildNoonCatalogProductUrl,
-  buildNoonProductUrl,
-  formatDateTimeParts,
-  formatSnapshotValue,
-  isProductNotListedSource,
   isProductPublishTaskActive,
-  isProductPublishTaskNeedsAttention,
-  productListingStartedSourceLabel,
-  productSourceTypeMeta
+  isProductPublishTaskNeedsAttention
 } from '../utils';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
+import { ProductDetailSummaryBar } from './ProductDetailSummaryBar';
 import { ProductDetailSyncAlert } from './ProductDetailSyncAlert';
 
 const { Text } = Typography;
@@ -46,17 +39,6 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
   const publishTaskId = typeof publishTask?.taskId === 'number' ? publishTask.taskId : undefined;
   const publishTaskActive = isProductPublishTaskActive(publishTask);
   const publishTaskNeedsAttention = isProductPublishTaskNeedsAttention(publishTask);
-  const partnerSku = formatSnapshotValue(
-    currentProductSummarySurface?.partnerSku ?? productSnapshotView?.identity.partnerSku
-  );
-  const sourceTypeMeta = productSourceTypeMeta(
-    currentProductSummarySurface?.productSourceType ?? productSnapshotView?.identity.productSourceType
-  );
-  const listingStartedParts = formatDateTimeParts(currentProductSummarySurface?.listingStartedAt);
-  const listingStartedSourceLabel = productListingStartedSourceLabel(currentProductSummarySurface?.listingStartedSource);
-  const productNotListed = isProductNotListedSource(currentProductSummarySurface?.listingStartedSource);
-  const productUrl = currentProductSummarySurface ? buildNoonProductUrl(currentProductSummarySurface) : undefined;
-  const catalogUrl = buildNoonCatalogProductUrl(productSnapshotView, activeProductSiteOffer);
   const requestPullFromNoon = () => {
     if (!productDraftDirty) {
       void previewProductAction('pull', { syncMergePolicy: 'use_noon' });
@@ -124,129 +106,50 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
       >
         <Text>确认放弃当前未发布草稿，并恢复到最近本地商品基线？</Text>
       </Modal>
-      <div className="pm-detail-section pm-detail-section--subtle">
-        <Row gutter={[12, 12]} align="middle" wrap={false}>
-          <Col flex="72px">
-            <button
-              type="button"
-              disabled={!productLeadImage}
-              style={{
-                width: 64,
-                height: 64,
-                padding: 0,
-                borderRadius: 6,
-                overflow: 'hidden',
-                border: '1px solid var(--pm-subtle-border)',
-                background: 'var(--pm-section-bg)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: productLeadImage ? 'pointer' : 'default'
-              }}
-              onClick={() => openCurrentProductGallery(0)}
+      <ProductDetailSummaryBar
+        currentProductSummarySurface={currentProductSummarySurface}
+        productSnapshotView={productSnapshotView}
+        activeProductSiteOffer={activeProductSiteOffer}
+        productLeadImage={productLeadImage}
+        openCurrentProductGallery={openCurrentProductGallery}
+        syncAlert={<ProductDetailSyncAlert workspace={workspace} />}
+        actions={
+          <Space wrap size={[8, 8]} style={{ justifyContent: 'flex-end' }}>
+            <Button
+              size="small"
+              loading={productActionSubmitting}
+              disabled={!workbenchReady || publishTaskActive}
+              onClick={() => void previewProductAction('save')}
             >
-              {productLeadImage ? (
-                <img
-                  src={productLeadImage}
-                  alt="商品首图"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <Text style={{ color: 'var(--pm-text-faint)' }}>暂无图片</Text>
-              )}
-            </button>
-          </Col>
-
-          <Col flex="auto" style={{ minWidth: 0 }}>
-            <Space direction="vertical" size={8} style={{ width: '100%' }}>
-              <Space size={12} wrap>
-                <Text style={{ color: 'var(--pm-text-muted)', fontSize: 12 }}>
-                  Partner SKU：<Text copyable>{partnerSku}</Text>
-                </Text>
-                <Tooltip title={sourceTypeMeta.description}>
-                  <Tag color={sourceTypeMeta.color} style={{ marginInlineEnd: 0 }}>
-                    {sourceTypeMeta.label}
-                  </Tag>
-                </Tooltip>
-                {productNotListed ? (
-                  <Tag color="warning" style={{ marginInlineEnd: 0 }}>
-                    未上架
-                  </Tag>
-                ) : listingStartedParts ? (
-                  <Tag color="default" style={{ marginInlineEnd: 0 }}>
-                    上架 {listingStartedParts.date}
-                    {listingStartedSourceLabel ? ` · ${listingStartedSourceLabel}` : ''}
-                  </Tag>
-                ) : listingStartedSourceLabel ? (
-                  <Tag color="warning" style={{ marginInlineEnd: 0 }}>
-                    {listingStartedSourceLabel}
-                  </Tag>
-                ) : null}
-                {productUrl ? (
-                  <Button
-                    size="small"
-                    href={productUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    icon={<ExportOutlined />}
-                  >
-                    打开前台详情
-                  </Button>
-                ) : null}
-                {catalogUrl ? (
-                  <Button
-                    size="small"
-                    href={catalogUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    icon={<ExportOutlined />}
-                  >
-                    打开后台详情
-                  </Button>
-                ) : null}
-              </Space>
-              <ProductDetailSyncAlert workspace={workspace} />
-            </Space>
-          </Col>
-
-          <Col flex="none">
-            <Space wrap size={[8, 8]} style={{ justifyContent: 'flex-end' }}>
-              <Button
-                size="small"
-                loading={productActionSubmitting}
-                disabled={!workbenchReady || publishTaskActive}
-                onClick={() => void previewProductAction('save')}
-              >
-                保存草稿
-              </Button>
-              <Button
-                size="small"
-                danger
-                disabled={!workbenchReady || !productDraftDirty || productActionSubmitting || publishTaskActive}
-                onClick={() => setRollbackConfirmOpen(true)}
-              >
-                回滚草稿
-              </Button>
-              <Button
-                size="small"
-                type="primary"
-                loading={productActionSubmitting || productPublishTaskActionSubmitting}
-                disabled={!workbenchReady || publishTaskActive || productPublishTaskActionSubmitting}
-                onClick={submitPublish}
-              >
-                {publishTaskNeedsAttention ? '重试发布' : '发布当前修改'}
-              </Button>
-              <Button
-                size="small"
-                disabled={!workbenchReady || productActionSubmitting || publishTaskActive}
-                onClick={requestPullFromNoon}
-              >
-                从 Noon 同步
-              </Button>
-            </Space>
-          </Col>
-        </Row>
-      </div>
+              保存草稿
+            </Button>
+            <Button
+              size="small"
+              danger
+              disabled={!workbenchReady || !productDraftDirty || productActionSubmitting || publishTaskActive}
+              onClick={() => setRollbackConfirmOpen(true)}
+            >
+              回滚草稿
+            </Button>
+            <Button
+              size="small"
+              type="primary"
+              loading={productActionSubmitting || productPublishTaskActionSubmitting}
+              disabled={!workbenchReady || publishTaskActive || productPublishTaskActionSubmitting}
+              onClick={submitPublish}
+            >
+              {publishTaskNeedsAttention ? '重试发布' : '发布当前修改'}
+            </Button>
+            <Button
+              size="small"
+              disabled={!workbenchReady || productActionSubmitting || publishTaskActive}
+              onClick={requestPullFromNoon}
+            >
+              从 Noon 同步
+            </Button>
+          </Space>
+        }
+      />
     </>
   );
 }

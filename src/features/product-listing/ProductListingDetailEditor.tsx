@@ -1,6 +1,7 @@
-import { message } from 'antd'
+import { Space, message } from 'antd'
 import { useMemo } from 'react'
 import { ProductDetailOfficialTabs } from '../product-management/components/ProductDetailOfficialTabs'
+import { ProductDetailSummaryBar } from '../product-management/components/ProductDetailSummaryBar'
 import {
   productListingContentProgress,
   productListingEditorDraftDomains,
@@ -150,47 +151,57 @@ export function ProductListingDetailEditor({ draft, onDraftChange }: ProductList
   }
 
   return (
-    <ProductDetailOfficialTabs
-      defaultActiveKey="content"
-      productSiteDomain={domains.site}
-      productSharedDomainDirtyCount={0}
-      productActionSubmitting={false}
-      currentProductSummarySurface={summary}
-      productSnapshotView={snapshot}
-      activeProductSiteOffer={activeSiteOffer}
-      activeSiteDirty
-      activeSiteOfferCode={draft.storeCode}
-      productWarehouseStockRows={stockRows}
-      siteOfferColumns={[]}
-      productPlatformSignals={{}}
-      productPlatformRejectionReasons={[]}
-      productPlatformAffectingAttributes={[]}
-      productContentDomain={domains.content}
-      productContentProgressDone={contentProgress.done}
-      productContentProgressTotal={contentProgress.total}
-      productMainDomain={domains.main}
-      productImageUrls={imageUrls}
-      productAttributesDomain={domains.attributes}
-      productRequiredAttributeCount={0}
-      productFilledRequiredAttributeCount={0}
-      productGroupingDomain={domains.grouping}
-      productGroupMembers={[]}
-      productCandidateGroups={[]}
-      productListSourceItems={[]}
-      productInsightMetrics={[]}
-      productLeadImage={imageUrls[0]}
-      previewProductAction={() => undefined}
-      updateSiteOfferField={updateSiteOfferField}
-      setActiveSiteOfferCode={() => undefined}
-      updateProductSectionField={updateProductSectionField}
-      updateProductMultilineField={updateProductMultilineField}
-      openCurrentProductGallery={openCurrentProductGallery}
-      addProductVariant={() => undefined}
-      updateProductVariant={updateProductVariant}
-      removeProductVariant={() => undefined}
-      updateProductAxes={() => undefined}
-      updateProductAttributeField={updateProductAttributeField}
-    />
+    <Space direction="vertical" size={16} style={{ width: '100%' }}>
+      <ProductDetailSummaryBar
+        currentProductSummarySurface={summary}
+        productSnapshotView={snapshot}
+        activeProductSiteOffer={activeSiteOffer}
+        productLeadImage={imageUrls[0]}
+        openCurrentProductGallery={openCurrentProductGallery}
+        showExternalLinks={false}
+      />
+      <ProductDetailOfficialTabs
+        defaultActiveKey="content"
+        productSiteDomain={domains.site}
+        productSharedDomainDirtyCount={0}
+        productActionSubmitting={false}
+        currentProductSummarySurface={summary}
+        productSnapshotView={snapshot}
+        activeProductSiteOffer={activeSiteOffer}
+        activeSiteDirty
+        activeSiteOfferCode={draft.storeCode}
+        productWarehouseStockRows={stockRows}
+        siteOfferColumns={[]}
+        productPlatformSignals={{}}
+        productPlatformRejectionReasons={[]}
+        productPlatformAffectingAttributes={[]}
+        productContentDomain={domains.content}
+        productContentProgressDone={contentProgress.done}
+        productContentProgressTotal={contentProgress.total}
+        productMainDomain={domains.main}
+        productImageUrls={imageUrls}
+        productAttributesDomain={domains.attributes}
+        productRequiredAttributeCount={0}
+        productFilledRequiredAttributeCount={0}
+        productGroupingDomain={domains.grouping}
+        productGroupMembers={[]}
+        productCandidateGroups={[]}
+        productListSourceItems={[]}
+        productInsightMetrics={[]}
+        productLeadImage={imageUrls[0]}
+        previewProductAction={() => undefined}
+        updateSiteOfferField={updateSiteOfferField}
+        setActiveSiteOfferCode={() => undefined}
+        updateProductSectionField={updateProductSectionField}
+        updateProductMultilineField={updateProductMultilineField}
+        openCurrentProductGallery={openCurrentProductGallery}
+        addProductVariant={() => undefined}
+        updateProductVariant={updateProductVariant}
+        removeProductVariant={() => undefined}
+        updateProductAxes={() => undefined}
+        updateProductAttributeField={updateProductAttributeField}
+      />
+    </Space>
   )
 }
 
