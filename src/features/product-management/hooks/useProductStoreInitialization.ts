@@ -15,8 +15,6 @@ import type { StoreSyncOverviewState } from '../workspaceContracts';
 import type { ProductListDatasetState, StoreInitializationPayload, StoreInitializationState } from '../types';
 type UseProductStoreInitializationParams = {
   activeOwnerId?: number;
-  autoInitializationStoreCode?: string;
-  enableProductBootAutoInit: boolean;
   enableProductBootDataset: boolean;
   enableProductBootInitStatus: boolean;
   enableProductBootStoreSelection: boolean;
@@ -24,7 +22,6 @@ type UseProductStoreInitializationParams = {
   loadProductListDataset: (storeCode: string, ownerUserId?: number) => Promise<void>;
   selectedInitializationStoreCodeOverride?: string;
   session: AuthSession | null;
-  setAutoInitializationStoreCode: Dispatch<SetStateAction<string | undefined>>;
   setProductListDatasetState: Dispatch<SetStateAction<ProductListDatasetState>>;
   setSelectedInitializationStoreCodeOverride: Dispatch<SetStateAction<string | undefined>>;
   setSelectedProductRowKeys: Dispatch<SetStateAction<string[]>>;
@@ -37,8 +34,6 @@ type UseProductStoreInitializationParams = {
 
 export function useProductStoreInitialization({
   activeOwnerId,
-  autoInitializationStoreCode,
-  enableProductBootAutoInit,
   enableProductBootDataset,
   enableProductBootInitStatus,
   enableProductBootStoreSelection,
@@ -46,7 +41,6 @@ export function useProductStoreInitialization({
   loadProductListDataset,
   selectedInitializationStoreCodeOverride,
   session,
-  setAutoInitializationStoreCode,
   setProductListDatasetState,
   setSelectedInitializationStoreCodeOverride,
   setSelectedProductRowKeys,
@@ -292,31 +286,6 @@ export function useProductStoreInitialization({
     }
     void loadProductListDataset(selectedInitializationStoreCode, activeOwnerId);
   }, [activeOwnerId, enableProductBootDataset, loadProductListDataset, selectedInitializationStoreCode, storeInitializationState]);
-
-  useEffect(() => {
-    if (!enableProductBootAutoInit) {
-      return;
-    }
-    if (!selectedInitializationStoreCode || storeInitializationState.status !== 'success') {
-      return;
-    }
-    if (storeInitializationState.data.status !== 'IDLE') {
-      return;
-    }
-    if (autoInitializationStoreCode === selectedInitializationStoreCode) {
-      return;
-    }
-
-    setAutoInitializationStoreCode(selectedInitializationStoreCode);
-    void startStoreInitialization(selectedInitializationStoreCode, { silent: true });
-  }, [
-    autoInitializationStoreCode,
-    selectedInitializationStoreCode,
-    setAutoInitializationStoreCode,
-    startStoreInitialization,
-    storeInitializationState,
-    enableProductBootAutoInit
-  ]);
 
   return {
     loadStoreInitializationStatus,
