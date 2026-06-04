@@ -526,7 +526,7 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     keys: ['purchase-listing'],
     urlPaths: ['/purchase/listing', '/api/product-listing'],
     urlPathPrefixes: ['/api/product-listing/'],
-    menuNames: ['商品上架', '利润计算与上架']
+    menuNames: ['商品上架']
   },
   {
     keys: ['purchase-profit'],
