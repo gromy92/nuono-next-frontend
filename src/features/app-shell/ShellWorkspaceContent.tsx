@@ -54,6 +54,11 @@ const Ali1688CollectionPage = lazyWorkspace(() =>
     default: module.Ali1688CollectionPage
   }))
 );
+const ProductListingPage = lazyWorkspace(() =>
+  import('../product-listing/ProductListingPage').then((module) => ({
+    default: module.ProductListingPage
+  }))
+);
 const MasterDataBoard = lazyWorkspace(() =>
   import('../master-data/MasterDataBoard').then((module) => ({ default: module.MasterDataBoard }))
 );
@@ -249,6 +254,14 @@ export function ShellWorkspaceContent({
           storeCode={shellSession.currentStore?.storeCode}
           operatorName={shellSession.realName || shellSession.accountNo}
         />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'product-listing') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ProductListingPage storeCode={shellSession.currentStore?.storeCode} />
       </LazyWorkspaceBoundary>
     );
   }
