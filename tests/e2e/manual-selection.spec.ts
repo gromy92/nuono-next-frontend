@@ -135,14 +135,20 @@ test('manual selection row opens product listing editor with source prefill', as
   await expect(page.getByRole('tab', { name: 'Offer' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Content' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Sizes' })).toBeVisible();
+  const productDetailSummary = page.locator('.pm-detail-section--subtle').filter({ hasText: 'Partner SKU' });
+  await expect(productDetailSummary).toBeVisible();
+  await expect(productDetailSummary.getByText('未上架')).toBeVisible();
+  await expect(page.getByRole('button', { name: '保存草稿' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: '发布当前修改' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '从 Noon 同步' })).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: '标题英语' })).toHaveValue('DUYONE Artificial Flowers 6 Stems Poppy Silk Bouquet');
   await expect(page.getByRole('textbox', { name: '标题阿语' })).toHaveValue('باقة زهور صناعية');
   await expect(page.getByRole('textbox', { name: '卖点 1 英语' })).toHaveValue('[Home decor]- Artificial flowers for home decoration.');
   await expect(page.getByRole('combobox', { name: '品牌' })).toHaveValue('DUYONE');
   await expect(page.getByRole('button', { name: '管理图片' })).toBeVisible();
   await expect(page.getByLabel('供应凭证 ID')).toHaveValue('86001');
-  await expect(page.locator('img[src="https://images.example.com/main.jpg"]')).toBeVisible();
-  await expect(page.locator('img[src="https://images.example.com/detail.jpg"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: '商品图 1 头图' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '商品图 2' })).toBeVisible();
 });
 
 test('manual selection collection page closes the first phase workflow', async ({ page }) => {
