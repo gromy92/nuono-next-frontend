@@ -71,6 +71,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [saving, setSaving] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [confirmingRealRun, setConfirmingRealRun] = useState(false)
+  const [realRunConfirmOpen, setRealRunConfirmOpen] = useState(false)
   const [draftView, setDraftView] = useState<ProductListingDraftView>()
   const [taskView, setTaskView] = useState<ProductListingTaskView>()
   const [realRunTaskView, setRealRunTaskView] = useState<ProductListingTaskView>()
@@ -134,38 +135,37 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     if (!taskView?.taskId || taskView.status !== 'validated') {
       return
     }
-    Modal.confirm({
-      title: '确认真实上架到 Noon',
-      content: '将使用当前 validated dry-run 快照写入 Noon，执行前仍由后端开关和任务锁校验。',
-      okText: '确认上架',
-      cancelText: '取消',
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        setConfirmingRealRun(true)
-        try {
-          const realRun = await confirmProductListingRealRun(taskView.taskId, {
-            confirmRealNoonWrite: true,
-            confirmationNote: 'confirmed from product listing page'
-          })
-          setRealRunTaskView(realRun)
-          if (realRun.status === 'succeeded') {
-            message.success('真实上架任务已完成')
-          } else if (realRun.failureCode === 'real_write_disabled') {
-            message.warning('真实写入开关未开启，后端已记录拦截任务')
-          } else if (realRun.status === 'rejected') {
-            message.warning(realRun.failureMessage || '真实上架已被后端门禁拦截')
-          } else if (realRun.status === 'failed') {
-            message.error(realRun.failureMessage || '真实上架失败')
-          } else {
-            message.info('真实上架任务已提交')
-          }
-        } catch (error) {
-          message.error(normalizeError(error, '确认真实上架失败'))
-        } finally {
-          setConfirmingRealRun(false)
-        }
+    setRealRunConfirmOpen(true)
+  }
+
+  const handleConfirmRealRunOk = async () => {
+    if (!taskView?.taskId || taskView.status !== 'validated') {
+      return
+    }
+    setConfirmingRealRun(true)
+    try {
+      const realRun = await confirmProductListingRealRun(taskView.taskId, {
+        confirmRealNoonWrite: true,
+        confirmationNote: 'confirmed from product listing page'
+      })
+      setRealRunTaskView(realRun)
+      setRealRunConfirmOpen(false)
+      if (realRun.status === 'succeeded') {
+        message.success('真实上架任务已完成')
+      } else if (realRun.failureCode === 'real_write_disabled') {
+        message.warning('真实写入开关未开启，后端已记录拦截任务')
+      } else if (realRun.status === 'rejected') {
+        message.warning(realRun.failureMessage || '真实上架已被后端门禁拦截')
+      } else if (realRun.status === 'failed') {
+        message.error(realRun.failureMessage || '真实上架失败')
+      } else {
+        message.info('真实上架任务已提交')
       }
-    })
+    } catch (error) {
+      message.error(normalizeError(error, '确认真实上架失败'))
+    } finally {
+      setConfirmingRealRun(false)
+    }
   }
 
   return (
@@ -375,6 +375,24 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
           </Space>
         </Card>
       ) : null}
+
+      <Modal
+        title="确认真实上架到 Noon"
+        open={realRunConfirmOpen}
+        okText="确认上架"
+        cancelText="取消"
+        okButtonProps={{ danger: true }}
+        confirmLoading={confirmingRealRun}
+        maskClosable={!confirmingRealRun}
+        onOk={() => void handleConfirmRealRunOk()}
+        onCancel={() => {
+          if (!confirmingRealRun) {
+            setRealRunConfirmOpen(false)
+          }
+        }}
+      >
+        将使用当前 validated dry-run 快照写入 Noon，执行前仍由后端开关和任务锁校验。
+      </Modal>
 
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={14}>
