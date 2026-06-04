@@ -113,6 +113,32 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test('manual selection row opens product listing editor with source prefill', async ({ page }) => {
+  const listingCollection = {
+    ...baseCollection,
+    id: '86001',
+    collectionNo: 'PSC-20260514-LISTING',
+    brandName: 'DUYONE'
+  };
+
+  await page.route('**/api/product-selection/source-collections?**', async (route) => {
+    await route.fulfill({ json: [listingCollection] });
+  });
+
+  await page.goto('/product/manual-selection?devSession=1&devRole=boss&grantManualSelection=1&grantPurchase=1');
+
+  await page.getByTestId('manual-selection-listing-button').first().click();
+
+  await expect(page).toHaveURL(/\/purchase\/listing/);
+  await expect(page.getByText('来源：人工采集')).toBeVisible();
+  await expect(page.getByText('PSC-20260514-LISTING')).toBeVisible();
+  await expect(page.getByLabel('英文标题')).toHaveValue('DUYONE Artificial Flowers 6 Stems Poppy Silk Bouquet');
+  await expect(page.getByLabel('阿文标题')).toHaveValue('باقة زهور صناعية');
+  await expect(page.getByLabel('品牌', { exact: true })).toHaveValue('DUYONE');
+  await expect(page.getByLabel('供应凭证 ID')).toHaveValue('86001');
+  await expect(page.getByLabel('图片 URL')).toHaveValue(/https:\/\/images\.example\.com\/main\.jpg[\s\S]*https:\/\/images\.example\.com\/detail\.jpg/);
+});
+
 test('manual selection collection page closes the first phase workflow', async ({ page }) => {
   const collections = [baseCollection];
 

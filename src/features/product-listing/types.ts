@@ -8,6 +8,8 @@ export type ProductListingValidationIssue = {
 export type ProductListingDraftPayload = {
   draftId?: number
   storeCode: string
+  sourceType?: string
+  sourceRefId?: number
   psku: string
   idProductFullType?: number
   productFullType?: string
