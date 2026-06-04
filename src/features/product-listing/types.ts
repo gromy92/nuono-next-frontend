@@ -49,9 +49,17 @@ export type ProductListingTaskView = {
   storeCode: string
   mode: string
   status: string
+  sourceTaskId?: number
   validationIssues: ProductListingValidationIssue[]
+  failureCategory?: string
   failureCode?: string
   failureMessage?: string
   submittedAt?: string
+  startedAt?: string
   completedAt?: string
+}
+
+export type ProductListingRealRunCommand = {
+  confirmRealNoonWrite: boolean
+  confirmationNote?: string
 }

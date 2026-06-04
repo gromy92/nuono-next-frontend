@@ -1,4 +1,4 @@
-import { PlayCircleOutlined, SaveOutlined } from '@ant-design/icons'
+import { CheckCircleOutlined, PlayCircleOutlined, SaveOutlined } from '@ant-design/icons'
 import {
   Alert,
   Button,
@@ -8,6 +8,7 @@ import {
   Form,
   Input,
   InputNumber,
+  Modal,
   Row,
   Select,
   Space,
@@ -19,7 +20,7 @@ import {
 } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { normalizeError } from '../../shared/api'
-import { saveProductListingDraft, submitProductListingDryRun } from './api'
+import { confirmProductListingRealRun, saveProductListingDraft, submitProductListingDryRun } from './api'
 import type {
   ProductListingDraftPayload,
   ProductListingDraftView,
@@ -69,8 +70,10 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [form] = Form.useForm<ProductListingFormValues>()
   const [saving, setSaving] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [confirmingRealRun, setConfirmingRealRun] = useState(false)
   const [draftView, setDraftView] = useState<ProductListingDraftView>()
   const [taskView, setTaskView] = useState<ProductListingTaskView>()
+  const [realRunTaskView, setRealRunTaskView] = useState<ProductListingTaskView>()
 
   useEffect(() => {
     if (storeCode && !form.getFieldValue('storeCode')) {
@@ -92,6 +95,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
       const saved = await saveProductListingDraft(payload)
       setDraftView(saved)
       setTaskView(undefined)
+      setRealRunTaskView(undefined)
       applyDraftToForm(form, saved.draft ?? payload)
       if (!options?.silent) {
         message.success('上架草稿已保存')
@@ -117,12 +121,51 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         storeCode: saved.storeCode
       })
       setTaskView(submitted)
+      setRealRunTaskView(undefined)
       message.success(submitted.status === 'validated' ? 'dry-run 已通过' : 'dry-run 已生成校验结果')
     } catch (error) {
       message.error(normalizeError(error, '提交上架 dry-run 失败'))
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleConfirmRealRun = () => {
+    if (!taskView?.taskId || taskView.status !== 'validated') {
+      return
+    }
+    Modal.confirm({
+      title: '确认真实上架到 Noon',
+      content: '将使用当前 validated dry-run 快照写入 Noon，执行前仍由后端开关和任务锁校验。',
+      okText: '确认上架',
+      cancelText: '取消',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        setConfirmingRealRun(true)
+        try {
+          const realRun = await confirmProductListingRealRun(taskView.taskId, {
+            confirmRealNoonWrite: true,
+            confirmationNote: 'confirmed from product listing page'
+          })
+          setRealRunTaskView(realRun)
+          if (realRun.status === 'succeeded') {
+            message.success('真实上架任务已完成')
+          } else if (realRun.failureCode === 'real_write_disabled') {
+            message.warning('真实写入开关未开启，后端已记录拦截任务')
+          } else if (realRun.status === 'rejected') {
+            message.warning(realRun.failureMessage || '真实上架已被后端门禁拦截')
+          } else if (realRun.status === 'failed') {
+            message.error(realRun.failureMessage || '真实上架失败')
+          } else {
+            message.info('真实上架任务已提交')
+          }
+        } catch (error) {
+          message.error(normalizeError(error, '确认真实上架失败'))
+        } finally {
+          setConfirmingRealRun(false)
+        }
+      }
+    })
   }
 
   return (
@@ -140,7 +183,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         </Space>
       </Space>
 
-      <Alert type="info" showIcon message="当前为 dry-run 校验，不会写入 Noon。" />
+      <Alert type="info" showIcon message="保存草稿和 dry-run 不会写入 Noon；真实上架必须由人工确认，并通过后端开关和任务锁。" />
 
       <Form form={form} layout="vertical" initialValues={{ fbp: true, storeCode }}>
         <Row gutter={[16, 16]}>
@@ -298,6 +341,41 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         </Button>
       </Space>
 
+      {taskView?.status === 'validated' ? (
+        <Card title="真实上架确认" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
+          <Space direction="vertical" size={12} style={{ width: '100%' }}>
+            <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
+              <Text type="secondary">来源 dry-run：{taskView.taskNo || taskView.taskId}</Text>
+              <Button
+                danger
+                icon={<CheckCircleOutlined />}
+                loading={confirmingRealRun}
+                onClick={() => void handleConfirmRealRun()}
+              >
+                确认真实上架
+              </Button>
+            </Space>
+            {realRunTaskView?.failureCode === 'real_write_disabled' ? (
+              <Alert type="warning" showIcon message="后端真实写入开关未开启，本次确认已记录为 rejected 任务。" />
+            ) : null}
+            {realRunTaskView ? (
+              <Descriptions size="small" column={{ xs: 1, md: 2 }}>
+                <Descriptions.Item label="任务号">{realRunTaskView.taskNo || realRunTaskView.taskId}</Descriptions.Item>
+                <Descriptions.Item label="状态">
+                  <Tag color={statusColor(realRunTaskView.status)}>{realRunTaskView.status}</Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="来源任务">{realRunTaskView.sourceTaskId || '-'}</Descriptions.Item>
+                <Descriptions.Item label="失败分类">{realRunTaskView.failureCategory || '-'}</Descriptions.Item>
+                <Descriptions.Item label="失败代码">{realRunTaskView.failureCode || '-'}</Descriptions.Item>
+                <Descriptions.Item label="失败信息">{realRunTaskView.failureMessage || '-'}</Descriptions.Item>
+              </Descriptions>
+            ) : (
+              <Text type="secondary">尚未提交真实上架确认</Text>
+            )}
+          </Space>
+        </Card>
+      ) : null}
+
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={14}>
           <Card title="校验问题" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
@@ -395,14 +473,17 @@ function optionalText(value?: string) {
 }
 
 function statusColor(status: string) {
-  if (status === 'validated' || status === 'ready_for_dry_run') {
+  if (status === 'validated' || status === 'ready_for_dry_run' || status === 'succeeded') {
     return 'green'
   }
-  if (status === 'validation_failed') {
+  if (status === 'validation_failed' || status === 'failed') {
     return 'red'
   }
-  if (status === 'draft') {
+  if (status === 'draft' || status === 'submitted' || status === 'running') {
     return 'blue'
+  }
+  if (status === 'rejected') {
+    return 'orange'
   }
   return 'default'
 }
