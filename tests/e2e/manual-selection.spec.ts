@@ -135,6 +135,7 @@ test('manual selection row opens product listing editor with source prefill', as
   await expect(page.getByRole('tab', { name: 'Offer' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Content' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Sizes' })).toBeVisible();
+  await expect(page.getByText('商品详情编辑', { exact: true })).toHaveCount(0);
   const productDetailSummary = page.locator('.pm-detail-section--subtle').filter({ hasText: 'Partner SKU' });
   await expect(productDetailSummary).toBeVisible();
   await expect(productDetailSummary.getByText('未上架')).toBeVisible();

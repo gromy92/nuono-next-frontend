@@ -308,7 +308,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         </Card>
       </Form>
 
-      <Card title="商品详情编辑" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
+      <Card variant="borderless" style={{ border: '1px solid #dbe4ea' }}>
         <ProductListingDetailEditor draft={listingDraft} onDraftChange={setListingDraft} />
       </Card>
 
