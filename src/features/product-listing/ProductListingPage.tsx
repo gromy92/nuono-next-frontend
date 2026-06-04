@@ -21,7 +21,12 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { normalizeError } from '../../shared/api'
 import { ProductListingDetailEditor } from './ProductListingDetailEditor'
-import { confirmProductListingRealRun, saveProductListingDraft, submitProductListingDryRun } from './api'
+import {
+  confirmProductListingRealRun,
+  fetchProductListingWarehouses,
+  saveProductListingDraft,
+  submitProductListingDryRun
+} from './api'
 import {
   createProductListingEditorDraft,
   normalizeProductListingEditorDraft,
@@ -33,7 +38,8 @@ import {
 import { readProductListingSourcePrefill, type ProductListingSourcePrefill } from './sourcePrefill'
 import type {
   ProductListingDraftView,
-  ProductListingTaskView
+  ProductListingTaskView,
+  ProductListingWarehouseView
 } from './types'
 
 const { Text, Title } = Typography
@@ -51,6 +57,7 @@ const SUPPLY_EVIDENCE_OPTIONS = [
 
 export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [form] = Form.useForm<ProductListingMetadataFormValues>()
+  const watchedStoreCode = Form.useWatch('storeCode', form)
   const [listingDraft, setListingDraft] = useState<ProductListingEditorDraft>(() =>
     createProductListingEditorDraft(storeCode)
   )
@@ -62,6 +69,9 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [taskView, setTaskView] = useState<ProductListingTaskView>()
   const [realRunTaskView, setRealRunTaskView] = useState<ProductListingTaskView>()
   const [sourcePrefill, setSourcePrefill] = useState<ProductListingSourcePrefill>()
+  const [warehouses, setWarehouses] = useState<ProductListingWarehouseView[]>([])
+  const [loadingWarehouses, setLoadingWarehouses] = useState(false)
+  const warehouseStoreCode = compactText(watchedStoreCode || listingDraft.storeCode || storeCode)
 
   useEffect(() => {
     if (storeCode && !listingDraft.storeCode) {
@@ -90,6 +100,35 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, storeCode])
 
+  useEffect(() => {
+    if (!warehouseStoreCode) {
+      setWarehouses([])
+      return
+    }
+    let cancelled = false
+    setLoadingWarehouses(true)
+    fetchProductListingWarehouses(warehouseStoreCode)
+      .then((items) => {
+        if (!cancelled) {
+          setWarehouses(items)
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setWarehouses([])
+          message.warning(normalizeError(error, '读取 Noon 仓库列表失败'))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingWarehouses(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [warehouseStoreCode])
+
   const validationIssues = useMemo(() => {
     if (taskView?.validationIssues?.length) {
       return taskView.validationIssues
@@ -97,6 +136,34 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     return draftView?.validationIssues ?? []
   }, [draftView?.validationIssues, taskView?.validationIssues])
   const realWriteAttemptLocked = hasRealWriteAttempt(realRunTaskView)
+  const warehouseOptions = useMemo(
+    () =>
+      warehouses.map((warehouse) => ({
+        value: warehouse.warehouseCode,
+        label: `${warehouse.warehouseName || warehouse.warehouseCode} (${warehouse.warehouseCode})`
+      })),
+    [warehouses]
+  )
+
+  const handleWarehouseChange = (warehouseCode?: string) => {
+    const selectedWarehouse = warehouses.find((warehouse) => warehouse.warehouseCode === warehouseCode)
+    const warehouseId = selectedWarehouse?.idPartnerWarehouse
+    form.setFieldsValue({
+      warehouseCode,
+      warehouseId
+    })
+    setListingDraft((currentDraft) =>
+      normalizeProductListingEditorDraft(
+        {
+          ...currentDraft,
+          ...form.getFieldsValue(),
+          warehouseCode,
+          warehouseId
+        },
+        storeCode
+      )
+    )
+  }
 
   const saveDraftFromForm = async (options?: { silent?: boolean }) => {
     setSaving(true)
@@ -295,8 +362,21 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
               </Form.Item>
             </Col>
             <Col xs={24} md={8} xl={6}>
+              <Form.Item label="仓库编码" name="warehouseCode">
+                <Select
+                  allowClear
+                  showSearch
+                  loading={loadingWarehouses}
+                  options={warehouseOptions}
+                  optionFilterProp="label"
+                  placeholder={warehouseStoreCode ? '请选择仓库' : '请先选择店铺'}
+                  onChange={(value) => handleWarehouseChange(value)}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8} xl={6}>
               <Form.Item label="仓库 ID" name="warehouseId">
-                <Input placeholder="W00752151SA" />
+                <Input disabled placeholder="选择仓库后自动带入" />
               </Form.Item>
             </Col>
             <Col xs={24} md={8} xl={6}>
@@ -453,4 +533,8 @@ function hasRealWriteAttempt(task?: ProductListingTaskView) {
     task.failureCode === 'real_run_already_active' ||
     task.failureCode === 'real_run_already_attempted'
   )
+}
+
+function compactText(value: unknown) {
+  return typeof value === 'string' ? value.trim() : value == null ? '' : String(value).trim()
 }
