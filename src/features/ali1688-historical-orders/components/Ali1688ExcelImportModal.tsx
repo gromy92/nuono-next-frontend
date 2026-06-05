@@ -1,5 +1,5 @@
 import { UploadOutlined } from '@ant-design/icons'
-import { Alert, Button, List, Modal, Space, Statistic, Tag, Typography, Upload, message } from 'antd'
+import { Alert, Button, List, Modal, Space, Statistic, Typography, Upload, message } from 'antd'
 import { useEffect, useState } from 'react'
 import {
   commitAli1688ExcelImport,
@@ -111,8 +111,6 @@ export function Ali1688ExcelImportModal({
     }
   }
 
-  const scopeLabel = [storeCode, siteCode].filter(Boolean).join(' · ') || '当前店铺'
-
   return (
     <Modal
       title="Excel 导入"
@@ -123,12 +121,6 @@ export function Ali1688ExcelImportModal({
       width={720}
     >
       <Space direction="vertical" size={16} className="ali1688-excel-import-modal">
-        <div>
-          <Text type="secondary">导入目标</Text>
-          <div>
-            <Tag color="processing">{scopeLabel}</Tag>
-          </div>
-        </div>
         <Space wrap>
           <Upload
             accept=".xlsx"

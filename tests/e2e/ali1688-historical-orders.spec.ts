@@ -73,12 +73,12 @@ const syncedWorkbench = {
       orderNo: 'ALI-ORDER-20260525-001',
       orderTime: '2026-05-25 10:30:00',
       supplierName: '义乌诚信通源头工厂',
-      goodsTotalText: '¥336.00',
+      goodsTotalText: '336',
       freightText: '¥12.00',
       adjustmentText: '-¥8.00',
-      paidAmountText: '¥340.00',
+      paidAmountText: '340',
       amountText: '¥128.00',
-      orderStatus: '已付款',
+      orderStatus: 'waitbuyerreceive',
       logisticsStatus: '待发货',
       originalUrl: 'https://trade.1688.com/order/new_step_order_detail.htm?orderId=ALI-ORDER-20260525-001',
       items: [
@@ -339,7 +339,8 @@ test('boss can open Excel import entry while operations cannot upload', async ({
   await page.getByRole('button', { name: 'Excel 导入' }).click();
   const importDialog = page.getByRole('dialog', { name: 'Excel 导入' });
   await expect(importDialog).toBeVisible();
-  await expect(importDialog.getByText('PRJ108065 · AE', { exact: true })).toBeVisible();
+  await expect(importDialog.getByText('导入目标')).not.toBeVisible();
+  await expect(importDialog.getByText('PRJ108065 · AE', { exact: true })).not.toBeVisible();
   await expect(importDialog.getByRole('button', { name: '上传' })).toBeVisible();
   await expect(importDialog.getByText('Excel 来源')).not.toBeVisible();
   await expect(importDialog.getByText('创建来源')).not.toBeVisible();
@@ -429,7 +430,7 @@ test('boss can upload and audit a sanitized Excel import without a preview confi
       }
     });
   });
-  await page.route('**/api/procurement/ali1688-orders/excel-imports?**', async (route) => {
+  await page.route(/\/api\/procurement\/ali1688-orders\/excel-imports(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       json: [
         {
@@ -447,7 +448,7 @@ test('boss can upload and audit a sanitized Excel import without a preview confi
       ]
     });
   });
-  await page.route('**/api/procurement/ali1688-orders/excel-imports/97001?**', async (route) => {
+  await page.route(/\/api\/procurement\/ali1688-orders\/excel-imports\/97001(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       json: {
         batchId: 97001,
@@ -567,28 +568,24 @@ test('boss sees safe validation feedback for a wrong Excel template', async ({ p
   await expect(importDialog.getByRole('button', { name: '确认导入' })).not.toBeVisible();
 });
 
-test('boss can complete dev authorization from modal', async ({ page }) => {
+test('boss can start real OpenAPI authorization from modal', async ({ page }) => {
   let workbench = noAuthorizationWorkbench;
 
   await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
     await route.fulfill({ json: workbench });
   });
-  await page.route('**/api/procurement/ali1688-orders/authorizations/dev', async (route) => {
-    workbench = {
-      ...noAuthorizationWorkbench,
-      authorization: {
-        status: 'authorized',
-        authorizationId: 91001,
-        accountLabel: '1688 开发授权账号',
-        scopeSummary: '读取 1688 历史订单，不会付款或创建订单。'
-      },
-      roleCapabilities: {
-        canAuthorize: true,
-        canTriggerSync: true,
-        canViewOrders: true
+  let startCalled = false;
+  await page.route('**/api/procurement/ali1688-orders/authorizations/open-api/start**', async (route) => {
+    startCalled = true;
+    expect(route.request().headers()['x-nuono-dev-session-user-id']).toBe('307');
+    await route.fulfill({
+      json: {
+        configured: true,
+        providerCode: 'ALI1688_OPEN_API',
+        authorizationUrl: 'https://auth.1688.com/oauth/authorize?client_id=5890829&state=signed-state',
+        message: '请在 1688 页面完成账号授权，系统只读取历史订单。'
       }
-    };
-    await route.fulfill({ json: workbench });
+    });
   });
 
   await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
@@ -599,9 +596,13 @@ test('boss can complete dev authorization from modal', async ({ page }) => {
   await expect(modal.getByText('读取 1688 历史订单')).toBeVisible();
   await expect(modal.getByText('不会付款')).toBeVisible();
   await expect(modal.getByText('不会创建订单')).toBeVisible();
+  const popupPromise = page.waitForEvent('popup');
   await modal.getByRole('button', { name: '确认授权' }).click();
+  const popup = await popupPromise;
 
-  await expect(page.getByRole('button', { name: '同步历史订单' })).toBeVisible();
+  expect(startCalled).toBeTruthy();
+  await expect(popup).toHaveURL(/auth\.1688\.com\/oauth\/authorize/);
+  await expect(modal).not.toBeVisible();
 });
 
 test('operations can view authorization status but cannot mutate it', async ({ page }) => {
@@ -658,8 +659,6 @@ test('authorized boss can run fake initial sync and inspect product-line detail 
   await expect(page.getByText('义乌诚信通源头工厂').first()).toBeVisible();
   await expect(page.getByText('¥340.00').first()).toBeVisible();
   await expect(page.getByText('跨境B6复古五角星锁心本')).toBeVisible();
-  await expect(page.getByAltText('仿真罂粟花束 6 支装 家居装饰')).not.toBeVisible();
-  await expect(page.getByLabel('无图片')).not.toBeVisible();
   await expect(page.getByText('YTO20260525002')).toBeVisible();
   await expect(page.getByText('分配信息 canman AE xingyao AE')).toBeVisible();
   await expect(page.getByText('已分配 4 / 剩余 6')).not.toBeVisible();
@@ -672,7 +671,7 @@ test('authorized boss can run fake initial sync and inspect product-line detail 
   await expect(controls.getByPlaceholder('供应商')).toBeVisible();
   await expect(controls.getByRole('button', { name: '刷新订单' })).toBeVisible();
   await expect(controls.getByRole('button', { name: '刷新', exact: true })).toHaveCount(0);
-  await expect(controls.getByRole('button', { name: '批量分配到店' })).toBeVisible();
+  await expect(controls.getByRole('button', { name: '批量分配/关联' })).toBeVisible();
   await expect(page.locator('.ali1688-assignment-toolbar')).toHaveCount(0);
   const controlsBox = await controls.boundingBox();
   const actionButtons = await controls.getByRole('button').all();
@@ -683,17 +682,25 @@ test('authorized boss can run fake initial sync and inspect product-line detail 
     expect(buttonBox!.x + buttonBox!.width).toBeLessThanOrEqual(controlsBox!.x + controlsBox!.width + 1);
   }
   await expect(page.locator('.ali1688-historical-orders-toolbar')).toHaveCount(0);
-  await expect(controls.getByRole('button', { name: '批量分配到店' })).toBeVisible();
+  await expect(controls.getByRole('button', { name: '批量分配/关联' })).toBeVisible();
   await expect(page.getByRole('button', { name: '分配到店铺' })).not.toBeVisible();
+  const productImage = firstProductRow.getByAltText('仿真罂粟花束 6 支装 家居装饰');
+  await expect(productImage).toBeVisible();
+  const productImageBox = await productImage.boundingBox();
+  expect(productImageBox).not.toBeNull();
+  expect(Math.round(productImageBox!.width)).toBe(90);
+  expect(Math.round(productImageBox!.height)).toBe(90);
   await expect(firstProductRow.getByText('规格: 红色 / 仿真花束')).toBeVisible();
   await expect(firstProductRow.getByText('货品金额:')).not.toBeVisible();
   await expect(firstProductRow.getByText('订单总价: ¥336.00')).toBeVisible();
   await expect(firstProductRow.getByText('运费: ¥12.00')).toBeVisible();
-  await expect(firstProductRow.getByText('涨价/折扣: -¥8.00')).toBeVisible();
+  await expect(firstProductRow.getByText('涨价/折扣')).not.toBeVisible();
   await expect(firstProductRow.getByText('实付款: ¥340.00')).toBeVisible();
-  await expect(firstProductRow.getByText('订单价: ¥12.80')).toBeVisible();
+  await expect(firstProductRow.getByText('订单价:')).toHaveCount(0);
   await expect(firstProductRow.getByText('供应商: 义乌诚信通源头工厂')).toBeVisible();
   await expect(firstProductRow.getByText('订单号: ALI-ORDER-20260525-001')).toBeVisible();
+  await expect(firstProductRow.getByText('等待买家收货')).toBeVisible();
+  await expect(firstProductRow.getByText('waitbuyerreceive')).toHaveCount(0);
   await expect(firstProductRow.locator('.ali1688-product-line-tags').getByText('Offer')).not.toBeVisible();
   await expect(firstProductRow.locator('.ali1688-product-line-tags').getByText('SKU')).not.toBeVisible();
   await expect(firstProductRow.locator('.ali1688-order-context-cell').getByText('Offer 745612345678')).toBeVisible();
@@ -717,6 +724,9 @@ test('authorized boss can run fake initial sync and inspect product-line detail 
   await expect(drawer.getByText('SKU-745612345678-RED')).toBeVisible();
   await drawer.getByRole('tab', { name: '订单信息' }).click();
   await expect(drawer.getByText('ALI-ORDER-20260525-001')).toBeVisible();
+  await expect(drawer.getByText('涨价或折扣')).not.toBeVisible();
+  await expect(drawer.getByText('¥336.00')).toBeVisible();
+  await expect(drawer.getByText('¥340.00')).toBeVisible();
   await drawer.getByRole('tab', { name: '物流信息' }).click();
   await expect(drawer.getByText('中通快递(ZTO)')).toBeVisible();
   await expect(drawer.getByText('ZTO20260525001')).toBeVisible();
@@ -748,6 +758,8 @@ test('missing fields are explicit and sensitive values never render', async ({ p
   await expect(page.getByText('ALI-ORDER-20260525-MISSING')).toBeVisible();
   const missingRow = page.getByText('ALI-ORDER-20260525-MISSING').locator('xpath=ancestor::tr');
   await expect(missingRow.getByText('未返回信息')).toHaveCount(1);
+  await expect(missingRow.locator('.ali1688-product-line-main').getByText('未返回信息')).toHaveCount(0);
+  await expect(missingRow.locator('.ali1688-logistics-cell').getByText('未返回信息')).toBeVisible();
   const missingInfo = missingRow.getByText('未返回信息').first();
   await expect(missingInfo).toBeVisible();
   await expect(page.getByText('未返回: 金额 / 物流 / 供应商 / 原始链接')).not.toBeVisible();
@@ -770,7 +782,7 @@ test('missing fields are explicit and sensitive values never render', async ({ p
   await expect(drawer.getByText('13800138000')).not.toBeVisible();
 });
 
-test('filters and search drive backend query and table shows item summary', async ({ page }) => {
+test('filters and search drive owner-level backend query and table shows item summary', async ({ page }) => {
   const seenQueries: string[] = [];
   await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
     seenQueries.push(new URL(route.request().url()).search);
@@ -779,31 +791,49 @@ test('filters and search drive backend query and table shows item summary', asyn
 
   await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
 
-  await expect.poll(() => seenQueries[0] || '').toContain('storeCode=PRJ108065');
-  await expect.poll(() => seenQueries[0] || '').toContain('siteCode=AE');
+  await expect.poll(() => new URLSearchParams(seenQueries[0] || '').get('storeCode')).toBeNull();
+  await expect.poll(() => new URLSearchParams(seenQueries[0] || '').get('siteCode')).toBeNull();
   await page.getByLabel('供应商').fill('义乌');
   await page.getByRole('combobox', { name: '订单状态' }).click();
   await page.getByTitle('已付款').click();
   await page.getByPlaceholder('订单号 / 商品 / offerId / SKU / 货号').fill('745612345678');
-  await page.getByRole('button', { name: '查询' }).click();
-
   await expect(page.getByText('仿真罂粟花束 6 支装 家居装饰')).toBeVisible();
   await expect.poll(() => seenQueries.at(-1) || '').toContain('supplierKeyword=%E4%B9%89%E4%B9%8C');
   await expect.poll(() => seenQueries.at(-1) || '').toContain('orderStatus=%E5%B7%B2%E4%BB%98%E6%AC%BE');
   await expect.poll(() => seenQueries.at(-1) || '').toContain('keyword=745612345678');
 
-  await page.getByRole('combobox', { name: '分配筛选' }).click();
+  await page.locator('.ant-select:has(input[aria-label="分配店铺"]) .ant-select-selector').click();
   await page.getByTitle('未分配').click();
-  await page.getByRole('button', { name: '查询' }).click();
   await expect.poll(() => seenQueries.at(-1) || '').toContain('assignmentState=unassigned');
   await expect(page.getByText('仿真罂粟花束 6 支装 家居装饰')).not.toBeVisible();
   await expect(page.getByText('跨境B6复古五角星锁心本')).toBeVisible();
 
-  await page.locator('.ali1688-historical-orders-filters .ant-select').nth(1).click();
+  await page.locator('.ant-select:has(input[aria-label="分配店铺"]) .ant-select-selector').click();
   await page.getByTitle('canman AE').click();
-  await page.getByRole('button', { name: '查询' }).click();
   await expect.poll(() => seenQueries.at(-1) || '').toContain('assignmentTargetStoreCode=PRJ108065');
   await expect.poll(() => seenQueries.at(-1) || '').toContain('assignmentTargetSiteCode=AE');
+  await expect.poll(() => new URLSearchParams(seenQueries.at(-1) || '').get('storeCode')).toBeNull();
+  await expect.poll(() => new URLSearchParams(seenQueries.at(-1) || '').get('siteCode')).toBeNull();
+
+  await page.locator('.ant-select:has(input[aria-label="商品关联"]) .ant-select-selector').click();
+  await page.getByTitle('已关联').click();
+  await expect.poll(() => seenQueries.at(-1) || '').toContain('productLinkState=linked');
+
+  await page.locator('.ant-select:has(input[aria-label="商品关联"]) .ant-select-selector').click();
+  await page.getByTitle('未关联').click();
+  await expect.poll(() => seenQueries.at(-1) || '').toContain('productLinkState=unlinked');
+});
+
+test('keyword search is the first historical order filter control', async ({ page }) => {
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    await route.fulfill({ json: syncedWorkbench });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+
+  const firstFilterControl = page.locator('.ali1688-historical-orders-query > *').first();
+  await expect(firstFilterControl.locator('input[placeholder="订单号 / 商品 / offerId / SKU / 货号"]')).toBeVisible();
+  await expect(page.getByRole('button', { name: '查询' })).toHaveCount(0);
 });
 
 test('filters update pagination total and search fields can be cleared', async ({ page }) => {
@@ -843,11 +873,52 @@ test('filters update pagination total and search fields can be cleared', async (
   await keywordInput.fill('锁心本');
   const keywordWrapper = keywordInput.locator('xpath=ancestor::*[contains(@class, "ant-input-affix-wrapper")][1]');
   await expect(keywordWrapper.locator('.ant-input-clear-icon')).toBeVisible();
-  await page.getByRole('button', { name: '查询' }).click();
   await expect(page.getByText('共 21 条货品行')).toBeVisible();
 
   await keywordWrapper.locator('.ant-input-clear-icon').click();
   await expect(keywordInput).toHaveValue('');
+});
+
+test('server pagination renders the rows returned for the selected page', async ({ page }) => {
+  const pageOneWorkbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  pageOneWorkbench.orders[0].items = [{
+    ...pageOneWorkbench.orders[0].items[0],
+    id: '94001-PAGE-1',
+    title: '第一页服务端货品'
+  }];
+  pageOneWorkbench.pagination = {
+    page: 1,
+    pageSize: 20,
+    total: 40
+  };
+
+  const pageTwoWorkbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  pageTwoWorkbench.orders[0].items = Array.from({ length: 23 }, (_, index) => ({
+    ...pageTwoWorkbench.orders[0].items[1],
+    id: `94002-PAGE-2-${index + 1}`,
+    title: `第二页第 ${index + 1} 条服务端货品`
+  }));
+  pageTwoWorkbench.pagination = {
+    page: 2,
+    pageSize: 20,
+    total: 40
+  };
+
+  const seenPages: string[] = [];
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    const requestedPage = new URL(route.request().url()).searchParams.get('page') || '1';
+    seenPages.push(requestedPage);
+    await route.fulfill({ json: requestedPage === '2' ? pageTwoWorkbench : pageOneWorkbench });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+  await expect(page.getByText('第一页服务端货品')).toBeVisible();
+
+  await page.locator('.ant-pagination-item-2').click();
+
+  await expect.poll(() => seenPages).toContain('2');
+  await expect(page.getByText('第二页第 1 条服务端货品')).toBeVisible();
+  await expect(page.getByText('第一页服务端货品')).toHaveCount(0);
 });
 
 test('unassigned filter removes stale split rows with duplicated source item ids', async ({ page }) => {
@@ -922,14 +993,81 @@ test('unassigned filter removes stale split rows with duplicated source item ids
   await expect(page.getByText('分配信息 canman AE')).toBeVisible();
   await expect(page.getByText('分配信息 未分配')).toBeVisible();
 
-  await page.getByRole('combobox', { name: '分配筛选' }).click();
+  await page.getByRole('combobox', { name: '分配店铺' }).click();
   await page.getByTitle('未分配').click();
-  await page.getByRole('button', { name: '查询' }).click();
-
   await expect(page.getByText('共 1 条货品行')).toBeVisible();
   await expect(page.getByText('分配信息 未分配')).toBeVisible();
   await expect(page.getByText('分配信息 canman AE')).toHaveCount(0);
   await expect(page.getByText('分配信息 canman SA')).toHaveCount(0);
+});
+
+test('product link filter shows linked and unlinked assigned product lines', async ({ page }) => {
+  const workbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  workbench.orders[0].items = [
+    {
+      ...workbench.orders[0].items[0],
+      id: '94001-LINKED',
+      title: '已关联采购货品',
+      assignmentId: 99001,
+      assignmentStatus: 'assigned',
+      assignmentTargetType: 'STORE_SITE',
+      assignmentTargetStoreCode: 'PRJ108065',
+      assignmentTargetSiteCode: 'AE',
+      assignmentBreakdownText: 'PRJ108065 AE 6',
+      productLink: {
+        status: 'linked',
+        skuParent: 'CANMAN-AE-SKU-001',
+        partnerSku: 'PAPERSAYSB291',
+        displayText: '已关联: CANMAN-AE-SKU-001'
+      }
+    },
+    {
+      ...workbench.orders[0].items[1],
+      id: '94002-UNLINKED',
+      title: '未关联采购货品',
+      assignmentId: 99002,
+      assignmentStatus: 'assigned',
+      assignmentTargetType: 'STORE_SITE',
+      assignmentTargetStoreCode: 'PRJ108065',
+      assignmentTargetSiteCode: 'AE',
+      assignmentBreakdownText: 'PRJ108065 AE 10',
+      productLink: undefined
+    },
+    {
+      ...workbench.orders[0].items[1],
+      id: '94003-UNASSIGNED',
+      title: '未分配采购货品',
+      assignmentId: undefined,
+      assignmentStatus: 'unassigned',
+      assignmentBreakdownText: '',
+      productLink: undefined
+    }
+  ];
+  const seenQueries: string[] = [];
+
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    seenQueries.push(new URL(route.request().url()).search);
+    await route.fulfill({ json: workbench });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+  await expect(page.getByText('已关联采购货品')).toBeVisible();
+  await expect(page.getByText('未关联采购货品')).toBeVisible();
+  await expect(page.getByText('未分配采购货品')).toBeVisible();
+
+  await page.locator('.ant-select:has(input[aria-label="商品关联"]) .ant-select-selector').click();
+  await page.getByTitle('已关联').click();
+  await expect.poll(() => seenQueries.at(-1) || '').toContain('productLinkState=linked');
+  await expect(page.getByText('已关联采购货品')).toBeVisible();
+  await expect(page.getByText('未关联采购货品')).toHaveCount(0);
+  await expect(page.getByText('未分配采购货品')).toHaveCount(0);
+
+  await page.locator('.ant-select:has(input[aria-label="商品关联"]) .ant-select-selector').click();
+  await page.getByTitle('未关联').click();
+  await expect.poll(() => seenQueries.at(-1) || '').toContain('productLinkState=unlinked');
+  await expect(page.getByText('已关联采购货品')).toHaveCount(0);
+  await expect(page.getByText('未关联采购货品')).toBeVisible();
+  await expect(page.getByText('未分配采购货品')).toHaveCount(0);
 });
 
 test('toolbar keeps action buttons in the right action group', async ({ page }) => {
@@ -946,9 +1084,12 @@ test('toolbar keeps action buttons in the right action group', async ({ page }) 
   expect(controlsBox).not.toBeNull();
   expect(queryBox).not.toBeNull();
   expect(actionsBox).not.toBeNull();
-  expect(actionsBox!.x).toBeGreaterThan(queryBox!.x);
+  expect(actionsBox!.y).toBeGreaterThan(queryBox!.y);
   expect(actionsBox!.x + actionsBox!.width).toBeLessThanOrEqual(controlsBox!.x + controlsBox!.width + 1);
-  await expect(page.locator('.ali1688-historical-orders-actions').getByRole('button', { name: '批量分配到店' })).toBeVisible();
+  const supplierBox = await page.getByLabel('供应商').boundingBox();
+  expect(supplierBox).not.toBeNull();
+  expect(supplierBox!.width).toBeLessThanOrEqual(190);
+  await expect(page.locator('.ali1688-historical-orders-actions').getByRole('button', { name: '批量分配/关联' })).toBeVisible();
 });
 
 test('user can link an assigned 1688 product line to a store SKU', async ({ page }) => {
@@ -976,7 +1117,7 @@ test('user can link an assigned 1688 product line to a store SKU', async ({ page
         partnerSku: 'CM-AE-PARTNER-001',
         pskuCode: 'PSKU-CM-AE-001',
         productTitle: 'canman AE 抽纸盒',
-        displayText: '已关联: CANMAN-AE-SKU-001'
+        displayText: '已关联: Z6F6FB9180C80122C7EA5Z'
       };
     }
     await route.fulfill({ json: response });
@@ -984,7 +1125,7 @@ test('user can link an assigned 1688 product line to a store SKU', async ({ page
   await page.route('**/api/procurement/ali1688-orders/product-link-candidates**', async (route) => {
     const url = new URL(route.request().url());
     candidateRequests.push(url.search);
-    const linkStatus = url.searchParams.get('linkStatus') || 'unlinked';
+    const linkStatus = url.searchParams.get('linkStatus') || 'all';
     const linkedCandidate = linkStatus === 'linked';
     await route.fulfill({
       json: [{
@@ -995,7 +1136,7 @@ test('user can link an assigned 1688 product line to a store SKU', async ({ page
         pskuCode: linkedCandidate ? 'PSKU-CM-AE-001' : 'PSKU-CM-AE-002',
         productTitle: linkedCandidate ? '已关联 canman 商品' : '未关联 canman 商品',
         productImageUrl: linkedCandidate ? 'https://example.com/canman-ae-linked.jpg' : 'https://example.com/canman-ae-unlinked.jpg',
-        linkStatus,
+        linkStatus: linkedCandidate ? 'linked' : 'unlinked',
         linkedAssignmentCount: linkedCandidate ? 1 : 0
       }]
     });
@@ -1031,15 +1172,16 @@ test('user can link an assigned 1688 product line to a store SKU', async ({ page
   const row = page.getByText('已分配样品货品').locator('xpath=ancestor::tr');
   const productCell = row.locator('.ali1688-product-line-main');
   await expect(productCell.getByText('分配信息 canman AE')).toBeVisible();
-  await expect(productCell.getByRole('button', { name: '商品关联' })).toBeVisible();
-  await expect(row.locator('td').last().getByRole('button', { name: '商品关联' })).toHaveCount(0);
-  await productCell.getByRole('button', { name: '商品关联' }).click();
+  await expect(productCell.getByRole('button', { name: '商品关联' })).toHaveCount(0);
+  await expect(productCell.getByRole('button', { name: '分配店铺' })).toHaveCount(0);
+  await expect(row.locator('td').last().getByRole('button', { name: '分配/关联' })).toHaveCount(0);
+  await productCell.getByRole('button', { name: '分配/关联' }).click();
 
-  const dialog = page.getByRole('dialog', { name: '商品关联' });
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
   await expect(dialog.getByText('已分配样品货品')).toBeVisible();
   await expect.poll(() => candidateRequests[0] || '').toContain('assignmentId=99001');
-  await expect.poll(() => candidateRequests[0] || '').toContain('linkStatus=unlinked');
-  await expect(dialog.locator('.ali1688-product-link-filter').getByText('未关联')).toBeVisible();
+  await expect.poll(() => new URLSearchParams(candidateRequests[0] || '').get('linkStatus')).toBeNull();
+  await expect(dialog.locator('.ali1688-product-link-filter').getByText('全部')).toBeVisible();
   await expect(dialog.getByText('未关联 canman 商品')).toBeVisible();
   await expect(dialog.getByText('PSKU PSKU-CM-AE-002')).toBeVisible();
   await expect(dialog.locator('.ant-avatar-image')).toBeVisible();
@@ -1049,7 +1191,7 @@ test('user can link an assigned 1688 product line to a store SKU', async ({ page
   await expect(dialog.getByText('已关联 canman 商品')).toBeVisible();
 
   await dialog.locator('.ali1688-product-link-filter').getByText('未关联').click();
-  await expect.poll(() => candidateRequests.filter((query) => query.includes('linkStatus=unlinked')).length).toBeGreaterThan(1);
+  await expect.poll(() => candidateRequests.filter((query) => query.includes('linkStatus=unlinked')).length).toBeGreaterThan(0);
   await dialog.getByRole('searchbox', { name: '搜索商品' }).fill('CANMAN-AE-SKU-002');
   await dialog.getByText('CANMAN-AE-SKU-002').click();
   await dialog.getByRole('button', { name: '确认关联' }).click();
@@ -1061,11 +1203,386 @@ test('user can link an assigned 1688 product line to a store SKU', async ({ page
     pskuCode: 'PSKU-CM-AE-002',
     productTitle: '未关联 canman 商品'
   });
-  await expect(page.getByText('已关联: CANMAN-AE-SKU-001')).toBeVisible();
-  await expect(productCell.getByRole('button', { name: '改关联' })).toBeVisible();
-  await productCell.getByRole('button', { name: '解除关联' }).click();
+  await expect(page.getByText('已关联: CM-AE-PARTNER-001')).toBeVisible();
+  await expect(page.getByText('已关联: Z6F6FB9180C80122C7EA5Z')).toHaveCount(0);
+  await expect(productCell.getByRole('button', { name: '改关联' })).toHaveCount(0);
+  await expect(productCell.getByRole('button', { name: '分配/关联' })).toBeVisible();
+  await expect(productCell.getByRole('button', { name: '解除关联' })).toHaveCount(0);
+  await productCell.getByRole('button', { name: '分配/关联' }).click();
+  await expect(dialog.getByText('当前关联')).toBeVisible();
+  await expect(dialog.getByText('已关联: CM-AE-PARTNER-001')).toBeVisible();
+  await dialog.getByRole('button', { name: '解除关联' }).click();
   await expect.poll(() => unlinkRequested).toBeTruthy();
-  await expect(page.getByText('已关联: CANMAN-AE-SKU-001')).toHaveCount(0);
+  await expect(page.getByText('已关联: CM-AE-PARTNER-001')).toHaveCount(0);
+});
+
+test('product link search queries backend instead of filtering only the first candidate page', async ({ page }) => {
+  const candidateRequests: string[] = [];
+  const workbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  workbench.orders[0].items = [{
+    ...workbench.orders[0].items[2],
+    assignmentId: 99001,
+    assignmentTargetType: 'STORE_SITE',
+    assignmentTargetStoreCode: 'PRJ108065',
+    assignmentTargetSiteCode: 'AE',
+    assignmentBreakdownText: 'PRJ108065 AE 8',
+    productLink: undefined
+  }];
+
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    await route.fulfill({ json: workbench });
+  });
+  await page.route('**/api/procurement/ali1688-orders/product-link-candidates**', async (route) => {
+    const url = new URL(route.request().url());
+    candidateRequests.push(url.search);
+    const keyword = url.searchParams.get('keyword') || '';
+    await route.fulfill({
+      json: keyword === 'DEEP-SKU-999'
+        ? [{
+          storeCode: 'PRJ108065',
+          siteCode: 'AE',
+          skuParent: 'DEEP-SKU-999',
+          partnerSku: 'DEEP-PARTNER-999',
+          pskuCode: 'PSKU-DEEP-999',
+          productTitle: '分页后面的目标商品',
+          productImageUrl: 'https://example.com/deep-sku-999.jpg',
+          linkStatus: 'unlinked',
+          linkedAssignmentCount: 0
+        }]
+        : [{
+          storeCode: 'PRJ108065',
+          siteCode: 'AE',
+          skuParent: 'FIRST-PAGE-SKU-001',
+          partnerSku: 'FIRST-PARTNER-001',
+          pskuCode: 'PSKU-FIRST-001',
+          productTitle: '默认第一页商品',
+          productImageUrl: 'https://example.com/first-page-sku-001.jpg',
+          linkStatus: 'unlinked',
+          linkedAssignmentCount: 0
+        }]
+    });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+  await page.getByText('已分配样品货品').locator('xpath=ancestor::tr').locator('.ali1688-product-line-main')
+    .getByRole('button', { name: '分配/关联' })
+    .click();
+
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
+  await expect(dialog.getByText('默认第一页商品')).toBeVisible();
+  await dialog.getByRole('searchbox', { name: '搜索商品' }).fill('DEEP-SKU-999');
+
+  await expect.poll(() => candidateRequests.some((query) => new URLSearchParams(query).get('keyword') === 'DEEP-SKU-999'))
+    .toBeTruthy();
+  await expect(dialog.getByText('分页后面的目标商品')).toBeVisible();
+  await expect(dialog.getByText('默认第一页商品')).toHaveCount(0);
+});
+
+test('boss can link multiple assigned product lines to the same store SKU', async ({ page }) => {
+  const workbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  workbench.orders[0].items = [
+    {
+      ...workbench.orders[0].items[2],
+      id: '94003-A',
+      title: '金属油画书签 向日葵',
+      assignmentId: 99001,
+      assignmentTargetType: 'STORE_SITE',
+      assignmentTargetStoreCode: 'PRJ108065',
+      assignmentTargetSiteCode: 'AE',
+      assignmentBreakdownText: 'PRJ108065 AE 20',
+      productLink: undefined
+    },
+    {
+      ...workbench.orders[0].items[2],
+      id: '94003-B',
+      title: '金属油画书签 睡莲',
+      assignmentId: 99002,
+      assignmentTargetType: 'STORE_SITE',
+      assignmentTargetStoreCode: 'PRJ108065',
+      assignmentTargetSiteCode: 'AE',
+      assignmentBreakdownText: 'PRJ108065 AE 20',
+      productLink: undefined
+    }
+  ];
+  const candidateRequests: string[] = [];
+  const linkPayloads: any[] = [];
+
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    await route.fulfill({ json: workbench });
+  });
+  await page.route('**/api/procurement/ali1688-orders/product-link-candidates**', async (route) => {
+    const url = new URL(route.request().url());
+    candidateRequests.push(url.search);
+    await route.fulfill({
+      json: [{
+        storeCode: 'PRJ108065',
+        siteCode: 'AE',
+        skuParent: 'CANMAN-AE-SKU-001',
+        partnerSku: 'PAPERSAYSB291',
+        pskuCode: 'PSKU-PAPER-291',
+        productTitle: 'PAPERSAYSB291 书签套装',
+        productImageUrl: 'https://example.com/papersaysb291.jpg',
+        linkStatus: 'linked',
+        linkedAssignmentCount: 1
+      }]
+    });
+  });
+  await page.route('**/api/procurement/ali1688-orders/product-links/batch', async (route) => {
+    linkPayloads.push(route.request().postDataJSON());
+    await route.fulfill({
+      json: {
+        status: 'linked',
+        linkedLineCount: 2,
+        skuParent: 'CANMAN-AE-SKU-001'
+      }
+    });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+
+  await page.getByLabel('选择 金属油画书签 向日葵').check();
+  await page.getByLabel('选择 金属油画书签 睡莲').check();
+  await expect(page.getByRole('button', { name: '批量商品关联' })).toHaveCount(0);
+  await page.getByRole('button', { name: '批量分配/关联' }).click();
+
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
+  await expect(dialog.getByText('已选 2 条货品行')).toBeVisible();
+  await expect.poll(() => candidateRequests[0] || '').toContain('assignmentId=99001');
+  await expect.poll(() => new URLSearchParams(candidateRequests[0] || '').get('linkStatus')).toBeNull();
+  await expect(dialog.getByText('PAPERSAYSB291 书签套装')).toBeVisible();
+  await dialog.getByText('CANMAN-AE-SKU-001').click();
+  await dialog.getByRole('button', { name: '确认关联' }).click();
+
+  await expect.poll(() => linkPayloads).toHaveLength(1);
+  expect(linkPayloads[0]).toEqual({
+    links: [
+      expect.objectContaining({
+        assignmentId: 99001,
+        skuParent: 'CANMAN-AE-SKU-001',
+        partnerSku: 'PAPERSAYSB291',
+        pskuCode: 'PSKU-PAPER-291'
+      }),
+      expect.objectContaining({
+        assignmentId: 99002,
+        skuParent: 'CANMAN-AE-SKU-001',
+        partnerSku: 'PAPERSAYSB291',
+        pskuCode: 'PSKU-PAPER-291'
+      })
+    ]
+  });
+});
+
+test('boss can open product link entry before assigning product line', async ({ page }) => {
+  const workbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  workbench.orders[0].items = [workbench.orders[0].items[1]];
+
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    await route.fulfill({ json: workbench });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+
+  const row = page.getByText('跨境B6复古五角星锁心本').locator('xpath=ancestor::tr');
+  const productCell = row.locator('.ali1688-product-line-main');
+  await expect(productCell.getByText('分配信息 未分配')).toBeVisible();
+  await expect(productCell.getByRole('button', { name: '分配店铺' })).toHaveCount(0);
+  await expect(productCell.getByRole('button', { name: '商品关联' })).toHaveCount(0);
+  const actionButton = productCell.getByRole('button', { name: '分配/关联' });
+  await expect(actionButton).toBeVisible();
+  await expect(actionButton).toBeEnabled();
+  await actionButton.click();
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
+  await expect(dialog.getByText('保存分配后选择店铺商品。')).toBeVisible();
+  await expect(dialog.getByRole('combobox', { name: '目标店铺' })).toBeVisible();
+});
+
+test('historical order product image border reflects product and store assignment state', async ({ page }) => {
+  const workbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  workbench.orders[0].items = [
+    {
+      ...workbench.orders[0].items[0],
+      id: '94001-LINKED-IMAGE',
+      title: '已关联商品图片',
+      imageUrl: 'https://example.com/linked-item.jpg',
+      assignmentId: undefined,
+      assignmentStatus: 'unassigned',
+      assignmentStatusLabel: '未分配',
+      assignmentTargetType: undefined,
+      assignmentTargetStoreCode: undefined,
+      assignmentTargetSiteCode: undefined,
+      productLink: {
+        status: 'linked',
+        skuParent: 'CANMAN-AE-SKU-LINKED',
+        partnerSku: 'CM-AE-LINKED',
+        pskuCode: 'PSKU-CM-AE-LINKED'
+      }
+    },
+    {
+      ...workbench.orders[0].items[2],
+      id: '94002-STORE-LINKED-IMAGE',
+      title: '已分配且已关联商品图片',
+      imageUrl: 'https://example.com/store-linked-item.jpg',
+      assignmentId: 99002,
+      assignmentStatus: 'assigned',
+      assignmentStatusLabel: '已分配',
+      assignmentTargetType: 'STORE_SITE',
+      assignmentTargetStoreCode: 'PRJ108065',
+      assignmentTargetSiteCode: 'AE',
+      assignmentBreakdownText: 'PRJ108065 AE 8',
+      productLink: {
+        status: 'linked',
+        skuParent: 'CANMAN-AE-SKU-STORE',
+        partnerSku: 'CM-AE-STORE',
+        pskuCode: 'PSKU-CM-AE-STORE'
+      }
+    },
+    {
+      ...workbench.orders[0].items[2],
+      id: '94003-STORE-ONLY-IMAGE',
+      title: '仅分配店铺商品图片',
+      imageUrl: 'https://example.com/store-only-item.jpg',
+      assignmentId: 99003,
+      assignmentStatus: 'assigned',
+      assignmentStatusLabel: '已分配',
+      assignmentTargetType: 'STORE_SITE',
+      assignmentTargetStoreCode: 'PRJ108065',
+      assignmentTargetSiteCode: 'AE',
+      assignmentBreakdownText: 'PRJ108065 AE 8',
+      productLink: undefined
+    }
+  ];
+
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    await route.fulfill({ json: workbench });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+
+  const productLinkedImage = page.getByRole('img', { name: '已关联商品图片', exact: true });
+  await expect(productLinkedImage).toHaveClass(/ali1688-product-line-image--product-linked/);
+  await expect(productLinkedImage).toHaveCSS('border-color', 'rgb(34, 197, 94)');
+
+  const assignedAndProductLinkedImage = page.getByRole('img', { name: '已分配且已关联商品图片', exact: true });
+  await expect(assignedAndProductLinkedImage).toHaveClass(/ali1688-product-line-image--product-linked/);
+  await expect(assignedAndProductLinkedImage).not.toHaveClass(/ali1688-product-line-image--store-linked/);
+  await expect(assignedAndProductLinkedImage).toHaveCSS('border-color', 'rgb(34, 197, 94)');
+
+  const assignedStoreOnlyImage = page.getByRole('img', { name: '仅分配店铺商品图片', exact: true });
+  await expect(assignedStoreOnlyImage).toHaveClass(/ali1688-product-line-image--store-linked/);
+  await expect(assignedStoreOnlyImage).not.toHaveClass(/ali1688-product-line-image--product-linked/);
+  await expect(assignedStoreOnlyImage).toHaveCSS('border-color', 'rgb(37, 99, 235)');
+});
+
+test('boss can assign and link a product line in the same dialog', async ({ page }) => {
+  let workbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  const assignedWorkbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  let assignmentPayload: any;
+  let linkPayload: any;
+
+  workbench.orders[0].items = [{
+    ...workbench.orders[0].items[1],
+    assignedQuantity: 0,
+    remainingQuantity: 10,
+    assignmentStatus: 'unassigned',
+    assignmentStatusLabel: '未分配',
+    assignmentBreakdownText: '',
+    assignmentId: undefined,
+    assignmentTargetType: undefined,
+    assignmentTargetStoreCode: undefined,
+    assignmentTargetSiteCode: undefined,
+    productLink: undefined
+  }];
+  assignedWorkbench.orders[0].items = [{
+    ...workbench.orders[0].items[0],
+    assignedQuantity: 10,
+    remainingQuantity: 0,
+    assignmentStatus: 'assigned',
+    assignmentStatusLabel: '已分配',
+    assignmentBreakdownText: 'PRJ108065 AE 10',
+    assignmentId: 99003,
+    assignmentTargetType: 'STORE_SITE',
+    assignmentTargetStoreCode: 'PRJ108065',
+    assignmentTargetSiteCode: 'AE'
+  }];
+
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    await route.fulfill({ json: workbench });
+  });
+  await page.route('**/api/procurement/ali1688-orders/assignments', async (route) => {
+    assignmentPayload = route.request().postDataJSON();
+    workbench = assignedWorkbench;
+    await route.fulfill({
+      json: {
+        status: 'assigned',
+        assignedLineCount: 1,
+        assignedQuantity: 10
+      }
+    });
+  });
+  await page.route('**/api/procurement/ali1688-orders/product-link-candidates**', async (route) => {
+    await route.fulfill({
+      json: [{
+        storeCode: 'PRJ108065',
+        siteCode: 'AE',
+        skuParent: 'CANMAN-AE-SKU-003',
+        partnerSku: 'CM-AE-PARTNER-003',
+        pskuCode: 'PSKU-CM-AE-003',
+        productTitle: 'canman AE 锁心本',
+        productImageUrl: 'https://example.com/canman-ae-notebook.jpg',
+        linkStatus: 'unlinked',
+        linkedAssignmentCount: 0
+      }]
+    });
+  });
+  await page.route('**/api/procurement/ali1688-orders/product-links', async (route) => {
+    linkPayload = route.request().postDataJSON();
+    workbench.orders[0].items[0].productLink = {
+      status: 'linked',
+      skuParent: 'CANMAN-AE-SKU-003',
+      partnerSku: 'CM-AE-PARTNER-003',
+      pskuCode: 'PSKU-CM-AE-003',
+      productTitle: 'canman AE 锁心本'
+    };
+    await route.fulfill({
+      json: {
+        status: 'linked',
+        assignmentId: 99003,
+        skuParent: 'CANMAN-AE-SKU-003',
+        partnerSku: 'CM-AE-PARTNER-003',
+        pskuCode: 'PSKU-CM-AE-003',
+        productTitle: 'canman AE 锁心本'
+      }
+    });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+  const row = page.getByText('跨境B6复古五角星锁心本').locator('xpath=ancestor::tr');
+  await expect(row.getByRole('button', { name: '分配店铺' })).toHaveCount(0);
+  await expect(row.getByRole('button', { name: '商品关联' })).toHaveCount(0);
+  await row.getByRole('button', { name: '分配/关联' }).click();
+
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
+  await dialog.getByRole('combobox', { name: '目标店铺' }).click();
+  await page.getByTitle('canman AE').click();
+  await page.keyboard.press('Escape');
+  await dialog.getByRole('button', { name: '保存分配并继续关联' }).click();
+  await expect.poll(() => assignmentPayload).toMatchObject({
+    targetType: 'STORE_SITE',
+    targetStoreCode: 'PRJ108065',
+    targetSiteCode: 'AE',
+    lines: [{ itemId: '94002', quantity: 10 }]
+  });
+  await expect(dialog.getByText('canman AE 锁心本')).toBeVisible();
+  await dialog.getByText('CANMAN-AE-SKU-003').click();
+  await dialog.getByRole('button', { name: '确认关联' }).click();
+
+  await expect.poll(() => linkPayload).toMatchObject({
+    assignmentId: 99003,
+    skuParent: 'CANMAN-AE-SKU-003',
+    partnerSku: 'CM-AE-PARTNER-003',
+    pskuCode: 'PSKU-CM-AE-003'
+  });
+  await expect(page.getByText('已关联: CM-AE-PARTNER-003')).toBeVisible();
 });
 
 test('procurement role sees product link state as read-only', async ({ page }) => {
@@ -1099,26 +1616,21 @@ test('procurement role sees product link state as read-only', async ({ page }) =
   await page.goto('/purchase/ali1688-orders?devSession=1&devRole=procurement&grantAli1688HistoricalOrders=1');
 
   const row = page.getByText('已分配样品货品').locator('xpath=ancestor::tr');
-  await expect(row.getByText('已关联: CANMAN-AE-SKU-001')).toBeVisible();
+  await expect(row.getByText('已关联: CM-AE-PARTNER-001')).toBeVisible();
   await expect(row.getByRole('button', { name: '商品关联' })).not.toBeVisible();
   await expect(row.getByRole('button', { name: '改关联' })).not.toBeVisible();
   await expect(row.getByRole('button', { name: '解除关联' })).not.toBeVisible();
 });
 
-test('boss can select multiple product lines and assign their order quantities to one target store', async ({ page }) => {
+test('boss can assign a single product line before product linking', async ({ page }) => {
   let workbench = syncedWorkbench;
   let assignmentPayload: any;
   const assignedWorkbench = JSON.parse(JSON.stringify(syncedWorkbench));
-  assignedWorkbench.orders[0].items[0].assignedQuantity = 10;
-  assignedWorkbench.orders[0].items[0].remainingQuantity = 0;
-  assignedWorkbench.orders[0].items[0].assignmentStatus = 'assigned';
-  assignedWorkbench.orders[0].items[0].assignmentStatusLabel = '已分配';
-  assignedWorkbench.orders[0].items[0].assignmentBreakdownText = 'PRJ108065 AE 10';
   assignedWorkbench.orders[0].items[1].assignedQuantity = 10;
   assignedWorkbench.orders[0].items[1].remainingQuantity = 0;
   assignedWorkbench.orders[0].items[1].assignmentStatus = 'assigned';
   assignedWorkbench.orders[0].items[1].assignmentStatusLabel = '已分配';
-  assignedWorkbench.orders[0].items[1].assignmentBreakdownText = 'PRJ108065 AE 10';
+  assignedWorkbench.orders[0].items[1].assignmentBreakdownText = 'PRJ108065 SA 10';
 
   await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
     await route.fulfill({ json: workbench });
@@ -1129,8 +1641,68 @@ test('boss can select multiple product lines and assign their order quantities t
     await route.fulfill({
       json: {
         status: 'assigned',
-        assignedLineCount: 2,
-        assignedQuantity: 5
+        assignedLineCount: 1,
+        assignedQuantity: 10
+      }
+    });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+  const row = page.getByText('跨境B6复古五角星锁心本').locator('xpath=ancestor::tr');
+  const productCell = row.locator('.ali1688-product-line-main');
+  await expect(productCell.getByRole('button', { name: '分配店铺' })).toHaveCount(0);
+  await expect(productCell.getByRole('button', { name: '商品关联' })).toHaveCount(0);
+  await expect(productCell.getByRole('button', { name: '分配/关联' })).toBeVisible();
+  await expect(row.locator('td').last().getByRole('button', { name: '分配店铺' })).toHaveCount(0);
+  const productActionOrder = await productCell.locator('button').evaluateAll((buttons) =>
+    buttons.map((button) => button.textContent?.trim()).filter(Boolean)
+  );
+  expect(productActionOrder).toEqual(['分配/关联']);
+  await productCell.getByRole('button', { name: '分配/关联' }).click();
+
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
+  await expect(dialog.getByText('单个货品可拆分到多个店铺，请为每个店铺填写数量。')).toBeVisible();
+  await dialog.getByRole('combobox', { name: '目标店铺' }).click();
+  await page.getByTitle('canman SA').click();
+  await page.keyboard.press('Escape');
+  await expect(dialog.getByRole('spinbutton', { name: '分配数量 canman SA 跨境B6复古五角星锁心本' })).toHaveValue('10');
+  await dialog.getByRole('button', { name: '确认分配' }).click();
+
+  await expect.poll(() => assignmentPayload).toMatchObject({
+    targetType: 'STORE_SITE',
+    targetStoreCode: 'PRJ108065',
+    targetSiteCode: 'SA',
+    lines: [{ itemId: '94002', quantity: 10 }]
+  });
+  await expect(page.getByText('分配信息 canman SA')).toBeVisible();
+});
+
+test('boss can split multiple selected product lines across two target stores with quantities', async ({ page }) => {
+  let workbench = syncedWorkbench;
+  const assignmentPayloads: any[] = [];
+  const assignedWorkbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  assignedWorkbench.orders[0].items[0].assignedQuantity = 6;
+  assignedWorkbench.orders[0].items[0].remainingQuantity = 0;
+  assignedWorkbench.orders[0].items[0].assignmentStatus = 'assigned';
+  assignedWorkbench.orders[0].items[0].assignmentStatusLabel = '已分配';
+  assignedWorkbench.orders[0].items[0].assignmentBreakdownText = 'PRJ108065 SA 2 / PRJ245027 AE 4';
+  assignedWorkbench.orders[0].items[1].assignedQuantity = 10;
+  assignedWorkbench.orders[0].items[1].remainingQuantity = 0;
+  assignedWorkbench.orders[0].items[1].assignmentStatus = 'assigned';
+  assignedWorkbench.orders[0].items[1].assignmentStatusLabel = '已分配';
+  assignedWorkbench.orders[0].items[1].assignmentBreakdownText = 'PRJ108065 SA 3 / PRJ245027 AE 7';
+
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    await route.fulfill({ json: workbench });
+  });
+  await page.route('**/api/procurement/ali1688-orders/assignments/batch', async (route) => {
+    assignmentPayloads.push(route.request().postDataJSON());
+    workbench = assignedWorkbench;
+    await route.fulfill({
+      json: {
+        status: 'assigned',
+        assignedLineCount: 4,
+        assignedQuantity: 16
       }
     });
   });
@@ -1138,27 +1710,58 @@ test('boss can select multiple product lines and assign their order quantities t
   await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
   await page.getByText('仿真罂粟花束 6 支装 家居装饰').locator('xpath=ancestor::tr').getByRole('checkbox').check();
   await page.getByText('跨境B6复古五角星锁心本').locator('xpath=ancestor::tr').getByRole('checkbox').check();
-  await page.getByRole('button', { name: '批量分配到店' }).click();
+  await page.getByRole('button', { name: '批量分配/关联' }).click();
 
-  const dialog = page.getByRole('dialog', { name: '分配货品到店铺' });
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByText('多选货品只能分配到一个店铺，数量使用订单剩余数量。')).toBeVisible();
-  await expect(dialog.getByText('canman AE')).toBeVisible();
-  await dialog.locator('.ant-select').click();
-  await expect(page.getByTitle('canman SA')).toBeVisible();
+  await expect(dialog.getByText('多选货品可拆分到多个店铺，请为每个店铺和货品填写数量。')).toBeVisible();
+  await expect(page.locator('.ant-modal:visible')).toHaveCSS('width', '1180px');
+  await dialog.getByRole('combobox', { name: '目标店铺' }).click();
+  await page.getByTitle('canman SA').click();
+  await expect(dialog.locator('.ali1688-assignment-matrix')).toBeVisible();
+  await expect(dialog.locator('.ali1688-assignment-matrix thead th').nth(0)).toContainText('商品');
+  await expect(dialog.locator('.ali1688-assignment-matrix thead th').nth(1)).toContainText('canman SA');
+  await expect(dialog.getByRole('spinbutton', { name: '分配数量 canman SA 仿真罂粟花束 6 支装 家居装饰' })).toHaveValue('6');
+  await expect(dialog.getByRole('spinbutton', { name: '分配数量 canman SA 跨境B6复古五角星锁心本' })).toHaveValue('10');
+  await page.getByTitle('xingyao AE').click();
   await page.keyboard.press('Escape');
-  await expect(dialog.getByRole('spinbutton')).toHaveCount(0);
+  await expect(dialog.locator('.ali1688-assignment-matrix thead th').nth(2)).toContainText('xingyao AE');
+  await expect(dialog.getByRole('spinbutton', { name: '分配数量 canman SA 仿真罂粟花束 6 支装 家居装饰' })).toHaveValue('3');
+  await expect(dialog.getByRole('spinbutton', { name: '分配数量 xingyao AE 仿真罂粟花束 6 支装 家居装饰' })).toHaveValue('3');
+  await expect(dialog.getByRole('spinbutton', { name: '分配数量 canman SA 跨境B6复古五角星锁心本' })).toHaveValue('5');
+  await expect(dialog.getByRole('spinbutton', { name: '分配数量 xingyao AE 跨境B6复古五角星锁心本' })).toHaveValue('5');
+  await dialog.getByRole('spinbutton', { name: '分配数量 canman SA 仿真罂粟花束 6 支装 家居装饰' }).fill('6');
+  await expect(dialog.getByRole('spinbutton', { name: '分配数量 xingyao AE 仿真罂粟花束 6 支装 家居装饰' })).toHaveValue('0');
+  await dialog.getByRole('spinbutton', { name: '分配数量 canman SA 仿真罂粟花束 6 支装 家居装饰' }).fill('2');
+  await dialog.getByRole('spinbutton', { name: '分配数量 xingyao AE 仿真罂粟花束 6 支装 家居装饰' }).fill('4');
+  await expect(dialog.getByRole('spinbutton', { name: '分配数量 canman SA 仿真罂粟花束 6 支装 家居装饰' })).toHaveValue('2');
+  await dialog.getByRole('spinbutton', { name: '分配数量 canman SA 跨境B6复古五角星锁心本' }).fill('3');
+  await dialog.getByRole('spinbutton', { name: '分配数量 xingyao AE 跨境B6复古五角星锁心本' }).fill('7');
   await dialog.getByRole('button', { name: '确认分配' }).click();
 
-  await expect.poll(() => assignmentPayload).toMatchObject({
-    targetStoreCode: 'PRJ108065',
-    targetSiteCode: 'AE',
-    lines: [
-      { itemId: '94001', quantity: 6 },
-      { itemId: '94002', quantity: 10 }
+  await expect.poll(() => assignmentPayloads).toEqual([{
+    assignments: [
+      {
+        targetType: 'STORE_SITE',
+        targetStoreCode: 'PRJ108065',
+        targetSiteCode: 'SA',
+        lines: [
+          { itemId: '94001', quantity: 2 },
+          { itemId: '94002', quantity: 3 }
+        ]
+      },
+      {
+        targetType: 'STORE_SITE',
+        targetStoreCode: 'PRJ245027',
+        targetSiteCode: 'AE',
+        lines: [
+          { itemId: '94001', quantity: 4 },
+          { itemId: '94002', quantity: 7 }
+        ]
+      }
     ]
-  });
-  await expect(page.getByText('分配信息 canman AE')).toHaveCount(2);
+  }]);
+  await expect(page.getByText('分配信息 canman SA xingyao AE')).toHaveCount(2);
 });
 
 test('boss can filter and assign product lines to shared consumables', async ({ page }) => {
@@ -1201,9 +1804,9 @@ test('boss can filter and assign product lines to shared consumables', async ({ 
 
   await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
   await page.getByText('仿真罂粟花束 6 支装 家居装饰').locator('xpath=ancestor::tr').getByRole('checkbox').check();
-  await page.getByRole('button', { name: '批量分配到店' }).click();
+  await page.getByRole('button', { name: '批量分配/关联' }).click();
 
-  const dialog = page.getByRole('dialog', { name: '分配货品到店铺' });
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
   await dialog.getByRole('combobox', { name: '目标店铺' }).click();
   await page.getByTitle('耗材（共用）').click();
   await page.keyboard.press('Escape');
@@ -1219,9 +1822,8 @@ test('boss can filter and assign product lines to shared consumables', async ({ 
   expect(assignmentPayload.lines[0].quantity).toBeUndefined();
   await expect(page.getByText('分配信息 耗材')).toBeVisible();
 
-  await page.getByRole('combobox', { name: '分配筛选' }).click();
+  await page.getByRole('combobox', { name: '分配店铺' }).click();
   await page.getByTitle('耗材').click();
-  await page.getByRole('button', { name: '查询' }).click();
   await expect.poll(() => seenQueries.at(-1) || '').toContain('assignmentState=consumable');
 });
 
@@ -1269,25 +1871,23 @@ test('boss can split one selected product line across multiple owner stores', as
   await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
     await route.fulfill({ json: workbench });
   });
-  await page.route('**/api/procurement/ali1688-orders/assignments', async (route) => {
+  await page.route('**/api/procurement/ali1688-orders/assignments/batch', async (route) => {
     assignmentPayloads.push(route.request().postDataJSON());
-    if (assignmentPayloads.length === 2) {
-      workbench = assignedWorkbench;
-    }
+    workbench = assignedWorkbench;
     await route.fulfill({
       json: {
         status: 'assigned',
-        assignedLineCount: 1,
-        assignedQuantity: 1
+        assignedLineCount: 2,
+        assignedQuantity: 6
       }
     });
   });
 
   await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
   await page.getByText('仿真罂粟花束 6 支装 家居装饰').locator('xpath=ancestor::tr').getByRole('checkbox').check();
-  await page.getByRole('button', { name: '批量分配到店' }).click();
+  await page.getByRole('button', { name: '批量分配/关联' }).click();
 
-  const dialog = page.getByRole('dialog', { name: '分配货品到店铺' });
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
   await expect(dialog.getByText('单个货品可拆分到多个店铺，请为每个店铺填写数量。')).toBeVisible();
   await dialog.getByRole('combobox', { name: '目标店铺' }).click();
   await page.getByTitle('canman SA').click();
@@ -1300,20 +1900,22 @@ test('boss can split one selected product line across multiple owner stores', as
   await dialog.getByRole('spinbutton', { name: '分配数量 xingyao AE' }).fill('4');
   await dialog.getByRole('button', { name: '确认分配' }).click();
 
-  await expect.poll(() => assignmentPayloads).toEqual([
-    {
-      targetType: 'STORE_SITE',
-      targetStoreCode: 'PRJ108065',
-      targetSiteCode: 'SA',
-      lines: [{ itemId: '94001', quantity: 2 }]
-    },
-    {
-      targetType: 'STORE_SITE',
-      targetStoreCode: 'PRJ245027',
-      targetSiteCode: 'AE',
-      lines: [{ itemId: '94001', quantity: 4 }]
-    }
-  ]);
+  await expect.poll(() => assignmentPayloads).toEqual([{
+    assignments: [
+      {
+        targetType: 'STORE_SITE',
+        targetStoreCode: 'PRJ108065',
+        targetSiteCode: 'SA',
+        lines: [{ itemId: '94001', quantity: 2 }]
+      },
+      {
+        targetType: 'STORE_SITE',
+        targetStoreCode: 'PRJ245027',
+        targetSiteCode: 'AE',
+        lines: [{ itemId: '94001', quantity: 4 }]
+      }
+    ]
+  }]);
   const canmanRow = page.getByText('分配信息 canman SA').locator('xpath=ancestor::tr');
   const xingyaoRow = page.getByText('分配信息 xingyao AE').locator('xpath=ancestor::tr');
   await expect(canmanRow).toBeVisible();
@@ -1322,7 +1924,7 @@ test('boss can split one selected product line across multiple owner stores', as
   await expect(canmanRow.getByText('数量: 2套')).toBeVisible();
   await expect(canmanRow.getByText('订单总价: ¥25.60')).toBeVisible();
   await expect(canmanRow.getByText('实付款: ¥68.00')).toBeVisible();
-  await expect(canmanRow.getByText('订单价: ¥12.80')).toBeVisible();
+  await expect(canmanRow.getByText('订单价:')).toHaveCount(0);
   await expect(xingyaoRow.getByText('数量: 4套')).toBeVisible();
   await expect(xingyaoRow.getByText('订单总价: ¥51.20')).toBeVisible();
 });
@@ -1380,8 +1982,6 @@ test('boss can soft-delete an unassigned historical order from the list', async 
   await dialog.getByRole('button', { name: '确认删除' }).click();
 
   await expect.poll(() => deletePayload).toEqual({
-    storeCode: 'PRJ108065',
-    siteCode: 'AE',
     reason: '不属于任何店铺'
   });
   await expect(dialog).not.toBeVisible();

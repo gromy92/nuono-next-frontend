@@ -15,6 +15,13 @@ export type Ali1688HistoricalOrderRoleCapabilities = {
   canViewOrders: boolean
 }
 
+export type Ali1688OpenApiAuthorizationStart = {
+  configured: boolean
+  providerCode?: string
+  authorizationUrl?: string
+  message?: string
+}
+
 export type Ali1688HistoricalOrderSyncSummary = {
   latestTaskStatus?: string
   totalOrderCount: number
@@ -45,6 +52,7 @@ export type Ali1688HistoricalOrderQuery = {
   assignmentState?: string
   assignmentTargetStoreCode?: string
   assignmentTargetSiteCode?: string
+  productLinkState?: string
   page?: number
   pageSize?: number
 }
@@ -162,6 +170,10 @@ export type Ali1688HistoricalOrderAssignmentRequest = {
   lines: Ali1688HistoricalOrderAssignmentLine[]
 }
 
+export type Ali1688HistoricalOrderAssignmentBatchRequest = {
+  assignments: Ali1688HistoricalOrderAssignmentRequest[]
+}
+
 export type Ali1688HistoricalOrderAssignmentResult = {
   status?: string
   assignedLineCount: number
@@ -207,8 +219,18 @@ export type Ali1688HistoricalOrderProductLinkRequest = {
   productImageUrl?: string
 }
 
+export type Ali1688HistoricalOrderProductLinkBatchRequest = {
+  links: Ali1688HistoricalOrderProductLinkRequest[]
+}
+
 export type Ali1688HistoricalOrderProductLinkResult = Ali1688HistoricalOrderProductLink & {
   assignmentId?: number
+}
+
+export type Ali1688HistoricalOrderProductLinkBatchResult = {
+  status?: string
+  linkedLineCount: number
+  skuParent?: string
 }
 
 export type Ali1688HistoricalOrderProductLinkCandidate = {
@@ -256,11 +278,31 @@ export type Ali1688SkuPurchaseHistoryRecord = {
   orderNo?: string
   orderTime?: string
   supplierName?: string
-  assignedQuantity?: string
-  allocatedCost?: string
-  unitPrice?: string
-  amountBasis?: string
-  priceQuality?: 'ok' | 'missing_price_basis' | string
+  assignedQuantity?: string | number | null
+  allocatedCost?: string | number | null
+  unitPrice?: string | number | null
+  amountBasis?: string | number | null
+  priceQuality?: 'ready' | 'ok' | 'missing_price_basis' | string
+}
+
+export type Ali1688SkuPurchaseHistoryBatchSource = {
+  orderId?: number
+  itemId?: number
+  assignmentId?: number
+  orderNo?: string
+  orderTime?: string
+  supplierName?: string
+}
+
+export type Ali1688SkuPurchaseHistoryBatch = {
+  id?: number
+  label?: string
+  batchSequence?: number
+  countedQuantity?: string | number | null
+  countedCost?: string | number | null
+  unitPrice?: string | number | null
+  note?: string
+  sources?: Ali1688SkuPurchaseHistoryBatchSource[]
 }
 
 export type Ali1688SkuPurchaseHistoryItem = {
@@ -294,12 +336,33 @@ export type Ali1688SkuPurchaseHistoryItem = {
   amountBasis?: string
   dataQualityFlags?: string[]
   history?: Ali1688SkuPurchaseHistoryRecord[]
+  purchaseBatches?: Ali1688SkuPurchaseHistoryBatch[]
 }
 
 export type Ali1688SkuPurchaseHistoryView = {
   items: Ali1688SkuPurchaseHistoryItem[]
   pagination: Ali1688HistoricalOrderPagination
   unlinkedAssignedLineCount?: number
+}
+
+export type Ali1688SkuPurchaseBatchSaveRequest = {
+  storeCode?: string
+  siteCode?: string
+  skuParent?: string
+  partnerSku?: string
+  pskuCode?: string
+  batches: Array<{
+    label?: string
+    countedQuantity?: number | null
+    countedCost?: number | null
+    note?: string
+    sources: Ali1688SkuPurchaseHistoryBatchSource[]
+  }>
+}
+
+export type Ali1688SkuPurchaseBatchSaveResult = {
+  savedBatchCount: number
+  savedSourceCount: number
 }
 
 export type Ali1688ExcelImportSource = {

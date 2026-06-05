@@ -48,7 +48,7 @@ const skuPurchaseHistory = {
           allocatedCost: '200.00',
           unitPrice: '40.00',
           amountBasis: 'paid_amount_allocated',
-          priceQuality: 'ok'
+          priceQuality: 'ready'
         },
         {
           orderId: 93001,
@@ -61,18 +61,6 @@ const skuPurchaseHistory = {
           unitPrice: '11.00',
           amountBasis: 'paid_amount_allocated',
           priceQuality: 'ok'
-        },
-        {
-          orderId: 93003,
-          assignmentId: 99003,
-          orderNo: 'ALI-ORDER-20260524-003',
-          orderTime: '2026-05-24 08:15:00',
-          supplierName: '缺失金额样品供应商',
-          assignedQuantity: '1',
-          allocatedCost: null,
-          unitPrice: null,
-          amountBasis: null,
-          priceQuality: 'missing_price_basis'
         }
       ]
     }
@@ -94,6 +82,173 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/store-sync/overview**', async (route) => {
     await route.fulfill({ json: storeSyncOverview });
   });
+});
+
+test('SKU purchase history keeps the switched store data when the previous store request finishes late', async ({ page }) => {
+  const aeHistory = {
+    ...skuPurchaseHistory,
+    items: [
+      {
+        ...skuPurchaseHistory.items[0],
+        storeCode: 'PRJ108065',
+        siteCode: 'AE',
+        linkStatus: 'unlinked',
+        assignmentId: undefined,
+        itemId: undefined,
+        orderNo: undefined,
+        skuParent: 'CANMAN-AE-STALE-SKU',
+        partnerSku: 'CANMAN-AE-STALE',
+        productTitle: 'AE 慢请求商品'
+      },
+      {
+        ...skuPurchaseHistory.items[0],
+        storeCode: 'PRJ108065',
+        siteCode: 'AE',
+        linkStatus: 'unlinked',
+        assignmentId: undefined,
+        itemId: undefined,
+        orderNo: undefined,
+        skuParent: 'CANMAN-AE-STALE-SKU-2',
+        partnerSku: 'CANMAN-AE-STALE-2',
+        productTitle: 'AE 慢请求商品 2'
+      }
+    ]
+  };
+  const saHistory = {
+    ...skuPurchaseHistory,
+    items: [
+      {
+        ...skuPurchaseHistory.items[0],
+        storeCode: 'PRJ108065',
+        siteCode: 'SA',
+        linkStatus: 'unlinked',
+        assignmentId: undefined,
+        itemId: undefined,
+        orderNo: undefined,
+        skuParent: 'CANMAN-SA-CURRENT-SKU',
+        partnerSku: 'CANMAN-SA-CURRENT',
+        productTitle: 'SA 当前店铺商品'
+      },
+      {
+        ...skuPurchaseHistory.items[0],
+        storeCode: 'PRJ108065',
+        siteCode: 'SA',
+        linkStatus: 'unlinked',
+        assignmentId: undefined,
+        itemId: undefined,
+        orderNo: undefined,
+        skuParent: 'CANMAN-SA-CURRENT-SKU-2',
+        partnerSku: 'CANMAN-SA-CURRENT-2',
+        productTitle: 'SA 当前店铺商品 2'
+      }
+    ]
+  };
+  const requestedSites: string[] = [];
+  let releaseAeRequest: (() => void) | undefined;
+
+  await page.route('**/api/procurement/ali1688-orders/sku-purchase-history**', async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const requestSite = requestUrl.searchParams.get('siteCode') || '';
+    requestedSites.push(requestSite);
+    if (requestSite === 'AE') {
+      await new Promise<void>((resolve) => {
+        releaseAeRequest = resolve;
+      });
+      await route.fulfill({ json: aeHistory });
+      return;
+    }
+    await route.fulfill({ json: saHistory });
+  });
+
+  await page.goto('/purchase/ali1688-sku-purchase-history?devSession=1&devRole=procurement&grantAli1688HistoricalOrders=1');
+
+  await expect(page.getByTestId('ali1688-sku-purchase-history-page')).toBeVisible();
+  await page.getByTestId('global-site-select').click();
+  await page.locator('.ant-select-dropdown').getByText('SA', { exact: true }).click();
+  await expect.poll(() => requestedSites).toContain('SA');
+  await expect(page.getByText('SA 当前店铺商品', { exact: true })).toBeVisible();
+
+  releaseAeRequest?.();
+
+  await expect(page.getByText('SA 当前店铺商品', { exact: true })).toBeVisible();
+  await expect(page.getByText('AE 慢请求商品', { exact: true })).toHaveCount(0);
+});
+
+test('SKU purchase history replaces previously rendered unlinked rows after switching store', async ({ page }) => {
+  const aeHistory = {
+    ...skuPurchaseHistory,
+    items: [
+      {
+        ...skuPurchaseHistory.items[0],
+        storeCode: 'PRJ108065',
+        siteCode: 'AE',
+        linkStatus: 'unlinked',
+        assignmentId: undefined,
+        itemId: undefined,
+        orderNo: undefined,
+        skuParent: 'CANMAN-AE-STALE-SKU',
+        partnerSku: 'CANMAN-AE-STALE',
+        productTitle: 'AE 已渲染商品'
+      },
+      {
+        ...skuPurchaseHistory.items[0],
+        storeCode: 'PRJ108065',
+        siteCode: 'AE',
+        linkStatus: 'unlinked',
+        assignmentId: undefined,
+        itemId: undefined,
+        orderNo: undefined,
+        skuParent: 'CANMAN-AE-STALE-SKU-2',
+        partnerSku: 'CANMAN-AE-STALE-2',
+        productTitle: 'AE 已渲染商品 2'
+      }
+    ]
+  };
+  const saHistory = {
+    ...skuPurchaseHistory,
+    items: [
+      {
+        ...skuPurchaseHistory.items[0],
+        storeCode: 'PRJ108065',
+        siteCode: 'SA',
+        linkStatus: 'unlinked',
+        assignmentId: undefined,
+        itemId: undefined,
+        orderNo: undefined,
+        skuParent: 'CANMAN-SA-CURRENT-SKU',
+        partnerSku: 'CANMAN-SA-CURRENT',
+        productTitle: 'SA 切换后商品'
+      },
+      {
+        ...skuPurchaseHistory.items[0],
+        storeCode: 'PRJ108065',
+        siteCode: 'SA',
+        linkStatus: 'unlinked',
+        assignmentId: undefined,
+        itemId: undefined,
+        orderNo: undefined,
+        skuParent: 'CANMAN-SA-CURRENT-SKU-2',
+        partnerSku: 'CANMAN-SA-CURRENT-2',
+        productTitle: 'SA 切换后商品 2'
+      }
+    ]
+  };
+
+  await page.route('**/api/procurement/ali1688-orders/sku-purchase-history**', async (route) => {
+    const requestUrl = new URL(route.request().url());
+    await route.fulfill({ json: requestUrl.searchParams.get('siteCode') === 'SA' ? saHistory : aeHistory });
+  });
+
+  await page.goto('/purchase/ali1688-sku-purchase-history?devSession=1&devRole=procurement&grantAli1688HistoricalOrders=1');
+
+  await expect(page.getByText('AE 已渲染商品', { exact: true })).toBeVisible();
+  await page.getByTestId('global-site-select').click();
+  await page.locator('.ant-select-dropdown').getByText('SA', { exact: true }).click();
+
+  await expect(page.getByText('SA 切换后商品', { exact: true })).toBeVisible();
+  await expect(page.getByText('SA 切换后商品 2', { exact: true })).toBeVisible();
+  await expect(page.getByText('AE 已渲染商品', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('AE 已渲染商品 2', { exact: true })).toHaveCount(0);
 });
 
 test('procurement can inspect SKU purchase history with summary columns and hover history', async ({ page }) => {
@@ -135,10 +290,14 @@ test('procurement can inspect SKU purchase history with summary columns and hove
   expect(await filterBox.boundingBox()).not.toBeNull();
   expect(dateRangeBounds).not.toBeNull();
   expect(keywordBounds!.x).toBeLessThan(dateRangeBounds!.x);
+  expect(keywordBounds!.width).toBeLessThanOrEqual(220);
 
   const productImage = page.getByRole('img', { name: '仿真罂粟花束 6 支装 家居装饰' });
   await expect(productImage).toBeVisible();
   await expect(productImage).toHaveAttribute('src', /canman-flower\.jpg$/);
+  const productImageFrame = productImage.locator('xpath=ancestor::span[contains(@class, "ali1688-sku-product-thumbnail")][1]');
+  await expect(productImageFrame).toHaveClass(/ali1688-sku-product-thumbnail--linked/);
+  await expect(productImageFrame).toHaveCSS('border-color', 'rgb(34, 197, 94)');
   await expect(page.getByText('CANMAN-AE-SKU-001')).toBeVisible();
   await expect(page.getByText('PSKU: CANMAN-FLOWER-AE')).toBeVisible();
   await expect(page.getByText('SKU: CANMAN-AE-SKU-001')).toBeVisible();
@@ -153,6 +312,8 @@ test('procurement can inspect SKU purchase history with summary columns and hove
   await expect(page.getByText('采购总件数: 9')).toBeVisible();
   await expect(page.getByText('平均采购单价: ¥27.11')).toBeVisible();
   await expect(page.getByText('最近采购单价: ¥40.00')).toBeVisible();
+  await expect(page.getByText('按实付款分摊')).toHaveCount(0);
+  await expect(page.getByText('按货品金额分摊')).toHaveCount(0);
   await expect(page.getByTestId('sku-purchase-sparkline-CANMAN-AE-SKU-001')).toBeVisible();
   await expect(page.getByText('1688 未关联纸巾盒')).toHaveCount(0);
 
@@ -194,8 +355,9 @@ test('SKU purchase history filters by name and association status', async ({ pag
   await expect(page.getByPlaceholder('采购开始')).toBeVisible();
   await expect(page.getByPlaceholder('采购结束')).toBeVisible();
   await page.getByLabel('名称搜索').fill('NO-LINK-SKU');
-  await page.getByRole('combobox', { name: '关联' }).click();
-  await page.getByRole('option', { name: '未关联' }).click();
+  const linkStatusSelect = page.getByTestId('sku-purchase-link-status-filter').locator('.ant-select-selector');
+  await linkStatusSelect.click();
+  await page.locator('.ant-select-dropdown').getByText('未关联', { exact: true }).click();
   await page.getByRole('button', { name: '查询' }).click();
 
   await expect(page.getByText('当前筛选下没有已关联 SKU 采购历史')).toBeVisible();
@@ -206,58 +368,178 @@ test('SKU purchase history filters by name and association status', async ({ pag
   expect(lastRequestUrl.searchParams.get('siteCode')).toBe('AE');
   expect(lastRequestUrl.searchParams.get('linkStatus')).toBe('unlinked');
 
-  await page.getByRole('combobox', { name: '关联' }).click();
-  await page.getByRole('option', { name: '已关联' }).click();
+  await linkStatusSelect.click();
+  await page.locator('.ant-select-dropdown').getByText('已关联', { exact: true }).click();
   await page.getByRole('button', { name: '查询' }).click();
   const linkedRequestUrl = new URL(requestedUrls[requestedUrls.length - 1]);
   expect(linkedRequestUrl.searchParams.get('linkStatus')).toBe('linked');
 
-  await page.getByRole('combobox', { name: '关联' }).click();
-  await page.getByRole('option', { name: '全部' }).click();
+  await linkStatusSelect.click();
+  await page.locator('.ant-select-dropdown').getByText('全部', { exact: true }).click();
   await page.getByRole('button', { name: '查询' }).click();
   const allRequestUrl = new URL(requestedUrls[requestedUrls.length - 1]);
   expect(allRequestUrl.searchParams.get('linkStatus')).toBeNull();
 });
 
-test('user can open the full price trend and return to source order evidence', async ({ page }) => {
+test('user can group SKU purchase orders into batches and manually adjust counted quantity and cost', async ({ page }) => {
+  let savedBatchRequest: any;
+  let returnPersistedBatches = false;
   await page.route('**/api/procurement/ali1688-orders/sku-purchase-history**', async (route) => {
-    await route.fulfill({ json: skuPurchaseHistory });
-  });
-  await page.route('**/api/procurement/ali1688-orders/93002**', async (route) => {
-    await route.fulfill({
-      json: {
-        id: '93002',
-        orderNo: 'ALI-ORDER-20260527-002',
-        orderTime: '2026-05-27 11:20:00',
-        supplierName: '义乌诚信通源头工厂',
-        paidAmountText: '¥200.00',
-        orderStatus: '交易成功',
+    const response = returnPersistedBatches
+      ? {
+        ...skuPurchaseHistory,
         items: [
           {
-            id: '94002',
-            title: '仿真罂粟花束 6 支装 家居装饰',
-            quantity: 5,
-            amountText: '¥200.00'
+            ...skuPurchaseHistory.items[0],
+            purchaseBatches: [
+              {
+                id: 102001,
+                label: '批次 1',
+                batchSequence: 1,
+                countedQuantity: 3,
+                countedCost: '120.00',
+                unitPrice: '40.00',
+                note: '3个/套换6个/套',
+                sources: [
+                  {
+                    orderId: 93002,
+                    itemId: 94002,
+                    assignmentId: 99002,
+                    orderNo: 'ALI-ORDER-20260527-002',
+                    orderTime: '2026-05-27 11:20:00',
+                    supplierName: '义乌诚信通源头工厂'
+                  },
+                  {
+                    orderId: 93001,
+                    itemId: 94001,
+                    assignmentId: 99001,
+                    orderNo: 'ALI-ORDER-20260525-001',
+                    orderTime: '2026-05-25 10:30:00',
+                    supplierName: '任丘市溪潼针织机加工厂'
+                  }
+                ]
+              }
+            ]
           }
         ]
+      }
+      : skuPurchaseHistory;
+    await route.fulfill({ json: response });
+  });
+  await page.route('**/api/procurement/ali1688-orders/sku-purchase-history/batches', async (route) => {
+    savedBatchRequest = route.request().postDataJSON();
+    returnPersistedBatches = true;
+    await route.fulfill({
+      json: {
+        savedBatchCount: 1,
+        savedSourceCount: 2
       }
     });
   });
 
   await page.goto('/purchase/ali1688-sku-purchase-history?devSession=1&devRole=procurement&grantAli1688HistoricalOrders=1');
 
-  await page.getByTestId('sku-purchase-sparkline-CANMAN-AE-SKU-001').click();
+  await expect(page.getByText('采购次数: 2')).toBeVisible();
+  await expect(page.getByText('采购总费用: ¥244.00')).toBeVisible();
+  await page.getByRole('button', { name: '批次明细' }).click();
+
+  const batchDrawer = page.locator('.ant-drawer').filter({ hasText: '采购批次 · CANMAN-AE-SKU-001' });
+  await expect(batchDrawer).toBeVisible();
+  const sourceTable = batchDrawer.getByTestId('sku-purchase-batch-source-table');
+  await expect(sourceTable.getByText('ALI-ORDER-20260527-002', { exact: true })).toBeVisible();
+  await expect(sourceTable.getByText('ALI-ORDER-20260525-001', { exact: true })).toBeVisible();
+
+  const firstSourceRow = sourceTable.locator('tr').filter({ hasText: 'ALI-ORDER-20260527-002' });
+  const secondSourceRow = sourceTable.locator('tr').filter({ hasText: 'ALI-ORDER-20260525-001' });
+  await firstSourceRow.getByRole('checkbox').check();
+  await secondSourceRow.getByRole('checkbox').check();
+  await batchDrawer.getByRole('button', { name: '合并为批次' }).click();
+
+  const batchRow = batchDrawer.locator('tr').filter({ hasText: '批次 1' });
+  await expect(batchRow.getByText('2 单')).toBeVisible();
+  const quantityInput = batchRow.getByLabel('批次 1 计入 SKU 数量');
+  await quantityInput.fill('2.7');
+  await quantityInput.press('Tab');
+  await expect(quantityInput).toHaveValue('3');
+  await batchRow.getByLabel('批次 1 计入 SKU 成本').fill('120');
+  await batchRow.getByLabel('批次 1 备注').fill('3个/套换6个/套');
+  await expect(batchRow.getByText('¥40.00')).toBeVisible();
+  await expect(batchDrawer.getByText('批次汇总: 采购次数 1 · 总费用 ¥120.00 · 总件数 3')).toBeVisible();
+
+  await batchDrawer.getByRole('button', { name: '保存' }).click();
+  expect(savedBatchRequest.storeCode).toBe('PRJ108065');
+  expect(savedBatchRequest.siteCode).toBe('AE');
+  expect(savedBatchRequest.skuParent).toBe('CANMAN-AE-SKU-001');
+  expect(savedBatchRequest.batches).toHaveLength(1);
+  expect(savedBatchRequest.batches[0].countedQuantity).toBe(3);
+  expect(savedBatchRequest.batches[0].countedCost).toBe(120);
+  expect(savedBatchRequest.batches[0].sources.map((source: any) => source.assignmentId)).toEqual([99002, 99001]);
+  await expect(page.getByText('采购次数: 1')).toBeVisible();
+  await expect(page.getByText('采购总费用: ¥120.00')).toBeVisible();
+  await expect(page.getByText('采购总件数: 3')).toBeVisible();
+  await expect(page.getByText('平均采购单价: ¥40.00')).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByText('采购次数: 1')).toBeVisible();
+  await expect(page.getByText('采购总费用: ¥120.00')).toBeVisible();
+  await expect(page.getByText('采购总件数: 3')).toBeVisible();
+});
+
+test('user can open the full price trend with order-level rows and no source order action', async ({ page }) => {
+  const historyWithMissingPrice = {
+    ...skuPurchaseHistory,
+    items: [
+      {
+        ...skuPurchaseHistory.items[0],
+        purchaseCount: 3,
+        totalQuantity: '10',
+        dataQualityFlags: ['missing_price_basis'],
+        history: [
+          ...skuPurchaseHistory.items[0].history,
+          {
+            orderId: 93003,
+            assignmentId: 99003,
+            orderNo: 'ALI-ORDER-20260524-003',
+            orderTime: '2026-05-24 08:15:00',
+            supplierName: '缺失金额样品供应商',
+            assignedQuantity: '1',
+            allocatedCost: null,
+            unitPrice: null,
+            amountBasis: null,
+            priceQuality: 'missing_price_basis'
+          }
+        ]
+      }
+    ]
+  };
+  await page.route('**/api/procurement/ali1688-orders/sku-purchase-history**', async (route) => {
+    await route.fulfill({ json: historyWithMissingPrice });
+  });
+
+  await page.goto('/purchase/ali1688-sku-purchase-history?devSession=1&devRole=procurement&grantAli1688HistoricalOrders=1');
+
+  const sparkline = page.getByTestId('sku-purchase-sparkline-CANMAN-AE-SKU-001');
+  await expect(sparkline.locator('circle')).toHaveCount(2);
+  await sparkline.click();
   const trendDrawer = page.locator('.ant-drawer').filter({ hasText: '采购单价趋势 · CANMAN-AE-SKU-001' });
   await expect(trendDrawer).toBeVisible();
+  const largeTrendChart = trendDrawer.getByTestId('sku-purchase-price-trend-chart');
+  await expect(largeTrendChart).toBeVisible();
+  await expect(largeTrendChart.locator('canvas')).toBeVisible();
+  await expect(trendDrawer.locator('svg[aria-label="全部采购单价趋势"]')).toHaveCount(0);
   await expect(trendDrawer.getByText('最高采购单价: ¥40.00')).toBeVisible();
   await expect(trendDrawer.getByText('最低采购单价: ¥11.00')).toBeVisible();
   await expect(trendDrawer.getByRole('cell', { name: 'ALI-ORDER-20260527-002', exact: true })).toBeVisible();
-  await expect(trendDrawer.getByRole('cell', { name: 'ALI-ORDER-20260524-003', exact: true })).toBeVisible();
-  await expect(trendDrawer.getByText('缺失价格基础')).toBeVisible();
-
-  await trendDrawer.getByRole('button', { name: '查看订单' }).first().click();
-  const orderDrawer = page.locator('.ant-drawer').filter({ hasText: '1688 历史订单详情' });
-  await expect(orderDrawer).toBeVisible();
-  await expect(orderDrawer.getByText('ALI-ORDER-20260527-002')).toBeVisible();
-  await expect(orderDrawer.getByText('义乌诚信通源头工厂')).toBeVisible();
+  await expect(trendDrawer.getByRole('cell', { name: 'ALI-ORDER-20260525-001', exact: true })).toBeVisible();
+  const missingPriceRow = trendDrawer.locator('tr').filter({ hasText: 'ALI-ORDER-20260524-003' });
+  await expect(missingPriceRow).toBeVisible();
+  await expect(missingPriceRow.getByText('未返回信息')).toHaveCount(2);
+  await expect(missingPriceRow.getByText('缺失价格基础')).toBeVisible();
+  await expect(page.getByText('存在缺失价格点')).toHaveCount(0);
+  await expect(trendDrawer.getByRole('button', { name: '查看订单' })).toHaveCount(0);
+  await expect(page.locator('.ant-drawer').filter({ hasText: '1688 历史订单详情' })).toHaveCount(0);
+  await expect(trendDrawer.getByRole('columnheader', { name: '采购数量' })).toBeVisible();
+  await expect(trendDrawer.getByRole('columnheader', { name: '分摊金额' })).toBeVisible();
+  await expect(trendDrawer.getByRole('columnheader', { name: '采购单价' })).toBeVisible();
+  await expect(trendDrawer.getByRole('columnheader', { name: '价格状态' })).toBeVisible();
 });
