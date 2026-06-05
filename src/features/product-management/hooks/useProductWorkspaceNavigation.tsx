@@ -44,7 +44,6 @@ type UseProductWorkspaceNavigationParams = {
   setActiveProductMenu: () => void;
   setActiveProductWorkspaceTabKey: Dispatch<SetStateAction<ProductWorkspaceTabKey>>;
   setActiveSiteOfferCode: Dispatch<SetStateAction<string | undefined>>;
-  setAutoInitializationStoreCode: Dispatch<SetStateAction<string | undefined>>;
   setProductDetailTabRequest: Dispatch<SetStateAction<ProductDetailTabRequest | null>>;
   setProductGalleryImages: Dispatch<SetStateAction<string[]>>;
   setProductGalleryOpen: Dispatch<SetStateAction<boolean>>;
@@ -89,7 +88,6 @@ export function useProductWorkspaceNavigation({
   setActiveProductMenu,
   setActiveProductWorkspaceTabKey,
   setActiveSiteOfferCode,
-  setAutoInitializationStoreCode,
   setProductDetailTabRequest,
   setProductGalleryImages,
   setProductGalleryOpen,
@@ -354,7 +352,6 @@ export function useProductWorkspaceNavigation({
   const resetProductWorkspace = useProductWorkspaceReset({
     productDetailTabHandledRef,
     setActiveProductWorkspaceTabKey,
-    setAutoInitializationStoreCode,
     setProductDetailTabRequest,
     setProductGalleryImages,
     setProductGalleryOpen,
