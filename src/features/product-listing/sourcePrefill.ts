@@ -71,6 +71,7 @@ function buildManualSelectionListingPrefill(
       productHighlightsAr: uniqueTexts(record.sourceSellingPointsAr || []),
       productBrand: text(record.brandName),
       imageUrls: uniqueTexts([record.sourceImageUrl, ...(record.imageUrls || [])]),
+      price: numberFromPriceSummary(record.priceSummary),
       supplyEvidenceType: 'OTHER',
       supplyEvidenceRefId: sourceRefId,
       sourceType: 'manual_selection',
@@ -85,6 +86,16 @@ function uniqueTexts(values: Array<string | undefined>) {
 
 function text(value?: string) {
   return (value || '').trim()
+}
+
+function numberFromPriceSummary(value?: string) {
+  const normalized = text(value).replace(/,/g, '')
+  const match = normalized.match(/\d+(?:\.\d+)?/)
+  if (!match) {
+    return undefined
+  }
+  const parsed = Number(match[0])
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
 }
 
 function numericSourceRefId(value?: string) {

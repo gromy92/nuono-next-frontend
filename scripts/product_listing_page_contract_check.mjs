@@ -37,6 +37,7 @@ function sliceBetween(source, startNeedle, endNeedle, label) {
 
 const page = read('src/features/product-listing/ProductListingPage.tsx')
 const detailEditor = read('src/features/product-listing/ProductListingDetailEditor.tsx')
+const sourcePrefill = read('src/features/product-listing/sourcePrefill.ts')
 const adapter = read('src/features/product-listing/productDetailAdapter.ts')
 const api = read('src/features/product-listing/api.ts')
 const types = read('src/features/product-listing/types.ts')
@@ -69,6 +70,7 @@ assertIncludes(detailEditor, 'defaultActiveKey="offer"', 'ProductListingDetailEd
 assertNotIncludes(detailEditor, 'ProductDetailSummaryBar', 'ProductListingDetailEditor screenshot summary')
 assertIncludes(officialTabsTypes, 'offerHeaderExtra?: ReactNode', 'ProductDetailOfficialTabs offer extra slot')
 assertIncludes(offerTab, 'offerHeaderExtra', 'ProductOfferTab offer extra slot')
+assertIncludes(sourcePrefill, 'price: numberFromPriceSummary(record.priceSummary)', 'Manual selection listing price prefill')
 
 for (const label of [
   '店铺编码',
