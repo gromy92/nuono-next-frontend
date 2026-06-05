@@ -4,6 +4,8 @@ export type AppMenuKey =
   | 'product-specs'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
+  | 'purchase-ali1688-historical-orders'
+  | 'purchase-ali1688-sku-purchase-history'
   | 'purchase-listing'
   | 'purchase-order'
   | 'purchase-profit'
@@ -60,6 +62,8 @@ export type WorkspaceContentKind =
   | 'product-specs'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
+  | 'purchase-ali1688-historical-orders'
+  | 'purchase-ali1688-sku-purchase-history'
   | 'product-listing'
   | 'purchase-order'
   | 'purchase-profit'
@@ -164,6 +168,26 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '采购 / 1688查询展示',
     tabLabel: '1688查询展示',
     contentKind: 'purchase-ali1688-collection',
+    closable: true
+  },
+  'purchase-ali1688-historical-orders': {
+    key: 'purchase-ali1688-historical-orders',
+    label: '1688 历史订单',
+    path: '/purchase/ali1688-orders',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / 1688 历史订单',
+    tabLabel: '1688 历史订单',
+    contentKind: 'purchase-ali1688-historical-orders',
+    closable: true
+  },
+  'purchase-ali1688-sku-purchase-history': {
+    key: 'purchase-ali1688-sku-purchase-history',
+    label: 'SKU 采购历史',
+    path: '/purchase/ali1688-sku-purchase-history',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / SKU 采购历史',
+    tabLabel: 'SKU 采购历史',
+    contentKind: 'purchase-ali1688-sku-purchase-history',
     closable: true
   },
   'purchase-listing': {
@@ -394,6 +418,8 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     entries: [
       { type: 'workspace', key: 'purchase-listing' },
       { type: 'workspace', key: 'purchase-profit' },
+      { type: 'workspace', key: 'purchase-ali1688-historical-orders' },
+      { type: 'workspace', key: 'purchase-ali1688-sku-purchase-history' },
       { type: 'workspace', key: 'purchase-ali1688-collection' },
       { type: 'workspace', key: 'purchase-order' }
     ]
@@ -536,6 +562,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['1688查询展示', '1688查询']
   },
   {
+    keys: ['purchase-ali1688-historical-orders', 'purchase-ali1688-sku-purchase-history'],
+    urlPaths: ['/purchase/ali1688-orders', '/purchase/ali1688-sku-purchase-history'],
+    urlPathPrefixes: ['/api/procurement/ali1688-orders'],
+    menuNames: ['1688 历史订单', 'SKU 采购历史']
+  },
+  {
     keys: ['purchase-listing'],
     urlPaths: ['/purchase/listing', '/api/product-listing'],
     urlPathPrefixes: ['/api/product-listing/'],
@@ -606,6 +638,8 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'product-groups',
   'product-specs',
   'product-manual-selection',
+  'purchase-ali1688-historical-orders',
+  'purchase-ali1688-sku-purchase-history',
   'purchase-ali1688-collection',
   'purchase-listing',
   'purchase-order',

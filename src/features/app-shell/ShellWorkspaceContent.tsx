@@ -54,6 +54,16 @@ const Ali1688CollectionPage = lazyWorkspace(() =>
     default: module.Ali1688CollectionPage
   }))
 );
+const Ali1688HistoricalOrdersPage = lazyWorkspace(() =>
+  import('../ali1688-historical-orders/Ali1688HistoricalOrdersPage').then((module) => ({
+    default: module.Ali1688HistoricalOrdersPage
+  }))
+);
+const Ali1688SkuPurchaseHistoryPage = lazyWorkspace(() =>
+  import('../ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage').then((module) => ({
+    default: module.Ali1688SkuPurchaseHistoryPage
+  }))
+);
 const ProductListingPage = lazyWorkspace(() =>
   import('../product-listing/ProductListingPage').then((module) => ({
     default: module.ProductListingPage
@@ -253,6 +263,33 @@ export function ShellWorkspaceContent({
           storeName={shellSession.currentStore?.projectName || shellSession.currentStore?.projectCode || 'xingyao'}
           storeCode={shellSession.currentStore?.storeCode}
           operatorName={shellSession.realName || shellSession.accountNo}
+        />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'purchase-ali1688-historical-orders') {
+    return (
+      <LazyWorkspaceBoundary>
+        <Ali1688HistoricalOrdersPage
+          storeName={shellSession.currentStore?.projectName || shellSession.currentStore?.projectCode}
+          storeCode={shellSession.currentStore?.projectCode || shellSession.currentStore?.storeCode}
+          siteCode={shellSession.currentStore?.site}
+          ownerUserId={shellSession.defaultOwnerUserId ?? shellSession.userId}
+          operatorRoleName={shellSession.roleName}
+          availableStores={shellSession.userStores}
+        />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'purchase-ali1688-sku-purchase-history') {
+    return (
+      <LazyWorkspaceBoundary>
+        <Ali1688SkuPurchaseHistoryPage
+          storeCode={shellSession.currentStore?.projectCode || shellSession.currentStore?.storeCode}
+          siteCode={shellSession.currentStore?.site}
+          availableStores={shellSession.userStores}
         />
       </LazyWorkspaceBoundary>
     );
