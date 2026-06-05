@@ -48,16 +48,6 @@ export type ProductListingMetadataFormValues = Pick<
   | 'sourceType'
   | 'sourceRefId'
   | 'psku'
-  | 'idProductFullType'
-  | 'productBrandCode'
-  | 'purchasePrice'
-  | 'supplyEvidenceType'
-  | 'supplyEvidenceRefId'
-  | 'optionalPurchaseOrderId'
-  | 'fbp'
-  | 'warehouseId'
-  | 'warehouseCode'
-  | 'quantity'
 >
 
 export function createProductListingEditorDraft(storeCode?: string): ProductListingEditorDraft {
@@ -92,17 +82,7 @@ export function productListingEditorDraftToMetadataValues(
     storeCode: draft.storeCode,
     sourceType: draft.sourceType,
     sourceRefId: draft.sourceRefId,
-    psku: draft.psku,
-    idProductFullType: draft.idProductFullType,
-    productBrandCode: draft.productBrandCode,
-    purchasePrice: draft.purchasePrice,
-    supplyEvidenceType: draft.supplyEvidenceType,
-    supplyEvidenceRefId: draft.supplyEvidenceRefId,
-    optionalPurchaseOrderId: draft.optionalPurchaseOrderId,
-    fbp: draft.fbp,
-    warehouseId: draft.warehouseId,
-    warehouseCode: draft.warehouseCode,
-    quantity: draft.quantity
+    psku: draft.psku
   }
 }
 

@@ -66,11 +66,3 @@ export type ProductListingRealRunCommand = {
   confirmRealNoonWrite: boolean
   confirmationNote?: string
 }
-
-export type ProductListingWarehouseView = {
-  warehouseCode: string
-  warehouseName?: string
-  idPartnerWarehouse: string
-  countryCode?: string
-  idProcessingTime?: number
-}
