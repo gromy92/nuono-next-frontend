@@ -158,7 +158,60 @@ const scoredAliTask = {
         deliveryScore: 8
       },
       aiAssessmentStatus: 'pending',
+      pricePreviewStatus: 'price_probe_pending',
+      candidateGateStatus: 'price_probe_pending',
+      autoInquiryEligible: false,
+      procurementInquiryStatus: 'BACKUP_POOL'
+    }
+  ]
+};
+
+const confirmedPriceAliTask = {
+  ...scoredAliTask,
+  id: '87005',
+  taskId: '87005',
+  sourceCollectionNo: 'PSC-20260518-PRICE',
+  candidates: [
+    {
+      ...scoredAliTask.candidates[0],
+      id: '88005',
+      priceText: '¥6.93 运费4元起 4400+件 50件起批',
+      scoreStatus: 'final',
+      totalScore: 88,
+      scoreBreakdown: {
+        matchScore: 31,
+        specScore: 17,
+        priceScore: 12,
+        moqScore: 8,
+        supplierScore: 12,
+        deliveryScore: 8
+      },
+      aiAssessmentStatus: 'success',
+      pricePreviewStatus: 'price_confirmed',
+      confirmedRealPriceText: '¥38.40',
+      pricePreviewSafetyMode: 'preview_only',
+      candidateGateStatus: 'inquiry_eligible',
+      autoInquiryEligible: true,
       procurementInquiryStatus: 'IN_POOL_WAITING_SEND'
+    }
+  ]
+};
+
+const failedPriceAliTask = {
+  ...scoredAliTask,
+  id: '87006',
+  taskId: '87006',
+  sourceCollectionNo: 'PSC-20260518-PRICE-FAIL',
+  candidates: [
+    {
+      ...scoredAliTask.candidates[0],
+      id: '88006',
+      pricePreviewStatus: 'price_probe_failed',
+      pricePreviewFailureCode: 'shipping_unavailable',
+      pricePreviewFailureMessage: '当前地区无法计算运费。',
+      candidateGateStatus: 'price_probe_failed',
+      autoInquiryEligible: false,
+      procurementInquiryStatus: 'BACKUP_POOL'
     }
   ]
 };
@@ -212,10 +265,38 @@ test('standalone 1688 page renders real task candidates and rule score only', as
   await expect(page.getByTestId('ali1688-task-detail')).toContainText('义乌诚信通源头工厂');
   await expect(page.getByTestId('ali1688-task-detail')).toContainText('规则分');
   await expect(page.getByTestId('ali1688-task-detail')).toContainText('待评分');
-  await expect(page.getByTestId('ali1688-task-detail')).toContainText('待自动询盘');
+  await expect(page.getByTestId('ali1688-task-detail')).toContainText('待取价');
+  await expect(page.getByTestId('ali1688-task-detail')).toContainText('列表价 ¥12.80-18.60');
+  await expect(page.getByTestId('ali1688-task-detail')).toContainText('真实价 待取价');
+  await expect(page.getByTestId('ali1688-task-detail')).not.toContainText('待自动询盘');
   await expect(page.locator('.ali1688-candidate-card')).toHaveCount(1);
   await expect(page.getByTestId('ali1688-task-detail')).not.toContainText('生成采购单');
   await expect(page.getByTestId('ali1688-task-detail')).not.toContainText('加入候选');
+});
+
+test('standalone 1688 page separates list price hint from confirmed real price', async ({ page }) => {
+  await page.route('**/api/product-selection/ali1688-collections?**', async (route) => {
+    await route.fulfill({ json: [confirmedPriceAliTask] });
+  });
+
+  await page.goto('/purchase/1688-collection?devSession=1&devRole=boss&grantPurchase=1&grantManualSelection=1');
+
+  await expect(page.getByTestId('ali1688-task-detail')).toContainText('列表价 ¥6.93 运费4元起 4400+件 50件起批');
+  await expect(page.getByTestId('ali1688-task-detail')).toContainText('真实价 ¥38.40');
+  await expect(page.getByTestId('ali1688-task-detail')).toContainText('真实价已确认');
+  await expect(page.getByTestId('ali1688-task-detail')).toContainText('可询盘');
+});
+
+test('standalone 1688 page exposes typed real price failure reason', async ({ page }) => {
+  await page.route('**/api/product-selection/ali1688-collections?**', async (route) => {
+    await route.fulfill({ json: [failedPriceAliTask] });
+  });
+
+  await page.goto('/purchase/1688-collection?devSession=1&devRole=boss&grantPurchase=1&grantManualSelection=1');
+
+  await expect(page.getByTestId('ali1688-task-detail')).toContainText('取价失败');
+  await expect(page.getByTestId('ali1688-task-detail')).toContainText('取价失败：当前地区无法计算运费。');
+  await expect(page.getByTestId('ali1688-task-detail')).not.toContainText('待自动询盘');
 });
 
 test('not started task shows real empty candidate state without pending slots', async ({ page }) => {
