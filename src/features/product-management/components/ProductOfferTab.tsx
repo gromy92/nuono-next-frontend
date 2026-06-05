@@ -12,6 +12,7 @@ export function ProductOfferTab(props: ProductDetailOfficialTabsProps) {
     activeProductSiteOffer,
     currentProductSummarySurface,
     productWarehouseStockRows,
+    offerHeaderExtra,
     updateSiteOfferField,
     updateProductSectionField,
     updateProductAttributeField,
@@ -21,6 +22,12 @@ export function ProductOfferTab(props: ProductDetailOfficialTabsProps) {
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
       <ProductDetailSection>
         <Space direction="vertical" size={16} style={{ width: '100%' }}>
+          {offerHeaderExtra ? (
+            <>
+              {offerHeaderExtra}
+              <Divider style={{ margin: 0 }} />
+            </>
+          ) : null}
           <ProductOfferVisibilitySection
             activeProductSiteOffer={activeProductSiteOffer}
             currentProductSummarySurface={currentProductSummarySurface}

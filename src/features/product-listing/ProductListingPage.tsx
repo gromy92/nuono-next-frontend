@@ -34,7 +34,7 @@ import {
 import { readProductListingSourcePrefill, type ProductListingSourcePrefill } from './sourcePrefill'
 import type { ProductListingDraftView, ProductListingTaskView } from './types'
 
-const { Text, Title } = Typography
+const { Text } = Typography
 
 type ProductListingPageProps = {
   storeCode?: string
@@ -187,19 +187,6 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
 
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
-      <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
-        <div>
-          <Title level={4} style={{ margin: 0 }}>
-            商品上架
-          </Title>
-          <Text type="secondary">{draftView?.draftNo || '未保存草稿'}</Text>
-        </div>
-        <Space>
-          {draftView?.status ? <Tag color={statusColor(draftView.status)}>{draftView.status}</Tag> : null}
-          {taskView?.status ? <Tag color={statusColor(taskView.status)}>{taskView.status}</Tag> : null}
-        </Space>
-      </Space>
-
       <Alert type="info" showIcon message="保存草稿和 dry-run 不会写入 Noon；真实上架必须由人工确认，并通过后端开关和任务锁。" />
 
       {sourcePrefill ? (
@@ -224,13 +211,8 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
 
       <Form
         form={form}
-        layout="vertical"
         initialValues={productListingEditorDraftToMetadataValues(listingDraft)}
-        onValuesChange={(_changedValues, values) => {
-          setListingDraft((currentDraft) =>
-            normalizeProductListingEditorDraft({ ...currentDraft, ...values }, storeCode)
-          )
-        }}
+        style={{ display: 'none' }}
       >
         <Form.Item name="sourceType" hidden>
           <Input />
@@ -241,15 +223,6 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         <Form.Item name="storeCode" hidden>
           <Input />
         </Form.Item>
-        <Card title="新增 PSKU" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
-          <Row gutter={12}>
-            <Col xs={24} md={12} xl={8}>
-              <Form.Item label="新增 PSKU" name="psku">
-                <Input placeholder="例如 NUONO-DECOR-001" />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Card>
       </Form>
 
       <Card variant="borderless" style={{ border: '1px solid #dbe4ea' }}>

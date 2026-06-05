@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { ColumnsType } from 'antd/es/table';
 import type {
   ProductFieldDomainSurface,
@@ -36,6 +37,7 @@ export type ProductDetailOfficialTabsProps = {
   productListSourceItems: ProductListRowPayload[];
   productInsightMetrics: Array<{ label: string; value: string | number }>;
   productLeadImage?: string;
+  offerHeaderExtra?: ReactNode;
   previewProductAction: (action: 'save' | 'publish-current' | 'pull', options?: ProductWorkbenchActionOptions) => void | Promise<void>;
   updateSiteOfferField: (storeCode: string, field: string, value: unknown) => void;
   setActiveSiteOfferCode: (storeCode: string) => void;

@@ -1,7 +1,6 @@
-import { Space, message } from 'antd'
+import { Input, Space, Typography, message } from 'antd'
 import { useMemo } from 'react'
 import { ProductDetailOfficialTabs } from '../product-management/components/ProductDetailOfficialTabs'
-import { ProductDetailSummaryBar } from '../product-management/components/ProductDetailSummaryBar'
 import {
   productListingContentProgress,
   productListingEditorDraftDomains,
@@ -12,6 +11,8 @@ import {
   normalizeProductListingEditorDraft,
   type ProductListingEditorDraft
 } from './productDetailAdapter'
+
+const { Text } = Typography
 
 type ProductListingDetailEditorProps = {
   draft: ProductListingEditorDraft
@@ -150,18 +151,24 @@ export function ProductListingDetailEditor({ draft, onDraftChange }: ProductList
     }
   }
 
+  const listingPskuEditor = (
+    <Space direction="vertical" size={8} style={{ width: '100%' }}>
+      <Text strong style={{ color: 'var(--pm-text-primary)' }}>
+        新增 PSKU
+      </Text>
+      <Input
+        aria-label="新增 PSKU"
+        value={draft.psku}
+        placeholder="例如 NUONO-DECOR-001"
+        onChange={(event) => patchDraft({ psku: event.target.value })}
+      />
+    </Space>
+  )
+
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
-      <ProductDetailSummaryBar
-        currentProductSummarySurface={summary}
-        productSnapshotView={snapshot}
-        activeProductSiteOffer={activeSiteOffer}
-        productLeadImage={imageUrls[0]}
-        openCurrentProductGallery={openCurrentProductGallery}
-        showExternalLinks={false}
-      />
       <ProductDetailOfficialTabs
-        defaultActiveKey="content"
+        defaultActiveKey="offer"
         productSiteDomain={domains.site}
         productSharedDomainDirtyCount={0}
         productActionSubmitting={false}
@@ -189,6 +196,7 @@ export function ProductListingDetailEditor({ draft, onDraftChange }: ProductList
         productListSourceItems={[]}
         productInsightMetrics={[]}
         productLeadImage={imageUrls[0]}
+        offerHeaderExtra={listingPskuEditor}
         previewProductAction={() => undefined}
         updateSiteOfferField={updateSiteOfferField}
         setActiveSiteOfferCode={() => undefined}
