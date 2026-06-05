@@ -36,9 +36,12 @@ function sliceBetween(source, startNeedle, endNeedle, label) {
 }
 
 const page = read('src/features/product-listing/ProductListingPage.tsx')
+const detailEditor = read('src/features/product-listing/ProductListingDetailEditor.tsx')
 const adapter = read('src/features/product-listing/productDetailAdapter.ts')
 const api = read('src/features/product-listing/api.ts')
 const types = read('src/features/product-listing/types.ts')
+const officialTabsTypes = read('src/features/product-management/components/ProductDetailOfficialTabs.types.ts')
+const offerTab = read('src/features/product-management/components/ProductOfferTab.tsx')
 const metadataValues = sliceBetween(
   adapter,
   'export function productListingEditorDraftToMetadataValues',
@@ -46,11 +49,26 @@ const metadataValues = sliceBetween(
   'ProductListingMetadataFormValues'
 )
 
-assertIncludes(page, 'label="新增 PSKU"', 'ProductListingPage PSKU-only metadata form')
-assertIncludes(page, 'name="psku"', 'ProductListingPage PSKU-only metadata form')
 assertIncludes(page, 'name="storeCode" hidden', 'ProductListingPage hidden store context')
 assertIncludes(page, 'name="sourceType" hidden', 'ProductListingPage hidden source context')
 assertIncludes(page, 'name="sourceRefId" hidden', 'ProductListingPage hidden source context')
+assertNotIncludes(page, '<Title', 'ProductListingPage top header')
+assertNotIncludes(page, '未保存草稿', 'ProductListingPage top header')
+assertNotIncludes(page, 'Card title="新增 PSKU"', 'ProductListingPage standalone PSKU card')
+assertNotIncludes(page, 'label="新增 PSKU"', 'ProductListingPage standalone PSKU field')
+assertNotIncludes(page, 'name="psku"', 'ProductListingPage standalone PSKU field')
+
+assertIncludes(detailEditor, 'offerHeaderExtra={listingPskuEditor}', 'ProductListingDetailEditor PSKU offer slot')
+assertIncludes(detailEditor, 'aria-label="新增 PSKU"', 'ProductListingDetailEditor PSKU offer input')
+assertIncludes(
+  detailEditor,
+  'patchDraft({ psku: event.target.value })',
+  'ProductListingDetailEditor PSKU offer input'
+)
+assertIncludes(detailEditor, 'defaultActiveKey="offer"', 'ProductListingDetailEditor defaults to Offer')
+assertNotIncludes(detailEditor, 'ProductDetailSummaryBar', 'ProductListingDetailEditor screenshot summary')
+assertIncludes(officialTabsTypes, 'offerHeaderExtra?: ReactNode', 'ProductDetailOfficialTabs offer extra slot')
+assertIncludes(offerTab, 'offerHeaderExtra', 'ProductOfferTab offer extra slot')
 
 for (const label of [
   '店铺编码',
