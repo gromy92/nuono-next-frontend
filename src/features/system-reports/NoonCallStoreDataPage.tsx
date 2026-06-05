@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Alert, Button, Space, Table, Tag, Typography, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { ReloadOutlined } from '@ant-design/icons'
+import { ReloadOutlined, SyncOutlined } from '@ant-design/icons'
 import type { AuthSession } from '../auth/session'
 import { isSystemAdminSession } from '../app-shell/WorkspaceRouting'
 import { EChartPanel, buildDistributionPieOption, buildHorizontalBarOption } from '../../shared/charts'
@@ -32,10 +32,18 @@ type LoadState =
 
 const CATEGORY_ORDER = ['PRODUCT_LIST', 'PRODUCT_DETAIL', 'SALES_ORDER', 'SALES_PRODUCT_VIEWS']
 
+type SyncTarget = {
+  row: NoonCallStoreDataRow
+  cell: NoonCallStoreCategoryCell
+  key: string
+}
+
 export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
   const [state, setState] = useState<LoadState>({ status: 'idle' })
   const [actingKey, setActingKey] = useState<string | null>(null)
   const [syncingKeys, setSyncingKeys] = useState<Set<string>>(() => new Set())
+  const [bulkSyncing, setBulkSyncing] = useState(false)
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null)
   const canAct = session.activeRoleView === 'boss' || isSystemAdminSession(session)
 
   const load = async (options?: { preserveOptimisticSyncing?: boolean }) => {
@@ -78,29 +86,77 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
     }
   }
 
+  const view = state.data
+  const rows = view?.rows ?? []
+  const displayRows = useMemo(() => applyOptimisticSyncing(rows, syncingKeys), [rows, syncingKeys])
+  const syncTargets = useMemo(() => buildSyncTargets(displayRows), [displayRows])
+
+  const runBulkSync = async () => {
+    const targets = syncTargets.filter((target) => canAct && target.cell.syncable !== false)
+    if (!targets.length || bulkSyncing) {
+      return
+    }
+
+    setBulkSyncing(true)
+    setBulkProgress({ done: 0, total: targets.length })
+    setSyncingKeys((current) => {
+      const next = new Set(current)
+      targets.forEach((target) => next.add(target.key))
+      return next
+    })
+
+    let succeeded = 0
+    let failed = 0
+    for (const target of targets) {
+      setActingKey(target.key)
+      try {
+        await syncNoonCallStoreDataCategory(
+          target.row.ownerUserId,
+          target.row.storeCode,
+          target.row.siteCode,
+          target.cell.category
+        )
+        succeeded += 1
+      } catch {
+        failed += 1
+        setSyncingKeys((current) => removeSyncingKey(current, target.key))
+      } finally {
+        setBulkProgress((current) =>
+          current ? { done: Math.min(current.done + 1, current.total), total: current.total } : current
+        )
+      }
+    }
+
+    setActingKey(null)
+    setBulkSyncing(false)
+    setBulkProgress(null)
+    if (failed > 0) {
+      message.warning(`批量同步完成：成功 ${succeeded} 项，失败 ${failed} 项。`)
+    } else {
+      message.success(`批量同步已触发：${succeeded} 项。`)
+    }
+    await load()
+  }
+
   const columns = useMemo<ColumnsType<NoonCallStoreDataRow>>(
     () => [
       {
-        title: '店铺',
+        title: '店铺 / 标记',
         dataIndex: 'storeCode',
         key: 'storeCode',
         fixed: 'left',
-        width: 170,
+        width: 132,
         render: (_value, row) => (
-          <Space direction="vertical" size={0} style={{ maxWidth: 146, minWidth: 0 }}>
-            <Text strong ellipsis={{ tooltip: row.storeName || '未命名店铺' }} style={{ maxWidth: 146 }}>
+          <Space data-testid="noon-call-store-cell" direction="vertical" size={2} style={{ maxWidth: 108, minWidth: 0 }}>
+            <Text strong ellipsis={{ tooltip: row.storeName || '未命名店铺' }} style={{ maxWidth: 108 }}>
               {row.storeName || '未命名店铺'}
             </Text>
-            <Text type="secondary">{row.siteCode || '-'}</Text>
+            <Space size={4} wrap>
+              <Text type="secondary">{row.siteCode || '-'}</Text>
+              <MarkerTag value={row.overallMarker} />
+            </Space>
           </Space>
         )
-      },
-      {
-        title: '整体标记',
-        dataIndex: 'overallMarker',
-        key: 'overallMarker',
-        width: 88,
-        render: (value) => <MarkerTag value={value} />
       },
       ...CATEGORY_ORDER.map((category) => ({
         title: categoryTitle(category),
@@ -120,21 +176,11 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
             <Text type="secondary">未接入</Text>
           )
         }
-      })),
-      {
-        title: '最近同步',
-        dataIndex: 'lastSyncAt',
-        key: 'lastSyncAt',
-        width: 130,
-        render: formatDateTime
-      }
+      }))
     ],
     [actingKey, canAct]
   )
 
-  const view = state.data
-  const rows = view?.rows ?? []
-  const displayRows = useMemo(() => applyOptimisticSyncing(rows, syncingKeys), [rows, syncingKeys])
   const markerDistribution = useMemo(() => buildMarkerDistribution(displayRows), [displayRows])
   const categoryStatusDistribution = useMemo(() => buildCategoryMarkerDistribution(displayRows), [displayRows])
   const categoryGapDistribution = useMemo(() => buildCategoryGapDistribution(displayRows), [displayRows])
@@ -163,9 +209,24 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
       <NoonDataReportHeader
         generatedAt={view?.generatedAt}
         extra={
-          <Button icon={<ReloadOutlined />} loading={state.status === 'loading'} onClick={() => void load()}>
-            刷新
-          </Button>
+          <Space wrap>
+            {bulkProgress ? (
+              <Text type="secondary">
+                {bulkProgress.done}/{bulkProgress.total}
+              </Text>
+            ) : null}
+            <Button
+              icon={<SyncOutlined />}
+              disabled={!canAct || !syncTargets.length}
+              loading={bulkSyncing}
+              onClick={() => void runBulkSync()}
+            >
+              批量全部同步
+            </Button>
+            <Button icon={<ReloadOutlined />} loading={state.status === 'loading'} onClick={() => void load()}>
+              刷新
+            </Button>
+          </Space>
         }
       />
 
@@ -188,7 +249,7 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
             columns={columns}
             dataSource={displayRows}
             pagination={{ pageSize: 20, showSizeChanger: false }}
-            scroll={{ x: 1040 }}
+            scroll={{ x: 780 }}
           />
         ) : (
           <NoonDataEmpty testId="noon-call-store-data-empty" description="暂无 Noon 店铺同步数据" />
@@ -255,6 +316,18 @@ function CategorySyncCell({
 
 function rowCategoryKey(row: NoonCallStoreDataRow, cell: Pick<NoonCallStoreCategoryCell, 'category'>) {
   return `${row.ownerUserId}:${row.storeCode}:${row.siteCode}:${cell.category}`
+}
+
+function buildSyncTargets(rows: NoonCallStoreDataRow[]): SyncTarget[] {
+  return rows.flatMap((row) =>
+    CATEGORY_ORDER.flatMap((category) => {
+      const cell = row.categories.find((item) => item.category === category)
+      if (!cell || !row.ownerUserId || !row.storeCode || !row.siteCode || !cell.category || cell.syncable === false) {
+        return []
+      }
+      return [{ row, cell, key: rowCategoryKey(row, cell) }]
+    })
+  )
 }
 
 function addSyncingKey(current: Set<string>, key: string) {

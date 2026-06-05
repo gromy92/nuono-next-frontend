@@ -43,7 +43,7 @@ test('system reports store data route renders Noon store data without legacy ove
   await expect(page.getByTestId('noon-call-store-data-workbench')).toBeVisible();
   await expect(page.getByTestId('noon-call-store-data-workbench')).not.toContainText('系统报表 / 店铺数据');
   await expect(page.locator('body')).not.toContainText('系统报表 / 店铺数据');
-  await expect(page.getByTestId('workspace-tabs-bar')).toHaveCount(0);
+  await expect(page.getByTestId('workspace-tabs-bar').getByRole('tab', { name: '店铺数据' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '店铺数据' })).toHaveCount(0);
   await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('canman');
   await expect(page.getByTestId('noon-call-store-data-workbench')).not.toContainText('STR108065-NAE');
@@ -143,10 +143,13 @@ test('noon call store data shows four sync cells and posts category-specific syn
   await expect(page.getByTestId('noon-call-store-data-workbench')).toBeVisible();
   await expect(page.getByTestId('noon-call-store-data-workbench')).not.toContainText('系统报表 / 店铺数据');
   await expect(page.locator('body')).not.toContainText('系统报表 / 店铺数据');
-  await expect(page.getByTestId('workspace-tabs-bar')).toHaveCount(0);
+  await expect(page.getByTestId('workspace-tabs-bar').getByRole('tab', { name: '店铺数据' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '店铺数据' })).toHaveCount(0);
   await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('canman');
   await expect(page.getByTestId('noon-call-store-data-workbench')).not.toContainText('STR108065-NAE');
+  await expect(page.getByRole('columnheader', { name: '整体标记' })).toHaveCount(0);
+  await expect(page.getByRole('columnheader', { name: '最近同步' })).toHaveCount(0);
+  await expect(page.getByTestId('noon-call-store-cell').first()).toContainText('同步中');
   await expect(page.getByTestId('noon-call-store-data-marker-chart')).toBeVisible();
   await expect(page.getByTestId('noon-call-store-data-category-status-chart')).toBeVisible();
   await expect(page.getByTestId('noon-call-store-data-gap-chart')).toBeVisible();
@@ -171,6 +174,83 @@ test('noon call store data shows four sync cells and posts category-specific syn
 
   await expect.poll(() => syncCalls.length).toBe(4);
   for (const category of categories) {
+    expect(syncCalls.some((url) => url.includes(`/${category}/sync`))).toBeTruthy();
+  }
+});
+
+test('noon call store data can batch sync all syncable categories', async ({ page }) => {
+  const syncCalls: string[] = [];
+  await page.route('**/api/noon-call/store-data', async (route) => {
+    await route.fulfill({
+      json: {
+        title: '店铺数据',
+        generatedAt: '2026-05-25T14:00:00',
+        metrics: [{ key: 'store_count', title: '店铺站点', value: 1, unit: '个', state: 'ready' }],
+        rows: [
+          {
+            ownerUserId: 307,
+            storeName: 'canman',
+            storeCode: 'STR108065-NAE',
+            siteCode: 'AE',
+            overallMarker: 'PENDING_SYNC',
+            categories: [
+              {
+                category: 'PRODUCT_LIST',
+                label: '商品列表信息',
+                marker: 'PENDING_SYNC',
+                latestStatus: 'INCOMPLETE',
+                historyStatus: 'INCOMPLETE',
+                syncable: true
+              },
+              {
+                category: 'PRODUCT_DETAIL',
+                label: '商品信息',
+                marker: 'PENDING_SYNC',
+                latestStatus: 'INCOMPLETE',
+                historyStatus: 'INCOMPLETE',
+                syncable: true
+              },
+              {
+                category: 'SALES_ORDER',
+                label: '订单数据',
+                marker: 'PENDING_SYNC',
+                latestStatus: 'INCOMPLETE',
+                historyStatus: 'INCOMPLETE',
+                syncable: true
+              },
+              {
+                category: 'SALES_PRODUCT_VIEWS',
+                label: '销量数据',
+                marker: 'PENDING_SYNC',
+                latestStatus: 'INCOMPLETE',
+                historyStatus: 'INCOMPLETE',
+                syncable: true
+              }
+            ]
+          }
+        ]
+      }
+    });
+  });
+  await page.route('**/api/noon-call/store-data/307/STR108065-NAE/AE/*/sync', async (route) => {
+    syncCalls.push(route.request().url());
+    await route.fulfill({
+      json: {
+        plannedTaskCount: 1,
+        plannedTaskIds: [130099],
+        executedTaskCount: 1,
+        failedTaskCount: 0,
+        skippedTaskCount: 0,
+        message: '已立即执行同步任务。'
+      }
+    });
+  });
+
+  await page.goto('/system-reports/store-data?devSession=1&devRole=boss&grantSystemReports=1');
+  await page.getByRole('button', { name: /批量全部同步/ }).click();
+
+  await expect.poll(() => syncCalls.length).toBe(4);
+  for (const category of ['PRODUCT_LIST', 'PRODUCT_DETAIL', 'SALES_ORDER', 'SALES_PRODUCT_VIEWS']) {
     expect(syncCalls.some((url) => url.includes(`/${category}/sync`))).toBeTruthy();
   }
 });
