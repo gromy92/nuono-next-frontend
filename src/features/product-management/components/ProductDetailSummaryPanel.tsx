@@ -4,9 +4,12 @@ import { Button, Col, Modal, Row, Space, Tag, Tooltip, Typography } from 'antd';
 import {
   buildNoonCatalogProductUrl,
   buildNoonProductUrl,
+  formatDateTimeParts,
   formatSnapshotValue,
+  isProductNotListedSource,
   isProductPublishTaskActive,
   isProductPublishTaskNeedsAttention,
+  productListingStartedSourceLabel,
   productSourceTypeMeta
 } from '../utils';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
@@ -49,6 +52,9 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
   const sourceTypeMeta = productSourceTypeMeta(
     currentProductSummarySurface?.productSourceType ?? productSnapshotView?.identity.productSourceType
   );
+  const listingStartedParts = formatDateTimeParts(currentProductSummarySurface?.listingStartedAt);
+  const listingStartedSourceLabel = productListingStartedSourceLabel(currentProductSummarySurface?.listingStartedSource);
+  const productNotListed = isProductNotListedSource(currentProductSummarySurface?.listingStartedSource);
   const productUrl = currentProductSummarySurface ? buildNoonProductUrl(currentProductSummarySurface) : undefined;
   const catalogUrl = buildNoonCatalogProductUrl(productSnapshotView, activeProductSiteOffer);
   const requestPullFromNoon = () => {
@@ -162,6 +168,20 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
                     {sourceTypeMeta.label}
                   </Tag>
                 </Tooltip>
+                {productNotListed ? (
+                  <Tag color="warning" style={{ marginInlineEnd: 0 }}>
+                    未上架
+                  </Tag>
+                ) : listingStartedParts ? (
+                  <Tag color="default" style={{ marginInlineEnd: 0 }}>
+                    上架 {listingStartedParts.date}
+                    {listingStartedSourceLabel ? ` · ${listingStartedSourceLabel}` : ''}
+                  </Tag>
+                ) : listingStartedSourceLabel ? (
+                  <Tag color="warning" style={{ marginInlineEnd: 0 }}>
+                    {listingStartedSourceLabel}
+                  </Tag>
+                ) : null}
                 {productUrl ? (
                   <Button
                     size="small"

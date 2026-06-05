@@ -3,9 +3,11 @@ import { currentAppPathname } from '../../runtimePaths'
 import {
   normalizeSessionRoleView,
   PRODUCT_GROUPS_PATH,
+  PRODUCT_SPECS_PATH,
   PRODUCT_WORKSPACE_PATH,
   PRODUCT_MANUAL_SELECTION_PATH,
   PURCHASE_1688_COLLECTION_PATH,
+  PURCHASE_LISTING_PATH,
   DATA_SALES_ANALYTICS_PATH,
   DATA_SALES_FORECAST_PATH,
   NOON_CALL_STORE_DATA_PATH,
@@ -45,6 +47,36 @@ function shouldSkipStoredSessionRestore() {
   return currentAppPathname().startsWith('/login')
 }
 
+function readStoredCurrentStore() {
+  try {
+    const rawValue = window.localStorage.getItem(SESSION_STORAGE_KEY)
+    if (!rawValue) {
+      return null
+    }
+    const storedSession = JSON.parse(rawValue) as AuthSession
+    return storedSession.currentStore ?? null
+  } catch {
+    return null
+  }
+}
+
+function resolveDevCurrentStore(devStores: AuthSessionStore[]) {
+  const storedCurrentStore = readStoredCurrentStore()
+  if (!storedCurrentStore?.storeCode) {
+    return devStores[0]
+  }
+
+  return (
+    devStores.find(
+      (store) =>
+        store.storeCode === storedCurrentStore.storeCode &&
+        String(store.site || '') === String(storedCurrentStore.site || '')
+    ) ??
+    devStores.find((store) => store.storeCode === storedCurrentStore.storeCode) ??
+    devStores[0]
+  )
+}
+
 function readDevSessionOverride(): AuthSession | null {
   if (typeof window === 'undefined') {
     return null
@@ -63,13 +95,15 @@ function readDevSessionOverride(): AuthSession | null {
   const includeProductDevMenu =
     pathname.startsWith('/product-manage') ||
     pathname.startsWith(PRODUCT_WORKSPACE_PATH) ||
-    pathname.startsWith(PRODUCT_GROUPS_PATH)
+    pathname.startsWith(PRODUCT_GROUPS_PATH) ||
+    pathname.startsWith(PRODUCT_SPECS_PATH)
   const includeProductManualSelectionDevMenu =
     pathname.startsWith(PRODUCT_MANUAL_SELECTION_PATH) ||
     search.get('grantManualSelection') === '1'
   const includePurchaseDevMenu =
     pathname.startsWith('/purchase/order') ||
     pathname.startsWith(PURCHASE_1688_COLLECTION_PATH) ||
+    pathname.startsWith(PURCHASE_LISTING_PATH) ||
     search.get('grantPurchase') === '1'
   const includeLogisticsQuoteDevMenu =
     pathname.startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
@@ -217,12 +251,14 @@ function readDevSessionOverride(): AuthSession | null {
   if (includeProductDevMenu) {
     grantedMenus.push({ menuId: 9100, menuName: '商品管理', urlPath: '/api/sku/manage' })
     grantedMenus.push({ menuId: 9103, menuName: '商品分组', urlPath: PRODUCT_GROUPS_PATH })
+    grantedMenus.push({ menuId: 9104, menuName: '商品规格', urlPath: PRODUCT_SPECS_PATH })
   }
   if (includeProductManualSelectionDevMenu) {
     grantedMenus.push({ menuId: 9102, menuName: '人工选品', urlPath: PRODUCT_MANUAL_SELECTION_PATH })
   }
   if (includePurchaseDevMenu) {
     grantedMenus.push({ menuId: 24, menuName: '采购', urlPath: '/api/purchase/order' })
+    grantedMenus.push({ menuId: 2401, menuName: '商品上架', urlPath: PURCHASE_LISTING_PATH })
   }
   if (
     currentAppPathname().startsWith(PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH) ||
@@ -320,7 +356,8 @@ function readDevSessionOverride(): AuthSession | null {
                 roleName: '管理员',
                 companyName: 'Nuono',
                 level: 0
-              }
+              };
+  const currentStore = resolveDevCurrentStore(devStores)
 
   return {
     userId: devProfile.userId,
@@ -336,7 +373,7 @@ function readDevSessionOverride(): AuthSession | null {
     bindingStatus: 'PROJECT_BOUND',
     defaultOwnerUserId: useBusinessDevSession ? 307 : 10002,
     activeRoleView: useBossDevSession ? 'boss' : undefined,
-    currentStore: devStores[0],
+    currentStore,
     userStores: devStores,
     grantedMenus
   }

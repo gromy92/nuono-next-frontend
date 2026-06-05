@@ -55,6 +55,37 @@ export function formatDateTimeParts(value?: string) {
   };
 }
 
+export function productListingStartedSourceLabel(source?: string) {
+  const normalized = String(source ?? '').trim().toLowerCase();
+  if (normalized === 'not_listed') {
+    return '未上架';
+  }
+  if (normalized === 'data_missing') {
+    return '数据缺失';
+  }
+  if (normalized === 'pv') {
+    return 'PV';
+  }
+  if (normalized === 'inventory') {
+    return '库存';
+  }
+  if (normalized === 'sales') {
+    return '销量';
+  }
+  if (normalized === 'purchase') {
+    return '采购';
+  }
+  if (normalized === 'fallback_current_time') {
+    return '未上架';
+  }
+  return source || '';
+}
+
+export function isProductNotListedSource(source?: string) {
+  const normalized = String(source ?? '').trim().toLowerCase();
+  return normalized === 'not_listed' || normalized === 'fallback_current_time';
+}
+
 export function snapshotPayloadCore(payload: ProductMasterSnapshotPayload | ProductWorkbenchPayload): ProductMasterSnapshotPayload {
   return {
     mode: payload.mode,

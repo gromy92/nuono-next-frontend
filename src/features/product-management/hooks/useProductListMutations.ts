@@ -180,6 +180,8 @@ export function useProductListMutations({
                 groupRef: textInputValue(summary.groupRef) || undefined,
                 groupRefCanonical: textInputValue(summary.groupRefCanonical) || undefined,
                 syncStatus: summary.syncStatus,
+                listingStartedAt: summary.listingStartedAt,
+                listingStartedSource: summary.listingStartedSource,
                 lastSyncedAt: summary.lastSyncedAt,
                 lastDraftSavedAt: summary.lastDraftSavedAt,
                 variantCount: summary.variantCount,

@@ -72,6 +72,153 @@ export type ProductMasterSnapshotPayload = {
   siteOffers: Array<Record<string, unknown>>;
 };
 
+export type ProductVariantSpecLogisticsValue =
+  | 'unknown'
+  | 'none'
+  | 'battery'
+  | 'magnetic'
+  | 'battery_and_magnetic'
+  | 'liquid'
+  | 'powder'
+  | 'liquid_and_powder';
+
+export type ProductVariantSpecSourceType = 'ali1688' | 'warehouse' | 'noon_official';
+
+export type ProductVariantSpecCartonSourceType =
+  | 'none'
+  | 'factory_carton'
+  | 'warehouse_measured'
+  | 'derived_from_warehouse';
+
+export type ProductVariantSpecPayload = {
+  storeCode?: string;
+  skuParent?: string;
+  title?: string;
+  imageUrl?: string;
+  variantId?: number;
+  partnerSku?: string;
+  childSku?: string;
+  sizeEn?: string;
+  sizeAr?: string;
+  effectiveSourceId?: number;
+  effectiveSourceType?: ProductVariantSpecSourceType | string;
+  productLengthCm?: number;
+  productWidthCm?: number;
+  productHeightCm?: number;
+  productWeightG?: number;
+  cartonLengthCm?: number;
+  cartonWidthCm?: number;
+  cartonHeightCm?: number;
+  cartonWeightKg?: number;
+  cartonQuantity?: number;
+  cartonSourceType?: ProductVariantSpecCartonSourceType | string;
+  batteryMagneticType?: 'unknown' | 'none' | 'battery' | 'magnetic' | 'battery_and_magnetic';
+  liquidPowderType?: 'unknown' | 'none' | 'liquid' | 'powder' | 'liquid_and_powder';
+  completenessStatus?: string;
+  missingFields?: string[];
+  sources?: ProductVariantSpecSourcePayload[];
+  sourceType?: string;
+  confirmedAt?: string;
+  confirmedBy?: number;
+  createdBy?: number;
+  updatedBy?: number;
+  gmtCreate?: string;
+  gmtUpdated?: string;
+  isDeleted?: boolean;
+};
+
+export type ProductVariantSpecSourcePayload = {
+  sourceId?: number;
+  variantId?: number;
+  sourceType?: ProductVariantSpecSourceType | string;
+  productLengthCm?: number;
+  productWidthCm?: number;
+  productHeightCm?: number;
+  productWeightG?: number;
+  cartonLengthCm?: number;
+  cartonWidthCm?: number;
+  cartonHeightCm?: number;
+  cartonWeightKg?: number;
+  cartonQuantity?: number;
+  cartonSourceType?: ProductVariantSpecCartonSourceType | string;
+  batteryMagneticType?: 'unknown' | 'none' | 'battery' | 'magnetic' | 'battery_and_magnetic';
+  liquidPowderType?: 'unknown' | 'none' | 'liquid' | 'powder' | 'liquid_and_powder';
+  sourceRecordedAt?: string;
+  confirmedAt?: string;
+  confirmedBy?: number;
+  updatedBy?: number;
+  gmtUpdated?: string;
+};
+
+export type ProductVariantSpecListPayload = {
+  ready: boolean;
+  source?: string;
+  message?: string;
+  ownerUserId?: number;
+  storeCode?: string;
+  skuParent?: string;
+  warnings?: string[];
+  items: ProductVariantSpecPayload[];
+};
+
+export type ProductVariantSpecOverviewPayload = {
+  ready: boolean;
+  source?: string;
+  message?: string;
+  ownerUserId?: number;
+  storeCode?: string;
+  warnings?: string[];
+  items: ProductVariantSpecPayload[];
+};
+
+export type ProductVariantSpecDetailPayload = {
+  ready: boolean;
+  ownerUserId?: number;
+  storeCode?: string;
+  variantId?: number;
+  partnerSku?: string;
+  childSku?: string;
+  skuParent?: string;
+  title?: string;
+  imageUrl?: string;
+  effectiveSourceId?: number;
+  effectiveSourceType?: ProductVariantSpecSourceType | string;
+  effectiveSpec?: ProductVariantSpecPayload;
+  sources?: ProductVariantSpecSourcePayload[];
+  warnings?: string[];
+};
+
+export type ProductVariantSpecSaveRequest = ProductVariantSpecPayload & {
+  ownerUserId?: number;
+  storeCode: string;
+  skuParent: string;
+  partnerSku: string;
+};
+
+export type ProductVariantSpecSourceSaveRequest = ProductVariantSpecSourcePayload & {
+  ownerUserId?: number;
+  storeCode: string;
+  variantId: number;
+  sourceType: ProductVariantSpecSourceType;
+};
+
+export type ProductVariantSpecEffectiveSourceRequest = {
+  ownerUserId?: number;
+  storeCode: string;
+  variantId: number;
+  sourceId: number;
+};
+
+export type ProductVariantSpecModalState = {
+  open: boolean;
+  ownerUserId?: number;
+  storeCode?: string;
+  skuParent?: string;
+  title?: string;
+  partnerSku?: string;
+  imageUrl?: string;
+};
+
 export type ProductWorkbenchPayload = ProductMasterSnapshotPayload & {
   baselineSnapshot?: ProductMasterSnapshotPayload;
   draftSnapshot?: ProductMasterSnapshotPayload;

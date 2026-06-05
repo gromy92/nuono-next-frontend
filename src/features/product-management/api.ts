@@ -3,9 +3,18 @@ import type {
   ProductListDatasetPayload,
   ProductMasterSnapshotPayload,
   ProductPublishTaskPayload,
+  ProductVariantSpecDetailPayload,
+  ProductVariantSpecEffectiveSourceRequest,
+  ProductVariantSpecListPayload,
+  ProductVariantSpecOverviewPayload,
+  ProductVariantSpecPayload,
+  ProductVariantSpecSaveRequest,
+  ProductVariantSpecSourcePayload,
+  ProductVariantSpecSourceSaveRequest,
   ProductWorkbenchPayload,
   StoreInitializationPayload
 } from './types';
+import { apiFetch } from '../../shared/api';
 
 export type ProductStoreInitializationStatusRequest = {
   ownerUserId: number;
@@ -121,7 +130,7 @@ async function readBackendError(response: Response, fallback: string) {
 }
 
 async function postJson<TResponse>(url: string, body: unknown, fallbackError: string): Promise<TResponse> {
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -149,7 +158,7 @@ export async function fetchStoreInitializationStatus({
   storeCode
 }: ProductStoreInitializationStatusRequest) {
   const query = `?ownerUserId=${ownerUserId}&storeCode=${encodeURIComponent(storeCode)}`;
-  const response = await fetch(`/api/store-sync/init-status${query}`);
+  const response = await apiFetch(`/api/store-sync/init-status${query}`);
 
   if (!response.ok) {
     throw new Error(await readBackendError(response, `后端返回 ${response.status}`));
@@ -166,13 +175,99 @@ export async function openProductWorkbenchSnapshot(request: ProductWorkbenchOpen
   return postJson<ProductWorkbenchPayload>('/api/product-master/open', request, '读取商品主档失败');
 }
 
+export async function fetchProductVariantSpecs(request: ProductHistoryRequest) {
+  const query = new URLSearchParams({
+    ownerUserId: String(request.ownerUserId),
+    storeCode: request.storeCode,
+    skuParent: request.skuParent
+  });
+  const response = await apiFetch(`/api/product-variant-specs?${query.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, `商品规格返回 ${response.status}`));
+  }
+
+  return (await response.json()) as ProductVariantSpecListPayload;
+}
+
+export async function saveProductVariantSpec(request: ProductVariantSpecSaveRequest) {
+  return postJson<ProductVariantSpecPayload>('/api/product-variant-specs', request, '保存商品规格失败');
+}
+
+export type ProductSpecsOverviewRequest = {
+  ownerUserId?: number;
+  storeCode: string;
+  keyword?: string;
+};
+
+export async function fetchProductSpecsOverview(request: ProductSpecsOverviewRequest) {
+  const query = new URLSearchParams({
+    ...(request.ownerUserId ? { ownerUserId: String(request.ownerUserId) } : {}),
+    storeCode: request.storeCode,
+    ...(request.keyword ? { keyword: request.keyword } : {})
+  });
+  const response = await apiFetch(`/api/product-specs?${query.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, `商品规格返回 ${response.status}`));
+  }
+
+  return (await response.json()) as ProductVariantSpecOverviewPayload;
+}
+
+export type ProductSpecDetailRequest = {
+  ownerUserId?: number;
+  storeCode: string;
+  variantId: number;
+};
+
+export async function fetchProductSpecDetail(request: ProductSpecDetailRequest) {
+  const query = new URLSearchParams({
+    ...(request.ownerUserId ? { ownerUserId: String(request.ownerUserId) } : {}),
+    storeCode: request.storeCode
+  });
+  const response = await apiFetch(`/api/product-specs/${request.variantId}?${query.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, `商品规格详情返回 ${response.status}`));
+  }
+
+  return (await response.json()) as ProductVariantSpecDetailPayload;
+}
+
+export async function saveProductSpecSource(request: ProductVariantSpecSourceSaveRequest) {
+  const { variantId, sourceType, ...body } = request;
+  const response = await apiFetch(`/api/product-specs/${variantId}/sources/${sourceType}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, '保存规格来源失败'));
+  }
+
+  return (await response.json()) as ProductVariantSpecSourcePayload;
+}
+
+export async function selectProductSpecEffectiveSource(request: ProductVariantSpecEffectiveSourceRequest) {
+  const { variantId, ...body } = request;
+  return postJson<ProductVariantSpecDetailPayload>(
+    `/api/product-specs/${variantId}/effective-source`,
+    body,
+    '切换生效规格失败'
+  );
+}
+
 export async function executeProductWorkbenchAction(request: ProductWorkbenchActionRequest) {
   return postJson<ProductWorkbenchPayload>('/api/product-master/action', request, '商品详情动作执行失败');
 }
 
 export async function fetchProductPublishTask(taskId: number, ownerUserId: number) {
   const query = `?ownerUserId=${ownerUserId}`;
-  const response = await fetch(`/api/product-master/publish-tasks/${taskId}${query}`);
+  const response = await apiFetch(`/api/product-master/publish-tasks/${taskId}${query}`);
 
   if (!response.ok) {
     throw new Error(await readBackendError(response, `发布任务返回 ${response.status}`));
@@ -228,7 +323,7 @@ export async function uploadProductImageAsset(file: File, context?: Partial<Prod
     formData.append('skuParent', context.skuParent);
   }
 
-  const response = await fetch('/api/product-master/image-assets', {
+  const response = await apiFetch('/api/product-master/image-assets', {
     method: 'POST',
     body: formData
   });
@@ -241,7 +336,7 @@ export async function uploadProductImageAsset(file: File, context?: Partial<Prod
 }
 
 export async function translateProductContentText(request: ProductContentTranslateRequest) {
-  const response = await fetch('/api/product-master/translate', {
+  const response = await apiFetch('/api/product-master/translate', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

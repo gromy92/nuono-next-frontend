@@ -173,66 +173,14 @@ function addIssueTag(target: string[], issueTag: string) {
   }
 }
 
-function numericValue(value: unknown) {
-  const numeric = Number(value ?? 0);
-  return Number.isFinite(numeric) ? numeric : 0;
-}
-
-function hasOfferSignal(record: ProductListRowPayload) {
-  return (
-    Boolean(String(record.offerCode ?? '').trim()) ||
-    Boolean(String(record.pskuCode ?? '').trim()) ||
-    numericValue(record.siteOfferCount) > 0
-  );
-}
-
-function hasStockSignal(record: ProductListRowPayload) {
-  return numericValue(record.totalFbnStock) + numericValue(record.totalSupermallStock) + numericValue(record.totalFbpStock) > 0;
-}
-
-function hasPriceSignal(record: ProductListRowPayload) {
-  return numericValue(record.referencePrice) > 0;
-}
-
-function shouldSuppressContradictedIssue(record: ProductListRowPayload, issue: string) {
-  const normalized = issue.trim().toLowerCase();
-  if (normalized === 'no_offer' && hasOfferSignal(record)) {
-    return true;
-  }
-  if (normalized === 'stock_check' && hasStockSignal(record)) {
-    return true;
-  }
-  if (normalized === 'valid_price' && hasPriceSignal(record)) {
-    return true;
-  }
-  return false;
-}
-
 export function productListIssueTags(record: ProductListRowPayload) {
   const issues: string[] = [];
   (record.issueTags ?? []).forEach((issue) => {
     const normalized = String(issue ?? '').trim();
-    if (normalized && !shouldSuppressContradictedIssue(record, normalized)) {
+    if (normalized) {
       addIssueTag(issues, normalized);
     }
   });
-
-  if (!hasOfferSignal(record)) {
-    addIssueTag(issues, 'no_offer');
-  }
-  if (!String(record.referencePrice ?? '').trim() || numericValue(record.referencePrice) <= 0) {
-    addIssueTag(issues, 'valid_price');
-  }
-  if (!hasStockSignal(record)) {
-    addIssueTag(issues, 'stock_check');
-  }
-  if (!String(record.title ?? '').trim()) {
-    addIssueTag(issues, 'title_missing');
-  }
-  if (!String(record.productFulltype ?? '').trim()) {
-    addIssueTag(issues, '类目待复核');
-  }
-
   return issues;
 }
 

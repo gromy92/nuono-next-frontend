@@ -1,11 +1,14 @@
-import { BranchesOutlined, DeleteOutlined, HistoryOutlined } from '@ant-design/icons';
+import { BranchesOutlined, DeleteOutlined, HistoryOutlined, ProfileOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { Button, Popconfirm, Space, Tag, Tooltip, Typography } from 'antd';
 import type { ProductListRowPayload } from '../types';
 import {
   buildNoonProductUrl,
   buildProductSummarySurfaceFromListItem,
+  formatDateTimeParts,
+  isProductNotListedSource,
   mergeGalleryImageUrls,
+  productListingStartedSourceLabel,
   productSourceTypeMeta,
   productSummaryTitle
 } from '../utils';
@@ -74,6 +77,24 @@ function productName(record: ProductListRowPayload) {
   return record.title || record.partnerSku || record.skuParent || '当前商品';
 }
 
+function productVariantSpecMissing(record: ProductListRowPayload) {
+  const status = record.productVariantSpecStatus;
+  return Boolean(status && status !== 'ready');
+}
+
+function productVariantSpecTooltip(record: ProductListRowPayload) {
+  if (!productVariantSpecMissing(record)) {
+    return '商品规格';
+  }
+  const totalCount = record.productVariantSpecTotalCount ?? record.variantCount ?? 0;
+  const readyCount = record.productVariantSpecReadyCount ?? 0;
+  const maintainedCount = record.productVariantSpecMaintainedCount ?? 0;
+  if (totalCount > 0) {
+    return `商品规格缺失：${readyCount}/${totalCount} 个 SKU 完整，已维护 ${maintainedCount} 个`;
+  }
+  return '商品规格缺失';
+}
+
 export function ProductDetailsCell(props: {
   record: ProductListRowPayload;
   productSnapshotSubmitting: boolean;
@@ -81,6 +102,7 @@ export function ProductDetailsCell(props: {
   openProductListGallery: ProductListRowAction;
   openProductWorkbenchInPageTab: ProductListRowAction;
   openProductHistoryModal: ProductListRowAction;
+  openProductVariantSpecModal: ProductListRowAction;
   openProductSiteCompareModal: ProductListRowAction;
   requestDeleteLocalProduct: ProductListRowAction;
 }) {
@@ -91,6 +113,7 @@ export function ProductDetailsCell(props: {
     openProductListGallery,
     openProductWorkbenchInPageTab,
     openProductHistoryModal,
+    openProductVariantSpecModal,
     openProductSiteCompareModal,
     requestDeleteLocalProduct
   } = props;
@@ -100,6 +123,12 @@ export function ProductDetailsCell(props: {
   const visiblePsku = summary.partnerSku || summary.pskuCode || '-';
   const noonProductUrl = buildNoonProductUrl(summary);
   const sourceTypeMeta = productSourceTypeMeta(summary.productSourceType);
+  const listingStartedParts = formatDateTimeParts(summary.listingStartedAt);
+  const listingStartedSourceLabel = productListingStartedSourceLabel(summary.listingStartedSource);
+  const productNotListed = isProductNotListedSource(summary.listingStartedSource);
+  const productVariantSpecActionStyle = productVariantSpecMissing(record)
+    ? { height: 20, padding: 0, fontSize: 12, color: '#d97706' }
+    : { height: 20, padding: 0, fontSize: 12 };
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0 }}>
@@ -195,6 +224,23 @@ export function ProductDetailsCell(props: {
             Barcode: {summary.barcode}
           </div>
         ) : null}
+        {listingStartedParts || productNotListed || listingStartedSourceLabel ? (
+          <div style={{ color: '#6b7280', fontSize: 12, lineHeight: '18px', marginTop: summary.barcode ? 0 : 2 }}>
+            <Text style={{ color: '#9ca3af', fontSize: 12 }}>上架: </Text>
+            <Text style={{ color: productNotListed || !listingStartedParts ? '#b45309' : '#6b7280', fontSize: 12 }}>
+              {productNotListed
+                ? '未上架'
+                : listingStartedParts
+                  ? `${listingStartedParts.date}${listingStartedParts.time ? ` ${listingStartedParts.time}` : ''}`
+                  : listingStartedSourceLabel}
+            </Text>
+            {listingStartedSourceLabel && listingStartedParts && !productNotListed ? (
+              <Tag color="default" style={{ marginInlineStart: 6, marginInlineEnd: 0, fontSize: 11, lineHeight: '16px' }}>
+                {listingStartedSourceLabel}
+              </Tag>
+            ) : null}
+          </div>
+        ) : null}
         <Space wrap size={[8, 4]} style={{ marginTop: 5 }}>
           <Button
             type="link"
@@ -220,6 +266,20 @@ export function ProductDetailsCell(props: {
           >
             历史
           </Button>
+          <Tooltip title={productVariantSpecTooltip(record)}>
+            <Button
+              type="link"
+              size="small"
+              icon={<ProfileOutlined />}
+              onClick={(event) => {
+                event.stopPropagation();
+                openProductVariantSpecModal(record);
+              }}
+              style={productVariantSpecActionStyle}
+            >
+              规格
+            </Button>
+          </Tooltip>
           <Button
             type="link"
             size="small"

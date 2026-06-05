@@ -64,6 +64,11 @@ const Ali1688SkuPurchaseHistoryPage = lazyWorkspace(() =>
     default: module.Ali1688SkuPurchaseHistoryPage
   }))
 );
+const ProductListingPage = lazyWorkspace(() =>
+  import('../product-listing/ProductListingPage').then((module) => ({
+    default: module.ProductListingPage
+  }))
+);
 const MasterDataBoard = lazyWorkspace(() =>
   import('../master-data/MasterDataBoard').then((module) => ({ default: module.MasterDataBoard }))
 );
@@ -78,6 +83,11 @@ const ProductManagementWorkspacePage = lazyWorkspace(() =>
 const ProductGroupManagementPage = lazyWorkspace(() =>
   import('../product-management/groups/ProductGroupManagementPage').then((module) => ({
     default: module.ProductGroupManagementPage
+  }))
+);
+const ProductSpecsPage = lazyWorkspace(() =>
+  import('../product-specs/ProductSpecsPage').then((module) => ({
+    default: module.ProductSpecsPage
   }))
 );
 const ProcurementWorkspace = lazyWorkspace(() =>
@@ -105,6 +115,9 @@ const NoonDataGapPatrolPage = lazyWorkspace(() =>
 );
 const SalesAnalyticsPage = lazyWorkspace(() =>
   import('../sales-analytics/SalesAnalyticsPage').then((module) => ({ default: module.SalesAnalyticsPage }))
+);
+const OrderFinancePage = lazyWorkspace(() =>
+  import('../order-finance/OrderFinancePage').then((module) => ({ default: module.OrderFinancePage }))
 );
 const SalesForecastPage = lazyWorkspace(() =>
   import('../sales-forecast/SalesForecastPage').then((module) => ({ default: module.SalesForecastPage }))
@@ -223,6 +236,14 @@ export function ShellWorkspaceContent({
     );
   }
 
+  if (activeContentKind === 'product-specs') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ProductSpecsPage session={shellSession} activeOwnerId={activeOwnerId} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
   if (activeContentKind === 'product-manual-selection') {
     return (
       <LazyWorkspaceBoundary>
@@ -274,6 +295,14 @@ export function ShellWorkspaceContent({
     );
   }
 
+  if (activeContentKind === 'product-listing') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ProductListingPage storeCode={shellSession.currentStore?.storeCode} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
   if (activeContentKind === 'purchase-logistics-quote') {
     return (
       <LazyWorkspaceBoundary>
@@ -318,6 +347,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <SalesAnalyticsPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'order-finance') {
+    return (
+      <LazyWorkspaceBoundary>
+        <OrderFinancePage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

@@ -17,9 +17,7 @@ export function ProductSizesTab(props: ProductDetailOfficialTabsProps) {
         <Table
           size="small"
           pagination={false}
-          rowKey={(record) =>
-            String(record.childSku ?? record.partnerSku ?? record.sizeEn ?? record.sizeAr ?? Math.random())
-          }
+          rowKey={(record) => String(record.childSku ?? record.partnerSku ?? record.sizeEn ?? record.sizeAr ?? 'size-row')}
           dataSource={productSnapshotView?.variants ?? []}
           scroll={{ x: 900 }}
           columns={createProductSizeColumns({

@@ -18,6 +18,7 @@ type ProductListColumnsParams = {
   openProductListGallery: (record: ProductListRowPayload) => void;
   openProductWorkbenchInPageTab: (record: ProductListRowPayload) => void | Promise<void>;
   openProductHistoryModal: (record: ProductListRowPayload) => void;
+  openProductVariantSpecModal: (record: ProductListRowPayload) => void;
   openProductSiteCompareModal: (record: ProductListRowPayload) => void | Promise<void>;
   requestDeleteLocalProduct: (record: ProductListRowPayload) => void;
   updateProductListLiveStatus: (skuParent: string | undefined, liveActive: boolean) => void;
@@ -31,6 +32,7 @@ export function createProductListColumns({
   openProductListGallery,
   openProductWorkbenchInPageTab,
   openProductHistoryModal,
+  openProductVariantSpecModal,
   openProductSiteCompareModal,
   requestDeleteLocalProduct,
   updateProductListLiveStatus
@@ -48,6 +50,7 @@ export function createProductListColumns({
           openProductListGallery={openProductListGallery}
           openProductWorkbenchInPageTab={openProductWorkbenchInPageTab}
           openProductHistoryModal={openProductHistoryModal}
+          openProductVariantSpecModal={openProductVariantSpecModal}
           openProductSiteCompareModal={openProductSiteCompareModal}
           requestDeleteLocalProduct={requestDeleteLocalProduct}
         />

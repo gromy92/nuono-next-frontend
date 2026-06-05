@@ -14,10 +14,12 @@ export type { AppMenuKey } from './WorkspaceMenuRegistry'
 
 export const PRODUCT_WORKSPACE_PATH = workspaceMenuPath('product-manage')
 export const PRODUCT_GROUPS_PATH = workspaceMenuPath('product-groups')
+export const PRODUCT_SPECS_PATH = workspaceMenuPath('product-specs')
 export const PRODUCT_MANUAL_SELECTION_PATH = workspaceMenuPath('product-manual-selection')
 export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688-collection')
 export const PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH = workspaceMenuPath('purchase-ali1688-historical-orders')
 export const PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH = workspaceMenuPath('purchase-ali1688-sku-purchase-history')
+export const PURCHASE_LISTING_PATH = workspaceMenuPath('purchase-listing')
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
@@ -240,6 +242,7 @@ export function resolveSessionLandingMenuKey(
         'system-file-management',
         'user-account',
         'system-menu',
+        'purchase-listing',
         'purchase-profit',
         'purchase-order',
         'data-sales-analysis',
@@ -250,6 +253,7 @@ export function resolveSessionLandingMenuKey(
         'data-activity-config',
         'operations-lifecycle-rules',
         'product-manual-selection',
+        'product-specs',
         'product-manage'
       ] as AppMenuKey[])
     : isBossManagementSession(session)
@@ -258,8 +262,10 @@ export function resolveSessionLandingMenuKey(
           'purchase-ali1688-historical-orders',
           'purchase-ali1688-sku-purchase-history',
           'purchase-ali1688-collection',
+          'purchase-listing',
           'purchase-order',
           'product-manage',
+          'product-specs',
           'purchase-profit',
           'purchase-logistics-quote',
           'data-sales-analysis',
@@ -275,8 +281,10 @@ export function resolveSessionLandingMenuKey(
           'purchase-ali1688-historical-orders',
           'purchase-ali1688-sku-purchase-history',
           'purchase-ali1688-collection',
+          'purchase-listing',
           'purchase-order',
           'product-manage',
+          'product-specs',
           'user-role',
           'purchase-profit',
           'purchase-logistics-quote',
