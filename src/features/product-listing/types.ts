@@ -8,6 +8,8 @@ export type ProductListingValidationIssue = {
 export type ProductListingDraftPayload = {
   draftId?: number
   storeCode: string
+  sourceType?: string
+  sourceRefId?: number
   psku: string
   idProductFullType?: number
   productFullType?: string
@@ -26,6 +28,7 @@ export type ProductListingDraftPayload = {
   optionalPurchaseOrderId?: number
   fbp?: boolean
   warehouseId?: string
+  warehouseCode?: string
   quantity?: number
   idWarranty?: number
   barcode?: string
@@ -49,9 +52,17 @@ export type ProductListingTaskView = {
   storeCode: string
   mode: string
   status: string
+  sourceTaskId?: number
   validationIssues: ProductListingValidationIssue[]
+  failureCategory?: string
   failureCode?: string
   failureMessage?: string
   submittedAt?: string
+  startedAt?: string
   completedAt?: string
+}
+
+export type ProductListingRealRunCommand = {
+  confirmRealNoonWrite: boolean
+  confirmationNote?: string
 }
