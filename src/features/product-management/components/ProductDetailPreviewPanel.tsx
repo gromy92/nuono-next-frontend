@@ -8,6 +8,7 @@ import {
   productSummaryPriceLine,
   productSummaryTitle
 } from '../utils';
+import { ProductImageThumb } from './ProductBaselineDisplay';
 import { ProductSummaryPrimaryTags } from './ProductSummaryBlocks';
 
 const { Paragraph, Text, Title } = Typography;
@@ -40,31 +41,16 @@ export function ProductDetailPreviewPanel({ message, summary, status = 'loading'
         <Row gutter={[20, 20]} align="top">
           <Col xs={24} xl={18}>
             <Space align="start" size={16} style={{ width: '100%' }}>
-              <div
-                style={{
-                  width: 112,
-                  minWidth: 112,
-                  height: 112,
-                  padding: 0,
-                  borderRadius: 8,
-                  overflow: 'hidden',
-                  border: '1px solid #dbe4ea',
-                  background: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {summary.imageUrl ? (
-                  <img
-                    src={summary.imageUrl}
-                    alt={productSummaryTitle(summary)}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <Text style={{ color: '#94a3b8' }}>暂无图片</Text>
-                )}
-              </div>
+              <span style={{ flex: '0 0 auto' }}>
+                <ProductImageThumb
+                  src={summary.imageUrl || summary.galleryImages[0]}
+                  alt={productSummaryTitle(summary)}
+                  imageCount={summary.galleryImages.length}
+                  width={112}
+                  height={112}
+                  fallback="暂无图片"
+                />
+              </span>
 
               <Space direction="vertical" size={10} style={{ flex: 1, minWidth: 260 }}>
                 <ProductSummaryPrimaryTags summary={summary} includeSite />

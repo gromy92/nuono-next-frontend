@@ -1,6 +1,7 @@
-import { Avatar, Col, Empty, Row, Select, Space, Tag, Typography } from 'antd';
-import { formatSnapshotValue } from '../utils';
+import { Col, Empty, Row, Select, Space, Tag, Typography } from 'antd';
+import { formatSnapshotValue, productSummaryTitle } from '../utils';
 import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
+import { ProductImageThumb } from './ProductBaselineDisplay';
 
 const { Text } = Typography;
 
@@ -17,6 +18,9 @@ export function ProductInsightsTab(props: ProductDetailOfficialTabsProps) {
     productLeadImage
   } = props;
   const visibleMetrics = productInsightMetrics.filter((item) => hasMetricValue(item.value));
+  const imageUrl =
+    productLeadImage || currentProductSummarySurface?.imageUrl || currentProductSummarySurface?.galleryImages[0];
+  const imageAlt = currentProductSummarySurface ? productSummaryTitle(currentProductSummarySurface) : '当前商品';
 
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
@@ -47,9 +51,14 @@ export function ProductInsightsTab(props: ProductDetailOfficialTabsProps) {
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={10}>
             <Space size={12} align="center">
-              <Avatar shape="square" size={64} src={productLeadImage}>
-                SKU
-              </Avatar>
+              <ProductImageThumb
+                src={imageUrl}
+                alt={imageAlt}
+                imageCount={currentProductSummarySurface?.galleryImages.length}
+                width={64}
+                height={64}
+                fallback="SKU"
+              />
               <div>
                 <Text strong style={{ display: 'block', color: '#0f172a' }}>
                   {formatSnapshotValue(currentProductSummarySurface?.partnerSku ?? productSnapshotView?.identity.partnerSku)}
