@@ -7,6 +7,7 @@ import {
   Input,
   Modal,
   Segmented,
+  Select,
   Space,
   Spin,
   Table,
@@ -25,12 +26,14 @@ import {
   StopOutlined
 } from '@ant-design/icons'
 import { useEffect, useMemo, useState } from 'react'
-import type { AuthSession } from '../auth/session'
+import type { AuthSession, AuthSessionStore } from '../auth/session'
 import {
   addCompetitorKeyword,
   addManualCompetitor,
   confirmCompetitorCandidate,
+  createCompetitorWatchProduct,
   deleteCompetitorKeyword,
+  fetchCompetitorProductOptions,
   fetchCompetitorRankHistory,
   fetchCompetitorRefreshRun,
   fetchCompetitorWatchProductDetail,
@@ -42,7 +45,13 @@ import {
 } from './api'
 import { summarizeRanks } from './domain'
 import { normalizeError } from '../../shared/api'
-import type { CompetitorCandidate, CompetitorKeyword, CompetitorRankPoint, CompetitorWatchProduct } from './types'
+import type {
+  CompetitorCandidate,
+  CompetitorKeyword,
+  CompetitorProductOption,
+  CompetitorRankPoint,
+  CompetitorWatchProduct
+} from './types'
 import './CompetitorAnalysisPage.css'
 
 const { Text } = Typography
@@ -53,7 +62,49 @@ type CompetitorAnalysisPageProps = {
 
 type HistoryRange = '7' | '30' | '90' | '180' | '365'
 
-export function CompetitorAnalysisPage({ session: _session }: CompetitorAnalysisPageProps) {
+function siteCodeFromStoreCode(storeCode?: string) {
+  const normalized = (storeCode || '').toUpperCase()
+  if (normalized.endsWith('-NSA') || normalized.endsWith('-SAU') || normalized.endsWith('-SA')) return 'SA'
+  if (normalized.endsWith('-NAE') || normalized.endsWith('-UAE') || normalized.endsWith('-AE')) return 'AE'
+  if (normalized.endsWith('-NEG') || normalized.endsWith('-EG')) return 'EG'
+  return ''
+}
+
+function storeKey(store?: AuthSessionStore | null) {
+  if (!store?.storeCode) return ''
+  return `${store.storeCode}|${store.site || siteCodeFromStoreCode(store.storeCode)}`
+}
+
+function uniqueStores(stores?: AuthSessionStore[], currentStore?: AuthSessionStore | null) {
+  const result: AuthSessionStore[] = []
+  const seen = new Set<string>()
+  const addStore = (store?: AuthSessionStore | null) => {
+    const key = storeKey(store)
+    if (!store?.storeCode || !key || seen.has(key)) return
+    seen.add(key)
+    result.push(store)
+  }
+  ;(stores || []).forEach(addStore)
+  addStore(currentStore)
+  return result
+}
+
+function splitKeywordInput(value: string) {
+  const seen = new Set<string>()
+  return value
+    .split(/[\n,，;；]+/)
+    .map((item) => item.trim())
+    .filter((item) => {
+      const normalized = item.toLowerCase()
+      if (!item || seen.has(normalized)) {
+        return false
+      }
+      seen.add(normalized)
+      return true
+    })
+}
+
+export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps) {
   const { message } = App.useApp()
   const [products, setProducts] = useState<CompetitorWatchProduct[]>([])
   const [selectedProductId, setSelectedProductId] = useState('')
@@ -71,11 +122,39 @@ export function CompetitorAnalysisPage({ session: _session }: CompetitorAnalysis
   const [keywordInput, setKeywordInput] = useState('')
   const [manualInput, setManualInput] = useState('')
   const [historyRange, setHistoryRange] = useState<HistoryRange>('30')
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [createStoreKey, setCreateStoreKey] = useState(() => storeKey(session.currentStore))
+  const [createProductSearch, setCreateProductSearch] = useState('')
+  const [createProductOptions, setCreateProductOptions] = useState<CompetitorProductOption[]>([])
+  const [createProductOptionId, setCreateProductOptionId] = useState('')
+  const [createKeywordInput, setCreateKeywordInput] = useState('')
+  const [createOptionsLoading, setCreateOptionsLoading] = useState(false)
 
   const selectedProduct =
     selectedProductDetail?.id === selectedProductId
       ? selectedProductDetail
       : products.find((product) => product.id === selectedProductId) ?? products[0]
+  const allowedStores = useMemo(
+    () => uniqueStores(session.userStores, session.currentStore),
+    [session.currentStore, session.userStores]
+  )
+  const selectedCreateStore = useMemo(
+    () => allowedStores.find((store) => storeKey(store) === createStoreKey) || allowedStores[0] || null,
+    [allowedStores, createStoreKey]
+  )
+  const selectedCreateSiteCode = selectedCreateStore?.site || siteCodeFromStoreCode(selectedCreateStore?.storeCode)
+  const selectedCreateProductOption = useMemo(
+    () => createProductOptions.find((option) => option.productSiteOfferId === createProductOptionId),
+    [createProductOptionId, createProductOptions]
+  )
+
+  useEffect(() => {
+    if (!allowedStores.length) {
+      setCreateStoreKey('')
+      return
+    }
+    setCreateStoreKey((current) => (current && allowedStores.some((store) => storeKey(store) === current) ? current : storeKey(allowedStores[0])))
+  }, [allowedStores])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -115,6 +194,54 @@ export function CompetitorAnalysisPage({ session: _session }: CompetitorAnalysis
       controller.abort()
     }
   }, [competitorSearch, keywordSearch, message, productSearch])
+
+  useEffect(() => {
+    if (!createModalOpen) {
+      return undefined
+    }
+    if (!selectedCreateStore?.storeCode || !selectedCreateSiteCode) {
+      setCreateProductOptions([])
+      setCreateProductOptionId('')
+      return undefined
+    }
+
+    const controller = new AbortController()
+    const timer = window.setTimeout(() => {
+      setCreateOptionsLoading(true)
+      fetchCompetitorProductOptions(
+        {
+          storeCode: selectedCreateStore.storeCode,
+          siteCode: selectedCreateSiteCode,
+          keyword: createProductSearch,
+          limit: 50
+        },
+        controller.signal
+      )
+        .then((options) => {
+          setCreateProductOptions(options)
+          setCreateProductOptionId((current) =>
+            current && options.some((option) => option.productSiteOfferId === current)
+              ? current
+              : options[0]?.productSiteOfferId ?? ''
+          )
+        })
+        .catch((error) => {
+          if (!isAbortError(error)) {
+            message.error(normalizeError(error, '读取可监控商品失败'))
+            setCreateProductOptions([])
+            setCreateProductOptionId('')
+          }
+        })
+        .finally(() => {
+          setCreateOptionsLoading(false)
+        })
+    }, 220)
+
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [createModalOpen, createProductSearch, message, selectedCreateSiteCode, selectedCreateStore?.storeCode])
 
   const mergeProduct = (product: CompetitorWatchProduct) => {
     setSelectedProductDetail(product)
@@ -161,6 +288,50 @@ export function CompetitorAnalysisPage({ session: _session }: CompetitorAnalysis
     setManualInput('')
     setManualModalOpen(true)
     void loadProductDetail(product.id)
+  }
+
+  const openCreateModal = () => {
+    if (!allowedStores.length) {
+      message.warning('当前账号没有可用店铺')
+      return
+    }
+    setCreateStoreKey((current) => current || storeKey(session.currentStore) || storeKey(allowedStores[0]))
+    setCreateProductSearch('')
+    setCreateProductOptions([])
+    setCreateProductOptionId('')
+    setCreateKeywordInput('')
+    setCreateModalOpen(true)
+  }
+
+  const handleCreateWatchProduct = async () => {
+    if (!selectedCreateStore?.storeCode || !selectedCreateSiteCode) {
+      message.warning('请先选择店铺和站点')
+      return
+    }
+    if (!selectedCreateProductOption) {
+      message.warning('请先选择我方商品')
+      return
+    }
+    setActionLoading('create-watch-product')
+    try {
+      let detail = await createCompetitorWatchProduct({
+        storeCode: selectedCreateStore.storeCode,
+        siteCode: selectedCreateSiteCode,
+        productSiteOfferId: selectedCreateProductOption.productSiteOfferId,
+        selfNoonProductCode: selectedCreateProductOption.noonProductCode
+      })
+      for (const keyword of splitKeywordInput(createKeywordInput)) {
+        detail = await addCompetitorKeyword(detail.id, keyword, `en-${detail.siteCode || selectedCreateSiteCode}`)
+      }
+      mergeProduct(detail)
+      setSelectedProductId(detail.id)
+      setCreateModalOpen(false)
+      message.success('监控商品已新增')
+    } catch (error) {
+      message.error(normalizeError(error, '新增监控商品失败'))
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   const handleAddKeyword = async () => {
@@ -444,7 +615,13 @@ export function CompetitorAnalysisPage({ session: _session }: CompetitorAnalysis
           />
           <Space wrap>
             <Button onClick={resetSearch}>重置</Button>
-            <Button icon={<PlusOutlined />}>新增监控商品</Button>
+            <Button
+              data-testid="competitor-create-watch-product-button"
+              icon={<PlusOutlined />}
+              onClick={openCreateModal}
+            >
+              新增监控商品
+            </Button>
             <Button
               icon={<ReloadOutlined />}
               loading={products[0] ? actionLoading === `refresh-${products[0].id}` : false}
@@ -468,6 +645,102 @@ export function CompetitorAnalysisPage({ session: _session }: CompetitorAnalysis
           size="middle"
         />
       </Card>
+
+      <Modal
+        width={760}
+        open={createModalOpen}
+        title="新增监控商品"
+        okText="确认新增"
+        cancelText="取消"
+        confirmLoading={actionLoading === 'create-watch-product'}
+        okButtonProps={{ disabled: !selectedCreateProductOption }}
+        onOk={() => void handleCreateWatchProduct()}
+        onCancel={() => setCreateModalOpen(false)}
+        destroyOnClose={false}
+      >
+        <Space
+          direction="vertical"
+          style={{ width: '100%' }}
+          size={12}
+          data-testid="competitor-create-watch-product-modal"
+        >
+          <div className="competitor-analysis-create-grid">
+            <Space direction="vertical" size={4}>
+              <Text type="secondary">店铺 / 站点</Text>
+              <Select
+                value={createStoreKey || undefined}
+                placeholder="选择店铺"
+                options={allowedStores.map((store) => {
+                  const key = storeKey(store)
+                  const siteCode = store.site || siteCodeFromStoreCode(store.storeCode)
+                  return {
+                    value: key,
+                    label: `${store.projectName || store.projectCode || store.storeCode} / ${siteCode || '-'}`
+                  }
+                })}
+                onChange={(value) => {
+                  setCreateStoreKey(value)
+                  setCreateProductOptionId('')
+                }}
+              />
+            </Space>
+            <Space direction="vertical" size={4}>
+              <Text type="secondary">搜索商品</Text>
+              <Input
+                allowClear
+                prefix={<SearchOutlined />}
+                placeholder="输入我方SKU、标题或 Noon 码"
+                value={createProductSearch}
+                onChange={(event) => setCreateProductSearch(event.target.value)}
+              />
+            </Space>
+          </div>
+          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+            <Text type="secondary">我方商品</Text>
+            <Select
+              showSearch
+              filterOption={false}
+              value={createProductOptionId || undefined}
+              placeholder="选择要监控的我方商品"
+              loading={createOptionsLoading}
+              notFoundContent={
+                createOptionsLoading ? (
+                  <Spin size="small" />
+                ) : (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前店铺没有可选商品" />
+                )
+              }
+              options={createProductOptions.map((option) => ({
+                value: option.productSiteOfferId,
+                label: <ProductOptionLabel option={option} />
+              }))}
+              onSearch={setCreateProductSearch}
+              onChange={setCreateProductOptionId}
+            />
+          </Space>
+          {selectedCreateProductOption ? (
+            <div className="competitor-analysis-modal-summary">
+              <Text strong ellipsis={{ tooltip: selectedCreateProductOption.title }}>
+                {selectedCreateProductOption.title}
+              </Text>
+              <Space size={4} wrap>
+                <Tag color="blue">我方SKU {selectedCreateProductOption.partnerSku}</Tag>
+                <Tag>{selectedCreateProductOption.siteCode}</Tag>
+                <Text type="secondary">Noon {selectedCreateProductOption.noonProductCode}</Text>
+              </Space>
+            </div>
+          ) : null}
+          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+            <Text type="secondary">初始关键词</Text>
+            <Input.TextArea
+              autoSize={{ minRows: 2, maxRows: 4 }}
+              placeholder="可选，多个关键词用逗号或换行分隔"
+              value={createKeywordInput}
+              onChange={(event) => setCreateKeywordInput(event.target.value)}
+            />
+          </Space>
+        </Space>
+      </Modal>
 
       {selectedProduct ? (
         <>
@@ -853,6 +1126,21 @@ function ProductModalSummary({ product }: { product: CompetitorWatchProduct }) {
         <Tag color="blue">我方SKU {product.partnerSku}</Tag>
         <Tag>{product.siteCode}</Tag>
         <Text type="secondary">Noon {product.selfNoonProductCode}</Text>
+      </Space>
+    </div>
+  )
+}
+
+function ProductOptionLabel({ option }: { option: CompetitorProductOption }) {
+  return (
+    <div className="competitor-analysis-product-option-label">
+      <Text strong ellipsis={{ tooltip: option.title }}>
+        {option.title}
+      </Text>
+      <Space size={4} wrap>
+        <Tag color="blue">我方SKU {option.partnerSku || '-'}</Tag>
+        <Tag>{option.siteCode || '-'}</Tag>
+        <Text type="secondary">Noon {option.noonProductCode || '-'}</Text>
       </Space>
     </div>
   )

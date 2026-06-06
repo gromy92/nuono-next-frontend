@@ -84,6 +84,23 @@ export type CompetitorWatchProduct = {
   rankPoints: CompetitorRankPoint[]
 }
 
+export type CompetitorProductOption = {
+  productSiteOfferId: string
+  productMasterId: string
+  productVariantId: string
+  storeCode: string
+  siteCode: string
+  skuParent: string
+  partnerSku: string
+  childSku: string
+  noonProductCode: string
+  codeType: NoonProductCodeType
+  title: string
+  brand: string
+  imageUrl: string
+  productFulltype: string
+}
+
 export type RankSummary = {
   bestRank?: number
   sponsoredCount: number

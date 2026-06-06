@@ -3,6 +3,7 @@ import type {
   CompetitorCandidate,
   CompetitorCandidateSource,
   CompetitorKeyword,
+  CompetitorProductOption,
   CompetitorRankPoint,
   CompetitorReviewStatus,
   CompetitorWatchProduct,
@@ -47,6 +48,23 @@ type BackendWatchProductListItem = BackendWatchProduct & {
   activeKeywordCount?: number
   pendingCandidateCount?: number
   confirmedCompetitorCount?: number
+}
+
+type BackendProductOption = {
+  productSiteOfferId?: number | string
+  productMasterId?: number | string
+  productVariantId?: number | string
+  storeCode?: string
+  siteCode?: string
+  skuParent?: string
+  partnerSku?: string
+  childSku?: string
+  noonProductCode?: string
+  codeType?: string
+  title?: string
+  brand?: string
+  imageUrl?: string
+  productFulltype?: string
 }
 
 type BackendKeyword = {
@@ -128,6 +146,20 @@ export type CompetitorWatchProductQuery = {
   pageSize?: number
 }
 
+export type CompetitorProductOptionQuery = {
+  storeCode: string
+  siteCode: string
+  keyword?: string
+  limit?: number
+}
+
+export type CompetitorWatchProductCreateInput = {
+  storeCode: string
+  siteCode: string
+  productSiteOfferId: string
+  selfNoonProductCode?: string
+}
+
 export type CompetitorRefreshRun = {
   taskId?: string
   runId?: string
@@ -184,6 +216,29 @@ export async function fetchCompetitorWatchProducts(query: CompetitorWatchProduct
 export async function fetchCompetitorWatchProductDetail(watchProductId: string, signal?: AbortSignal) {
   const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}`, { signal })
   return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '读取竞品监控详情失败'))
+}
+
+export async function fetchCompetitorProductOptions(query: CompetitorProductOptionQuery, signal?: AbortSignal) {
+  const params = new URLSearchParams({
+    storeCode: query.storeCode,
+    siteCode: query.siteCode
+  })
+  appendSearchParam(params, 'keyword', query.keyword)
+  if (query.limit) {
+    params.set('limit', String(query.limit))
+  }
+  const response = await apiFetch(`/api/competitor-analysis/product-options?${params}`, { signal })
+  const payload = await parseApiResponse<BackendProductOption[]>(response, '读取可监控商品失败')
+  return payload.map(mapProductOption).filter((item): item is CompetitorProductOption => Boolean(item.productSiteOfferId))
+}
+
+export async function createCompetitorWatchProduct(input: CompetitorWatchProductCreateInput) {
+  const response = await apiFetch('/api/competitor-analysis/watch-products', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input)
+  })
+  return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '新增监控商品失败'))
 }
 
 export async function addCompetitorKeyword(watchProductId: string, keyword: string, locale?: string) {
@@ -304,6 +359,26 @@ function mapListItem(row: BackendWatchProductListItem): CompetitorWatchProduct {
     keywords: [],
     candidates: [],
     rankPoints: []
+  }
+}
+
+function mapProductOption(row: BackendProductOption): CompetitorProductOption {
+  const noonProductCode = stringValue(row.noonProductCode)
+  return {
+    productSiteOfferId: idValue(row.productSiteOfferId),
+    productMasterId: idValue(row.productMasterId),
+    productVariantId: idValue(row.productVariantId),
+    storeCode: stringValue(row.storeCode),
+    siteCode: stringValue(row.siteCode),
+    skuParent: stringValue(row.skuParent),
+    partnerSku: stringValue(row.partnerSku),
+    childSku: stringValue(row.childSku),
+    noonProductCode,
+    codeType: normalizeCodeType(row.codeType, noonProductCode),
+    title: stringValue(row.title) || '未命名商品',
+    brand: stringValue(row.brand),
+    imageUrl: stringValue(row.imageUrl) || EMPTY_IMAGE,
+    productFulltype: stringValue(row.productFulltype)
   }
 }
 

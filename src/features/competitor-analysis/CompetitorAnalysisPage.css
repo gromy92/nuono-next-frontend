@@ -41,6 +41,23 @@
   min-width: 0;
 }
 
+.competitor-analysis-create-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1fr);
+}
+
+.competitor-analysis-create-grid .ant-select {
+  width: 100%;
+}
+
+.competitor-analysis-product-option-label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 0;
+}
+
 .competitor-analysis-keyword-maintenance-list {
   display: grid;
   gap: 8px;
