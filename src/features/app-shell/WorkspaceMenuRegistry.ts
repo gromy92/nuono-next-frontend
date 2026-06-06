@@ -10,6 +10,7 @@ export type AppMenuKey =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'operations-competitor-analysis'
   | 'data-sales-analysis'
   | 'data-order-analysis'
   | 'data-sales-forecast'
@@ -33,6 +34,7 @@ export type WorkspaceSectionKey =
   | 'logistics'
   | 'warehouse'
   | 'campaign'
+  | 'operations'
   | 'operation-config'
   | 'task'
   | 'data'
@@ -48,6 +50,7 @@ export type WorkspaceSectionIconKey =
   | 'logistics'
   | 'warehouse'
   | 'campaign'
+  | 'operations'
   | 'operation-config'
   | 'task'
   | 'data'
@@ -68,6 +71,7 @@ export type WorkspaceContentKind =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'operations-competitor-analysis'
   | 'sales-analytics'
   | 'order-finance'
   | 'sales-forecast'
@@ -228,6 +232,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '物流 / 货代管理',
     tabLabel: '货代管理',
     contentKind: 'purchase-logistics-quote',
+    closable: true
+  },
+  'operations-competitor-analysis': {
+    key: 'operations-competitor-analysis',
+    label: '竞品分析',
+    path: '/operations/competitor-analysis',
+    sectionKey: 'operations',
+    pathLabel: '运营 / 竞品分析',
+    tabLabel: '竞品分析',
+    contentKind: 'operations-competitor-analysis',
     closable: true
   },
   'data-sales-analysis': {
@@ -443,6 +457,12 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     entries: [{ type: 'placeholder', key: 'campaign-list', label: '活动列表', disabled: true }]
   },
   {
+    key: 'operations',
+    label: '运营',
+    iconKey: 'operations',
+    entries: [{ type: 'workspace', key: 'operations-competitor-analysis' }]
+  },
+  {
     key: 'operation-config',
     label: '运营配置',
     iconKey: 'operation-config',
@@ -584,6 +604,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
+    keys: ['operations-competitor-analysis'],
+    urlPaths: ['/operations/competitor-analysis', '/api/competitor-analysis'],
+    urlPathPrefixes: ['/api/competitor-analysis/'],
+    menuNames: ['竞品分析', '运营竞品分析']
+  },
+  {
     keys: ['data-sales-analysis', 'data-order-analysis', 'data-sales-forecast'],
     urlPaths: [
       '/data/sales-analysis',
@@ -645,6 +671,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-order',
   'purchase-profit',
   'purchase-logistics-quote',
+  'operations-competitor-analysis',
   'data-sales-analysis',
   'data-order-analysis',
   'data-sales-forecast',

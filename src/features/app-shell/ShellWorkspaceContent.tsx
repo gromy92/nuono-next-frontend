@@ -122,6 +122,11 @@ const OrderFinancePage = lazyWorkspace(() =>
 const SalesForecastPage = lazyWorkspace(() =>
   import('../sales-forecast/SalesForecastPage').then((module) => ({ default: module.SalesForecastPage }))
 );
+const CompetitorAnalysisPage = lazyWorkspace(() =>
+  import('../competitor-analysis/CompetitorAnalysisPage').then((module) => ({
+    default: module.CompetitorAnalysisPage
+  }))
+);
 const OperationConfigSuiteVersionPage = lazyWorkspace(() =>
   import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
     default: module.OperationConfigSuiteVersionPage
@@ -363,6 +368,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <SalesForecastPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'operations-competitor-analysis') {
+    return (
+      <LazyWorkspaceBoundary>
+        <CompetitorAnalysisPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }
