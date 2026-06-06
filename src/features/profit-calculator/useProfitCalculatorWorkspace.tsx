@@ -184,7 +184,16 @@ function filterRows(
   });
 }
 
-export function useProfitCalculatorWorkspace(onOpenWorkspace: () => void, session?: AuthSession | null) {
+export type ProfitCalculatorWorkspaceOptions = {
+  enabled?: boolean;
+};
+
+export function useProfitCalculatorWorkspace(
+  onOpenWorkspace: () => void,
+  session?: AuthSession | null,
+  options: ProfitCalculatorWorkspaceOptions = {}
+) {
+  const enabled = options.enabled ?? true;
   const ownerUserId = session?.defaultOwnerUserId ?? session?.userId;
   const currentStore = session?.currentStore;
   const defaultStoreCode = currentStore?.storeCode;
@@ -210,9 +219,22 @@ export function useProfitCalculatorWorkspace(onOpenWorkspace: () => void, sessio
   const [bulkCalculating, setBulkCalculating] = useState(false);
   const [bulkCommissionCalculating, setBulkCommissionCalculating] = useState(false);
 
+  const clearLoadedProfitProducts = useCallback(() => {
+    setProfitListState({ status: 'idle' });
+    setSelectedRowKeys([]);
+    setOutboundFeeByRowKey({});
+    setNoonOutboundFeeByRowKey({});
+    setActualOutboundFeeByRowKey({});
+    setCommissionByRowKey({});
+    setActualCommissionByRowKey({});
+    setNoonOutboundFeeLoading(false);
+    setActualOutboundFeeLoading(false);
+    setActualCommissionLoading(false);
+  }, []);
+
   const loadProfitProducts = useCallback(async () => {
     if (!ownerUserId || !defaultStoreCode) {
-      setProfitListState({ status: 'idle' });
+      clearLoadedProfitProducts();
       return;
     }
     setProfitListState({ status: 'loading' });
@@ -354,11 +376,15 @@ export function useProfitCalculatorWorkspace(onOpenWorkspace: () => void, sessio
       setActualOutboundFeeLoading(false);
       setActualCommissionLoading(false);
     }
-  }, [defaultSite, defaultStoreCode, ownerUserId]);
+  }, [clearLoadedProfitProducts, defaultSite, defaultStoreCode, ownerUserId]);
 
   useEffect(() => {
+    if (!enabled) {
+      clearLoadedProfitProducts();
+      return;
+    }
     void loadProfitProducts();
-  }, [loadProfitProducts]);
+  }, [clearLoadedProfitProducts, enabled, loadProfitProducts]);
 
   const rows = profitListState.status === 'success' ? profitListState.data.items : [];
   const filteredRows = useMemo(
