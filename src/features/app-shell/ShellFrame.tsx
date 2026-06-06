@@ -25,6 +25,7 @@ import type { SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
 import { WorkspaceErrorBoundary } from './WorkspaceErrorBoundary';
 import { isProductWorkspaceMenu } from './WorkspaceMenuRegistry';
+import type { LoadStoreSyncOptions } from './useStoreSyncController';
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -63,7 +64,7 @@ type ShellFrameProps = {
   handleWorkspaceTabChange: (key: string) => void;
   handleWorkspaceTabEdit: NonNullable<TabsProps['onEdit']>;
   isProductDetailTab: boolean;
-  loadStoreSync: (ownerUserId?: number, options?: { preserveConnectionFeedback?: boolean }) => Promise<void> | void;
+  loadStoreSync: (ownerUserId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   loginError: string | null;
   loginForm: FormInstance;
   loginSubmitting: boolean;

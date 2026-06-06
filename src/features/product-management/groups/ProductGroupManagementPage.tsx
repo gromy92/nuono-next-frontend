@@ -250,7 +250,7 @@ export function ProductGroupManagementPage(props: ProductGroupManagementPageProp
 
   const refreshGroups = () => {
     if (workspace.selectedInitializationStoreCode) {
-      void workspace.loadProductListDataset(workspace.selectedInitializationStoreCode, activeOwnerId);
+      void workspace.loadProductListDataset(workspace.selectedInitializationStoreCode, activeOwnerId, { force: true });
     }
   };
 

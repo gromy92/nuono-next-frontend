@@ -4,6 +4,7 @@ import { message } from 'antd';
 import type { AuthSession } from '../../auth/session';
 import { fetchStoreInitializationStatus, startStoreInitializationRequest } from '../api';
 import { findProductStoreByCode, pickPreferredBoundStore, resolveProductApiStoreCode } from '../workspaceHelpers';
+import type { LoadProductListDatasetOptions } from './useProductListDatasetLoader';
 import {
   buildAuthorizedStoreOptions,
   resolvePreferredInitializationStoreCode,
@@ -19,7 +20,11 @@ type UseProductStoreInitializationParams = {
   enableProductBootInitStatus: boolean;
   enableProductBootStoreSelection: boolean;
   lastInitializationStoreCodeRef: MutableRefObject<string | undefined>;
-  loadProductListDataset: (storeCode: string, ownerUserId?: number) => Promise<void>;
+  loadProductListDataset: (
+    storeCode: string,
+    ownerUserId?: number,
+    options?: LoadProductListDatasetOptions
+  ) => Promise<void>;
   selectedInitializationStoreCodeOverride?: string;
   session: AuthSession | null;
   setProductListDatasetState: Dispatch<SetStateAction<ProductListDatasetState>>;
@@ -240,7 +245,7 @@ export function useProductStoreInitialization({
           storeCode
         });
         setStoreInitializationState({ status: 'success', data: payload });
-        void loadProductListDataset(storeCode, activeOwnerId);
+        void loadProductListDataset(storeCode, activeOwnerId, { force: true });
         if (!options?.silent) {
           message.success('正在后台准备当前店铺的商品列表。');
         }
@@ -259,7 +264,7 @@ export function useProductStoreInitialization({
     if (!selectedInitializationStoreCode || !activeOwnerId) {
       return;
     }
-    void loadProductListDataset(selectedInitializationStoreCode, activeOwnerId);
+    void loadProductListDataset(selectedInitializationStoreCode, activeOwnerId, { force: true });
     void loadStoreInitializationStatus(selectedInitializationStoreCode, activeOwnerId);
   }, [activeOwnerId, loadProductListDataset, loadStoreInitializationStatus, selectedInitializationStoreCode]);
 
