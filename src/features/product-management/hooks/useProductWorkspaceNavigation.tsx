@@ -32,6 +32,7 @@ type ProductQuickOpenSample = {
 type UseProductWorkspaceNavigationParams = {
   activeOwnerId?: number;
   activeProductWorkspaceTabKey: ProductWorkspaceTabKey;
+  enabled: boolean;
   currentProductSkuParent?: string;
   productDetailTabHandledRef: MutableRefObject<string | null>;
   productDetailTabRequest: ProductDetailTabRequest | null;
@@ -76,6 +77,7 @@ type UseProductWorkspaceNavigationParams = {
 export function useProductWorkspaceNavigation({
   activeOwnerId,
   activeProductWorkspaceTabKey,
+  enabled,
   currentProductSkuParent,
   productDetailTabHandledRef,
   productDetailTabRequest,
@@ -297,6 +299,7 @@ export function useProductWorkspaceNavigation({
   useProductDetailTabLifecycle({
     activeOwnerId,
     activeProductWorkspaceTabKey,
+    enabled,
     openMockProductWorkbench,
     productDetailTabHandledRef,
     productDetailTabRequest,

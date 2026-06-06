@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import type { TabsProps } from 'antd';
 import type { AuthSessionStore } from '../auth/session';
 import type { StoreSyncOverviewState } from '../store-sync/types';
+import type { LoadStoreSyncOptions } from '../app-shell/useStoreSyncController';
 import { MasterDataBoard } from './MasterDataBoard';
 import { OrgTreeBoard } from './OrgTreeBoard';
 import { PermissionOverviewBoard } from './PermissionOverviewBoard';
@@ -28,7 +29,7 @@ type RoleManagementWorkspaceProps = {
   canManageStoreBinding: boolean;
   onActiveKeyChange: (key: RoleManagementWorkspaceTabKey) => void;
   onOwnerChange: (ownerId: number) => void;
-  onStoreRefresh: (ownerId?: number, options?: { preserveConnectionFeedback?: boolean }) => Promise<void> | void;
+  onStoreRefresh: (ownerId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   onDataChanged: (source?: 'store-management') => void;
 };
 
