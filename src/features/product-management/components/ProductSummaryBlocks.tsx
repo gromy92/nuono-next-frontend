@@ -13,6 +13,7 @@ import {
   productSummaryTitle,
   productSyncStatusMeta
 } from '../utils';
+import { ProductImageThumb } from './ProductBaselineDisplay';
 
 const { Text } = Typography;
 
@@ -158,25 +159,15 @@ export function ProductSummaryEntry(props: {
       ]}
     >
       <Space size={compact ? 12 : 14} align="start" style={{ width: '100%' }}>
-        <div
-          style={{
-            width: compact ? 48 : 56,
-            height: compact ? 48 : 56,
-            borderRadius: 8,
-            border: '1px solid #dbe4ea',
-            background: '#f8fafc',
-            overflow: 'hidden',
-            flexShrink: 0
-          }}
-        >
-          {summary.imageUrl ? (
-            <img
-              src={summary.imageUrl}
-              alt={summary.title || summary.skuParent}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : null}
-        </div>
+        <span style={{ flexShrink: 0 }}>
+          <ProductImageThumb
+            src={summary.imageUrl || summary.galleryImages[0]}
+            alt={summary.title || summary.skuParent}
+            imageCount={summary.galleryImages.length}
+            width={compact ? 48 : 56}
+            height={compact ? 48 : 56}
+          />
+        </span>
 
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ marginBottom: 8 }}>
