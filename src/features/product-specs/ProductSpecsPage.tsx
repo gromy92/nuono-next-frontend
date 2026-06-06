@@ -2,7 +2,7 @@ import { App, Button, Empty, Input, InputNumber, Select, Space, Table, Tag, Tool
 import type { ColumnsType } from 'antd/es/table';
 import { CheckOutlined, CloseOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AuthSession, AuthSessionStore } from '../auth/session';
+import type { AuthSession } from '../auth/session';
 import { fetchProductSpecsOverview, saveProductSpecSource, selectProductSpecEffectiveSource } from '../product-management/api';
 import type {
   ProductVariantSpecPayload,
@@ -59,11 +59,6 @@ type SpecField = {
   precision?: number;
 };
 
-type StoreOption = {
-  value: string;
-  label: string;
-};
-
 const productSpecFields: SpecField[] = [
   { key: 'productLengthCm', label: '长/cm', min: 0.01, precision: 2 },
   { key: 'productWidthCm', label: '宽/cm', min: 0.01, precision: 2 },
@@ -82,8 +77,8 @@ const cartonSpecFields: SpecField[] = [
 export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPageProps) {
   const { message } = App.useApp();
   const ownerUserId = resolveRequestOwnerUserId(session, activeOwnerId);
-  const initialStoreCode = resolveInitialSpecStoreCode(session);
-  const [storeCode, setStoreCode] = useState(initialStoreCode);
+  const storeCode = resolveSpecStoreCode(session);
+  const storeLabel = resolveSpecStoreLabel(session, storeCode);
   const [keyword, setKeyword] = useState('');
   const [completenessFilter, setCompletenessFilter] = useState<SpecCompletenessFilter>('all');
   const [rows, setRows] = useState<ProductVariantSpecPayload[]>([]);
@@ -94,27 +89,8 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
   const [selectingEffectiveKey, setSelectingEffectiveKey] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialStoreCode && !storeCode) {
-      setStoreCode(initialStoreCode);
-    }
-  }, [initialStoreCode, storeCode]);
-
-  const storeOptions = useMemo(() => {
-    return buildSpecStoreOptions(session);
-  }, [session.userStores]);
-
-  const storeLabelByCode = useMemo(() => {
-    return new Map(storeOptions.map((option) => [option.value, option.label]));
-  }, [storeOptions]);
-
-  useEffect(() => {
-    if (!storeOptions.length || !storeCode) {
-      return;
-    }
-    if (!storeOptions.some((option) => option.value === storeCode)) {
-      setStoreCode(storeOptions[0]?.value || '');
-    }
-  }, [storeCode, storeOptions]);
+    setEditingKey(null);
+  }, [storeCode]);
 
   const loadRows = useCallback(async () => {
     const normalizedStoreCode = storeCode.trim();
@@ -236,7 +212,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
                 PSKU {formatSnapshotValue(row.partnerSku)}
               </Text>
               <Text type="secondary" ellipsis style={{ fontSize: 13, maxWidth: 186 }}>
-                {formatSnapshotValue(storeLabelByCode.get(row.storeCode || storeCode) || row.storeCode || storeCode)}
+                {formatSnapshotValue(storeLabel || row.storeCode || storeCode)}
               </Text>
             </Space>
           </Space>
@@ -280,7 +256,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
       savingKey,
       selectingEffectiveKey,
       storeCode,
-      storeLabelByCode
+      storeLabel
     ]
   );
 
@@ -325,17 +301,6 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
             ]}
             style={{ width: 150 }}
             onChange={setCompletenessFilter}
-          />
-          <Select
-            showSearch
-            value={storeCode || undefined}
-            placeholder="店铺"
-            options={storeOptions}
-            style={{ width: 200 }}
-            onChange={(value) => {
-              setStoreCode(value);
-              setEditingKey(null);
-            }}
           />
           <Tooltip title="刷新">
             <Button icon={<SyncOutlined />} loading={loading} onClick={() => void loadRows()} />
@@ -735,54 +700,16 @@ function isPositiveSpecValue(value?: number) {
   return typeof value === 'number' && Number.isFinite(value) && value > 0;
 }
 
-function buildSpecStoreOptions(session: AuthSession) {
-  const grouped = new Map<string, { option: StoreOption; preferred: boolean }>();
-  (session.userStores || []).forEach((store) => {
-    if (!store.storeCode || store.authorized === false) {
-      return;
-    }
-    const groupKey = specStoreGroupKey(store);
-    const existing = grouped.get(groupKey);
-    const preferred = isPreferredSpecStore(store);
-    if (existing && (!preferred || existing.preferred)) {
-      return;
-    }
-    grouped.set(groupKey, {
-      option: {
-        value: store.storeCode,
-        label: store.projectName || store.projectCode || store.storeCode
-      },
-      preferred
-    });
-  });
-  return Array.from(grouped.values()).map((entry) => entry.option);
+function resolveSpecStoreCode(session: AuthSession) {
+  return session.currentStore?.storeCode || '';
 }
 
-function resolveInitialSpecStoreCode(session: AuthSession) {
-  const options = buildSpecStoreOptions(session);
-  if (!options.length) {
-    return '';
-  }
+function resolveSpecStoreLabel(session: AuthSession, storeCode: string) {
   const currentStore = session.currentStore;
-  if (!currentStore?.storeCode) {
-    return options[0]?.value || '';
+  if (!currentStore || currentStore.storeCode !== storeCode) {
+    return storeCode;
   }
-  const currentGroupKey = specStoreGroupKey(currentStore);
-  const matched = buildSpecStoreOptions({
-    ...session,
-    userStores: (session.userStores || []).filter((store) => specStoreGroupKey(store) === currentGroupKey)
-  })[0];
-  return matched?.value || options[0]?.value || '';
-}
-
-function specStoreGroupKey(store: Partial<AuthSessionStore>) {
-  return store.projectCode || store.projectName || store.storeCode || '';
-}
-
-function isPreferredSpecStore(store: Partial<AuthSessionStore>) {
-  const site = String(store.site || '').trim().toUpperCase();
-  const storeCode = String(store.storeCode || '').trim().toUpperCase();
-  return site === 'AE' || storeCode.endsWith('-NAE');
+  return currentStore.projectName || currentStore.projectCode || currentStore.storeCode || storeCode;
 }
 
 function resolveRequestOwnerUserId(session: AuthSession, activeOwnerId?: number) {

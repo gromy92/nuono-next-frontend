@@ -302,8 +302,7 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     tabLabel: '运营配置版本',
     contentKind: 'operations-config-versions',
     closable: true,
-    visibleInSidebar: false,
-    visibleInWorkspaceTabs: false
+    visibleInWorkspaceTabs: true
   },
   'data-activity-config': {
     key: 'data-activity-config',
@@ -447,6 +446,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     label: '运营配置',
     iconKey: 'operation-config',
     entries: [
+      { type: 'workspace', key: 'operations-config-versions' },
       { type: 'workspace', key: 'data-activity-config' },
       { type: 'workspace', key: 'operations-lifecycle-rules' }
     ]
@@ -651,6 +651,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'noon-call-store-data',
   'system-report-noon-data-completeness',
   'system-report-noon-data-gaps',
+  'operations-config-versions',
   'data-activity-config',
   'operations-lifecycle-rules'
 ]
