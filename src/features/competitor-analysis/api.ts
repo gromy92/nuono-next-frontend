@@ -1,0 +1,536 @@
+import { apiFetch, parseApiResponse } from '../../shared/api'
+import type {
+  CompetitorCandidate,
+  CompetitorCandidateSource,
+  CompetitorKeyword,
+  CompetitorRankPoint,
+  CompetitorReviewStatus,
+  CompetitorWatchProduct,
+  NoonProductCodeType,
+  RankStatus,
+  SearchRunStatus
+} from './types'
+
+type BackendListResponse = {
+  items?: BackendWatchProductListItem[]
+  pagination?: {
+    page?: number
+    pageSize?: number
+    total?: number
+    totalPages?: number
+  }
+}
+
+type BackendWatchProduct = {
+  id?: number | string
+  ownerUserId?: number | string
+  storeCode?: string
+  siteCode?: string
+  productSiteOfferId?: number | string
+  skuParent?: string
+  partnerSku?: string
+  childSku?: string
+  pskuCode?: string
+  selfNoonProductCode?: string
+  selfCodeType?: string
+  title?: string
+  brand?: string
+  imageUrl?: string
+  productFulltype?: string
+  status?: string
+  latestRunId?: number | string
+  latestRunStatus?: string
+  latestRunAt?: string
+}
+
+type BackendWatchProductListItem = BackendWatchProduct & {
+  activeKeywordCount?: number
+  pendingCandidateCount?: number
+  confirmedCompetitorCount?: number
+}
+
+type BackendKeyword = {
+  id?: number | string
+  watchProductId?: number | string
+  keyword?: string
+  keywordNorm?: string
+  locale?: string
+  status?: string
+  displayOrder?: number
+  lastProviderStatus?: string
+  lastSucceededAt?: string
+  lastErrorCode?: string
+  lastErrorMessage?: string
+}
+
+type BackendCandidate = {
+  id?: number | string
+  watchProductId?: number | string
+  noonProductCode?: string
+  codeType?: string
+  canonicalUrl?: string
+  titleSnapshot?: string
+  brandSnapshot?: string
+  imageUrlSnapshot?: string
+  priceAmountSnapshot?: number
+  currencyCodeSnapshot?: string
+  ratingSnapshot?: number
+  reviewCountSnapshot?: number
+  sourceType?: string
+  reviewStatus?: string
+  firstSeenAt?: string
+  lastSeenAt?: string
+}
+
+type BackendKeywordRelation = {
+  id?: number | string
+  keywordId?: number | string
+  competitorProductId?: number | string
+  relationStatus?: string
+  firstSeenRankNo?: number
+  lastSeenRankNo?: number
+  lastSeenSponsored?: boolean
+  lastSeenAt?: string
+}
+
+type BackendRankPoint = {
+  id?: number | string
+  keywordId?: number | string
+  keyword?: string
+  trackedProductType?: string
+  noonProductCode?: string
+  rankStatus?: string
+  rankNo?: number
+  sponsored?: boolean
+  isSponsored?: boolean
+  priceAmount?: number
+  currencyCode?: string
+  factTime?: string
+  factDate?: string
+}
+
+type BackendDetailResponse = {
+  watchProduct?: BackendWatchProduct
+  keywords?: BackendKeyword[]
+  candidates?: BackendCandidate[]
+  keywordRelations?: BackendKeywordRelation[]
+  latestRankPoints?: BackendRankPoint[]
+}
+
+type BackendRankHistoryResponse = BackendRankPoint[] | { items?: BackendRankPoint[] }
+
+export type CompetitorWatchProductQuery = {
+  productSearch?: string
+  keywordSearch?: string
+  competitorSearch?: string
+  status?: 'active' | 'paused'
+  page?: number
+  pageSize?: number
+}
+
+export type CompetitorRefreshRun = {
+  taskId?: string
+  runId?: string
+  watchProductId?: string
+  taskStatus?: string
+  runStatus?: string
+  progressPercent?: number
+  message?: string
+  errorCode?: string
+  errorMessage?: string
+  keywordTotal?: number
+  keywordSuccess?: number
+  keywordFailed?: number
+}
+
+export type CompetitorTask = {
+  taskId?: string
+  taskType?: string
+  naturalKey?: string
+  status?: string
+  progressPercent?: number
+  message?: string
+  resultJson?: string
+  errorCode?: string
+  startedAt?: string
+  finishedAt?: string
+  updatedAt?: string
+}
+
+const EMPTY_IMAGE =
+  'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='
+
+export async function fetchCompetitorWatchProducts(query: CompetitorWatchProductQuery = {}, signal?: AbortSignal) {
+  const params = new URLSearchParams()
+  appendSearchParam(params, 'productSearch', query.productSearch)
+  appendSearchParam(params, 'keywordSearch', query.keywordSearch)
+  appendSearchParam(params, 'competitorSearch', query.competitorSearch)
+  appendSearchParam(params, 'status', query.status?.toUpperCase())
+  if (query.page) {
+    params.set('page', String(query.page))
+  }
+  if (query.pageSize) {
+    params.set('pageSize', String(query.pageSize))
+  }
+  const suffix = params.toString() ? `?${params.toString()}` : ''
+  const response = await apiFetch(`/api/competitor-analysis/watch-products${suffix}`, { signal })
+  const payload = await parseApiResponse<BackendListResponse>(response, '读取竞品监控列表失败')
+  return {
+    items: (payload.items || []).map(mapListItem),
+    pagination: payload.pagination
+  }
+}
+
+export async function fetchCompetitorWatchProductDetail(watchProductId: string, signal?: AbortSignal) {
+  const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}`, { signal })
+  return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '读取竞品监控详情失败'))
+}
+
+export async function addCompetitorKeyword(watchProductId: string, keyword: string, locale?: string) {
+  const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}/keywords`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keyword, locale })
+  })
+  return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '新增关键词失败'))
+}
+
+export async function updateCompetitorKeyword(
+  keywordId: string,
+  input: { keyword?: string; locale?: string; status?: 'active' | 'paused'; displayOrder?: number }
+) {
+  const response = await apiFetch(`/api/competitor-analysis/keywords/${keywordId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...input,
+      status: input.status?.toUpperCase()
+    })
+  })
+  return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '更新关键词失败'))
+}
+
+export async function deleteCompetitorKeyword(keywordId: string) {
+  const response = await apiFetch(`/api/competitor-analysis/keywords/${keywordId}`, {
+    method: 'DELETE'
+  })
+  return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '删除关键词失败'))
+}
+
+export async function addManualCompetitor(watchProductId: string, input: string) {
+  const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}/manual-competitors`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ input })
+  })
+  return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '手工添加竞品失败'))
+}
+
+export async function confirmCompetitorCandidate(keywordId: string, competitorProductId: string) {
+  const response = await apiFetch(
+    `/api/competitor-analysis/keywords/${keywordId}/candidates/${competitorProductId}/confirm`,
+    { method: 'POST' }
+  )
+  return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '确认竞品失败'))
+}
+
+export async function ignoreCompetitorCandidate(keywordId: string, competitorProductId: string) {
+  const response = await apiFetch(
+    `/api/competitor-analysis/keywords/${keywordId}/candidates/${competitorProductId}/ignore`,
+    { method: 'POST' }
+  )
+  return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '忽略竞品失败'))
+}
+
+export async function requestCompetitorRefresh(watchProductId: string) {
+  const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}/refresh`, {
+    method: 'POST'
+  })
+  return mapRefreshRun(await parseApiResponse<CompetitorRefreshRun>(response, '提交竞品刷新失败'))
+}
+
+export async function fetchCompetitorRefreshRun(runId: string) {
+  const response = await apiFetch(`/api/competitor-analysis/refresh-runs/${runId}`)
+  return mapRefreshRun(await parseApiResponse<CompetitorRefreshRun>(response, '读取竞品刷新状态失败'))
+}
+
+export async function fetchCompetitorTask(taskId: string) {
+  const response = await apiFetch(`/api/competitor-analysis/tasks/${taskId}`)
+  return mapTask(await parseApiResponse<CompetitorTask>(response, '读取竞品刷新任务失败'))
+}
+
+export async function fetchCompetitorRankHistory(
+  watchProductId: string,
+  query: { keywordId: string; rangeDays: number },
+  signal?: AbortSignal
+) {
+  const params = new URLSearchParams({
+    keywordId: query.keywordId,
+    rangeDays: String(query.rangeDays)
+  })
+  const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}/rank-history?${params}`, {
+    signal
+  })
+  const payload = await parseApiResponse<BackendRankHistoryResponse>(response, '读取排名历史失败')
+  const rows = Array.isArray(payload) ? payload : payload.items || []
+  return rows.map(mapRankPoint)
+}
+
+export function mapDetail(payload: BackendDetailResponse): CompetitorWatchProduct {
+  const watchProduct = payload.watchProduct || {}
+  const keywords = (payload.keywords || []).map(mapKeyword)
+  const relations = payload.keywordRelations || []
+  const rankPoints = (payload.latestRankPoints || []).map(mapRankPoint)
+  const candidates = (payload.candidates || []).map((candidate) =>
+    mapCandidate(candidate, keywords, relations, rankPoints)
+  )
+  return {
+    ...mapWatchProductBase(watchProduct),
+    activeKeywordCount: keywords.filter((keyword) => keyword.status === 'active').length,
+    pendingCandidateCount: candidates.filter((candidate) => candidate.reviewStatus === 'pending').length,
+    confirmedCompetitorCount: candidates.filter((candidate) => candidate.reviewStatus === 'confirmed').length,
+    keywords,
+    candidates,
+    rankPoints
+  }
+}
+
+function mapListItem(row: BackendWatchProductListItem): CompetitorWatchProduct {
+  return {
+    ...mapWatchProductBase(row),
+    activeKeywordCount: numberValue(row.activeKeywordCount),
+    pendingCandidateCount: numberValue(row.pendingCandidateCount),
+    confirmedCompetitorCount: numberValue(row.confirmedCompetitorCount),
+    keywords: [],
+    candidates: [],
+    rankPoints: []
+  }
+}
+
+function mapWatchProductBase(row: BackendWatchProduct) {
+  const selfNoonProductCode = stringValue(row.selfNoonProductCode)
+  return {
+    id: idValue(row.id),
+    title: stringValue(row.title) || '未命名商品',
+    brand: stringValue(row.brand),
+    imageUrl: stringValue(row.imageUrl) || EMPTY_IMAGE,
+    storeCode: stringValue(row.storeCode),
+    siteCode: stringValue(row.siteCode),
+    partnerSku: stringValue(row.partnerSku),
+    childSku: stringValue(row.childSku),
+    pskuCode: stringValue(row.pskuCode) || stringValue(row.skuParent) || selfNoonProductCode,
+    productFulltype: stringValue(row.productFulltype),
+    selfNoonProductCode,
+    status: normalizeActiveStatus(row.status),
+    latestRunAt: formatDateTime(row.latestRunAt),
+    latestRunStatus: normalizeRunStatus(row.latestRunStatus)
+  } satisfies Omit<
+    CompetitorWatchProduct,
+    | 'activeKeywordCount'
+    | 'pendingCandidateCount'
+    | 'confirmedCompetitorCount'
+    | 'keywords'
+    | 'candidates'
+    | 'rankPoints'
+  >
+}
+
+function mapKeyword(row: BackendKeyword): CompetitorKeyword {
+  return {
+    id: idValue(row.id),
+    keyword: stringValue(row.keyword),
+    locale: stringValue(row.locale),
+    status: normalizeActiveStatus(row.status),
+    displayOrder: numberValue(row.displayOrder),
+    lastRunStatus: normalizeRunStatus(row.lastProviderStatus),
+    lastSucceededAt: formatDateTime(row.lastSucceededAt),
+    lastErrorCode: stringValue(row.lastErrorCode) || undefined
+  }
+}
+
+function mapCandidate(
+  row: BackendCandidate,
+  keywords: CompetitorKeyword[],
+  relations: BackendKeywordRelation[],
+  rankPoints: CompetitorRankPoint[]
+): CompetitorCandidate {
+  const candidateId = idValue(row.id)
+  const candidateRelations = relations.filter((relation) => idValue(relation.competitorProductId) === candidateId)
+  const keywordById = new Map(keywords.map((keyword) => [keyword.id, keyword]))
+  const keywordReviewStatus = Object.fromEntries(
+    candidateRelations.map((relation) => [idValue(relation.keywordId), normalizeRelationStatus(relation.relationStatus)])
+  )
+  const keywordEvidence = candidateRelations
+    .filter((relation) => normalizeRelationStatus(relation.relationStatus) !== 'ignored')
+    .map((relation) => keywordById.get(idValue(relation.keywordId))?.keyword)
+    .filter((keyword): keyword is string => Boolean(keyword))
+  const noonProductCode = stringValue(row.noonProductCode)
+  const latestRankPoint = rankPoints.find(
+    (point) => point.noonProductCode === noonProductCode && point.isConfirmedCompetitor
+  )
+  const latestRelation = candidateRelations
+    .slice()
+    .sort((left, right) => formatDateTime(right.lastSeenAt).localeCompare(formatDateTime(left.lastSeenAt)))[0]
+  return {
+    id: candidateId,
+    noonProductCode,
+    codeType: normalizeCodeType(row.codeType, noonProductCode),
+    canonicalUrl: stringValue(row.canonicalUrl) || buildNoonProductUrl(noonProductCode),
+    title: stringValue(row.titleSnapshot) || `竞品 ${noonProductCode}`,
+    brand: stringValue(row.brandSnapshot) || '待补充',
+    imageUrl: stringValue(row.imageUrlSnapshot) || EMPTY_IMAGE,
+    priceAmount: row.priceAmountSnapshot,
+    currencyCode: stringValue(row.currencyCodeSnapshot) || undefined,
+    rating: row.ratingSnapshot,
+    reviewCount: row.reviewCountSnapshot,
+    isSponsored: latestRankPoint?.isSponsored ?? Boolean(latestRelation?.lastSeenSponsored),
+    latestRankNo: latestRankPoint?.rankNo ?? latestRelation?.lastSeenRankNo,
+    sourceType: normalizeSourceType(row.sourceType),
+    reviewStatus: normalizeReviewStatus(row.reviewStatus),
+    keywordReviewStatus,
+    keywordEvidence,
+    lastSeenAt: formatDateTime(row.lastSeenAt || latestRelation?.lastSeenAt)
+  }
+}
+
+function mapRankPoint(row: BackendRankPoint): CompetitorRankPoint {
+  const keywordId = idValue(row.keywordId)
+  const noonProductCode = stringValue(row.noonProductCode)
+  const factTime = stringValue(row.factTime || row.factDate)
+  const trackedType = stringValue(row.trackedProductType).toUpperCase()
+  return {
+    id: idValue(row.id) || `${keywordId}-${noonProductCode}-${factTime}`,
+    keywordId,
+    noonProductCode,
+    factDate: formatFactDate(factTime),
+    rankStatus: normalizeRankStatus(row.rankStatus),
+    rankNo: row.rankNo,
+    isSelf: trackedType === 'SELF',
+    isConfirmedCompetitor: trackedType === 'COMPETITOR',
+    isSponsored: Boolean(row.sponsored ?? row.isSponsored),
+    priceAmount: row.priceAmount,
+    currencyCode: stringValue(row.currencyCode) || undefined
+  }
+}
+
+function mapRefreshRun(payload: CompetitorRefreshRun): CompetitorRefreshRun {
+  return {
+    ...payload,
+    taskId: optionalId(payload.taskId),
+    runId: optionalId(payload.runId),
+    watchProductId: optionalId(payload.watchProductId)
+  }
+}
+
+function mapTask(payload: CompetitorTask): CompetitorTask {
+  return {
+    ...payload,
+    taskId: optionalId(payload.taskId)
+  }
+}
+
+function appendSearchParam(params: URLSearchParams, key: string, value?: string) {
+  const normalized = value?.trim()
+  if (normalized) {
+    params.set(key, normalized)
+  }
+}
+
+function normalizeActiveStatus(value: unknown): 'active' | 'paused' {
+  return String(value || 'ACTIVE').toUpperCase() === 'PAUSED' ? 'paused' : 'active'
+}
+
+function normalizeRunStatus(value: unknown): SearchRunStatus {
+  const normalized = String(value || 'FAILED').toUpperCase()
+  if (normalized === 'SUCCEEDED') {
+    return 'succeeded'
+  }
+  if (normalized === 'PARTIAL_FAILED') {
+    return 'partial_failed'
+  }
+  if (normalized === 'RUNNING' || normalized === 'QUEUED') {
+    return 'running'
+  }
+  if (normalized === 'CAPTCHA_REQUIRED') {
+    return 'captcha_required'
+  }
+  if (normalized === 'PARSE_FAILED') {
+    return 'parse_failed'
+  }
+  if (normalized === 'PROVIDER_UNAVAILABLE') {
+    return 'provider_unavailable'
+  }
+  return 'failed'
+}
+
+function normalizeRankStatus(value: unknown): RankStatus {
+  return String(value || 'NOT_IN_TOP_30').toUpperCase() === 'RANKED' ? 'ranked' : 'not_in_top_30'
+}
+
+function normalizeReviewStatus(value: unknown): CompetitorReviewStatus {
+  const normalized = String(value || 'PENDING').toUpperCase()
+  if (normalized === 'CONFIRMED') {
+    return 'confirmed'
+  }
+  if (normalized === 'IGNORED') {
+    return 'ignored'
+  }
+  return 'pending'
+}
+
+function normalizeRelationStatus(value: unknown): CompetitorReviewStatus {
+  const normalized = String(value || 'DISCOVERED').toUpperCase()
+  if (normalized === 'CONFIRMED') {
+    return 'confirmed'
+  }
+  if (normalized === 'IGNORED') {
+    return 'ignored'
+  }
+  return 'pending'
+}
+
+function normalizeSourceType(value: unknown): CompetitorCandidateSource {
+  return String(value || 'SEARCH_DISCOVERY').toUpperCase() === 'MANUAL_ADD' ? 'manual_add' : 'search_discovery'
+}
+
+function normalizeCodeType(value: unknown, noonProductCode: string): NoonProductCodeType {
+  const normalized = String(value || '').toUpperCase()
+  if (normalized === 'Z_CODE' || noonProductCode.startsWith('Z')) {
+    return 'Z_CODE'
+  }
+  return 'N_CODE'
+}
+
+function stringValue(value: unknown) {
+  return value === undefined || value === null ? '' : String(value).trim()
+}
+
+function idValue(value: unknown) {
+  return stringValue(value)
+}
+
+function optionalId(value: unknown) {
+  const id = idValue(value)
+  return id || undefined
+}
+
+function numberValue(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
+function formatDateTime(value: unknown) {
+  const text = stringValue(value)
+  if (!text) {
+    return ''
+  }
+  return text.replace('T', ' ').slice(0, 16)
+}
+
+function formatFactDate(value: unknown) {
+  const text = formatDateTime(value)
+  return text ? text.slice(0, 10) : ''
+}
+
+function buildNoonProductUrl(noonProductCode: string) {
+  return noonProductCode ? `https://www.noon.com/p/${noonProductCode}/p/` : 'https://www.noon.com/'
+}

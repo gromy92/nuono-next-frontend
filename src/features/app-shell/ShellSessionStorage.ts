@@ -10,6 +10,7 @@ import {
   PURCHASE_LISTING_PATH,
   DATA_SALES_ANALYTICS_PATH,
   DATA_SALES_FORECAST_PATH,
+  OPERATIONS_COMPETITOR_ANALYSIS_PATH,
   NOON_CALL_STORE_DATA_PATH,
   SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH,
   SYSTEM_REPORT_NOON_DATA_GAPS_PATH,
@@ -118,6 +119,9 @@ function readDevSessionOverride(): AuthSession | null {
     pathname.startsWith(DATA_SALES_FORECAST_PATH) ||
     search.get('grantSalesAnalytics') === '1' ||
     search.get('grantSalesForecast') === '1'
+  const includeOperationsCompetitorDevMenu =
+    pathname.startsWith(OPERATIONS_COMPETITOR_ANALYSIS_PATH) ||
+    search.get('grantCompetitorAnalysis') === '1'
   const includeOperationsConfigDevMenu =
     pathname.startsWith(OPERATIONS_CONFIG_VERSIONS_PATH) ||
     pathname.startsWith(DATA_ACTIVITY_CONFIG_PATH) ||
@@ -288,6 +292,9 @@ function readDevSessionOverride(): AuthSession | null {
   if (includeSalesAnalyticsDevMenu) {
     grantedMenus.push({ menuId: 9401, menuName: '销量分析', urlPath: DATA_SALES_ANALYTICS_PATH })
     grantedMenus.push({ menuId: 9402, menuName: '销量预测', urlPath: DATA_SALES_FORECAST_PATH })
+  }
+  if (includeOperationsCompetitorDevMenu) {
+    grantedMenus.push({ menuId: 9801, menuName: '竞品分析', urlPath: OPERATIONS_COMPETITOR_ANALYSIS_PATH })
   }
   if (includeOperationsConfigDevMenu) {
     grantedMenus.push({ menuId: 9503, menuName: '运营配置版本', urlPath: OPERATIONS_CONFIG_VERSIONS_PATH })
