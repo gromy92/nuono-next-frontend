@@ -78,12 +78,19 @@ export function buildProfitFormPrefillValues(
     fbnOutboundFee: isFiniteNumber(detailSeed.fbnOutboundFee)
       ? detailSeed.fbnOutboundFee
       : PROFIT_FORM_DEFAULTS.fbnOutboundFee,
+    manualFbnOutboundFeeOverride:
+      typeof detailSeed.manualFbnOutboundFeeOverride === 'boolean'
+        ? detailSeed.manualFbnOutboundFeeOverride
+        : currentValues.manualFbnOutboundFeeOverride ?? PROFIT_FORM_DEFAULTS.manualFbnOutboundFeeOverride,
     fbpDirectShipFee: isFiniteNumber(detailSeed.fbpDirectShipFee)
       ? detailSeed.fbpDirectShipFee
       : PROFIT_FORM_DEFAULTS.fbpDirectShipFee,
     fulfillmentFee: isFiniteNumber(detailSeed.fulfillmentFee)
       ? detailSeed.fulfillmentFee
-      : PROFIT_FORM_DEFAULTS.fulfillmentFee
+      : PROFIT_FORM_DEFAULTS.fulfillmentFee,
+    ownerUserId: isFiniteNumber(detailSeed.ownerUserId) ? detailSeed.ownerUserId : currentValues.ownerUserId,
+    storeCode: detailSeed.storeCode ?? currentValues.storeCode,
+    skuId: detailSeed.skuId ?? currentValues.skuId
   };
 
   if (!isFiniteNumber(nextValues.salePrice)) {

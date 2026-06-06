@@ -75,6 +75,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'previewAli1688',
   'grantAiFileParse',
   'grantFileManagement',
+  'grantProfit',
   'grantLogisticsQuote',
   'grantAli1688HistoricalOrders',
   'grantManualSelection',

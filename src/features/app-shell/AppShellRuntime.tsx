@@ -44,7 +44,7 @@ export function AppShellRuntime() {
     setActiveMenuKey('purchase-profit');
   }, []);
 
-  const { profitBoard, openProfitCalculatorPrefilled } = useProfitCalculatorWorkspace(openProfitWorkspace);
+  const { profitBoard, openProfitCalculatorPrefilled } = useProfitCalculatorWorkspace(openProfitWorkspace, shellSession);
   const productWorkspace = useProductManagementWorkspace({
     session,
     enabled: isProductWorkspaceMenu(activeMenuKey),

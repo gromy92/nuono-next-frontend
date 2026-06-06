@@ -575,8 +575,8 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
   },
   {
     keys: ['purchase-profit'],
-    urlPaths: ['/api/sku/cost'],
-    menuNames: ['利润计算与上架']
+    urlPaths: ['/purchase/profit', '/api/sku/cost'],
+    menuNames: ['利润计算', '利润计算与上架']
   },
   {
     keys: ['purchase-logistics-quote'],
