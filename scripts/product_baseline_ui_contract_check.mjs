@@ -23,8 +23,8 @@ for (const exportName of ['ProductImageThumb', 'ProductBaselineIdentity', 'Produ
 }
 assert.match(
   sharedBaselineComponent,
-  /aspectRatio:\s*['"]4\s*\/\s*3['"]/,
-  'Shared ProductImageThumb should use a 4:3 frame as the product-image default'
+  /aspectRatio:\s*['"]3\s*\/\s*4['"]/,
+  'Shared ProductImageThumb should use a vertical 3:4 frame as the product-image default'
 );
 assert.match(
   sharedBaselineComponent,
@@ -39,7 +39,7 @@ assert.match(
 assert.match(
   sharedBaselineComponent,
   /fit\s*=\s*['"]cover['"]/,
-  'Shared ProductImageThumb should fill the 4:3 thumbnail frame by default'
+  'Shared ProductImageThumb should fill the 3:4 thumbnail frame by default'
 );
 assert.match(
   sharedBaselineComponent,

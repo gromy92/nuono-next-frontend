@@ -81,7 +81,7 @@ export function ProductImageThumb({
         style={{
           display: 'inline-flex',
           width,
-          aspectRatio: '4 / 3',
+          aspectRatio: '3 / 4',
           flex: '0 0 auto',
           borderRadius: 6,
           overflow: 'hidden',
@@ -102,7 +102,7 @@ export function ProductImageThumb({
       aria-label={visibleImageCount > 0 ? `查看商品图片，共 ${visibleImageCount} 张` : '查看商品图片'}
       style={{
         width,
-        aspectRatio: '4 / 3',
+        aspectRatio: '3 / 4',
         flex: '0 0 auto',
         padding: 0,
         borderRadius: 6,
