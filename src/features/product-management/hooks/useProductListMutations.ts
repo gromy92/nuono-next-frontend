@@ -9,8 +9,10 @@ import {
 } from '../utils';
 import type {
   ProductListDatasetState,
+  ProductListRowPayload,
   ProductListSummaryPayload,
   ProductListUiState,
+  StoreInitializationPayload,
   StoreInitializationState
 } from '../types';
 
@@ -28,6 +30,27 @@ function liveStatusValue(liveActive: boolean) {
 function replaceLiveStatuses(currentStatuses: string[] | undefined, liveActive: boolean) {
   const nextStatus = liveStatusValue(liveActive);
   return currentStatuses?.length ? currentStatuses.map(() => nextStatus) : [nextStatus];
+}
+
+function storeCodeMatches(summaryStoreCode?: string, targetStoreCode?: string) {
+  const summaryStore = textInputValue(summaryStoreCode);
+  const targetStore = textInputValue(targetStoreCode);
+  return !summaryStore || !targetStore || summaryStore === targetStore;
+}
+
+function summaryAppliesToListStore(summary: ProductListSummaryPayload, listStoreCode?: string) {
+  return storeCodeMatches(summary.storeCode, listStoreCode);
+}
+
+function summaryAppliesToListItem(item: ProductListRowPayload, summary: ProductListSummaryPayload) {
+  return item.skuParent === summary.skuParent && storeCodeMatches(summary.storeCode, item.referenceStoreCode);
+}
+
+function summaryAppliesToSampleProduct(
+  item: StoreInitializationPayload['sampleProducts'][number],
+  summary: ProductListSummaryPayload
+) {
+  return item.skuParent === summary.skuParent && storeCodeMatches(summary.storeCode, item.storeCode);
 }
 
 export function useProductListMutations({
@@ -150,10 +173,13 @@ export function useProductListMutations({
         if (currentValue.status !== 'success') {
           return currentValue;
         }
+        if (!summaryAppliesToListStore(summary, currentValue.data.storeCode)) {
+          return currentValue;
+        }
 
         let itemChanged = false;
         const nextItems = currentValue.data.items.map((item) => {
-          if (item.skuParent !== summary.skuParent) {
+          if (!summaryAppliesToListItem(item, summary)) {
             return item;
           }
           itemChanged = true;
@@ -255,10 +281,13 @@ export function useProductListMutations({
         if (currentValue.status !== 'success') {
           return currentValue;
         }
+        if (!summaryAppliesToListStore(summary, currentValue.data.storeCode)) {
+          return currentValue;
+        }
 
         let productItemChanged = false;
         const nextProductItems = currentValue.data.productItems.map((item) => {
-          if (item.skuParent !== summary.skuParent) {
+          if (!summaryAppliesToListItem(item, summary)) {
             return item;
           }
           productItemChanged = true;
@@ -267,7 +296,7 @@ export function useProductListMutations({
 
         let sampleProductChanged = false;
         const nextSampleProducts = currentValue.data.sampleProducts.map((item) => {
-          if (item.skuParent !== summary.skuParent) {
+          if (!summaryAppliesToSampleProduct(item, summary)) {
             return item;
           }
           sampleProductChanged = true;
