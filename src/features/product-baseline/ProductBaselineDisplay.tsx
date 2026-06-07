@@ -20,7 +20,7 @@ export function ProductImageThumb({
   alt,
   imageCount = 0,
   width = 96,
-  fit = 'contain',
+  fit = 'cover',
   fallback = '无图',
   onClick,
   disabled
@@ -36,7 +36,7 @@ export function ProductImageThumb({
         src={visibleSrc}
         alt={alt}
         onError={() => setFailedSrc(visibleSrc)}
-        style={{ width: '100%', height: '100%', objectFit: fit, display: 'block' }}
+        style={{ width: '100%', height: '100%', objectFit: fit, objectPosition: 'center', display: 'block' }}
       />
       {visibleImageCount > 0 ? (
         <span
@@ -44,10 +44,12 @@ export function ProductImageThumb({
             position: 'absolute',
             right: 4,
             bottom: 4,
+            zIndex: 1,
             padding: '1px 5px',
             borderRadius: 4,
             color: '#ffffff',
             background: 'rgba(15, 23, 42, 0.72)',
+            boxShadow: '0 1px 4px rgba(15, 23, 42, 0.22)',
             fontSize: 11,
             lineHeight: '16px'
           }}
@@ -80,6 +82,7 @@ export function ProductImageThumb({
           display: 'inline-flex',
           width,
           aspectRatio: '4 / 3',
+          flex: '0 0 auto',
           borderRadius: 6,
           overflow: 'hidden',
           border: '1px solid #e5e7eb',
@@ -100,6 +103,7 @@ export function ProductImageThumb({
       style={{
         width,
         aspectRatio: '4 / 3',
+        flex: '0 0 auto',
         padding: 0,
         borderRadius: 6,
         border: '1px solid #e5e7eb',

@@ -43,6 +43,7 @@ export function useProductMediaAndHistoryActions({
 }: UseProductMediaAndHistoryActionsParams) {
   const galleryActions = useProductGalleryActions({
     activeOwnerId,
+    applyProductListSummary,
     currentProductSkuParent,
     currentProductSummarySurface,
     productGalleryImages: workspaceState.productGalleryImages,

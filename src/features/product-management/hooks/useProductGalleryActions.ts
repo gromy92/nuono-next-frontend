@@ -1,10 +1,16 @@
 import { useCallback, useEffect } from 'react';
 import { openProductWorkbenchSnapshot } from '../api';
 import { mergeGalleryImageUrls, productSummaryTitle } from '../utils';
-import type { ProductMasterSnapshotPayload, ProductSummarySurface, StoreInitializationPayload } from '../types';
+import type {
+  ProductListSummaryPayload,
+  ProductMasterSnapshotPayload,
+  ProductSummarySurface,
+  StoreInitializationPayload
+} from '../types';
 
 type UseProductGalleryActionsParams = {
   activeOwnerId?: number;
+  applyProductListSummary: (summary?: ProductListSummaryPayload) => void;
   currentProductSkuParent?: string;
   currentProductSummarySurface?: ProductSummarySurface | null;
   productGalleryImages: string[];
@@ -20,6 +26,7 @@ type UseProductGalleryActionsParams = {
 
 export function useProductGalleryActions({
   activeOwnerId,
+  applyProductListSummary,
   currentProductSkuParent,
   currentProductSummarySurface,
   productGalleryImages,
@@ -116,16 +123,22 @@ export function useProductGalleryActions({
   const openProductListGallery = useCallback(
     async (record: StoreInitializationPayload['productItems'][number]) => {
       const galleryImages = mergeGalleryImageUrls(record.galleryImages, record.imageUrl);
-      openProductGallery(galleryImages, {
-        title: record.title || record.skuParent,
-        subtitle: record.skuParent
-      });
+      const galleryOptions: { title?: string; subtitle?: string } = {};
+      const galleryTitle = record.title || record.skuParent;
+      if (galleryTitle) {
+        galleryOptions.title = galleryTitle;
+      }
+      if (record.skuParent) {
+        galleryOptions.subtitle = record.skuParent;
+      }
       if (galleryImages.length > 1 || !activeOwnerId || !record.skuParent) {
+        openProductGallery(galleryImages, galleryOptions);
         return;
       }
 
       const effectiveStoreCode = record.referenceStoreCode || selectedInitializationStoreCode;
       if (!effectiveStoreCode) {
+        openProductGallery(galleryImages, galleryOptions);
         return;
       }
 
@@ -137,6 +150,9 @@ export function useProductGalleryActions({
           partnerSku: record.partnerSku,
           pskuCode: record.pskuCode
         });
+        if (payload.listSummary) {
+          applyProductListSummary(payload.listSummary);
+        }
         const fetchedImages = mergeGalleryImageUrls(
           payload.content?.images,
           payload.content?.mainImageUrl,
@@ -144,15 +160,12 @@ export function useProductGalleryActions({
           payload.listSummary?.imageUrl,
           galleryImages
         );
-        if (fetchedImages.length > galleryImages.length) {
-          setProductGalleryImages(fetchedImages);
-          setProductGalleryIndex((currentValue) => Math.max(0, Math.min(currentValue, fetchedImages.length - 1)));
-        }
+        openProductGallery(fetchedImages.length ? fetchedImages : galleryImages, galleryOptions);
       } catch {
-        // The existing single image remains usable when live detail hydration is unavailable.
+        openProductGallery(galleryImages, galleryOptions);
       }
     },
-    [activeOwnerId, openProductGallery, selectedInitializationStoreCode, setProductGalleryImages, setProductGalleryIndex]
+    [activeOwnerId, applyProductListSummary, openProductGallery, selectedInitializationStoreCode]
   );
 
   return {

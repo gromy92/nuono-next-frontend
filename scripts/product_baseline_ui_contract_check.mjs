@@ -34,7 +34,17 @@ assert.match(
 assert.match(
   sharedBaselineComponent,
   /objectFit:\s*fit/,
-  'Shared ProductImageThumb should keep product images uncropped by default'
+  'Shared ProductImageThumb should drive image fitting through the shared fit prop'
+);
+assert.match(
+  sharedBaselineComponent,
+  /fit\s*=\s*['"]cover['"]/,
+  'Shared ProductImageThumb should fill the 4:3 thumbnail frame by default'
+);
+assert.match(
+  sharedBaselineComponent,
+  /zIndex:\s*1/,
+  'Shared ProductImageThumb count badge should stay visible over product images'
 );
 assert.match(
   sharedBaselineComponent,
@@ -89,11 +99,6 @@ assert.doesNotMatch(
   /function ProductListThumbnail\b/,
   'Product list should not keep a local thumbnail implementation after extracting the baseline component'
 );
-assert.doesNotMatch(
-  productListCells,
-  /objectFit:\s*['"]cover['"]/,
-  'Product list thumbnails should not crop product images'
-);
 
 const detailSummaryBar = read('src/features/product-management/components/ProductDetailSummaryBar.tsx');
 assert.match(
@@ -129,7 +134,7 @@ assert.match(
 assert.doesNotMatch(
   detailPreviewPanel,
   /objectFit:\s*['"]cover['"]/,
-  'Product detail preview should not crop product images'
+  'Product detail preview should not keep a local cover-fit override outside the shared image component'
 );
 
 const summaryBlocks = read('src/features/product-management/components/ProductSummaryBlocks.tsx');
@@ -141,7 +146,7 @@ assert.match(
 assert.doesNotMatch(
   summaryBlocks,
   /objectFit:\s*['"]cover['"]/,
-  'Product summary entries should not crop product images'
+  'Product summary entries should not keep a local cover-fit override outside the shared image component'
 );
 
 const productInsightsTab = read('src/features/product-management/components/ProductInsightsTab.tsx');
@@ -187,7 +192,7 @@ assert.match(
 assert.doesNotMatch(
   profitCalculatorPage,
   /objectFit:\s*['"]cover['"]/,
-  'Profit calculator thumbnails should not crop product images'
+  'Profit calculator thumbnails should not keep a local cover-fit override outside the shared image component'
 );
 
 const productSpecsPage = read('src/features/product-specs/ProductSpecsPage.tsx');
@@ -204,7 +209,7 @@ assert.doesNotMatch(
 assert.doesNotMatch(
   productSpecsPage,
   /objectFit:\s*['"]cover['"]/,
-  'Product specs page product thumbnails should not crop product images'
+  'Product specs page product thumbnails should not keep a local cover-fit override outside the shared image component'
 );
 
 const salesAnalyticsPage = read('src/features/sales-analytics/SalesAnalyticsPage.tsx');
@@ -221,7 +226,19 @@ assert.doesNotMatch(
 assert.doesNotMatch(
   salesAnalyticsPage,
   /objectFit:\s*['"]cover['"]/,
-  'Sales analytics product thumbnails should not crop product images'
+  'Sales analytics product thumbnails should not keep a local cover-fit override outside the shared image component'
+);
+
+const productGalleryActions = read('src/features/product-management/hooks/useProductGalleryActions.ts');
+assert.match(
+  productGalleryActions,
+  /applyProductListSummary\(payload\.listSummary\)/,
+  'Product list gallery hydration should apply list summaries so image counts update after detail fetch'
+);
+assert.doesNotMatch(
+  productGalleryActions,
+  /openProductGallery\(galleryImages[\s\S]*?if \(galleryImages\.length > 1/,
+  'Product list gallery should not open a single-image gallery before attempting detail hydration'
 );
 
 const operationConfigVersionLibrary = read('src/features/operations-config/OperationConfigVersionLibraryPage.tsx');
