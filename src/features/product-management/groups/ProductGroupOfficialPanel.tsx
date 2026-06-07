@@ -108,6 +108,9 @@ export function ProductGroupOfficialPanel(props: {
         textInputValue(item.imageUrl || item.mainImageUrl || item.imageKey || item.image_key) ||
         fallback.imageUrl ||
         fallback.galleryImages?.[0],
+      galleryImages: Array.isArray(item.galleryImages) && item.galleryImages.length
+        ? item.galleryImages
+        : [fallback.imageUrl, ...(fallback.galleryImages ?? [])].filter(Boolean),
       partnerSku: textInputValue(item.partnerSku) || fallback.partnerSku,
       pskuCode: textInputValue(item.pskuCode) || fallback.pskuCode,
       offerCode: textInputValue(item.offerCode) || fallback.offerCode,

@@ -1,6 +1,7 @@
 import { Input, Modal, Space, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import { formatSnapshotValue } from '../utils';
+import { ProductBaselineIdentity } from '../../product-baseline';
 
 const { Text } = Typography;
 
@@ -12,6 +13,7 @@ export type ProductGroupMemberDraft = {
   brand?: string;
   title?: string;
   imageUrl?: string;
+  galleryImages?: string[];
   partnerSku?: string;
   totalFbnStock?: number;
   totalFbpStock?: number;
@@ -37,6 +39,8 @@ export function ProductGroupMemberEditModal(props: ProductGroupMemberEditModalPr
   const fbnStock = Number(initialValue.totalFbnStock ?? 0);
   const fbpStock = Number(initialValue.totalFbpStock ?? 0);
   const displayPsku = initialValue.partnerSku || initialValue.childSku || initialValue.skuParent;
+  const imageUrl = initialValue.imageUrl || initialValue.galleryImages?.[0];
+  const imageCount = initialValue.galleryImages?.length ?? (imageUrl ? 1 : 0);
   const axisRows = initialValue.axisRows?.length
     ? initialValue.axisRows
     : [{ code: undefined, label, value: initialValue.axisValue }];
@@ -100,57 +104,37 @@ export function ProductGroupMemberEditModal(props: ProductGroupMemberEditModalPr
       <Space direction="vertical" size={16} style={{ width: '100%' }}>
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: '72px minmax(0, 1fr)',
-            gap: 12,
-            alignItems: 'center',
             padding: 14,
             border: '1px solid var(--pm-subtle-border)',
             borderRadius: 8,
             background: 'var(--pm-subtle-bg)'
           }}
         >
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 6,
-              overflow: 'hidden',
-              background: '#fff',
-              border: '1px solid var(--pm-subtle-border)'
-            }}
-          >
-            {initialValue.imageUrl ? (
-              <img
-                src={initialValue.imageUrl}
-                alt={initialValue.title || initialValue.skuParent}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <Text
-                style={{
-                  color: 'var(--pm-text-faint)',
-                  lineHeight: '70px',
-                  display: 'block',
-                  textAlign: 'center',
-                  fontSize: 12
-                }}
-              >
-                无图
+          <ProductBaselineIdentity
+            title={initialValue.title || initialValue.skuParent}
+            imageUrl={imageUrl}
+            imageCount={imageCount}
+            imageAlt={initialValue.title || initialValue.skuParent}
+            imageWidth={88}
+            titleMaxWidth={360}
+            codes={[
+              {
+                label: 'PSKU',
+                value: formatSnapshotValue(displayPsku),
+                copyText: displayPsku
+              },
+              {
+                label: 'SKU',
+                value: formatSnapshotValue(initialValue.skuParent),
+                copyText: initialValue.skuParent
+              }
+            ]}
+            extra={
+              <Text type="secondary" style={{ fontSize: 12, lineHeight: '18px' }}>
+                库存 FBN {Number.isFinite(fbnStock) ? fbnStock : 0} / FBP {Number.isFinite(fbpStock) ? fbpStock : 0}
               </Text>
-            )}
-          </div>
-          <Space direction="vertical" size={6} style={{ minWidth: 0 }}>
-            <Text strong ellipsis={{ tooltip: initialValue.title || initialValue.skuParent }}>
-              {formatSnapshotValue(initialValue.title || initialValue.skuParent)}
-            </Text>
-            <Text type="secondary">
-              PSKU：{formatSnapshotValue(displayPsku)}
-            </Text>
-            <Text type="secondary">
-              库存：FBN {Number.isFinite(fbnStock) ? fbnStock : 0} / FBP {Number.isFinite(fbpStock) ? fbpStock : 0}
-            </Text>
-          </Space>
+            }
+          />
         </div>
         {axisRows.map((row) => (
           <div key={row.code || row.label}>

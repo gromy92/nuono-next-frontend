@@ -18,7 +18,7 @@ type ProductDetailSummaryPanelProps = {
 export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: ProductDetailSummaryPanelProps) {
   const {
     productSnapshotView,
-    currentProductSummarySurface,
+    productDetailSummarySurface,
     activeProductSiteOffer,
     productLeadImage,
     openCurrentProductGallery,
@@ -107,7 +107,7 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
         <Text>确认放弃当前未发布草稿，并恢复到最近本地商品基线？</Text>
       </Modal>
       <ProductDetailSummaryBar
-        currentProductSummarySurface={currentProductSummarySurface}
+        summary={productDetailSummarySurface}
         productSnapshotView={productSnapshotView}
         activeProductSiteOffer={activeProductSiteOffer}
         productLeadImage={productLeadImage}

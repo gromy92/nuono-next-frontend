@@ -2,14 +2,15 @@ import { App, Button, Empty, Input, InputNumber, Select, Space, Table, Tag, Tool
 import type { ColumnsType } from 'antd/es/table';
 import { CheckOutlined, CloseOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AuthSession, AuthSessionStore } from '../auth/session';
+import type { AuthSession } from '../auth/session';
 import { fetchProductSpecsOverview, saveProductSpecSource, selectProductSpecEffectiveSource } from '../product-management/api';
 import type {
   ProductVariantSpecPayload,
   ProductVariantSpecSourcePayload,
   ProductVariantSpecSourceType
 } from '../product-management/types';
-import { formatSnapshotValue, normalizeNoonImageUrl } from '../product-management/utils/common';
+import { ProductBaselineIdentity } from '../product-baseline';
+import { formatSnapshotValue } from '../product-management/utils/common';
 
 const { Text } = Typography;
 
@@ -59,11 +60,6 @@ type SpecField = {
   precision?: number;
 };
 
-type StoreOption = {
-  value: string;
-  label: string;
-};
-
 const productSpecFields: SpecField[] = [
   { key: 'productLengthCm', label: '长/cm', min: 0.01, precision: 2 },
   { key: 'productWidthCm', label: '宽/cm', min: 0.01, precision: 2 },
@@ -82,8 +78,8 @@ const cartonSpecFields: SpecField[] = [
 export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPageProps) {
   const { message } = App.useApp();
   const ownerUserId = resolveRequestOwnerUserId(session, activeOwnerId);
-  const initialStoreCode = resolveInitialSpecStoreCode(session);
-  const [storeCode, setStoreCode] = useState(initialStoreCode);
+  const storeCode = resolveSpecStoreCode(session);
+  const storeLabel = resolveSpecStoreLabel(session, storeCode);
   const [keyword, setKeyword] = useState('');
   const [completenessFilter, setCompletenessFilter] = useState<SpecCompletenessFilter>('all');
   const [rows, setRows] = useState<ProductVariantSpecPayload[]>([]);
@@ -94,27 +90,8 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
   const [selectingEffectiveKey, setSelectingEffectiveKey] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialStoreCode && !storeCode) {
-      setStoreCode(initialStoreCode);
-    }
-  }, [initialStoreCode, storeCode]);
-
-  const storeOptions = useMemo(() => {
-    return buildSpecStoreOptions(session);
-  }, [session.userStores]);
-
-  const storeLabelByCode = useMemo(() => {
-    return new Map(storeOptions.map((option) => [option.value, option.label]));
-  }, [storeOptions]);
-
-  useEffect(() => {
-    if (!storeOptions.length || !storeCode) {
-      return;
-    }
-    if (!storeOptions.some((option) => option.value === storeCode)) {
-      setStoreCode(storeOptions[0]?.value || '');
-    }
-  }, [storeCode, storeOptions]);
+    setEditingKey(null);
+  }, [storeCode]);
 
   const loadRows = useCallback(async () => {
     const normalizedStoreCode = storeCode.trim();
@@ -224,22 +201,27 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         title: '商品',
         width: 262,
         render: (_, row) => (
-          <Space size={8} align="start" style={{ minWidth: 0, width: 254 }}>
-            <ProductThumb src={row.imageUrl} alt={formatSnapshotValue(row.title || row.partnerSku)} />
-            <Space direction="vertical" size={2} style={{ minWidth: 0, maxWidth: 186 }}>
-              <Tooltip title={formatSnapshotValue(row.title)}>
-                <Text strong ellipsis style={{ maxWidth: 186, fontSize: 12 }}>
-                  {formatSnapshotValue(row.title)}
-                </Text>
-              </Tooltip>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                PSKU {formatSnapshotValue(row.partnerSku)}
-              </Text>
-              <Text type="secondary" ellipsis style={{ fontSize: 13, maxWidth: 186 }}>
-                {formatSnapshotValue(storeLabelByCode.get(row.storeCode || storeCode) || row.storeCode || storeCode)}
-              </Text>
-            </Space>
-          </Space>
+          <div style={{ width: 254 }}>
+            <ProductBaselineIdentity
+              title={row.title || row.partnerSku || '-'}
+              imageUrl={row.imageUrl}
+              imageCount={row.imageUrl ? 1 : 0}
+              imageAlt={formatSnapshotValue(row.title || row.partnerSku)}
+              imageWidth={72}
+              compact
+              titleMaxWidth={164}
+              codes={[
+                {
+                  label: 'PSKU',
+                  value: formatSnapshotValue(row.partnerSku),
+                  copyText: row.partnerSku
+                },
+                {
+                  value: formatSnapshotValue(storeLabel || row.storeCode || storeCode)
+                }
+              ]}
+            />
+          </div>
         )
       },
       {
@@ -280,7 +262,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
       savingKey,
       selectingEffectiveKey,
       storeCode,
-      storeLabelByCode
+      storeLabel
     ]
   );
 
@@ -325,17 +307,6 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
             ]}
             style={{ width: 150 }}
             onChange={setCompletenessFilter}
-          />
-          <Select
-            showSearch
-            value={storeCode || undefined}
-            placeholder="店铺"
-            options={storeOptions}
-            style={{ width: 200 }}
-            onChange={(value) => {
-              setStoreCode(value);
-              setEditingKey(null);
-            }}
           />
           <Tooltip title="刷新">
             <Button icon={<SyncOutlined />} loading={loading} onClick={() => void loadRows()} />
@@ -618,95 +589,6 @@ function SpecValue({ value }: { value?: number }) {
   );
 }
 
-function ProductThumb({ src, alt }: { src?: string; alt: string }) {
-  const normalizedSrc = normalizeNoonImageUrl(src);
-  const [failed, setFailed] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-
-  useEffect(() => {
-    setFailed(false);
-    setPreviewOpen(false);
-  }, [normalizedSrc]);
-
-  if (!normalizedSrc || failed) {
-    return (
-      <span
-        style={{
-          flex: '0 0 auto',
-          width: 60,
-          height: 60,
-          borderRadius: 6,
-          border: '1px solid #e5e7eb',
-          background: '#f3f4f6',
-          color: '#94a3b8',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 11
-        }}
-      >
-        无图
-      </span>
-    );
-  }
-  return (
-    <span
-      onMouseEnter={() => setPreviewOpen(true)}
-      onMouseLeave={() => setPreviewOpen(false)}
-      style={{
-        flex: '0 0 auto',
-        width: 60,
-        height: 60,
-        position: 'relative',
-        display: 'block'
-      }}
-    >
-      <img
-        src={normalizedSrc}
-        alt={alt}
-        onError={() => setFailed(true)}
-        style={{
-          width: 60,
-          height: 60,
-          objectFit: 'cover',
-          borderRadius: 6,
-          border: '1px solid #e5e7eb',
-          background: '#f1f5f9',
-          display: 'block'
-        }}
-      />
-      {previewOpen ? (
-        <span
-          style={{
-            position: 'absolute',
-            left: 68,
-            top: -8,
-            zIndex: 20,
-            width: 180,
-            height: 180,
-            padding: 6,
-            borderRadius: 8,
-            border: '1px solid #dbe3ef',
-            background: '#ffffff',
-            boxShadow: '0 12px 28px rgba(15, 23, 42, 0.2)'
-          }}
-        >
-          <img
-            src={normalizedSrc}
-            alt={alt}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              display: 'block'
-            }}
-          />
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
 function findSource(
   sources: ProductVariantSpecSourcePayload[] | undefined,
   sourceType: ProductVariantSpecSourceType
@@ -735,54 +617,16 @@ function isPositiveSpecValue(value?: number) {
   return typeof value === 'number' && Number.isFinite(value) && value > 0;
 }
 
-function buildSpecStoreOptions(session: AuthSession) {
-  const grouped = new Map<string, { option: StoreOption; preferred: boolean }>();
-  (session.userStores || []).forEach((store) => {
-    if (!store.storeCode || store.authorized === false) {
-      return;
-    }
-    const groupKey = specStoreGroupKey(store);
-    const existing = grouped.get(groupKey);
-    const preferred = isPreferredSpecStore(store);
-    if (existing && (!preferred || existing.preferred)) {
-      return;
-    }
-    grouped.set(groupKey, {
-      option: {
-        value: store.storeCode,
-        label: store.projectName || store.projectCode || store.storeCode
-      },
-      preferred
-    });
-  });
-  return Array.from(grouped.values()).map((entry) => entry.option);
+function resolveSpecStoreCode(session: AuthSession) {
+  return session.currentStore?.storeCode || '';
 }
 
-function resolveInitialSpecStoreCode(session: AuthSession) {
-  const options = buildSpecStoreOptions(session);
-  if (!options.length) {
-    return '';
-  }
+function resolveSpecStoreLabel(session: AuthSession, storeCode: string) {
   const currentStore = session.currentStore;
-  if (!currentStore?.storeCode) {
-    return options[0]?.value || '';
+  if (!currentStore || currentStore.storeCode !== storeCode) {
+    return storeCode;
   }
-  const currentGroupKey = specStoreGroupKey(currentStore);
-  const matched = buildSpecStoreOptions({
-    ...session,
-    userStores: (session.userStores || []).filter((store) => specStoreGroupKey(store) === currentGroupKey)
-  })[0];
-  return matched?.value || options[0]?.value || '';
-}
-
-function specStoreGroupKey(store: Partial<AuthSessionStore>) {
-  return store.projectCode || store.projectName || store.storeCode || '';
-}
-
-function isPreferredSpecStore(store: Partial<AuthSessionStore>) {
-  const site = String(store.site || '').trim().toUpperCase();
-  const storeCode = String(store.storeCode || '').trim().toUpperCase();
-  return site === 'AE' || storeCode.endsWith('-NAE');
+  return currentStore.projectName || currentStore.projectCode || currentStore.storeCode || storeCode;
 }
 
 function resolveRequestOwnerUserId(session: AuthSession, activeOwnerId?: number) {

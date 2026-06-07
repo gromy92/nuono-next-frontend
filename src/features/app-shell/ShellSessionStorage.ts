@@ -6,6 +6,7 @@ import {
   PRODUCT_SPECS_PATH,
   PRODUCT_WORKSPACE_PATH,
   PRODUCT_MANUAL_SELECTION_PATH,
+  PURCHASE_PROFIT_PATH,
   PURCHASE_1688_COLLECTION_PATH,
   PURCHASE_LISTING_PATH,
   DATA_SALES_ANALYTICS_PATH,
@@ -106,6 +107,9 @@ function readDevSessionOverride(): AuthSession | null {
     pathname.startsWith(PURCHASE_1688_COLLECTION_PATH) ||
     pathname.startsWith(PURCHASE_LISTING_PATH) ||
     search.get('grantPurchase') === '1'
+  const includeProfitDevMenu =
+    pathname.startsWith(PURCHASE_PROFIT_PATH) ||
+    search.get('grantProfit') === '1'
   const includeLogisticsQuoteDevMenu =
     pathname.startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
     search.get('grantLogisticsQuote') === '1'
@@ -280,6 +284,9 @@ function readDevSessionOverride(): AuthSession | null {
       menuName: 'SKU 采购历史',
       urlPath: PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH
     })
+  }
+  if (includeProfitDevMenu) {
+    grantedMenus.push({ menuId: 6, menuName: '利润计算', urlPath: PURCHASE_PROFIT_PATH })
   }
   if (includeLogisticsQuoteDevMenu) {
     grantedMenus.push({ menuId: 9201, menuName: '货代管理', urlPath: PURCHASE_LOGISTICS_QUOTE_PATH })

@@ -76,6 +76,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'previewAli1688',
   'grantAiFileParse',
   'grantFileManagement',
+  'grantProfit',
   'grantLogisticsQuote',
   'grantAli1688HistoricalOrders',
   'grantManualSelection',
@@ -253,6 +254,7 @@ export function resolveSessionLandingMenuKey(
         'noon-call-store-data',
         'system-report-noon-data-completeness',
         'system-report-noon-data-gaps',
+        'operations-config-versions',
         'data-activity-config',
         'operations-lifecycle-rules',
         'product-manual-selection',
@@ -277,6 +279,7 @@ export function resolveSessionLandingMenuKey(
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
+          'operations-config-versions',
           'data-activity-config',
           'operations-lifecycle-rules',
           'product-manual-selection'
@@ -298,6 +301,7 @@ export function resolveSessionLandingMenuKey(
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
+          'operations-config-versions',
           'data-activity-config',
           'operations-lifecycle-rules',
           'product-manual-selection'

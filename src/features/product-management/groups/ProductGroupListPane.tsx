@@ -1,7 +1,7 @@
 import { Input, Space, Tag, Typography } from 'antd';
-import { useEffect, useState } from 'react';
 import type { ProductListRowPayload } from '../types';
 import { formatSnapshotValue, normalizeNoonImageUrl } from '../utils';
+import { ProductImageThumb } from '../components/ProductBaselineDisplay';
 import type { ProductGroupRow } from './productGroupRows';
 
 const { Text } = Typography;
@@ -18,45 +18,12 @@ function memberLeadImage(item: ProductListRowPayload) {
   return normalizeNoonImageUrl(item.imageUrl || item.galleryImages?.[0]);
 }
 
-function ProductGroupListThumbnail({ src, alt }: { src?: string; alt?: string }) {
-  const [loadFailed, setLoadFailed] = useState(false);
-
-  useEffect(() => {
-    setLoadFailed(false);
-  }, [src]);
-
-  if (!src || loadFailed) {
-    return (
-      <Text
-        style={{
-          display: 'block',
-          lineHeight: '38px',
-          textAlign: 'center',
-          color: 'var(--pm-text-faint)',
-          fontSize: 10
-        }}
-      >
-        无图
-      </Text>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt={alt}
-      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-      onError={() => setLoadFailed(true)}
-    />
-  );
-}
-
 function GroupMemberImages({ group }: { group: ProductGroupRow }) {
   return (
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(40px, 40px))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(48px, 48px))',
         gap: 6,
         alignItems: 'center'
       }}
@@ -64,20 +31,12 @@ function GroupMemberImages({ group }: { group: ProductGroupRow }) {
       {group.items.map((item) => {
         const imageUrl = memberLeadImage(item);
         return (
-          <div
+          <span
             key={item.skuParent}
             title={item.title || item.skuParent}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 6,
-              overflow: 'hidden',
-              background: 'var(--pm-subtle-bg)',
-              border: '1px solid var(--pm-subtle-border)'
-            }}
           >
-            <ProductGroupListThumbnail src={imageUrl} alt={item.title || item.skuParent} />
-          </div>
+            <ProductImageThumb src={imageUrl} alt={item.title || item.skuParent} imageCount={imageUrl ? 1 : 0} width={48} />
+          </span>
         );
       })}
     </div>

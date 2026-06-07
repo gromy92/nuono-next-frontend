@@ -80,7 +80,7 @@ export function ProductGroupDetailPanel(props: ProductGroupDetailPanelProps) {
       return;
     }
     setRefreshedPublishTaskId(publishTaskId);
-    void workspace.loadProductListDataset(workspace.selectedInitializationStoreCode, activeOwnerId);
+    void workspace.loadProductListDataset(workspace.selectedInitializationStoreCode, activeOwnerId, { force: true });
   }, [
     activeOwnerId,
     publishTaskActive,
@@ -102,7 +102,7 @@ export function ProductGroupDetailPanel(props: ProductGroupDetailPanelProps) {
     if (!activeOwnerId || !workspace.selectedInitializationStoreCode) {
       return;
     }
-    void workspace.loadProductListDataset(workspace.selectedInitializationStoreCode, activeOwnerId);
+    void workspace.loadProductListDataset(workspace.selectedInitializationStoreCode, activeOwnerId, { force: true });
   }, [
     activeOwnerId,
     productActionSubmitting,

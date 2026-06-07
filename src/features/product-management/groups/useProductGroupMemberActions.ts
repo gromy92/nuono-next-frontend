@@ -96,6 +96,7 @@ export function useProductGroupMemberActions(params: UseProductGroupMemberAction
           partnerSku: product.partnerSku,
           pskuCode: product.pskuCode,
           imageUrl: product.imageUrl || product.galleryImages?.[0],
+          galleryImages: [product.imageUrl, ...(product.galleryImages ?? [])].filter(Boolean),
           productFulltype: product.productFulltype
         };
       });

@@ -7,6 +7,7 @@ import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProf
 import type { StoreSyncOverviewState } from '../store-sync/types';
 import type { AppMenuKey } from './WorkspaceRouting';
 import { workspaceMenuContentKind } from './WorkspaceMenuRegistry';
+import type { LoadStoreSyncOptions } from './useStoreSyncController';
 
 const DYNAMIC_IMPORT_RELOAD_KEY = 'nuono:dynamic-import-reload';
 
@@ -164,7 +165,7 @@ type ShellWorkspaceContentProps = {
   canManageStoreBinding: boolean;
   onRoleManagementTabChange: (nextKey: RoleManagementWorkspaceTabKey) => void;
   onStoreOwnerChange: (ownerId: number) => void;
-  onStoreRefresh: (ownerId?: number, options?: { preserveConnectionFeedback?: boolean }) => Promise<void> | void;
+  onStoreRefresh: (ownerId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   onRoleManagementDataChanged: (source?: 'store-management') => void;
 };
 

@@ -11,6 +11,7 @@ import type {
 type UseProductDetailTabLifecycleParams = {
   activeOwnerId?: number;
   activeProductWorkspaceTabKey: ProductWorkspaceTabKey;
+  enabled: boolean;
   openMockProductWorkbench: (skuParent?: string) => void;
   productDetailTabHandledRef: MutableRefObject<string | null>;
   productDetailTabRequest: ProductDetailTabRequest | null;
@@ -33,6 +34,7 @@ type UseProductDetailTabLifecycleParams = {
 export function useProductDetailTabLifecycle({
   activeOwnerId,
   activeProductWorkspaceTabKey,
+  enabled,
   openMockProductWorkbench,
   productDetailTabHandledRef,
   productDetailTabRequest,
@@ -42,7 +44,7 @@ export function useProductDetailTabLifecycle({
   submitProductSnapshot
 }: UseProductDetailTabLifecycleParams) {
   useEffect(() => {
-    if (!session || !productDetailTabRequest || activeProductWorkspaceTabKey !== 'product-detail') {
+    if (!enabled || !session || !productDetailTabRequest || activeProductWorkspaceTabKey !== 'product-detail') {
       return;
     }
 
@@ -85,6 +87,7 @@ export function useProductDetailTabLifecycle({
   }, [
     activeOwnerId,
     activeProductWorkspaceTabKey,
+    enabled,
     openMockProductWorkbench,
     productDetailTabHandledRef,
     productDetailTabRequest,

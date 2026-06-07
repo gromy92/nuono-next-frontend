@@ -17,16 +17,38 @@ export type ProfitCalculationPayload = {
   airFirstLegFeeRmb: number;
   oceanFirstLegFeeRmb: number;
   officialOutboundFee?: {
+    ready?: boolean;
     status?: 'CALCULATED' | 'FAILED' | 'MANUAL_OVERRIDE';
     failureCode?: string;
     message?: string;
+    ownerUserId?: number;
+    storeCode?: string;
+    skuId?: string;
+    variantId?: number;
+    partnerSku?: string;
+    childSku?: string;
+    site?: string;
+    country?: string;
+    platform?: string;
+    fulfillmentType?: string;
+    salePrice?: number;
+    effectiveSourceId?: number;
+    specSourceType?: string;
+    lengthCm?: number;
+    widthCm?: number;
+    heightCm?: number;
+    weightGrams?: number;
     feeAmount?: number;
     currency?: string;
+    taxMultiplier?: number;
+    taxIncludedFeeAmount?: number;
     matchedClassificationName?: string;
     matchedSlabNaturalKey?: string;
     sourceVersionId?: number;
+    calculationFactId?: number;
     evidence?: Record<string, unknown>;
   };
+  officialCommission?: OfficialCommissionCalculationResult;
   notes: string[];
   scenarios: Array<{
     code: string;
@@ -55,6 +77,75 @@ export type ProfitCalculationState =
   | { status: 'success'; data: ProfitCalculationPayload }
   | { status: 'error'; message: string };
 
+export type OfficialOutboundFeeCalculationResult = NonNullable<ProfitCalculationPayload['officialOutboundFee']>;
+
+export type OfficialCommissionCalculationResult = {
+  ready?: boolean;
+  status?: 'CALCULATED' | 'FAILED';
+  failureCode?: string;
+  message?: string;
+  ownerUserId?: number;
+  storeCode?: string;
+  skuId?: string;
+  variantId?: number;
+  partnerSku?: string;
+  childSku?: string;
+  site?: string;
+  country?: string;
+  platform?: string;
+  fulfillmentType?: string;
+  salePrice?: number;
+  marketCurrency?: string;
+  brand?: string;
+  productFulltype?: string;
+  categoryPath?: string;
+  categoryName?: string;
+  brandRestriction?: string;
+  amountRangeLabel?: string;
+  amountMin?: number;
+  amountMax?: number;
+  amountCurrency?: string;
+  commissionRate?: number;
+  commissionAmount?: number;
+  currency?: string;
+  taxMultiplier?: number;
+  taxIncludedCommissionAmount?: number;
+  matchedRuleNaturalKey?: string;
+  sourceVersionId?: number;
+  calculationFactId?: number;
+  evidence?: Record<string, unknown>;
+};
+
+export type ActualOutboundFeeSnapshot = {
+  partnerSku?: string | null;
+  sku?: string | null;
+  currency?: string | null;
+  sampleCount: number;
+  transactionRowCount: number;
+  totalFeeAmount?: number | null;
+  averageFeeAmount?: number | null;
+  latestFeeAmount?: number | null;
+  latestTransactionDate?: string | null;
+};
+
+export type ActualCommissionSnapshot = {
+  partnerSku?: string | null;
+  sku?: string | null;
+  currency?: string | null;
+  sampleCount: number;
+  transactionRowCount: number;
+  totalCommissionAmount?: number | null;
+  averageCommissionAmount?: number | null;
+  latestCommissionAmount?: number | null;
+  latestTransactionDate?: string | null;
+};
+
+export type OfficialOutboundFeeCalculationState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: OfficialOutboundFeeCalculationResult }
+  | { status: 'error'; message: string };
+
 export type ProfitPendingCarryoverState = {
   source: 'candidate';
 };
@@ -80,8 +171,12 @@ export type ProfitDetailSeedPayload = {
   fbnCommissionRate?: number;
   fbpCommissionRate?: number;
   fbnOutboundFee?: number;
+  manualFbnOutboundFeeOverride?: boolean;
   fbpDirectShipFee?: number;
   fulfillmentFee?: number;
+  ownerUserId?: number;
+  storeCode?: string;
+  skuId?: string;
 };
 
 export type ProfitQuickSignalsPayload = {
@@ -130,6 +225,9 @@ export type ProcurementProfitSignalsState =
 export type ProfitFormValues = {
   title?: string;
   site: 'SA' | 'AE';
+  ownerUserId?: number;
+  storeCode?: string;
+  skuId?: string;
   salePrice: number;
   purchasePrice: number;
   lengthCm: number;
@@ -146,6 +244,7 @@ export type ProfitFormValues = {
   oceanFreightUnitPrice: number;
   airFreightDimFactor: number;
   fbnOutboundFee: number;
+  manualFbnOutboundFeeOverride?: boolean;
   fbpDirectShipFee: number;
   fulfillmentFee: number;
 };
@@ -169,6 +268,7 @@ export const PROFIT_FORM_DEFAULTS: ProfitFormValues = {
   oceanFreightUnitPrice: 1300,
   airFreightDimFactor: 5000,
   fbnOutboundFee: 8,
+  manualFbnOutboundFeeOverride: false,
   fbpDirectShipFee: 10,
   fulfillmentFee: 7
 };
