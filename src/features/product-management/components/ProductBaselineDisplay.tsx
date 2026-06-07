@@ -114,6 +114,7 @@ export function ProductBaselineListCell({
         src={imageUrl}
         alt={imageAlt || title}
         imageCount={imageCount}
+        width={72}
         disabled={imageDisabled}
         onClick={
           onImageClick
