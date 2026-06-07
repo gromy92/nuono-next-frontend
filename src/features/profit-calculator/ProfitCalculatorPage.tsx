@@ -4,6 +4,7 @@ import { useState, type Key } from 'react';
 import { ReloadOutlined } from '@ant-design/icons';
 import type { AuthSessionStore } from '../auth/session';
 import type { ProductListRowPayload } from '../product-management/types';
+import { ProductImageThumb } from '../product-baseline';
 import type { OrderFinanceOrderGroup, OrderFinanceTransactionLine } from '../order-finance/types';
 import {
   buildNoonProductUrl,
@@ -843,58 +844,6 @@ function CommissionDetailModal(props: {
   );
 }
 
-function ProfitProductThumbnail(props: { src?: string; alt: string; imageCount: number }) {
-  const { src, alt, imageCount } = props;
-  const [imageFailed, setImageFailed] = useState(false);
-
-  if (!src || imageFailed) {
-    return (
-      <span
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#9ca3af',
-          fontSize: 11,
-          background: '#f3f4f6'
-        }}
-      >
-        无图
-      </span>
-    );
-  }
-
-  return (
-    <span style={{ position: 'relative', width: '100%', height: '100%', display: 'block' }}>
-      <img
-        src={src}
-        alt={alt}
-        onError={() => setImageFailed(true)}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-      />
-      {imageCount > 1 ? (
-        <span
-          style={{
-            position: 'absolute',
-            right: 4,
-            bottom: 4,
-            padding: '1px 5px',
-            borderRadius: 4,
-            color: '#ffffff',
-            background: 'rgba(15, 23, 42, 0.72)',
-            fontSize: 11,
-            lineHeight: '16px'
-          }}
-        >
-          {imageCount}
-        </span>
-      ) : null}
-    </span>
-  );
-}
-
 function ProductIdentityCell(props: { record: ProductListRowPayload }) {
   const { record } = props;
   const summary = buildProductSummarySurfaceFromListItem(record);
@@ -906,19 +855,14 @@ function ProductIdentityCell(props: { record: ProductListRowPayload }) {
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0 }}>
-      <span
-        style={{
-          flex: '0 0 auto',
-          width: 84,
-          height: 84,
-          padding: 0,
-          borderRadius: 6,
-          border: '1px solid #e5e7eb',
-          background: '#f8fafc',
-          overflow: 'hidden'
-        }}
-      >
-        <ProfitProductThumbnail src={galleryImages[0]} alt={record.title || record.skuParent} imageCount={galleryImages.length} />
+      <span style={{ flex: '0 0 auto' }}>
+        <ProductImageThumb
+          src={galleryImages[0]}
+          alt={record.title || record.skuParent}
+          imageCount={galleryImages.length}
+          width={96}
+          fallback="无图"
+        />
       </span>
       <div style={{ minWidth: 0, flex: '1 1 auto' }}>
         <Space size={6} wrap style={{ minHeight: 18 }}>

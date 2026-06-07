@@ -164,8 +164,7 @@ export function ProductSummaryEntry(props: {
             src={summary.imageUrl || summary.galleryImages[0]}
             alt={summary.title || summary.skuParent}
             imageCount={summary.galleryImages.length}
-            width={compact ? 48 : 56}
-            height={compact ? 48 : 56}
+            width={compact ? 56 : 72}
           />
         </span>
 

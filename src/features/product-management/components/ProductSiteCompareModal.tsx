@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Alert, Modal, Space, Spin, Table, Typography } from 'antd';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 import {
@@ -8,57 +8,13 @@ import {
   siteOfferCode
 } from '../utils';
 import { createProductSiteCompareColumns } from './ProductSiteCompareModal.helpers';
+import { ProductImageThumb } from './ProductBaselineDisplay';
 
 const { Text } = Typography;
 
 type ProductSiteCompareModalProps = {
   workspace: ProductManagementWorkspace;
 };
-
-function ProductSiteCompareThumbnail(props: { src?: string; alt: string }) {
-  const { src, alt } = props;
-  const [imageFailed, setImageFailed] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-
-  const showPlaceholder = !src || imageFailed || !imageLoaded;
-
-  return (
-    <span
-      style={{
-        position: 'relative',
-        flex: '0 0 42px',
-        width: 42,
-        height: 42,
-        borderRadius: 5,
-        overflow: 'hidden',
-        background: '#f1f5f9',
-        color: '#94a3b8',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: 11
-      }}
-    >
-      {showPlaceholder ? '无图' : null}
-      {src && !imageFailed ? (
-        <img
-          src={src}
-          alt={alt}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageFailed(true)}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            opacity: imageLoaded ? 1 : 0
-          }}
-        />
-      ) : null}
-    </span>
-  );
-}
 
 export function ProductSiteCompareModal({ workspace }: ProductSiteCompareModalProps) {
   const {
@@ -100,7 +56,12 @@ export function ProductSiteCompareModal({ workspace }: ProductSiteCompareModalPr
               background: '#f8fafc'
             }}
           >
-            <ProductSiteCompareThumbnail src={summary.imageUrl} alt={productSummaryTitle(summary)} />
+            <ProductImageThumb
+              src={summary.imageUrl || summary.galleryImages[0]}
+              alt={productSummaryTitle(summary)}
+              imageCount={summary.galleryImages.length}
+              width={56}
+            />
             <div style={{ minWidth: 0 }}>
               <Text
                 strong

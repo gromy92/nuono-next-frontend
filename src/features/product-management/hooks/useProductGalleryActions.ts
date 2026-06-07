@@ -1,11 +1,12 @@
 import { useCallback, useEffect } from 'react';
 import { openProductWorkbenchSnapshot } from '../api';
-import { mergeGalleryImageUrls } from '../utils';
-import type { ProductMasterSnapshotPayload, StoreInitializationPayload } from '../types';
+import { mergeGalleryImageUrls, productSummaryTitle } from '../utils';
+import type { ProductMasterSnapshotPayload, ProductSummarySurface, StoreInitializationPayload } from '../types';
 
 type UseProductGalleryActionsParams = {
   activeOwnerId?: number;
   currentProductSkuParent?: string;
+  currentProductSummarySurface?: ProductSummarySurface | null;
   productGalleryImages: string[];
   productImageUrls: string[];
   productSnapshotView?: ProductMasterSnapshotPayload;
@@ -20,6 +21,7 @@ type UseProductGalleryActionsParams = {
 export function useProductGalleryActions({
   activeOwnerId,
   currentProductSkuParent,
+  currentProductSummarySurface,
   productGalleryImages,
   productImageUrls,
   productSnapshotView,
@@ -75,16 +77,24 @@ export function useProductGalleryActions({
 
   const openCurrentProductGallery = useCallback(
     (index = 0) => {
-      openProductGallery(productImageUrls, {
+      const currentImages = mergeGalleryImageUrls(
+        productImageUrls,
+        productSnapshotView?.content.mainImageUrl,
+        currentProductSummarySurface?.galleryImages,
+        currentProductSummarySurface?.imageUrl
+      );
+      openProductGallery(currentImages, {
         index,
         title:
           typeof productSnapshotView?.content.titleEn === 'string' && productSnapshotView.content.titleEn.trim()
             ? productSnapshotView.content.titleEn
+            : currentProductSummarySurface
+              ? productSummaryTitle(currentProductSummarySurface)
             : currentProductSkuParent || '商品图片',
         subtitle: currentProductSkuParent
       });
     },
-    [currentProductSkuParent, openProductGallery, productImageUrls, productSnapshotView]
+    [currentProductSkuParent, currentProductSummarySurface, openProductGallery, productImageUrls, productSnapshotView]
   );
 
   const stepProductGallery = useCallback(

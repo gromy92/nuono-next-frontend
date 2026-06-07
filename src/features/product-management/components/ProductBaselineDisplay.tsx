@@ -1,6 +1,5 @@
 import { Col, Row, Space, Tag, Tooltip, Typography } from 'antd';
-import type { CSSProperties, MouseEvent, ReactNode } from 'react';
-import { useState } from 'react';
+import type { ReactNode } from 'react';
 import type { ProductSummarySurface } from '../types';
 import {
   formatDateTimeParts,
@@ -9,116 +8,10 @@ import {
   productSourceTypeMeta,
   productSummaryTitle
 } from '../utils';
+import { ProductImageThumb } from '../../product-baseline';
+export { ProductImageThumb } from '../../product-baseline';
 
 const { Text } = Typography;
-
-type ProductImageThumbProps = {
-  src?: string;
-  alt: string;
-  imageCount?: number;
-  width?: CSSProperties['width'];
-  height?: CSSProperties['height'];
-  fit?: CSSProperties['objectFit'];
-  fallback?: ReactNode;
-  onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
-  disabled?: boolean;
-};
-
-export function ProductImageThumb({
-  src,
-  alt,
-  imageCount = 0,
-  width = 84,
-  height = 84,
-  fit = 'contain',
-  fallback = '无图',
-  onClick,
-  disabled
-}: ProductImageThumbProps) {
-  const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const visibleSrc = src && failedSrc !== src ? src : undefined;
-  const clickable = Boolean(onClick && visibleSrc && !disabled);
-  const content = visibleSrc ? (
-    <span style={{ position: 'relative', width: '100%', height: '100%', display: 'block' }}>
-      <img
-        src={visibleSrc}
-        alt={alt}
-        onError={() => setFailedSrc(visibleSrc)}
-        style={{ width: '100%', height: '100%', objectFit: fit, display: 'block' }}
-      />
-      {imageCount > 1 ? (
-        <span
-          style={{
-            position: 'absolute',
-            right: 4,
-            bottom: 4,
-            padding: '1px 5px',
-            borderRadius: 4,
-            color: '#ffffff',
-            background: 'rgba(15, 23, 42, 0.72)',
-            fontSize: 11,
-            lineHeight: '16px'
-          }}
-        >
-          {imageCount}
-        </span>
-      ) : null}
-    </span>
-  ) : (
-    <span
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#9ca3af',
-        fontSize: 11,
-        background: '#f8fafc'
-      }}
-    >
-      {fallback}
-    </span>
-  );
-
-  if (!onClick) {
-    return (
-      <span
-        style={{
-          display: 'inline-flex',
-          width,
-          height,
-          borderRadius: 6,
-          overflow: 'hidden',
-          border: '1px solid #e5e7eb',
-          background: '#ffffff'
-        }}
-      >
-        {content}
-      </span>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={!clickable}
-      style={{
-        width,
-        height,
-        padding: 0,
-        borderRadius: 6,
-        border: '1px solid #e5e7eb',
-        background: '#ffffff',
-        overflow: 'hidden',
-        cursor: clickable ? 'pointer' : 'default'
-      }}
-    >
-      {content}
-    </button>
-  );
-}
 
 function ListingStartedBadge({ summary, compact = false }: { summary: ProductSummarySurface; compact?: boolean }) {
   const listingStartedParts = formatDateTimeParts(summary.listingStartedAt);
@@ -222,10 +115,14 @@ export function ProductBaselineListCell({
         alt={imageAlt || title}
         imageCount={imageCount}
         disabled={imageDisabled}
-        onClick={(event) => {
-          event.stopPropagation();
-          onImageClick?.();
-        }}
+        onClick={
+          onImageClick
+            ? (event) => {
+              event.stopPropagation();
+              onImageClick();
+            }
+            : undefined
+        }
       />
       <div style={{ minWidth: 0, flex: '1 1 auto' }}>
         <Space size={6} wrap style={{ minHeight: 18 }}>
@@ -342,13 +239,12 @@ export function ProductBaselineHeader({
   return (
     <div className="pm-detail-section pm-detail-section--subtle">
       <Row gutter={[12, 12]} align="middle" wrap={false}>
-        <Col flex="72px">
+        <Col flex="88px">
           <ProductImageThumb
             src={imageUrl || summary?.imageUrl}
             alt={title}
             imageCount={imageCount}
-            width={64}
-            height={64}
+            width={80}
             fallback="暂无图片"
             disabled={!onImageClick}
             onClick={

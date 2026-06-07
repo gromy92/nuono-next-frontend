@@ -55,8 +55,7 @@ export function ProductInsightsTab(props: ProductDetailOfficialTabsProps) {
                 src={imageUrl}
                 alt={imageAlt}
                 imageCount={currentProductSummarySurface?.galleryImages.length}
-                width={64}
-                height={64}
+                width={80}
                 fallback="SKU"
               />
               <div>

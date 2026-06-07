@@ -1,6 +1,7 @@
 import { Input, Modal, Space, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import { formatSnapshotValue } from '../utils';
+import { ProductImageThumb } from '../components/ProductBaselineDisplay';
 
 const { Text } = Typography;
 
@@ -12,6 +13,7 @@ export type ProductGroupMemberDraft = {
   brand?: string;
   title?: string;
   imageUrl?: string;
+  galleryImages?: string[];
   partnerSku?: string;
   totalFbnStock?: number;
   totalFbpStock?: number;
@@ -37,6 +39,8 @@ export function ProductGroupMemberEditModal(props: ProductGroupMemberEditModalPr
   const fbnStock = Number(initialValue.totalFbnStock ?? 0);
   const fbpStock = Number(initialValue.totalFbpStock ?? 0);
   const displayPsku = initialValue.partnerSku || initialValue.childSku || initialValue.skuParent;
+  const imageUrl = initialValue.imageUrl || initialValue.galleryImages?.[0];
+  const imageCount = initialValue.galleryImages?.length ?? (imageUrl ? 1 : 0);
   const axisRows = initialValue.axisRows?.length
     ? initialValue.axisRows
     : [{ code: undefined, label, value: initialValue.axisValue }];
@@ -101,7 +105,7 @@ export function ProductGroupMemberEditModal(props: ProductGroupMemberEditModalPr
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '72px minmax(0, 1fr)',
+            gridTemplateColumns: '88px minmax(0, 1fr)',
             gap: 12,
             alignItems: 'center',
             padding: 14,
@@ -110,36 +114,12 @@ export function ProductGroupMemberEditModal(props: ProductGroupMemberEditModalPr
             background: 'var(--pm-subtle-bg)'
           }}
         >
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: 6,
-              overflow: 'hidden',
-              background: '#fff',
-              border: '1px solid var(--pm-subtle-border)'
-            }}
-          >
-            {initialValue.imageUrl ? (
-              <img
-                src={initialValue.imageUrl}
-                alt={initialValue.title || initialValue.skuParent}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <Text
-                style={{
-                  color: 'var(--pm-text-faint)',
-                  lineHeight: '70px',
-                  display: 'block',
-                  textAlign: 'center',
-                  fontSize: 12
-                }}
-              >
-                无图
-              </Text>
-            )}
-          </div>
+          <ProductImageThumb
+            src={imageUrl}
+            alt={initialValue.title || initialValue.skuParent}
+            imageCount={imageCount}
+            width={88}
+          />
           <Space direction="vertical" size={6} style={{ minWidth: 0 }}>
             <Text strong ellipsis={{ tooltip: initialValue.title || initialValue.skuParent }}>
               {formatSnapshotValue(initialValue.title || initialValue.skuParent)}

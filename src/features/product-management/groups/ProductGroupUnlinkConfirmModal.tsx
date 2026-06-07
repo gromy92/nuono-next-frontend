@@ -1,5 +1,6 @@
 import { Modal, Space, Typography } from 'antd';
 import { formatSnapshotValue } from '../utils';
+import { ProductImageThumb } from '../components/ProductBaselineDisplay';
 import type { ProductGroupMemberCardView } from './productGroupMemberTypes';
 
 const { Text } = Typography;
@@ -16,6 +17,8 @@ type ProductGroupUnlinkConfirmModalProps = {
 export function ProductGroupUnlinkConfirmModal(props: ProductGroupUnlinkConfirmModalProps) {
   const { groupName, member, open, confirmDisabled = false, onCancel, onConfirm } = props;
   const safeGroupName = formatSnapshotValue(groupName);
+  const imageUrl = member?.imageUrl || member?.galleryImages?.[0];
+  const imageCount = member?.galleryImages?.length ?? (imageUrl ? 1 : 0);
 
   return (
     <Modal
@@ -34,7 +37,7 @@ export function ProductGroupUnlinkConfirmModal(props: ProductGroupUnlinkConfirmM
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: '72px minmax(0, 1fr)',
+              gridTemplateColumns: '88px minmax(0, 1fr)',
               gap: 12,
               alignItems: 'center',
               padding: 14,
@@ -43,36 +46,12 @@ export function ProductGroupUnlinkConfirmModal(props: ProductGroupUnlinkConfirmM
               background: 'var(--pm-subtle-bg)'
             }}
           >
-            <div
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: 6,
-                overflow: 'hidden',
-                background: '#fff',
-                border: '1px solid var(--pm-subtle-border)'
-              }}
-            >
-              {member.imageUrl ? (
-                <img
-                  src={member.imageUrl}
-                  alt={member.title || member.skuParent}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <Text
-                  style={{
-                    color: 'var(--pm-text-faint)',
-                    lineHeight: '70px',
-                    display: 'block',
-                    textAlign: 'center',
-                    fontSize: 12
-                  }}
-                >
-                  无图
-                </Text>
-              )}
-            </div>
+            <ProductImageThumb
+              src={imageUrl}
+              alt={member.title || member.skuParent}
+              imageCount={imageCount}
+              width={88}
+            />
             <Space direction="vertical" size={6} style={{ minWidth: 0 }}>
               <Text strong ellipsis={{ tooltip: member.title || member.skuParent }}>
                 {formatSnapshotValue(member.title || member.skuParent)}

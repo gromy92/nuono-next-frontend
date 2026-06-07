@@ -35,7 +35,7 @@ export function ProductDetailSummaryBar({
       summary={summary}
       imageUrl={imageUrl}
       imageCount={summary?.galleryImages.length}
-      onImageClick={productLeadImage ? () => openCurrentProductGallery(0) : undefined}
+      onImageClick={imageUrl ? () => openCurrentProductGallery(0) : undefined}
       syncAlert={syncAlert}
       metaActions={
         <>

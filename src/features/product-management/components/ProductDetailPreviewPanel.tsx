@@ -46,8 +46,7 @@ export function ProductDetailPreviewPanel({ message, summary, status = 'loading'
                   src={summary.imageUrl || summary.galleryImages[0]}
                   alt={productSummaryTitle(summary)}
                   imageCount={summary.galleryImages.length}
-                  width={112}
-                  height={112}
+                  width={128}
                   fallback="暂无图片"
                 />
               </span>

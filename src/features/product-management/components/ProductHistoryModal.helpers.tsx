@@ -22,6 +22,7 @@ import {
   type ProductHistoryChange,
   type ProductHistoryItem
 } from './ProductHistoryModal.utils';
+import { ProductImageThumb } from './ProductBaselineDisplay';
 
 const { Text } = Typography;
 
@@ -231,11 +232,15 @@ export function ProductHistoryAuditList(props: {
 export function ProductHistoryHeaderSummary({ summary }: { summary: ProductSummarySurface }) {
   const syncMeta = summary.syncStatus ? productSyncStatusMeta(summary.syncStatus) : null;
   const title = productSummaryTitle(summary);
+  const imageUrl = summary.imageUrl || summary.galleryImages[0];
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '56px minmax(0, 1fr)', gap: 12, padding: 12, borderRadius: 8, border: '1px solid #e5e7eb', background: '#f8fafc' }}>
-      <div style={{ width: 56, height: 56, borderRadius: 6, border: '1px solid #e5e7eb', background: '#ffffff', overflow: 'hidden' }}>
-        {summary.imageUrl ? <img src={summary.imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
-      </div>
+    <div style={{ display: 'grid', gridTemplateColumns: '72px minmax(0, 1fr)', gap: 12, padding: 12, borderRadius: 8, border: '1px solid #e5e7eb', background: '#f8fafc' }}>
+      <ProductImageThumb
+        src={imageUrl}
+        alt={title}
+        imageCount={summary.galleryImages.length}
+        width={72}
+      />
       <div style={{ minWidth: 0 }}>
         <Tooltip title={title}>
           <Text strong style={{ display: 'block', color: '#0f172a', lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

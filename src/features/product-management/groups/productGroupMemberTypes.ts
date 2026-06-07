@@ -5,6 +5,7 @@ export type ProductGroupMemberCardView = {
   brand?: string;
   title?: string;
   imageUrl?: string;
+  galleryImages?: string[];
   axisLabel?: string;
   axisValue?: string;
   axisRows?: Array<{ code?: string; label: string; value?: string }>;

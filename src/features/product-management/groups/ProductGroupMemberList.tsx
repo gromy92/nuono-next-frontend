@@ -2,6 +2,7 @@ import { DisconnectOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons
 import { Button, Space, Tag, Tooltip, Typography } from 'antd';
 import type { ProductGroupMemberCardView } from './productGroupMemberTypes';
 import { formatSnapshotValue, isLiveStatusActive, productLiveStatusLabel } from '../utils';
+import { ProductImageThumb } from '../components/ProductBaselineDisplay';
 
 const { Text } = Typography;
 
@@ -64,40 +65,18 @@ function StockCell({ member }: { member: ProductGroupMemberListItem }) {
 }
 
 function ProductImage({ member, compact }: { member: ProductGroupMemberListItem; compact: boolean }) {
-  const imageSize = compact ? 46 : 52;
+  const imageUrl = member.imageUrl || member.galleryImages?.[0];
+  const imageCount = member.galleryImages?.length ?? (imageUrl ? 1 : 0);
 
   return (
-    <div
-      style={{
-        width: imageSize,
-        height: imageSize,
-        borderRadius: 6,
-        overflow: 'hidden',
-        background: 'var(--pm-subtle-bg)',
-        border: '1px solid var(--pm-subtle-border)',
-        flex: '0 0 auto'
-      }}
-    >
-      {member.imageUrl ? (
-        <img
-          src={member.imageUrl}
-          alt={member.title || member.skuParent}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-        />
-      ) : (
-        <Text
-          style={{
-            color: 'var(--pm-text-faint)',
-            lineHeight: `${imageSize - 2}px`,
-            display: 'block',
-            textAlign: 'center',
-            fontSize: 12
-          }}
-        >
-          无图
-        </Text>
-      )}
-    </div>
+    <span style={{ flex: '0 0 auto' }}>
+      <ProductImageThumb
+        src={imageUrl}
+        alt={member.title || member.skuParent}
+        imageCount={imageCount}
+        width={compact ? 56 : 64}
+      />
+    </span>
   );
 }
 

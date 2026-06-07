@@ -3,6 +3,7 @@ import { Button, Checkbox, Drawer, Empty, Input, Space, Spin, Typography, messag
 import { useMemo, useState } from 'react';
 import type { ProductListRowPayload } from '../types';
 import { formatSnapshotValue, normalizeNoonImageUrl, textInputValue } from '../utils';
+import { ProductImageThumb } from '../components/ProductBaselineDisplay';
 
 const { Text } = Typography;
 
@@ -105,7 +106,7 @@ export function ProductGroupAddProductsDrawer(props: {
                   key={product.skuParent}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '28px 56px minmax(0, 1fr)',
+                    gridTemplateColumns: '28px 72px minmax(0, 1fr)',
                     gap: 12,
                     alignItems: 'start',
                     width: '100%',
@@ -120,15 +121,12 @@ export function ProductGroupAddProductsDrawer(props: {
                     onChange={(event) => toggleSku(product.skuParent, event.target.checked)}
                     style={{ marginTop: 24 }}
                   />
-                  <div style={{ width: 56, height: 56, borderRadius: 6, overflow: 'hidden', background: 'var(--pm-subtle-bg)' }}>
-                    {imageUrl ? (
-                      <img
-                        src={normalizeNoonImageUrl(imageUrl)}
-                        alt={product.title || product.skuParent}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : null}
-                  </div>
+                  <ProductImageThumb
+                    src={normalizeNoonImageUrl(imageUrl)}
+                    alt={product.title || product.skuParent}
+                    imageCount={imageUrl ? 1 : 0}
+                    width={72}
+                  />
                   <Space direction="vertical" size={3} style={{ minWidth: 0 }}>
                     <Text strong>{formatSnapshotValue(product.skuParent)}</Text>
                     <Text ellipsis={{ tooltip: product.title }}>{formatSnapshotValue(product.title)}</Text>

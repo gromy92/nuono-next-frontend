@@ -9,7 +9,8 @@ import type {
   ProductVariantSpecSourcePayload,
   ProductVariantSpecSourceType
 } from '../product-management/types';
-import { formatSnapshotValue, normalizeNoonImageUrl } from '../product-management/utils/common';
+import { ProductBaselineIdentity } from '../product-baseline';
+import { formatSnapshotValue } from '../product-management/utils/common';
 
 const { Text } = Typography;
 
@@ -200,22 +201,27 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         title: '商品',
         width: 262,
         render: (_, row) => (
-          <Space size={8} align="start" style={{ minWidth: 0, width: 254 }}>
-            <ProductThumb src={row.imageUrl} alt={formatSnapshotValue(row.title || row.partnerSku)} />
-            <Space direction="vertical" size={2} style={{ minWidth: 0, maxWidth: 186 }}>
-              <Tooltip title={formatSnapshotValue(row.title)}>
-                <Text strong ellipsis style={{ maxWidth: 186, fontSize: 12 }}>
-                  {formatSnapshotValue(row.title)}
-                </Text>
-              </Tooltip>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                PSKU {formatSnapshotValue(row.partnerSku)}
-              </Text>
-              <Text type="secondary" ellipsis style={{ fontSize: 13, maxWidth: 186 }}>
-                {formatSnapshotValue(storeLabel || row.storeCode || storeCode)}
-              </Text>
-            </Space>
-          </Space>
+          <div style={{ width: 254 }}>
+            <ProductBaselineIdentity
+              title={row.title || row.partnerSku || '-'}
+              imageUrl={row.imageUrl}
+              imageCount={row.imageUrl ? 1 : 0}
+              imageAlt={formatSnapshotValue(row.title || row.partnerSku)}
+              imageWidth={72}
+              compact
+              titleMaxWidth={164}
+              codes={[
+                {
+                  label: 'PSKU',
+                  value: formatSnapshotValue(row.partnerSku),
+                  copyText: row.partnerSku
+                },
+                {
+                  value: formatSnapshotValue(storeLabel || row.storeCode || storeCode)
+                }
+              ]}
+            />
+          </div>
         )
       },
       {
@@ -580,95 +586,6 @@ function SpecValue({ value }: { value?: number }) {
     <Text style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
       {value == null ? '-' : formatCompactNumber(value)}
     </Text>
-  );
-}
-
-function ProductThumb({ src, alt }: { src?: string; alt: string }) {
-  const normalizedSrc = normalizeNoonImageUrl(src);
-  const [failed, setFailed] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-
-  useEffect(() => {
-    setFailed(false);
-    setPreviewOpen(false);
-  }, [normalizedSrc]);
-
-  if (!normalizedSrc || failed) {
-    return (
-      <span
-        style={{
-          flex: '0 0 auto',
-          width: 60,
-          height: 60,
-          borderRadius: 6,
-          border: '1px solid #e5e7eb',
-          background: '#f3f4f6',
-          color: '#94a3b8',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 11
-        }}
-      >
-        无图
-      </span>
-    );
-  }
-  return (
-    <span
-      onMouseEnter={() => setPreviewOpen(true)}
-      onMouseLeave={() => setPreviewOpen(false)}
-      style={{
-        flex: '0 0 auto',
-        width: 60,
-        height: 60,
-        position: 'relative',
-        display: 'block'
-      }}
-    >
-      <img
-        src={normalizedSrc}
-        alt={alt}
-        onError={() => setFailed(true)}
-        style={{
-          width: 60,
-          height: 60,
-          objectFit: 'cover',
-          borderRadius: 6,
-          border: '1px solid #e5e7eb',
-          background: '#f1f5f9',
-          display: 'block'
-        }}
-      />
-      {previewOpen ? (
-        <span
-          style={{
-            position: 'absolute',
-            left: 68,
-            top: -8,
-            zIndex: 20,
-            width: 180,
-            height: 180,
-            padding: 6,
-            borderRadius: 8,
-            border: '1px solid #dbe3ef',
-            background: '#ffffff',
-            boxShadow: '0 12px 28px rgba(15, 23, 42, 0.2)'
-          }}
-        >
-          <img
-            src={normalizedSrc}
-            alt={alt}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              display: 'block'
-            }}
-          />
-        </span>
-      ) : null}
-    </span>
   );
 }
 

@@ -2,6 +2,7 @@ import { App as AntdApp, Modal, Space, Typography } from 'antd';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 import { formatSnapshotValue } from '../utils';
 import { ProductVariantSpecTable } from './ProductVariantSpecTable';
+import { ProductImageThumb } from './ProductBaselineDisplay';
 
 const { Text } = Typography;
 
@@ -58,31 +59,12 @@ export function ProductVariantSpecModal({ workspace }: ProductVariantSpecModalPr
             background: '#f8fafc'
           }}
         >
-          <span
-            style={{
-              flex: '0 0 42px',
-              width: 42,
-              height: 42,
-              borderRadius: 5,
-              overflow: 'hidden',
-              background: '#f1f5f9',
-              color: '#94a3b8',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 11
-            }}
-          >
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={title || skuParent || '商品'}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-            ) : (
-              '无图'
-            )}
-          </span>
+          <ProductImageThumb
+            src={imageUrl}
+            alt={title || skuParent || '商品'}
+            imageCount={imageUrl ? 1 : 0}
+            width={56}
+          />
           <div style={{ minWidth: 0 }}>
             <Text
               strong

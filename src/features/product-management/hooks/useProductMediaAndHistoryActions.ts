@@ -44,6 +44,7 @@ export function useProductMediaAndHistoryActions({
   const galleryActions = useProductGalleryActions({
     activeOwnerId,
     currentProductSkuParent,
+    currentProductSummarySurface,
     productGalleryImages: workspaceState.productGalleryImages,
     productImageUrls,
     productSnapshotView,
