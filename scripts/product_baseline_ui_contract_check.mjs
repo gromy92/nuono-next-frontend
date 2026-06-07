@@ -110,4 +110,31 @@ assert.doesNotMatch(
   'Product insights should not use Avatar for product images because it crops rectangular product photos'
 );
 
+const productListMutations = read('src/features/product-management/hooks/useProductListMutations.ts');
+assert.match(
+  productListMutations,
+  /function summaryAppliesToListStore\b/,
+  'Product list summary mutations should guard by the current list store'
+);
+assert.match(
+  productListMutations,
+  /function summaryAppliesToListItem\b/,
+  'Product list summary mutations should guard by the row reference store'
+);
+assert.match(
+  productListMutations,
+  /summaryAppliesToListStore\(summary,\s*currentValue\.data\.storeCode\)/,
+  'Product list summary mutations should skip summaries from another store'
+);
+assert.match(
+  productListMutations,
+  /summaryAppliesToListItem\(item,\s*summary\)/,
+  'Product list summary mutations should not merge a row using skuParent alone'
+);
+assert.doesNotMatch(
+  productListMutations,
+  /if\s*\(\s*item\.skuParent\s*!==\s*summary\.skuParent\s*\)/,
+  'Product list summary mutations should not match rows only by skuParent'
+);
+
 console.log('product baseline UI contract passed');
