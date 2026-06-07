@@ -1,9 +1,9 @@
 import { SearchOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Drawer, Empty, Input, Space, Spin, Typography, message } from 'antd';
+import { Button, Checkbox, Drawer, Empty, Input, Space, Spin, Tag, Typography, message } from 'antd';
 import { useMemo, useState } from 'react';
 import type { ProductListRowPayload } from '../types';
 import { formatSnapshotValue, normalizeNoonImageUrl, textInputValue } from '../utils';
-import { ProductImageThumb } from '../components/ProductBaselineDisplay';
+import { ProductBaselineIdentity } from '../../product-baseline';
 
 const { Text } = Typography;
 
@@ -19,6 +19,10 @@ function productSearchText(product: ProductListRowPayload) {
 
 function productImage(product: ProductListRowPayload) {
   return textInputValue(product.imageUrl || product.galleryImages?.[0]);
+}
+
+function productImageCount(product: ProductListRowPayload) {
+  return product.galleryImages?.length ?? (productImage(product) ? 1 : 0);
 }
 
 export function ProductGroupAddProductsDrawer(props: {
@@ -106,7 +110,7 @@ export function ProductGroupAddProductsDrawer(props: {
                   key={product.skuParent}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: '28px 72px minmax(0, 1fr)',
+                    gridTemplateColumns: '28px minmax(0, 1fr)',
                     gap: 12,
                     alignItems: 'start',
                     width: '100%',
@@ -121,18 +125,28 @@ export function ProductGroupAddProductsDrawer(props: {
                     onChange={(event) => toggleSku(product.skuParent, event.target.checked)}
                     style={{ marginTop: 24 }}
                   />
-                  <ProductImageThumb
-                    src={normalizeNoonImageUrl(imageUrl)}
-                    alt={product.title || product.skuParent}
-                    imageCount={imageUrl ? 1 : 0}
-                    width={72}
+                  <ProductBaselineIdentity
+                    title={product.title || product.skuParent}
+                    imageUrl={normalizeNoonImageUrl(imageUrl)}
+                    imageCount={productImageCount(product)}
+                    imageAlt={product.title || product.skuParent}
+                    imageWidth={72}
+                    compact
+                    titleMaxWidth={300}
+                    codes={[
+                      {
+                        label: 'PSKU',
+                        value: formatSnapshotValue(product.partnerSku || product.pskuCode),
+                        copyText: product.partnerSku || product.pskuCode
+                      },
+                      {
+                        label: 'SKU',
+                        value: formatSnapshotValue(product.skuParent),
+                        copyText: product.skuParent
+                      }
+                    ]}
+                    tags={product.brand ? <Tag style={{ marginInlineEnd: 0 }}>{product.brand}</Tag> : null}
                   />
-                  <Space direction="vertical" size={3} style={{ minWidth: 0 }}>
-                    <Text strong>{formatSnapshotValue(product.skuParent)}</Text>
-                    <Text ellipsis={{ tooltip: product.title }}>{formatSnapshotValue(product.title)}</Text>
-                    <Text style={{ color: 'var(--pm-text-primary)' }}>{formatSnapshotValue(product.partnerSku)}</Text>
-                    <Text style={{ color: 'var(--pm-text-muted)' }}>{formatSnapshotValue(product.brand)}</Text>
-                  </Space>
                 </div>
               );
             })}

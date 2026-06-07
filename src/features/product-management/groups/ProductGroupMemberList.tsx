@@ -2,7 +2,7 @@ import { DisconnectOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons
 import { Button, Space, Tag, Tooltip, Typography } from 'antd';
 import type { ProductGroupMemberCardView } from './productGroupMemberTypes';
 import { formatSnapshotValue, isLiveStatusActive, productLiveStatusLabel } from '../utils';
-import { ProductImageThumb } from '../components/ProductBaselineDisplay';
+import { ProductBaselineIdentity } from '../../product-baseline';
 
 const { Text } = Typography;
 
@@ -64,19 +64,34 @@ function StockCell({ member }: { member: ProductGroupMemberListItem }) {
   );
 }
 
-function ProductImage({ member, compact }: { member: ProductGroupMemberListItem; compact: boolean }) {
+function memberImageUrl(member: ProductGroupMemberListItem) {
+  return member.imageUrl || member.galleryImages?.[0];
+}
+
+function memberImageCount(member: ProductGroupMemberListItem) {
+  return member.galleryImages?.length ?? (memberImageUrl(member) ? 1 : 0);
+}
+
+function ProductIdentity({ member, compact }: { member: ProductGroupMemberListItem; compact: boolean }) {
   const imageUrl = member.imageUrl || member.galleryImages?.[0];
-  const imageCount = member.galleryImages?.length ?? (imageUrl ? 1 : 0);
 
   return (
-    <span style={{ flex: '0 0 auto' }}>
-      <ProductImageThumb
-        src={imageUrl}
-        alt={member.title || member.skuParent}
-        imageCount={imageCount}
-        width={compact ? 56 : 64}
-      />
-    </span>
+    <ProductBaselineIdentity
+      title={member.title || member.skuParent}
+      imageUrl={imageUrl}
+      imageCount={memberImageCount(member)}
+      imageAlt={member.title || member.skuParent}
+      imageWidth={compact ? 56 : 64}
+      compact={compact}
+      titleMaxWidth="100%"
+      codes={[
+        {
+          value: formatSnapshotValue(member.skuParent),
+          copyText: member.skuParent
+        }
+      ]}
+      extra={<AxisTags member={member} />}
+    />
   );
 }
 
@@ -174,22 +189,7 @@ export function ProductGroupMemberList({
                 background: member.current ? '#f6fbff' : '#fff'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                <ProductImage member={member} compact={compact} />
-                <Space direction="vertical" size={4} style={{ minWidth: 0, width: '100%' }}>
-                  <Text
-                    strong
-                    ellipsis={{ tooltip: member.title || member.skuParent }}
-                    style={{ maxWidth: '100%', fontSize: compact ? 13 : 14 }}
-                  >
-                    {formatSnapshotValue(member.title || member.skuParent)}
-                  </Text>
-                  <Text type="secondary" ellipsis style={{ maxWidth: '100%', fontSize: 12 }}>
-                    {formatSnapshotValue(member.skuParent)}
-                  </Text>
-                  <AxisTags member={member} />
-                </Space>
-              </div>
+              <ProductIdentity member={member} compact={compact} />
 
               <Space direction="vertical" size={2} style={{ minWidth: 0 }}>
                 <Text ellipsis={{ tooltip: code }} style={{ maxWidth: '100%' }}>

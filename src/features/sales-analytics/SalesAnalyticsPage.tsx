@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Key, ReactNode } from 'react'
 import { EChartPanel, buildNetUnitsLineOption, buildSalesPriceTrendOption } from '../../shared/charts'
 import type { AuthSession } from '../auth/session'
-import { ProductBaselineIdentity, ProductImageThumb } from '../product-baseline'
+import { ProductBaselineIdentity } from '../product-baseline'
 import { fetchProductClassificationOptions, type ProductClassificationOptionPayload } from '../product-management/api'
 import {
   exportSalesAnalyticsCsv,
@@ -874,40 +874,34 @@ function ProductDetailDialog({
   return (
     <Modal title={<Space size={6}><ShoppingOutlined />商品详情</Space>} open={open} width={1180} footer={null} onCancel={onClose}>
       <Space direction="vertical" size={14} style={{ width: '100%' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '104px minmax(0, 1fr)', gap: 14, alignItems: 'start', paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
-          <ProductImageThumb src={imageUrl} alt={productTitle} imageCount={imageUrl ? 1 : 0} width={104} />
-          <div style={{ display: 'grid', gap: 6, minWidth: 0 }}>
-            <Tooltip title={productTitle}>
-              <Text
-                strong
-                style={{
-                  display: 'block',
-                  maxWidth: '100%',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontSize: 16,
-                  lineHeight: '22px'
-                }}
-              >
-                {productTitle}
-              </Text>
-            </Tooltip>
-            <Space wrap size={[6, 4]} align="center">
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                PSKU: {partnerSku} · SKU: {sku}
-              </Text>
-              <Tag style={{ marginInlineEnd: 0 }}>{brandLabel}</Tag>
-              <Tag title={row?.productFulltype || undefined} style={{ marginInlineEnd: 0 }}>{categoryLabel}</Tag>
-              <Tag color={lifecycleColor(row?.lifecycleCode)} style={{ marginInlineEnd: 0 }}>{lifecycleLabel}</Tag>
-            </Space>
-            <Space wrap size={[4, 4]} align="center">
-              {healthTags(row || undefined)}
-              <Tag color="blue" style={{ marginInlineEnd: 0 }}>30天预测 —</Tag>
-              <Tag style={{ marginInlineEnd: 0 }}>可售 {formatNumber(currentStock)}</Tag>
-              <Tag style={{ marginInlineEnd: 0 }}>覆盖 {formatStockCoverDays(stockCoverDays)}</Tag>
-            </Space>
-          </div>
+        <div style={{ paddingBottom: 12, borderBottom: '1px solid #f0f0f0' }}>
+          <ProductBaselineIdentity
+            title={productTitle}
+            imageUrl={imageUrl}
+            imageCount={imageUrl ? 1 : 0}
+            imageAlt={productTitle}
+            imageWidth={104}
+            titleMaxWidth="100%"
+            codes={[
+              { label: 'PSKU', value: partnerSku, copyText: partnerSku },
+              { label: 'SKU', value: sku, copyText: sku }
+            ]}
+            tags={
+              <>
+                <Tag style={{ marginInlineEnd: 0 }}>{brandLabel}</Tag>
+                <Tag title={row?.productFulltype || undefined} style={{ marginInlineEnd: 0 }}>{categoryLabel}</Tag>
+                <Tag color={lifecycleColor(row?.lifecycleCode)} style={{ marginInlineEnd: 0 }}>{lifecycleLabel}</Tag>
+              </>
+            }
+            extra={
+              <Space wrap size={[4, 4]} align="center">
+                {healthTags(row || undefined)}
+                <Tag color="blue" style={{ marginInlineEnd: 0 }}>30天预测 —</Tag>
+                <Tag style={{ marginInlineEnd: 0 }}>可售 {formatNumber(currentStock)}</Tag>
+                <Tag style={{ marginInlineEnd: 0 }}>覆盖 {formatStockCoverDays(stockCoverDays)}</Tag>
+              </Space>
+            }
+          />
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1217,25 +1211,34 @@ function productColumns(
       width: 280,
       fixed: 'left',
       render: (_, row) => (
-        <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr', gap: 8, alignItems: 'start' }}>
-          <ProductImageThumb src={row.imageUrl} alt={row.productTitle || row.partnerSku} imageCount={row.imageUrl ? 1 : 0} width={72} />
-          <Space direction="vertical" size={1} style={{ minWidth: 0 }}>
-            <Popover content={<ProductIdentityPopover row={row} />} trigger="hover" placement="rightTop">
-              <Text strong ellipsis style={{ maxWidth: 178, fontSize: 12, lineHeight: '18px' }}>
-                {row.productTitle || row.partnerSku}
-              </Text>
-            </Popover>
-            <div style={{ display: 'flex', gap: 4, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden' }}>
-              <Tag color={lifecycleColor(row.lifecycleCode)} style={{ fontSize: 11, marginInlineEnd: 0, maxWidth: 58, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {row.lifecycleLabel || '生命周期 —'}
-              </Tag>
-              <Tag style={{ fontSize: 11, marginInlineEnd: 0, maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.brand || '品牌 —'}</Tag>
-              <Tag title={row.productFulltype || undefined} style={{ fontSize: 11, marginInlineEnd: 0, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {lastCategoryLabel(row.productFulltype)}
-              </Tag>
-            </div>
-          </Space>
-        </div>
+        <Popover content={<ProductIdentityPopover row={row} />} trigger="hover" placement="rightTop">
+          <div>
+            <ProductBaselineIdentity
+              title={row.productTitle || row.partnerSku}
+              imageUrl={row.imageUrl}
+              imageCount={row.imageUrl ? 1 : 0}
+              imageAlt={row.productTitle || row.partnerSku}
+              imageWidth={72}
+              compact
+              titleMaxWidth={178}
+              codes={[
+                { label: 'PSKU', value: row.partnerSku, copyText: row.partnerSku },
+                { label: 'SKU', value: row.sku, copyText: row.sku }
+              ]}
+              tags={
+                <>
+                  <Tag color={lifecycleColor(row.lifecycleCode)} style={{ fontSize: 11, marginInlineEnd: 0, maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {row.lifecycleLabel || '生命周期 —'}
+                  </Tag>
+                  <Tag style={{ fontSize: 11, marginInlineEnd: 0, maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.brand || '品牌 —'}</Tag>
+                  <Tag title={row.productFulltype || undefined} style={{ fontSize: 11, marginInlineEnd: 0, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {lastCategoryLabel(row.productFulltype)}
+                  </Tag>
+                </>
+              }
+            />
+          </div>
+        </Popover>
       )
     },
     {

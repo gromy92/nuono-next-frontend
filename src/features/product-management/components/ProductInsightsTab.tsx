@@ -1,7 +1,7 @@
 import { Col, Empty, Row, Select, Space, Tag, Typography } from 'antd';
 import { formatSnapshotValue, productSummaryTitle } from '../utils';
 import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
-import { ProductImageThumb } from './ProductBaselineDisplay';
+import { ProductBaselineIdentity } from '../../product-baseline';
 
 const { Text } = Typography;
 
@@ -21,6 +21,8 @@ export function ProductInsightsTab(props: ProductDetailOfficialTabsProps) {
   const imageUrl =
     productLeadImage || currentProductSummarySurface?.imageUrl || currentProductSummarySurface?.galleryImages[0];
   const imageAlt = currentProductSummarySurface ? productSummaryTitle(currentProductSummarySurface) : '当前商品';
+  const visiblePartnerSku = formatSnapshotValue(currentProductSummarySurface?.partnerSku ?? productSnapshotView?.identity.partnerSku);
+  const visibleSku = formatSnapshotValue(productSnapshotView?.identity.childSku ?? productSnapshotView?.identity.skuParent);
 
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
@@ -50,23 +52,21 @@ export function ProductInsightsTab(props: ProductDetailOfficialTabsProps) {
       >
         <Row gutter={[16, 16]} align="middle">
           <Col xs={24} md={10}>
-            <Space size={12} align="center">
-              <ProductImageThumb
-                src={imageUrl}
-                alt={imageAlt}
-                imageCount={currentProductSummarySurface?.galleryImages.length}
-                width={80}
-                fallback="SKU"
-              />
-              <div>
-                <Text strong style={{ display: 'block', color: '#0f172a' }}>
-                  {formatSnapshotValue(currentProductSummarySurface?.partnerSku ?? productSnapshotView?.identity.partnerSku)}
-                </Text>
-                <Text style={{ color: '#64748b' }}>
-                  SKU {formatSnapshotValue(productSnapshotView?.identity.childSku ?? productSnapshotView?.identity.skuParent)}
-                </Text>
-              </div>
-            </Space>
+            <ProductBaselineIdentity
+              title={visiblePartnerSku}
+              imageUrl={imageUrl}
+              imageCount={currentProductSummarySurface?.galleryImages.length}
+              imageAlt={imageAlt}
+              imageWidth={80}
+              titleMaxWidth={260}
+              codes={[
+                {
+                  label: 'SKU',
+                  value: visibleSku,
+                  copyText: visibleSku !== '-' ? visibleSku : undefined
+                }
+              ]}
+            />
           </Col>
           {visibleMetrics.length ? (
             visibleMetrics.map((item) => (

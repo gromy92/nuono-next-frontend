@@ -1,7 +1,7 @@
 import { Input, Modal, Space, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import { formatSnapshotValue } from '../utils';
-import { ProductImageThumb } from '../components/ProductBaselineDisplay';
+import { ProductBaselineIdentity } from '../../product-baseline';
 
 const { Text } = Typography;
 
@@ -104,33 +104,37 @@ export function ProductGroupMemberEditModal(props: ProductGroupMemberEditModalPr
       <Space direction="vertical" size={16} style={{ width: '100%' }}>
         <div
           style={{
-            display: 'grid',
-            gridTemplateColumns: '88px minmax(0, 1fr)',
-            gap: 12,
-            alignItems: 'center',
             padding: 14,
             border: '1px solid var(--pm-subtle-border)',
             borderRadius: 8,
             background: 'var(--pm-subtle-bg)'
           }}
         >
-          <ProductImageThumb
-            src={imageUrl}
-            alt={initialValue.title || initialValue.skuParent}
+          <ProductBaselineIdentity
+            title={initialValue.title || initialValue.skuParent}
+            imageUrl={imageUrl}
             imageCount={imageCount}
-            width={88}
+            imageAlt={initialValue.title || initialValue.skuParent}
+            imageWidth={88}
+            titleMaxWidth={360}
+            codes={[
+              {
+                label: 'PSKU',
+                value: formatSnapshotValue(displayPsku),
+                copyText: displayPsku
+              },
+              {
+                label: 'SKU',
+                value: formatSnapshotValue(initialValue.skuParent),
+                copyText: initialValue.skuParent
+              }
+            ]}
+            extra={
+              <Text type="secondary" style={{ fontSize: 12, lineHeight: '18px' }}>
+                库存 FBN {Number.isFinite(fbnStock) ? fbnStock : 0} / FBP {Number.isFinite(fbpStock) ? fbpStock : 0}
+              </Text>
+            }
           />
-          <Space direction="vertical" size={6} style={{ minWidth: 0 }}>
-            <Text strong ellipsis={{ tooltip: initialValue.title || initialValue.skuParent }}>
-              {formatSnapshotValue(initialValue.title || initialValue.skuParent)}
-            </Text>
-            <Text type="secondary">
-              PSKU：{formatSnapshotValue(displayPsku)}
-            </Text>
-            <Text type="secondary">
-              库存：FBN {Number.isFinite(fbnStock) ? fbnStock : 0} / FBP {Number.isFinite(fbpStock) ? fbpStock : 0}
-            </Text>
-          </Space>
         </div>
         {axisRows.map((row) => (
           <div key={row.code || row.label}>

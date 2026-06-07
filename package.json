@@ -9,6 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "product-baseline:display-contract": "node scripts/product_baseline_display_contract.mjs",
     "product:workspace-smoke": "node scripts/product_workspace_smoke.mjs",
     "product-management:08-smoke": "node scripts/product_management_08_api_smoke.mjs",
     "product-management:10-page-acceptance": "node scripts/product_management_10_page_acceptance.mjs",

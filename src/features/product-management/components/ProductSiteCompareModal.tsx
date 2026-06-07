@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Alert, Modal, Space, Spin, Table, Typography } from 'antd';
+import { Alert, Modal, Space, Spin, Table } from 'antd';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 import {
   closedProductSiteCompareModalState,
@@ -8,9 +8,7 @@ import {
   siteOfferCode
 } from '../utils';
 import { createProductSiteCompareColumns } from './ProductSiteCompareModal.helpers';
-import { ProductImageThumb } from './ProductBaselineDisplay';
-
-const { Text } = Typography;
+import { ProductBaselineIdentity } from '../../product-baseline';
 
 type ProductSiteCompareModalProps = {
   workspace: ProductManagementWorkspace;
@@ -47,41 +45,33 @@ export function ProductSiteCompareModal({ workspace }: ProductSiteCompareModalPr
         {summary ? (
           <div
             style={{
-              display: 'flex',
-              gap: 10,
-              alignItems: 'center',
               padding: '8px 10px',
               border: '1px solid #e5e7eb',
               borderRadius: 6,
               background: '#f8fafc'
             }}
           >
-            <ProductImageThumb
-              src={summary.imageUrl || summary.galleryImages[0]}
-              alt={productSummaryTitle(summary)}
+            <ProductBaselineIdentity
+              title={productSummaryTitle(summary)}
+              imageUrl={summary.imageUrl || summary.galleryImages[0]}
               imageCount={summary.galleryImages.length}
-              width={56}
+              imageAlt={productSummaryTitle(summary)}
+              imageWidth={56}
+              compact
+              titleMaxWidth={780}
+              codes={[
+                {
+                  label: 'SKU',
+                  value: formatSnapshotValue(summary.skuParent),
+                  copyText: summary.skuParent
+                },
+                {
+                  label: 'PSKU',
+                  value: formatSnapshotValue(summary.partnerSku || summary.pskuCode),
+                  copyText: summary.partnerSku || summary.pskuCode
+                }
+              ]}
             />
-            <div style={{ minWidth: 0 }}>
-              <Text
-                strong
-                style={{
-                  display: 'block',
-                  maxWidth: 780,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  color: '#0f172a',
-                  fontSize: 14,
-                  lineHeight: '20px'
-                }}
-              >
-                {productSummaryTitle(summary)}
-              </Text>
-              <Text type="secondary" style={{ fontSize: 12, lineHeight: '18px' }}>
-                {formatSnapshotValue(summary.skuParent)} · {formatSnapshotValue(summary.partnerSku || summary.pskuCode)}
-              </Text>
-            </div>
           </div>
         ) : null}
 

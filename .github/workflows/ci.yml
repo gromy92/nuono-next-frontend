@@ -42,6 +42,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Product baseline display contract
+        run: pnpm product-baseline:display-contract
+
       - name: Typecheck
         run: pnpm typecheck
 

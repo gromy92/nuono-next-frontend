@@ -4,14 +4,12 @@ import { useState, type Key } from 'react';
 import { ReloadOutlined } from '@ant-design/icons';
 import type { AuthSessionStore } from '../auth/session';
 import type { ProductListRowPayload } from '../product-management/types';
-import { ProductImageThumb } from '../product-baseline';
+import { ProductBaselineListCell } from '../product-management/components/ProductBaselineDisplay';
 import type { OrderFinanceOrderGroup, OrderFinanceTransactionLine } from '../order-finance/types';
 import {
   buildNoonProductUrl,
   buildProductSummarySurfaceFromListItem,
-  mergeGalleryImageUrls,
-  productSourceTypeMeta,
-  productSummaryTitle
+  mergeGalleryImageUrls
 } from '../product-management/utils';
 import {
   formatMoney,
@@ -848,100 +846,23 @@ function ProductIdentityCell(props: { record: ProductListRowPayload }) {
   const { record } = props;
   const summary = buildProductSummarySurfaceFromListItem(record);
   const galleryImages = mergeGalleryImageUrls(record.galleryImages, record.imageUrl);
-  const title = productSummaryTitle(summary);
-  const visiblePsku = summary.partnerSku || summary.pskuCode || '-';
   const noonProductUrl = buildNoonProductUrl(summary);
-  const sourceTypeMeta = productSourceTypeMeta(summary.productSourceType);
 
   return (
-    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0 }}>
-      <span style={{ flex: '0 0 auto' }}>
-        <ProductImageThumb
-          src={galleryImages[0]}
-          alt={record.title || record.skuParent}
-          imageCount={galleryImages.length}
-          width={96}
-          fallback="无图"
-        />
-      </span>
-      <div style={{ minWidth: 0, flex: '1 1 auto' }}>
-        <Space size={6} wrap style={{ minHeight: 18 }}>
-          <Text style={{ display: 'block', color: '#6b7280', fontSize: 12, lineHeight: '18px' }}>
-            {summary.brand || '-'}
-          </Text>
-          <Tooltip title={sourceTypeMeta.description}>
-            <Tag color={sourceTypeMeta.color} style={{ marginInlineEnd: 0, fontSize: 11, lineHeight: '16px' }}>
-              {sourceTypeMeta.label}
-            </Tag>
-          </Tooltip>
-          {record.variantCount && record.variantCount > 1 ? (
-            <Tag color="warning" style={{ marginInlineEnd: 0, fontSize: 11, lineHeight: '16px' }}>
-              多变体 {record.variantCount}
-            </Tag>
-          ) : null}
-        </Space>
-        <Tooltip title={title}>
-          <a
-            href={noonProductUrl}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(event) => {
-              event.stopPropagation();
-            }}
-            style={{
-              display: 'block',
-              width: '100%',
-              height: 20,
-              maxWidth: 360,
-              padding: 0,
-              color: '#111827',
-              fontWeight: 600,
-              textAlign: 'left',
-              lineHeight: '20px',
-              textDecoration: 'none'
-            }}
-          >
-            <span
-              style={{
-                display: 'block',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {title}
-            </span>
-          </a>
-        </Tooltip>
-        <Space
-          wrap
-          size={[10, 2]}
-          style={{ color: '#6b7280', fontSize: 12, lineHeight: '18px', marginTop: 4 }}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <span>
-            <Text style={{ color: '#6b7280', fontSize: 12 }}>PSKU: </Text>
-            <Text copyable={visiblePsku !== '-' ? { text: visiblePsku, tooltips: ['复制 PSKU', '已复制'] } : false} style={{ fontSize: 12 }}>
-              {visiblePsku}
-            </Text>
-          </span>
-          <span>
-            <Text style={{ color: '#9ca3af', fontSize: 12 }}>SKU: </Text>
-            <Text
-              copyable={summary.skuParent ? { text: summary.skuParent, tooltips: ['复制 SKU', '已复制'] } : false}
-              style={{ color: '#9ca3af', fontSize: 12 }}
-            >
-              {summary.skuParent || '-'}
-            </Text>
-          </span>
-        </Space>
-        {summary.barcode ? (
-          <div style={{ color: '#9ca3af', fontSize: 12, lineHeight: '18px' }}>
-            Barcode: {summary.barcode}
-          </div>
-        ) : null}
-      </div>
-    </div>
+    <ProductBaselineListCell
+      summary={summary}
+      imageUrl={galleryImages[0]}
+      imageCount={galleryImages.length}
+      imageAlt={record.title || record.skuParent}
+      titleHref={noonProductUrl}
+      actions={
+        record.variantCount && record.variantCount > 1 ? (
+          <Tag color="warning" style={{ marginInlineEnd: 0, fontSize: 11, lineHeight: '16px' }}>
+            多变体 {record.variantCount}
+          </Tag>
+        ) : null
+      }
+    />
   );
 }
 

@@ -1,6 +1,6 @@
 import { Modal, Space, Typography } from 'antd';
 import { formatSnapshotValue } from '../utils';
-import { ProductImageThumb } from '../components/ProductBaselineDisplay';
+import { ProductBaselineIdentity } from '../../product-baseline';
 import type { ProductGroupMemberCardView } from './productGroupMemberTypes';
 
 const { Text } = Typography;
@@ -36,29 +36,31 @@ export function ProductGroupUnlinkConfirmModal(props: ProductGroupUnlinkConfirmM
         {member ? (
           <div
             style={{
-              display: 'grid',
-              gridTemplateColumns: '88px minmax(0, 1fr)',
-              gap: 12,
-              alignItems: 'center',
               padding: 14,
               border: '1px solid var(--pm-subtle-border)',
               borderRadius: 8,
               background: 'var(--pm-subtle-bg)'
             }}
           >
-            <ProductImageThumb
-              src={imageUrl}
-              alt={member.title || member.skuParent}
+            <ProductBaselineIdentity
+              title={member.title || member.skuParent}
+              imageUrl={imageUrl}
               imageCount={imageCount}
-              width={88}
+              imageAlt={member.title || member.skuParent}
+              imageWidth={88}
+              titleMaxWidth={360}
+              codes={[
+                {
+                  label: 'SKU',
+                  value: formatSnapshotValue(member.childSku || member.skuParent),
+                  copyText: member.childSku || member.skuParent
+                },
+                {
+                  label: 'Group',
+                  value: safeGroupName
+                }
+              ]}
             />
-            <Space direction="vertical" size={6} style={{ minWidth: 0 }}>
-              <Text strong ellipsis={{ tooltip: member.title || member.skuParent }}>
-                {formatSnapshotValue(member.title || member.skuParent)}
-              </Text>
-              <Text type="secondary">Group：{safeGroupName}</Text>
-              <Text type="secondary">SKU：{formatSnapshotValue(member.childSku || member.skuParent)}</Text>
-            </Space>
           </div>
         ) : null}
         <Text type="secondary">确认移除该商品的 Group 关联？确认后会形成待发布修改。</Text>
