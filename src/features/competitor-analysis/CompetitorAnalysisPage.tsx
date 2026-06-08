@@ -2,6 +2,7 @@ import {
   App,
   Button,
   Card,
+  Checkbox,
   Drawer,
   Empty,
   Input,
@@ -11,44 +12,55 @@ import {
   Space,
   Spin,
   Table,
+  Tabs,
   Tag,
   Tooltip,
   Typography
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  CheckCircleOutlined,
+  CheckOutlined,
   ClockCircleOutlined,
+  CloseOutlined,
+  EditOutlined,
+  EyeOutlined,
+  LineChartOutlined,
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined,
-  StarFilled,
-  StopOutlined
+  StarFilled
 } from '@ant-design/icons'
 import { useEffect, useMemo, useState } from 'react'
+import type { EChartsCoreOption } from 'echarts/core'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
+import { ProductBaselineIdentity } from '../product-baseline'
+import { EChartPanel } from '../../shared/charts'
 import {
   addCompetitorKeyword,
   addManualCompetitor,
   confirmCompetitorCandidate,
   createCompetitorWatchProduct,
   deleteCompetitorKeyword,
-  fetchCompetitorProductOptions,
+  fetchCompetitorProductBaselines,
+  fetchCompetitorProductChanges,
   fetchCompetitorRankHistory,
   fetchCompetitorRefreshRun,
+  fetchCompetitorTask,
   fetchCompetitorWatchProductDetail,
-  fetchCompetitorWatchProducts,
   ignoreCompetitorCandidate,
+  removeCompetitorCandidate,
+  requestCompetitorMonitoring,
   requestCompetitorRefresh,
   updateCompetitorKeyword,
-  type CompetitorRefreshRun
+  type CompetitorTask
 } from './api'
 import { summarizeRanks } from './domain'
 import { normalizeError } from '../../shared/api'
 import type {
   CompetitorCandidate,
   CompetitorKeyword,
-  CompetitorProductOption,
+  CompetitorProductChangeField,
+  CompetitorProductChangeGroup,
   CompetitorRankPoint,
   CompetitorWatchProduct
 } from './types'
@@ -61,6 +73,9 @@ type CompetitorAnalysisPageProps = {
 }
 
 type HistoryRange = '7' | '30' | '90' | '180' | '365'
+
+const SELF_RANK_REPORT_WINDOW_DAYS = 15
+const SELF_RANK_REPORT_CHANGE_LABEL = '近15日变化'
 
 function siteCodeFromStoreCode(storeCode?: string) {
   const normalized = (storeCode || '').toUpperCase()
@@ -89,19 +104,94 @@ function uniqueStores(stores?: AuthSessionStore[], currentStore?: AuthSessionSto
   return result
 }
 
-function splitKeywordInput(value: string) {
-  const seen = new Set<string>()
-  return value
-    .split(/[\n,，;；]+/)
-    .map((item) => item.trim())
-    .filter((item) => {
-      const normalized = item.toLowerCase()
-      if (!item || seen.has(normalized)) {
-        return false
-      }
-      seen.add(normalized)
-      return true
-    })
+function storeDisplayName(store?: AuthSessionStore | null) {
+  return (
+    store?.projectName ||
+    store?.projectCode ||
+    store?.orgName ||
+    store?.orgCode ||
+    store?.storeCode ||
+    ''
+  )
+}
+
+function sameProductLine(left: CompetitorWatchProduct, right: CompetitorWatchProduct) {
+  if (left.id && right.id && left.id === right.id) {
+    return true
+  }
+  return Boolean(
+    left.productSiteOfferId &&
+      right.productSiteOfferId &&
+      left.productSiteOfferId === right.productSiteOfferId
+  )
+}
+
+function hasValidSelfNoonCode(product: CompetitorWatchProduct) {
+  return /^[ZN][A-Z0-9]{4,79}$/i.test(product.selfNoonProductCode || '')
+}
+
+function extractNoonProductCode(input: string) {
+  return input.match(/[ZN][A-Z0-9]{7,79}/i)?.[0].toUpperCase() || ''
+}
+
+function changeCandidateStatus(
+  keywordId: string,
+  candidateId: string,
+  status: 'confirmed' | 'ignored' | 'removed'
+) {
+  if (status === 'confirmed') {
+    return confirmCompetitorCandidate(keywordId, candidateId)
+  }
+  if (status === 'ignored') {
+    return ignoreCompetitorCandidate(keywordId, candidateId)
+  }
+  return removeCompetitorCandidate(keywordId, candidateId)
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
+function isTerminalRefreshStatus(status?: string) {
+  const normalized = status?.toUpperCase()
+  return normalized === 'SUCCEEDED' || normalized === 'PARTIAL_FAILED' || normalized === 'FAILED'
+}
+
+function isSuccessfulRefreshStatus(status?: string) {
+  const normalized = status?.toUpperCase()
+  return normalized === 'SUCCEEDED' || normalized === 'PARTIAL_FAILED'
+}
+
+function isTerminalTaskStatus(status?: string) {
+  const normalized = status?.toUpperCase()
+  return normalized === 'SUCCEEDED' || normalized === 'FAILED' || normalized === 'CANCELLED'
+}
+
+function isSuccessfulTaskStatus(status?: string) {
+  return status?.toUpperCase() === 'SUCCEEDED'
+}
+
+function monitoringTaskSummary(task: CompetitorTask) {
+  if (!task.resultJson) {
+    return ''
+  }
+  try {
+    const payload = JSON.parse(task.resultJson) as {
+      watchProductTotal?: number
+      submittedCount?: number
+      failedCount?: number
+    }
+    if (typeof payload.submittedCount !== 'number') {
+      return ''
+    }
+    const total = typeof payload.watchProductTotal === 'number' ? payload.watchProductTotal : payload.submittedCount
+    const failed = typeof payload.failedCount === 'number' ? payload.failedCount : 0
+    return failed > 0
+      ? `已提交 ${payload.submittedCount}/${total} 个商品，${failed} 个提交失败`
+      : `已提交 ${payload.submittedCount} 个商品抓取`
+  } catch {
+    return ''
+  }
 }
 
 export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps) {
@@ -109,79 +199,99 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
   const [products, setProducts] = useState<CompetitorWatchProduct[]>([])
   const [selectedProductId, setSelectedProductId] = useState('')
   const [selectedProductDetail, setSelectedProductDetail] = useState<CompetitorWatchProduct>()
+  const [keywordProduct, setKeywordProduct] = useState<CompetitorWatchProduct>()
+  const [reportProduct, setReportProduct] = useState<CompetitorWatchProduct>()
+  const [changeRows, setChangeRows] = useState<CompetitorProductChangeGroup[]>([])
   const [detailOpen, setDetailOpen] = useState(false)
   const [keywordModalOpen, setKeywordModalOpen] = useState(false)
   const [manualModalOpen, setManualModalOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
   const [listLoading, setListLoading] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [changeLoading, setChangeLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-  const [refreshRuns, setRefreshRuns] = useState<Record<string, CompetitorRefreshRun>>({})
   const [productSearch, setProductSearch] = useState('')
   const [keywordSearch, setKeywordSearch] = useState('')
   const [competitorSearch, setCompetitorSearch] = useState('')
   const [keywordInput, setKeywordInput] = useState('')
   const [manualInput, setManualInput] = useState('')
+  const [manualKeywordId, setManualKeywordId] = useState('')
   const [historyRange, setHistoryRange] = useState<HistoryRange>('30')
-  const [createModalOpen, setCreateModalOpen] = useState(false)
-  const [createStoreKey, setCreateStoreKey] = useState(() => storeKey(session.currentStore))
-  const [createProductSearch, setCreateProductSearch] = useState('')
-  const [createProductOptions, setCreateProductOptions] = useState<CompetitorProductOption[]>([])
-  const [createProductOptionId, setCreateProductOptionId] = useState('')
-  const [createKeywordInput, setCreateKeywordInput] = useState('')
-  const [createOptionsLoading, setCreateOptionsLoading] = useState(false)
+  const [productPage, setProductPage] = useState(1)
+  const [productPageSize, setProductPageSize] = useState(50)
+  const [productTotal, setProductTotal] = useState(0)
 
   const selectedProduct =
-    selectedProductDetail?.id === selectedProductId
+    selectedProductDetail &&
+    (selectedProductDetail.id === selectedProductId || selectedProductDetail.productSiteOfferId === selectedProductId)
       ? selectedProductDetail
-      : products.find((product) => product.id === selectedProductId) ?? products[0]
+      : products.find((product) => product.id === selectedProductId || product.productSiteOfferId === selectedProductId) ?? products[0]
   const allowedStores = useMemo(
     () => uniqueStores(session.userStores, session.currentStore),
     [session.currentStore, session.userStores]
   )
-  const selectedCreateStore = useMemo(
-    () => allowedStores.find((store) => storeKey(store) === createStoreKey) || allowedStores[0] || null,
-    [allowedStores, createStoreKey]
+  const currentStoreKey = storeKey(session.currentStore)
+  const selectedStore = useMemo(
+    () => allowedStores.find((store) => storeKey(store) === currentStoreKey) || allowedStores[0] || null,
+    [allowedStores, currentStoreKey]
   )
-  const selectedCreateSiteCode = selectedCreateStore?.site || siteCodeFromStoreCode(selectedCreateStore?.storeCode)
-  const selectedCreateProductOption = useMemo(
-    () => createProductOptions.find((option) => option.productSiteOfferId === createProductOptionId),
-    [createProductOptionId, createProductOptions]
+  const selectedSiteCode = selectedStore?.site || siteCodeFromStoreCode(selectedStore?.storeCode)
+  const selectedStoreLabel = storeDisplayName(selectedStore)
+  const ownedNoonProductCodes = useMemo(
+    () =>
+      new Set(
+        products
+          .map((product) => normalizeNoonProductCode(product.selfNoonProductCode))
+          .filter(Boolean)
+      ),
+    [products]
   )
 
   useEffect(() => {
-    if (!allowedStores.length) {
-      setCreateStoreKey('')
-      return
+    setProductPage(1)
+  }, [selectedStore?.storeCode, selectedSiteCode])
+
+  useEffect(() => {
+    if (!selectedStore?.storeCode || !selectedSiteCode) {
+      setProducts([])
+      setProductTotal(0)
+      setSelectedProductId('')
+      return undefined
     }
-    setCreateStoreKey((current) => (current && allowedStores.some((store) => storeKey(store) === current) ? current : storeKey(allowedStores[0])))
-  }, [allowedStores])
-
-  useEffect(() => {
     const controller = new AbortController()
     const timer = window.setTimeout(() => {
       setListLoading(true)
-      fetchCompetitorWatchProducts(
+      fetchCompetitorProductBaselines(
         {
+          storeCode: selectedStore.storeCode,
+          siteCode: selectedSiteCode,
           productSearch,
           keywordSearch,
           competitorSearch,
-          page: 1,
-          pageSize: 50
+          page: productPage,
+          pageSize: productPageSize
         },
         controller.signal
       )
         .then((result) => {
           setProducts(result.items)
+          setProductTotal(result.pagination?.total ?? result.items.length)
           setSelectedProductId((current) => {
-            if (current && result.items.some((product) => product.id === current)) {
+            if (
+              current &&
+              result.items.some(
+                (product) => product.id === current || product.productSiteOfferId === current
+              )
+            ) {
               return current
             }
-            return result.items[0]?.id ?? ''
+            const first = result.items[0]
+            return first?.id || first?.productSiteOfferId || ''
           })
         })
         .catch((error) => {
           if (!isAbortError(error)) {
-            message.error(normalizeError(error, '读取竞品监控列表失败'))
+            message.error(normalizeError(error, '读取商品基线列表失败'))
           }
         })
         .finally(() => {
@@ -193,61 +303,22 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [competitorSearch, keywordSearch, message, productSearch])
-
-  useEffect(() => {
-    if (!createModalOpen) {
-      return undefined
-    }
-    if (!selectedCreateStore?.storeCode || !selectedCreateSiteCode) {
-      setCreateProductOptions([])
-      setCreateProductOptionId('')
-      return undefined
-    }
-
-    const controller = new AbortController()
-    const timer = window.setTimeout(() => {
-      setCreateOptionsLoading(true)
-      fetchCompetitorProductOptions(
-        {
-          storeCode: selectedCreateStore.storeCode,
-          siteCode: selectedCreateSiteCode,
-          keyword: createProductSearch,
-          limit: 50
-        },
-        controller.signal
-      )
-        .then((options) => {
-          setCreateProductOptions(options)
-          setCreateProductOptionId((current) =>
-            current && options.some((option) => option.productSiteOfferId === current)
-              ? current
-              : options[0]?.productSiteOfferId ?? ''
-          )
-        })
-        .catch((error) => {
-          if (!isAbortError(error)) {
-            message.error(normalizeError(error, '读取可监控商品失败'))
-            setCreateProductOptions([])
-            setCreateProductOptionId('')
-          }
-        })
-        .finally(() => {
-          setCreateOptionsLoading(false)
-        })
-    }, 220)
-
-    return () => {
-      window.clearTimeout(timer)
-      controller.abort()
-    }
-  }, [createModalOpen, createProductSearch, message, selectedCreateSiteCode, selectedCreateStore?.storeCode])
+  }, [
+    competitorSearch,
+    keywordSearch,
+    message,
+    productPage,
+    productPageSize,
+    productSearch,
+    selectedSiteCode,
+    selectedStore?.storeCode
+  ])
 
   const mergeProduct = (product: CompetitorWatchProduct) => {
     setSelectedProductDetail(product)
     setProducts((current) =>
-      current.some((item) => item.id === product.id)
-        ? current.map((item) => (item.id === product.id ? { ...item, ...product } : item))
+      current.some((item) => sameProductLine(item, product))
+        ? current.map((item) => (sameProductLine(item, product) ? { ...item, ...product } : item))
         : [product, ...current]
     )
   }
@@ -270,72 +341,118 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     }
   }
 
-  const openDetail = (product: CompetitorWatchProduct) => {
-    setSelectedProductId(product.id)
-    setDetailOpen(true)
-    void loadProductDetail(product.id)
+  const ensureWatchProduct = async (product: CompetitorWatchProduct) => {
+    if (product.id) {
+      return product
+    }
+    if (!selectedStore?.storeCode || !selectedSiteCode) {
+      message.warning('请先选择店铺和站点')
+      return undefined
+    }
+    if (!product.productSiteOfferId || !hasValidSelfNoonCode(product)) {
+      message.warning('当前商品缺少 Noon Z/N 码，暂不能做竞品分析')
+      return undefined
+    }
+    try {
+      const detail = await createCompetitorWatchProduct({
+        storeCode: selectedStore.storeCode,
+        siteCode: selectedSiteCode,
+        productSiteOfferId: product.productSiteOfferId,
+        selfNoonProductCode: product.selfNoonProductCode
+      })
+      mergeProduct(detail)
+      return detail
+    } catch (error) {
+      message.error(normalizeError(error, '启用竞品分析失败'))
+      return undefined
+    }
   }
 
-  const openKeywordModal = (product: CompetitorWatchProduct) => {
-    setSelectedProductId(product.id)
+  const openDetail = async (product: CompetitorWatchProduct) => {
+    setActionLoading(`ensure-${product.id || product.productSiteOfferId}`)
+    const readyProduct = await ensureWatchProduct(product)
+    setActionLoading(null)
+    if (!readyProduct?.id) {
+      return
+    }
+    setSelectedProductId(readyProduct.id)
+    setDetailOpen(true)
+    void loadProductDetail(readyProduct.id)
+  }
+
+  const openReport = async (product: CompetitorWatchProduct) => {
+    const loadingKey = `report-${product.id || product.productSiteOfferId}`
+    setActionLoading(loadingKey)
+    const readyProduct = await ensureWatchProduct(product)
+    setActionLoading(null)
+    if (!readyProduct?.id) {
+      return
+    }
+    setSelectedProductId(readyProduct.id)
+    setReportProduct(readyProduct)
+    setChangeRows(buildMockProductChanges(readyProduct))
+    setReportOpen(true)
+    setChangeLoading(true)
+    try {
+      const rows = await fetchCompetitorProductChanges(readyProduct.id)
+      setChangeRows(rows.length ? rows : buildMockProductChanges(readyProduct))
+    } catch {
+      setChangeRows(buildMockProductChanges(readyProduct))
+    } finally {
+      setChangeLoading(false)
+    }
+  }
+
+  const openManualModal = async (product: CompetitorWatchProduct) => {
+    setActionLoading(`ensure-${product.id || product.productSiteOfferId}`)
+    const readyProduct = await ensureWatchProduct(product)
+    setActionLoading(null)
+    if (!readyProduct?.id) {
+      return
+    }
+    setSelectedProductId(readyProduct.id)
+    setManualInput('')
+    setManualKeywordId('')
+    const detail = await loadProductDetail(readyProduct.id)
+    if (!detail) {
+      return
+    }
+    const activeKeywords = detail.keywords
+      .filter((keyword) => keyword.status === 'active')
+      .slice()
+      .sort((left, right) => left.displayOrder - right.displayOrder)
+    if (!activeKeywords.length) {
+      message.warning('请先维护关键词')
+      setKeywordInput('')
+      setManualModalOpen(false)
+      setKeywordModalOpen(true)
+      return
+    }
+    setManualKeywordId(activeKeywords[0].id)
+    setManualModalOpen(true)
+  }
+
+  const openKeywordModal = async (product: CompetitorWatchProduct) => {
+    setActionLoading(`ensure-${product.id || product.productSiteOfferId}`)
+    const readyProduct = await ensureWatchProduct(product)
+    setActionLoading(null)
+    if (!readyProduct?.id) {
+      return
+    }
+    setSelectedProductId(readyProduct.id)
+    setKeywordProduct(readyProduct)
     setKeywordInput('')
     setKeywordModalOpen(true)
-    void loadProductDetail(product.id)
-  }
-
-  const openManualModal = (product: CompetitorWatchProduct) => {
-    setSelectedProductId(product.id)
-    setManualInput('')
-    setManualModalOpen(true)
-    void loadProductDetail(product.id)
-  }
-
-  const openCreateModal = () => {
-    if (!allowedStores.length) {
-      message.warning('当前账号没有可用店铺')
-      return
-    }
-    setCreateStoreKey((current) => current || storeKey(session.currentStore) || storeKey(allowedStores[0]))
-    setCreateProductSearch('')
-    setCreateProductOptions([])
-    setCreateProductOptionId('')
-    setCreateKeywordInput('')
-    setCreateModalOpen(true)
-  }
-
-  const handleCreateWatchProduct = async () => {
-    if (!selectedCreateStore?.storeCode || !selectedCreateSiteCode) {
-      message.warning('请先选择店铺和站点')
-      return
-    }
-    if (!selectedCreateProductOption) {
-      message.warning('请先选择我方商品')
-      return
-    }
-    setActionLoading('create-watch-product')
-    try {
-      let detail = await createCompetitorWatchProduct({
-        storeCode: selectedCreateStore.storeCode,
-        siteCode: selectedCreateSiteCode,
-        productSiteOfferId: selectedCreateProductOption.productSiteOfferId,
-        selfNoonProductCode: selectedCreateProductOption.noonProductCode
-      })
-      for (const keyword of splitKeywordInput(createKeywordInput)) {
-        detail = await addCompetitorKeyword(detail.id, keyword, `en-${detail.siteCode || selectedCreateSiteCode}`)
-      }
-      mergeProduct(detail)
-      setSelectedProductId(detail.id)
-      setCreateModalOpen(false)
-      message.success('监控商品已新增')
-    } catch (error) {
-      message.error(normalizeError(error, '新增监控商品失败'))
-    } finally {
-      setActionLoading(null)
+    const detail = await loadProductDetail(readyProduct.id)
+    if (detail) {
+      setKeywordProduct(detail)
     }
   }
 
   const handleAddKeyword = async () => {
-    if (!selectedProduct) {
+    const targetProduct = keywordProduct || selectedProduct
+    if (!targetProduct?.id) {
+      message.warning('请先启用竞品分析')
       return
     }
     const keyword = keywordInput.trim()
@@ -344,8 +461,9 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     }
     setActionLoading('add-keyword')
     try {
-      const detail = await addCompetitorKeyword(selectedProduct.id, keyword, `en-${selectedProduct.siteCode}`)
+      const detail = await addCompetitorKeyword(targetProduct.id, keyword, `en-${targetProduct.siteCode}`)
       mergeProduct(detail)
+      setKeywordProduct(detail)
       message.success('关键词已加入监控')
       setKeywordInput('')
     } catch (error) {
@@ -365,6 +483,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
         status
       })
       mergeProduct(detail)
+      setKeywordProduct(detail)
       message.success(status === 'active' ? '关键词已启用' : '关键词已暂停')
     } catch (error) {
       message.error(normalizeError(error, '更新关键词失败'))
@@ -378,6 +497,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     try {
       const detail = await deleteCompetitorKeyword(keyword.id)
       mergeProduct(detail)
+      setKeywordProduct(detail)
       message.success('关键词已删除')
     } catch (error) {
       message.error(normalizeError(error, '删除关键词失败'))
@@ -394,9 +514,25 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     if (!input) {
       return
     }
+    if (!manualKeywordId) {
+      message.warning('请先选择关键词')
+      return
+    }
+    const noonProductCode = extractNoonProductCode(input)
+    if (
+      noonProductCode &&
+      selectedProduct.candidates.some(
+        (candidate) =>
+          candidate.noonProductCode.toUpperCase() === noonProductCode &&
+          candidateStatusForKeyword(candidate, manualKeywordId) !== 'ignored'
+      )
+    ) {
+      message.warning('竞品已存在')
+      return
+    }
     setActionLoading('manual-add')
     try {
-      const detail = await addManualCompetitor(selectedProduct.id, input)
+      const detail = await addManualCompetitor(selectedProduct.id, input, manualKeywordId)
       mergeProduct(detail)
       message.success('手工竞品已加入确认池')
       setManualInput('')
@@ -407,64 +543,189 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     }
   }
 
+  const handleManualRefresh = async (product: CompetitorWatchProduct) => {
+    if (!product.id) {
+      message.warning('请先启用竞品分析')
+      return
+    }
+    const activeKeywordCount =
+      product.activeKeywordCount ??
+      product.keywords.filter((keyword) => keyword.status === 'active').length
+    if (activeKeywordCount <= 0) {
+      message.warning('请先维护至少一个启用关键词')
+      return
+    }
+
+    const loadingKey = `refresh-${product.id}`
+    setActionLoading(loadingKey)
+    try {
+      const run = await requestCompetitorRefresh(product.id)
+      const runId = run.runId
+      setProducts((current) =>
+        current.map((item) =>
+          sameProductLine(item, product)
+            ? {
+                ...item,
+                latestRunStatus: 'running',
+                latestRunAt: item.latestRunAt || '-'
+              }
+            : item
+        )
+      )
+      if (!runId) {
+        message.success('抓取任务已提交')
+        return
+      }
+
+      message.success(`抓取任务已提交：${runId}`)
+      let latestRun = run
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        if (isTerminalRefreshStatus(latestRun.runStatus)) {
+          break
+        }
+        await delay(900)
+        latestRun = await fetchCompetitorRefreshRun(runId)
+      }
+
+      if (isSuccessfulRefreshStatus(latestRun.runStatus)) {
+        await loadProductDetail(product.id, { showLoading: false })
+        message.success('抓取完成，抓取结果已刷新')
+        return
+      }
+      if (latestRun.runStatus && isTerminalRefreshStatus(latestRun.runStatus)) {
+        message.error(latestRun.errorMessage || latestRun.errorCode || '抓取失败')
+        return
+      }
+      message.info('抓取仍在运行，稍后重新打开详情可查看结果')
+    } catch (error) {
+      message.error(normalizeError(error, '提交竞品抓取失败'))
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const reloadProductBaselines = async () => {
+    if (!selectedStore?.storeCode || !selectedSiteCode) {
+      return
+    }
+    setListLoading(true)
+    try {
+      const result = await fetchCompetitorProductBaselines({
+        storeCode: selectedStore.storeCode,
+        siteCode: selectedSiteCode,
+        productSearch,
+        keywordSearch,
+        competitorSearch,
+        page: productPage,
+        pageSize: productPageSize
+      })
+      setProducts(result.items)
+      setProductTotal(result.pagination?.total ?? result.items.length)
+    } catch (error) {
+      message.error(normalizeError(error, '刷新商品基线列表失败'))
+    } finally {
+      setListLoading(false)
+    }
+  }
+
+  const handleManualMonitoring = async () => {
+    if (!selectedStore?.storeCode || !selectedSiteCode) {
+      message.warning('请先选择店铺和站点')
+      return
+    }
+    setActionLoading('store-monitoring')
+    try {
+      const task = await requestCompetitorMonitoring(selectedStore.storeCode, selectedSiteCode)
+      const taskId = task.taskId
+      message.success(taskId ? `手动监控任务已提交：${taskId}` : '手动监控任务已提交')
+      if (!taskId) {
+        await reloadProductBaselines()
+        return
+      }
+
+      let latestTask = task
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        if (isTerminalTaskStatus(latestTask.status)) {
+          break
+        }
+        await delay(900)
+        latestTask = await fetchCompetitorTask(taskId)
+      }
+
+      if (isSuccessfulTaskStatus(latestTask.status)) {
+        await reloadProductBaselines()
+        message.success(monitoringTaskSummary(latestTask) || '手动监控批次已提交商品抓取')
+        return
+      }
+      if (latestTask.status && isTerminalTaskStatus(latestTask.status)) {
+        message.error(latestTask.message || latestTask.errorCode || '手动监控失败')
+        return
+      }
+      message.info('手动监控批次仍在提交，稍后刷新列表查看各商品抓取状态')
+    } catch (error) {
+      message.error(normalizeError(error, '提交手动监控失败'))
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
   const handleCandidateStatusChange = async (
     keywordId: string,
     candidateId: string,
-    status: 'confirmed' | 'ignored'
+    status: 'confirmed' | 'ignored' | 'removed'
   ) => {
     setActionLoading(`candidate-${status}-${keywordId}-${candidateId}`)
     try {
-      const detail =
-        status === 'confirmed'
-          ? await confirmCompetitorCandidate(keywordId, candidateId)
-          : await ignoreCompetitorCandidate(keywordId, candidateId)
+      const detail = await changeCandidateStatus(keywordId, candidateId, status)
       mergeProduct(detail)
-      message.success(status === 'confirmed' ? '竞品已确认' : '竞品已忽略')
+      message.success(status === 'confirmed' ? '竞品已确认' : status === 'ignored' ? '竞品已忽略' : '竞品已移除')
     } catch (error) {
-      message.error(normalizeError(error, status === 'confirmed' ? '确认竞品失败' : '忽略竞品失败'))
+      message.error(
+        normalizeError(
+          error,
+          status === 'confirmed' ? '确认竞品失败' : status === 'ignored' ? '忽略竞品失败' : '移除竞品失败'
+        )
+      )
     } finally {
       setActionLoading(null)
     }
   }
 
-  const handleRefresh = async (product: CompetitorWatchProduct) => {
-    setActionLoading(`refresh-${product.id}`)
+  const handleCandidateBatchStatusChange = async (
+    keywordId: string,
+    candidateIds: string[],
+    status: 'confirmed' | 'ignored'
+  ) => {
+    const uniqueCandidateIds = Array.from(new Set(candidateIds.filter(Boolean)))
+    if (!uniqueCandidateIds.length) {
+      return
+    }
+
+    setActionLoading(`candidate-batch-${status}-${keywordId}`)
+    let latestDetail: CompetitorWatchProduct | undefined
+    let processedCount = 0
     try {
-      const run = await requestCompetitorRefresh(product.id)
-      if (run.runId) {
-        setRefreshRuns((current) => ({ ...current, [product.id]: run }))
-        void pollRefreshRun(product.id, run.runId)
+      for (const candidateId of uniqueCandidateIds) {
+        latestDetail =
+          status === 'confirmed'
+            ? await confirmCompetitorCandidate(keywordId, candidateId)
+            : await ignoreCompetitorCandidate(keywordId, candidateId)
+        processedCount += 1
       }
-      message.info('手动刷新已提交，正在抓取排名')
+      if (latestDetail) {
+        mergeProduct(latestDetail)
+      }
+      message.success(status === 'confirmed' ? `已加入 ${processedCount} 个竞品` : `已忽略 ${processedCount} 个竞品`)
     } catch (error) {
-      message.error(normalizeError(error, '提交竞品刷新失败'))
+      if (latestDetail) {
+        mergeProduct(latestDetail)
+      }
+      const prefix = processedCount > 0 ? `已处理 ${processedCount} 个，` : ''
+      message.error(
+        prefix + normalizeError(error, status === 'confirmed' ? '批量加入竞品失败' : '批量忽略竞品失败')
+      )
     } finally {
       setActionLoading(null)
-    }
-  }
-
-  const pollRefreshRun = async (watchProductId: string, runId: string) => {
-    for (let index = 0; index < 12; index += 1) {
-      await delay(index === 0 ? 700 : 2000)
-      try {
-        const run = await fetchCompetitorRefreshRun(runId)
-        setRefreshRuns((current) => ({ ...current, [watchProductId]: run }))
-        const status = (run.runStatus || run.taskStatus || '').toUpperCase()
-        if (['SUCCEEDED', 'PARTIAL_FAILED', 'FAILED'].includes(status)) {
-          if (status === 'SUCCEEDED') {
-            message.success(run.message || '竞品刷新完成')
-          } else if (status === 'PARTIAL_FAILED') {
-            message.warning(run.message || '竞品刷新部分关键词失败')
-          } else {
-            message.error(run.errorMessage || run.message || '竞品刷新失败')
-          }
-          await loadProductDetail(watchProductId, { showLoading: false })
-          return
-        }
-      } catch (error) {
-        message.error(normalizeError(error, '读取竞品刷新状态失败'))
-        return
-      }
     }
   }
 
@@ -472,76 +733,86 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     setProductSearch('')
     setKeywordSearch('')
     setCompetitorSearch('')
+    setProductPage(1)
   }
 
-  const handleRefreshFirstProduct = () => {
-    const product = products[0]
-    if (product) {
-      void handleRefresh(product)
-    }
-  }
+  const candidateCounts = (product: CompetitorWatchProduct) => ({
+    pending:
+      product.pendingCandidateCount ??
+      product.candidates.filter((candidate) => candidate.reviewStatus === 'pending').length,
+    confirmed:
+      product.confirmedCompetitorCount ??
+      product.candidates.filter((candidate) => candidate.reviewStatus === 'confirmed').length
+  })
+  const keywordPanelProduct = keywordProduct || selectedProduct
 
   const productColumns: ColumnsType<CompetitorWatchProduct> = [
     {
-      title: '我方监控商品',
+      title: '商品基线',
       dataIndex: 'title',
       key: 'title',
       fixed: 'left',
-      width: 380,
-      render: (_value, product) => (
-        <div className="competitor-analysis-product-cell">
-          <div className="competitor-analysis-product-thumb">
-            <img src={product.imageUrl} alt="" />
-          </div>
-          <Space direction="vertical" size={2} style={{ minWidth: 0 }}>
-            <Text strong ellipsis={{ tooltip: product.title }}>
-              {product.title}
-            </Text>
-            <Space size={4} wrap>
-              <Tag color="blue">我方SKU {product.partnerSku}</Tag>
-              <Tag>{product.siteCode}</Tag>
-              <Text type="secondary">Noon {product.selfNoonProductCode}</Text>
-            </Space>
-          </Space>
-        </div>
-      )
-    },
-    {
-      title: '关键词',
-      key: 'keywords',
-      width: 96,
-      render: (_value, product) =>
-        product.activeKeywordCount ?? product.keywords.filter((keyword) => keyword.status === 'active').length
-    },
-    {
-      title: '候选 / 确认',
-      key: 'candidates',
-      width: 132,
+      width: 320,
       render: (_value, product) => {
-        const pending =
-          product.pendingCandidateCount ??
-          product.candidates.filter((candidate) => candidate.reviewStatus === 'pending').length
-        const confirmed =
-          product.confirmedCompetitorCount ??
-          product.candidates.filter((candidate) => candidate.reviewStatus === 'confirmed').length
         return (
-          <Space size={4} wrap>
-            <Tag color={pending ? 'gold' : 'default'}>{pending} 待确认</Tag>
-            <Tag color="green">{confirmed} 已确认</Tag>
-          </Space>
+          <ProductBaselineIdentity
+            compact
+            title={product.title}
+            subtitle={productChineseTitle(product)}
+            fallbackTitle="未命名商品"
+            imageUrl={product.imageUrl}
+            imageAlt={product.title}
+            imageWidth={70}
+            titleMaxWidth={210}
+            codes={productListIdentityCodes(product)}
+            tags={!product.id ? <Tag style={{ marginInlineEnd: 0 }}>未监控</Tag> : undefined}
+          />
         )
       }
     },
     {
-      title: '最近排名',
+      title: '关键词',
+      key: 'keywords',
+      width: 260,
+      render: (_value, product) => {
+        return (
+          <ProductKeywordLinks
+            product={product}
+            onEdit={() => void openKeywordModal(product)}
+          />
+        )
+      }
+    },
+    {
+      title: '候选/监控中',
+      key: 'candidates',
+      width: 96,
+      render: (_value, product) => {
+        const { pending, confirmed } = candidateCounts(product)
+        return (
+          <div className="competitor-analysis-count-stack">
+            <div className="competitor-analysis-count-row">
+              <Text type="secondary">候选</Text>
+              <Tag color={pending ? 'gold' : 'default'}>{pending}</Tag>
+            </div>
+            <div className="competitor-analysis-count-row">
+              <Text type="secondary">监控中</Text>
+              <Tag color="green">{confirmed}</Tag>
+            </div>
+          </div>
+        )
+      }
+    },
+    {
+      title: '排名摘要',
       key: 'rank',
       width: 150,
       render: (_value, product) => {
-        const summary = summarizeRanks(product)
+        const summary = product.id ? summarizeRanks(product) : undefined
         return (
           <Space direction="vertical" size={2}>
-            <Text>{summary.label}</Text>
-            <Text type="secondary">{summary.notInTop30Count} 次未进前30</Text>
+            <Text>{summary?.label || '暂无排名'}</Text>
+            <Text type="secondary">{summary?.notInTop20Count ?? 0} 次未进前20</Text>
           </Space>
         )
       }
@@ -552,8 +823,8 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       width: 148,
       render: (_value, product) => (
         <Space direction="vertical" size={2}>
-          <RunStatusTag status={product.latestRunStatus} />
-          <Text type="secondary">{product.latestRunAt}</Text>
+          {product.id ? <RunStatusTag status={product.latestRunStatus} /> : <Tag>未开始</Tag>}
+          <Text type="secondary">{product.id ? product.latestRunAt : '-'}</Text>
         </Space>
       )
     },
@@ -561,30 +832,59 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       title: '操作',
       key: 'actions',
       fixed: 'right',
-      width: 278,
-      render: (_value, product) => (
-        <Space size={6}>
-          <Button size="small" icon={<SearchOutlined />} onClick={() => openKeywordModal(product)}>
-            关键词
-          </Button>
-          <Button size="small" icon={<PlusOutlined />} onClick={() => openManualModal(product)}>
-            添加竞品
-          </Button>
-          <Button size="small" onClick={() => openDetail(product)}>
-            查看详情
-          </Button>
-          <Tooltip title="提交当前商品全部关键词刷新">
-            <Button
-              size="small"
-              icon={<ReloadOutlined />}
-              loading={actionLoading === `refresh-${product.id}`}
-              onClick={() => void handleRefresh(product)}
-            >
-              手动刷新
-            </Button>
-          </Tooltip>
-        </Space>
-      )
+      width: 152,
+      render: (_value, product) => {
+        const activeKeywordCount =
+          product.activeKeywordCount ??
+          product.keywords.filter((keyword) => keyword.status === 'active').length
+        const refreshDisabled = !product.id || activeKeywordCount <= 0
+        const refreshTitle = activeKeywordCount <= 0 ? '维护启用关键词后可抓取' : ''
+        return (
+          <Space size={4} className="competitor-analysis-row-actions">
+            <Tooltip title={refreshTitle || '抓取'}>
+              <Button
+                aria-label="抓取"
+                size="small"
+                icon={<ReloadOutlined />}
+                shape="circle"
+                disabled={refreshDisabled}
+                loading={actionLoading === `refresh-${product.id}`}
+                onClick={() => void handleManualRefresh(product)}
+              />
+            </Tooltip>
+            <Tooltip title="添加竞品">
+              <Button
+                aria-label="添加竞品"
+                size="small"
+                icon={<PlusOutlined />}
+                shape="circle"
+                loading={actionLoading === `ensure-${product.id || product.productSiteOfferId}`}
+                onClick={() => void openManualModal(product)}
+              />
+            </Tooltip>
+            <Tooltip title="查看详情">
+              <Button
+                aria-label="查看详情"
+                size="small"
+                icon={<EyeOutlined />}
+                shape="circle"
+                loading={actionLoading === `ensure-${product.id || product.productSiteOfferId}`}
+                onClick={() => void openDetail(product)}
+              />
+            </Tooltip>
+            <Tooltip title="报表">
+              <Button
+                aria-label="报表"
+                size="small"
+                icon={<LineChartOutlined />}
+                shape="circle"
+                loading={actionLoading === `report-${product.id || product.productSiteOfferId}`}
+                onClick={() => void openReport(product)}
+              />
+            </Tooltip>
+          </Space>
+        )
+      }
     }
   ]
 
@@ -597,150 +897,70 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
             prefix={<SearchOutlined />}
             placeholder="搜索我方SKU、商品标题、Noon码"
             value={productSearch}
-            onChange={(event) => setProductSearch(event.target.value)}
+            onChange={(event) => {
+              setProductSearch(event.target.value)
+              setProductPage(1)
+            }}
           />
           <Input
             allowClear
             prefix={<SearchOutlined />}
             placeholder="搜索关键词"
             value={keywordSearch}
-            onChange={(event) => setKeywordSearch(event.target.value)}
+            onChange={(event) => {
+              setKeywordSearch(event.target.value)
+              setProductPage(1)
+            }}
           />
           <Input
             allowClear
             prefix={<SearchOutlined />}
             placeholder="搜索竞品Z/N码、品牌、标题"
             value={competitorSearch}
-            onChange={(event) => setCompetitorSearch(event.target.value)}
+            onChange={(event) => {
+              setCompetitorSearch(event.target.value)
+              setProductPage(1)
+            }}
           />
           <Space wrap>
+            <Tooltip title="按当前店铺/站点提交已有确认竞品的监控商品">
+              <Button
+                icon={<ReloadOutlined />}
+                loading={actionLoading === 'store-monitoring'}
+                disabled={!selectedStore?.storeCode || !selectedSiteCode}
+                onClick={() => void handleManualMonitoring()}
+              >
+                手动监控
+              </Button>
+            </Tooltip>
             <Button onClick={resetSearch}>重置</Button>
-            <Button
-              data-testid="competitor-create-watch-product-button"
-              icon={<PlusOutlined />}
-              onClick={openCreateModal}
-            >
-              新增监控商品
-            </Button>
-            <Button
-              icon={<ReloadOutlined />}
-              loading={products[0] ? actionLoading === `refresh-${products[0].id}` : false}
-              onClick={handleRefreshFirstProduct}
-            >
-              手动刷新
-            </Button>
           </Space>
         </div>
-        <Text type="secondary">已筛选 {products.length} 个我方SKU，每日 08:00 自动轮询 Noon 前台关键词前 30 名。</Text>
+        <Text type="secondary">已筛选 {productTotal} 个商品基线；行内操作会自动启用竞品分析对象。</Text>
       </Card>
 
-      <Card size="small" title="监控商品列表（按我方SKU）" variant="borderless">
+      <Card size="small" className="competitor-analysis-list-card" variant="borderless">
         <Table
-          rowKey="id"
+          className="competitor-analysis-table"
+          rowKey={(product) => product.id || product.productSiteOfferId || product.partnerSku}
           columns={productColumns}
           dataSource={products}
           loading={listLoading}
-          pagination={false}
-          scroll={{ x: 1060 }}
+          pagination={{
+            current: productPage,
+            pageSize: productPageSize,
+            total: productTotal,
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 个商品`,
+            onChange: (page, pageSize) => {
+              setProductPage(page)
+              setProductPageSize(pageSize)
+            }
+          }}
+          scroll={{ x: 1248 }}
           size="middle"
         />
       </Card>
-
-      <Modal
-        width={760}
-        open={createModalOpen}
-        title="新增监控商品"
-        okText="确认新增"
-        cancelText="取消"
-        confirmLoading={actionLoading === 'create-watch-product'}
-        okButtonProps={{ disabled: !selectedCreateProductOption }}
-        onOk={() => void handleCreateWatchProduct()}
-        onCancel={() => setCreateModalOpen(false)}
-        destroyOnClose={false}
-      >
-        <Space
-          direction="vertical"
-          style={{ width: '100%' }}
-          size={12}
-          data-testid="competitor-create-watch-product-modal"
-        >
-          <div className="competitor-analysis-create-grid">
-            <Space direction="vertical" size={4}>
-              <Text type="secondary">店铺 / 站点</Text>
-              <Select
-                value={createStoreKey || undefined}
-                placeholder="选择店铺"
-                options={allowedStores.map((store) => {
-                  const key = storeKey(store)
-                  const siteCode = store.site || siteCodeFromStoreCode(store.storeCode)
-                  return {
-                    value: key,
-                    label: `${store.projectName || store.projectCode || store.storeCode} / ${siteCode || '-'}`
-                  }
-                })}
-                onChange={(value) => {
-                  setCreateStoreKey(value)
-                  setCreateProductOptionId('')
-                }}
-              />
-            </Space>
-            <Space direction="vertical" size={4}>
-              <Text type="secondary">搜索商品</Text>
-              <Input
-                allowClear
-                prefix={<SearchOutlined />}
-                placeholder="输入我方SKU、标题或 Noon 码"
-                value={createProductSearch}
-                onChange={(event) => setCreateProductSearch(event.target.value)}
-              />
-            </Space>
-          </div>
-          <Space direction="vertical" size={4} style={{ width: '100%' }}>
-            <Text type="secondary">我方商品</Text>
-            <Select
-              showSearch
-              filterOption={false}
-              value={createProductOptionId || undefined}
-              placeholder="选择要监控的我方商品"
-              loading={createOptionsLoading}
-              notFoundContent={
-                createOptionsLoading ? (
-                  <Spin size="small" />
-                ) : (
-                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前店铺没有可选商品" />
-                )
-              }
-              options={createProductOptions.map((option) => ({
-                value: option.productSiteOfferId,
-                label: <ProductOptionLabel option={option} />
-              }))}
-              onSearch={setCreateProductSearch}
-              onChange={setCreateProductOptionId}
-            />
-          </Space>
-          {selectedCreateProductOption ? (
-            <div className="competitor-analysis-modal-summary">
-              <Text strong ellipsis={{ tooltip: selectedCreateProductOption.title }}>
-                {selectedCreateProductOption.title}
-              </Text>
-              <Space size={4} wrap>
-                <Tag color="blue">我方SKU {selectedCreateProductOption.partnerSku}</Tag>
-                <Tag>{selectedCreateProductOption.siteCode}</Tag>
-                <Text type="secondary">Noon {selectedCreateProductOption.noonProductCode}</Text>
-              </Space>
-            </div>
-          ) : null}
-          <Space direction="vertical" size={4} style={{ width: '100%' }}>
-            <Text type="secondary">初始关键词</Text>
-            <Input.TextArea
-              autoSize={{ minRows: 2, maxRows: 4 }}
-              placeholder="可选，多个关键词用逗号或换行分隔"
-              value={createKeywordInput}
-              onChange={(event) => setCreateKeywordInput(event.target.value)}
-            />
-          </Space>
-        </Space>
-      </Modal>
 
       {selectedProduct ? (
         <>
@@ -753,37 +973,20 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
           >
             <ProductDetail
               product={selectedProduct}
+              storeLabel={selectedStoreLabel}
+              ownedNoonProductCodes={ownedNoonProductCodes}
               historyRange={historyRange}
               onHistoryRangeChange={setHistoryRange}
-              onRefresh={() => void handleRefresh(selectedProduct)}
               onCandidateStatusChange={(keywordId, candidateId, status) =>
                 void handleCandidateStatusChange(keywordId, candidateId, status)
               }
+              onCandidateBatchStatusChange={(keywordId, candidateIds, status) =>
+                void handleCandidateBatchStatusChange(keywordId, candidateIds, status)
+              }
+              onManualRefresh={(product) => void handleManualRefresh(product)}
               actionLoading={actionLoading}
-              refreshRun={refreshRuns[selectedProduct.id]}
             />
           </Drawer>
-
-          <Modal
-            width={640}
-            open={keywordModalOpen}
-            title="关键词维护"
-            footer={null}
-            onCancel={() => setKeywordModalOpen(false)}
-            destroyOnClose={false}
-          >
-            <Spin spinning={detailLoading}>
-              <KeywordMaintenancePanel
-                product={selectedProduct}
-                keywordInput={keywordInput}
-                actionLoading={actionLoading}
-                onKeywordInputChange={setKeywordInput}
-                onAddKeyword={() => void handleAddKeyword()}
-                onKeywordStatusChange={(keyword, status) => void handleKeywordStatusChange(keyword, status)}
-                onKeywordDelete={(keyword) => void handleKeywordDelete(keyword)}
-              />
-            </Spin>
-          </Modal>
 
           <Modal
             width={680}
@@ -797,13 +1000,57 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
               <ManualCompetitorPanel
                 product={selectedProduct}
                 manualInput={manualInput}
+                selectedKeywordId={manualKeywordId}
                 actionLoading={actionLoading}
                 onManualInputChange={setManualInput}
+                onManualKeywordChange={setManualKeywordId}
                 onManualAdd={() => void handleManualAdd()}
               />
             </Spin>
           </Modal>
         </>
+      ) : null}
+      {keywordPanelProduct ? (
+        <Modal
+          width={640}
+          open={keywordModalOpen}
+          title="关键词维护"
+          footer={null}
+          onCancel={() => {
+            setKeywordModalOpen(false)
+            setKeywordProduct(undefined)
+          }}
+          destroyOnClose={false}
+        >
+          <Spin spinning={detailLoading}>
+            <KeywordMaintenancePanel
+              product={keywordPanelProduct}
+              keywordInput={keywordInput}
+              actionLoading={actionLoading}
+              onKeywordInputChange={setKeywordInput}
+              onAddKeyword={() => void handleAddKeyword()}
+              onKeywordStatusChange={(keyword, status) => void handleKeywordStatusChange(keyword, status)}
+              onKeywordDelete={(keyword) => void handleKeywordDelete(keyword)}
+            />
+          </Spin>
+        </Modal>
+      ) : null}
+      {reportProduct ? (
+        <Modal
+          width={1240}
+          open={reportOpen}
+          title="商品分析"
+          footer={null}
+          onCancel={() => setReportOpen(false)}
+          destroyOnClose={false}
+        >
+          <SelfRankReportModal
+            product={products.find((product) => sameProductLine(product, reportProduct)) ?? reportProduct}
+            storeLabel={selectedStoreLabel}
+            changeGroups={changeRows}
+            changeLoading={changeLoading}
+          />
+        </Modal>
       ) : null}
     </div>
   )
@@ -817,28 +1064,1113 @@ function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === 'AbortError'
 }
 
-function delay(milliseconds: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, milliseconds))
+function productChineseTitle(product: CompetitorWatchProduct) {
+  return product.titleCn?.trim() || ''
+}
+
+function productListIdentityCodes(product: CompetitorWatchProduct) {
+  const psku = product.partnerSku || product.pskuCode || ''
+  return [
+    { value: psku || '-', copyText: psku || undefined },
+    ...(product.selfNoonProductCode
+      ? [
+          {
+            value: product.selfNoonProductCode,
+            copyText: product.selfNoonProductCode
+          }
+        ]
+      : [])
+  ]
+}
+
+function ProductKeywordLinks({
+  product,
+  onEdit
+}: {
+  product: CompetitorWatchProduct
+  onEdit: () => void
+}) {
+  const activeKeywords = product.keywords
+    .filter((keyword) => keyword.status === 'active' && keyword.keyword.trim())
+    .slice()
+    .sort((left, right) => left.displayOrder - right.displayOrder)
+
+  return (
+    <div className="competitor-analysis-keyword-cell">
+      <div className="competitor-analysis-keyword-content">
+        <div className="competitor-analysis-keyword-inline-list">
+          {activeKeywords.length ? (
+            activeKeywords.map((keyword) => (
+              <a
+                key={keyword.id}
+                className="competitor-analysis-keyword-link"
+                href={buildNoonSearchUrl(keyword.keyword, product.siteCode, product.id, keyword.id)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <SearchOutlined />
+                <span className="competitor-analysis-keyword-text">{keyword.keyword}</span>
+                <Text className="competitor-analysis-keyword-link-count">
+                  {` ${keyword.monitoredCount ?? 0}`}
+                </Text>
+              </a>
+            ))
+          ) : (
+            <Text type="secondary">-</Text>
+          )}
+        </div>
+      </div>
+      <Tooltip title="编辑关键词">
+        <Button
+          aria-label="编辑关键词"
+          className="competitor-analysis-keyword-edit-button"
+          icon={<EditOutlined />}
+          size="small"
+          type="text"
+          onClick={onEdit}
+        />
+      </Tooltip>
+    </div>
+  )
+}
+
+function buildNoonSearchUrl(keyword: string, siteCode: string, watchProductId?: string, keywordId?: string) {
+  const searchUrl = `https://www.noon.com/${noonMarketPath(siteCode)}/search/?q=${encodeURIComponent(keyword)}`
+  const fragment = new URLSearchParams()
+  if (watchProductId) {
+    fragment.set('nuonoWatchProductId', watchProductId)
+  }
+  if (keywordId && /^\d+$/.test(keywordId)) {
+    fragment.set('nuonoKeywordId', keywordId)
+  }
+  fragment.set('nuonoKeyword', keyword)
+  const fragmentText = fragment.toString()
+  return fragmentText ? `${searchUrl}#${fragmentText}` : searchUrl
+}
+
+function noonMarketPath(siteCode: string) {
+  const normalized = siteCode.trim().toUpperCase()
+  if (normalized === 'SA') return 'saudi-en'
+  if (normalized === 'EG') return 'egypt-en'
+  return 'uae-en'
+}
+
+function ProductChangeModal({
+  product,
+  storeLabel,
+  groups,
+  showIdentity = true
+}: {
+  product: CompetitorWatchProduct
+  storeLabel?: string
+  groups: CompetitorProductChangeGroup[]
+  showIdentity?: boolean
+}) {
+  const summary = buildProductChangeSummary(groups)
+
+  return (
+    <div className="competitor-analysis-product-change-modal" data-testid="competitor-product-change-modal">
+      {showIdentity ? (
+        <ProductBaselineIdentity
+          title={product.title}
+          fallbackTitle="未命名商品"
+          imageUrl={product.imageUrl}
+          imageAlt={product.title}
+          imageWidth={72}
+          titleMaxWidth={680}
+          codes={[
+            { label: '店铺', value: storeLabel || product.storeCode || '-' },
+            {
+              label: 'psku',
+              value: product.partnerSku || product.pskuCode || '-',
+              copyText: product.partnerSku || product.pskuCode || undefined
+            },
+            ...(product.selfNoonProductCode
+              ? [
+                  {
+                    label: 'Noon',
+                    value: product.selfNoonProductCode,
+                    copyText: product.selfNoonProductCode
+                  }
+                ]
+              : [])
+          ]}
+          tags={
+            <>
+              <Tag style={{ marginInlineEnd: 0 }}>{product.siteCode || '-'}</Tag>
+              <Tag color="cyan" style={{ marginInlineEnd: 0 }}>商品详情变化</Tag>
+            </>
+          }
+        />
+      ) : null}
+
+      <div className="competitor-analysis-product-change-summary-grid">
+        <ProductChangeSummaryCard label="变化日期" value={`${summary.changedDays} 天`} />
+        <ProductChangeSummaryCard label="变化字段" value={`${summary.fieldChanges} 项`} />
+        <ProductChangeSummaryCard label="价格变化" value={`${summary.priceChanges} 次`} />
+        <ProductChangeSummaryCard label="主图变化" value={`${summary.imageChanges} 次`} />
+      </div>
+
+      {groups.length ? (
+        <div className="competitor-analysis-product-change-timeline">
+          {groups.map((group) => (
+            <ProductChangeGroupCard key={group.id} group={group} />
+          ))}
+        </div>
+      ) : (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="近 15 天暂无商品详情变化" />
+      )}
+    </div>
+  )
+}
+
+function ProductChangeSummaryCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="competitor-analysis-product-change-summary-card">
+      <Text type="secondary">{label}</Text>
+      <Text strong>{value}</Text>
+    </div>
+  )
+}
+
+function ProductChangeGroupCard({ group }: { group: CompetitorProductChangeGroup }) {
+  return (
+    <Card
+      size="small"
+      variant="borderless"
+      className="competitor-analysis-product-change-group"
+      title={
+        <div className="competitor-analysis-product-change-group-title">
+          <Space size={8} wrap>
+            <Text strong>{group.factDate}</Text>
+            <Tag color={group.subjectType === 'self' ? 'blue' : 'green'}>{group.subjectType === 'self' ? '本品' : '竞品'}</Tag>
+            <Text strong ellipsis={{ tooltip: group.productName }}>
+              {group.productName}
+            </Text>
+          </Space>
+          <Text type="secondary" copyable={{ text: group.noonProductCode }}>
+            {group.noonProductCode}
+          </Text>
+        </div>
+      }
+    >
+      <div className="competitor-analysis-product-change-list">
+        {group.changes.map((change, index) => (
+          <ProductChangeRow key={`${group.id}-${change.fieldKey}-${index}`} change={change} />
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+function ProductChangeRow({ change }: { change: CompetitorProductChangeField }) {
+  return (
+    <div className={`competitor-analysis-product-change-row competitor-analysis-product-change-row-${change.severity || 'info'}`}>
+      <Tag color={productChangeFieldColor(change.fieldKey)}>{change.fieldLabel}</Tag>
+      <div className="competitor-analysis-product-change-value-flow">
+        <span>{formatProductChangeValue(change.oldValue)}</span>
+        <em>→</em>
+        <span>{formatProductChangeValue(change.newValue)}</span>
+      </div>
+    </div>
+  )
+}
+
+function buildProductChangeSummary(groups: CompetitorProductChangeGroup[]) {
+  const fieldChanges = groups.reduce((total, group) => total + group.changes.length, 0)
+  const allChanges = groups.flatMap((group) => group.changes)
+  return {
+    changedDays: new Set(groups.map((group) => group.factDate)).size,
+    fieldChanges,
+    priceChanges: allChanges.filter((change) => change.fieldKey === 'price').length,
+    imageChanges: allChanges.filter((change) => change.fieldKey === 'main_image').length
+  }
+}
+
+function buildMockProductChanges(product: CompetitorWatchProduct): CompetitorProductChangeGroup[] {
+  const firstCompetitor = product.candidates.find((candidate) => candidate.reviewStatus === 'confirmed')
+  const secondCompetitor = product.candidates.find(
+    (candidate) => candidate.reviewStatus === 'confirmed' && candidate.id !== firstCompetitor?.id
+  )
+  const competitorName = firstCompetitor?.title || 'QiLi 30 Pcs Wooden HB Pencils'
+  const competitorCode = firstCompetitor?.noonProductCode || 'Z34EF4F0434F9215F04FC'
+  const secondCompetitorName = secondCompetitor?.title || 'Slim Light Trifold Stand Case Cover'
+  const secondCompetitorCode = secondCompetitor?.noonProductCode || 'N51360862A'
+  return [
+    {
+      id: 'mock-change-2026-06-07-self',
+      factDate: '2026-06-07',
+      noonProductCode: product.selfNoonProductCode || 'Z005EB950196204061C8AZ',
+      productName: product.title || '本品',
+      subjectType: 'self',
+      changes: [
+        {
+          fieldKey: 'price',
+          fieldLabel: '价格',
+          changeType: 'PRICE',
+          oldValue: { amount: 32.95, currency: 'SAR' },
+          newValue: { amount: 35.0, currency: 'SAR' },
+          severity: 'warning'
+        },
+        {
+          fieldKey: 'sold_recently_text',
+          fieldLabel: 'Sold recently',
+          changeType: 'TEXT',
+          oldValue: '-',
+          newValue: '100+ sold recently',
+          severity: 'info'
+        }
+      ]
+    },
+    {
+      id: 'mock-change-2026-06-06-competitor-image',
+      factDate: '2026-06-06',
+      noonProductCode: competitorCode,
+      productName: competitorName,
+      subjectType: 'competitor',
+      changes: [
+        {
+          fieldKey: 'main_image',
+          fieldLabel: '主图资产变化',
+          changeType: 'IMAGE_ASSET',
+          oldValue: { assetKey: 'qili-pencil-main-v1', normalizedUrl: '/p/qili-pencil-main-v1' },
+          newValue: { assetKey: 'qili-pencil-main-v2', normalizedUrl: '/p/qili-pencil-main-v2' },
+          severity: 'warning'
+        },
+        {
+          fieldKey: 'supermall_enabled',
+          fieldLabel: 'Supermall',
+          changeType: 'BOOLEAN',
+          oldValue: false,
+          newValue: true,
+          severity: 'info'
+        }
+      ]
+    },
+    {
+      id: 'mock-change-2026-06-05-competitor-price',
+      factDate: '2026-06-05',
+      noonProductCode: secondCompetitorCode,
+      productName: secondCompetitorName,
+      subjectType: 'competitor',
+      changes: [
+        {
+          fieldKey: 'title_en',
+          fieldLabel: '英文标题',
+          changeType: 'TEXT',
+          oldValue: 'Slim Light Trifold Stand Case',
+          newValue: 'Slim Light Trifold Stand Case Cover For Tablet',
+          severity: 'info'
+        },
+        {
+          fieldKey: 'rating',
+          fieldLabel: '评分',
+          changeType: 'NUMBER',
+          oldValue: 4.3,
+          newValue: 4.4,
+          severity: 'info'
+        }
+      ]
+    }
+  ]
+}
+
+function productChangeFieldColor(fieldKey: string) {
+  if (fieldKey === 'price') return 'orange'
+  if (fieldKey === 'main_image') return 'purple'
+  if (fieldKey === 'supermall_enabled') return 'green'
+  if (fieldKey === 'availability_status') return 'red'
+  return 'blue'
+}
+
+function formatProductChangeValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') {
+    return '-'
+  }
+  if (typeof value === 'boolean') {
+    return value ? '是' : '否'
+  }
+  if (typeof value === 'number') {
+    return String(value)
+  }
+  if (typeof value === 'string') {
+    return value
+  }
+  if (Array.isArray(value)) {
+    return value.length ? value.map(formatProductChangeValue).join('、') : '-'
+  }
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>
+    if ('amount' in record || 'currency' in record) {
+      return `${record.amount ?? '-'} ${record.currency ?? ''}`.trim()
+    }
+    if ('assetKey' in record) {
+      return String(record.assetKey || '-')
+    }
+    if ('normalizedUrl' in record) {
+      return String(record.normalizedUrl || '-')
+    }
+    return JSON.stringify(value)
+  }
+  return String(value)
+}
+
+type SelfRankReportStatus = 'ranked' | 'not_in_top_100' | 'missing'
+
+type SelfRankReportPoint = {
+  date: string
+  adStatus: SelfRankReportStatus
+  adRankNo?: number
+  organicStatus: SelfRankReportStatus
+  organicRankNo?: number
+  scanDepth: number
+  runStatus: string
+}
+
+type SelfRankKeywordReport = {
+  keywordId: string
+  keyword: string
+  points: SelfRankReportPoint[]
+  competitorSeries: KeywordCompetitorRankSeries[]
+}
+
+type KeywordCompetitorRankSeries = {
+  productCode: string
+  name: string
+  organicData: Array<number | null>
+  adData: Array<number | null>
+}
+
+type RankChartProductSeries = {
+  productCode: string
+  name: string
+  organicData: Array<number | null>
+  adData: Array<number | null>
+}
+
+type ReportChartLineSeries = {
+  id: string
+  name: string
+  type: 'line'
+  smooth: boolean
+  symbolSize: number
+  connectNulls: boolean
+  itemStyle: { color: string }
+  lineStyle: { color: string; width: number; type?: 'dashed' }
+  data: Array<number | null>
+}
+
+type ReportChartLineMeta = {
+  productName: string
+  lineKind: '自然' | '广告'
+  color: string
+}
+
+type RankReportSummary = {
+  latestOrganicText: string
+  organicChangeText: string
+  adDaysText: string
+  bestCompetitorText: string
+}
+
+type RankHeatmapCell = {
+  dateLabel: string
+  rankNo?: number
+  adRankNo?: number
+  band: 'top10' | 'top20' | 'top50' | 'top100' | 'missing'
+}
+
+type RankHeatmapRow = {
+  productCode: string
+  name: string
+  color: string
+  isSelf: boolean
+  cells: RankHeatmapCell[]
+}
+
+function SelfRankReportModal({
+  product,
+  storeLabel,
+  changeGroups,
+  changeLoading
+}: {
+  product: CompetitorWatchProduct
+  storeLabel?: string
+  changeGroups: CompetitorProductChangeGroup[]
+  changeLoading: boolean
+}) {
+  const reports = useMemo(() => buildSelfRankReport(product), [product])
+  const changeSummary = buildProductChangeSummary(changeGroups)
+
+  return (
+    <div className="competitor-analysis-report-modal" data-testid="competitor-self-rank-report">
+      <ProductBaselineIdentity
+        title={product.title}
+        fallbackTitle="未命名商品"
+        imageUrl={product.imageUrl}
+        imageAlt={product.title}
+        imageWidth={76}
+        titleMaxWidth={680}
+        codes={[
+          { label: '店铺', value: storeLabel || product.storeCode || '-' },
+          {
+            label: 'psku',
+            value: product.partnerSku || product.pskuCode || '-',
+            copyText: product.partnerSku || product.pskuCode || undefined
+          },
+          ...(product.selfNoonProductCode
+            ? [
+                {
+                  label: 'Noon',
+                  value: product.selfNoonProductCode,
+                  copyText: product.selfNoonProductCode
+                }
+              ]
+            : [])
+        ]}
+        tags={
+          <>
+            <Tag style={{ marginInlineEnd: 0 }}>{product.siteCode || '-'}</Tag>
+            <Tag color="blue" style={{ marginInlineEnd: 0 }}>商品级报表</Tag>
+          </>
+        }
+      />
+
+      <Tabs
+        className="competitor-analysis-analysis-tabs"
+        items={[
+          {
+            key: 'ranking',
+            label: (
+              <span className="competitor-analysis-report-tab-label">
+                <LineChartOutlined />
+                <span>排名分析</span>
+                <Tag>{reports.length}</Tag>
+              </span>
+            ),
+            children: (
+              <Tabs
+                className="competitor-analysis-report-tabs"
+                items={reports.map((report) => {
+                  const latest = report.points[report.points.length - 1]
+                  const summary = buildReportSummary(report)
+                  const heatmapRows = buildRankHeatmapRows(report)
+                  return {
+                    key: report.keywordId,
+                    label: (
+                      <span className="competitor-analysis-report-tab-label">
+                        <SearchOutlined />
+                        <span>{report.keyword}</span>
+                        <Tag>{report.competitorSeries.length + 1}</Tag>
+                      </span>
+                    ),
+                    children: (
+                      <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                        <div className="competitor-analysis-rank-summary-grid">
+                          <RankSummaryMetric label="本品最新自然位" value={summary.latestOrganicText} />
+                          <RankSummaryMetric label={SELF_RANK_REPORT_CHANGE_LABEL} value={summary.organicChangeText} />
+                          <RankSummaryMetric label="本品广告出现" value={summary.adDaysText} />
+                          <RankSummaryMetric label="最强竞品" value={summary.bestCompetitorText} />
+                        </div>
+                        <Card
+                          size="small"
+                          variant="borderless"
+                          className="competitor-analysis-report-keyword-card competitor-analysis-rank-race-card"
+                          title={
+                            <div className="competitor-analysis-race-card-title">
+                              <Space size={6} wrap>
+                                <Tag color="blue">本品自然 {formatSelfRankReportText(latest.organicStatus, latest.organicRankNo)}</Tag>
+                                <Tag color="blue">本品广告 {formatSelfRankReportText(latest.adStatus, latest.adRankNo)}</Tag>
+                                <Tag color="green">竞品 {report.competitorSeries.length}</Tag>
+                              </Space>
+                              <div className="competitor-analysis-rank-zone-legend">
+                                <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top10">前10</span>
+                                <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top20">11-20</span>
+                                <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top50">21-50</span>
+                                <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top100">51-100</span>
+                              </div>
+                            </div>
+                          }
+                        >
+                          <div className="competitor-analysis-report-chart-only">
+                            <EChartPanel
+                              testId={`self-rank-chart-${report.keywordId}`}
+                              ariaLabel={`${report.keyword} 本品与竞品排名赛道图`}
+                              height={300}
+                              option={buildSelfRankChartOption(report)}
+                            />
+                          </div>
+                        </Card>
+                        <RankHeatmap rows={heatmapRows} dates={report.points.map((point) => point.date.slice(5))} />
+                      </Space>
+                    )
+                  }
+                })}
+              />
+            )
+          },
+          {
+            key: 'changes',
+            label: (
+              <span className="competitor-analysis-report-tab-label">
+                <ClockCircleOutlined />
+                <span>变化历史</span>
+                <Tag color={changeSummary.fieldChanges ? 'orange' : undefined}>{changeSummary.fieldChanges}</Tag>
+              </span>
+            ),
+            children: (
+              <Spin spinning={changeLoading}>
+                <ProductChangeModal
+                  product={product}
+                  storeLabel={storeLabel}
+                  groups={changeGroups}
+                  showIdentity={false}
+                />
+              </Spin>
+            )
+          }
+        ]}
+      />
+    </div>
+  )
+}
+
+function RankSummaryMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="competitor-analysis-rank-summary-card">
+      <Text type="secondary">{label}</Text>
+      <Text strong ellipsis={{ tooltip: value }}>
+        {value}
+      </Text>
+    </div>
+  )
+}
+
+function RankHeatmap({ rows, dates }: { rows: RankHeatmapRow[]; dates: string[] }) {
+  return (
+    <Card
+      size="small"
+      variant="borderless"
+      className="competitor-analysis-rank-heatmap-card"
+      title={
+        <Space size={8} wrap>
+          <Text strong>排名热力矩阵</Text>
+          <Text type="secondary">颜色越深代表排名越靠前，AD 表示当天出现广告位。</Text>
+        </Space>
+      }
+    >
+      <div
+        className="competitor-analysis-rank-heatmap"
+        style={{ gridTemplateColumns: `minmax(132px, 1.15fr) repeat(${dates.length}, minmax(58px, 1fr))` }}
+      >
+        <div className="competitor-analysis-rank-heatmap-corner">商品</div>
+        {dates.map((date) => (
+          <div key={date} className="competitor-analysis-rank-heatmap-date">
+            {date}
+          </div>
+        ))}
+        {rows.map((row) => (
+          <RankHeatmapRowView key={row.productCode} row={row} />
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+function RankHeatmapRowView({ row }: { row: RankHeatmapRow }) {
+  return (
+    <>
+      <div className={`competitor-analysis-rank-heatmap-product${row.isSelf ? ' competitor-analysis-rank-heatmap-product-self' : ''}`}>
+        <span style={{ background: row.color }} />
+        <Text strong={row.isSelf} ellipsis={{ tooltip: row.name }}>
+          {row.name}
+        </Text>
+      </div>
+      {row.cells.map((cell) => (
+        <div
+          key={`${row.productCode}-${cell.dateLabel}`}
+          className={`competitor-analysis-rank-heatmap-cell competitor-analysis-rank-heatmap-cell-${cell.band}`}
+          title={`${row.name} ${cell.dateLabel} ${cell.rankNo ? `第 ${cell.rankNo} 名` : '未进前100'}${cell.adRankNo ? `，广告第 ${cell.adRankNo} 名` : ''}`}
+        >
+          <span>{cell.rankNo ? cell.rankNo : '-'}</span>
+          {cell.adRankNo ? <em>AD {cell.adRankNo}</em> : null}
+        </div>
+      ))}
+    </>
+  )
+}
+
+function buildSelfRankReport(product: CompetitorWatchProduct): SelfRankKeywordReport[] {
+  const activeKeywords = product.keywords
+    .filter((keyword) => keyword.status === 'active' && keyword.keyword.trim())
+    .slice()
+    .sort((left, right) => left.displayOrder - right.displayOrder)
+  const reportKeywords = activeKeywords.length ? activeKeywords : buildMockReportKeywords(product)
+
+  return reportKeywords.map((keyword, keywordIndex) => {
+    const points = buildMockSelfRankPoints(keywordIndex)
+    const pointsByDate = new Map(points.map((point) => [point.date, point]))
+    product.rankPoints
+      .filter(
+        (point) =>
+          point.keywordId === keyword.id &&
+          (point.isSelf || normalizeNoonProductCode(point.noonProductCode) === normalizeNoonProductCode(product.selfNoonProductCode))
+      )
+      .forEach((point) => {
+        const date = point.factDate
+        const existing =
+          pointsByDate.get(date) ??
+          ({
+            date,
+            adStatus: 'missing',
+            organicStatus: 'not_in_top_100',
+            scanDepth: 100,
+            runStatus: '真实抓取'
+          } satisfies SelfRankReportPoint)
+        const status: SelfRankReportStatus = point.rankStatus === 'ranked' ? 'ranked' : 'not_in_top_100'
+        if (point.isSponsored) {
+          existing.adStatus = status
+          existing.adRankNo = point.rankNo
+        } else {
+          existing.organicStatus = status
+          existing.organicRankNo = point.rankNo
+        }
+        existing.runStatus = '真实抓取'
+        pointsByDate.set(date, existing)
+      })
+
+    const sortedPoints = Array.from(pointsByDate.values()).sort((left, right) => left.date.localeCompare(right.date))
+    return {
+      keywordId: keyword.id,
+      keyword: keyword.keyword,
+      points: sortedPoints,
+      competitorSeries: buildKeywordCompetitorRankSeries(product, keyword, sortedPoints, keywordIndex)
+    }
+  })
+}
+
+function buildMockReportKeywords(product: CompetitorWatchProduct): CompetitorKeyword[] {
+  const normalizedTitle = product.title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const titleWords = normalizedTitle.split(' ').filter((word) => word.length > 2)
+  const firstKeyword = titleWords.slice(0, 4).join(' ') || 'product keyword'
+  const secondKeyword = titleWords.slice(1, 5).join(' ') || 'market keyword'
+  return [firstKeyword, secondKeyword].map((keyword, index) => ({
+    id: `mock-keyword-${index + 1}`,
+    keyword,
+    locale: `en-${product.siteCode || 'AE'}`,
+    status: 'active',
+    displayOrder: index + 1,
+    lastRunStatus: 'succeeded',
+    monitoredCount: index === 0 ? 6 : 3
+  }))
+}
+
+function buildMockSelfRankPoints(keywordIndex: number): SelfRankReportPoint[] {
+  const dates = buildMockReportDates()
+  return dates.map((date, index) => {
+    const organicRank = Math.max(8, Math.min(99, 92 - keywordIndex * 11 - index * 4 + ((index + keywordIndex) % 3) * 5))
+    const hasAd = (index + keywordIndex) % 3 !== 1
+    return {
+      date,
+      adStatus: hasAd ? 'ranked' : 'missing',
+      adRankNo: hasAd ? Math.max(1, 5 - ((index + keywordIndex) % 4)) : undefined,
+      organicStatus: index === 0 && keywordIndex % 2 === 1 ? 'not_in_top_100' : 'ranked',
+      organicRankNo: index === 0 && keywordIndex % 2 === 1 ? undefined : organicRank,
+      scanDepth: 100,
+      runStatus: '模拟数据'
+    }
+  })
+}
+
+function buildMockReportDates() {
+  const endDateUtc = Date.UTC(2026, 5, 7)
+  const dayMs = 24 * 60 * 60 * 1000
+  return Array.from({ length: SELF_RANK_REPORT_WINDOW_DAYS }).map((_, index) => {
+    const offset = SELF_RANK_REPORT_WINDOW_DAYS - index - 1
+    return new Date(endDateUtc - offset * dayMs).toISOString().slice(0, 10)
+  })
+}
+
+function buildKeywordCompetitorRankSeries(
+  product: CompetitorWatchProduct,
+  keyword: CompetitorKeyword,
+  points: SelfRankReportPoint[],
+  keywordIndex: number
+): KeywordCompetitorRankSeries[] {
+  const dates = points.map((point) => point.date)
+  const selfProductCode = normalizeNoonProductCode(product.selfNoonProductCode)
+  const confirmedCandidates = product.candidates
+    .filter((candidate) => candidateStatusForKeyword(candidate, keyword.id) === 'confirmed')
+    .filter((candidate) => normalizeNoonProductCode(candidate.noonProductCode) !== selfProductCode)
+    .slice()
+    .sort((left, right) => {
+      const leftRank = candidateVisibleRankNo(product, keyword.id, left) ?? Number.MAX_SAFE_INTEGER
+      const rightRank = candidateVisibleRankNo(product, keyword.id, right) ?? Number.MAX_SAFE_INTEGER
+      if (leftRank !== rightRank) return leftRank - rightRank
+      return left.noonProductCode.localeCompare(right.noonProductCode)
+    })
+    .slice(0, 8)
+
+  if (!confirmedCandidates.length) {
+    return buildMockCompetitorRankSeries(keywordIndex, dates)
+  }
+
+  return confirmedCandidates.map((candidate, candidateIndex) => {
+    const organicRankByDate = new Map<string, number>()
+    const adRankByDate = new Map<string, number>()
+    product.rankPoints
+      .filter(
+        (point) =>
+          point.keywordId === keyword.id &&
+          normalizeNoonProductCode(point.noonProductCode) === normalizeNoonProductCode(candidate.noonProductCode) &&
+          point.rankStatus === 'ranked' &&
+          Boolean(point.rankNo)
+      )
+      .forEach((point) => {
+        if (!point.rankNo) {
+          return
+        }
+        const rankByDate = point.isSponsored ? adRankByDate : organicRankByDate
+        const existingRank = rankByDate.get(point.factDate)
+        if (!existingRank || point.rankNo < existingRank) {
+          rankByDate.set(point.factDate, point.rankNo)
+        }
+      })
+
+    const realOrganicData = dates.map((date) => organicRankByDate.get(date) ?? null)
+    const realAdData = dates.map((date) => adRankByDate.get(date) ?? null)
+    return {
+      productCode: candidate.noonProductCode,
+      name: buildCompetitorSeriesName(candidate, candidateIndex),
+      organicData: realOrganicData.some((rank) => typeof rank === 'number')
+        ? realOrganicData
+        : buildMockCompetitorRankData(keywordIndex, candidateIndex, dates),
+      adData: realAdData.some((rank) => typeof rank === 'number')
+        ? realAdData
+        : buildMockCompetitorAdRankData(keywordIndex, candidateIndex, dates)
+    }
+  })
+}
+
+function buildMockCompetitorRankSeries(
+  keywordIndex: number,
+  dates: string[]
+): KeywordCompetitorRankSeries[] {
+  return Array.from({ length: 3 }).map((_, index) => ({
+    productCode: `mock-competitor-${keywordIndex + 1}-${index + 1}`,
+    name: `竞品 ${index + 1}`,
+    organicData: buildMockCompetitorRankData(keywordIndex, index, dates),
+    adData: buildMockCompetitorAdRankData(keywordIndex, index, dates)
+  }))
+}
+
+function buildMockCompetitorRankData(keywordIndex: number, candidateIndex: number, dates: string[]) {
+  const baseRank = 12 + keywordIndex * 9 + candidateIndex * 11
+  return dates.map((_, dateIndex) => {
+    const drift = candidateIndex % 2 === 0 ? dateIndex * 2 : -dateIndex
+    const wave = ((dateIndex + candidateIndex + keywordIndex) % 3) * 3
+    return Math.max(1, Math.min(100, baseRank + drift + wave))
+  })
+}
+
+function buildMockCompetitorAdRankData(keywordIndex: number, candidateIndex: number, dates: string[]) {
+  if (candidateIndex > 1) {
+    return dates.map(() => null)
+  }
+  return dates.map((_, dateIndex) => {
+    if ((dateIndex + candidateIndex + keywordIndex) % 3 === 1) {
+      return null
+    }
+    return Math.max(1, Math.min(100, 2 + candidateIndex * 3 + ((dateIndex + keywordIndex) % 4)))
+  })
+}
+
+function buildCompetitorSeriesName(candidate: CompetitorCandidate, index: number) {
+  const code = candidate.noonProductCode || `竞品 ${index + 1}`
+  const brand = candidate.brand?.trim()
+  return brand ? `竞品 ${index + 1} ${brand}` : `竞品 ${index + 1} ${code}`
+}
+
+function buildSelfRankChartOption(report: SelfRankKeywordReport): EChartsCoreOption {
+  const dates = report.points.map((point) => point.date.slice(5))
+  const productSeriesList = buildRankChartProductSeries(report)
+  const seriesMeta: ReportChartLineMeta[] = []
+  const series = productSeriesList.flatMap((productSeries, productIndex) => {
+    const color = colorByProduct(productIndex)
+    const isSelf = productIndex === 0
+    const productName = isSelf ? '本品' : productSeries.name
+    const lineWidth = isSelf ? 3 : 2
+    const symbolSize = isSelf ? 7 : 5
+    const lines: ReportChartLineSeries[] = [
+      {
+        id: `${productSeries.productCode}-organic`,
+        name: productName,
+        type: 'line',
+        smooth: true,
+        symbolSize,
+        connectNulls: false,
+        itemStyle: { color },
+        lineStyle: {
+          color,
+          width: lineWidth
+        },
+        data: productSeries.organicData
+      }
+    ]
+    seriesMeta.push({ productName, lineKind: '自然', color })
+    if (productSeries.adData.some((rank) => typeof rank === 'number')) {
+      lines.push({
+        id: `${productSeries.productCode}-ad`,
+        name: productName,
+        type: 'line',
+        smooth: true,
+        symbolSize,
+        connectNulls: false,
+        itemStyle: { color },
+        lineStyle: {
+          color,
+          type: 'dashed',
+          width: Math.max(1.5, lineWidth - 0.4)
+        },
+        data: productSeries.adData
+      })
+      seriesMeta.push({ productName, lineKind: '广告', color })
+    }
+    return lines
+  })
+  const legendProductNames = productSeriesList.map((productSeries, index) =>
+    index === 0 ? '本品' : productSeries.name
+  )
+
+  return {
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: unknown) => formatRankChartTooltip(params, seriesMeta)
+    },
+    legend: {
+      top: 0,
+      left: 0,
+      data: legendProductNames
+    },
+    grid: {
+      top: 68,
+      right: 20,
+      bottom: 28,
+      left: 42
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: dates
+    },
+    yAxis: {
+      type: 'value',
+      inverse: true,
+      min: 1,
+      max: 100,
+      splitNumber: 5,
+      axisLabel: {
+        formatter: (value: number) => `${value}`
+      },
+      splitArea: {
+        show: true,
+        areaStyle: {
+          color: ['rgba(82, 196, 26, 0.10)', 'rgba(149, 222, 100, 0.08)', 'rgba(250, 219, 20, 0.08)', 'rgba(217, 217, 217, 0.12)']
+        }
+      }
+    },
+    series
+  }
+}
+
+function formatRankChartTooltip(params: unknown, seriesMeta: ReportChartLineMeta[]) {
+  const items = Array.isArray(params) ? params : [params]
+  const validItems = items.filter(isTooltipParam)
+  const axisLabel = validItems[0]?.axisValueLabel || validItems[0]?.name || ''
+  const rows = validItems
+    .map((item) => {
+      const meta = seriesMeta[item.seriesIndex]
+      if (!meta || typeof item.value !== 'number') {
+        return ''
+      }
+      return `<div style="display:flex;align-items:center;gap:6px;line-height:20px;"><span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:${meta.color};"></span><span>${escapeHtml(meta.productName)} ${meta.lineKind}</span><strong>第 ${item.value} 名</strong></div>`
+    })
+    .filter(Boolean)
+    .join('')
+  return `<div style="min-width:140px;"><div style="font-weight:600;margin-bottom:4px;">${escapeHtml(String(axisLabel))}</div>${rows || '<span style="color:#8c8c8c;">暂无排名</span>'}</div>`
+}
+
+function isTooltipParam(value: unknown): value is {
+  axisValueLabel?: string
+  name?: string
+  seriesIndex: number
+  value: unknown
+} {
+  return Boolean(value && typeof value === 'object' && 'seriesIndex' in value && 'value' in value)
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function buildReportSummary(report: SelfRankKeywordReport): RankReportSummary {
+  const productSeries = buildRankChartProductSeries(report)
+  const selfSeries = productSeries[0]
+  const firstOrganicRank = firstRankValue(selfSeries?.organicData ?? [])
+  const latestOrganicRank = latestRankValue(selfSeries?.organicData ?? [])
+  const adDays = selfSeries?.adData.filter((rank) => typeof rank === 'number').length ?? 0
+  const bestCompetitor = productSeries
+    .slice(1)
+    .map((series) => ({
+      name: series.name,
+      rankNo: bestRankValue(latestRankValue(series.organicData), latestRankValue(series.adData))
+    }))
+    .filter((item): item is { name: string; rankNo: number } => typeof item.rankNo === 'number')
+    .sort((left, right) => left.rankNo - right.rankNo)[0]
+
+  return {
+    latestOrganicText: formatSummaryRankText(latestOrganicRank),
+    organicChangeText: formatRankChangeText(firstOrganicRank, latestOrganicRank),
+    adDaysText: `${adDays}/${report.points.length} 天`,
+    bestCompetitorText: bestCompetitor ? `${bestCompetitor.name} 第 ${bestCompetitor.rankNo} 名` : '暂无竞品排名'
+  }
+}
+
+function buildRankHeatmapRows(report: SelfRankKeywordReport): RankHeatmapRow[] {
+  return buildRankChartProductSeries(report).map((series, productIndex) => ({
+    productCode: series.productCode,
+    name: series.name,
+    color: colorByProduct(productIndex),
+    isSelf: productIndex === 0,
+    cells: report.points.map((point, dateIndex) => {
+      const organicRankNo = series.organicData[dateIndex] ?? undefined
+      const adRankNo = series.adData[dateIndex] ?? undefined
+      const rankNo = bestRankValue(organicRankNo, adRankNo)
+      return {
+        dateLabel: point.date.slice(5),
+        rankNo,
+        adRankNo,
+        band: rankBand(rankNo)
+      }
+    })
+  }))
+}
+
+function buildRankChartProductSeries(report: SelfRankKeywordReport): RankChartProductSeries[] {
+  return [
+    {
+      productCode: 'self',
+      name: '本品',
+      organicData: report.points.map((point) => (point.organicStatus === 'ranked' ? point.organicRankNo ?? null : null)),
+      adData: report.points.map((point) => (point.adStatus === 'ranked' ? point.adRankNo ?? null : null))
+    },
+    ...report.competitorSeries
+  ]
+}
+
+const REPORT_PRODUCT_COLORS = [
+  '#1677ff',
+  '#13a8a8',
+  '#fa8c16',
+  '#52c41a',
+  '#eb2f96',
+  '#2f54eb',
+  '#a0d911',
+  '#fa541c',
+  '#08979c'
+]
+
+function colorByProduct(productIndex: number) {
+  return REPORT_PRODUCT_COLORS[productIndex % REPORT_PRODUCT_COLORS.length]
+}
+
+function firstRankValue(values: Array<number | null>) {
+  return values.find((value): value is number => typeof value === 'number')
+}
+
+function latestRankValue(values: Array<number | null>) {
+  return values
+    .slice()
+    .reverse()
+    .find((value): value is number => typeof value === 'number')
+}
+
+function bestRankValue(...values: Array<number | undefined>) {
+  const rankedValues = values.filter((value): value is number => typeof value === 'number')
+  return rankedValues.length ? Math.min(...rankedValues) : undefined
+}
+
+function rankBand(rankNo?: number): RankHeatmapCell['band'] {
+  if (!rankNo) return 'missing'
+  if (rankNo <= 10) return 'top10'
+  if (rankNo <= 20) return 'top20'
+  if (rankNo <= 50) return 'top50'
+  return 'top100'
+}
+
+function formatSummaryRankText(rankNo?: number) {
+  return rankNo ? `第 ${rankNo} 名` : '未进前100'
+}
+
+function formatRankChangeText(firstRank?: number, latestRank?: number) {
+  if (!firstRank || !latestRank) {
+    return '暂无趋势'
+  }
+  const change = firstRank - latestRank
+  if (change > 0) {
+    return `上升 ${change} 名`
+  }
+  if (change < 0) {
+    return `下降 ${Math.abs(change)} 名`
+  }
+  return '持平'
+}
+
+function formatSelfRankReportText(status: SelfRankReportStatus, rankNo?: number) {
+  if (status === 'ranked' && rankNo) {
+    return `第 ${rankNo} 名`
+  }
+  if (status === 'not_in_top_100') {
+    return '未进100'
+  }
+  return '-'
 }
 
 type ProductDetailProps = {
   product: CompetitorWatchProduct
+  storeLabel?: string
+  ownedNoonProductCodes: ReadonlySet<string>
   historyRange: HistoryRange
   onHistoryRangeChange: (value: HistoryRange) => void
-  onRefresh: () => void
-  onCandidateStatusChange: (keywordId: string, candidateId: string, status: 'confirmed' | 'ignored') => void
+  onCandidateStatusChange: (keywordId: string, candidateId: string, status: 'confirmed' | 'ignored' | 'removed') => void
+  onCandidateBatchStatusChange: (
+    keywordId: string,
+    candidateIds: string[],
+    status: 'confirmed' | 'ignored'
+  ) => void
+  onManualRefresh: (product: CompetitorWatchProduct) => void
   actionLoading: string | null
-  refreshRun?: CompetitorRefreshRun
 }
 
 function ProductDetail({
   product,
+  storeLabel,
+  ownedNoonProductCodes,
   historyRange,
   onHistoryRangeChange,
-  onRefresh,
   onCandidateStatusChange,
-  actionLoading,
-  refreshRun
+  onCandidateBatchStatusChange,
+  onManualRefresh,
+  actionLoading
 }: ProductDetailProps) {
   const { message } = App.useApp()
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -872,6 +2204,9 @@ function ProductDetail({
     () => (selectedKeyword ? buildRankRows(product).filter((point) => point.keywordId === selectedKeyword.id) : []),
     [product, selectedKeyword]
   )
+  const activeKeywordCount = product.activeKeywordCount ?? activeKeywords.length
+  const refreshDisabled = !product.id || activeKeywordCount <= 0
+  const refreshTitle = activeKeywordCount <= 0 ? '维护启用关键词后可抓取' : ''
 
   useEffect(() => {
     if (!activeKeywords.some((keyword) => keyword.id === selectedKeywordId)) {
@@ -910,30 +2245,43 @@ function ProductDetail({
     <div className="competitor-analysis-detail">
       <Card size="small" variant="borderless">
         <div className="competitor-analysis-toolbar">
-          <div className="competitor-analysis-product-cell">
-            <div className="competitor-analysis-product-thumb">
-              <img src={product.imageUrl} alt="" />
-            </div>
-            <Space direction="vertical" size={2} style={{ minWidth: 0 }}>
-              <Text strong>{product.title}</Text>
-              <Space size={4} wrap>
-                <Tag color="blue">我方SKU {product.partnerSku}</Tag>
-                <Tag>{product.siteCode}</Tag>
-                <Text type="secondary">店铺 {product.storeCode}</Text>
-                <Text type="secondary">Noon {product.selfNoonProductCode}</Text>
-              </Space>
-            </Space>
-          </div>
-          <Space wrap>
-            {refreshRun ? (
-              <Tag color={refreshRun.runStatus === 'SUCCEEDED' ? 'green' : 'blue'}>
-                刷新 {refreshRun.progressPercent ?? 0}%
-              </Tag>
-            ) : null}
-            <Button icon={<ReloadOutlined />} loading={actionLoading === `refresh-${product.id}`} onClick={onRefresh}>
-              手动刷新
+          <ProductBaselineIdentity
+            title={product.title}
+            fallbackTitle="未命名商品"
+            imageUrl={product.imageUrl}
+            imageAlt={product.title}
+            imageWidth={80}
+            titleMaxWidth={520}
+            codes={[
+              { label: '店铺', value: storeLabel || product.storeCode || '-' },
+              {
+                label: 'psku',
+                value: product.partnerSku || product.pskuCode || '-',
+                copyText: product.partnerSku || product.pskuCode || undefined
+              },
+              ...(product.selfNoonProductCode
+                ? [
+                    {
+                      label: 'Noon',
+                      value: product.selfNoonProductCode,
+                      copyText: product.selfNoonProductCode
+                    }
+                  ]
+                : [])
+            ]}
+            tags={product.siteCode ? <Tag style={{ marginInlineEnd: 0 }}>{product.siteCode}</Tag> : undefined}
+          />
+          <Tooltip title={refreshTitle}>
+            <Button
+              size="small"
+              icon={<ReloadOutlined />}
+              disabled={refreshDisabled}
+              loading={actionLoading === `refresh-${product.id}`}
+              onClick={() => onManualRefresh(product)}
+            >
+              抓取
             </Button>
-          </Space>
+          </Tooltip>
         </div>
       </Card>
 
@@ -969,7 +2317,9 @@ function ProductDetail({
             product={product}
             keyword={selectedKeyword}
             candidates={keywordCandidates}
+            ownedNoonProductCodes={ownedNoonProductCodes}
             onCandidateStatusChange={onCandidateStatusChange}
+            onCandidateBatchStatusChange={onCandidateBatchStatusChange}
             actionLoading={actionLoading}
           />
         </Space>
@@ -1073,21 +2423,41 @@ function KeywordMaintenancePanel({
 function ManualCompetitorPanel({
   product,
   manualInput,
+  selectedKeywordId,
   actionLoading,
   onManualInputChange,
+  onManualKeywordChange,
   onManualAdd
 }: {
   product: CompetitorWatchProduct
   manualInput: string
+  selectedKeywordId: string
   actionLoading: string | null
   onManualInputChange: (value: string) => void
+  onManualKeywordChange: (value: string) => void
   onManualAdd: () => void
 }) {
-  const confirmedCandidates = product.candidates.filter((candidate) => candidate.reviewStatus === 'confirmed')
+  const activeKeywords = product.keywords
+    .filter((keyword) => keyword.status === 'active')
+    .slice()
+    .sort((left, right) => left.displayOrder - right.displayOrder)
+  const confirmedCandidates = selectedKeywordId
+    ? product.candidates.filter((candidate) => candidateStatusForKeyword(candidate, selectedKeywordId) === 'confirmed')
+    : []
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={12} data-testid="competitor-manual-panel">
       <ProductModalSummary product={product} />
+      <Space direction="vertical" size={6} style={{ width: '100%' }}>
+        <Text strong>添加到关键词</Text>
+        <Select
+          value={selectedKeywordId || undefined}
+          placeholder="选择关键词"
+          style={{ width: '100%' }}
+          options={activeKeywords.map((keyword) => ({ label: keyword.keyword, value: keyword.id }))}
+          onChange={onManualKeywordChange}
+        />
+      </Space>
       <div className="competitor-analysis-inline-form">
         <Input
           allowClear
@@ -1097,13 +2467,18 @@ function ManualCompetitorPanel({
           onChange={(event) => onManualInputChange(event.target.value)}
           onPressEnter={onManualAdd}
         />
-        <Button icon={<PlusOutlined />} loading={actionLoading === 'manual-add'} onClick={onManualAdd}>
+        <Button
+          icon={<PlusOutlined />}
+          disabled={!selectedKeywordId}
+          loading={actionLoading === 'manual-add'}
+          onClick={onManualAdd}
+        >
           手工添加
         </Button>
       </div>
-      <Text type="secondary">手工添加后直接进入已确认竞品池，后续按所有 active 关键词记录排名。</Text>
+      <Text type="secondary">手工添加后直接进入所选关键词的已选竞品池。</Text>
       <div className="competitor-analysis-modal-summary">
-        <Text strong>已确认竞品</Text>
+        <Text strong>当前关键词已选竞品</Text>
         <Space wrap size={6}>
           {confirmedCandidates.map((candidate) => (
             <Tag key={candidate.id} color={candidate.sourceType === 'manual_add' ? 'cyan' : 'green'}>
@@ -1131,21 +2506,6 @@ function ProductModalSummary({ product }: { product: CompetitorWatchProduct }) {
   )
 }
 
-function ProductOptionLabel({ option }: { option: CompetitorProductOption }) {
-  return (
-    <div className="competitor-analysis-product-option-label">
-      <Text strong ellipsis={{ tooltip: option.title }}>
-        {option.title}
-      </Text>
-      <Space size={4} wrap>
-        <Tag color="blue">我方SKU {option.partnerSku || '-'}</Tag>
-        <Tag>{option.siteCode || '-'}</Tag>
-        <Text type="secondary">Noon {option.noonProductCode || '-'}</Text>
-      </Space>
-    </div>
-  )
-}
-
 function KeywordTag({ keyword }: { keyword: CompetitorKeyword }) {
   return (
     <Tag color={keyword.status === 'active' ? 'blue' : 'default'} icon={<SearchOutlined />}>
@@ -1158,35 +2518,153 @@ function KeywordBoard({
   product,
   keyword,
   candidates,
+  ownedNoonProductCodes,
   onCandidateStatusChange,
+  onCandidateBatchStatusChange,
   actionLoading
 }: {
   product: CompetitorWatchProduct
   keyword?: CompetitorKeyword
   candidates: CompetitorCandidate[]
-  onCandidateStatusChange: (keywordId: string, candidateId: string, status: 'confirmed' | 'ignored') => void
+  ownedNoonProductCodes: ReadonlySet<string>
+  onCandidateStatusChange: (keywordId: string, candidateId: string, status: 'confirmed' | 'ignored' | 'removed') => void
+  onCandidateBatchStatusChange: (
+    keywordId: string,
+    candidateIds: string[],
+    status: 'confirmed' | 'ignored'
+  ) => void
   actionLoading: string | null
 }) {
+  const hasKeywordRunEvidence = useMemo(
+    () => Boolean(keyword && candidates.some((candidate) => candidate.keywordLastSeenRunIds?.[keyword.id])),
+    [candidates, keyword]
+  )
+  const resultCandidates = useMemo(
+    () =>
+      keyword
+        ? sortCandidatesByRank(
+            product,
+            keyword.id,
+            candidates.filter((candidate) =>
+              isLatestFetchResultCandidate(product, keyword.id, candidate, hasKeywordRunEvidence)
+            )
+          )
+        : [],
+    [candidates, hasKeywordRunEvidence, keyword, product]
+  )
+  const resultPendingCandidates = useMemo(
+    () =>
+      keyword
+        ? resultCandidates.filter((candidate) => candidateStatusForKeyword(candidate, keyword.id) === 'pending')
+        : [],
+    [keyword, resultCandidates]
+  )
+  const confirmedCandidates = useMemo(
+    () =>
+      keyword
+        ? sortCandidatesByRank(
+            product,
+            keyword.id,
+            candidates.filter((candidate) => candidateStatusForKeyword(candidate, keyword.id) === 'confirmed')
+          )
+        : [],
+    [candidates, keyword, product]
+  )
+  const [selectedPendingIds, setSelectedPendingIds] = useState<string[]>([])
+  const pendingCandidateIds = useMemo(
+    () => resultPendingCandidates.map((candidate) => candidate.id),
+    [resultPendingCandidates]
+  )
+  const pendingCandidateIdKey = pendingCandidateIds.join('|')
+  const selectedPendingIdSet = useMemo(() => new Set(selectedPendingIds), [selectedPendingIds])
+  const selectedPendingCount = selectedPendingIds.length
+  const pendingBatchLoading = actionLoading?.startsWith(`candidate-batch-`) ?? false
+  const allPendingSelected =
+    resultPendingCandidates.length > 0 && selectedPendingCount === resultPendingCandidates.length
+  const partialPendingSelected =
+    selectedPendingCount > 0 && selectedPendingCount < resultPendingCandidates.length
+
+  useEffect(() => {
+    setSelectedPendingIds([])
+  }, [keyword?.id])
+
+  useEffect(() => {
+    const pendingIds = new Set(pendingCandidateIds)
+    setSelectedPendingIds((current) => current.filter((candidateId) => pendingIds.has(candidateId)))
+  }, [pendingCandidateIdKey])
+
   if (!keyword) {
     return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="还没有维护关键词" />
   }
 
-  const pendingCandidates = candidates.filter((candidate) => candidateStatusForKeyword(candidate, keyword.id) === 'pending')
-  const confirmedCandidates = candidates.filter((candidate) => candidateStatusForKeyword(candidate, keyword.id) === 'confirmed')
+  const handleTogglePendingCandidate = (candidateId: string, checked: boolean) => {
+    setSelectedPendingIds((current) => {
+      if (checked) {
+        return current.includes(candidateId) ? current : [...current, candidateId]
+      }
+      return current.filter((item) => item !== candidateId)
+    })
+  }
+
+  const handleToggleAllPending = (checked: boolean) => {
+    setSelectedPendingIds(checked ? pendingCandidateIds : [])
+  }
+
+  const handleBatchStatusChange = (status: 'confirmed' | 'ignored') => {
+    if (!selectedPendingIds.length) {
+      return
+    }
+    onCandidateBatchStatusChange(keyword.id, selectedPendingIds, status)
+  }
 
   return (
     <div className="competitor-analysis-keyword-board" data-testid="competitor-keyword-board">
-      {pendingCandidates.length ? (
+      {resultPendingCandidates.length ? (
         <div className="competitor-analysis-board-pool">
           <div className="competitor-analysis-board-pool-header">
-            <Text strong>待选池 ({pendingCandidates.length})</Text>
-            <Text type="secondary">运营确认后进入已选竞品，后续每日记录排名。</Text>
+            <div className="competitor-analysis-board-pool-title">
+              <Text strong>待选池 ({resultPendingCandidates.length})</Text>
+              <Text type="secondary">运营可加入或忽略本次抓取的新候选。</Text>
+            </div>
+            <Space wrap size={8} className="competitor-analysis-board-pool-actions">
+              <Checkbox
+                checked={allPendingSelected}
+                indeterminate={partialPendingSelected}
+                onChange={(event) => handleToggleAllPending(event.target.checked)}
+              >
+                全选
+              </Checkbox>
+              <Button
+                size="small"
+                className="competitor-analysis-batch-confirm-button"
+                icon={<CheckOutlined />}
+                disabled={!selectedPendingCount || pendingBatchLoading}
+                loading={actionLoading === `candidate-batch-confirmed-${keyword.id}`}
+                onClick={() => handleBatchStatusChange('confirmed')}
+              >
+                {allPendingSelected ? '全选加入' : '加入选中'}
+              </Button>
+              <Button
+                size="small"
+                className="competitor-analysis-batch-ignore-button"
+                icon={<CloseOutlined />}
+                disabled={!selectedPendingCount || pendingBatchLoading}
+                loading={actionLoading === `candidate-batch-ignored-${keyword.id}`}
+                onClick={() => handleBatchStatusChange('ignored')}
+              >
+                {allPendingSelected ? '全选忽略' : '忽略选中'}
+              </Button>
+            </Space>
           </div>
           <CandidateGallery
-            candidates={pendingCandidates}
+            candidates={resultPendingCandidates}
             keyword={keyword}
             product={product}
-            emptyText="当前关键词没有待选竞品"
+            ownedNoonProductCodes={ownedNoonProductCodes}
+            selectable
+            selectedCandidateIds={selectedPendingIdSet}
+            emptyText="当前关键词还没有抓取结果"
+            onCandidateSelectionChange={handleTogglePendingCandidate}
             onCandidateStatusChange={onCandidateStatusChange}
             actionLoading={actionLoading}
           />
@@ -1202,6 +2680,7 @@ function KeywordBoard({
           candidates={confirmedCandidates}
           keyword={keyword}
           product={product}
+          ownedNoonProductCodes={ownedNoonProductCodes}
           readonly
           emptyText="当前关键词还没有已选竞品"
           onCandidateStatusChange={onCandidateStatusChange}
@@ -1216,17 +2695,25 @@ function CandidateGallery({
   product,
   keyword,
   candidates,
+  ownedNoonProductCodes,
   readonly,
+  selectable,
+  selectedCandidateIds,
   emptyText,
+  onCandidateSelectionChange,
   onCandidateStatusChange,
   actionLoading
 }: {
   product: CompetitorWatchProduct
   keyword: CompetitorKeyword
   candidates: CompetitorCandidate[]
+  ownedNoonProductCodes: ReadonlySet<string>
   readonly?: boolean
+  selectable?: boolean
+  selectedCandidateIds?: Set<string>
   emptyText: string
-  onCandidateStatusChange: (keywordId: string, candidateId: string, status: 'confirmed' | 'ignored') => void
+  onCandidateSelectionChange?: (candidateId: string, checked: boolean) => void
+  onCandidateStatusChange: (keywordId: string, candidateId: string, status: 'confirmed' | 'ignored' | 'removed') => void
   actionLoading: string | null
 }) {
   if (!candidates.length) {
@@ -1235,18 +2722,25 @@ function CandidateGallery({
 
   return (
     <div className="competitor-analysis-candidate-grid">
-      {candidates.map((candidate) => (
-        <CandidateCard
-          key={candidate.id}
-          candidate={candidate}
-          readonly={readonly}
-          keywordId={keyword.id}
-          reviewStatus={candidateStatusForKeyword(candidate, keyword.id)}
-          rankPoint={getLatestRankPoint(product, keyword.id, candidate.noonProductCode)}
-          onCandidateStatusChange={onCandidateStatusChange}
-          actionLoading={actionLoading}
-        />
-      ))}
+      {candidates.map((candidate) => {
+        const rankPoint = getLatestRankPoint(product, keyword.id, candidate.noonProductCode)
+        return (
+          <CandidateCard
+            key={candidate.id}
+            candidate={candidate}
+            readonly={readonly}
+            selectable={selectable}
+            selected={selectedCandidateIds?.has(candidate.id) ?? false}
+            keywordId={keyword.id}
+            reviewStatus={candidateStatusForKeyword(candidate, keyword.id)}
+            rankPoint={rankPoint}
+            isOwnProduct={isOwnStoreCandidate(product, candidate, rankPoint, ownedNoonProductCodes)}
+            onCandidateSelectionChange={onCandidateSelectionChange}
+            onCandidateStatusChange={onCandidateStatusChange}
+            actionLoading={actionLoading}
+          />
+        )
+      })}
     </div>
   )
 }
@@ -1254,25 +2748,34 @@ function CandidateGallery({
 function CandidateCard({
   candidate,
   readonly,
+  selectable,
+  selected,
   keywordId,
   reviewStatus,
   rankPoint,
+  isOwnProduct,
+  onCandidateSelectionChange,
   onCandidateStatusChange,
   actionLoading
 }: {
   candidate: CompetitorCandidate
   readonly?: boolean
+  selectable?: boolean
+  selected?: boolean
   keywordId: string
   reviewStatus: 'pending' | 'confirmed' | 'ignored'
   rankPoint?: CompetitorRankPoint
-  onCandidateStatusChange: (keywordId: string, candidateId: string, status: 'confirmed' | 'ignored') => void
+  isOwnProduct?: boolean
+  onCandidateSelectionChange?: (candidateId: string, checked: boolean) => void
+  onCandidateStatusChange: (keywordId: string, candidateId: string, status: 'confirmed' | 'ignored' | 'removed') => void
   actionLoading: string | null
 }) {
   const isSponsored = rankPoint?.isSponsored ?? candidate.isSponsored
+  const batchLoading = actionLoading?.startsWith('candidate-batch-') ?? false
 
   return (
     <article
-      className="competitor-analysis-candidate-card"
+      className={`competitor-analysis-candidate-card${reviewStatus === 'confirmed' ? ' competitor-analysis-candidate-card-confirmed' : ''}${selected ? ' competitor-analysis-candidate-card-selected' : ''}`}
       role="link"
       tabIndex={0}
       aria-label={`打开 Noon 商品 ${candidate.noonProductCode}`}
@@ -1285,9 +2788,35 @@ function CandidateCard({
       }}
     >
       <div className="competitor-analysis-candidate-media">
+        {readonly ? (
+          <Tooltip title="从当前关键词移除">
+            <Button
+              aria-label="移除竞品"
+              className="competitor-analysis-candidate-action-remove competitor-analysis-candidate-action-remove-top"
+              icon={<CloseOutlined />}
+              loading={actionLoading === `candidate-removed-${keywordId}-${candidate.id}`}
+              shape="circle"
+              size="small"
+              type="text"
+              onClick={(event) => {
+                event.stopPropagation()
+                onCandidateStatusChange(keywordId, candidate.id, 'removed')
+              }}
+            />
+          </Tooltip>
+        ) : selectable && reviewStatus === 'pending' ? (
+          <Checkbox
+            aria-label={`选择竞品 ${candidate.noonProductCode}`}
+            className="competitor-analysis-candidate-select"
+            checked={selected}
+            onClick={(event) => event.stopPropagation()}
+            onChange={(event) => onCandidateSelectionChange?.(candidate.id, event.target.checked)}
+          />
+        ) : null}
         <div className="competitor-analysis-candidate-badges">
+          {isOwnProduct ? <Tag color="blue">我的</Tag> : null}
           {isSponsored ? <Tag color="purple">广告</Tag> : null}
-          <Tag color={rankPoint?.rankStatus === 'not_in_top_30' ? 'default' : 'gold'}>
+          <Tag color={rankPoint && isNotInRankRange(rankPoint.rankStatus) ? 'default' : 'gold'}>
             {formatRankStatus(rankPoint, candidate.latestRankNo)}
           </Tag>
         </div>
@@ -1297,24 +2826,21 @@ function CandidateCard({
 
       <div className="competitor-analysis-candidate-body">
         <div className="competitor-analysis-candidate-code-row">
-          <Space size={4} wrap>
-            <Text strong>{candidate.noonProductCode}</Text>
-            <Tag>{candidate.codeType === 'Z_CODE' ? 'Z码' : 'N码'}</Tag>
-          </Space>
-          <ReviewStatusTag status={reviewStatus} />
+          <Text strong className="competitor-analysis-candidate-code">
+            {candidate.noonProductCode}
+          </Text>
         </div>
 
         <Text className="competitor-analysis-candidate-title" ellipsis={{ tooltip: candidate.title }}>
           {candidate.title}
         </Text>
-        <Text type="secondary" className="competitor-analysis-candidate-brand">
-          {candidate.brand}
-        </Text>
-
-        <div className="competitor-analysis-candidate-commerce">
-          <Text strong className="competitor-analysis-candidate-price">
-            {formatCandidatePrice(candidate)}
+        <div className="competitor-analysis-candidate-meta">
+          <Text type="secondary" className="competitor-analysis-candidate-brand">
+            {candidate.brand}
           </Text>
+          <Tag color={candidate.sourceType === 'manual_add' ? 'cyan' : 'geekblue'}>
+            {candidate.sourceType === 'manual_add' ? '人工' : '搜索'}
+          </Tag>
           <Space size={4} className="competitor-analysis-candidate-rating">
             {candidate.rating ? (
               <>
@@ -1328,47 +2854,55 @@ function CandidateCard({
           </Space>
         </div>
 
-        <Space wrap size={4} className="competitor-analysis-candidate-keywords">
-          <Tag color={candidate.sourceType === 'manual_add' ? 'cyan' : 'geekblue'}>
-            {candidate.sourceType === 'manual_add' ? '手工添加' : '搜索发现'}
-          </Tag>
-          {candidate.keywordEvidence.map((keyword) => (
-            <Tag key={keyword}>{keyword}</Tag>
-          ))}
-        </Space>
-
-        <div className="competitor-analysis-candidate-footer">
-          {readonly ? (
-            <Text type="secondary">已纳入排名</Text>
-          ) : (
-            <Space size={6}>
-              <Button
-                size="small"
-                type={reviewStatus === 'confirmed' ? 'default' : 'primary'}
-                disabled={reviewStatus === 'confirmed'}
-                loading={actionLoading === `candidate-confirmed-${keywordId}-${candidate.id}`}
-                icon={<CheckCircleOutlined />}
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onCandidateStatusChange(keywordId, candidate.id, 'confirmed')
-                }}
-              >
-                确认竞品
-              </Button>
-              <Button
-                size="small"
-                disabled={reviewStatus === 'ignored'}
-                loading={actionLoading === `candidate-ignored-${keywordId}-${candidate.id}`}
-                icon={<StopOutlined />}
-                onClick={(event) => {
-                  event.stopPropagation()
-                  onCandidateStatusChange(keywordId, candidate.id, 'ignored')
-                }}
-              >
-                忽略
-              </Button>
+        <div className="competitor-analysis-candidate-commerce">
+          <Text strong className="competitor-analysis-candidate-price">
+            {candidate.priceAmount ? (
+              <>
+                <span>{candidate.priceAmount}</span>
+                {candidate.currencyCode ? (
+                  <span className="competitor-analysis-candidate-price-currency">{candidate.currencyCode}</span>
+                ) : null}
+              </>
+            ) : (
+              '--'
+            )}
+          </Text>
+          {!readonly && reviewStatus === 'pending' ? (
+            <Space size={6} className="competitor-analysis-candidate-inline-actions">
+              <Tooltip title="加入竞品">
+                <Button
+                  aria-label="加入竞品"
+                  className="competitor-analysis-candidate-action-confirm"
+                  disabled={batchLoading}
+                  icon={<CheckOutlined />}
+                  loading={actionLoading === `candidate-confirmed-${keywordId}-${candidate.id}`}
+                  shape="circle"
+                  size="small"
+                  type="text"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onCandidateStatusChange(keywordId, candidate.id, 'confirmed')
+                  }}
+                />
+              </Tooltip>
+              <Tooltip title="忽略">
+                <Button
+                  aria-label="忽略竞品"
+                  className="competitor-analysis-candidate-action-ignore"
+                  disabled={batchLoading}
+                  icon={<CloseOutlined />}
+                  loading={actionLoading === `candidate-ignored-${keywordId}-${candidate.id}`}
+                  shape="circle"
+                  size="small"
+                  type="text"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onCandidateStatusChange(keywordId, candidate.id, 'ignored')
+                  }}
+                />
+              </Tooltip>
             </Space>
-          )}
+          ) : null}
         </div>
       </div>
     </article>
@@ -1379,32 +2913,63 @@ function openCandidateLink(url: string) {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
-function formatCandidatePrice(candidate: CompetitorCandidate) {
-  if (!candidate.priceAmount) {
-    return '--'
-  }
-  return `${candidate.priceAmount} ${candidate.currencyCode || ''}`.trim()
+function getCandidatesForKeyword(product: CompetitorWatchProduct, keyword: CompetitorKeyword) {
+  return product.candidates.filter((candidate) => candidateStatusForKeyword(candidate, keyword.id) !== 'ignored')
 }
 
-function getCandidatesForKeyword(product: CompetitorWatchProduct, keyword: CompetitorKeyword) {
-  const keywordText = normalizeSearchText(keyword.keyword)
-  const rankedCodes = new Set(
-    product.rankPoints
-      .filter((point) => point.keywordId === keyword.id && !point.isSelf)
-      .map((point) => point.noonProductCode)
-  )
-
-  return product.candidates.filter(
-    (candidate) =>
-      candidateStatusForKeyword(candidate, keyword.id) !== 'ignored' &&
-      (rankedCodes.has(candidate.noonProductCode) ||
-        candidate.keywordReviewStatus?.[keyword.id] ||
-        candidate.keywordEvidence.some((evidence) => normalizeSearchText(evidence) === keywordText))
-  )
+function isLatestFetchResultCandidate(
+  product: CompetitorWatchProduct,
+  keywordId: string,
+  candidate: CompetitorCandidate,
+  hasKeywordRunEvidence: boolean
+) {
+  if (candidateStatusForKeyword(candidate, keywordId) === 'ignored') {
+    return false
+  }
+  const relationRunId = candidate.keywordLastSeenRunIds?.[keywordId]
+  if (!hasKeywordRunEvidence) {
+    return true
+  }
+  if (product.latestRunId) {
+    return relationRunId === product.latestRunId
+  }
+  return Boolean(relationRunId)
 }
 
 function candidateStatusForKeyword(candidate: CompetitorCandidate, keywordId: string) {
-  return candidate.keywordReviewStatus?.[keywordId] ?? candidate.reviewStatus
+  return candidate.keywordReviewStatus?.[keywordId] ?? 'ignored'
+}
+
+function sortCandidatesByRank(
+  product: CompetitorWatchProduct,
+  keywordId: string,
+  candidates: CompetitorCandidate[]
+) {
+  return candidates.slice().sort((left, right) => {
+    const leftRank = candidateVisibleRankNo(product, keywordId, left)
+    const rightRank = candidateVisibleRankNo(product, keywordId, right)
+    const leftSortRank = leftRank ?? Number.MAX_SAFE_INTEGER
+    const rightSortRank = rightRank ?? Number.MAX_SAFE_INTEGER
+    if (leftSortRank !== rightSortRank) {
+      return leftSortRank - rightSortRank
+    }
+    return left.noonProductCode.localeCompare(right.noonProductCode)
+  })
+}
+
+function candidateVisibleRankNo(
+  product: CompetitorWatchProduct,
+  keywordId: string,
+  candidate: CompetitorCandidate
+) {
+  const rankPoint = getLatestRankPoint(product, keywordId, candidate.noonProductCode)
+  if (rankPoint?.rankStatus === 'ranked' && rankPoint.rankNo) {
+    return rankPoint.rankNo
+  }
+  if (rankPoint && isNotInRankRange(rankPoint.rankStatus)) {
+    return undefined
+  }
+  return candidate.latestRankNo
 }
 
 function getLatestRankPoint(product: CompetitorWatchProduct, keywordId: string, noonProductCode: string) {
@@ -1414,17 +2979,48 @@ function getLatestRankPoint(product: CompetitorWatchProduct, keywordId: string, 
     .sort((left, right) => right.factDate.localeCompare(left.factDate))[0]
 }
 
+function isOwnStoreCandidate(
+  product: CompetitorWatchProduct,
+  candidate: CompetitorCandidate,
+  rankPoint?: CompetitorRankPoint,
+  ownedNoonProductCodes?: ReadonlySet<string>
+) {
+  if (candidate.ownedByCurrentStore) {
+    return true
+  }
+  if (rankPoint?.isSelf) {
+    return true
+  }
+  const candidateNoonProductCode = normalizeNoonProductCode(candidate.noonProductCode)
+  if (candidateNoonProductCode && ownedNoonProductCodes?.has(candidateNoonProductCode)) {
+    return true
+  }
+  const selfNoonProductCode = normalizeNoonProductCode(product.selfNoonProductCode)
+  return Boolean(selfNoonProductCode && candidateNoonProductCode && selfNoonProductCode === candidateNoonProductCode)
+}
+
+function normalizeNoonProductCode(value?: string) {
+  return (value || '').trim().toUpperCase()
+}
+
 function formatRankStatus(rankPoint?: CompetitorRankPoint, fallbackRankNo?: number) {
   if (rankPoint?.rankStatus === 'ranked' && rankPoint.rankNo) {
     return `第 ${rankPoint.rankNo} 名`
   }
-  if (rankPoint?.rankStatus === 'not_in_top_30') {
-    return '未进前30'
+  if (rankPoint?.rankStatus === 'not_in_top_20') {
+    return '未进前20'
+  }
+  if (rankPoint?.rankStatus === 'not_in_scan_depth') {
+    return rankPoint.scanDepth ? `未进前${rankPoint.scanDepth}` : '未进扫描范围'
   }
   if (fallbackRankNo) {
     return `第 ${fallbackRankNo} 名`
   }
   return '暂无排名'
+}
+
+function isNotInRankRange(rankStatus: CompetitorRankPoint['rankStatus']) {
+  return rankStatus === 'not_in_top_20' || rankStatus === 'not_in_scan_depth'
 }
 
 function RunStatusTag({ status }: { status: string }) {
@@ -1441,16 +3037,6 @@ function RunStatusTag({ status }: { status: string }) {
     return <Tag color="orange">验证码</Tag>
   }
   return <Tag color="red">抓取受限</Tag>
-}
-
-function ReviewStatusTag({ status }: { status: string }) {
-  if (status === 'confirmed') {
-    return <Tag color="green">已确认</Tag>
-  }
-  if (status === 'ignored') {
-    return <Tag>已忽略</Tag>
-  }
-  return <Tag color="gold">待确认</Tag>
 }
 
 function buildRankRows(product: CompetitorWatchProduct) {
@@ -1530,7 +3116,7 @@ function rankColumns(product: CompetitorWatchProduct): ColumnsType<ReturnType<ty
         point.rankStatus === 'ranked' ? (
           <Text strong>第 {point.rankNo} 名</Text>
         ) : (
-          <Tag icon={<ClockCircleOutlined />}>未进前30</Tag>
+          <Tag icon={<ClockCircleOutlined />}>未进前20</Tag>
         )
     },
     {
