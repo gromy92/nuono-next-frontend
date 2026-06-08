@@ -5,11 +5,11 @@ export function summarizeRanks(product: CompetitorWatchProduct): RankSummary {
   const rankedPoints = relevantPoints.filter((point) => point.rankStatus === 'ranked' && typeof point.rankNo === 'number')
   const bestRank = rankedPoints.length ? Math.min(...rankedPoints.map((point) => point.rankNo || 999)) : undefined
   const sponsoredCount = relevantPoints.filter((point) => point.isSponsored).length
-  const notInTop30Count = relevantPoints.filter((point) => point.rankStatus === 'not_in_top_30').length
+  const notInTop20Count = relevantPoints.filter((point) => point.rankStatus !== 'ranked').length
   return {
     bestRank,
     sponsoredCount,
-    notInTop30Count,
-    label: bestRank ? `最佳第 ${bestRank} 名` : '暂无排名'
+    notInTop20Count,
+    label: bestRank ? `最好排名第 ${bestRank} 名` : '暂无排名'
   }
 }

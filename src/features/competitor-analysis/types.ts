@@ -4,7 +4,7 @@ export type CompetitorCandidateSource = 'search_discovery' | 'manual_add'
 
 export type NoonProductCodeType = 'Z_CODE' | 'N_CODE'
 
-export type RankStatus = 'ranked' | 'not_in_top_30'
+export type RankStatus = 'ranked' | 'not_in_top_20' | 'not_in_scan_depth'
 
 export type SearchRunStatus =
   | 'succeeded'
@@ -24,6 +24,7 @@ export type CompetitorKeyword = {
   lastRunStatus: SearchRunStatus
   lastSucceededAt?: string
   lastErrorCode?: string
+  monitoredCount?: number
 }
 
 export type CompetitorCandidate = {
@@ -39,10 +40,12 @@ export type CompetitorCandidate = {
   rating?: number
   reviewCount?: number
   isSponsored?: boolean
+  ownedByCurrentStore?: boolean
   latestRankNo?: number
   sourceType: CompetitorCandidateSource
   reviewStatus: CompetitorReviewStatus
   keywordReviewStatus?: Record<string, CompetitorReviewStatus>
+  keywordLastSeenRunIds?: Record<string, string>
   keywordEvidence: string[]
   lastSeenAt: string
 }
@@ -54,6 +57,8 @@ export type CompetitorRankPoint = {
   factDate: string
   rankStatus: RankStatus
   rankNo?: number
+  rankChannel?: 'organic' | 'sponsored'
+  scanDepth?: number
   isSelf: boolean
   isConfirmedCompetitor: boolean
   isSponsored: boolean
@@ -63,7 +68,10 @@ export type CompetitorRankPoint = {
 
 export type CompetitorWatchProduct = {
   id: string
+  productSiteOfferId: string
+  skuParent: string
   title: string
+  titleCn?: string
   brand: string
   imageUrl: string
   storeCode: string
@@ -76,6 +84,7 @@ export type CompetitorWatchProduct = {
   status: 'active' | 'paused'
   latestRunAt: string
   latestRunStatus: SearchRunStatus
+  latestRunId: string
   activeKeywordCount?: number
   pendingCandidateCount?: number
   confirmedCompetitorCount?: number
@@ -104,6 +113,24 @@ export type CompetitorProductOption = {
 export type RankSummary = {
   bestRank?: number
   sponsoredCount: number
-  notInTop30Count: number
+  notInTop20Count: number
   label: string
+}
+
+export type CompetitorProductChangeField = {
+  fieldKey: string
+  fieldLabel: string
+  changeType: string
+  oldValue?: unknown
+  newValue?: unknown
+  severity?: 'info' | 'warning' | 'critical'
+}
+
+export type CompetitorProductChangeGroup = {
+  id: string
+  factDate: string
+  noonProductCode: string
+  productName: string
+  subjectType: 'self' | 'competitor'
+  changes: CompetitorProductChangeField[]
 }

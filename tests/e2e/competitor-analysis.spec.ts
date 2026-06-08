@@ -38,6 +38,8 @@ type MockRelation = {
   keywordId: number
   competitorProductId: number
   relationStatus: string
+  firstSeenRunId?: number
+  lastSeenRunId?: number
   lastSeenRankNo?: number
   lastSeenSponsored?: boolean
   lastSeenAt: string
@@ -92,7 +94,11 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
     const method = route.request().method()
     const pathname = url.pathname
 
-    if (method === 'GET' && pathname === '/api/competitor-analysis/watch-products') {
+    if (
+      method === 'GET' &&
+      (pathname === '/api/competitor-analysis/watch-products' ||
+        pathname === '/api/competitor-analysis/product-baselines')
+    ) {
       await route.fulfill({ json: buildListResponse(Object.values(details), url.searchParams) })
       return
     }
@@ -125,7 +131,11 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
     const manualMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)\/manual-competitors$/)
     if (method === 'POST' && manualMatch) {
       const detail = details[Number(manualMatch[1])]
-      const payload = route.request().postDataJSON() as { input: string }
+      const payload = route.request().postDataJSON() as { input: string; keywordId?: number }
+      if (!payload.keywordId) {
+        await route.fulfill({ status: 400, json: { message: 'COMPETITOR_KEYWORD_REQUIRED' } })
+        return
+      }
       const noonProductCode = payload.input.match(/[ZN][A-Z0-9]{7,30}/i)?.[0].toUpperCase() || payload.input.toUpperCase()
       const candidateId = nextCandidateId++
       detail.candidates.push({
@@ -141,17 +151,13 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
         reviewStatus: 'CONFIRMED',
         lastSeenAt: '2026-06-05T08:20:00'
       })
-      detail.keywords
-        .filter((keyword) => keyword.status === 'ACTIVE')
-        .forEach((keyword, index) => {
-          detail.keywordRelations.push({
-            id: 210100 + index,
-            keywordId: keyword.id,
-            competitorProductId: candidateId,
-            relationStatus: 'CONFIRMED',
-            lastSeenAt: '2026-06-05T08:20:00'
-          })
-        })
+      detail.keywordRelations.push({
+        id: 210100,
+        keywordId: payload.keywordId,
+        competitorProductId: candidateId,
+        relationStatus: 'CONFIRMED',
+        lastSeenAt: '2026-06-05T08:20:00'
+      })
       await route.fulfill({ json: detail })
       return
     }
@@ -282,7 +288,14 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
   await expect(page.getByPlaceholder('搜索我方SKU、商品标题、Noon码')).toBeVisible()
   await expect(page.getByPlaceholder('搜索关键词')).toBeVisible()
   await expect(page.getByPlaceholder('搜索竞品Z/N码、品牌、标题')).toBeVisible()
-  await expect(page.getByText('每日 08:00')).toBeVisible()
+  await expect
+    .poll(async () =>
+      page
+        .locator('.competitor-analysis-row-actions')
+        .first()
+        .evaluate((element) => getComputedStyle(element).flexDirection)
+    )
+    .toBe('column')
 
   await page.getByPlaceholder('搜索关键词').fill('makeup organizer')
   await expect(page.getByText('API-ORG-AE-207')).toBeVisible()
@@ -301,18 +314,27 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
 
   await page.getByRole('button', { name: '添加竞品' }).first().click()
   await expect(page.getByTestId('competitor-manual-panel')).toBeVisible()
+  await expect(page.getByText('添加到关键词')).toBeVisible()
+  await expect(page.getByText('laundry basket').last()).toBeVisible()
   await page.getByPlaceholder('粘贴 Noon 链接、Z 码或 N 码').fill('https://www.noon.com/saudi-en/p/N70123456A/p/')
   await page.getByRole('button', { name: '手工添加' }).click()
   await expect(page.getByText('N70123456A', { exact: true }).first()).toBeVisible()
+  await page.getByPlaceholder('粘贴 Noon 链接、Z 码或 N 码').fill('N70123456A')
+  await page.getByRole('button', { name: '手工添加' }).click()
+  await expect(page.getByText('竞品已存在')).toBeVisible()
   await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: '查看详情' }).first().click()
+  const detailDrawer = page.locator('.ant-drawer').filter({ hasText: '我方商品竞品详情' })
+  await expect(detailDrawer.getByRole('button', { name: '抓取' })).toBeVisible()
   await expect(page.getByTestId('competitor-keyword-board')).toBeVisible()
   await expect(page.getByRole('button', { name: /laundry basket/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /foldable hamper/ })).toBeVisible()
   await expect(page.getByText(/关键词看板：/)).toBeHidden()
-  await expect(page.getByText('待选池 (1)')).toBeVisible()
+  await expect(page.getByText('抓取结果 (2)')).toBeVisible()
   await expect(page.getByText('已选竞品 (2)')).toBeVisible()
+  await expect(page.locator('.competitor-analysis-candidate-card').filter({ hasText: 'Z6122BASKETSA' }).getByText('已有')).toBeVisible()
+  await expect(page.locator('.competitor-analysis-candidate-card').filter({ hasText: 'N70011234A' }).getByText('广告')).toBeVisible()
   await expect(page.locator('.competitor-analysis-candidate-card').first()).toBeVisible()
   await expect(page.getByText('Noon链接')).toBeHidden()
   await expect(page.getByRole('link', { name: /打开 Noon 商品 N70011234A/ })).toBeVisible()
@@ -327,8 +349,8 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
 
   await expect(page.getByText('Premium Woven Storage Basket')).toBeHidden()
   await page.getByRole('button', { name: /foldable hamper/ }).click()
-  await expect(page.getByText('待选池 (2)')).toBeVisible()
-  await expect(page.getByText('已选竞品 (2)')).toBeVisible()
+  await expect(page.getByText('抓取结果 (3)')).toBeVisible()
+  await expect(page.getByText('已选竞品 (1)')).toBeVisible()
   await expect(page.getByText('Premium Woven Storage Basket')).toBeVisible()
   await expect(page.getByText('排名历史：foldable hamper')).toBeHidden()
   await page.getByRole('button', { name: /排名历史/ }).click()
@@ -338,17 +360,156 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
   await historyDialog.getByLabel('Close', { exact: true }).click()
   await expect(historyDialog).toBeHidden()
 
-  await page.getByRole('button', { name: '确认竞品' }).first().click()
-  await expect(
-    page.locator('.competitor-analysis-candidate-card').filter({ hasText: 'N70011234A' }).getByText('已确认')
-  ).toBeVisible()
+  await page.locator('.competitor-analysis-candidate-card').filter({ hasText: 'N70011234A' }).getByLabel('加入竞品').click()
+  await expect(page.getByText('已选竞品 (2)')).toBeVisible()
   await page.getByRole('button', { name: /laundry basket/ }).click()
   await expect(page.getByText('0 待选')).toBeVisible()
-  await expect(page.getByText('待选池 (0)')).toBeHidden()
+  await expect(page.getByText('抓取结果 (2)')).toBeVisible()
   await expect(page.getByText('已选竞品 (3)')).toBeVisible()
 
-  await page.getByRole('dialog').getByRole('button', { name: '手动刷新' }).click()
-  await expect(page.getByText(/手动刷新已提交|竞品刷新完成/)).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('competitor-keyword-board')).toBeHidden()
+  await page.getByRole('button', { name: '抓取' }).first().click()
+  await expect(page.getByText(/抓取任务已提交|抓取完成/)).toBeVisible()
+})
+
+test('manual competitor requires an active keyword', async ({ page }) => {
+  const details = createMockDetails()
+
+  await page.route('**/api/competitor-analysis/**', async (route) => {
+    const url = new URL(route.request().url())
+    const method = route.request().method()
+    const pathname = url.pathname
+
+    if (
+      method === 'GET' &&
+      (pathname === '/api/competitor-analysis/watch-products' ||
+        pathname === '/api/competitor-analysis/product-baselines')
+    ) {
+      await route.fulfill({ json: buildListResponse(Object.values(details), url.searchParams) })
+      return
+    }
+
+    const watchProductDetailMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)$/)
+    if (method === 'GET' && watchProductDetailMatch) {
+      await route.fulfill({ json: details[Number(watchProductDetailMatch[1])] })
+      return
+    }
+
+    await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
+  })
+
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss')
+  await expect(page.getByTestId('competitor-analysis-workbench')).toBeVisible()
+  await page.getByPlaceholder('搜索我方SKU、商品标题、Noon码').fill('API-NOKEY-SA-001')
+  await expect(page.getByText('API Product Without Keywords')).toBeVisible()
+
+  await page.getByRole('button', { name: '添加竞品' }).first().click()
+
+  await expect(page.getByText('请先维护关键词')).toBeVisible()
+  await expect(page.getByTestId('competitor-keyword-panel')).toBeVisible()
+  await expect(page.getByTestId('competitor-manual-panel')).toBeHidden()
+})
+
+test('shows fetch results when keyword relations omit run ids', async ({ page }) => {
+  const details = createMockDetails()
+  details[180001].keywordRelations.forEach((relation) => {
+    delete relation.lastSeenRunId
+  })
+
+  await page.route('**/api/competitor-analysis/**', async (route) => {
+    const url = new URL(route.request().url())
+    const method = route.request().method()
+    const pathname = url.pathname
+
+    if (
+      method === 'GET' &&
+      (pathname === '/api/competitor-analysis/watch-products' ||
+        pathname === '/api/competitor-analysis/product-baselines')
+    ) {
+      await route.fulfill({ json: buildListResponse(Object.values(details), url.searchParams) })
+      return
+    }
+
+    const watchProductDetailMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)$/)
+    if (method === 'GET' && watchProductDetailMatch) {
+      await route.fulfill({ json: details[Number(watchProductDetailMatch[1])] })
+      return
+    }
+
+    await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
+  })
+
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss')
+  await page.getByRole('button', { name: '查看详情' }).first().click()
+
+  await expect(page.getByText('抓取结果 (2)')).toBeVisible()
+  await expect(page.locator('.competitor-analysis-candidate-card').filter({ hasText: 'N70011234A' })).toBeVisible()
+  await expect(page.locator('.competitor-analysis-candidate-card').filter({ hasText: 'Z6122BASKETSA' }).getByText('已有')).toBeVisible()
+})
+
+test('removing a selected competitor hides it even when stale rank facts remain', async ({ page }) => {
+  const details = createMockDetails()
+
+  await page.route('**/api/competitor-analysis/**', async (route) => {
+    const url = new URL(route.request().url())
+    const method = route.request().method()
+    const pathname = url.pathname
+
+    if (method === 'GET' && pathname === '/api/competitor-analysis/watch-products') {
+      await route.fulfill({ json: buildListResponse(Object.values(details), url.searchParams) })
+      return
+    }
+
+    if (method === 'GET' && pathname === '/api/competitor-analysis/product-baselines') {
+      await route.fulfill({ json: buildListResponse(Object.values(details), url.searchParams) })
+      return
+    }
+
+    const watchProductDetailMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)$/)
+    if (method === 'GET' && watchProductDetailMatch) {
+      await route.fulfill({ json: details[Number(watchProductDetailMatch[1])] })
+      return
+    }
+
+    const removeMatch = pathname.match(/^\/api\/competitor-analysis\/keywords\/(\d+)\/candidates\/(\d+)\/remove$/)
+    if (method === 'POST' && removeMatch) {
+      const keywordId = Number(removeMatch[1])
+      const competitorProductId = Number(removeMatch[2])
+      const detail = Object.values(details).find((item) =>
+        item.candidates.some((candidate) => candidate.id === competitorProductId)
+      )
+      if (detail) {
+        detail.keywordRelations = detail.keywordRelations.filter(
+          (relation) => !(relation.keywordId === keywordId && relation.competitorProductId === competitorProductId)
+        )
+      }
+      await route.fulfill({ json: detail })
+      return
+    }
+
+    await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
+  })
+
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss')
+  await expect(page.getByTestId('competitor-analysis-workbench')).toBeVisible()
+
+  await page.getByPlaceholder('搜索我方SKU、商品标题、Noon码').fill('API-ORG-AE-207')
+  await expect(page.getByText('API Acrylic Cosmetic Organizer')).toBeVisible()
+  await page.getByRole('button', { name: '查看详情' }).first().click()
+
+  const selectedCard = page.locator('.competitor-analysis-candidate-card').filter({
+    has: page.getByLabel('移除竞品'),
+    hasText: 'N60004567A'
+  })
+  await expect(page.getByText('已选竞品 (1)')).toBeVisible()
+  await expect(selectedCard).toBeVisible()
+
+  await selectedCard.getByLabel('移除竞品').click()
+
+  await expect(page.getByText('竞品已移除')).toBeVisible()
+  await expect(page.getByText('已选竞品 (0)')).toBeVisible()
+  await expect(selectedCard).toBeHidden()
 })
 
 function createMockDetails(): Record<number, MockDetail> {
@@ -457,6 +618,7 @@ function createMockDetails(): Record<number, MockDetail> {
           keywordId: 190001,
           competitorProductId: 200001,
           relationStatus: 'DISCOVERED',
+          lastSeenRunId: 3000,
           lastSeenRankNo: 3,
           lastSeenSponsored: true,
           lastSeenAt: '2026-06-05T08:04:00'
@@ -466,6 +628,7 @@ function createMockDetails(): Record<number, MockDetail> {
           keywordId: 190001,
           competitorProductId: 200002,
           relationStatus: 'CONFIRMED',
+          lastSeenRunId: 3000,
           lastSeenRankNo: 8,
           lastSeenSponsored: false,
           lastSeenAt: '2026-06-05T08:04:00'
@@ -475,6 +638,7 @@ function createMockDetails(): Record<number, MockDetail> {
           keywordId: 190002,
           competitorProductId: 200001,
           relationStatus: 'DISCOVERED',
+          lastSeenRunId: 3000,
           lastSeenRankNo: 3,
           lastSeenSponsored: true,
           lastSeenAt: '2026-06-05T08:05:00'
@@ -484,6 +648,7 @@ function createMockDetails(): Record<number, MockDetail> {
           keywordId: 190002,
           competitorProductId: 200002,
           relationStatus: 'CONFIRMED',
+          lastSeenRunId: 3000,
           lastSeenRankNo: 5,
           lastSeenSponsored: false,
           lastSeenAt: '2026-06-05T08:05:00'
@@ -493,6 +658,7 @@ function createMockDetails(): Record<number, MockDetail> {
           keywordId: 190002,
           competitorProductId: 200003,
           relationStatus: 'DISCOVERED',
+          lastSeenRunId: 3000,
           lastSeenRankNo: 16,
           lastSeenSponsored: false,
           lastSeenAt: '2026-06-05T08:05:00'
@@ -608,6 +774,7 @@ function createMockDetails(): Record<number, MockDetail> {
           keywordId: 190003,
           competitorProductId: 200004,
           relationStatus: 'CONFIRMED',
+          lastSeenRunId: 3002,
           lastSeenRankNo: 7,
           lastSeenSponsored: true,
           lastSeenAt: '2026-06-05T08:11:00'
@@ -639,6 +806,31 @@ function createMockDetails(): Record<number, MockDetail> {
           factTime: '2026-06-05T08:11:00'
         }
       ]
+    },
+    180003: {
+      watchProduct: {
+        id: 180003,
+        ownerUserId: 501,
+        storeCode: 'STR108065-NSA',
+        siteCode: 'SA',
+        productSiteOfferId: 170003,
+        skuParent: 'API-NOKEY-SA',
+        partnerSku: 'API-NOKEY-SA-001',
+        childSku: 'Z8C2NOKEY001-1',
+        selfNoonProductCode: 'N51009999A',
+        selfCodeType: 'N_CODE',
+        title: 'API Product Without Keywords',
+        brand: 'Nuono Home',
+        imageUrl: transparentPixel,
+        productFulltype: 'home_storage-boxes',
+        status: 'ACTIVE',
+        latestRunStatus: 'FAILED',
+        latestRunAt: ''
+      },
+      keywords: [],
+      candidates: [],
+      keywordRelations: [],
+      latestRankPoints: []
     }
   }
 }
