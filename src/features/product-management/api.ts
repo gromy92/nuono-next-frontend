@@ -25,6 +25,27 @@ export type ProductStoreInitializationStartRequest = ProductStoreInitializationS
 
 export type ProductListDatasetRequest = ProductStoreInitializationStatusRequest;
 
+export type ProductDetailBaselineSyncRequest = ProductStoreInitializationStatusRequest & {
+  siteCode?: string;
+  maxDetailFetches?: number;
+  resumePosition?: string;
+};
+
+export type ProductDetailBaselineSyncResponse = {
+  attemptedCount?: number;
+  succeededCount?: number;
+  failedCount?: number;
+  skippedReadyCount?: number;
+  totalProductCount?: number;
+  completedCount?: number;
+  remainingCount?: number;
+  nextResumePosition?: string;
+  diagnosticSummary?: string;
+  failureMessage?: string;
+  succeeded?: boolean;
+  partial?: boolean;
+};
+
 export type ProductWorkbenchOpenRequest = {
   ownerUserId: number;
   storeCode: string;
@@ -169,6 +190,14 @@ export async function fetchStoreInitializationStatus({
 
 export async function startStoreInitializationRequest(request: ProductStoreInitializationStartRequest) {
   return postJson<StoreInitializationPayload>('/api/store-sync/init-start', request, '启动店铺初始化失败');
+}
+
+export async function syncMissingProductDetailBaselinesRequest(request: ProductDetailBaselineSyncRequest) {
+  return postJson<ProductDetailBaselineSyncResponse>(
+    '/api/product-master/detail-baseline/sync-missing',
+    request,
+    '补详情基线失败'
+  );
 }
 
 export async function openProductWorkbenchSnapshot(request: ProductWorkbenchOpenRequest) {

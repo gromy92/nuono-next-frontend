@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { message } from 'antd';
-import { fetchProductPublishTask } from './api';
+import { fetchProductPublishTask, syncMissingProductDetailBaselinesRequest } from './api';
 import { createProductListColumns } from './productListColumns';
 import { useMockProductActions } from './hooks/useMockProductActions';
 import { useProductDraftMutations } from './hooks/useProductDraftMutations';
@@ -57,6 +57,7 @@ export function useProductManagementWorkspace({
     setProductGalleryOpen,
     setProductGallerySubtitle,
     setProductGalleryTitle,
+    setProductDetailBaselineSyncSubmitting,
     setProductListDatasetState,
     setProductListDraftFilters,
     setProductListFilters,
@@ -99,6 +100,50 @@ export function useProductManagementWorkspace({
     storeSyncState
   });
   const { selectedInitializationStoreCode } = storeInitialization;
+
+  const syncMissingProductDetailBaselines = useCallback(async () => {
+    const ownerUserId = activeOwnerId ?? session?.defaultOwnerUserId;
+    const storeCode = selectedInitializationStoreCode;
+    if (!ownerUserId || !storeCode) {
+      message.warning('缺少老板或店铺上下文，暂时不能补详情基线。');
+      return;
+    }
+
+    try {
+      setProductDetailBaselineSyncSubmitting(true);
+      const result = await syncMissingProductDetailBaselinesRequest({
+        ownerUserId,
+        storeCode,
+        maxDetailFetches: 20
+      });
+      const succeededCount = result.succeededCount ?? 0;
+      const failedCount = result.failedCount ?? 0;
+      const remainingCount = result.remainingCount ?? 0;
+      const attemptedCount = result.attemptedCount ?? 0;
+      if (failedCount > 0) {
+        message.warning(
+          `本次补详情基线：成功 ${succeededCount} 个，失败 ${failedCount} 个，剩余 ${remainingCount} 个。`
+        );
+      } else if (remainingCount > 0) {
+        message.success(`本次补详情基线 ${succeededCount} 个，剩余 ${remainingCount} 个。可以继续点击补下一批。`);
+      } else if (attemptedCount > 0 || succeededCount > 0) {
+        message.success(`详情基线已补齐，本次完成 ${succeededCount} 个。`);
+      } else {
+        message.info('当前没有需要补齐的详情基线。');
+      }
+      void loadProductListDataset(storeCode, ownerUserId);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '补详情基线失败');
+    } finally {
+      setProductDetailBaselineSyncSubmitting(false);
+    }
+  }, [
+    activeOwnerId,
+    loadProductListDataset,
+    selectedInitializationStoreCode,
+    session?.defaultOwnerUserId,
+    setProductDetailBaselineSyncSubmitting
+  ]);
 
   const listSource = useProductListSource({
     activeOwnerId,
@@ -376,6 +421,7 @@ export function useProductManagementWorkspace({
     ...workbenchApiActions,
     ...publishTaskActions,
     ...navigation,
+    syncMissingProductDetailBaselines,
     productListColumns,
     storeInitializationStepColor
   };

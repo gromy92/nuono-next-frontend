@@ -3,6 +3,7 @@ import {
   ReloadOutlined,
   SearchOutlined,
   SortAscendingOutlined,
+  SyncOutlined,
   UndoOutlined
 } from '@ant-design/icons';
 import { Button, Input, Select, Tooltip } from 'antd';
@@ -19,7 +20,9 @@ type ProductCatalogFilterBarProps = {
 export function ProductCatalogFilterBar({ workspace, activeOwnerId }: ProductCatalogFilterBarProps) {
   const {
     selectedInitializationStoreCode,
+    productDetailBaselineSyncSubmitting,
     refreshProductWorkspaceSurface,
+    syncMissingProductDetailBaselines,
     productListDraftFilters,
     setProductListDraftFilters,
     setProductListFilters,
@@ -52,6 +55,16 @@ export function ProductCatalogFilterBar({ workspace, activeOwnerId }: ProductCat
                 onClick={refreshProductWorkspaceSurface}
                 disabled={!selectedInitializationStoreCode || !activeOwnerId}
               />
+            </Tooltip>
+            <Tooltip title="从 Noon 按批次补齐缺失的商品详情基线">
+              <Button
+                icon={<SyncOutlined />}
+                loading={productDetailBaselineSyncSubmitting}
+                onClick={() => void syncMissingProductDetailBaselines()}
+                disabled={!selectedInitializationStoreCode || !activeOwnerId}
+              >
+                补详情基线
+              </Button>
             </Tooltip>
             <Tooltip title="重置">
               <Button aria-label="重置" icon={<UndoOutlined />} onClick={resetProductListFilters} />

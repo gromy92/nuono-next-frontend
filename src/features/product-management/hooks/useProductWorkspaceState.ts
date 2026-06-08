@@ -15,6 +15,7 @@ import { closedProductSiteCompareModalState } from '../utils';
 export function useProductWorkspaceState() {
   const [storeInitializationForm] = Form.useForm();
   const [storeInitializationSubmitting, setStoreInitializationSubmitting] = useState(false);
+  const [productDetailBaselineSyncSubmitting, setProductDetailBaselineSyncSubmitting] = useState(false);
   const [selectedInitializationStoreCodeOverride, setSelectedInitializationStoreCodeOverride] = useState<string>();
   const [storeInitializationState, setStoreInitializationState] = useState<StoreInitializationState>({ status: 'idle' });
   const [productListDatasetState, setProductListDatasetState] = useState<ProductListDatasetState>({ status: 'idle' });
@@ -64,6 +65,8 @@ export function useProductWorkspaceState() {
     storeInitializationForm,
     storeInitializationSubmitting,
     setStoreInitializationSubmitting,
+    productDetailBaselineSyncSubmitting,
+    setProductDetailBaselineSyncSubmitting,
     selectedInitializationStoreCodeOverride,
     setSelectedInitializationStoreCodeOverride,
     storeInitializationState,
