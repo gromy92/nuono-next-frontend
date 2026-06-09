@@ -752,7 +752,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       dataIndex: 'title',
       key: 'title',
       fixed: 'left',
-      width: 320,
+      width: 310,
       render: (_value, product) => {
         return (
           <ProductBaselineIdentity
@@ -763,7 +763,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
             imageUrl={product.imageUrl}
             imageAlt={product.title}
             imageWidth={70}
-            titleMaxWidth={210}
+            titleMaxWidth={200}
             codes={productListIdentityCodes(product)}
             tags={!product.id ? <Tag style={{ marginInlineEnd: 0 }}>未监控</Tag> : undefined}
           />
@@ -773,7 +773,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     {
       title: '关键词',
       key: 'keywords',
-      width: 260,
+      width: 250,
       render: (_value, product) => {
         return (
           <ProductKeywordLinks
@@ -806,7 +806,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     {
       title: '排名摘要',
       key: 'rank',
-      width: 150,
+      width: 146,
       render: (_value, product) => {
         const summary = product.id ? summarizeRanks(product) : undefined
         return (
@@ -820,7 +820,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     {
       title: '最近抓取',
       key: 'run',
-      width: 148,
+      width: 140,
       render: (_value, product) => (
         <Space direction="vertical" size={2}>
           {product.id ? <RunStatusTag status={product.latestRunStatus} /> : <Tag>未开始</Tag>}
@@ -957,7 +957,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
               setProductPageSize(pageSize)
             }
           }}
-          scroll={{ x: 1248 }}
+          scroll={{ x: 1094 }}
           size="middle"
         />
       </Card>

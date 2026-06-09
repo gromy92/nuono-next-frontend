@@ -26,6 +26,7 @@ import type { AppMenuKey } from './WorkspaceRouting';
 import { WorkspaceErrorBoundary } from './WorkspaceErrorBoundary';
 import { isProductWorkspaceMenu } from './WorkspaceMenuRegistry';
 import type { LoadStoreSyncOptions } from './useStoreSyncController';
+import './shell-layout.css';
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -207,6 +208,7 @@ export function ShellFrame({
             }}
           >
             <Layout
+              className="nuono-shell-layout"
               style={{
                 minHeight: '100vh',
                 background: 'linear-gradient(180deg, #fbfbfd 0%, #f5f7fb 100%)'
@@ -221,7 +223,7 @@ export function ShellFrame({
                 onMouseLeave={() => setSidebarOpenKeys(activeSidebarOpenKeys)}
                 onOpenKeysChange={setSidebarOpenKeys}
               />
-              <Layout style={{ background: 'transparent' }}>
+              <Layout className="nuono-shell-main" style={{ background: 'transparent' }}>
                 <ShellHeader
                   activeMenuPathLabel={activeMenuPathLabel}
                   session={shellSession}
@@ -230,8 +232,11 @@ export function ShellFrame({
                   onSessionStoreChange={handleSessionStoreChange}
                   onUserDropdownClick={handleUserDropdownClick}
                 />
-                <Content style={{ padding: isProductWorkspaceMenu(activeMenuKey) ? '10px 10px 20px' : '16px 16px 24px' }}>
-                  <div style={{ width: '100%' }}>
+                <Content
+                  className="nuono-shell-content"
+                  style={{ padding: isProductWorkspaceMenu(activeMenuKey) ? '10px 10px 20px' : '16px 16px 24px' }}
+                >
+                  <div className="nuono-shell-content-inner">
                     {shouldRenderWorkspaceTabs ? (
                       <WorkspaceErrorBoundary boundaryName="workspace-tabs">
                         <WorkspaceTabsBar
@@ -244,8 +249,8 @@ export function ShellFrame({
                       </WorkspaceErrorBoundary>
                     ) : null}
 
-                    <Row gutter={[16, 16]} align="top">
-                      <Col span={24}>
+                    <Row className="nuono-shell-workspace-row" gutter={[16, 16]} align="top">
+                      <Col className="nuono-shell-workspace-col" span={24}>
                         <WorkspaceErrorBoundary boundaryName="main-content">
                           <ShellWorkspaceContent
                             activeMenuKey={activeMenuKey}
