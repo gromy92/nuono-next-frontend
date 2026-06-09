@@ -63,7 +63,11 @@ function readStoredCurrentStore() {
   }
 }
 
-function resolveDevCurrentStore(devStores: AuthSessionStore[]) {
+function resolveDevCurrentStore(devStores: AuthSessionStore[], options: { restoreStored?: boolean } = {}) {
+  if (!options.restoreStored) {
+    return devStores[0]
+  }
+
   const storedCurrentStore = readStoredCurrentStore()
   if (!storedCurrentStore?.storeCode) {
     return devStores[0]
@@ -143,7 +147,8 @@ function readDevSessionOverride(): AuthSession | null {
   const includeRoleAssignmentDevMenu = search.get('grantRoleAssignment') === '1'
   const includeSystemRoleDevMenu = search.get('grantSystemRole') === '1'
   const devRole = (search.get('devRole') || search.get('role') || '').trim().toLowerCase()
-  const useBossDevSession = devRole === 'boss' || devRole === 'laoban' || devRole === '老板'
+  const useAdminDevSession = ['admin', 'system-admin', 'administrator', '管理员', '系统管理员'].includes(devRole)
+  const useBossDevSession = !useAdminDevSession && (devRole === '' || devRole === 'boss' || devRole === 'laoban' || devRole === '老板')
   const useOpsManagerDevSession = ['ops-manager', 'operation-manager', 'operations-manager', '运营主管', '运营管理'].includes(devRole)
   const useOperatorDevSession = ['operator', 'ops', 'operation', '运营'].includes(devRole)
   const useProcurementDevSession = ['procurement', 'purchase', 'purchasing', 'buyer', '采购'].includes(devRole)
@@ -375,7 +380,7 @@ function readDevSessionOverride(): AuthSession | null {
                 companyName: 'Nuono',
                 level: 0
               };
-  const currentStore = resolveDevCurrentStore(devStores)
+  const currentStore = resolveDevCurrentStore(devStores, { restoreStored: search.get('preserveDevStore') === '1' })
 
   return {
     userId: devProfile.userId,
