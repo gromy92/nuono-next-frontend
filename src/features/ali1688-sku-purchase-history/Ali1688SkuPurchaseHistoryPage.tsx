@@ -1,10 +1,17 @@
 import { LineChartOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
-import { Button, Checkbox, DatePicker, Drawer, Empty, Input, InputNumber, Popover, Select, Space, Spin, Table, Tag, Tooltip, Typography, message } from 'antd'
+import { Alert, Button, Checkbox, DatePicker, Drawer, Empty, Input, InputNumber, Modal, Popover, Select, Space, Spin, Table, Tag, Tooltip, Typography, message } from 'antd'
 import type { Dayjs } from 'dayjs'
 import type { EChartsCoreOption } from 'echarts/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { loadAli1688SkuPurchaseHistory, saveAli1688SkuPurchaseBatches } from '../ali1688-historical-orders/api'
+import {
+  loadAli1688SkuPurchaseHistory,
+  previewAli1688SkuPurchaseBatchSourceMatch,
+  saveAli1688SkuPurchaseBatches,
+  saveAli1688SkuPurchaseBatchSourceMatch
+} from '../ali1688-historical-orders/api'
 import type {
+  Ali1688SkuPurchaseBatchSourceMatchCandidate,
+  Ali1688SkuPurchaseBatchSourceMatchPreviewResult,
   Ali1688SkuPurchaseHistoryItem,
   Ali1688SkuPurchaseHistoryQuery,
   Ali1688SkuPurchaseHistoryRecord,
@@ -57,11 +64,18 @@ type PurchaseBatchSource = {
 
 type PurchaseBatch = {
   id: string
+  batchId?: number
   label: string
   sources: PurchaseBatchSource[]
   countedQuantity: number | null
   countedCost: number | null
   note?: string
+}
+
+type SourceMatchFormState = {
+  orderNo: string
+  offerId: string
+  skuId: string
 }
 
 type PurchaseBatchMetrics = {
@@ -83,6 +97,19 @@ const EMPTY_VIEW: Ali1688SkuPurchaseHistoryView = {
     total: 0
   },
   unlinkedAssignedLineCount: 0
+}
+
+const EMPTY_SOURCE_MATCH_FORM: SourceMatchFormState = {
+  orderNo: '',
+  offerId: '',
+  skuId: ''
+}
+
+const SOURCE_MATCH_REJECTION_MESSAGES: Record<string, string> = {
+  unsafe_match_key: '请完整填写订单号、offer_id、sku_id。',
+  batch_not_found: '批次不存在或已删除，请刷新后重试。',
+  no_match: '没有找到同时匹配当前批次店铺、站点、SKU 的 1688 来源。',
+  ambiguous_match: '匹配到多条来源，请收窄订单号、offer_id、sku_id 后重试。'
 }
 
 export function Ali1688SkuPurchaseHistoryPage({ storeCode, siteCode }: Ali1688SkuPurchaseHistoryPageProps) {
@@ -636,13 +663,27 @@ function PurchaseBatchDrawer({
   const [selectedSourceKeys, setSelectedSourceKeys] = useState<string[]>([])
   const [draftBatches, setDraftBatches] = useState<PurchaseBatch[]>([])
   const [saving, setSaving] = useState(false)
+  const [sourceMatchBatchKey, setSourceMatchBatchKey] = useState<string | null>(null)
+  const [sourceMatchForm, setSourceMatchForm] = useState<SourceMatchFormState>(EMPTY_SOURCE_MATCH_FORM)
+  const [sourceMatchPreview, setSourceMatchPreview] = useState<Ali1688SkuPurchaseBatchSourceMatchPreviewResult | null>(null)
+  const [sourceMatchLoading, setSourceMatchLoading] = useState(false)
+  const [sourceMatchSaving, setSourceMatchSaving] = useState(false)
   const sources = record ? buildPurchaseBatchSources(record) : []
   const selectedKeySet = new Set(selectedSourceKeys)
   const metrics = calculatePurchaseBatchMetrics(draftBatches)
+  const sourceMatchBatch = sourceMatchBatchKey
+    ? draftBatches.find((batch) => batch.id === sourceMatchBatchKey) || null
+    : null
+  const sourceMatchCandidate = sourceMatchPreview?.rejectionReason
+    ? undefined
+    : sourceMatchPreview?.candidates?.[0]
 
   useEffect(() => {
     setSelectedSourceKeys([])
     setDraftBatches(clonePurchaseBatches(batches))
+    setSourceMatchBatchKey(null)
+    setSourceMatchForm(EMPTY_SOURCE_MATCH_FORM)
+    setSourceMatchPreview(null)
   }, [batches, record])
 
   function toggleSource(sourceKey: string, checked: boolean) {
@@ -681,6 +722,85 @@ function PurchaseBatchDrawer({
     setDraftBatches((current) =>
       current.map((batch) => (batch.id === batchId ? { ...batch, ...patch } : batch))
     )
+  }
+
+  function openSourceMatch(batch: PurchaseBatch) {
+    if (!record) {
+      return
+    }
+    if (!batch.batchId) {
+      message.warning('请先保存批次并刷新后再匹配来源')
+      return
+    }
+    setSourceMatchBatchKey(batch.id)
+    setSourceMatchForm({
+      orderNo: purchaseBatchOrderNos(batch)[0] || '',
+      offerId: displayOptionalText(record.sourceOfferId) || '',
+      skuId: displayOptionalText(record.sourceSkuId) || ''
+    })
+    setSourceMatchPreview(null)
+  }
+
+  function closeSourceMatch() {
+    setSourceMatchBatchKey(null)
+    setSourceMatchForm(EMPTY_SOURCE_MATCH_FORM)
+    setSourceMatchPreview(null)
+    setSourceMatchLoading(false)
+    setSourceMatchSaving(false)
+  }
+
+  function updateSourceMatchForm(field: keyof SourceMatchFormState, value: string) {
+    setSourceMatchForm((current) => ({ ...current, [field]: value }))
+    setSourceMatchPreview(null)
+  }
+
+  async function previewSourceMatch() {
+    if (!sourceMatchBatch?.batchId) {
+      return
+    }
+    setSourceMatchLoading(true)
+    try {
+      const result = await previewAli1688SkuPurchaseBatchSourceMatch({
+        batchId: sourceMatchBatch.batchId,
+        orderNo: sourceMatchForm.orderNo.trim(),
+        offerId: sourceMatchForm.offerId.trim(),
+        skuId: sourceMatchForm.skuId.trim()
+      })
+      setSourceMatchPreview(result)
+      if (result.rejectionReason) {
+        message.warning(sourceMatchRejectionMessage(result.rejectionReason))
+      } else {
+        message.success('已找到唯一来源')
+      }
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '匹配 1688 来源失败')
+    } finally {
+      setSourceMatchLoading(false)
+    }
+  }
+
+  async function saveSourceMatch() {
+    if (!sourceMatchBatch?.batchId || !sourceMatchCandidate) {
+      return
+    }
+    const batchToUpdate = sourceMatchBatch
+    setSourceMatchSaving(true)
+    try {
+      const result = await saveAli1688SkuPurchaseBatchSourceMatch({
+        batchId: batchToUpdate.batchId,
+        sources: [sourceMatchCandidateToBatchSource(sourceMatchCandidate)]
+      })
+      const nextSource = purchaseBatchSourceFromMatchCandidate(sourceMatchCandidate, 0)
+      setDraftBatches((current) =>
+        current.map((batch) => (batch.id === batchToUpdate.id ? { ...batch, sources: [nextSource] } : batch))
+      )
+      message.success(`来源已保存，替换 ${result.replacedSourceCount} 条旧来源`)
+      closeSourceMatch()
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '保存 1688 来源失败')
+    } finally {
+      setSourceMatchSaving(false)
+    }
   }
 
   async function saveDraftBatches() {
@@ -774,6 +894,7 @@ function PurchaseBatchDrawer({
                     <th>计入 SKU 成本</th>
                     <th>批次单价</th>
                     <th>备注</th>
+                    <th>操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -813,12 +934,104 @@ function PurchaseBatchDrawer({
                           onChange={(event) => updateDraftBatch(batch.id, { note: event.target.value })}
                         />
                       </td>
+                      <td>
+                        <Tooltip title={batch.batchId ? '匹配 1688 历史订单来源' : '新批次需先保存并刷新后再匹配来源'}>
+                          <span>
+                            <Button
+                              size="small"
+                              disabled={!batch.batchId}
+                              onClick={() => openSourceMatch(batch)}
+                            >
+                              匹配来源
+                            </Button>
+                          </span>
+                        </Tooltip>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           </section>
+          <Modal
+            title={`匹配 1688 来源 · ${displayText(sourceMatchBatch?.label)}`}
+            open={Boolean(sourceMatchBatch)}
+            okText="保存来源"
+            cancelText="关闭"
+            width={720}
+            destroyOnClose
+            confirmLoading={sourceMatchSaving}
+            okButtonProps={{ disabled: !sourceMatchCandidate }}
+            onOk={() => void saveSourceMatch()}
+            onCancel={closeSourceMatch}
+          >
+            <div className="ali1688-sku-source-match-modal">
+              <div className="ali1688-sku-source-match-form">
+                <label>
+                  <Text type="secondary">订单号</Text>
+                  <Input
+                    aria-label="匹配订单号"
+                    value={sourceMatchForm.orderNo}
+                    onChange={(event) => updateSourceMatchForm('orderNo', event.target.value)}
+                  />
+                </label>
+                <label>
+                  <Text type="secondary">offer_id</Text>
+                  <Input
+                    aria-label="匹配 offer_id"
+                    value={sourceMatchForm.offerId}
+                    onChange={(event) => updateSourceMatchForm('offerId', event.target.value)}
+                  />
+                </label>
+                <label>
+                  <Text type="secondary">sku_id</Text>
+                  <Input
+                    aria-label="匹配 sku_id"
+                    value={sourceMatchForm.skuId}
+                    onChange={(event) => updateSourceMatchForm('skuId', event.target.value)}
+                  />
+                </label>
+                <Button
+                  type="primary"
+                  loading={sourceMatchLoading}
+                  disabled={!sourceMatchBatch?.batchId}
+                  onClick={() => void previewSourceMatch()}
+                >
+                  预览匹配
+                </Button>
+              </div>
+              {sourceMatchPreview?.rejectionReason ? (
+                <Alert
+                  type="warning"
+                  showIcon
+                  message={sourceMatchRejectionMessage(sourceMatchPreview.rejectionReason)}
+                />
+              ) : null}
+              {sourceMatchCandidate ? (
+                <div className="ali1688-sku-source-match-candidate">
+                  <Text strong>唯一命中来源</Text>
+                  <dl>
+                    <div>
+                      <dt>订单号</dt>
+                      <dd>{displayText(sourceMatchCandidate.orderNo)}</dd>
+                    </div>
+                    <div>
+                      <dt>采购时间</dt>
+                      <dd>{displayText(sourceMatchCandidate.orderTime)}</dd>
+                    </div>
+                    <div>
+                      <dt>供应商</dt>
+                      <dd>{displayText(sourceMatchCandidate.supplierName)}</dd>
+                    </div>
+                    <div>
+                      <dt>分配数量</dt>
+                      <dd>{formatNumberText(sourceMatchCandidate.assignedQuantity)}</dd>
+                    </div>
+                  </dl>
+                </div>
+              ) : null}
+            </div>
+          </Modal>
         </div>
       ) : null}
     </Drawer>
@@ -1072,6 +1285,7 @@ function purchaseBatchFromPersistedBatch(
   const label = displayOptionalText(batch.label) || `批次 ${index + 1}`
   return {
     id: batch.id ? `persisted-${batch.id}` : `persisted-${index + 1}`,
+    batchId: batch.id,
     label,
     sources: (batch.sources || []).map((source, sourceIndex) => persistedPurchaseBatchSource(source, sourceIndex)),
     countedQuantity: normalizeNullableInteger(batch.countedQuantity ?? null),
@@ -1102,6 +1316,47 @@ function persistedPurchaseBatchSourceKey(source: Ali1688SkuPurchaseHistoryBatchS
     source.itemId ? `item-${source.itemId}` : '',
     source.orderNo ? `no-${source.orderNo}` : '',
     `persisted-${index}`
+  ]
+    .filter(Boolean)
+    .join('-')
+}
+
+function sourceMatchCandidateToBatchSource(
+  candidate: Ali1688SkuPurchaseBatchSourceMatchCandidate
+): Ali1688SkuPurchaseHistoryBatchSource {
+  return {
+    orderId: candidate.orderId,
+    itemId: candidate.itemId,
+    assignmentId: candidate.assignmentId,
+    orderNo: candidate.orderNo,
+    orderTime: candidate.orderTime,
+    supplierName: candidate.supplierName
+  }
+}
+
+function purchaseBatchSourceFromMatchCandidate(
+  candidate: Ali1688SkuPurchaseBatchSourceMatchCandidate,
+  index: number
+): PurchaseBatchSource {
+  return {
+    key: sourceMatchCandidateKey(candidate, index),
+    orderId: candidate.orderId,
+    itemId: candidate.itemId,
+    assignmentId: candidate.assignmentId,
+    orderNo: candidate.orderNo,
+    orderTime: candidate.orderTime,
+    supplierName: candidate.supplierName,
+    assignedQuantity: candidate.assignedQuantity
+  }
+}
+
+function sourceMatchCandidateKey(candidate: Ali1688SkuPurchaseBatchSourceMatchCandidate, index: number) {
+  return [
+    candidate.assignmentId ? `assignment-${candidate.assignmentId}` : '',
+    candidate.orderId ? `order-${candidate.orderId}` : '',
+    candidate.itemId ? `item-${candidate.itemId}` : '',
+    candidate.orderNo ? `no-${candidate.orderNo}` : '',
+    `source-match-${index}`
   ]
     .filter(Boolean)
     .join('-')
@@ -1265,6 +1520,13 @@ function displayText(value?: string | number | null, fallback?: string | number 
 function displayOptionalText(value?: string | number | null) {
   const normalized = value === undefined || value === null ? '' : String(value).trim()
   return normalized || undefined
+}
+
+function sourceMatchRejectionMessage(reason?: string | null) {
+  if (!reason) {
+    return '未找到可保存的来源。'
+  }
+  return SOURCE_MATCH_REJECTION_MESSAGES[reason] || `无法保存来源: ${reason}`
 }
 
 function formatNumberText(value?: string | number | null) {

@@ -1,4 +1,4 @@
-import { HistoryOutlined, KeyOutlined, LinkOutlined, ReloadOutlined, SyncOutlined, UploadOutlined } from '@ant-design/icons'
+import { DeleteOutlined, HistoryOutlined, KeyOutlined, LinkOutlined, ReloadOutlined, SyncOutlined, UploadOutlined } from '@ant-design/icons'
 import { Alert, Avatar, Button, DatePicker, Drawer, Empty, Input, InputNumber, List, Modal, Pagination, Segmented, Select, Space, Spin, Table, Tabs, Tag, Tooltip, Typography, message } from 'antd'
 import type { Dayjs } from 'dayjs'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
@@ -76,14 +76,16 @@ type AssignmentTargetStore = {
 type AssignmentTargetOption = {
   value: string
   label: string
-  targetType: 'STORE_SITE' | 'CONSUMABLE'
+  targetType: 'STORE_SITE' | 'CONSUMABLE' | 'DISCONTINUED'
   targetStoreCode?: string
   targetSiteCode?: string
 }
 
 type ProductLinkActionControls = {
   canMutateProductLinks: boolean
+  canDeleteOrders: boolean
   onOpenProductActionModal: (row: ProductLineRow) => void | Promise<void>
+  onOpenDeleteOrderModal: (order: Ali1688HistoricalOrderRow) => void
 }
 
 type ProductLinkStatusFilter = 'all' | 'unlinked' | 'linked'
@@ -169,6 +171,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
   const [productLinkLoading, setProductLinkLoading] = useState(false)
   const [productLinkSubmitting, setProductLinkSubmitting] = useState(false)
   const [productLinkUnlinkingAssignmentId, setProductLinkUnlinkingAssignmentId] = useState<number>()
+  const [markingDiscontinued, setMarkingDiscontinued] = useState(false)
   const didMountFilters = useRef(false)
   const productLinkCandidateRequestSeq = useRef(0)
   const productLineRows = useMemo(() => buildProductLineRows(workbench.orders || []), [workbench.orders])
@@ -200,10 +203,18 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
   const canAssignActionProductRows = actionProductLineRows.length > 0
     && actionProductLineRows.every(isAssignableProductLine)
   const canLinkActionProductRows = canBatchLinkProductLines(actionProductLineRows)
+  const productLinkCandidateSourceRow = useMemo(
+    () => actionProductLineRows.find(canLinkProductLine)
+      || (productLinkRow && canLinkProductLine(productLinkRow) ? productLinkRow : null),
+    [actionProductLineRows, productLinkRow]
+  )
+  const canShowProductCandidateSearch = canMutateProductLinks && Boolean(productLinkCandidateSourceRow)
+  const canMarkDiscontinuedActionRows = canMutateProductLinks
+    && actionProductLineRows.some(canMarkDiscontinuedProductLine)
   const canContinueAssignmentToProductLink = canMutateProductLinks
     && canSubmitAssignment(actionProductLineRows, assignmentTargetValues, assignmentTargetQuantities)
     && selectedAssignmentTargetOptions.length === 1
-    && !isConsumableTarget(selectedAssignmentTargetOptions[0])
+    && !isStorelessFullLineTarget(selectedAssignmentTargetOptions[0])
   const selectedDetailItem = selectedOrder
     ? findSelectedDetailItem(selectedOrder, selectedLineItemId)
     : undefined
@@ -244,14 +255,14 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
   }, [filters])
 
   useEffect(() => {
-    if (!productLinkRow || !canLinkActionProductRows || !canMutateProductLinks) {
+    if (!canShowProductCandidateSearch || !productLinkCandidateSourceRow) {
       return undefined
     }
     const timeoutId = window.setTimeout(() => {
-      void loadProductLinkCandidatesForRow(productLinkRow, productLinkStatusFilter, productLinkSearch)
+      void loadProductLinkCandidatesForRow(productLinkCandidateSourceRow, productLinkStatusFilter, productLinkSearch)
     }, productLinkSearch.trim() ? 250 : 0)
     return () => window.clearTimeout(timeoutId)
-  }, [productLinkSearch])
+  }, [canShowProductCandidateSearch, productLinkCandidateSourceRow, productLinkSearch, productLinkStatusFilter])
 
   const showAuthorizeButton = workbench.roleCapabilities?.canAuthorize
   const canTriggerSync = workbench.roleCapabilities?.canTriggerSync
@@ -287,6 +298,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
             options={[
               { label: '未分配', value: 'state:unassigned' },
               { label: '耗材', value: 'state:consumable' },
+              { label: '已下架', value: 'state:discontinued' },
               ...assignmentTargetOptions
                 .filter((option) => option.targetType === 'STORE_SITE')
                 .map((option) => ({
@@ -401,7 +413,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
           size="middle"
           tableLayout="fixed"
           className="ali1688-historical-orders-table"
-          scroll={{ x: 1540 }}
+          scroll={{ x: 1240 }}
           dataSource={visibleProductLineRows}
           rowSelection={{
             selectedRowKeys: selectedLineKeys,
@@ -423,13 +435,15 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
             {
               title: '货品',
               key: 'product',
-              width: 560,
+              width: 380,
               render: (_, row) => renderProductCell(
                 row,
                 assignmentTargetOptions,
                 {
                   canMutateProductLinks,
-                  onOpenProductActionModal: openProductActionModal
+                  canDeleteOrders: Boolean(showAuthorizeButton),
+                  onOpenProductActionModal: openProductActionModal,
+                  onOpenDeleteOrderModal: openDeleteOrderModal
                 }
               )
             },
@@ -456,28 +470,6 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
               key: 'order',
               width: 220,
               render: (_, row) => renderOrderContextCell(row.order, row.item)
-            },
-            {
-              title: '操作',
-              key: 'actions',
-              width: 150,
-              render: (_, row) => (
-                <Space direction="vertical" size={2}>
-                  <Button type="link" onClick={() => void openProductLineDetail(row)}>
-                    查看货品
-                  </Button>
-                  {showAuthorizeButton && row.order.id ? (
-                    <Button
-                      type="link"
-                      danger
-                      aria-label={`删除订单 ${row.order.orderNo || row.order.id}`}
-                      onClick={() => openDeleteOrderModal(row.order)}
-                    >
-                      删除订单
-                    </Button>
-                  ) : null}
-                </Space>
-              )
             }
           ]}
           pagination={false}
@@ -688,20 +680,22 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
                   ? '单个货品可拆分到多个店铺，请为每个店铺填写数量。'
                   : '多选货品可拆分到多个店铺，请为每个店铺和货品填写数量。'}
               </Text>
-              <Select
-                aria-label="目标店铺"
-                mode="multiple"
-                placeholder="目标店铺"
-                value={assignmentTargetValues}
-                onChange={updateAssignmentTargetValues}
-                options={assignmentTargetOptions.map((option) => ({ value: option.value, label: option.label }))}
-              />
-              <Space size={6} wrap className="ali1688-assignment-target-summary">
+              <div className="ali1688-assignment-target-options" role="group" aria-label="目标店铺">
                 {assignmentTargetOptions.map((option) => (
-                  <Tag key={option.value}>{option.label}</Tag>
+                  <Button
+                    key={option.value}
+                    size="small"
+                    type={assignmentTargetValues.includes(option.value) ? 'primary' : 'default'}
+                    danger={isDiscontinuedTarget(option)}
+                    aria-pressed={assignmentTargetValues.includes(option.value)}
+                    className="ali1688-assignment-target-option"
+                    onClick={() => toggleAssignmentTargetValue(option.value)}
+                  >
+                    {option.label}
+                  </Button>
                 ))}
-              </Space>
-              {selectedAssignmentTargetOptions.some(isConsumableTarget) ? (
+              </div>
+              {selectedAssignmentTargetOptions.some(isStorelessFullLineTarget) ? (
                 <List
                   size="small"
                   dataSource={actionProductLineRows}
@@ -709,7 +703,9 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
                     <List.Item>
                       <List.Item.Meta
                         title={<Text>{row.item?.title || '未返回'}</Text>}
-                        description={<Text type="secondary">标记为耗材，使用整条货品行数量 {assignmentMaxQuantity(row)}</Text>}
+                        description={<Text type="secondary">
+                          标记为{assignmentTargetDescription(selectedAssignmentTargetOptions[0])}，使用整条货品行数量 {assignmentMaxQuantity(row)}
+                        </Text>}
                       />
                     </List.Item>
                   )}
@@ -938,8 +934,9 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
     setAssignmentTargetValues([])
     setAssignmentTargetQuantities({})
     setAssignmentModalOpen(true)
-    if (canMutateProductLinks && canBatchLinkProductLines(rows)) {
-      await loadProductLinkCandidatesForRow(primaryRow, defaultLinkStatus, '')
+    const candidateSourceRow = rows.find(canLinkProductLine)
+    if (canMutateProductLinks && candidateSourceRow) {
+      await loadProductLinkCandidatesForRow(candidateSourceRow, defaultLinkStatus, '')
     }
   }
 
@@ -947,8 +944,8 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
     setProductLinkStatusFilter(linkStatus)
     setProductLinkSearch('')
     setSelectedProductCandidate(null)
-    if (productLinkRow) {
-      await loadProductLinkCandidatesForRow(productLinkRow, linkStatus, '')
+    if (productLinkCandidateSourceRow) {
+      await loadProductLinkCandidatesForRow(productLinkCandidateSourceRow, linkStatus, '')
     }
   }
 
@@ -1030,6 +1027,72 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
     }
   }
 
+  async function submitMarkDiscontinuedFromProductLink() {
+    if (!canMutateProductLinks) {
+      message.warning('当前角色只能查看商品关联，不能修改')
+      return
+    }
+    const rowsToMark = productLinkRows.filter(canMarkDiscontinuedProductLine)
+    const assignmentIds = Array.from(new Set(
+      rowsToMark
+        .map((row) => row.item?.assignmentId)
+        .filter((assignmentId): assignmentId is number => Boolean(assignmentId))
+    ))
+    if (!assignmentIds.length || !rowsToMark.length) {
+      message.error('请选择已分配店铺的货品行')
+      return
+    }
+    const targetGroups = new Map<string, {
+      targetStoreCode: string
+      targetSiteCode?: string
+      lines: { itemId: string; quantity: number }[]
+    }>()
+    rowsToMark.forEach((row) => {
+      const itemId = row.item?.id
+      const targetStoreCode = row.item?.assignmentTargetStoreCode?.trim()
+      const targetSiteCode = row.item?.assignmentTargetSiteCode?.trim()
+      const quantity = row.item?.assignedQuantity ?? row.item?.quantity ?? assignmentMaxQuantity(row)
+      if (!itemId || !targetStoreCode || !quantity || quantity <= 0) {
+        return
+      }
+      const groupKey = `${targetStoreCode}::${targetSiteCode || ''}`
+      const group = targetGroups.get(groupKey) || {
+        targetStoreCode,
+        targetSiteCode: targetSiteCode && targetSiteCode !== '*' ? targetSiteCode : undefined,
+        lines: []
+      }
+      group.lines.push({ itemId, quantity })
+      targetGroups.set(groupKey, group)
+    })
+    if (!targetGroups.size) {
+      message.error('请选择已分配店铺的货品行')
+      return
+    }
+    setMarkingDiscontinued(true)
+    try {
+      for (const assignmentId of assignmentIds) {
+        await revokeAli1688HistoricalOrderAssignment(assignmentId)
+      }
+      for (const group of targetGroups.values()) {
+        await assignAli1688HistoricalOrderLines({
+          targetType: 'DISCONTINUED',
+          targetStoreCode: group.targetStoreCode,
+          targetSiteCode: group.targetSiteCode,
+          lines: group.lines
+        })
+      }
+      const markedCount = rowsToMark.length
+      message.success(markedCount > 1 ? `已标记 ${markedCount} 条下架数据` : '已标记为下架数据')
+      closeActionModal()
+      setSelectedLineKeys([])
+      await loadWorkbench(query)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '标记下架数据失败')
+    } finally {
+      setMarkingDiscontinued(false)
+    }
+  }
+
   async function submitProductUnlink(assignmentId?: number) {
     if (!canMutateProductLinks) {
       message.warning('当前角色只能查看商品关联，不能修改')
@@ -1080,16 +1143,33 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
   }
 
   function updateAssignmentTargetValues(values: string[]) {
-    const nextValues = values.includes(CONSUMABLE_ASSIGNMENT_VALUE)
-      ? [CONSUMABLE_ASSIGNMENT_VALUE]
+    const specialTargetValue = [...values].reverse().find(isStorelessFullLineTargetValue)
+    const nextValues = specialTargetValue
+      ? [specialTargetValue]
       : values
     setAssignmentTargetValues(nextValues)
     setAssignmentTargetQuantities(() => {
-      if (nextValues.includes(CONSUMABLE_ASSIGNMENT_VALUE)) {
+      if (nextValues.some(isStorelessFullLineTargetValue)) {
         return {}
       }
       return buildAutoAssignmentTargetQuantities(actionProductLineRows, nextValues)
     })
+  }
+
+  function toggleAssignmentTargetValue(value: string) {
+    const selected = assignmentTargetValues.includes(value)
+    if (selected) {
+      updateAssignmentTargetValues(assignmentTargetValues.filter((targetValue) => targetValue !== value))
+      return
+    }
+    if (isStorelessFullLineTargetValue(value)) {
+      updateAssignmentTargetValues([value])
+      return
+    }
+    updateAssignmentTargetValues([
+      ...assignmentTargetValues.filter((targetValue) => !isStorelessFullLineTargetValue(targetValue)),
+      value
+    ])
   }
 
   function updateAssignmentTargetQuantity(targetValue: string, row: ProductLineRow, value: number | string | null) {
@@ -1113,9 +1193,9 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
     setAssigning(true)
     try {
       const assignmentRequests: Ali1688HistoricalOrderAssignmentRequest[] = []
-      if (targets.length === 1 && isConsumableTarget(targets[0])) {
+      if (targets.length === 1 && isStorelessFullLineTarget(targets[0])) {
         assignmentRequests.push({
-          targetType: 'CONSUMABLE',
+          targetType: targets[0].targetType,
           lines: rowsToAssign.map((row) => ({
             itemId: row.item?.id || ''
           }))
@@ -1150,15 +1230,19 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
       message.success(`已分配 ${assignedLineCount} 条货品`)
       const nextWorkbench = await loadWorkbench(query)
       if (options.keepOpenForLink) {
-        const nextRows = findLinkableRowsAfterAssignment(nextWorkbench, rowsToAssign)
+        const nextRows = await loadAssignedRowsAfterAssignment(nextWorkbench, rowsToAssign)
+        const nextCandidateRow = nextRows.find(canLinkProductLine)
         setProductLinkRows(nextRows)
-        setProductLinkRow(nextRows[0] || rowsToAssign[0] || null)
+        setProductLinkRow(nextCandidateRow || nextRows[0] || rowsToAssign[0] || null)
+        setProductLinkStatusFilter('all')
         setAssignmentTargetValues([])
         setAssignmentTargetQuantities({})
         setSelectedProductCandidate(null)
         setProductLinkCandidates([])
-        if (canBatchLinkProductLines(nextRows) && nextRows[0]) {
-          await loadProductLinkCandidatesForRow(nextRows[0], productLinkStatusFilter, '')
+        if (nextCandidateRow) {
+          await loadProductLinkCandidatesForRow(nextCandidateRow, 'all', '')
+        } else if (nextRows.length) {
+          message.warning('分配已保存；当前货品不能关联当前 SKU，可标记下架数据或关闭弹窗')
         } else {
           message.warning('分配已保存，请在列表刷新后重新打开商品关联')
         }
@@ -1209,6 +1293,19 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
           onClick={() => void submitAssignment({ keepOpenForLink: true })}
         >
           保存分配并继续关联
+        </Button>
+      )
+    }
+    if (canMarkDiscontinuedActionRows) {
+      footerButtons.push(
+        <Button
+          key="mark-discontinued"
+          danger
+          loading={markingDiscontinued}
+          disabled={productLinkSubmitting}
+          onClick={() => void submitMarkDiscontinuedFromProductLink()}
+        >
+          标记下架数据
         </Button>
       )
     }
@@ -1275,7 +1372,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
           )}
         </section>
         <section className="ali1688-product-link-candidates">
-          {canLinkActionProductRows ? (
+          {canShowProductCandidateSearch ? (
             <>
               <div className="ali1688-product-link-filter">
                 <Input.Search
@@ -1346,14 +1443,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
                 />
               </Spin>
             </>
-          ) : (
-            <Alert
-              type="info"
-              showIcon
-              message="保存分配后选择店铺商品。"
-              description="商品候选会按分配后的店铺和站点加载。"
-            />
-          )}
+          ) : null}
         </section>
       </div>
     )
@@ -1436,11 +1526,11 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
             renderItem={(record) => {
               const targetLabel = assignmentRecordTargetLabel(record)
               const disabled = record.status !== 'active'
-              const consumableRecord = record.targetType === 'CONSUMABLE'
+              const fullLineRecord = isStorelessFullLineAssignmentRecord(record)
               return (
                 <List.Item
                   actions={[
-                    consumableRecord ? null : (
+                    fullLineRecord ? null : (
                       <InputNumber
                         key="quantity"
                         aria-label={`调整数量 ${targetLabel}`}
@@ -1454,7 +1544,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
                         onChange={(value) => updateAssignmentRecordQuantity(record.assignmentId, value)}
                       />
                     ),
-                    consumableRecord ? null : (
+                    fullLineRecord ? null : (
                       <Button
                         key="adjust"
                         loading={assignmentRecordUpdatingId === record.assignmentId}
@@ -1511,6 +1601,9 @@ function assignmentFilterQuery(
   if (assignmentFilter === 'state:consumable') {
     return { assignmentState: 'consumable' }
   }
+  if (assignmentFilter === 'state:discontinued') {
+    return { assignmentState: 'discontinued' }
+  }
   if (assignmentFilter?.startsWith('target:')) {
     const target = parseAssignmentTargetValue(assignmentFilter.slice('target:'.length))
     return {
@@ -1540,6 +1633,11 @@ function filterProductLineRowsByAssignment(rows: ProductLineRow[], assignmentFil
   if (assignmentFilter === 'state:consumable') {
     return rows.filter((row) =>
       parseAssignmentBreakdownTargets(row.item?.assignmentBreakdownText).some((entry) => entry.targetType === 'CONSUMABLE')
+    )
+  }
+  if (assignmentFilter === 'state:discontinued') {
+    return rows.filter((row) =>
+      parseAssignmentBreakdownTargets(row.item?.assignmentBreakdownText).some((entry) => entry.targetType === 'DISCONTINUED')
     )
   }
   if (assignmentFilter.startsWith('target:')) {
@@ -1658,6 +1756,25 @@ function isConsumableTarget(target?: AssignmentTargetOption) {
   return target?.targetType === 'CONSUMABLE'
 }
 
+function isDiscontinuedTarget(target?: AssignmentTargetOption) {
+  return target?.targetType === 'DISCONTINUED'
+}
+
+function isStorelessFullLineTarget(target?: AssignmentTargetOption) {
+  return isConsumableTarget(target)
+}
+
+function isStorelessFullLineTargetValue(value: string) {
+  return value === CONSUMABLE_ASSIGNMENT_VALUE
+}
+
+function assignmentTargetDescription(target?: AssignmentTargetOption) {
+  if (isDiscontinuedTarget(target)) {
+    return '已下架商品'
+  }
+  return '耗材'
+}
+
 function selectedAssignmentTargets(
   options: AssignmentTargetOption[],
   targetValues: string[]
@@ -1679,10 +1796,28 @@ function assignmentRecordTargetLabel(record: Ali1688HistoricalOrderAssignmentRec
   if (record.targetType === 'CONSUMABLE') {
     return '耗材（共用）'
   }
+  if (record.targetType === 'DISCONTINUED') {
+    const siteCode = record.targetSiteCode && record.targetSiteCode !== '*'
+      ? record.targetSiteCode
+      : undefined
+    return compactJoin([record.targetStoreCode, siteCode, '已下架商品'], ' · ') || '已下架商品'
+  }
   const siteCode = record.targetSiteCode && record.targetSiteCode !== '*'
     ? record.targetSiteCode
     : undefined
   return compactJoin([record.targetStoreCode, siteCode], ' · ') || `分配 ${record.assignmentId || ''}`.trim()
+}
+
+function isStorelessFullLineAssignmentRecord(record: Ali1688HistoricalOrderAssignmentRecord) {
+  return isStorelessFullLineAssignmentType(record.targetType)
+}
+
+function isStorelessFullLineAssignmentType(targetType?: string) {
+  return targetType === 'CONSUMABLE'
+}
+
+function isProductLinkBlockedAssignmentType(targetType?: string) {
+  return isStorelessFullLineAssignmentType(targetType) || targetType === 'DISCONTINUED'
 }
 
 function assignmentRecordStatusText(status?: string) {
@@ -1713,8 +1848,18 @@ function canLinkProductLine(row: ProductLineRow) {
   return Boolean(
     row.item?.assignmentId &&
     row.item.assignmentStatus === 'assigned' &&
-    row.item.assignmentTargetType !== 'CONSUMABLE' &&
+    !isProductLinkBlockedAssignmentType(row.item.assignmentTargetType) &&
     row.item.assignmentTargetStoreCode
+  )
+}
+
+function canMarkDiscontinuedProductLine(row: ProductLineRow) {
+  return Boolean(
+    row.item?.id &&
+    row.item.assignmentId &&
+    row.item.assignmentStatus === 'assigned' &&
+    row.item.assignmentTargetStoreCode &&
+    !isProductLinkBlockedAssignmentType(row.item.assignmentTargetType)
   )
 }
 
@@ -1742,7 +1887,7 @@ function canOpenProductLinkActionForRows(rows: ProductLineRow[]) {
   return rows.every(isAssignableProductLine)
 }
 
-function findLinkableRowsAfterAssignment(
+function findAssignedRowsAfterAssignment(
   workbench: Ali1688HistoricalOrderWorkbench,
   sourceRows: ProductLineRow[]
 ) {
@@ -1755,7 +1900,60 @@ function findLinkableRowsAfterAssignment(
     return []
   }
   return buildProductLineRows(workbench.orders || [])
-    .filter((row) => sourceItemIds.has(row.item?.id || '') && canLinkProductLine(row))
+    .filter((row) => sourceItemIds.has(row.item?.id || '') && Boolean(row.item?.assignmentId))
+}
+
+async function loadAssignedRowsAfterAssignment(
+  workbench: Ali1688HistoricalOrderWorkbench,
+  sourceRows: ProductLineRow[]
+) {
+  const currentPageRows = findAssignedRowsAfterAssignment(workbench, sourceRows)
+  const sourceItemIds = new Set(
+    sourceRows
+      .map((row) => row.item?.id)
+      .filter((itemId): itemId is string => Boolean(itemId))
+  )
+  if (!sourceItemIds.size) {
+    return currentPageRows
+  }
+  const resolvedItemIds = new Set(currentPageRows.map((row) => row.item?.id).filter(Boolean))
+  if (resolvedItemIds.size >= sourceItemIds.size) {
+    return currentPageRows
+  }
+  const orderIds = Array.from(new Set(
+    sourceRows
+      .map((row) => row.order.id)
+      .filter((orderId): orderId is string => Boolean(orderId))
+  ))
+  if (!orderIds.length) {
+    return currentPageRows
+  }
+  const detailResults = await Promise.allSettled(
+    orderIds.map((orderId) => loadAli1688HistoricalOrderDetail(orderId))
+  )
+  const detailRows = detailResults
+    .flatMap((result) => result.status === 'fulfilled' ? buildProductLineRows([result.value]) : [])
+    .filter((row) => sourceItemIds.has(row.item?.id || '') && Boolean(row.item?.assignmentId))
+
+  const mergedRows = [...currentPageRows]
+  const seen = new Set(mergedRows.map(productLinkRowIdentity))
+  detailRows.forEach((row) => {
+    const key = productLinkRowIdentity(row)
+    if (!seen.has(key)) {
+      seen.add(key)
+      mergedRows.push(row)
+    }
+  })
+  return mergedRows
+}
+
+function productLinkRowIdentity(row: ProductLineRow) {
+  return [
+    row.item?.id || row.lineKey,
+    row.item?.assignmentId || '',
+    row.item?.assignmentTargetStoreCode || '',
+    row.item?.assignmentTargetSiteCode || ''
+  ].join(':')
 }
 
 function canRoleMutateProductLinks(roleName?: string) {
@@ -1906,8 +2104,8 @@ function canSubmitAssignment(
   if (!rows.every((row) => Boolean(row.item?.id))) {
     return false
   }
-  const hasConsumableTarget = targetValues.includes(CONSUMABLE_ASSIGNMENT_VALUE)
-  if (hasConsumableTarget) {
+  const hasStorelessFullLineTarget = targetValues.some(isStorelessFullLineTargetValue)
+  if (hasStorelessFullLineTarget) {
     return targetValues.length === 1 && rows.every((row) => assignmentMaxQuantity(row) > 0)
   }
   return rows.every((row) => {
@@ -1976,7 +2174,7 @@ function productLineImageClassName(item?: Ali1688HistoricalOrderItem) {
 function isAssignedToStore(item?: Ali1688HistoricalOrderItem) {
   return Boolean(
     item?.assignmentTargetStoreCode &&
-    item.assignmentTargetType !== 'CONSUMABLE'
+    !isStorelessFullLineAssignmentType(item.assignmentTargetType)
   )
 }
 
@@ -1985,7 +2183,8 @@ function renderProductLineActions(row: ProductLineRow, controls: ProductLinkActi
   const hasLinkState = Boolean(item?.productLink?.skuParent)
   const canOpenAction = isAssignableProductLine(row)
     || (controls.canMutateProductLinks && canOpenProductLinkActionForRows([row]))
-  if (!hasLinkState && !canOpenAction) {
+  const canDeleteOrder = controls.canDeleteOrders && Boolean(row.order.id)
+  if (!hasLinkState && !canOpenAction && !canDeleteOrder) {
     return null
   }
 
@@ -1999,11 +2198,24 @@ function renderProductLineActions(row: ProductLineRow, controls: ProductLinkActi
       分配/关联
     </Button>
   ) : null
+  const deleteButton = canDeleteOrder ? (
+    <Button
+      type="link"
+      size="small"
+      danger
+      icon={<DeleteOutlined />}
+      aria-label={`删除订单 ${row.order.orderNo || row.order.id}`}
+      onClick={() => controls.onOpenDeleteOrderModal(row.order)}
+    >
+      删除订单
+    </Button>
+  ) : null
 
   return (
     <Space size={[6, 4]} wrap className="ali1688-product-link-actions">
       {renderProductLinkState(item)}
       {actionButton}
+      {deleteButton}
     </Space>
   )
 }
@@ -2170,6 +2382,14 @@ function assignmentTargetDisplayText(
       if (entry.targetType === 'CONSUMABLE') {
         return '耗材'
       }
+      if (entry.targetType === 'DISCONTINUED') {
+        const exactOption = assignmentTargetOptions.find((option) =>
+          option.targetType === 'STORE_SITE' &&
+          option.targetStoreCode === entry.targetStoreCode &&
+          (!entry.targetSiteCode || option.targetSiteCode === entry.targetSiteCode)
+        )
+        return compactJoin([exactOption?.label || compactJoin([entry.targetStoreCode, entry.targetSiteCode], ' '), '已下架'], ' ')
+      }
       const exactOption = assignmentTargetOptions.find((option) =>
         option.targetType === 'STORE_SITE' &&
         option.targetStoreCode === entry.targetStoreCode &&
@@ -2196,6 +2416,21 @@ function parseAssignmentBreakdownTargets(assignmentBreakdownText?: string) {
           targetType: 'CONSUMABLE' as const,
           targetStoreCode: 'CONSUMABLE',
           targetSiteCode: undefined
+        }
+      }
+      if (tokens[0] === '已下架' || tokens[0] === 'DISCONTINUED') {
+        return {
+          targetType: 'DISCONTINUED' as const,
+          targetStoreCode: 'DISCONTINUED',
+          targetSiteCode: undefined
+        }
+      }
+      const discontinuedMarkerIndex = tokens.findIndex((token) => token === '已下架' || token === 'DISCONTINUED')
+      if (discontinuedMarkerIndex > 0 && /^\d+(\.\d+)?$/.test(tokens[tokens.length - 1])) {
+        return {
+          targetType: 'DISCONTINUED' as const,
+          targetStoreCode: tokens[0],
+          targetSiteCode: discontinuedMarkerIndex > 1 && tokens[1] !== '*' ? tokens[1] : undefined
         }
       }
       if (tokens.length >= 3 && /^\d+(\.\d+)?$/.test(tokens[tokens.length - 1])) {
