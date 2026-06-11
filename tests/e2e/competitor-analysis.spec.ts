@@ -411,6 +411,67 @@ test('manual competitor requires an active keyword', async ({ page }) => {
   await expect(page.getByTestId('competitor-manual-panel')).toBeHidden()
 })
 
+test('report uses empty states instead of synthesized ranking or change data', async ({ page }) => {
+  const details = createMockDetails()
+  details[180003].keywords = [
+    {
+      id: 190009,
+      watchProductId: 180003,
+      keyword: 'plain pencil case',
+      keywordNorm: 'plain pencil case',
+      locale: 'en-SA',
+      status: 'ACTIVE',
+      displayOrder: 1
+    }
+  ]
+  details[180003].latestRankPoints = []
+
+  await page.route('**/api/competitor-analysis/**', async (route) => {
+    const url = new URL(route.request().url())
+    const method = route.request().method()
+    const pathname = url.pathname
+
+    if (
+      method === 'GET' &&
+      (pathname === '/api/competitor-analysis/watch-products' ||
+        pathname === '/api/competitor-analysis/product-baselines')
+    ) {
+      await route.fulfill({ json: buildListResponse(Object.values(details), url.searchParams) })
+      return
+    }
+
+    const watchProductDetailMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)$/)
+    if (method === 'GET' && watchProductDetailMatch) {
+      await route.fulfill({ json: details[Number(watchProductDetailMatch[1])] })
+      return
+    }
+
+    const productChangesMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)\/product-changes$/)
+    if (method === 'GET' && productChangesMatch) {
+      await route.fulfill({ json: { items: [] } })
+      return
+    }
+
+    await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
+  })
+
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss')
+  await expect(page.getByTestId('competitor-analysis-workbench')).toBeVisible()
+  await page.getByPlaceholder('搜索我方SKU、商品标题、Noon码').fill('API-NOKEY-SA-001')
+  await expect(page.getByText('API Product Without Keywords')).toBeVisible()
+
+  await page.getByLabel('报表').first().click()
+  const reportDialog = page.getByRole('dialog').filter({ has: page.getByTestId('competitor-self-rank-report') })
+  await expect(reportDialog).toBeVisible()
+  await expect(reportDialog.getByText('暂无真实排名数据')).toBeVisible()
+  await reportDialog.getByRole('tab', { name: /变化历史/ }).click()
+  await expect(reportDialog.getByText('近 15 天暂无商品详情变化')).toBeVisible()
+  await expect(reportDialog.getByText('模拟数据')).toBeHidden()
+  await expect(reportDialog.getByText('mock-change')).toBeHidden()
+  await expect(reportDialog.getByText('竞品 1')).toBeHidden()
+  await expect(reportDialog.getByText('2026-06-07')).toBeHidden()
+})
+
 test('shows fetch results when keyword relations omit run ids', async ({ page }) => {
   const details = createMockDetails()
   details[180001].keywordRelations.forEach((relation) => {

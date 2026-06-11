@@ -17,9 +17,8 @@ const checks = [
   ['changes analysis tab', pageSource, '变化历史'],
   ['changes embedded in report modal', pageSource, 'changeGroups={changeRows}'],
   ['changes modal component', pageSource, 'ProductChangeModal'],
-  ['mock fallback builder', pageSource, 'buildMockProductChanges'],
+  ['real empty changes state', pageSource, '近 15 天暂无商品详情变化'],
   ['timeline class', pageSource, 'competitor-analysis-product-change-timeline'],
-  ['main image change wording', pageSource, '主图资产变化'],
   ['product changes api', apiSource, 'fetchCompetitorProductChanges'],
   ['product change group type', typesSource, 'CompetitorProductChangeGroup'],
   ['product change field type', typesSource, 'CompetitorProductChangeField'],
@@ -33,7 +32,11 @@ const failures = checks
 
 const forbiddenSnippets = [
   ['standalone changes row action', 'aria-label="变化"'],
-  ['standalone changes modal state', 'changeOpen']
+  ['standalone changes modal state', 'changeOpen'],
+  ['mock fallback builder', 'buildMockProductChanges'],
+  ['mock change id', 'mock-change'],
+  ['mock qili product name', 'QiLi 30 Pcs Wooden HB Pencils'],
+  ['mock slim case product name', 'Slim Light Trifold Stand Case Cover']
 ];
 
 const forbiddenFailures = forbiddenSnippets
