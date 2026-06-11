@@ -2,6 +2,7 @@ export type AppMenuKey =
   | 'product-manage'
   | 'product-groups'
   | 'product-specs'
+  | 'product-image-match'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
   | 'purchase-order'
@@ -57,6 +58,7 @@ export type WorkspaceContentKind =
   | 'product-management'
   | 'product-groups'
   | 'product-specs'
+  | 'product-image-match'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
   | 'purchase-order'
@@ -142,6 +144,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '商品 / 商品规格',
     tabLabel: '商品规格',
     contentKind: 'product-specs',
+    closable: true
+  },
+  'product-image-match': {
+    key: 'product-image-match',
+    label: '图片匹配',
+    path: '/product/image-match',
+    sectionKey: 'product',
+    pathLabel: '商品 / 图片匹配',
+    tabLabel: '图片匹配',
+    contentKind: 'product-image-match',
     closable: true
   },
   'product-manual-selection': {
@@ -371,6 +383,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
       { type: 'workspace', key: 'product-manage' },
       { type: 'workspace', key: 'product-groups' },
       { type: 'workspace', key: 'product-specs' },
+      { type: 'workspace', key: 'product-image-match' },
       { type: 'placeholder', key: 'product-category-collect', label: '类目采集', disabled: true },
       { type: 'workspace', key: 'product-manual-selection' }
     ]
@@ -505,6 +518,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['商品规格']
   },
   {
+    keys: ['product-image-match'],
+    urlPaths: ['/product/image-match', '/api/image-match/compare'],
+    urlPathPrefixes: ['/api/image-match/'],
+    menuNames: ['图片匹配', '商品图片匹配']
+  },
+  {
     keys: ['product-groups'],
     urlPaths: ['/product/groups'],
     menuNames: ['商品分组']
@@ -587,6 +606,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'product-manage',
   'product-groups',
   'product-specs',
+  'product-image-match',
   'product-manual-selection',
   'purchase-ali1688-collection',
   'purchase-order',

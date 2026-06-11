@@ -75,6 +75,11 @@ const ProductSpecsPage = lazyWorkspace(() =>
     default: module.ProductSpecsPage
   }))
 );
+const ImageMatchPage = lazyWorkspace(() =>
+  import('../image-match/ImageMatchPage').then((module) => ({
+    default: module.ImageMatchPage
+  }))
+);
 const ProcurementWorkspace = lazyWorkspace(() =>
   import('../procurement/ProcurementWorkspace').then((module) => ({ default: module.ProcurementWorkspace }))
 );
@@ -225,6 +230,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <ProductSpecsPage session={shellSession} activeOwnerId={activeOwnerId} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'product-image-match') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ImageMatchPage />
       </LazyWorkspaceBoundary>
     );
   }
