@@ -15,6 +15,7 @@ export type { AppMenuKey } from './WorkspaceMenuRegistry'
 export const PRODUCT_WORKSPACE_PATH = workspaceMenuPath('product-manage')
 export const PRODUCT_GROUPS_PATH = workspaceMenuPath('product-groups')
 export const PRODUCT_SPECS_PATH = workspaceMenuPath('product-specs')
+export const PRODUCT_IMAGE_MATCH_PATH = workspaceMenuPath('product-image-match')
 export const PRODUCT_MANUAL_SELECTION_PATH = workspaceMenuPath('product-manual-selection')
 export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688-collection')
 export const PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH = workspaceMenuPath('purchase-ali1688-historical-orders')
@@ -81,6 +82,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantAli1688HistoricalOrders',
   'grantManualSelection',
   'grantCompetitorAnalysis',
+  'grantImageMatch',
   'grantPurchase',
   'grantSalesAnalytics',
   'grantSalesForecast',
