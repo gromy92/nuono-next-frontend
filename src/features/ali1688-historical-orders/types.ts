@@ -122,7 +122,7 @@ export type Ali1688HistoricalOrderItem = {
   assignmentStatusLabel?: string
   assignmentBreakdownText?: string
   assignmentId?: number
-  assignmentTargetType?: 'STORE_SITE' | 'CONSUMABLE' | string
+  assignmentTargetType?: 'STORE_SITE' | 'CONSUMABLE' | 'DISCONTINUED' | string
   assignmentTargetStoreCode?: string
   assignmentTargetSiteCode?: string
   productLink?: Ali1688HistoricalOrderProductLink
@@ -164,7 +164,7 @@ export type Ali1688HistoricalOrderAssignmentLine = {
 }
 
 export type Ali1688HistoricalOrderAssignmentRequest = {
-  targetType?: 'STORE_SITE' | 'CONSUMABLE' | string
+  targetType?: 'STORE_SITE' | 'CONSUMABLE' | 'DISCONTINUED' | string
   targetStoreCode?: string
   targetSiteCode?: string
   lines: Ali1688HistoricalOrderAssignmentLine[]
@@ -183,7 +183,7 @@ export type Ali1688HistoricalOrderAssignmentResult = {
 export type Ali1688HistoricalOrderAssignmentRecord = {
   assignmentId?: number
   itemId?: string
-  targetType?: 'STORE_SITE' | 'CONSUMABLE' | string
+  targetType?: 'STORE_SITE' | 'CONSUMABLE' | 'DISCONTINUED' | string
   targetStoreCode?: string
   targetSiteCode?: string
   assignedQuantity?: number
@@ -363,6 +363,43 @@ export type Ali1688SkuPurchaseBatchSaveRequest = {
 export type Ali1688SkuPurchaseBatchSaveResult = {
   savedBatchCount: number
   savedSourceCount: number
+}
+
+export type Ali1688SkuPurchaseBatchSourceMatchPreviewRequest = {
+  batchId?: number
+  orderNo?: string
+  offerId?: string
+  skuId?: string
+}
+
+export type Ali1688SkuPurchaseBatchSourceMatchCandidate = {
+  orderId?: number
+  itemId?: number
+  assignmentId?: number
+  orderNo?: string
+  orderTime?: string
+  supplierName?: string
+  offerId?: string
+  skuId?: string
+  assignedQuantity?: number
+}
+
+export type Ali1688SkuPurchaseBatchSourceMatchPreviewResult = {
+  batchId?: number
+  matchedCount: number
+  candidates: Ali1688SkuPurchaseBatchSourceMatchCandidate[]
+  rejectionReason?: string | null
+}
+
+export type Ali1688SkuPurchaseBatchSourceMatchSaveRequest = {
+  batchId?: number
+  sources: Ali1688SkuPurchaseHistoryBatchSource[]
+}
+
+export type Ali1688SkuPurchaseBatchSourceMatchSaveResult = {
+  batchId?: number
+  savedSourceCount: number
+  replacedSourceCount: number
 }
 
 export type Ali1688ExcelImportSource = {
