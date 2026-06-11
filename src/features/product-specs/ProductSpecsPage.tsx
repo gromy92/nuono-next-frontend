@@ -3,8 +3,14 @@ import type { ColumnsType } from 'antd/es/table';
 import { CheckOutlined, CloseOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AuthSession, AuthSessionStore } from '../auth/session';
-import { fetchProductSpecsOverview, saveProductSpecSource, selectProductSpecEffectiveSource } from '../product-management/api';
+import {
+  fetchProductSpecsOverview,
+  saveProductLogisticsProfile,
+  saveProductSpecSource,
+  selectProductSpecEffectiveSource
+} from '../product-management/api';
 import type {
+  ProductLogisticsProfilePayload,
   ProductVariantSpecPayload,
   ProductVariantSpecSourcePayload,
   ProductVariantSpecSourceType
@@ -64,6 +70,11 @@ type StoreOption = {
   label: string;
 };
 
+type LogisticsOption = {
+  value: string;
+  label: string;
+};
+
 const productSpecFields: SpecField[] = [
   { key: 'productLengthCm', label: '长/cm', min: 0.01, precision: 2 },
   { key: 'productWidthCm', label: '宽/cm', min: 0.01, precision: 2 },
@@ -79,6 +90,26 @@ const cartonSpecFields: SpecField[] = [
   { key: 'cartonQuantity', label: '数量', min: 1, precision: 0 }
 ];
 
+const baseLogisticsOptions: LogisticsOption[] = [
+  { label: '待确认', value: 'unknown' },
+  { label: '无', value: 'none' }
+];
+
+const logisticsSelectOptions: Partial<Record<keyof ProductLogisticsProfilePayload, LogisticsOption[]>> = {
+  batteryType: [...baseLogisticsOptions, { label: '带电', value: 'battery_equipment' }],
+  electricType: [...baseLogisticsOptions, { label: '电器', value: 'electric_equipment_review' }],
+  magneticType: [...baseLogisticsOptions, { label: '磁性', value: 'magnetic' }],
+  liquidType: [...baseLogisticsOptions, { label: '液体', value: 'liquid' }],
+  powderType: [...baseLogisticsOptions, { label: '粉末', value: 'powder' }],
+  woodenMaterialType: [...baseLogisticsOptions, { label: '需复核', value: 'wooden_material_review' }],
+  bladeWeaponType: [...baseLogisticsOptions, { label: '需复核', value: 'blade_tool_review' }]
+};
+
+const logisticsStatusOptions: LogisticsOption[] = [
+  { label: '待复核', value: 'needs_review' },
+  { label: '已确认', value: 'confirmed' }
+];
+
 export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPageProps) {
   const { message } = App.useApp();
   const ownerUserId = resolveRequestOwnerUserId(session, activeOwnerId);
@@ -92,6 +123,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
   const [editingDraft, setEditingDraft] = useState<SpecSourceDraft>(createSpecSourceDraft());
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [selectingEffectiveKey, setSelectingEffectiveKey] = useState<string | null>(null);
+  const [logisticsSavingKey, setLogisticsSavingKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (initialStoreCode && !storeCode) {
@@ -218,6 +250,49 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
     [loadRows, message, ownerUserId, storeCode]
   );
 
+  const handleChangeLogisticsProfile = useCallback(
+    async (row: ProductVariantSpecPayload, patch: Partial<ProductLogisticsProfilePayload>) => {
+      const normalizedStoreCode = storeCode.trim();
+      if (!normalizedStoreCode || !row.variantId) {
+        message.warning('缺少店铺或 SKU 上下文，暂不能保存物流属性');
+        return;
+      }
+
+      const nextProfile = {
+        ...defaultLogisticsProfile(row, normalizedStoreCode),
+        ...row.logisticsProfile,
+        ...patch
+      };
+      const key = String(row.variantId);
+      setRows((currentRows) =>
+        currentRows.map((currentRow) =>
+          currentRow.variantId === row.variantId ? { ...currentRow, logisticsProfile: nextProfile } : currentRow
+        )
+      );
+      setLogisticsSavingKey(key);
+
+      try {
+        const saved = await saveProductLogisticsProfile({
+          ...nextProfile,
+          ownerUserId,
+          storeCode: normalizedStoreCode,
+          variantId: row.variantId
+        });
+        setRows((currentRows) =>
+          currentRows.map((currentRow) =>
+            currentRow.variantId === row.variantId ? { ...currentRow, logisticsProfile: saved } : currentRow
+          )
+        );
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : '保存物流属性失败，已重新加载当前数据');
+        await loadRows();
+      } finally {
+        setLogisticsSavingKey(null);
+      }
+    },
+    [loadRows, message, ownerUserId, storeCode]
+  );
+
   const columns = useMemo<ColumnsType<ProductVariantSpecPayload>>(
     () => [
       {
@@ -267,16 +342,31 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         title: 'Noon官方尺寸',
         width: 185,
         render: (_, row) => <NoonOfficialSpec source={findSource(row.sources, 'noon_official')} />
+      },
+      {
+        title: '物流属性',
+        width: 300,
+        fixed: 'right',
+        render: (_, row) => (
+          <LogisticsInlineEditor
+            row={row}
+            saving={logisticsSavingKey === String(row.variantId)}
+            savingBlocked={Boolean(logisticsSavingKey)}
+            onChange={handleChangeLogisticsProfile}
+          />
+        )
       }
     ],
     [
       editingDraft,
       editingKey,
       handleCancelEdit,
+      handleChangeLogisticsProfile,
       handleDraftNumberChange,
       handleSaveSource,
       handleSelectEffectiveSource,
       handleStartEdit,
+      logisticsSavingKey,
       savingKey,
       selectingEffectiveKey,
       storeCode,
@@ -349,7 +439,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         loading={loading}
         columns={columns}
         dataSource={filteredRows}
-        scroll={{ x: 1160 }}
+        scroll={{ x: 1460 }}
         pagination={{
           pageSize: 50,
           showSizeChanger: true,
@@ -442,6 +532,139 @@ function NoonOfficialSpec({ source }: { source?: ProductVariantSpecSourcePayload
       />
     </div>
   );
+}
+
+function LogisticsInlineEditor(props: {
+  row: ProductVariantSpecPayload;
+  saving: boolean;
+  savingBlocked: boolean;
+  onChange: (row: ProductVariantSpecPayload, patch: Partial<ProductLogisticsProfilePayload>) => void | Promise<void>;
+}) {
+  const { row, saving, savingBlocked, onChange } = props;
+  const profile = {
+    ...defaultLogisticsProfile(row, row.storeCode),
+    ...row.logisticsProfile
+  };
+  const disabled = savingBlocked;
+  return (
+    <div
+      style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 90px)', gap: 5, alignItems: 'end', minWidth: 0 }}
+    >
+      <LogisticsSelectField
+        label="状态"
+        value={profile.profileStatus || 'needs_review'}
+        options={logisticsStatusOptions}
+        disabled={disabled}
+        saving={saving}
+        onChange={(value) => void onChange(row, { profileStatus: value, manualConfirmRequired: value !== 'confirmed' })}
+      />
+      <LogisticsSelectField
+        label="带电"
+        value={profile.batteryType || 'unknown'}
+        options={logisticsSelectOptions.batteryType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { batteryType: value })}
+      />
+      <LogisticsSelectField
+        label="电器"
+        value={profile.electricType || 'unknown'}
+        options={logisticsSelectOptions.electricType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { electricType: value })}
+      />
+      <LogisticsSelectField
+        label="磁性"
+        value={profile.magneticType || 'unknown'}
+        options={logisticsSelectOptions.magneticType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { magneticType: value })}
+      />
+      <LogisticsSelectField
+        label="液体"
+        value={profile.liquidType || 'unknown'}
+        options={logisticsSelectOptions.liquidType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { liquidType: value })}
+      />
+      <LogisticsSelectField
+        label="粉末"
+        value={profile.powderType || 'unknown'}
+        options={logisticsSelectOptions.powderType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { powderType: value })}
+      />
+      <LogisticsSelectField
+        label="木材"
+        value={profile.woodenMaterialType || 'unknown'}
+        options={logisticsSelectOptions.woodenMaterialType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { woodenMaterialType: value })}
+      />
+      <LogisticsSelectField
+        label="刀具"
+        value={profile.bladeWeaponType || 'unknown'}
+        options={logisticsSelectOptions.bladeWeaponType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { bladeWeaponType: value })}
+      />
+    </div>
+  );
+}
+
+function LogisticsSelectField(props: {
+  label: string;
+  value?: string;
+  options: LogisticsOption[];
+  disabled?: boolean;
+  sensitiveField?: boolean;
+  saving?: boolean;
+  onChange: (value: string) => void;
+}) {
+  const { label, value, options, disabled, sensitiveField, saving, onChange } = props;
+  const normalizedValue = value || 'unknown';
+  const hasSensitiveValue = Boolean(sensitiveField && !isNeutralLogisticsValue(normalizedValue));
+  const isNoneValue = normalizedValue === 'none';
+  return (
+    <label style={{ display: 'grid', gap: 3, minWidth: 0 }}>
+      <Text type="secondary" style={{ fontSize: 12, lineHeight: '16px' }}>
+        {label}
+      </Text>
+      <Select
+        size="small"
+        value={normalizedValue}
+        options={options}
+        disabled={disabled}
+        className={[
+          'product-specs-logistics-select',
+          isNoneValue ? 'product-specs-logistics-select--none' : '',
+          hasSensitiveValue ? 'product-specs-logistics-select--sensitive' : '',
+          saving ? 'product-specs-logistics-select--saving' : ''
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        style={{ width: '100%' }}
+        onChange={onChange}
+      />
+    </label>
+  );
+}
+
+function isNeutralLogisticsValue(value: string) {
+  return value === 'none' || value === 'unknown';
 }
 
 function SpecGridHeader(props: { includeCarton: boolean; includeSource: boolean; includeEffective?: boolean }) {
@@ -733,6 +956,29 @@ function isSourceProductSpecMissing(source?: ProductVariantSpecSourcePayload) {
 
 function isPositiveSpecValue(value?: number) {
   return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+function defaultLogisticsProfile(row: ProductVariantSpecPayload, storeCode?: string): ProductLogisticsProfilePayload {
+  return {
+    storeCode: row.storeCode || storeCode,
+    skuParent: row.skuParent,
+    title: row.title,
+    imageUrl: row.imageUrl,
+    variantId: row.variantId,
+    partnerSku: row.partnerSku,
+    childSku: row.childSku,
+    sizeEn: row.sizeEn,
+    sizeAr: row.sizeAr,
+    profileStatus: 'needs_review',
+    batteryType: 'unknown',
+    electricType: 'unknown',
+    magneticType: 'unknown',
+    liquidType: 'unknown',
+    powderType: 'unknown',
+    woodenMaterialType: 'unknown',
+    bladeWeaponType: 'unknown',
+    manualConfirmRequired: true
+  };
 }
 
 function buildSpecStoreOptions(session: AuthSession) {
