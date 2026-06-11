@@ -580,7 +580,7 @@ function mapCandidate(
     noonProductCode,
     codeType: normalizeCodeType(row.codeType, noonProductCode),
     canonicalUrl: stringValue(row.canonicalUrl) || buildNoonProductUrl(noonProductCode),
-    title: stringValue(row.titleSnapshot) || `竞品 ${noonProductCode}`,
+    title: stringValue(row.titleSnapshot) || noonProductCode || '未知竞品',
     brand: stringValue(row.brandSnapshot) || '待补充',
     imageUrl: stringValue(row.imageUrlSnapshot) || EMPTY_IMAGE,
     priceAmount: row.priceAmountSnapshot,

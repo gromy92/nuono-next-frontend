@@ -48,7 +48,10 @@ const forbiddenSnippets = [
   ['mock competitor organic data', 'buildMockCompetitorRankData'],
   ['mock competitor ad data', 'buildMockCompetitorAdRankData'],
   ['mock report run status', '模拟数据'],
-  ['mock competitor code', 'mock-competitor']
+  ['mock competitor code', 'mock-competitor'],
+  ['overstated missing rank text', '未进前100'],
+  ['overstated missing rank short text', '未进100'],
+  ['generic numbered competitor series label', '`竞品 ${index + 1}']
 ];
 
 const forbiddenFailures = forbiddenSnippets

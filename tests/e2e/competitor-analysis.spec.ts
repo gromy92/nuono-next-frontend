@@ -76,6 +76,7 @@ type MockDetail = {
     noonProductCode: string
     rankStatus: string
     rankNo?: number
+    scanDepth?: number
     sponsored: boolean
     priceAmount?: number
     currencyCode?: string
@@ -424,7 +425,18 @@ test('report uses empty states instead of synthesized ranking or change data', a
       displayOrder: 1
     }
   ]
-  details[180003].latestRankPoints = []
+  details[180003].latestRankPoints = [
+    {
+      keywordId: 190009,
+      keyword: 'plain pencil case',
+      trackedProductType: 'SELF',
+      noonProductCode: 'N51009999A',
+      rankStatus: 'NOT_IN_TOP_20',
+      scanDepth: 20,
+      sponsored: false,
+      factTime: '2026-06-11T06:40:00'
+    }
+  ]
 
   await page.route('**/api/competitor-analysis/**', async (route) => {
     const url = new URL(route.request().url())
@@ -464,6 +476,8 @@ test('report uses empty states instead of synthesized ranking or change data', a
   const reportDialog = page.getByRole('dialog').filter({ has: page.getByTestId('competitor-self-rank-report') })
   await expect(reportDialog).toBeVisible()
   await expect(reportDialog.getByText('暂无真实排名数据')).toBeVisible()
+  await expect(reportDialog.getByText('本品最新自然位')).toBeHidden()
+  await expect(reportDialog.getByText('未进前100')).toBeHidden()
   await reportDialog.getByRole('tab', { name: /变化历史/ }).click()
   await expect(reportDialog.getByText('近 15 天暂无商品详情变化')).toBeVisible()
   await expect(reportDialog.getByText('模拟数据')).toBeHidden()
