@@ -9,7 +9,7 @@ const requiredSnippets = [
   ['report button aria label', 'aria-label="报表"'],
   ['product report modal state', 'reportProduct'],
   ['self rank report component', 'SelfRankReportModal'],
-  ['mock report builder', 'buildSelfRankReport'],
+  ['real report builder', 'buildSelfRankReport'],
   ['report keyword tabs', '<Tabs'],
   ['chart panel usage', 'EChartPanel'],
   ['same keyword competitor series builder', 'buildKeywordCompetitorRankSeries'],
@@ -21,7 +21,7 @@ const requiredSnippets = [
   ['heatmap matrix class', 'competitor-analysis-rank-heatmap'],
   ['report summary builder', 'buildReportSummary'],
   ['heatmap row builder', 'buildRankHeatmapRows'],
-  ['15 day report window constant', 'SELF_RANK_REPORT_WINDOW_DAYS = 15'],
+  ['real empty ranking state', '暂无真实排名数据'],
   ['15 day report summary label', '近15日变化'],
   ['legend grouped by product', 'legendProductNames'],
   ['tooltip keeps line kind', 'formatRankChartTooltip'],
@@ -40,7 +40,15 @@ const forbiddenSnippets = [
   ['old second color self ad palette', "'#1677ff', '#722ed1'"],
   ['old legend per line', 'data: series.map((item) => item.name)'],
   ['old self ad legend name', "name: isSelf ? '本品广告'"],
-  ['old competitor ad legend name', "name: isSelf ? '本品广告' : `${productSeries.name} 广告`"]
+  ['old competitor ad legend name', "name: isSelf ? '本品广告' : `${productSeries.name} 广告`"],
+  ['mock keyword builder', 'buildMockReportKeywords'],
+  ['mock self rank points', 'buildMockSelfRankPoints'],
+  ['mock report dates', 'buildMockReportDates'],
+  ['mock competitor series', 'buildMockCompetitorRankSeries'],
+  ['mock competitor organic data', 'buildMockCompetitorRankData'],
+  ['mock competitor ad data', 'buildMockCompetitorAdRankData'],
+  ['mock report run status', '模拟数据'],
+  ['mock competitor code', 'mock-competitor']
 ];
 
 const forbiddenFailures = forbiddenSnippets

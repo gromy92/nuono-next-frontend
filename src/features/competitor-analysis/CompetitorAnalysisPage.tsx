@@ -74,7 +74,6 @@ type CompetitorAnalysisPageProps = {
 
 type HistoryRange = '7' | '30' | '90' | '180' | '365'
 
-const SELF_RANK_REPORT_WINDOW_DAYS = 15
 const SELF_RANK_REPORT_CHANGE_LABEL = '近15日变化'
 
 function siteCodeFromStoreCode(storeCode?: string) {
@@ -390,14 +389,14 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     }
     setSelectedProductId(readyProduct.id)
     setReportProduct(readyProduct)
-    setChangeRows(buildMockProductChanges(readyProduct))
+    setChangeRows([])
     setReportOpen(true)
     setChangeLoading(true)
     try {
       const rows = await fetchCompetitorProductChanges(readyProduct.id)
-      setChangeRows(rows.length ? rows : buildMockProductChanges(readyProduct))
+      setChangeRows(rows)
     } catch {
-      setChangeRows(buildMockProductChanges(readyProduct))
+      setChangeRows([])
     } finally {
       setChangeLoading(false)
     }
@@ -1287,94 +1286,6 @@ function buildProductChangeSummary(groups: CompetitorProductChangeGroup[]) {
   }
 }
 
-function buildMockProductChanges(product: CompetitorWatchProduct): CompetitorProductChangeGroup[] {
-  const firstCompetitor = product.candidates.find((candidate) => candidate.reviewStatus === 'confirmed')
-  const secondCompetitor = product.candidates.find(
-    (candidate) => candidate.reviewStatus === 'confirmed' && candidate.id !== firstCompetitor?.id
-  )
-  const competitorName = firstCompetitor?.title || 'QiLi 30 Pcs Wooden HB Pencils'
-  const competitorCode = firstCompetitor?.noonProductCode || 'Z34EF4F0434F9215F04FC'
-  const secondCompetitorName = secondCompetitor?.title || 'Slim Light Trifold Stand Case Cover'
-  const secondCompetitorCode = secondCompetitor?.noonProductCode || 'N51360862A'
-  return [
-    {
-      id: 'mock-change-2026-06-07-self',
-      factDate: '2026-06-07',
-      noonProductCode: product.selfNoonProductCode || 'Z005EB950196204061C8AZ',
-      productName: product.title || '本品',
-      subjectType: 'self',
-      changes: [
-        {
-          fieldKey: 'price',
-          fieldLabel: '价格',
-          changeType: 'PRICE',
-          oldValue: { amount: 32.95, currency: 'SAR' },
-          newValue: { amount: 35.0, currency: 'SAR' },
-          severity: 'warning'
-        },
-        {
-          fieldKey: 'sold_recently_text',
-          fieldLabel: 'Sold recently',
-          changeType: 'TEXT',
-          oldValue: '-',
-          newValue: '100+ sold recently',
-          severity: 'info'
-        }
-      ]
-    },
-    {
-      id: 'mock-change-2026-06-06-competitor-image',
-      factDate: '2026-06-06',
-      noonProductCode: competitorCode,
-      productName: competitorName,
-      subjectType: 'competitor',
-      changes: [
-        {
-          fieldKey: 'main_image',
-          fieldLabel: '主图资产变化',
-          changeType: 'IMAGE_ASSET',
-          oldValue: { assetKey: 'qili-pencil-main-v1', normalizedUrl: '/p/qili-pencil-main-v1' },
-          newValue: { assetKey: 'qili-pencil-main-v2', normalizedUrl: '/p/qili-pencil-main-v2' },
-          severity: 'warning'
-        },
-        {
-          fieldKey: 'supermall_enabled',
-          fieldLabel: 'Supermall',
-          changeType: 'BOOLEAN',
-          oldValue: false,
-          newValue: true,
-          severity: 'info'
-        }
-      ]
-    },
-    {
-      id: 'mock-change-2026-06-05-competitor-price',
-      factDate: '2026-06-05',
-      noonProductCode: secondCompetitorCode,
-      productName: secondCompetitorName,
-      subjectType: 'competitor',
-      changes: [
-        {
-          fieldKey: 'title_en',
-          fieldLabel: '英文标题',
-          changeType: 'TEXT',
-          oldValue: 'Slim Light Trifold Stand Case',
-          newValue: 'Slim Light Trifold Stand Case Cover For Tablet',
-          severity: 'info'
-        },
-        {
-          fieldKey: 'rating',
-          fieldLabel: '评分',
-          changeType: 'NUMBER',
-          oldValue: 4.3,
-          newValue: 4.4,
-          severity: 'info'
-        }
-      ]
-    }
-  ]
-}
-
 function productChangeFieldColor(fieldKey: string) {
   if (fieldKey === 'price') return 'orange'
   if (fieldKey === 'main_image') return 'purple'
@@ -1549,64 +1460,71 @@ function SelfRankReportModal({
               </span>
             ),
             children: (
-              <Tabs
-                className="competitor-analysis-report-tabs"
-                items={reports.map((report) => {
-                  const latest = report.points[report.points.length - 1]
-                  const summary = buildReportSummary(report)
-                  const heatmapRows = buildRankHeatmapRows(report)
-                  return {
-                    key: report.keywordId,
-                    label: (
-                      <span className="competitor-analysis-report-tab-label">
-                        <SearchOutlined />
-                        <span>{report.keyword}</span>
-                        <Tag>{report.competitorSeries.length + 1}</Tag>
-                      </span>
-                    ),
-                    children: (
-                      <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                        <div className="competitor-analysis-rank-summary-grid">
-                          <RankSummaryMetric label="本品最新自然位" value={summary.latestOrganicText} />
-                          <RankSummaryMetric label={SELF_RANK_REPORT_CHANGE_LABEL} value={summary.organicChangeText} />
-                          <RankSummaryMetric label="本品广告出现" value={summary.adDaysText} />
-                          <RankSummaryMetric label="最强竞品" value={summary.bestCompetitorText} />
-                        </div>
-                        <Card
-                          size="small"
-                          variant="borderless"
-                          className="competitor-analysis-report-keyword-card competitor-analysis-rank-race-card"
-                          title={
-                            <div className="competitor-analysis-race-card-title">
-                              <Space size={6} wrap>
-                                <Tag color="blue">本品自然 {formatSelfRankReportText(latest.organicStatus, latest.organicRankNo)}</Tag>
-                                <Tag color="blue">本品广告 {formatSelfRankReportText(latest.adStatus, latest.adRankNo)}</Tag>
-                                <Tag color="green">竞品 {report.competitorSeries.length}</Tag>
-                              </Space>
-                              <div className="competitor-analysis-rank-zone-legend">
-                                <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top10">前10</span>
-                                <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top20">11-20</span>
-                                <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top50">21-50</span>
-                                <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top100">51-100</span>
-                              </div>
-                            </div>
-                          }
-                        >
-                          <div className="competitor-analysis-report-chart-only">
-                            <EChartPanel
-                              testId={`self-rank-chart-${report.keywordId}`}
-                              ariaLabel={`${report.keyword} 本品与竞品排名赛道图`}
-                              height={300}
-                              option={buildSelfRankChartOption(report)}
-                            />
+              reports.length ? (
+                <Tabs
+                  className="competitor-analysis-report-tabs"
+                  items={reports.map((report) => {
+                    const hasRankData = report.points.length > 0
+                    const latest = report.points[report.points.length - 1]
+                    const summary = buildReportSummary(report)
+                    const heatmapRows = buildRankHeatmapRows(report)
+                    return {
+                      key: report.keywordId,
+                      label: (
+                        <span className="competitor-analysis-report-tab-label">
+                          <SearchOutlined />
+                          <span>{report.keyword}</span>
+                          <Tag>{hasRankData ? report.competitorSeries.length + 1 : 0}</Tag>
+                        </span>
+                      ),
+                      children: hasRankData ? (
+                        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                          <div className="competitor-analysis-rank-summary-grid">
+                            <RankSummaryMetric label="本品最新自然位" value={summary.latestOrganicText} />
+                            <RankSummaryMetric label={SELF_RANK_REPORT_CHANGE_LABEL} value={summary.organicChangeText} />
+                            <RankSummaryMetric label="本品广告出现" value={summary.adDaysText} />
+                            <RankSummaryMetric label="最强竞品" value={summary.bestCompetitorText} />
                           </div>
-                        </Card>
-                        <RankHeatmap rows={heatmapRows} dates={report.points.map((point) => point.date.slice(5))} />
-                      </Space>
-                    )
-                  }
-                })}
-              />
+                          <Card
+                            size="small"
+                            variant="borderless"
+                            className="competitor-analysis-report-keyword-card competitor-analysis-rank-race-card"
+                            title={
+                              <div className="competitor-analysis-race-card-title">
+                                <Space size={6} wrap>
+                                  <Tag color="blue">本品自然 {formatSelfRankReportText(latest.organicStatus, latest.organicRankNo)}</Tag>
+                                  <Tag color="blue">本品广告 {formatSelfRankReportText(latest.adStatus, latest.adRankNo)}</Tag>
+                                  <Tag color="green">竞品 {report.competitorSeries.length}</Tag>
+                                </Space>
+                                <div className="competitor-analysis-rank-zone-legend">
+                                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top10">前10</span>
+                                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top20">11-20</span>
+                                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top50">21-50</span>
+                                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top100">51-100</span>
+                                </div>
+                              </div>
+                            }
+                          >
+                            <div className="competitor-analysis-report-chart-only">
+                              <EChartPanel
+                                testId={`self-rank-chart-${report.keywordId}`}
+                                ariaLabel={`${report.keyword} 本品与竞品排名赛道图`}
+                                height={300}
+                                option={buildSelfRankChartOption(report)}
+                              />
+                            </div>
+                          </Card>
+                          <RankHeatmap rows={heatmapRows} dates={report.points.map((point) => point.date.slice(5))} />
+                        </Space>
+                      ) : (
+                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无真实排名数据" />
+                      )
+                    }
+                  })}
+                />
+              ) : (
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无真实排名数据" />
+              )
             )
           },
           {
@@ -1705,28 +1623,38 @@ function buildSelfRankReport(product: CompetitorWatchProduct): SelfRankKeywordRe
     .filter((keyword) => keyword.status === 'active' && keyword.keyword.trim())
     .slice()
     .sort((left, right) => left.displayOrder - right.displayOrder)
-  const reportKeywords = activeKeywords.length ? activeKeywords : buildMockReportKeywords(product)
 
-  return reportKeywords.map((keyword, keywordIndex) => {
-    const points = buildMockSelfRankPoints(keywordIndex)
-    const pointsByDate = new Map(points.map((point) => [point.date, point]))
-    product.rankPoints
+  return activeKeywords.map((keyword) => {
+    const confirmedCandidateCodes = new Set(
+      product.candidates
+        .filter((candidate) => candidateStatusForKeyword(candidate, keyword.id) === 'confirmed')
+        .map((candidate) => normalizeNoonProductCode(candidate.noonProductCode))
+        .filter(Boolean)
+    )
+    const relevantRankPoints = product.rankPoints.filter((point) => {
+      if (point.keywordId !== keyword.id) {
+        return false
+      }
+      const pointCode = normalizeNoonProductCode(point.noonProductCode)
+      return (
+        point.isSelf ||
+        pointCode === normalizeNoonProductCode(product.selfNoonProductCode) ||
+        confirmedCandidateCodes.has(pointCode)
+      )
+    })
+    const pointsByDate = new Map(
+      Array.from(new Set(relevantRankPoints.map((point) => point.factDate)))
+        .sort((left, right) => left.localeCompare(right))
+        .map((date) => [date, buildEmptySelfRankReportPoint(date)] as const)
+    )
+    relevantRankPoints
       .filter(
         (point) =>
-          point.keywordId === keyword.id &&
           (point.isSelf || normalizeNoonProductCode(point.noonProductCode) === normalizeNoonProductCode(product.selfNoonProductCode))
       )
       .forEach((point) => {
         const date = point.factDate
-        const existing =
-          pointsByDate.get(date) ??
-          ({
-            date,
-            adStatus: 'missing',
-            organicStatus: 'not_in_top_100',
-            scanDepth: 100,
-            runStatus: '真实抓取'
-          } satisfies SelfRankReportPoint)
+        const existing = pointsByDate.get(date) ?? buildEmptySelfRankReportPoint(date)
         const status: SelfRankReportStatus = point.rankStatus === 'ranked' ? 'ranked' : 'not_in_top_100'
         if (point.isSponsored) {
           existing.adStatus = status
@@ -1744,62 +1672,25 @@ function buildSelfRankReport(product: CompetitorWatchProduct): SelfRankKeywordRe
       keywordId: keyword.id,
       keyword: keyword.keyword,
       points: sortedPoints,
-      competitorSeries: buildKeywordCompetitorRankSeries(product, keyword, sortedPoints, keywordIndex)
+      competitorSeries: buildKeywordCompetitorRankSeries(product, keyword, sortedPoints)
     }
   })
 }
 
-function buildMockReportKeywords(product: CompetitorWatchProduct): CompetitorKeyword[] {
-  const normalizedTitle = product.title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  const titleWords = normalizedTitle.split(' ').filter((word) => word.length > 2)
-  const firstKeyword = titleWords.slice(0, 4).join(' ') || 'product keyword'
-  const secondKeyword = titleWords.slice(1, 5).join(' ') || 'market keyword'
-  return [firstKeyword, secondKeyword].map((keyword, index) => ({
-    id: `mock-keyword-${index + 1}`,
-    keyword,
-    locale: `en-${product.siteCode || 'AE'}`,
-    status: 'active',
-    displayOrder: index + 1,
-    lastRunStatus: 'succeeded',
-    monitoredCount: index === 0 ? 6 : 3
-  }))
-}
-
-function buildMockSelfRankPoints(keywordIndex: number): SelfRankReportPoint[] {
-  const dates = buildMockReportDates()
-  return dates.map((date, index) => {
-    const organicRank = Math.max(8, Math.min(99, 92 - keywordIndex * 11 - index * 4 + ((index + keywordIndex) % 3) * 5))
-    const hasAd = (index + keywordIndex) % 3 !== 1
-    return {
-      date,
-      adStatus: hasAd ? 'ranked' : 'missing',
-      adRankNo: hasAd ? Math.max(1, 5 - ((index + keywordIndex) % 4)) : undefined,
-      organicStatus: index === 0 && keywordIndex % 2 === 1 ? 'not_in_top_100' : 'ranked',
-      organicRankNo: index === 0 && keywordIndex % 2 === 1 ? undefined : organicRank,
-      scanDepth: 100,
-      runStatus: '模拟数据'
-    }
-  })
-}
-
-function buildMockReportDates() {
-  const endDateUtc = Date.UTC(2026, 5, 7)
-  const dayMs = 24 * 60 * 60 * 1000
-  return Array.from({ length: SELF_RANK_REPORT_WINDOW_DAYS }).map((_, index) => {
-    const offset = SELF_RANK_REPORT_WINDOW_DAYS - index - 1
-    return new Date(endDateUtc - offset * dayMs).toISOString().slice(0, 10)
-  })
+function buildEmptySelfRankReportPoint(date: string): SelfRankReportPoint {
+  return {
+    date,
+    adStatus: 'missing',
+    organicStatus: 'missing',
+    scanDepth: 0,
+    runStatus: '真实抓取'
+  }
 }
 
 function buildKeywordCompetitorRankSeries(
   product: CompetitorWatchProduct,
   keyword: CompetitorKeyword,
-  points: SelfRankReportPoint[],
-  keywordIndex: number
+  points: SelfRankReportPoint[]
 ): KeywordCompetitorRankSeries[] {
   const dates = points.map((point) => point.date)
   const selfProductCode = normalizeNoonProductCode(product.selfNoonProductCode)
@@ -1815,11 +1706,7 @@ function buildKeywordCompetitorRankSeries(
     })
     .slice(0, 8)
 
-  if (!confirmedCandidates.length) {
-    return buildMockCompetitorRankSeries(keywordIndex, dates)
-  }
-
-  return confirmedCandidates.map((candidate, candidateIndex) => {
+  return confirmedCandidates.flatMap((candidate, candidateIndex) => {
     const organicRankByDate = new Map<string, number>()
     const adRankByDate = new Map<string, number>()
     product.rankPoints
@@ -1843,50 +1730,20 @@ function buildKeywordCompetitorRankSeries(
 
     const realOrganicData = dates.map((date) => organicRankByDate.get(date) ?? null)
     const realAdData = dates.map((date) => adRankByDate.get(date) ?? null)
-    return {
+    if (!hasRankValue(realOrganicData) && !hasRankValue(realAdData)) {
+      return []
+    }
+    return [{
       productCode: candidate.noonProductCode,
       name: buildCompetitorSeriesName(candidate, candidateIndex),
-      organicData: realOrganicData.some((rank) => typeof rank === 'number')
-        ? realOrganicData
-        : buildMockCompetitorRankData(keywordIndex, candidateIndex, dates),
-      adData: realAdData.some((rank) => typeof rank === 'number')
-        ? realAdData
-        : buildMockCompetitorAdRankData(keywordIndex, candidateIndex, dates)
-    }
+      organicData: realOrganicData,
+      adData: realAdData
+    }]
   })
 }
 
-function buildMockCompetitorRankSeries(
-  keywordIndex: number,
-  dates: string[]
-): KeywordCompetitorRankSeries[] {
-  return Array.from({ length: 3 }).map((_, index) => ({
-    productCode: `mock-competitor-${keywordIndex + 1}-${index + 1}`,
-    name: `竞品 ${index + 1}`,
-    organicData: buildMockCompetitorRankData(keywordIndex, index, dates),
-    adData: buildMockCompetitorAdRankData(keywordIndex, index, dates)
-  }))
-}
-
-function buildMockCompetitorRankData(keywordIndex: number, candidateIndex: number, dates: string[]) {
-  const baseRank = 12 + keywordIndex * 9 + candidateIndex * 11
-  return dates.map((_, dateIndex) => {
-    const drift = candidateIndex % 2 === 0 ? dateIndex * 2 : -dateIndex
-    const wave = ((dateIndex + candidateIndex + keywordIndex) % 3) * 3
-    return Math.max(1, Math.min(100, baseRank + drift + wave))
-  })
-}
-
-function buildMockCompetitorAdRankData(keywordIndex: number, candidateIndex: number, dates: string[]) {
-  if (candidateIndex > 1) {
-    return dates.map(() => null)
-  }
-  return dates.map((_, dateIndex) => {
-    if ((dateIndex + candidateIndex + keywordIndex) % 3 === 1) {
-      return null
-    }
-    return Math.max(1, Math.min(100, 2 + candidateIndex * 3 + ((dateIndex + keywordIndex) % 4)))
-  })
+function hasRankValue(values: Array<number | null>) {
+  return values.some((rank) => typeof rank === 'number')
 }
 
 function buildCompetitorSeriesName(candidate: CompetitorCandidate, index: number) {
