@@ -3,6 +3,7 @@ import { currentAppPathname } from '../../runtimePaths'
 import {
   normalizeSessionRoleView,
   PRODUCT_GROUPS_PATH,
+  PRODUCT_IMAGE_MATCH_PATH,
   PRODUCT_SPECS_PATH,
   PRODUCT_WORKSPACE_PATH,
   PRODUCT_MANUAL_SELECTION_PATH,
@@ -98,7 +99,9 @@ function readDevSessionOverride(): AuthSession | null {
     pathname.startsWith('/product-manage') ||
     pathname.startsWith(PRODUCT_WORKSPACE_PATH) ||
     pathname.startsWith(PRODUCT_GROUPS_PATH) ||
-    pathname.startsWith(PRODUCT_SPECS_PATH)
+    pathname.startsWith(PRODUCT_SPECS_PATH) ||
+    pathname.startsWith(PRODUCT_IMAGE_MATCH_PATH) ||
+    search.get('grantImageMatch') === '1'
   const includeProductManualSelectionDevMenu =
     pathname.startsWith(PRODUCT_MANUAL_SELECTION_PATH) ||
     search.get('grantManualSelection') === '1'
@@ -260,6 +263,7 @@ function readDevSessionOverride(): AuthSession | null {
     grantedMenus.push({ menuId: 9100, menuName: '商品管理', urlPath: '/api/sku/manage' })
     grantedMenus.push({ menuId: 9103, menuName: '商品分组', urlPath: PRODUCT_GROUPS_PATH })
     grantedMenus.push({ menuId: 9104, menuName: '商品规格', urlPath: PRODUCT_SPECS_PATH })
+    grantedMenus.push({ menuId: 9105, menuName: '图片匹配', urlPath: PRODUCT_IMAGE_MATCH_PATH })
   }
   if (includeProductManualSelectionDevMenu) {
     grantedMenus.push({ menuId: 9102, menuName: '人工选品', urlPath: PRODUCT_MANUAL_SELECTION_PATH })
