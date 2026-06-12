@@ -14,7 +14,13 @@ assert.equal(
 );
 
 const sharedBaselineComponent = read(sharedBaselinePath);
-for (const exportName of ['ProductImageThumb', 'ProductBaselineIdentity', 'ProductDimensionOptionLabel']) {
+const sharedProductImageUsagePattern = /Product(?:ImageThumb|BaselineIdentity)/;
+for (const exportName of [
+  'ProductImageThumb',
+  'ProductBaselineIdentity',
+  'ProductDimensionOptionLabel',
+  'normalizeProductImageUrl'
+]) {
   assert.match(
     sharedBaselineComponent,
     new RegExp(`export function ${exportName}\\b`),
@@ -60,6 +66,21 @@ assert.match(
   sharedBaselineComponent,
   /typeof visibleTitle === ['"]string['"]/,
   'Shared ProductBaselineIdentity should not stringify ReactNode titles into image alt text'
+);
+assert.match(
+  sharedBaselineComponent,
+  /f\\\.nooncdn\\\.com\\\/pzsku\\\//,
+  'Shared ProductImageThumb should normalize legacy Noon pzsku image URLs before rendering'
+);
+assert.match(
+  sharedBaselineComponent,
+  /f\.nooncdn\.com\/p\/pzsku\//,
+  'Shared ProductImageThumb should render normalized Noon pzsku image URLs through the current /p/pzsku path'
+);
+assert.match(
+  sharedBaselineComponent,
+  /\.jpg/,
+  'Shared ProductImageThumb should append a jpg extension when Noon pzsku image keys have no extension'
 );
 
 const baselineComponentPath = 'src/features/product-management/components/ProductBaselineDisplay.tsx';
@@ -128,8 +149,8 @@ assert.match(
 const detailPreviewPanel = read('src/features/product-management/components/ProductDetailPreviewPanel.tsx');
 assert.match(
   detailPreviewPanel,
-  /ProductImageThumb/,
-  'Product detail preview should use the shared product image component'
+  /Product(?:ImageThumb|BaselineIdentity)/,
+  'Product detail preview should use the shared product baseline image component'
 );
 assert.doesNotMatch(
   detailPreviewPanel,
@@ -140,8 +161,8 @@ assert.doesNotMatch(
 const summaryBlocks = read('src/features/product-management/components/ProductSummaryBlocks.tsx');
 assert.match(
   summaryBlocks,
-  /ProductImageThumb/,
-  'Product summary entries should use the shared product image component'
+  sharedProductImageUsagePattern,
+  'Product summary entries should use the shared product baseline image component'
 );
 assert.doesNotMatch(
   summaryBlocks,
@@ -152,8 +173,8 @@ assert.doesNotMatch(
 const productInsightsTab = read('src/features/product-management/components/ProductInsightsTab.tsx');
 assert.match(
   productInsightsTab,
-  /ProductImageThumb/,
-  'Product insights should use the shared product image component'
+  sharedProductImageUsagePattern,
+  'Product insights should use the shared product baseline image component'
 );
 assert.doesNotMatch(
   productInsightsTab,
@@ -175,7 +196,7 @@ const baselineThumbnailConsumers = [
 
 for (const [path, label] of baselineThumbnailConsumers) {
   const source = read(path);
-  assert.match(source, /ProductImageThumb/, `${label} should use the shared product image component`);
+  assert.match(source, sharedProductImageUsagePattern, `${label} should use the shared product baseline image component`);
 }
 
 const profitCalculatorPage = read('src/features/profit-calculator/ProfitCalculatorPage.tsx');
@@ -186,7 +207,7 @@ assert.doesNotMatch(
 );
 assert.match(
   profitCalculatorPage,
-  /from ['"]\.\.\/product-baseline['"]/,
+  /from ['"](?:\.\.\/product-baseline|\.\.\/product-management\/components\/ProductBaselineDisplay)['"]/,
   'Profit calculator product identity should use the shared product baseline module'
 );
 assert.doesNotMatch(

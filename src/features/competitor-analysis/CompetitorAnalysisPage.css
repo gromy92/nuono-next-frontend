@@ -14,6 +14,22 @@
   justify-content: space-between;
 }
 
+.competitor-analysis-row-actions {
+  align-items: center;
+  display: inline-flex;
+  flex-direction: row;
+  gap: 4px;
+  justify-content: flex-end;
+  width: 136px;
+}
+
+.competitor-analysis-row-actions .ant-btn {
+  flex: 0 0 auto;
+  min-width: 24px;
+  padding: 0;
+  width: 24px;
+}
+
 .competitor-analysis-detail {
   display: grid;
   gap: 12px;
@@ -24,11 +40,19 @@
   gap: 8px;
 }
 
+.competitor-analysis-list-card .ant-card-body {
+  padding-top: 4px;
+}
+
 .competitor-analysis-search-grid {
   align-items: center;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.8fr) minmax(220px, 1fr) auto;
+  grid-template-columns:
+    minmax(220px, 1fr)
+    minmax(180px, 0.8fr)
+    minmax(220px, 1fr)
+    auto;
 }
 
 .competitor-analysis-inline-form {
@@ -39,23 +63,6 @@
 
 .competitor-analysis-inline-form .ant-input {
   min-width: 0;
-}
-
-.competitor-analysis-create-grid {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1fr);
-}
-
-.competitor-analysis-create-grid .ant-select {
-  width: 100%;
-}
-
-.competitor-analysis-product-option-label {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-  padding: 2px 0;
 }
 
 .competitor-analysis-keyword-maintenance-list {
@@ -74,29 +81,105 @@
   padding: 8px;
 }
 
-.competitor-analysis-product-cell {
+.competitor-analysis-table .ant-table-cell-fix-right {
+  background: #fff;
+  z-index: 4;
+}
+
+.competitor-analysis-table .ant-table-cell-fix-right-last,
+.competitor-analysis-table .ant-table-cell-fix-right-first {
+  box-shadow: -8px 0 10px -10px rgba(0, 0, 0, 0.32);
+}
+
+.competitor-analysis-keyword-cell {
+  align-items: flex-start;
   display: grid;
-  gap: 10px;
-  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  min-width: 0;
+  width: 100%;
+}
+
+.competitor-analysis-keyword-content {
+  display: grid;
+  gap: 4px;
   min-width: 0;
 }
 
-.competitor-analysis-product-thumb {
-  align-items: center;
-  background: #f5f5f5;
-  border: 1px solid #ececec;
-  border-radius: 6px;
+.competitor-analysis-keyword-inline-list {
+  align-items: flex-start;
+  background: transparent;
+  border: 0;
   display: flex;
-  height: 44px;
-  justify-content: center;
-  overflow: hidden;
-  width: 44px;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  width: 100%;
 }
 
-.competitor-analysis-product-thumb img {
-  height: 100%;
-  object-fit: cover;
-  width: 100%;
+.competitor-analysis-keyword-edit-button {
+  height: 22px;
+  min-width: 22px;
+  padding: 0;
+  width: 22px;
+}
+
+.competitor-analysis-keyword-link {
+  align-items: center;
+  background: #e6f4ff;
+  border: 1px solid #91caff;
+  border-radius: 4px;
+  color: #0958d9;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 4px;
+  line-height: 18px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 1px 6px;
+}
+
+.competitor-analysis-keyword-link:hover {
+  background: #bae0ff;
+  color: #003eb3;
+}
+
+.competitor-analysis-keyword-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.competitor-analysis-keyword-link-count {
+  color: #0958d9;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  margin-left: 1px;
+}
+
+.competitor-analysis-count-stack {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-width: 0;
+}
+
+.competitor-analysis-count-row {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  min-width: 0;
+}
+
+.competitor-analysis-count-row .ant-tag {
+  margin-inline-end: 0;
+  min-width: 34px;
+  text-align: center;
 }
 
 .competitor-analysis-keyword-toolbar {
@@ -143,6 +226,37 @@
   justify-content: space-between;
 }
 
+.competitor-analysis-board-pool-title {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.competitor-analysis-board-pool-actions {
+  flex-shrink: 0;
+  justify-content: flex-end;
+}
+
+.competitor-analysis-batch-confirm-button {
+  border-color: #95de64;
+  color: #237804;
+}
+
+.competitor-analysis-batch-confirm-button:not(:disabled):hover {
+  border-color: #52c41a;
+  color: #237804;
+}
+
+.competitor-analysis-batch-ignore-button {
+  border-color: #d9d9d9;
+  color: #595959;
+}
+
+.competitor-analysis-batch-ignore-button:not(:disabled):hover {
+  border-color: #bfbfbf;
+  color: #434343;
+}
+
 .competitor-analysis-candidate-grid {
   display: grid;
   gap: 10px;
@@ -168,6 +282,16 @@
   outline: none;
 }
 
+.competitor-analysis-candidate-card-selected {
+  border-color: #52c41a;
+  box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.14);
+}
+
+.competitor-analysis-candidate-card-confirmed {
+  border-color: #52c41a;
+  box-shadow: 0 0 0 1px rgba(82, 196, 26, 0.16);
+}
+
 .competitor-analysis-candidate-media {
   align-items: center;
   background:
@@ -175,16 +299,17 @@
     #f6f7f8;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
-  height: clamp(112px, 11vw, 148px);
   justify-content: center;
+  min-height: clamp(112px, 11vw, 148px);
   overflow: hidden;
   position: relative;
 }
 
 .competitor-analysis-candidate-media img {
-  height: 100%;
+  display: block;
+  height: auto;
   object-fit: contain;
-  position: absolute;
+  position: relative;
   width: 100%;
   z-index: 2;
 }
@@ -204,8 +329,22 @@
   font-weight: 700;
   height: 58px;
   justify-content: center;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: 74px;
   z-index: 1;
+}
+
+.competitor-analysis-candidate-select {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 4px;
+  padding: 2px 4px;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 4;
 }
 
 .competitor-analysis-candidate-badges {
@@ -220,10 +359,10 @@
 
 .competitor-analysis-candidate-body {
   display: grid;
-  gap: 6px;
-  grid-template-rows: auto auto auto auto auto 1fr;
+  gap: 5px;
+  grid-template-rows: auto auto auto 1fr;
   min-width: 0;
-  padding: 8px;
+  padding: 7px 8px 6px;
 }
 
 .competitor-analysis-candidate-code-row,
@@ -236,14 +375,42 @@
   min-width: 0;
 }
 
+.competitor-analysis-candidate-code {
+  display: block;
+  font-size: 10px;
+  line-height: 13px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .competitor-analysis-candidate-title {
   display: block;
   font-size: 13px;
   min-height: 20px;
 }
 
+.competitor-analysis-candidate-meta {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+}
+
+.competitor-analysis-candidate-meta .ant-tag {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 16px;
+  margin-inline-end: 0;
+  padding-inline: 5px;
+}
+
 .competitor-analysis-candidate-brand {
   display: block;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .competitor-analysis-candidate-price {
@@ -251,20 +418,85 @@
   font-size: 16px;
 }
 
-.competitor-analysis-candidate-rating {
-  color: #f5a623;
-  flex-shrink: 0;
+.competitor-analysis-candidate-price-currency {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  margin-left: 3px;
 }
 
-.competitor-analysis-candidate-keywords {
-  min-height: 24px;
+.competitor-analysis-candidate-rating {
+  align-items: center;
+  color: #f5a623;
+  font-size: 12px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.competitor-analysis-candidate-rating .ant-typography {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.competitor-analysis-candidate-commerce {
+  align-self: end;
+}
+
+.competitor-analysis-candidate-inline-actions {
+  flex-shrink: 0;
 }
 
 .competitor-analysis-candidate-footer {
   align-self: end;
   border-top: 1px solid #f0f0f0;
   flex-wrap: wrap;
-  padding-top: 6px;
+  justify-content: flex-end;
+  margin-top: -2px;
+  padding-top: 4px;
+}
+
+.competitor-analysis-candidate-action-confirm {
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  color: #389e0d;
+}
+
+.competitor-analysis-candidate-action-confirm:not(:disabled):hover {
+  background: #f6ffed;
+  border-color: #52c41a;
+  color: #237804;
+}
+
+.competitor-analysis-candidate-action-ignore {
+  background: #fafafa;
+  border: 1px solid #d9d9d9;
+  color: #8c8c8c;
+}
+
+.competitor-analysis-candidate-action-ignore:not(:disabled):hover {
+  background: #f5f5f5;
+  border-color: #bfbfbf;
+  color: #595959;
+}
+
+.competitor-analysis-candidate-action-remove {
+  background: #fafafa;
+  border: 1px solid #d9d9d9;
+  color: #8c8c8c;
+}
+
+.competitor-analysis-candidate-action-remove:not(:disabled):hover {
+  background: #f5f5f5;
+  border-color: #bfbfbf;
+  color: #595959;
+}
+
+.competitor-analysis-candidate-action-remove-top {
+  background: rgba(255, 255, 255, 0.92);
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 4;
 }
 
 .competitor-analysis-modal-summary {
@@ -275,6 +507,349 @@
   gap: 6px;
   min-width: 0;
   padding: 10px;
+}
+
+.competitor-analysis-report-modal {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.competitor-analysis-analysis-tabs {
+  min-width: 0;
+}
+
+.competitor-analysis-analysis-tabs > .ant-tabs-nav {
+  margin-bottom: 12px;
+}
+
+.competitor-analysis-report-tabs {
+  min-width: 0;
+}
+
+.competitor-analysis-report-tabs .ant-tabs-nav {
+  margin-bottom: 10px;
+}
+
+.competitor-analysis-report-tab-label {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  max-width: 220px;
+  min-width: 0;
+}
+
+.competitor-analysis-report-tab-label > span:nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.competitor-analysis-report-tab-label .ant-tag {
+  margin-inline-end: 0;
+}
+
+.competitor-analysis-report-keyword-card .ant-card-body {
+  padding: 10px 12px 12px;
+}
+
+.competitor-analysis-report-chart-only {
+  min-width: 0;
+}
+
+.competitor-analysis-rank-summary-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.competitor-analysis-rank-summary-card {
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.competitor-analysis-rank-summary-card .ant-typography:last-child {
+  font-size: 15px;
+}
+
+.competitor-analysis-race-card-title {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.competitor-analysis-rank-zone-legend {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.competitor-analysis-rank-zone {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  padding: 0 6px;
+}
+
+.competitor-analysis-rank-zone-top10 {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #237804;
+}
+
+.competitor-analysis-rank-zone-top20 {
+  background: #f6ffed;
+  border-color: #d9f7be;
+  color: #3f6600;
+}
+
+.competitor-analysis-rank-zone-top50 {
+  background: #fffbe6;
+  border-color: #ffe58f;
+  color: #ad6800;
+}
+
+.competitor-analysis-rank-zone-top100 {
+  background: #fafafa;
+  border-color: #d9d9d9;
+  color: #595959;
+}
+
+.competitor-analysis-rank-heatmap-card .ant-card-body {
+  padding: 10px 12px 12px;
+}
+
+.competitor-analysis-rank-heatmap {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.competitor-analysis-rank-heatmap-corner,
+.competitor-analysis-rank-heatmap-date {
+  color: #8c8c8c;
+  font-size: 12px;
+  line-height: 18px;
+  min-width: 0;
+  padding: 0 4px;
+}
+
+.competitor-analysis-rank-heatmap-date {
+  text-align: center;
+}
+
+.competitor-analysis-rank-heatmap-product {
+  align-items: center;
+  border: 1px solid #f0f0f0;
+  border-radius: 5px;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 6px;
+}
+
+.competitor-analysis-rank-heatmap-product-self {
+  background: #f0f7ff;
+  border-color: #91caff;
+}
+
+.competitor-analysis-rank-heatmap-product > span:first-child {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 8px;
+  width: 8px;
+}
+
+.competitor-analysis-rank-heatmap-cell {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  min-height: 30px;
+  min-width: 0;
+  padding: 3px 4px;
+}
+
+.competitor-analysis-rank-heatmap-cell span {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.competitor-analysis-rank-heatmap-cell em {
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 9px;
+  font-style: normal;
+  line-height: 12px;
+  padding: 0 2px;
+}
+
+.competitor-analysis-rank-heatmap-cell-top10 {
+  background: #d9f7be;
+  border-color: #95de64;
+  color: #135200;
+}
+
+.competitor-analysis-rank-heatmap-cell-top20 {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #237804;
+}
+
+.competitor-analysis-rank-heatmap-cell-top50 {
+  background: #fff7e6;
+  border-color: #ffd591;
+  color: #ad4e00;
+}
+
+.competitor-analysis-rank-heatmap-cell-top100 {
+  background: #fafafa;
+  border-color: #d9d9d9;
+  color: #595959;
+}
+
+.competitor-analysis-rank-heatmap-cell-missing {
+  background: #fff;
+  border-color: #f0f0f0;
+  color: #bfbfbf;
+}
+
+.competitor-analysis-product-change-modal {
+  display: grid;
+  gap: 12px;
+  max-height: calc(100vh - 190px);
+  min-width: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.competitor-analysis-product-change-summary-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.competitor-analysis-product-change-summary-card {
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.competitor-analysis-product-change-summary-card .ant-typography:last-child {
+  font-size: 16px;
+}
+
+.competitor-analysis-product-change-timeline {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.competitor-analysis-product-change-group {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+}
+
+.competitor-analysis-product-change-group .ant-card-head {
+  min-height: 0;
+  padding: 0 12px;
+}
+
+.competitor-analysis-product-change-group .ant-card-head-title {
+  min-width: 0;
+  padding: 10px 0;
+}
+
+.competitor-analysis-product-change-group .ant-card-body {
+  padding: 8px 12px 12px;
+}
+
+.competitor-analysis-product-change-group-title {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+}
+
+.competitor-analysis-product-change-group-title .ant-space {
+  min-width: 0;
+}
+
+.competitor-analysis-product-change-list {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.competitor-analysis-product-change-row {
+  align-items: center;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-left: 3px solid #91caff;
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 104px minmax(0, 1fr);
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.competitor-analysis-product-change-row-warning {
+  background: #fffbe6;
+  border-left-color: #faad14;
+}
+
+.competitor-analysis-product-change-row-critical {
+  background: #fff2f0;
+  border-left-color: #ff4d4f;
+}
+
+.competitor-analysis-product-change-value-flow {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+  min-width: 0;
+}
+
+.competitor-analysis-product-change-value-flow span {
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 5px;
+  font-size: 13px;
+  line-height: 18px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.competitor-analysis-product-change-value-flow em {
+  color: #8c8c8c;
+  font-style: normal;
+  text-align: center;
 }
 
 @media (max-width: 960px) {
@@ -297,6 +872,32 @@
 
   .competitor-analysis-board-pool-header {
     display: grid;
+  }
+
+  .competitor-analysis-rank-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .competitor-analysis-race-card-title {
+    align-items: flex-start;
+    display: grid;
+  }
+
+  .competitor-analysis-product-change-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .competitor-analysis-product-change-group-title {
+    grid-template-columns: 1fr;
+  }
+
+  .competitor-analysis-product-change-row {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+
+  .competitor-analysis-product-change-value-flow {
+    grid-template-columns: 1fr;
   }
 }
 

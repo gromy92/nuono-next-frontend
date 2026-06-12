@@ -63,6 +63,11 @@ const contracts = [
     file: 'src/features/sales-analytics/SalesAnalyticsPage.tsx',
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
+  },
+  {
+    file: 'src/features/competitor-analysis/CompetitorAnalysisPage.tsx',
+    required: ['ProductBaselineIdentity'],
+    forbidden: ['ProductImageThumb']
   }
 ];
 

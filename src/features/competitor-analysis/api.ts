@@ -3,6 +3,10 @@ import type {
   CompetitorCandidate,
   CompetitorCandidateSource,
   CompetitorKeyword,
+  CompetitorProductChangeBaselineSummary,
+  CompetitorProductChangeField,
+  CompetitorProductChangeGroup,
+  CompetitorProductChangesResult,
   CompetitorProductOption,
   CompetitorRankPoint,
   CompetitorReviewStatus,
@@ -35,6 +39,9 @@ type BackendWatchProduct = {
   selfNoonProductCode?: string
   selfCodeType?: string
   title?: string
+  titleCn?: string
+  titleZh?: string
+  chineseTitle?: string
   brand?: string
   imageUrl?: string
   productFulltype?: string
@@ -46,8 +53,15 @@ type BackendWatchProduct = {
 
 type BackendWatchProductListItem = BackendWatchProduct & {
   activeKeywordCount?: number
+  activeKeywords?: string[]
+  activeKeywordStats?: BackendKeywordCount[]
   pendingCandidateCount?: number
   confirmedCompetitorCount?: number
+}
+
+type BackendKeywordCount = {
+  keyword?: string
+  monitoredCount?: number
 }
 
 type BackendProductOption = {
@@ -94,6 +108,7 @@ type BackendCandidate = {
   currencyCodeSnapshot?: string
   ratingSnapshot?: number
   reviewCountSnapshot?: number
+  ownedByCurrentStore?: boolean
   sourceType?: string
   reviewStatus?: string
   firstSeenAt?: string
@@ -105,6 +120,8 @@ type BackendKeywordRelation = {
   keywordId?: number | string
   competitorProductId?: number | string
   relationStatus?: string
+  firstSeenRunId?: number | string
+  lastSeenRunId?: number | string
   firstSeenRankNo?: number
   lastSeenRankNo?: number
   lastSeenSponsored?: boolean
@@ -119,6 +136,8 @@ type BackendRankPoint = {
   noonProductCode?: string
   rankStatus?: string
   rankNo?: number
+  rankChannel?: string
+  scanDepth?: number
   sponsored?: boolean
   isSponsored?: boolean
   priceAmount?: number
@@ -137,7 +156,40 @@ type BackendDetailResponse = {
 
 type BackendRankHistoryResponse = BackendRankPoint[] | { items?: BackendRankPoint[] }
 
+type BackendProductChangeField = {
+  fieldKey?: string
+  fieldLabel?: string
+  changeType?: string
+  oldValue?: unknown
+  newValue?: unknown
+  severity?: string
+}
+
+type BackendProductChangeGroup = {
+  id?: number | string
+  factDate?: string
+  noonProductCode?: string
+  productName?: string
+  subjectType?: string
+  changes?: BackendProductChangeField[]
+}
+
+type BackendProductChangeBaselineSummary = {
+  monitoredCompetitorCount?: number
+  snapshotCompetitorCount?: number
+  firstSnapshotDate?: string
+  latestSnapshotDate?: string
+  latestCapturedAt?: string
+}
+
+type BackendProductChangeResponse = BackendProductChangeGroup[] | {
+  items?: BackendProductChangeGroup[]
+  baselineSummary?: BackendProductChangeBaselineSummary
+}
+
 export type CompetitorWatchProductQuery = {
+  storeCode?: string
+  siteCode?: string
   productSearch?: string
   keywordSearch?: string
   competitorSearch?: string
@@ -194,6 +246,8 @@ const EMPTY_IMAGE =
 
 export async function fetchCompetitorWatchProducts(query: CompetitorWatchProductQuery = {}, signal?: AbortSignal) {
   const params = new URLSearchParams()
+  appendSearchParam(params, 'storeCode', query.storeCode)
+  appendSearchParam(params, 'siteCode', query.siteCode)
   appendSearchParam(params, 'productSearch', query.productSearch)
   appendSearchParam(params, 'keywordSearch', query.keywordSearch)
   appendSearchParam(params, 'competitorSearch', query.competitorSearch)
@@ -207,6 +261,28 @@ export async function fetchCompetitorWatchProducts(query: CompetitorWatchProduct
   const suffix = params.toString() ? `?${params.toString()}` : ''
   const response = await apiFetch(`/api/competitor-analysis/watch-products${suffix}`, { signal })
   const payload = await parseApiResponse<BackendListResponse>(response, '读取竞品监控列表失败')
+  return {
+    items: (payload.items || []).map(mapListItem),
+    pagination: payload.pagination
+  }
+}
+
+export async function fetchCompetitorProductBaselines(query: CompetitorWatchProductQuery = {}, signal?: AbortSignal) {
+  const params = new URLSearchParams()
+  appendSearchParam(params, 'storeCode', query.storeCode)
+  appendSearchParam(params, 'siteCode', query.siteCode)
+  appendSearchParam(params, 'productSearch', query.productSearch)
+  appendSearchParam(params, 'keywordSearch', query.keywordSearch)
+  appendSearchParam(params, 'competitorSearch', query.competitorSearch)
+  appendSearchParam(params, 'status', query.status?.toUpperCase())
+  if (query.page) {
+    params.set('page', String(query.page))
+  }
+  if (query.pageSize) {
+    params.set('pageSize', String(query.pageSize))
+  }
+  const response = await apiFetch(`/api/competitor-analysis/product-baselines?${params}`, { signal })
+  const payload = await parseApiResponse<BackendListResponse>(response, '读取商品基线列表失败')
   return {
     items: (payload.items || []).map(mapListItem),
     pagination: payload.pagination
@@ -272,11 +348,11 @@ export async function deleteCompetitorKeyword(keywordId: string) {
   return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '删除关键词失败'))
 }
 
-export async function addManualCompetitor(watchProductId: string, input: string) {
+export async function addManualCompetitor(watchProductId: string, input: string, keywordId: string) {
   const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}/manual-competitors`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ input })
+    body: JSON.stringify({ input, keywordId })
   })
   return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '手工添加竞品失败'))
 }
@@ -297,6 +373,14 @@ export async function ignoreCompetitorCandidate(keywordId: string, competitorPro
   return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '忽略竞品失败'))
 }
 
+export async function removeCompetitorCandidate(keywordId: string, competitorProductId: string) {
+  const response = await apiFetch(
+    `/api/competitor-analysis/keywords/${keywordId}/candidates/${competitorProductId}/remove`,
+    { method: 'POST' }
+  )
+  return mapDetail(await parseApiResponse<BackendDetailResponse>(response, '移除竞品失败'))
+}
+
 export async function requestCompetitorRefresh(watchProductId: string) {
   const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}/refresh`, {
     method: 'POST'
@@ -314,6 +398,14 @@ export async function fetchCompetitorTask(taskId: string) {
   return mapTask(await parseApiResponse<CompetitorTask>(response, '读取竞品刷新任务失败'))
 }
 
+export async function requestCompetitorMonitoring(storeCode: string, siteCode: string) {
+  const params = new URLSearchParams({ storeCode, siteCode })
+  const response = await apiFetch(`/api/competitor-analysis/monitoring-runs/manual?${params}`, {
+    method: 'POST'
+  })
+  return mapTask(await parseApiResponse<CompetitorTask>(response, '提交手动监控失败'))
+}
+
 export async function fetchCompetitorRankHistory(
   watchProductId: string,
   query: { keywordId: string; rangeDays: number },
@@ -329,6 +421,23 @@ export async function fetchCompetitorRankHistory(
   const payload = await parseApiResponse<BackendRankHistoryResponse>(response, '读取排名历史失败')
   const rows = Array.isArray(payload) ? payload : payload.items || []
   return rows.map(mapRankPoint)
+}
+
+export async function fetchCompetitorProductChanges(
+  watchProductId: string,
+  limit = 100,
+  signal?: AbortSignal
+): Promise<CompetitorProductChangesResult> {
+  const params = new URLSearchParams({ limit: String(limit) })
+  const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}/product-changes?${params}`, {
+    signal
+  })
+  const payload = await parseApiResponse<BackendProductChangeResponse>(response, '读取商品详情变化失败')
+  const rows = Array.isArray(payload) ? payload : payload.items || []
+  return {
+    items: rows.map(mapProductChangeGroup),
+    baselineSummary: Array.isArray(payload) ? undefined : mapProductChangeBaselineSummary(payload.baselineSummary)
+  }
 }
 
 export function mapDetail(payload: BackendDetailResponse): CompetitorWatchProduct {
@@ -351,15 +460,46 @@ export function mapDetail(payload: BackendDetailResponse): CompetitorWatchProduc
 }
 
 function mapListItem(row: BackendWatchProductListItem): CompetitorWatchProduct {
+  const base = mapWatchProductBase(row)
+  const keywords = mapListKeywords(base, row.activeKeywordStats, row.activeKeywords)
+  const activeKeywordCount = numberValue(row.activeKeywordCount)
   return {
-    ...mapWatchProductBase(row),
-    activeKeywordCount: numberValue(row.activeKeywordCount),
+    ...base,
+    activeKeywordCount: activeKeywordCount || keywords.length,
     pendingCandidateCount: numberValue(row.pendingCandidateCount),
     confirmedCompetitorCount: numberValue(row.confirmedCompetitorCount),
-    keywords: [],
+    keywords,
     candidates: [],
     rankPoints: []
   }
+}
+
+function mapListKeywords(
+  product: Pick<CompetitorWatchProduct, 'id' | 'productSiteOfferId' | 'partnerSku' | 'siteCode'>,
+  activeKeywordStats?: BackendKeywordCount[],
+  activeKeywords?: string[]
+): CompetitorKeyword[] {
+  const baseId = product.id || product.productSiteOfferId || product.partnerSku || 'product'
+  const keywordRows = activeKeywordStats?.length
+    ? activeKeywordStats.map((item) => ({
+        keyword: stringValue(item.keyword),
+        monitoredCount: numberValue(item.monitoredCount)
+      }))
+    : (activeKeywords || []).map((keyword) => ({
+        keyword: stringValue(keyword),
+        monitoredCount: 0
+      }))
+  return keywordRows
+    .filter((item) => item.keyword)
+    .map((item, index) => ({
+      id: `${baseId}-keyword-${index}-${item.keyword}`,
+      keyword: item.keyword,
+      locale: product.siteCode ? `en-${product.siteCode}` : '',
+      status: 'active',
+      displayOrder: index,
+      lastRunStatus: 'failed',
+      monitoredCount: item.monitoredCount
+    }))
 }
 
 function mapProductOption(row: BackendProductOption): CompetitorProductOption {
@@ -386,7 +526,10 @@ function mapWatchProductBase(row: BackendWatchProduct) {
   const selfNoonProductCode = stringValue(row.selfNoonProductCode)
   return {
     id: idValue(row.id),
+    productSiteOfferId: idValue(row.productSiteOfferId),
+    skuParent: stringValue(row.skuParent),
     title: stringValue(row.title) || '未命名商品',
+    titleCn: firstText(row.titleCn, row.titleZh, row.chineseTitle) || undefined,
     brand: stringValue(row.brand),
     imageUrl: stringValue(row.imageUrl) || EMPTY_IMAGE,
     storeCode: stringValue(row.storeCode),
@@ -397,6 +540,7 @@ function mapWatchProductBase(row: BackendWatchProduct) {
     productFulltype: stringValue(row.productFulltype),
     selfNoonProductCode,
     status: normalizeActiveStatus(row.status),
+    latestRunId: idValue(row.latestRunId),
     latestRunAt: formatDateTime(row.latestRunAt),
     latestRunStatus: normalizeRunStatus(row.latestRunStatus)
   } satisfies Omit<
@@ -435,6 +579,11 @@ function mapCandidate(
   const keywordReviewStatus = Object.fromEntries(
     candidateRelations.map((relation) => [idValue(relation.keywordId), normalizeRelationStatus(relation.relationStatus)])
   )
+  const keywordLastSeenRunIds = Object.fromEntries(
+    candidateRelations
+      .map((relation) => [idValue(relation.keywordId), idValue(relation.lastSeenRunId)] as const)
+      .filter((entry) => entry[0] && entry[1])
+  )
   const keywordEvidence = candidateRelations
     .filter((relation) => normalizeRelationStatus(relation.relationStatus) !== 'ignored')
     .map((relation) => keywordById.get(idValue(relation.keywordId))?.keyword)
@@ -459,10 +608,12 @@ function mapCandidate(
     rating: row.ratingSnapshot,
     reviewCount: row.reviewCountSnapshot,
     isSponsored: latestRankPoint?.isSponsored ?? Boolean(latestRelation?.lastSeenSponsored),
+    ownedByCurrentStore: Boolean(row.ownedByCurrentStore),
     latestRankNo: latestRankPoint?.rankNo ?? latestRelation?.lastSeenRankNo,
     sourceType: normalizeSourceType(row.sourceType),
     reviewStatus: normalizeReviewStatus(row.reviewStatus),
     keywordReviewStatus,
+    keywordLastSeenRunIds,
     keywordEvidence,
     lastSeenAt: formatDateTime(row.lastSeenAt || latestRelation?.lastSeenAt)
   }
@@ -473,19 +624,70 @@ function mapRankPoint(row: BackendRankPoint): CompetitorRankPoint {
   const noonProductCode = stringValue(row.noonProductCode)
   const factTime = stringValue(row.factTime || row.factDate)
   const trackedType = stringValue(row.trackedProductType).toUpperCase()
+  const rankChannel = normalizeRankChannel(row.rankChannel, row.sponsored ?? row.isSponsored)
   return {
-    id: idValue(row.id) || `${keywordId}-${noonProductCode}-${factTime}`,
+    id: idValue(row.id) || `${keywordId}-${noonProductCode}-${factTime}-${rankChannel}`,
     keywordId,
     noonProductCode,
     factDate: formatFactDate(factTime),
     rankStatus: normalizeRankStatus(row.rankStatus),
     rankNo: row.rankNo,
+    rankChannel,
+    scanDepth: row.scanDepth,
     isSelf: trackedType === 'SELF',
     isConfirmedCompetitor: trackedType === 'COMPETITOR',
-    isSponsored: Boolean(row.sponsored ?? row.isSponsored),
+    isSponsored: rankChannel === 'sponsored',
     priceAmount: row.priceAmount,
     currencyCode: stringValue(row.currencyCode) || undefined
   }
+}
+
+function mapProductChangeGroup(row: BackendProductChangeGroup): CompetitorProductChangeGroup {
+  const factDate = stringValue(row.factDate)
+  const noonProductCode = stringValue(row.noonProductCode)
+  return {
+    id: idValue(row.id) || `${factDate}-${noonProductCode}`,
+    factDate,
+    noonProductCode,
+    productName: stringValue(row.productName) || noonProductCode || '未知商品',
+    subjectType: String(row.subjectType || '').toUpperCase() === 'SELF' ? 'self' : 'competitor',
+    changes: (row.changes || []).map(mapProductChangeField)
+  }
+}
+
+function mapProductChangeBaselineSummary(
+  row?: BackendProductChangeBaselineSummary
+): CompetitorProductChangeBaselineSummary | undefined {
+  if (!row) return undefined
+  return {
+    monitoredCompetitorCount: numberValue(row.monitoredCompetitorCount),
+    snapshotCompetitorCount: numberValue(row.snapshotCompetitorCount),
+    firstSnapshotDate: stringValue(row.firstSnapshotDate) || undefined,
+    latestSnapshotDate: stringValue(row.latestSnapshotDate) || undefined,
+    latestCapturedAt: stringValue(row.latestCapturedAt) || undefined
+  }
+}
+
+function mapProductChangeField(row: BackendProductChangeField): CompetitorProductChangeField {
+  return {
+    fieldKey: stringValue(row.fieldKey),
+    fieldLabel: stringValue(row.fieldLabel) || stringValue(row.fieldKey),
+    changeType: stringValue(row.changeType),
+    oldValue: row.oldValue,
+    newValue: row.newValue,
+    severity: normalizeChangeSeverity(row.severity)
+  }
+}
+
+function normalizeChangeSeverity(value: unknown): CompetitorProductChangeField['severity'] {
+  const normalized = String(value || 'INFO').toUpperCase()
+  if (normalized === 'CRITICAL') {
+    return 'critical'
+  }
+  if (normalized === 'WARNING') {
+    return 'warning'
+  }
+  return 'info'
 }
 
 function mapRefreshRun(payload: CompetitorRefreshRun): CompetitorRefreshRun {
@@ -539,7 +741,22 @@ function normalizeRunStatus(value: unknown): SearchRunStatus {
 }
 
 function normalizeRankStatus(value: unknown): RankStatus {
-  return String(value || 'NOT_IN_TOP_30').toUpperCase() === 'RANKED' ? 'ranked' : 'not_in_top_30'
+  const normalized = String(value || 'NOT_IN_TOP_20').toUpperCase()
+  if (normalized === 'RANKED') {
+    return 'ranked'
+  }
+  if (normalized === 'NOT_IN_SCAN_DEPTH') {
+    return 'not_in_scan_depth'
+  }
+  return 'not_in_top_20'
+}
+
+function normalizeRankChannel(value: unknown, sponsoredFallback?: unknown): 'organic' | 'sponsored' {
+  const normalized = String(value || '').toUpperCase()
+  if (normalized === 'SPONSORED') {
+    return 'sponsored'
+  }
+  return sponsoredFallback ? 'sponsored' : 'organic'
 }
 
 function normalizeReviewStatus(value: unknown): CompetitorReviewStatus {
@@ -578,6 +795,10 @@ function normalizeCodeType(value: unknown, noonProductCode: string): NoonProduct
 
 function stringValue(value: unknown) {
   return value === undefined || value === null ? '' : String(value).trim()
+}
+
+function firstText(...values: unknown[]) {
+  return values.map(stringValue).find(Boolean) || ''
 }
 
 function idValue(value: unknown) {

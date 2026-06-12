@@ -22,6 +22,7 @@ import {
   PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH,
   PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
+  WAREHOUSE_DISPATCH_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
 } from './WorkspaceRouting'
 
@@ -63,7 +64,11 @@ function readStoredCurrentStore() {
   }
 }
 
-function resolveDevCurrentStore(devStores: AuthSessionStore[]) {
+function resolveDevCurrentStore(devStores: AuthSessionStore[], options: { restoreStored?: boolean } = {}) {
+  if (!options.restoreStored) {
+    return devStores[0]
+  }
+
   const storedCurrentStore = readStoredCurrentStore()
   if (!storedCurrentStore?.storeCode) {
     return devStores[0]
@@ -116,6 +121,9 @@ function readDevSessionOverride(): AuthSession | null {
   const includeLogisticsQuoteDevMenu =
     pathname.startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
     search.get('grantLogisticsQuote') === '1'
+  const includeWarehouseDevMenu =
+    pathname.startsWith(WAREHOUSE_DISPATCH_PATH) ||
+    search.get('grantWarehouse') === '1'
   const includeSystemReportsDevMenu =
     pathname.startsWith(NOON_CALL_STORE_DATA_PATH) ||
     pathname.startsWith(SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH) ||
@@ -143,7 +151,8 @@ function readDevSessionOverride(): AuthSession | null {
   const includeRoleAssignmentDevMenu = search.get('grantRoleAssignment') === '1'
   const includeSystemRoleDevMenu = search.get('grantSystemRole') === '1'
   const devRole = (search.get('devRole') || search.get('role') || '').trim().toLowerCase()
-  const useBossDevSession = devRole === 'boss' || devRole === 'laoban' || devRole === '老板'
+  const useAdminDevSession = ['admin', 'system-admin', 'administrator', '管理员', '系统管理员'].includes(devRole)
+  const useBossDevSession = !useAdminDevSession && (devRole === '' || devRole === 'boss' || devRole === 'laoban' || devRole === '老板')
   const useOpsManagerDevSession = ['ops-manager', 'operation-manager', 'operations-manager', '运营主管', '运营管理'].includes(devRole)
   const useOperatorDevSession = ['operator', 'ops', 'operation', '运营'].includes(devRole)
   const useProcurementDevSession = ['procurement', 'purchase', 'purchasing', 'buyer', '采购'].includes(devRole)
@@ -295,6 +304,9 @@ function readDevSessionOverride(): AuthSession | null {
   if (includeLogisticsQuoteDevMenu) {
     grantedMenus.push({ menuId: 9201, menuName: '货代管理', urlPath: PURCHASE_LOGISTICS_QUOTE_PATH })
   }
+  if (includeWarehouseDevMenu) {
+    grantedMenus.push({ menuId: 9251, menuName: '仓库发运', urlPath: WAREHOUSE_DISPATCH_PATH })
+  }
   if (includeSystemReportsDevMenu) {
     grantedMenus.push({ menuId: 9600, menuName: '系统报表', urlPath: NOON_CALL_STORE_DATA_PATH })
     grantedMenus.push({ menuId: 9602, menuName: '数据完整度', urlPath: SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH })
@@ -375,7 +387,7 @@ function readDevSessionOverride(): AuthSession | null {
                 companyName: 'Nuono',
                 level: 0
               };
-  const currentStore = resolveDevCurrentStore(devStores)
+  const currentStore = resolveDevCurrentStore(devStores, { restoreStored: search.get('preserveDevStore') === '1' })
 
   return {
     userId: devProfile.userId,

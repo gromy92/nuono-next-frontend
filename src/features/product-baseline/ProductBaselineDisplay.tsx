@@ -4,6 +4,36 @@ import { useState } from 'react';
 
 const { Text } = Typography;
 
+function hasImageExtension(value: string) {
+  return /\.(?:avif|gif|jpe?g|png|webp)(?:[?#].*)?$/i.test(value);
+}
+
+export function normalizeProductImageUrl(value: unknown) {
+  const raw = String(value ?? '').trim();
+  if (!raw) {
+    return '';
+  }
+
+  let normalized = raw;
+  if (/^original\/pzsku\//i.test(normalized)) {
+    normalized = normalized.replace(/^original\/pzsku\//i, 'https://f.nooncdn.com/p/pzsku/');
+  } else if (/^pzsku\//i.test(normalized)) {
+    normalized = `https://f.nooncdn.com/p/${normalized}`;
+  } else if (/^https:\/\/f\.nooncdn\.com\/p\/original\/pzsku\//i.test(normalized)) {
+    normalized = normalized.replace(
+      /^https:\/\/f\.nooncdn\.com\/p\/original\/pzsku\//i,
+      'https://f.nooncdn.com/p/pzsku/'
+    );
+  } else if (/^https:\/\/f\.nooncdn\.com\/pzsku\//i.test(normalized)) {
+    normalized = normalized.replace(/^https:\/\/f\.nooncdn\.com\/pzsku\//i, 'https://f.nooncdn.com/p/pzsku/');
+  }
+
+  if (/^https:\/\/f\.nooncdn\.com\/p\/pzsku\//i.test(normalized) && !hasImageExtension(normalized)) {
+    return `${normalized}.jpg`;
+  }
+  return normalized;
+}
+
 export type ProductImageThumbProps = {
   src?: string | null;
   alt: string;
@@ -26,7 +56,7 @@ export function ProductImageThumb({
   disabled
 }: ProductImageThumbProps) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
-  const normalizedSrc = typeof src === 'string' ? src.trim() : '';
+  const normalizedSrc = normalizeProductImageUrl(src);
   const visibleSrc = normalizedSrc && failedSrc !== normalizedSrc ? normalizedSrc : undefined;
   const visibleImageCount = Math.max(visibleSrc ? 1 : 0, imageCount);
   const clickable = Boolean(onClick && visibleSrc && !disabled);
@@ -125,6 +155,7 @@ export type ProductBaselineCode = {
 
 export type ProductBaselineIdentityProps = {
   title?: ReactNode;
+  subtitle?: ReactNode;
   fallbackTitle?: ReactNode;
   imageUrl?: string | null;
   imageCount?: number;
@@ -142,6 +173,7 @@ export type ProductBaselineIdentityProps = {
 
 export function ProductBaselineIdentity({
   title,
+  subtitle,
   fallbackTitle = '-',
   imageUrl,
   imageCount,
@@ -157,6 +189,7 @@ export function ProductBaselineIdentity({
   compact = false
 }: ProductBaselineIdentityProps) {
   const visibleTitle = title || fallbackTitle;
+  const visibleSubtitle = subtitle === undefined || subtitle === null || subtitle === '' ? undefined : subtitle;
   const visibleImageAlt = imageAlt || (typeof visibleTitle === 'string' ? visibleTitle : '商品图片');
   const visibleCodes = codes.filter((item) => item.value !== undefined && item.value !== null && item.value !== '');
 
@@ -189,6 +222,17 @@ export function ProductBaselineIdentity({
             {visibleTitle}
           </Text>
         </Tooltip>
+        {visibleSubtitle ? (
+          <Tooltip title={typeof visibleSubtitle === 'string' ? visibleSubtitle : undefined}>
+            <Text
+              type="secondary"
+              ellipsis
+              style={{ maxWidth: titleMaxWidth, fontSize: compact ? 11 : 12, lineHeight: compact ? '16px' : '18px' }}
+            >
+              {visibleSubtitle}
+            </Text>
+          </Tooltip>
+        ) : null}
         {visibleCodes.length ? (
           <Space size={[6, 2]} wrap>
             {visibleCodes.map((code, index) => {
