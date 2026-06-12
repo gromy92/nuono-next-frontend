@@ -1,0 +1,2418 @@
+import {
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CloudSyncOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  ExclamationCircleOutlined,
+  FileSearchOutlined,
+  PlusOutlined,
+  SearchOutlined,
+  TruckOutlined
+} from '@ant-design/icons'
+import {
+  AutoComplete,
+  Button,
+  Descriptions,
+  Empty,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Popover,
+  Progress,
+  Alert,
+  Select,
+  Spin,
+  Tag,
+  Tooltip,
+  Typography,
+  message
+} from 'antd'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
+import { firstFormValidationMessage, normalizeError } from '../../shared/api'
+import type { AuthSession } from '../auth/session'
+import {
+  addPurchaseOrderItems,
+  collectPurchaseOrder,
+  createPurchaseOrder,
+  deletePurchaseOrder,
+  deletePurchaseOrderItem,
+  generatePurchaseOrderLogisticsPlan,
+  loadPurchaseOrderAli1688History,
+  loadProductOptions,
+  loadPurchaseOrders,
+  previewPurchaseOrderLogisticsPlan,
+  updatePurchaseOrder,
+  updatePurchaseOrderItem
+} from './api'
+import type {
+  PurchaseCollectionStatus,
+  PurchaseOrder,
+  PurchaseOrderItem,
+  PurchaseOrderItemCommand,
+  PurchaseOrderItemSiteQuantityCommand,
+  ProductOption,
+  PurchaseOrderAli1688HistoryBatch,
+  PurchaseOrderAli1688HistoryRecord,
+  PurchaseOrderAli1688HistorySource,
+  PurchaseOrderAli1688HistoryView,
+  PurchaseOrderLogisticsPlan,
+  PurchaseOrderStatus,
+  PurchaseSiteCode,
+  PurchaseTransportMode
+} from './types'
+import './PurchaseOrderPage.css'
+
+const { Text } = Typography
+
+type PurchaseOrderPageProps = {
+  session?: AuthSession | null
+}
+
+type CreateOrderFormValues = {
+  storeCode: string
+  title: string
+  remark?: string
+  items?: PskuEntryFormValue[]
+}
+
+type AddItemsFormValues = {
+  items: PskuEntryFormValue[]
+}
+
+type UpdateItemFormValues = {
+  psku?: string
+  siteQuantities?: SiteQuantityFormValue[]
+}
+
+type UpdateOrderFormValues = {
+  title: string
+  remark?: string
+}
+
+type PskuEntryFormValue = {
+  psku?: string
+  site?: PurchaseSiteCode
+  transportMode?: PurchaseTransportMode
+  quantity?: number | null
+}
+
+type SiteQuantityFormValue = {
+  siteCode?: PurchaseSiteCode
+  transportMode?: PurchaseTransportMode
+  quantity?: number | null
+}
+
+type OrderSummary = {
+  itemCount: number
+  pskuCount: number
+  skuCount: number
+  totalQuantity: number
+  progress: number
+  status: PurchaseOrderStatus
+}
+
+type AllocationSummary = {
+  site: PurchaseSiteCode
+  siteName?: string
+  transportMode?: PurchaseTransportMode
+  transportModeLabel?: string
+  quantity: number
+}
+
+type PurchaseItemFilterOption = {
+  key: string
+  label: string
+  count: number
+  site?: PurchaseSiteCode
+  transportMode?: PurchaseTransportMode
+}
+
+type PurchaseOrderIssueSummary = {
+  issueItemCount: number
+  missingImageCount: number
+  missingAllocationCount: number
+  missingTransportCount: number
+  quantityIssueCount: number
+  missingSourcingRequirementCount: number
+  collectionFailedCount: number
+}
+
+type PurchaseOrderAli1688HistoryEntry = {
+  key: string
+  siteCode?: string
+  record?: PurchaseOrderAli1688HistoryRecord
+}
+
+type DeleteItemTarget = {
+  order: PurchaseOrder
+  item: PurchaseOrderItem
+}
+
+const ORDER_STATUS_META: Record<PurchaseOrderStatus, { label: string; color: string; icon: ReactNode }> = {
+  draft: { label: '草稿', color: 'default', icon: <ClockCircleOutlined /> },
+  pending_collection: { label: '待采集', color: 'blue', icon: <FileSearchOutlined /> },
+  collecting: { label: '采集中', color: 'processing', icon: <CloudSyncOutlined /> },
+  partial_done: { label: '部分完成', color: 'warning', icon: <ClockCircleOutlined /> },
+  done: { label: '采集完成', color: 'success', icon: <CheckCircleOutlined /> },
+  exception: { label: '有异常', color: 'error', icon: <ExclamationCircleOutlined /> },
+  deleted: { label: '已删除', color: 'default', icon: <DeleteOutlined /> }
+}
+
+const ITEM_STATUS_META: Record<PurchaseCollectionStatus, { label: string; color: string }> = {
+  not_started: { label: '待采集', color: 'default' },
+  collecting: { label: '采集中', color: 'processing' },
+  succeeded: { label: '采集成功', color: 'success' },
+  failed: { label: '采集失败', color: 'error' },
+  reused: { label: '复用历史', color: 'cyan' },
+  cancelled: { label: '已取消', color: 'default' }
+}
+
+const SITE_OPTIONS: Array<{ label: string; value: PurchaseSiteCode }> = [
+  { label: '沙特 SA', value: 'SA' },
+  { label: '阿联酋 AE', value: 'AE' }
+]
+
+const DEFAULT_SITE_CODES: PurchaseSiteCode[] = ['SA', 'AE']
+
+const TRANSPORT_MODE_OPTIONS: Array<{ label: string; value: PurchaseTransportMode }> = [
+  { label: '空运', value: 'AIR' },
+  { label: '海运', value: 'SEA' }
+]
+
+const DEFAULT_TRANSPORT_MODE: PurchaseTransportMode = 'AIR'
+
+export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
+  const [createOrderForm] = Form.useForm<CreateOrderFormValues>()
+  const [editOrderForm] = Form.useForm<UpdateOrderFormValues>()
+  const [addItemsForm] = Form.useForm<AddItemsFormValues>()
+  const [editItemForm] = Form.useForm<UpdateItemFormValues>()
+  const [orders, setOrders] = useState<PurchaseOrder[]>([])
+  const [selectedOrderId, setSelectedOrderId] = useState<string>()
+  const [keyword, setKeyword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [editOrderTarget, setEditOrderTarget] = useState<PurchaseOrder | null>(null)
+  const [addItemsOrderId, setAddItemsOrderId] = useState<string | null>(null)
+  const [editItemTarget, setEditItemTarget] = useState<DeleteItemTarget | null>(null)
+  const [deleteTargetOrder, setDeleteTargetOrder] = useState<PurchaseOrder | null>(null)
+  const [deleteTargetItem, setDeleteTargetItem] = useState<DeleteItemTarget | null>(null)
+  const [logisticsPlanPreview, setLogisticsPlanPreview] = useState<PurchaseOrderLogisticsPlan | null>(null)
+  const [logisticsPlan, setLogisticsPlan] = useState<PurchaseOrderLogisticsPlan | null>(null)
+  const [actionKey, setActionKey] = useState<string>()
+  const [createErrorMessage, setCreateErrorMessage] = useState<string>()
+  const [addItemsErrorMessage, setAddItemsErrorMessage] = useState<string>()
+  const [editItemErrorMessage, setEditItemErrorMessage] = useState<string>()
+  const [productSearchOptions, setProductSearchOptions] = useState<ProductOption[]>([])
+  const [productSearchLoading, setProductSearchLoading] = useState(false)
+  const [itemFilterKey, setItemFilterKey] = useState('all')
+  const [ali1688HistoryByKey, setAli1688HistoryByKey] = useState<Record<string, PurchaseOrderAli1688HistoryEntry>>({})
+  const [ali1688HistoryLoading, setAli1688HistoryLoading] = useState(false)
+  const [ali1688HistoryError, setAli1688HistoryError] = useState<string>()
+  const productSearchRequestIdRef = useRef(0)
+  const ali1688HistoryRequestIdRef = useRef(0)
+
+  const storeCode = session?.currentStore?.storeCode
+  const createStoreCode = Form.useWatch('storeCode', createOrderForm)
+  const createStoreOptions = useMemo(() => buildCreateStoreOptions(session), [session])
+  const createSiteOptions = useMemo(
+    () => getCreateStoreSiteOptions(session, createStoreCode),
+    [createStoreCode, session]
+  )
+  const selectedOrder = useMemo(
+    () => orders.find((order) => order.id === selectedOrderId) || orders[0],
+    [orders, selectedOrderId]
+  )
+  const selectedOrderSummary = useMemo(
+    () => selectedOrder ? summarizeOrder(selectedOrder) : emptySummary(),
+    [selectedOrder]
+  )
+  const selectedOrderAllocationSummary = useMemo(
+    () => selectedOrder ? summarizeOrderAllocations(selectedOrder) : [],
+    [selectedOrder]
+  )
+  const selectedOrderIssueSummary = useMemo(
+    () => selectedOrder ? summarizeOrderIssues(selectedOrder) : emptyIssueSummary(),
+    [selectedOrder]
+  )
+  const itemFilterOptions = useMemo(
+    () => selectedOrder ? buildItemFilterOptions(selectedOrder, selectedOrderIssueSummary) : [],
+    [selectedOrder, selectedOrderIssueSummary]
+  )
+  const visibleOrderItems = useMemo(
+    () => selectedOrder ? filterOrderItems(selectedOrder.items || [], itemFilterKey) : [],
+    [itemFilterKey, selectedOrder]
+  )
+  const activeItemFilter = useMemo(
+    () => selectedOrder
+      ? buildActiveItemFilter(itemFilterKey, selectedOrder, selectedOrderIssueSummary, itemFilterOptions)
+      : itemFilterOptions[0],
+    [itemFilterKey, itemFilterOptions, selectedOrder, selectedOrderIssueSummary]
+  )
+  const addItemsOrder = addItemsOrderId ? orders.find((order) => order.id === addItemsOrderId) : undefined
+  const productAutoCompleteOptions = useMemo(
+    () => buildProductAutoCompleteOptions(productSearchOptions),
+    [productSearchOptions]
+  )
+
+  const loadOrders = useCallback(async () => {
+    if (!storeCode) {
+      setOrders([])
+      setSelectedOrderId(undefined)
+      return
+    }
+    setLoading(true)
+    try {
+      const nextOrders = await loadPurchaseOrders({ storeCode })
+      setOrders(nextOrders)
+      setSelectedOrderId((current) => {
+        if (current && nextOrders.some((order) => order.id === current)) {
+          return current
+        }
+        return nextOrders[0]?.id
+      })
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '读取采购单失败')
+      setOrders([])
+      setSelectedOrderId(undefined)
+    } finally {
+      setLoading(false)
+    }
+  }, [storeCode])
+
+  useEffect(() => {
+    void loadOrders()
+  }, [loadOrders])
+
+  useEffect(() => {
+    setItemFilterKey('all')
+  }, [selectedOrder?.id])
+
+  useEffect(() => {
+    const requestId = ali1688HistoryRequestIdRef.current + 1
+    ali1688HistoryRequestIdRef.current = requestId
+    if (!selectedOrder?.id) {
+      setAli1688HistoryByKey({})
+      setAli1688HistoryError(undefined)
+      setAli1688HistoryLoading(false)
+      return
+    }
+    setAli1688HistoryLoading(true)
+    setAli1688HistoryError(undefined)
+    loadPurchaseOrderAli1688History(selectedOrder.id)
+      .then((view) => {
+        if (ali1688HistoryRequestIdRef.current !== requestId) {
+          return
+        }
+        setAli1688HistoryByKey(buildAli1688HistoryEntriesFromView(selectedOrder, view))
+      })
+      .catch((error) => {
+        if (ali1688HistoryRequestIdRef.current !== requestId) {
+          return
+        }
+        setAli1688HistoryByKey({})
+        setAli1688HistoryError(error instanceof Error ? error.message : '读取 1688 采购历史失败')
+      })
+      .finally(() => {
+        if (ali1688HistoryRequestIdRef.current === requestId) {
+          setAli1688HistoryLoading(false)
+        }
+      })
+  }, [selectedOrder])
+
+  const orderSummaries = useMemo(() => {
+    const entries = orders.map((order) => [order.id, summarizeOrder(order)] as const)
+    return new Map(entries)
+  }, [orders])
+
+  const visibleOrders = useMemo(() => {
+    const normalized = keyword.trim().toLowerCase()
+    if (!normalized) {
+      return orders
+    }
+    return orders.filter((order) => {
+      const text = [
+        order.orderNo,
+        order.title,
+        order.storeName,
+        order.storeCode,
+        ...(order.items || []).flatMap((item) => [
+          item.partnerSku,
+          item.skuParent,
+          item.productTitle,
+          item.sourceTitle,
+          item.sourceTitleCn,
+          ...(item.allocations || []).map((allocation) => allocation.pskuCode)
+        ])
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return text.includes(normalized)
+    })
+  }, [keyword, orders])
+
+  function handleSelectOrder(order: PurchaseOrder) {
+    setSelectedOrderId(order.id)
+  }
+
+  function handleOrderCardKeyDown(event: KeyboardEvent<HTMLElement>, order: PurchaseOrder) {
+    if (event.target !== event.currentTarget) {
+      return
+    }
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleSelectOrder(order)
+    }
+  }
+
+  function openCreateOrderModal() {
+    const defaultStoreCode = defaultCreateStoreCode(session) || storeCode || ''
+    const defaultSite = defaultCreateStoreSite(session, defaultStoreCode)
+    createOrderForm.setFieldsValue({
+      storeCode: defaultStoreCode,
+      title: '',
+      remark: '',
+      items: [createEmptyPskuEntry(defaultSite)]
+    })
+    clearProductSearchOptions()
+    setCreateErrorMessage(undefined)
+    setCreateModalOpen(true)
+  }
+
+  function handleCreateStoreChange(nextStoreCode: string) {
+    const nextSite = defaultCreateStoreSite(session, nextStoreCode)
+    const currentItems = createOrderForm.getFieldValue('items') as PskuEntryFormValue[] | undefined
+    createOrderForm.setFieldsValue({
+      items: currentItems?.length
+        ? currentItems.map((item) => ({ ...item, site: nextSite }))
+        : [createEmptyPskuEntry(nextSite)]
+    })
+    clearProductSearchOptions()
+    setCreateErrorMessage(undefined)
+  }
+
+  function closeCreateOrderModal() {
+    setCreateModalOpen(false)
+    setCreateErrorMessage(undefined)
+    clearProductSearchOptions()
+    createOrderForm.resetFields()
+  }
+
+  function openEditOrderModal(order: PurchaseOrder) {
+    editOrderForm.setFieldsValue({
+      title: order.title,
+      remark: order.remark || ''
+    })
+    setEditOrderTarget(order)
+  }
+
+  function closeEditOrderModal() {
+    setEditOrderTarget(null)
+    editOrderForm.resetFields()
+  }
+
+  async function handleCreateOrder() {
+    try {
+      const values = await createOrderForm.validateFields()
+      if (!values.storeCode) {
+        message.warning('请先选择店铺。')
+        return
+      }
+      const items = normalizePskuEntries(values.items)
+      if (!items.length) {
+        message.warning('请至少添加一行 PSKU、站点和数量。')
+        return
+      }
+      setCreateErrorMessage(undefined)
+      setActionKey('create-order')
+      const nextOrder = await createPurchaseOrder({
+        storeCode: values.storeCode,
+        title: values.title.trim(),
+        remark: values.remark?.trim() || undefined,
+        siteCodes: siteCodesFromItems(items),
+        items
+      })
+      setOrders((current) => [nextOrder, ...current.filter((order) => order.id !== nextOrder.id)])
+      setSelectedOrderId(nextOrder.id)
+      closeCreateOrderModal()
+      message.success('已创建采购单。')
+    } catch (error) {
+      const validationMessage = firstFormValidationMessage(error)
+      if (validationMessage) {
+        setCreateErrorMessage(validationMessage)
+        message.warning(validationMessage)
+      } else {
+        const errorMessage = normalizeError(error, '创建采购单失败')
+        setCreateErrorMessage(errorMessage)
+        message.error(errorMessage)
+      }
+    } finally {
+      setActionKey((current) => (current === 'create-order' ? undefined : current))
+    }
+  }
+
+  async function handleSaveOrderHeader() {
+    if (!editOrderTarget) {
+      return
+    }
+    const currentActionKey = `edit-order:${editOrderTarget.id}`
+    setActionKey(currentActionKey)
+    try {
+      const values = await editOrderForm.validateFields()
+      const nextOrder = await updatePurchaseOrder(editOrderTarget.id, {
+        title: values.title.trim(),
+        remark: values.remark?.trim() || undefined
+      })
+      replaceOrder(nextOrder)
+      setSelectedOrderId(nextOrder.id)
+      closeEditOrderModal()
+      message.success('已保存采购单。')
+    } catch (error) {
+      const validationMessage = firstFormValidationMessage(error)
+      message.error(validationMessage || normalizeError(error, '保存采购单失败'))
+    } finally {
+      setActionKey((current) => (current === currentActionKey ? undefined : current))
+    }
+  }
+
+  function openAddItemsModal(order: PurchaseOrder) {
+    const defaultSite = getOrderSiteOptions(order, session)[0]?.value || DEFAULT_SITE_CODES[0]
+    addItemsForm.setFieldsValue({
+      items: [createEmptyPskuEntry(defaultSite)]
+    })
+    clearProductSearchOptions()
+    setAddItemsErrorMessage(undefined)
+    setAddItemsOrderId(order.id)
+  }
+
+  function closeAddItemsModal() {
+    setAddItemsOrderId(null)
+    setAddItemsErrorMessage(undefined)
+    clearProductSearchOptions()
+    addItemsForm.resetFields()
+  }
+
+  function clearProductSearchOptions() {
+    productSearchRequestIdRef.current += 1
+    setProductSearchOptions([])
+    setProductSearchLoading(false)
+  }
+
+  const handleProductSearch = useCallback(async (targetStoreCode: string | undefined, keywordValue: string) => {
+    const requestId = productSearchRequestIdRef.current + 1
+    productSearchRequestIdRef.current = requestId
+    const nextKeyword = keywordValue.trim()
+    if (!targetStoreCode || !nextKeyword) {
+      setProductSearchOptions([])
+      setProductSearchLoading(false)
+      return
+    }
+
+    setProductSearchLoading(true)
+    try {
+      const options = await loadProductOptions({ storeCode: targetStoreCode, keyword: nextKeyword })
+      if (productSearchRequestIdRef.current === requestId) {
+        setProductSearchOptions(options)
+      }
+    } catch (error) {
+      if (productSearchRequestIdRef.current === requestId) {
+        setProductSearchOptions([])
+        message.error(error instanceof Error ? error.message : '读取商品档案失败')
+      }
+    } finally {
+      if (productSearchRequestIdRef.current === requestId) {
+        setProductSearchLoading(false)
+      }
+    }
+  }, [])
+
+  function openEditItemModal(order: PurchaseOrder, item: PurchaseOrderItem) {
+    const defaultSite = getOrderSiteOptions(order, session)[0]?.value || DEFAULT_SITE_CODES[0]
+    editItemForm.setFieldsValue({
+      psku: item.partnerSku,
+      siteQuantities: item.allocations?.length
+        ? item.allocations.map((allocation) => ({
+          siteCode: allocation.site,
+          transportMode: normalizeTransportMode(allocation.transportMode),
+          quantity: allocation.quantity
+        }))
+        : [createEmptySiteQuantityEntry(defaultSite)]
+    })
+    setEditItemErrorMessage(undefined)
+    setEditItemTarget({ order, item })
+  }
+
+  function closeEditItemModal() {
+    setEditItemTarget(null)
+    setEditItemErrorMessage(undefined)
+    editItemForm.resetFields()
+  }
+
+  async function handleAddItemsToOrder() {
+    try {
+      if (!addItemsOrder) {
+        return
+      }
+      const values = await addItemsForm.validateFields()
+      const items = normalizePskuEntries(values.items)
+      if (!items.length) {
+        message.warning('请至少添加一行 PSKU、站点、运输方式和数量。')
+        return
+      }
+      setAddItemsErrorMessage(undefined)
+      setActionKey(`add-items:${addItemsOrder.id}`)
+      const nextOrder = await addPurchaseOrderItems(addItemsOrder.id, { items })
+      replaceOrder(nextOrder)
+      setSelectedOrderId(nextOrder.id)
+      closeAddItemsModal()
+      message.success('已添加商品。')
+    } catch (error) {
+      const validationMessage = firstFormValidationMessage(error)
+      if (validationMessage) {
+        setAddItemsErrorMessage(validationMessage)
+        message.warning(validationMessage)
+      } else {
+        const errorMessage = normalizeError(error, '添加商品失败')
+        setAddItemsErrorMessage(errorMessage)
+        message.error(errorMessage)
+      }
+    } finally {
+      setActionKey((current) => (current === `add-items:${addItemsOrder?.id}` ? undefined : current))
+    }
+  }
+
+  async function handleUpdateItem() {
+    if (!editItemTarget) {
+      return
+    }
+    const { order, item } = editItemTarget
+    const currentActionKey = `edit-item:${item.id}`
+    setActionKey(currentActionKey)
+    try {
+      const values = await editItemForm.validateFields()
+      const siteQuantities = normalizeSiteQuantityEntries(values.siteQuantities)
+      if (!siteQuantities.length) {
+        message.warning('请至少保留一条站点数量。')
+        return
+      }
+      setEditItemErrorMessage(undefined)
+      const nextOrder = await updatePurchaseOrderItem(order.id, item.id, {
+        psku: item.partnerSku,
+        siteQuantities
+      })
+      replaceOrder(nextOrder)
+      setSelectedOrderId(nextOrder.id)
+      closeEditItemModal()
+      message.success('已保存商品。')
+    } catch (error) {
+      const validationMessage = firstFormValidationMessage(error)
+      if (validationMessage) {
+        setEditItemErrorMessage(validationMessage)
+        message.warning(validationMessage)
+      } else {
+        const errorMessage = normalizeError(error, '保存商品失败')
+        setEditItemErrorMessage(errorMessage)
+        message.error(errorMessage)
+      }
+    } finally {
+      setActionKey((current) => (current === currentActionKey ? undefined : current))
+    }
+  }
+
+  async function handleDeleteOrder() {
+    if (!deleteTargetOrder) {
+      return
+    }
+    const targetId = deleteTargetOrder.id
+    setActionKey(`delete:${targetId}`)
+    try {
+      await deletePurchaseOrder(targetId)
+      setOrders((current) => {
+        const nextOrders = current.filter((order) => order.id !== targetId)
+        if (selectedOrderId === targetId) {
+          setSelectedOrderId(nextOrders[0]?.id)
+        }
+        return nextOrders
+      })
+      if (addItemsOrderId === targetId) {
+        closeAddItemsModal()
+      }
+      if (editItemTarget?.order.id === targetId) {
+        closeEditItemModal()
+      }
+      setDeleteTargetOrder(null)
+      message.success('已删除采购单。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '删除采购单失败')
+    } finally {
+      setActionKey(undefined)
+    }
+  }
+
+  async function handleDeleteItem() {
+    if (!deleteTargetItem) {
+      return
+    }
+    const { order, item } = deleteTargetItem
+    const currentActionKey = `delete-item:${item.id}`
+    setActionKey(currentActionKey)
+    try {
+      const nextOrder = await deletePurchaseOrderItem(order.id, item.id)
+      replaceOrder(nextOrder)
+      setSelectedOrderId(nextOrder.id)
+      if (editItemTarget?.item.id === item.id) {
+        closeEditItemModal()
+      }
+      setDeleteTargetItem(null)
+      message.success('已删除商品行。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '删除商品失败')
+    } finally {
+      setActionKey((current) => (current === currentActionKey ? undefined : current))
+    }
+  }
+
+  async function handleCollectOrder(order: PurchaseOrder) {
+    if (!order.items?.length) {
+      message.warning('当前采购单还没有商品。')
+      return
+    }
+    setActionKey(`collect-order:${order.id}`)
+    try {
+      const nextOrder = await collectPurchaseOrder(order.id)
+      replaceOrder(nextOrder)
+      setSelectedOrderId(nextOrder.id)
+      message.success('已发起整单1688采集。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '发起整单采集失败')
+    } finally {
+      setActionKey(undefined)
+    }
+  }
+
+  async function handlePreviewLogisticsPlan(order: PurchaseOrder) {
+    if (!order.items?.length) {
+      message.warning('当前采购单还没有商品。')
+      return
+    }
+    setActionKey(`logistics-plan-preview:${order.id}`)
+    try {
+      const plan = await previewPurchaseOrderLogisticsPlan(order.id)
+      setLogisticsPlanPreview(plan)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '物流计划预检失败')
+    } finally {
+      setActionKey(undefined)
+    }
+  }
+
+  async function handleGenerateLogisticsPlan() {
+    const orderId = logisticsPlanPreview?.purchaseOrderId
+    if (!orderId) {
+      return
+    }
+    setActionKey(`logistics-plan:${orderId}`)
+    try {
+      const plan = await generatePurchaseOrderLogisticsPlan(orderId)
+      setLogisticsPlanPreview(null)
+      setLogisticsPlan(plan)
+      message.success('已生成物流计划草稿。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '生成物流计划失败')
+    } finally {
+      setActionKey(undefined)
+    }
+  }
+
+  function replaceOrder(nextOrder: PurchaseOrder) {
+    setOrders((current) => current.map((order) => (order.id === nextOrder.id ? nextOrder : order)))
+  }
+
+  return (
+    <div className="purchase-order-page" data-testid="purchase-order-page">
+      <Spin spinning={loading}>
+        <div className="purchase-order-layout">
+          <aside className="purchase-order-sidebar">
+            <div className="purchase-order-sidebar-tools">
+              <Input
+                allowClear
+                prefix={<SearchOutlined />}
+                placeholder="搜索采购单 / SKU"
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                className="purchase-order-search"
+              />
+              <Button type="primary" icon={<PlusOutlined />} onClick={openCreateOrderModal} disabled={!storeCode}>
+                新建采购单
+              </Button>
+            </div>
+            {visibleOrders.length ? (
+              visibleOrders.map((order) => {
+                const summary = orderSummaries.get(order.id) || emptySummary()
+                const meta = ORDER_STATUS_META[summary.status] || ORDER_STATUS_META.draft
+                return (
+                  <article
+                    className={`purchase-order-card${order.id === selectedOrder?.id ? ' is-active' : ''}`}
+                    key={order.id}
+                  >
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={order.id === selectedOrder?.id}
+                      className="purchase-order-card-select"
+                      onClick={() => handleSelectOrder(order)}
+                      onKeyDown={(event) => handleOrderCardKeyDown(event, order)}
+                    >
+                      <div className="purchase-order-card-top">
+                        <div className="purchase-order-card-titleline">
+                          <Text strong ellipsis className="purchase-order-card-title">{order.title}</Text>
+                          <Tooltip title={meta.label}>
+                            <Tag icon={meta.icon} color={meta.color} className="purchase-order-status-tag" />
+                          </Tooltip>
+                        </div>
+                        <div className="purchase-order-card-tools">
+                          <Button
+                            size="small"
+                            icon={<EditOutlined />}
+                            aria-label="编辑采购单"
+                            title="编辑采购单"
+                            className="purchase-order-card-icon-button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              openEditOrderModal(order)
+                            }}
+                          />
+                          <Button
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                            aria-label="删除采购单"
+                            title="删除采购单"
+                            className="purchase-order-card-icon-button"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setDeleteTargetOrder(order)
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="purchase-order-card-meta">
+                        <span>{order.createdAt?.slice(5, 10) || order.orderNo}</span>
+                        <span>商品 {summary.itemCount}</span>
+                        <span>SKU {summary.skuCount}</span>
+                        <span>{summary.totalQuantity} 件</span>
+                        <span>{summary.progress}%</span>
+                      </div>
+                      <Progress percent={summary.progress} size="small" showInfo={false} />
+                    </div>
+                  </article>
+                )
+              })
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={storeCode ? '暂无采购单' : '请先选择店铺'} />
+            )}
+          </aside>
+
+          <main className="purchase-order-workbench">
+            <section className="purchase-order-items">
+              {selectedOrder ? (
+                <div className="purchase-order-detail-toolbar">
+                  <div className="purchase-order-detail-main">
+                    <div className="purchase-order-detail-summary">
+                      <Text strong ellipsis className="purchase-order-detail-title">{selectedOrder.title}</Text>
+                      <span>{selectedOrder.createdAt?.slice(5, 10)}</span>
+                      <span>商品 {selectedOrderSummary.itemCount}</span>
+                      <span>PSKU {selectedOrderSummary.pskuCount}</span>
+                      <span>SKU {selectedOrderSummary.skuCount}</span>
+                      <span>{selectedOrderSummary.totalQuantity} 件</span>
+                    </div>
+                    {selectedOrderAllocationSummary.length ? (
+                      <div className="purchase-order-allocation-summary" aria-label="按站点和运输方式汇总">
+                        <span className="purchase-order-allocation-summary-label">站点运输</span>
+                        {selectedOrderAllocationSummary.map((allocation) => (
+                          <button
+                            type="button"
+                            className={`purchase-site-chip purchase-order-summary-chip${itemFilterKey === allocationFilterKey(allocation.site, allocation.transportMode) ? ' is-active' : ''}`}
+                            key={`${allocation.site}:${allocation.transportMode || 'UNSPECIFIED'}`}
+                            onClick={() => setItemFilterKey(allocationFilterKey(allocation.site, allocation.transportMode))}
+                          >
+                            <span>{allocationDisplayLabel(allocation)}</span>
+                            <strong>{allocation.quantity}</strong>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="purchase-order-detail-actions">
+                    <Button
+                      size="small"
+                      icon={<PlusOutlined />}
+                      onClick={() => openAddItemsModal(selectedOrder)}
+                    >
+                      添加商品
+                    </Button>
+                    <Button
+                      size="small"
+                      icon={<TruckOutlined />}
+                      disabled={!selectedOrder.items?.length}
+                      loading={actionKey === `logistics-plan-preview:${selectedOrder.id}`}
+                      onClick={() => void handlePreviewLogisticsPlan(selectedOrder)}
+                    >
+                      生成物流计划
+                    </Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      icon={<CloudSyncOutlined />}
+                      disabled={!selectedOrder.items?.length}
+                      loading={actionKey === `collect-order:${selectedOrder.id}`}
+                      onClick={() => void handleCollectOrder(selectedOrder)}
+                    >
+                      整单采集
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
+              {selectedOrder ? (
+                <div className="purchase-order-inspection-panel">
+                  <div className="purchase-order-filter-bar" data-testid="purchase-order-filter-bar">
+                    {itemFilterOptions.map((option) => (
+                      <Button
+                        key={option.key}
+                        size="small"
+                        type={itemFilterKey === option.key ? 'primary' : 'default'}
+                        onClick={() => setItemFilterKey(option.key)}
+                      >
+                        {option.label} {option.count}
+                      </Button>
+                    ))}
+                    {activeItemFilter ? (
+                      <Text type="secondary" className="purchase-order-active-filter" data-testid="purchase-order-active-filter">
+                        当前 {activeItemFilter.label}
+                      </Text>
+                    ) : null}
+                  </div>
+                  <div className="purchase-order-issue-summary" data-testid="purchase-order-issue-summary">
+                    {selectedOrderIssueSummary.issueItemCount ? (
+                      <>
+                        {selectedOrderIssueSummary.missingImageCount ? (
+                          <span>缺图片 {selectedOrderIssueSummary.missingImageCount}</span>
+                        ) : null}
+                        {selectedOrderIssueSummary.missingAllocationCount ? (
+                          <span>无站点运输 {selectedOrderIssueSummary.missingAllocationCount}</span>
+                        ) : null}
+                        {selectedOrderIssueSummary.missingTransportCount ? (
+                          <span>运输方式未指定 {selectedOrderIssueSummary.missingTransportCount}</span>
+                        ) : null}
+                        {selectedOrderIssueSummary.quantityIssueCount ? (
+                          <span>数量异常 {selectedOrderIssueSummary.quantityIssueCount}</span>
+                        ) : null}
+                        {selectedOrderIssueSummary.missingSourcingRequirementCount ? (
+                          <span>规格缺失 {selectedOrderIssueSummary.missingSourcingRequirementCount}</span>
+                        ) : null}
+                        {selectedOrderIssueSummary.collectionFailedCount ? (
+                          <span>采集失败 {selectedOrderIssueSummary.collectionFailedCount}</span>
+                        ) : null}
+                      </>
+                    ) : (
+                      <>
+                        <Tag color="success">基础信息正常</Tag>
+                        <span>箱规/重量以物流计划预检为准</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+              {selectedOrder?.items?.length ? (
+                <div className="purchase-item-list">
+                  {visibleOrderItems.length ? visibleOrderItems.map((item) => (
+                    <PurchaseItemCard
+                      key={item.id}
+                      item={item}
+                      issues={itemIssues(item)}
+                      editing={actionKey === `edit-item:${item.id}`}
+                      deleting={actionKey === `delete-item:${item.id}`}
+                      ali1688HistoryEntries={ali1688HistoryEntriesForItem(selectedOrder, item, ali1688HistoryByKey)}
+                      ali1688HistoryLoading={ali1688HistoryLoading}
+                      ali1688HistoryError={ali1688HistoryError}
+                      onEdit={() => openEditItemModal(selectedOrder, item)}
+                      onDelete={() => setDeleteTargetItem({ order: selectedOrder, item })}
+                      onOpenTop5={() => openTop5(item, selectedOrder)}
+                    />
+                  )) : (
+                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前筛选没有商品。" />
+                  )}
+                </div>
+              ) : (
+                <Empty description={selectedOrder ? '当前采购单还没有商品。' : '请选择或新建采购单。'} />
+              )}
+            </section>
+          </main>
+        </div>
+      </Spin>
+
+      <Modal
+        title="新建采购单"
+        open={createModalOpen}
+        okText="创建"
+        cancelText="取消"
+        okButtonProps={{ loading: actionKey === 'create-order' }}
+        onOk={() => void handleCreateOrder()}
+        onCancel={closeCreateOrderModal}
+        width={760}
+      >
+        <Form form={createOrderForm} layout="vertical" requiredMark={false} className="purchase-create-form">
+          {createErrorMessage ? (
+            <Alert type="error" showIcon message={createErrorMessage} style={{ marginBottom: 12 }} />
+          ) : null}
+          <Form.Item
+            label="采购单名"
+            name="title"
+            rules={[{ required: true, whitespace: true, message: '请输入采购单名' }]}
+          >
+            <Input placeholder="例如 xingyao 6月新品采集单" maxLength={60} showCount />
+          </Form.Item>
+          <Form.Item
+            label="店铺选择"
+            name="storeCode"
+            rules={[{ required: true, message: '请选择店铺' }]}
+          >
+            <Select
+              showSearch
+              optionFilterProp="label"
+              options={createStoreOptions}
+              placeholder="选择店铺"
+              onChange={handleCreateStoreChange}
+            />
+          </Form.Item>
+          <PskuRowsFormList
+            addButtonText="添加 PSKU"
+            siteOptions={createSiteOptions}
+            productOptions={productAutoCompleteOptions}
+            productSearchLoading={productSearchLoading}
+            onProductSearch={(nextKeyword) => {
+              void handleProductSearch(createStoreCode || defaultCreateStoreCode(session) || storeCode, nextKeyword)
+            }}
+          />
+          <Form.Item label="备注" name="remark">
+            <Input.TextArea placeholder="输入备注" autoSize={{ minRows: 3, maxRows: 5 }} maxLength={160} showCount />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="添加商品"
+        open={Boolean(addItemsOrder)}
+        okText="添加"
+        cancelText="取消"
+        okButtonProps={{ loading: actionKey === `add-items:${addItemsOrder?.id}` }}
+        onOk={() => void handleAddItemsToOrder()}
+        onCancel={closeAddItemsModal}
+        width={760}
+      >
+        <Form form={addItemsForm} layout="vertical" requiredMark={false} className="purchase-create-form">
+          {addItemsErrorMessage ? (
+            <Alert type="error" showIcon message={addItemsErrorMessage} style={{ marginBottom: 12 }} />
+          ) : null}
+          <PskuRowsFormList
+            addButtonText="添加 PSKU"
+            siteOptions={getOrderSiteOptions(addItemsOrder, session)}
+            productOptions={productAutoCompleteOptions}
+            productSearchLoading={productSearchLoading}
+            onProductSearch={(nextKeyword) => {
+              void handleProductSearch(addItemsOrder?.storeCode || storeCode, nextKeyword)
+            }}
+          />
+        </Form>
+      </Modal>
+
+      <Modal
+        title="编辑商品"
+        open={Boolean(editItemTarget)}
+        okText="保存"
+        cancelText="取消"
+        okButtonProps={{ loading: actionKey === `edit-item:${editItemTarget?.item.id}` }}
+        onOk={() => void handleUpdateItem()}
+        onCancel={closeEditItemModal}
+        width={680}
+      >
+        <Form form={editItemForm} layout="vertical" requiredMark={false} className="purchase-create-form">
+          {editItemErrorMessage ? (
+            <Alert type="error" showIcon message={editItemErrorMessage} style={{ marginBottom: 12 }} />
+          ) : null}
+          <Form.Item label="PSKU" name="psku">
+            <Input disabled />
+          </Form.Item>
+          <SiteQuantityFormList
+            addButtonText="添加站点数量"
+            siteOptions={getOrderSiteOptions(editItemTarget?.order, session)}
+          />
+        </Form>
+      </Modal>
+
+      <Modal
+        title="编辑采购单"
+        open={Boolean(editOrderTarget)}
+        okText="保存"
+        cancelText="取消"
+        okButtonProps={{ loading: actionKey === `edit-order:${editOrderTarget?.id}` }}
+        onOk={() => void handleSaveOrderHeader()}
+        onCancel={closeEditOrderModal}
+        width={560}
+      >
+        <Form form={editOrderForm} layout="vertical" requiredMark={false}>
+          <Form.Item
+            label="采购单名"
+            name="title"
+            rules={[{ required: true, whitespace: true, message: '请输入采购单名' }]}
+          >
+            <Input placeholder="输入采购单名" maxLength={60} showCount />
+          </Form.Item>
+          <Form.Item label="备注" name="remark">
+            <Input.TextArea placeholder="输入备注" autoSize={{ minRows: 3, maxRows: 5 }} maxLength={160} showCount />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="物流计划预检"
+        open={Boolean(logisticsPlanPreview)}
+        footer={[
+          <Button key="cancel" onClick={() => setLogisticsPlanPreview(null)}>
+            取消
+          </Button>,
+          <Button
+            key="generate"
+            type="primary"
+            loading={actionKey === `logistics-plan:${logisticsPlanPreview?.purchaseOrderId}`}
+            onClick={() => void handleGenerateLogisticsPlan()}
+          >
+            生成草稿
+          </Button>
+        ]}
+        onCancel={() => setLogisticsPlanPreview(null)}
+        width={900}
+      >
+        {logisticsPlanPreview ? (
+          <div className="purchase-logistics-plan">
+            <Alert
+              type={logisticsPlanPreview.missingItemCount ? 'warning' : 'success'}
+              showIcon
+              message="以下为物流计划预检结果；确认后才会生成草稿，不会自动转在途批次。"
+            />
+            <LogisticsPlanContent logisticsPlan={logisticsPlanPreview} />
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        title="物流计划草稿"
+        open={Boolean(logisticsPlan)}
+        footer={[
+          <Button key="close" type="primary" onClick={() => setLogisticsPlan(null)}>
+            知道了
+          </Button>
+        ]}
+        onCancel={() => setLogisticsPlan(null)}
+        width={900}
+      >
+        {logisticsPlan ? (
+          <LogisticsPlanContent logisticsPlan={logisticsPlan} />
+        ) : null}
+      </Modal>
+
+      <Modal
+        title="删除采购单"
+        open={Boolean(deleteTargetOrder)}
+        okText="删除"
+        okButtonProps={{ danger: true, loading: actionKey === `delete:${deleteTargetOrder?.id}` }}
+        cancelText="取消"
+        onOk={() => void handleDeleteOrder()}
+        onCancel={() => setDeleteTargetOrder(null)}
+      >
+        <Text>确认删除 {deleteTargetOrder?.title || '该采购单'}？</Text>
+      </Modal>
+
+      <Modal
+        title="删除商品"
+        open={Boolean(deleteTargetItem)}
+        okText="删除"
+        okButtonProps={{ danger: true, loading: actionKey === `delete-item:${deleteTargetItem?.item.id}` }}
+        cancelText="取消"
+        onOk={() => void handleDeleteItem()}
+        onCancel={() => setDeleteTargetItem(null)}
+      >
+        <Text>
+          确认从 {deleteTargetItem?.order.title || '该采购单'} 删除 {deleteTargetItem?.item.partnerSku || '该商品'}？
+        </Text>
+      </Modal>
+
+    </div>
+  )
+}
+
+function LogisticsPlanContent({ logisticsPlan }: { logisticsPlan: PurchaseOrderLogisticsPlan }) {
+  const recommendations = logisticsPlan.recommendations || []
+  return (
+    <div className="purchase-logistics-plan">
+      <Descriptions size="small" column={3} colon={false} className="purchase-logistics-plan-summary">
+        <Descriptions.Item label="计划号">{logisticsPlan.planNo}</Descriptions.Item>
+        <Descriptions.Item label="采购单">{logisticsPlan.purchaseOrderTitle}</Descriptions.Item>
+        <Descriptions.Item label="生成时间">{logisticsPlan.generatedAt}</Descriptions.Item>
+        <Descriptions.Item label="商品">{logisticsPlan.itemCount}</Descriptions.Item>
+        <Descriptions.Item label="SKU">{logisticsPlan.skuCount}</Descriptions.Item>
+        <Descriptions.Item label="总数量">{logisticsPlan.totalQuantity}</Descriptions.Item>
+        <Descriptions.Item label="海运散货体积">{logisticsPlan.estimatedSeaVolumeCbmText || '-'}</Descriptions.Item>
+        <Descriptions.Item label="空运计费重">{logisticsPlan.estimatedAirChargeableWeightKgText || '-'}</Descriptions.Item>
+      </Descriptions>
+      <div className="purchase-logistics-sites">
+        {(logisticsPlan.siteSummaries || []).map((site) => (
+          <span className="purchase-site-chip" key={`${site.site}:${site.transportMode || 'UNSPECIFIED'}`}>
+            <span>{allocationDisplayLabel(site)}</span>
+            <strong>{site.quantity}</strong>
+          </span>
+        ))}
+      </div>
+      {(logisticsPlan.messages || []).length ? (
+        <Alert
+          type={logisticsPlan.missingItemCount ? 'warning' : 'success'}
+          showIcon
+          message={logisticsPlan.messages.join('；')}
+        />
+      ) : null}
+      {recommendations.length ? (
+        <section className="purchase-logistics-recommendations">
+          <div className="purchase-logistics-section-title">
+            <Text strong>货代推荐候选</Text>
+            {logisticsPlan.recommendationStatus ? (
+              <Tag color={logisticsPlan.recommendationStatus.includes('blocked') ? 'warning' : 'processing'}>
+                {logisticsRecommendationStatusLabel(logisticsPlan.recommendationStatus)}
+              </Tag>
+            ) : null}
+          </div>
+          <div className="purchase-logistics-recommendation-list">
+            {recommendations.map((recommendation) => (
+              <article className="purchase-logistics-recommendation" key={`${recommendation.forwarderCode || recommendation.forwarderName}:${recommendation.serviceCode}:${recommendation.rank}`}>
+                <div className="purchase-logistics-recommendation-head">
+                  <div className="purchase-logistics-recommendation-title">
+                    <Text strong>{recommendation.forwarderName || recommendation.forwarderCode || '-'}</Text>
+                    {recommendation.recommended ? <Tag color="success">首选候选</Tag> : null}
+                  </div>
+                  <Text type="secondary">#{recommendation.rank}</Text>
+                </div>
+                <div className="purchase-logistics-recommendation-meta">
+                  <span>{transportModeLabel(recommendation.transportMode)}</span>
+                  <span>{recommendation.serviceName || recommendation.serviceCode || '-'}</span>
+                  <span>{recommendation.country || '-'} {recommendation.deliveryCity || recommendation.destinationNode || ''}</span>
+                  <span>{recommendation.transitTimeText || '时效待确认'}</span>
+                  <span>{recommendation.priceSummary || '报价待确认'}</span>
+                  {recommendation.estimatedCostText ? <span>{recommendation.estimatedCostText}</span> : null}
+                  {recommendation.cargoCategorySummary ? <span>{recommendation.cargoCategorySummary}</span> : null}
+                </div>
+                {recommendation.costComponents?.length ? (
+                  <div className="purchase-logistics-cost-components">
+                    {recommendation.costComponents.map((component) => (
+                      <div
+                        className={`purchase-logistics-cost-component${component.amountStatus === 'RECURRING_DAILY' ? ' is-recurring' : ''}`}
+                        key={`${recommendation.routeCode || recommendation.serviceCode}:${component.componentType}:${component.componentName}`}
+                      >
+                        <span>{component.componentName}</span>
+                        <strong>{component.amountText || '待确认'}</strong>
+                        <small>{component.formulaText || component.sourceFeeName || ''}</small>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {recommendation.excludedCostNotes?.length ? (
+                  <ul className="purchase-logistics-excluded-costs">
+                    {recommendation.excludedCostNotes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <div className="purchase-logistics-recommendation-notes">
+                  {(recommendation.reasons || []).map((reason) => <Tag key={reason}>{reason}</Tag>)}
+                  {(recommendation.risks || []).map((risk) => <Tag color="warning" key={risk}>{risk}</Tag>)}
+                  {recommendation.estimateStatus ? (
+                    <Tag color={recommendation.estimateStatus.includes('blocked') ? 'warning' : 'processing'}>
+                      {logisticsEstimateStatusLabel(recommendation.estimateStatus)}
+                    </Tag>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+      <div className="purchase-logistics-lines">
+        {(logisticsPlan.lines || []).map((line) => (
+          <article className="purchase-logistics-line" key={line.itemId}>
+            <div className="purchase-logistics-line-main">
+              {line.productImageUrl ? (
+                <img src={line.productImageUrl} alt="" className="purchase-logistics-thumb" />
+              ) : (
+                <div className="purchase-logistics-thumb" />
+              )}
+              <div className="purchase-logistics-copy">
+                <Text strong ellipsis>{line.partnerSku}</Text>
+                <Text type="secondary" ellipsis>{line.productTitle}</Text>
+              </div>
+            </div>
+            <div className="purchase-logistics-line-specs">
+              <span>商品 {line.productDimensionsText || '-'}</span>
+              <span>重量 {line.productWeightText || '-'}</span>
+              <span>箱规 {line.cartonDimensionsText || '-'}</span>
+              <span>箱重 {line.cartonWeightText || '-'}</span>
+              <span>装箱 {line.cartonQuantity || '-'}</span>
+              <span>散货 {line.looseVolumeCbmText || '-'}</span>
+              <span>海运散货 {line.seaLooseVolumeCbmText || '-'}</span>
+            </div>
+            <div className="purchase-logistics-line-sites">
+              {(line.allocations || []).map((allocation) => (
+                <span className="purchase-site-chip" key={`${line.itemId}:${allocation.site}:${allocation.transportMode || 'UNSPECIFIED'}`}>
+                  <span>{allocationDisplayLabel(allocation)}</span>
+                  <strong>{allocation.quantity}</strong>
+                </span>
+              ))}
+            </div>
+            <div className="purchase-logistics-line-missing">
+              {line.missingFields?.length ? (
+                line.missingFields.map((field) => <Tag color="warning" key={field}>{field}</Tag>)
+              ) : (
+                <Tag color="success">信息完整</Tag>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PurchaseItemCard({
+  item,
+  issues,
+  editing,
+  deleting,
+  ali1688HistoryEntries,
+  ali1688HistoryLoading,
+  ali1688HistoryError,
+  onEdit,
+  onDelete,
+  onOpenTop5
+}: {
+  item: PurchaseOrderItem
+  issues: string[]
+  editing: boolean
+  deleting: boolean
+  ali1688HistoryEntries: PurchaseOrderAli1688HistoryEntry[]
+  ali1688HistoryLoading: boolean
+  ali1688HistoryError?: string
+  onEdit: () => void
+  onDelete: () => void
+  onOpenTop5: () => void
+}) {
+  const meta = ITEM_STATUS_META[item.collectionStatus] || ITEM_STATUS_META.not_started
+  const imageUrl = item.sourceImageUrl || item.productImageUrl
+  const titlePair = buildItemTitlePair(item)
+  const showInlinePsku = !sameDisplayText(titlePair.cn, item.partnerSku)
+
+  return (
+    <article className="purchase-item-card">
+      <div className="purchase-item-main">
+        <ProductThumbnail imageUrl={imageUrl} />
+        <div className="purchase-item-copy">
+          <div className="purchase-item-title-row">
+            <Text strong ellipsis className="purchase-item-title">
+              {titlePair.cn}
+            </Text>
+            <ProductDetailButton item={item} imageUrl={imageUrl} titlePair={titlePair} />
+          </div>
+          {showInlinePsku || titlePair.en ? (
+            <div className="purchase-item-sub-row">
+              {showInlinePsku ? (
+                <Text type="secondary" className="purchase-item-psku">{item.partnerSku}</Text>
+              ) : null}
+              {titlePair.en ? (
+                <Text type="secondary" ellipsis className="purchase-item-en-title">{titlePair.en}</Text>
+              ) : null}
+            </div>
+          ) : null}
+          {issues.length ? (
+            <div className="purchase-item-issue-list">
+              {issues.slice(0, 3).map((issue) => (
+                <Tag color="warning" key={issue}>{issue}</Tag>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="purchase-sku-cell">
+        <div className="purchase-site-list">
+          {(item.allocations || []).map((allocation) => (
+            <span
+              className={`purchase-site-chip${allocation.enabled ? '' : ' is-disabled'}`}
+              key={`${item.id}:${allocation.site}:${allocation.transportMode || 'UNSPECIFIED'}`}
+            >
+              <span>{allocationDisplayLabel(allocation)}</span>
+              <strong>{allocation.quantity}</strong>
+            </span>
+          ))}
+        </div>
+        <PurchaseAli1688HistoryLine
+          entries={ali1688HistoryEntries}
+          loading={ali1688HistoryLoading}
+          error={ali1688HistoryError}
+        />
+      </div>
+
+      <button type="button" className="purchase-collection-cell" onClick={onOpenTop5}>
+        <div className="purchase-collection-line">
+          <Text type="secondary">1688</Text>
+          <Tag color={meta.color}>{meta.label}</Tag>
+          <Text strong>{item.progress}%</Text>
+        </div>
+        <div className="purchase-collection-line purchase-collection-progress-line">
+          <Progress
+            percent={item.progress}
+            size="small"
+            showInfo={false}
+            status={item.collectionStatus === 'failed' ? 'exception' : undefined}
+          />
+        </div>
+      </button>
+
+      <div className="purchase-item-actions">
+        <Button
+          size="small"
+          icon={<EditOutlined />}
+          loading={editing}
+          aria-label="编辑"
+          title="编辑"
+          onClick={onEdit}
+        />
+        <Button
+          size="small"
+          danger
+          icon={<DeleteOutlined />}
+          loading={deleting}
+          aria-label="删除"
+          title="删除"
+          onClick={onDelete}
+        />
+      </div>
+    </article>
+  )
+}
+
+function PurchaseAli1688HistoryLine({
+  entries,
+  loading,
+  error
+}: {
+  entries: PurchaseOrderAli1688HistoryEntry[]
+  loading: boolean
+  error?: string
+}) {
+  const visibleEntries = entries.filter((entry) => Boolean(entry.record))
+  if (loading && !visibleEntries.length) {
+    return <Text type="secondary" className="purchase-ali1688-history-status">1688历史读取中</Text>
+  }
+  if (error && !visibleEntries.length) {
+    return (
+      <Tooltip title={error}>
+        <Text type="danger" className="purchase-ali1688-history-status">1688历史读取失败</Text>
+      </Tooltip>
+    )
+  }
+  if (!visibleEntries.length) {
+    return <Text type="secondary" className="purchase-ali1688-history-status">暂无1688历史</Text>
+  }
+  return (
+    <div className="purchase-ali1688-history-list" aria-label="1688 历史采购">
+      {visibleEntries.map((entry) => (
+        <Popover
+          key={entry.key}
+          placement="topLeft"
+          title="1688 历史采购"
+          content={<PurchaseAli1688HistoryPopover entry={entry} />}
+        >
+          <button type="button" className="purchase-ali1688-history-chip">
+            <span>{normalizeSiteCode(entry.siteCode) || '全部'}历史</span>
+            <strong>{formatPurchaseAmount(recentAli1688UnitPrice(entry.record))}</strong>
+            <em>{displayShortText(recentAli1688OrderNo(entry.record), '无订单')}</em>
+          </button>
+        </Popover>
+      ))}
+    </div>
+  )
+}
+
+function PurchaseAli1688HistoryPopover({ entry }: { entry: PurchaseOrderAli1688HistoryEntry }) {
+  const record = entry.record
+  const batches = record?.purchaseBatches || []
+  const latestBatch = latestAli1688Batch(record)
+  const sourceRows = latestBatch?.sources?.length ? latestBatch.sources : record?.history || []
+  return (
+    <div className="purchase-ali1688-history-popover">
+      <div className="purchase-ali1688-history-popover-summary">
+        <Text strong>{displayShortText(record?.partnerSku || record?.pskuCode || record?.skuParent, '未知 PSKU')}</Text>
+        <Text type="secondary">
+          {displayShortText(record?.storeCode)} · {displayShortText(record?.siteCode || entry.siteCode)}
+        </Text>
+        <Text type="secondary">
+          采购 {record?.purchaseCount || batches.length || 0} 次 · 最近 {formatPurchaseAmount(recentAli1688UnitPrice(record))}
+        </Text>
+      </div>
+      {latestBatch ? (
+        <div className="purchase-ali1688-history-popover-batch">
+          <Text strong>{displayShortText(latestBatch.label, '最近批次')}</Text>
+          <Text type="secondary">
+            数量 {displayShortText(latestBatch.countedQuantity)} · 成本 {formatPurchaseAmount(latestBatch.countedCost)}
+          </Text>
+          {sourceRows.map((source, index) => (
+            <div className="purchase-ali1688-history-source" key={ali1688HistorySourceKey(source, index)}>
+              <Text>{displayShortText(source.orderNo, '无订单号')}</Text>
+              <Text type="secondary">{ali1688HistorySourceSummary(source, false)}</Text>
+            </div>
+          ))}
+        </div>
+      ) : sourceRows.length ? (
+        <div className="purchase-ali1688-history-popover-batch">
+          <Text strong>历史订单</Text>
+          {sourceRows.slice(0, 5).map((source, index) => (
+            <div className="purchase-ali1688-history-source" key={ali1688HistorySourceKey(source, index)}>
+              <Text>{displayShortText(source.orderNo, '无订单号')}</Text>
+              <Text type="secondary">{ali1688HistorySourceSummary(source, true)}</Text>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Text type="secondary">暂无已维护批次来源</Text>
+      )}
+    </div>
+  )
+}
+
+function ali1688HistorySourceKey(source: PurchaseOrderAli1688HistorySource, index: number) {
+  return `${source.allocationId || source.assignmentId || source.orderNo || 'source'}:${source.itemId || ''}:${index}`
+}
+
+function ali1688HistorySourceSummary(source: PurchaseOrderAli1688HistorySource, includePrice: boolean) {
+  const parts = [
+    displayShortText(source.orderTime),
+    displayShortText(source.supplierName)
+  ]
+  if (source.sourceLineLabel) {
+    parts.push(source.sourceLineLabel)
+  }
+  if (source.assignedQuantity) {
+    parts.push(`数量 ${displayShortText(source.assignedQuantity)}`)
+  }
+  if (includePrice) {
+    parts.push(`成本 ${formatPurchaseAmount(source.allocatedCost)}`)
+    parts.push(`单价 ${formatPurchaseAmount(source.unitPrice)}`)
+  }
+  if (source.allocationBasis) {
+    parts.push(source.allocationBasis)
+  }
+  return parts.join(' · ')
+}
+
+function ProductDetailButton({
+  item,
+  imageUrl,
+  titlePair
+}: {
+  item: PurchaseOrderItem
+  imageUrl?: string
+  titlePair: { cn: string; en: string }
+}) {
+  const content = (
+    <div className="purchase-product-popover">
+      <div className="purchase-thumb-preview-frame">
+        {imageUrl ? (
+          <img src={imageUrl} alt="" className="purchase-thumb-preview" />
+        ) : (
+          <div className="purchase-thumb-preview-empty">暂无图片</div>
+        )}
+      </div>
+      <div className="purchase-product-popover-copy">
+        <Text strong className="purchase-product-popover-title">{titlePair.cn}</Text>
+        {titlePair.en ? (
+          <Text type="secondary" className="purchase-product-popover-subtitle">{titlePair.en}</Text>
+        ) : null}
+        <div className="purchase-product-popover-fields">
+          <InfoField label="Z码" value={item.skuParent} />
+          <InfoField label="PSKU" value={item.partnerSku} />
+          <InfoField label="类目" value={item.productFulltype} />
+        </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <Popover
+      content={content}
+      trigger="click"
+      overlayClassName="purchase-thumb-tooltip"
+      placement="topLeft"
+    >
+      <Button size="small" icon={<SearchOutlined />} aria-label="详情" title="详情" />
+    </Popover>
+  )
+}
+
+function ProductThumbnail({ imageUrl }: { imageUrl?: string }) {
+  if (!imageUrl) {
+    return <div className="purchase-thumb" />
+  }
+
+  return <img src={imageUrl} alt="" className="purchase-thumb" />
+}
+
+function InfoField({ label, value }: { label: string; value?: string }) {
+  return (
+    <div className="purchase-product-popover-field">
+      <span>{label}</span>
+      <strong>{value?.trim() || '-'}</strong>
+    </div>
+  )
+}
+
+function SiteQuantityFormList({
+  addButtonText,
+  siteOptions
+}: {
+  addButtonText: string
+  siteOptions: Array<{ label: string; value: PurchaseSiteCode }>
+}) {
+  const defaultSite = siteOptions[0]?.value || DEFAULT_SITE_CODES[0]
+
+  return (
+    <div className="purchase-psku-entry">
+      <Form.List name="siteQuantities">
+        {(fields, { add, remove }) => (
+          <div className="purchase-psku-entry-list">
+            {fields.length ? (
+              fields.map((field) => (
+                <div className="purchase-site-quantity-row" key={field.key}>
+                  <Form.Item name={[field.name, 'siteCode']} rules={[{ required: true, message: '请选择站点' }]}>
+                    <Select options={siteOptions} placeholder="选择站点" />
+                  </Form.Item>
+                  <Form.Item name={[field.name, 'transportMode']} rules={[{ required: true, message: '请选择运输方式' }]}>
+                    <Select options={TRANSPORT_MODE_OPTIONS} placeholder="运输方式" />
+                  </Form.Item>
+                  <Form.Item
+                    name={[field.name, 'quantity']}
+                    rules={[
+                      {
+                        validator: (_, value: number | null | undefined) =>
+                          typeof value === 'number' && value > 0
+                            ? Promise.resolve()
+                            : Promise.reject(new Error('请输入数量'))
+                      }
+                    ]}
+                  >
+                    <InputNumber min={1} precision={0} placeholder="数量" />
+                  </Form.Item>
+                  <Button aria-label="删除" icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                </div>
+              ))
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无记录" />
+            )}
+            <Button icon={<PlusOutlined />} onClick={() => add(createEmptySiteQuantityEntry(defaultSite))}>
+              {addButtonText}
+            </Button>
+          </div>
+        )}
+      </Form.List>
+    </div>
+  )
+}
+
+function PskuRowsFormList({
+  addButtonText,
+  siteOptions,
+  productOptions,
+  productSearchLoading,
+  onProductSearch
+}: {
+  addButtonText: string
+  siteOptions: Array<{ label: string; value: PurchaseSiteCode }>
+  productOptions?: Array<{ value: string; label: ReactNode }>
+  productSearchLoading?: boolean
+  onProductSearch?: (keyword: string) => void
+}) {
+  const defaultSite = siteOptions[0]?.value || DEFAULT_SITE_CODES[0]
+
+  return (
+    <div className="purchase-psku-entry">
+      <Form.List name="items">
+        {(fields, { add, remove }) => (
+          <div className="purchase-psku-entry-list">
+            {fields.length ? (
+              fields.map((field) => (
+                <div className="purchase-psku-entry-row" key={field.key}>
+                  <Form.Item
+                    name={[field.name, 'psku']}
+                    rules={[{ required: true, whitespace: true, message: '请输入 PSKU' }]}
+                  >
+                    <AutoComplete
+                      allowClear
+                      filterOption={false}
+                      notFoundContent={productSearchLoading ? <Spin size="small" /> : null}
+                      options={productOptions}
+                      placeholder="输入 PSKU / 标题搜索"
+                      onSearch={onProductSearch}
+                    />
+                  </Form.Item>
+                  <Form.Item name={[field.name, 'site']} rules={[{ required: true, message: '请选择站点' }]}>
+                    <Select options={siteOptions} placeholder="选择站点" />
+                  </Form.Item>
+                  <Form.Item name={[field.name, 'transportMode']} rules={[{ required: true, message: '请选择运输方式' }]}>
+                    <Select options={TRANSPORT_MODE_OPTIONS} placeholder="运输方式" />
+                  </Form.Item>
+                  <Form.Item
+                    name={[field.name, 'quantity']}
+                    rules={[
+                      {
+                        validator: (_, value: number | null | undefined) =>
+                          typeof value === 'number' && value > 0
+                            ? Promise.resolve()
+                            : Promise.reject(new Error('请输入数量'))
+                      }
+                    ]}
+                  >
+                    <InputNumber min={1} precision={0} placeholder="数量" />
+                  </Form.Item>
+                  <Button aria-label="删除" icon={<DeleteOutlined />} onClick={() => remove(field.name)} />
+                </div>
+              ))
+            ) : (
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无记录" />
+            )}
+            <Button icon={<PlusOutlined />} onClick={() => add(createEmptyPskuEntry(defaultSite))}>
+              {addButtonText}
+            </Button>
+          </div>
+        )}
+      </Form.List>
+    </div>
+  )
+}
+
+function createEmptyPskuEntry(site: PurchaseSiteCode): PskuEntryFormValue {
+  return {
+    psku: '',
+    site,
+    transportMode: DEFAULT_TRANSPORT_MODE,
+    quantity: 1
+  }
+}
+
+function createEmptySiteQuantityEntry(site: PurchaseSiteCode): SiteQuantityFormValue {
+  return {
+    siteCode: site,
+    transportMode: DEFAULT_TRANSPORT_MODE,
+    quantity: 1
+  }
+}
+
+function getOrderSiteOptions(order?: PurchaseOrder, session?: AuthSession | null) {
+  const sessionSiteOptions = storeGroupSiteOptions(session, order?.storeCode)
+  if (sessionSiteOptions.length) {
+    return sessionSiteOptions
+  }
+  if (!order?.siteCodes?.length) {
+    return SITE_OPTIONS
+  }
+  const sites = new Set(order.siteCodes)
+  return SITE_OPTIONS.filter((option) => sites.has(option.value))
+}
+
+function siteCodesFromItems(items: PurchaseOrderItemCommand[]) {
+  return Array.from(new Set(items.map((item) => normalizeSiteCode(item.site)).filter(Boolean)))
+}
+
+function buildProductAutoCompleteOptions(options: ProductOption[]) {
+  const seen = new Set<string>()
+  return options
+    .filter((option) => {
+      const key = option.partnerSku?.trim()
+      if (!key || seen.has(key)) {
+        return false
+      }
+      seen.add(key)
+      return true
+    })
+    .map((option) => ({
+      value: option.partnerSku,
+      label: (
+        <div className="purchase-product-option">
+          {option.productImageUrl ? (
+            <img src={option.productImageUrl} alt="" className="purchase-product-option-thumb" />
+          ) : (
+            <span className="purchase-product-option-thumb" />
+          )}
+          <span className="purchase-product-option-copy">
+            <Text strong className="purchase-product-option-psku">{option.partnerSku}</Text>
+            <Text type="secondary" ellipsis className="purchase-product-option-title">
+              {option.productTitle || option.skuParent || option.partnerSku}
+            </Text>
+          </span>
+          {option.availableSiteCodes?.length ? (
+            <span className="purchase-product-option-sites">{option.availableSiteCodes.join(' / ')}</span>
+          ) : null}
+        </div>
+      )
+    }))
+}
+
+function buildCreateStoreOptions(session?: AuthSession | null) {
+  return availableSessionStores(session).map((store) => ({
+    label: storeOptionLabel(store),
+    value: store.storeCode
+  }))
+}
+
+function getCreateStoreSiteOptions(session?: AuthSession | null, storeCode?: string) {
+  const sessionSiteOptions = storeGroupSiteOptions(session, storeCode)
+  return sessionSiteOptions.length ? sessionSiteOptions : SITE_OPTIONS
+}
+
+function defaultCreateStoreCode(session?: AuthSession | null) {
+  return session?.currentStore?.storeCode || availableSessionStores(session)[0]?.storeCode || ''
+}
+
+function defaultCreateStoreSite(session?: AuthSession | null, storeCode?: string) {
+  const targetStoreCode = storeCode || defaultCreateStoreCode(session)
+  const store = availableSessionStores(session).find((item) => item.storeCode === targetStoreCode)
+  return normalizeSiteCode(store?.site || session?.currentStore?.site) || DEFAULT_SITE_CODES[0]
+}
+
+function storeGroupSiteOptions(session?: AuthSession | null, storeCode?: string) {
+  const stores = availableSessionStores(session)
+  const targetStoreCode = storeCode || defaultCreateStoreCode(session)
+  const targetStore = stores.find((store) => store.storeCode === targetStoreCode)
+  const siblingStores = targetStore?.projectCode
+    ? stores.filter((store) => store.projectCode === targetStore.projectCode)
+    : targetStore
+      ? [targetStore]
+      : []
+  const siteCodes = Array.from(
+    new Set(
+      siblingStores
+        .map((store) => normalizeSiteCode(store.site))
+        .filter((site): site is PurchaseSiteCode => Boolean(site))
+    )
+  )
+  return siteCodes.map(siteOption)
+}
+
+function availableSessionStores(session?: AuthSession | null) {
+  const stores = [
+    ...(session?.userStores || []),
+    ...(session?.currentStore ? [session.currentStore] : [])
+  ]
+  const seen = new Set<string>()
+  return stores.filter((store) => {
+    if (!store.storeCode || seen.has(store.storeCode)) {
+      return false
+    }
+    seen.add(store.storeCode)
+    return store.authorized !== false
+  })
+}
+
+function storeOptionLabel(store: NonNullable<AuthSession['userStores']>[number]) {
+  return [
+    store.projectName || store.projectCode || store.storeCode,
+    normalizeSiteCode(store.site)
+  ].filter(Boolean).join(' / ')
+}
+
+function normalizeSiteCode(value?: string) {
+  return (value || '').trim().toUpperCase()
+}
+
+function normalizeTransportMode(value?: string) {
+  const normalized = (value || '').trim().toUpperCase()
+  if (normalized === 'SEA' || normalized === '海' || normalized === '海运') {
+    return 'SEA'
+  }
+  if (normalized === 'EXPRESS' || normalized === '快递') {
+    return 'EXPRESS'
+  }
+  if (normalized === 'UNSPECIFIED' || normalized === '未分配' || normalized === '未指定') {
+    return 'UNSPECIFIED'
+  }
+  return 'AIR'
+}
+
+function transportModeLabel(value?: string) {
+  const normalized = normalizeTransportMode(value)
+  if (normalized === 'SEA') {
+    return '海'
+  }
+  if (normalized === 'EXPRESS') {
+    return '快递'
+  }
+  if (normalized === 'UNSPECIFIED') {
+    return '未分配'
+  }
+  return '空'
+}
+
+function logisticsRecommendationStatusLabel(value?: string) {
+  switch (value) {
+    case 'transport_candidate_blocked_by_specs':
+      return '部分缺规格待计价'
+    case 'transport_candidate_ready':
+      return '候选可复核'
+    case 'air_candidate_blocked_by_specs':
+      return '空运缺规格待计价'
+    case 'air_candidate_ready':
+      return '空运候选可复核'
+    case 'sea_candidate_blocked_by_specs':
+      return '缺尺寸待计价'
+    case 'sea_candidate_ready':
+      return '候选可复核'
+    case 'no_transport_quote':
+      return '暂无报价'
+    case 'no_transport_quantity':
+      return '无运输数量'
+    case 'no_air_quote':
+      return '暂无空运报价'
+    case 'no_sea_quote':
+      return '暂无海运报价'
+    case 'no_sea_quantity':
+      return '无海运数量'
+    default:
+      return value || '待确认'
+  }
+}
+
+function logisticsEstimateStatusLabel(value?: string) {
+  switch (value) {
+    case 'air_blocked_by_missing_specs':
+      return '空运缺规格'
+    case 'air_chargeable_weight_estimated':
+      return '空运计费重估算'
+    case 'blocked_by_missing_specs':
+      return '缺尺寸'
+    case 'loose_volume_estimated':
+      return '散货体积估算'
+    case 'candidate_ready':
+      return '待复核计价'
+    default:
+      return value || '待确认'
+  }
+}
+
+function allocationDisplayLabel(allocation: { site?: string; transportMode?: string; transportModeLabel?: string }) {
+  const site = normalizeSiteCode(allocation.site) || '-'
+  const modeLabel = allocation.transportModeLabel || transportModeLabel(allocation.transportMode)
+  return `${site} ${modeLabel}`
+}
+
+function ensureSiteOption(siteCode: PurchaseSiteCode) {
+  const knownOption = SITE_OPTIONS.find((option) => option.value === siteCode)
+  if (knownOption) {
+    return [knownOption]
+  }
+  return [{ label: siteCode, value: siteCode }]
+}
+
+function siteOption(siteCode: PurchaseSiteCode) {
+  return ensureSiteOption(siteCode)[0]
+}
+
+function normalizePskuEntries(rows?: PskuEntryFormValue[]): PurchaseOrderItemCommand[] {
+  return (rows || [])
+    .map(normalizePskuEntry)
+    .filter((row): row is PurchaseOrderItemCommand => Boolean(row))
+}
+
+function normalizePskuEntry(row?: PskuEntryFormValue): PurchaseOrderItemCommand | null {
+  const item = {
+    psku: row?.psku?.trim() || '',
+    site: normalizeSiteCode(row?.site),
+    transportMode: normalizeTransportMode(row?.transportMode),
+    quantity: row?.quantity || 0
+  }
+  return item.psku && item.site && item.transportMode && item.quantity > 0 ? item : null
+}
+
+function normalizeSiteQuantityEntries(rows?: SiteQuantityFormValue[]): PurchaseOrderItemSiteQuantityCommand[] {
+  const merged = new Map<string, PurchaseOrderItemSiteQuantityCommand>()
+  ;(rows || []).forEach((row) => {
+    const siteCode = normalizeSiteCode(row?.siteCode)
+    const transportMode = normalizeTransportMode(row?.transportMode)
+    const quantity = row?.quantity || 0
+    if (!siteCode || !transportMode || quantity <= 0) {
+      return
+    }
+    const key = `${siteCode}:${transportMode}`
+    const current = merged.get(key)
+    if (current) {
+      current.quantity += quantity
+      return
+    }
+    merged.set(key, { siteCode, transportMode, quantity })
+  })
+  return Array.from(merged.values())
+}
+
+function summarizeOrder(order: PurchaseOrder): OrderSummary {
+  const items = order.items || []
+  const totalQuantity = items.reduce((sum, item) => sum + (item.totalQuantity || 0), 0)
+  const pskuCount = new Set(
+    items
+      .map((item) => item.partnerSku?.trim())
+      .filter(Boolean)
+  ).size
+  const skuCount = items.reduce((sum, item) => {
+    const allocationKeys = new Set(
+      (item.allocations || []).map((allocation) => allocation.pskuCode
+        ? `${allocation.pskuCode}:${allocation.site}:${allocation.transportMode || 'UNSPECIFIED'}`
+        : `${item.id}:${allocation.site}:${allocation.transportMode || 'UNSPECIFIED'}`)
+    )
+    return sum + Math.max(allocationKeys.size, item.allocations?.length ? 0 : 1)
+  }, 0)
+  const progress = items.length ? Math.round(items.reduce((sum, item) => sum + (item.progress || 0), 0) / items.length) : 0
+  return {
+    itemCount: items.length,
+    pskuCount,
+    skuCount,
+    totalQuantity,
+    progress,
+    status: order.status === 'deleted' ? 'deleted' : deriveStatus(items)
+  }
+}
+
+function emptySummary(): OrderSummary {
+  return {
+    itemCount: 0,
+    pskuCount: 0,
+    skuCount: 0,
+    totalQuantity: 0,
+    progress: 0,
+    status: 'draft'
+  }
+}
+
+function buildItemFilterOptions(
+  order: PurchaseOrder,
+  issueSummary: PurchaseOrderIssueSummary
+): PurchaseItemFilterOption[] {
+  const items = order.items || []
+  return [
+    { key: 'all', label: '全部', count: items.length },
+    { key: 'issues', label: '异常', count: issueSummary.issueItemCount }
+  ]
+}
+
+function buildActiveItemFilter(
+  filterKey: string,
+  order: PurchaseOrder,
+  issueSummary: PurchaseOrderIssueSummary,
+  options: PurchaseItemFilterOption[]
+): PurchaseItemFilterOption {
+  const matchedOption = options.find((option) => option.key === filterKey)
+  if (matchedOption) {
+    return matchedOption
+  }
+  const [site, transportMode] = filterKey.split(':')
+  const normalizedSite = normalizeSiteCode(site)
+  const normalizedTransport = normalizeTransportMode(transportMode)
+  if (normalizedSite && normalizedTransport) {
+    return {
+      key: filterKey,
+      label: allocationDisplayLabel({ site: normalizedSite, transportMode: normalizedTransport }),
+      count: filterOrderItems(order.items || [], filterKey).length,
+      site: normalizedSite,
+      transportMode: normalizedTransport
+    }
+  }
+  return options[0] || { key: 'all', label: '全部', count: order.items?.length || 0 }
+}
+
+function filterOrderItems(items: PurchaseOrderItem[], filterKey: string) {
+  if (filterKey === 'issues') {
+    return items.filter((item) => itemIssues(item).length > 0)
+  }
+  if (!filterKey || filterKey === 'all') {
+    return items
+  }
+  const [site, transportMode] = filterKey.split(':')
+  return items.filter((item) => itemMatchesAllocationFilter(item, site, transportMode))
+}
+
+function itemMatchesAllocationFilter(
+  item: PurchaseOrderItem,
+  site: string,
+  transportMode?: string
+) {
+  const normalizedSite = normalizeSiteCode(site)
+  const normalizedTransport = normalizeTransportMode(transportMode)
+  return (item.allocations || []).some((allocation) => (
+    allocation.enabled !== false &&
+    normalizeSiteCode(allocation.site) === normalizedSite &&
+    normalizeTransportMode(allocation.transportMode) === normalizedTransport
+  ))
+}
+
+function allocationFilterKey(site?: string, transportMode?: string) {
+  return `${normalizeSiteCode(site)}:${normalizeTransportMode(transportMode)}`
+}
+
+function ali1688HistoryEntriesForItem(
+  order: PurchaseOrder,
+  item: PurchaseOrderItem,
+  historiesByKey: Record<string, PurchaseOrderAli1688HistoryEntry>
+): PurchaseOrderAli1688HistoryEntry[] {
+  const siteCodes = (item.allocations || [])
+    .filter((allocation) => allocation.enabled !== false)
+    .map((allocation) => normalizeSiteCode(allocation.site))
+    .filter(Boolean)
+  return (siteCodes.length ? Array.from(new Set(siteCodes)) : ['']).map((siteCode) => {
+    const key = ali1688HistoryKey(order, item, siteCode)
+    return historiesByKey[key] || { key, siteCode }
+  })
+}
+
+function ali1688HistoryKey(order: PurchaseOrder, item: PurchaseOrderItem, siteCode?: string) {
+  return [
+    order.storeCode,
+    normalizeSiteCode(siteCode) || '*',
+    item.partnerSku || item.skuParent || item.id
+  ].join(':')
+}
+
+function buildAli1688HistoryEntriesFromView(
+  order: PurchaseOrder,
+  view: PurchaseOrderAli1688HistoryView
+): Record<string, PurchaseOrderAli1688HistoryEntry> {
+  const entries: Record<string, PurchaseOrderAli1688HistoryEntry> = {}
+  ;(view.items || []).forEach((record) => {
+    const matchedItems = (order.items || []).filter((item) => ali1688HistoryRecordMatchesItem(record, item))
+    matchedItems.forEach((item) => {
+      const siteCode = normalizeSiteCode(record.siteCode)
+      const key = ali1688HistoryKey(order, item, siteCode)
+      entries[key] = {
+        key,
+        siteCode,
+        record
+      }
+    })
+  })
+  return entries
+}
+
+function ali1688HistoryRecordMatchesItem(
+  record: PurchaseOrderAli1688HistoryRecord,
+  item: PurchaseOrderItem
+) {
+  return (
+    sameDisplayText(record.partnerSku, item.partnerSku)
+    || sameDisplayText(record.pskuCode, item.partnerSku)
+    || sameDisplayText(record.skuParent, item.skuParent)
+    || (item.allocations || []).some((allocation) => sameDisplayText(record.pskuCode, allocation.pskuCode))
+  )
+}
+
+function latestAli1688Batch(record?: PurchaseOrderAli1688HistoryRecord) {
+  return (record?.purchaseBatches || [])
+    .slice()
+    .sort((left, right) => compareNullableText(latestAli1688BatchSourceTime(right), latestAli1688BatchSourceTime(left)))[0]
+}
+
+function latestAli1688BatchSourceTime(batch?: PurchaseOrderAli1688HistoryBatch) {
+  return (batch?.sources || [])
+    .map((source) => source.orderTime?.trim())
+    .filter((value): value is string => Boolean(value))
+    .sort()
+    .reverse()[0]
+}
+
+function recentAli1688UnitPrice(record?: PurchaseOrderAli1688HistoryRecord) {
+  const latestBatch = latestAli1688Batch(record)
+  return latestBatch?.unitPrice
+    ?? calculateAli1688BatchUnitPrice(latestBatch)
+    ?? record?.recentUnitPrice
+    ?? record?.averageUnitPrice
+}
+
+function calculateAli1688BatchUnitPrice(batch?: PurchaseOrderAli1688HistoryBatch) {
+  const cost = parsePurchaseNumber(batch?.countedCost)
+  const quantity = parsePurchaseNumber(batch?.countedQuantity)
+  if (cost === null || quantity === null || quantity <= 0) {
+    return null
+  }
+  return cost / quantity
+}
+
+function recentAli1688OrderNo(record?: PurchaseOrderAli1688HistoryRecord) {
+  return latestAli1688Source(record)?.orderNo
+}
+
+function latestAli1688Source(record?: PurchaseOrderAli1688HistoryRecord): PurchaseOrderAli1688HistorySource | undefined {
+  const batchSource = latestAli1688Batch(record)?.sources?.find((source) => source.orderNo?.trim())
+  if (batchSource) {
+    return batchSource
+  }
+  return (record?.history || [])
+    .slice()
+    .sort((left, right) => compareNullableText(right.orderTime, left.orderTime))[0]
+}
+
+function formatPurchaseAmount(value?: string | number | null) {
+  const amount = parsePurchaseNumber(value)
+  return amount === null ? '无价格' : `¥${amount.toFixed(2)}`
+}
+
+function parsePurchaseNumber(value?: string | number | null) {
+  if (value === undefined || value === null) {
+    return null
+  }
+  const normalized = String(value).replace(/[¥,\s]/g, '')
+  if (!normalized) {
+    return null
+  }
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function displayShortText(value?: string | number | null, fallback = '-') {
+  const normalized = value === undefined || value === null ? '' : String(value).trim()
+  return normalized || fallback
+}
+
+function compareNullableText(left?: string, right?: string) {
+  return (left || '').localeCompare(right || '')
+}
+
+function summarizeOrderIssues(order: PurchaseOrder): PurchaseOrderIssueSummary {
+  return (order.items || []).reduce((summary, item) => {
+    const issues = itemIssues(item)
+    if (!issues.length) {
+      return summary
+    }
+    summary.issueItemCount += 1
+    if (issues.includes('缺图片')) {
+      summary.missingImageCount += 1
+    }
+    if (issues.includes('无站点运输')) {
+      summary.missingAllocationCount += 1
+    }
+    if (issues.includes('运输方式未指定')) {
+      summary.missingTransportCount += 1
+    }
+    if (issues.includes('数量异常')) {
+      summary.quantityIssueCount += 1
+    }
+    if (issues.includes('规格缺失')) {
+      summary.missingSourcingRequirementCount += 1
+    }
+    if (issues.includes('采集失败')) {
+      summary.collectionFailedCount += 1
+    }
+    return summary
+  }, emptyIssueSummary())
+}
+
+function emptyIssueSummary(): PurchaseOrderIssueSummary {
+  return {
+    issueItemCount: 0,
+    missingImageCount: 0,
+    missingAllocationCount: 0,
+    missingTransportCount: 0,
+    quantityIssueCount: 0,
+    missingSourcingRequirementCount: 0,
+    collectionFailedCount: 0
+  }
+}
+
+function itemIssues(item: PurchaseOrderItem) {
+  const issues: string[] = []
+  const hasImage = Boolean((item.sourceImageUrl || item.productImageUrl || '').trim())
+  if (!hasImage) {
+    issues.push('缺图片')
+  }
+  const allocations = item.allocations || []
+  if (!allocations.length) {
+    issues.push('无站点运输')
+  }
+  if (allocations.some((allocation) => !normalizeTransportMode(allocation.transportMode) || normalizeTransportMode(allocation.transportMode) === 'UNSPECIFIED')) {
+    issues.push('运输方式未指定')
+  }
+  if ((item.totalQuantity || 0) <= 0 || allocations.some((allocation) => (allocation.quantity || 0) <= 0)) {
+    issues.push('数量异常')
+  }
+  if (!hasAnyText(item.sourcingSpec, item.sourcingColor)) {
+    issues.push('规格缺失')
+  }
+  if (item.collectionStatus === 'failed' || Boolean(item.failureMessage?.trim())) {
+    issues.push('采集失败')
+  }
+  return issues
+}
+
+function hasAnyText(...values: Array<string | undefined>) {
+  return values.some((value) => Boolean(value?.trim()))
+}
+
+function summarizeOrderAllocations(order: PurchaseOrder): AllocationSummary[] {
+  const summaryByKey = new Map<string, AllocationSummary>()
+  ;(order.items || []).forEach((item) => {
+    ;(item.allocations || []).forEach((allocation) => {
+      const quantity = allocation.quantity || 0
+      if (!quantity || allocation.enabled === false) {
+        return
+      }
+      const site = normalizeSiteCode(allocation.site)
+      if (!site) {
+        return
+      }
+      const transportMode = normalizeTransportMode(allocation.transportMode)
+      const key = `${site}:${transportMode}`
+      const current = summaryByKey.get(key)
+      if (current) {
+        current.quantity += quantity
+        return
+      }
+      summaryByKey.set(key, {
+        site,
+        siteName: allocation.siteName,
+        transportMode,
+        transportModeLabel: allocation.transportModeLabel,
+        quantity
+      })
+    })
+  })
+  return Array.from(summaryByKey.values()).sort(compareAllocationSummary)
+}
+
+function compareAllocationSummary(left: AllocationSummary, right: AllocationSummary) {
+  const siteDiff = siteSortRank(left.site) - siteSortRank(right.site)
+  if (siteDiff !== 0) {
+    return siteDiff
+  }
+  const transportDiff = transportSortRank(left.transportMode) - transportSortRank(right.transportMode)
+  if (transportDiff !== 0) {
+    return transportDiff
+  }
+  return `${left.site}:${left.transportMode || ''}`.localeCompare(`${right.site}:${right.transportMode || ''}`)
+}
+
+function siteSortRank(site?: string) {
+  const normalized = normalizeSiteCode(site)
+  const index = DEFAULT_SITE_CODES.indexOf(normalized)
+  return index >= 0 ? index : DEFAULT_SITE_CODES.length
+}
+
+function transportSortRank(transportMode?: string) {
+  const normalized = normalizeTransportMode(transportMode)
+  if (normalized === 'AIR') {
+    return 0
+  }
+  if (normalized === 'SEA') {
+    return 1
+  }
+  return 2
+}
+
+function buildItemTitlePair(item: PurchaseOrderItem) {
+  const candidates = [
+    item.sourceTitleCn,
+    item.productTitle,
+    item.sourceTitle,
+    item.sourcingSpec,
+    item.sourcingSize,
+    item.sourcingColor
+  ]
+  const chineseTitle = firstMatchingText(candidates, containsCjk)
+    || firstMatchingText([item.sourcingSpec, item.sourcingSize, item.sourcingColor], Boolean)
+    || item.partnerSku
+  const englishTitle = firstMatchingText([item.sourceTitle, item.productTitle, item.sourceTitleCn], looksMostlyEnglish)
+    || firstMatchingText([item.sourceTitle, item.productTitle, item.sourceTitleCn], Boolean)
+    || item.partnerSku
+  const displayChineseTitle = stripLeadingPsku(chineseTitle, item.partnerSku) || item.partnerSku
+  const displayEnglishTitle = stripLeadingPsku(englishTitle, item.partnerSku)
+  return {
+    cn: displayChineseTitle,
+    en: displayEnglishTitle === displayChineseTitle ? '' : displayEnglishTitle
+  }
+}
+
+function stripLeadingPsku(value: string, psku?: string) {
+  const normalized = value.trim()
+  const normalizedPsku = psku?.trim()
+  if (!normalizedPsku) {
+    return normalized
+  }
+  const pattern = new RegExp(`^${escapeRegExp(normalizedPsku)}(?:$|[\\s:_-]+)`, 'i')
+  return normalized.replace(pattern, '').trim()
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function sameDisplayText(left?: string, right?: string) {
+  return (left || '').trim().toUpperCase() === (right || '').trim().toUpperCase()
+}
+
+function firstMatchingText(values: Array<string | undefined>, predicate: (value: string) => boolean) {
+  for (const value of values) {
+    const normalized = value?.trim()
+    if (normalized && predicate(normalized)) {
+      return normalized
+    }
+  }
+  return ''
+}
+
+function containsCjk(value: string) {
+  return /[\u3400-\u9fff]/.test(value)
+}
+
+function looksMostlyEnglish(value: string) {
+  return /[A-Za-z]/.test(value) && !containsCjk(value)
+}
+
+function deriveStatus(items: PurchaseOrderItem[]): PurchaseOrderStatus {
+  if (!items.length) {
+    return 'draft'
+  }
+  if (items.some((item) => item.collectionStatus === 'failed')) {
+    return 'exception'
+  }
+  if (items.some((item) => item.collectionStatus === 'collecting')) {
+    return 'collecting'
+  }
+  const completed = items.filter((item) => item.collectionStatus === 'succeeded' || item.collectionStatus === 'reused')
+  if (completed.length === items.length) {
+    return 'done'
+  }
+  if (completed.length) {
+    return 'partial_done'
+  }
+  return 'pending_collection'
+}
+
+function openTop5(item: PurchaseOrderItem, order: PurchaseOrder) {
+  const params = new URLSearchParams(window.location.search)
+  params.set('psku', item.partnerSku)
+  params.set('purchaseOrderItemId', item.id)
+  if (order.storeCode) {
+    params.set('storeCode', order.storeCode)
+  }
+  window.location.href = `/purchase/1688-collection?${params.toString()}#top5`
+}

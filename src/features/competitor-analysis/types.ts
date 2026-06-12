@@ -134,3 +134,16 @@ export type CompetitorProductChangeGroup = {
   subjectType: 'self' | 'competitor'
   changes: CompetitorProductChangeField[]
 }
+
+export type CompetitorProductChangeBaselineSummary = {
+  monitoredCompetitorCount: number
+  snapshotCompetitorCount: number
+  firstSnapshotDate?: string
+  latestSnapshotDate?: string
+  latestCapturedAt?: string
+}
+
+export type CompetitorProductChangesResult = {
+  items: CompetitorProductChangeGroup[]
+  baselineSummary?: CompetitorProductChangeBaselineSummary
+}

@@ -11,6 +11,7 @@ export type AppMenuKey =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'warehouse-dispatch'
   | 'operations-competitor-analysis'
   | 'data-sales-analysis'
   | 'data-order-analysis'
@@ -73,6 +74,7 @@ export type WorkspaceContentKind =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'warehouse-dispatch'
   | 'operations-competitor-analysis'
   | 'sales-analytics'
   | 'order-finance'
@@ -244,6 +246,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '物流 / 货代管理',
     tabLabel: '货代管理',
     contentKind: 'purchase-logistics-quote',
+    closable: true
+  },
+  'warehouse-dispatch': {
+    key: 'warehouse-dispatch',
+    label: '仓库发运',
+    path: '/warehouse/dispatch',
+    sectionKey: 'warehouse',
+    pathLabel: '仓储 / 仓库发运',
+    tabLabel: '仓库发运',
+    contentKind: 'warehouse-dispatch',
     closable: true
   },
   'operations-competitor-analysis': {
@@ -460,7 +472,10 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     key: 'warehouse',
     label: '仓储',
     iconKey: 'warehouse',
-    entries: [{ type: 'placeholder', key: 'warehouse-fbn', label: 'FBN抢仓', disabled: true }]
+    entries: [
+      { type: 'workspace', key: 'warehouse-dispatch' },
+      { type: 'placeholder', key: 'warehouse-fbn', label: 'FBN抢仓', disabled: true }
+    ]
   },
   {
     key: 'campaign',
@@ -623,6 +638,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
+    keys: ['warehouse-dispatch'],
+    urlPaths: ['/warehouse/dispatch'],
+    urlPathPrefixes: ['/api/warehouse/dispatch'],
+    menuNames: ['仓库发运', '仓储发运', '采购收货', '发运计划']
+  },
+  {
     keys: ['operations-competitor-analysis'],
     urlPaths: ['/operations/competitor-analysis', '/api/competitor-analysis'],
     urlPathPrefixes: ['/api/competitor-analysis/'],
@@ -691,6 +712,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-order',
   'purchase-profit',
   'purchase-logistics-quote',
+  'warehouse-dispatch',
   'operations-competitor-analysis',
   'data-sales-analysis',
   'data-order-analysis',

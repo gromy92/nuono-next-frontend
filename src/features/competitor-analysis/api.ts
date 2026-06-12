@@ -3,8 +3,10 @@ import type {
   CompetitorCandidate,
   CompetitorCandidateSource,
   CompetitorKeyword,
+  CompetitorProductChangeBaselineSummary,
   CompetitorProductChangeField,
   CompetitorProductChangeGroup,
+  CompetitorProductChangesResult,
   CompetitorProductOption,
   CompetitorRankPoint,
   CompetitorReviewStatus,
@@ -172,7 +174,18 @@ type BackendProductChangeGroup = {
   changes?: BackendProductChangeField[]
 }
 
-type BackendProductChangeResponse = BackendProductChangeGroup[] | { items?: BackendProductChangeGroup[] }
+type BackendProductChangeBaselineSummary = {
+  monitoredCompetitorCount?: number
+  snapshotCompetitorCount?: number
+  firstSnapshotDate?: string
+  latestSnapshotDate?: string
+  latestCapturedAt?: string
+}
+
+type BackendProductChangeResponse = BackendProductChangeGroup[] | {
+  items?: BackendProductChangeGroup[]
+  baselineSummary?: BackendProductChangeBaselineSummary
+}
 
 export type CompetitorWatchProductQuery = {
   storeCode?: string
@@ -410,14 +423,21 @@ export async function fetchCompetitorRankHistory(
   return rows.map(mapRankPoint)
 }
 
-export async function fetchCompetitorProductChanges(watchProductId: string, limit = 100, signal?: AbortSignal) {
+export async function fetchCompetitorProductChanges(
+  watchProductId: string,
+  limit = 100,
+  signal?: AbortSignal
+): Promise<CompetitorProductChangesResult> {
   const params = new URLSearchParams({ limit: String(limit) })
   const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}/product-changes?${params}`, {
     signal
   })
   const payload = await parseApiResponse<BackendProductChangeResponse>(response, '读取商品详情变化失败')
   const rows = Array.isArray(payload) ? payload : payload.items || []
-  return rows.map(mapProductChangeGroup)
+  return {
+    items: rows.map(mapProductChangeGroup),
+    baselineSummary: Array.isArray(payload) ? undefined : mapProductChangeBaselineSummary(payload.baselineSummary)
+  }
 }
 
 export function mapDetail(payload: BackendDetailResponse): CompetitorWatchProduct {
@@ -632,6 +652,19 @@ function mapProductChangeGroup(row: BackendProductChangeGroup): CompetitorProduc
     productName: stringValue(row.productName) || noonProductCode || '未知商品',
     subjectType: String(row.subjectType || '').toUpperCase() === 'SELF' ? 'self' : 'competitor',
     changes: (row.changes || []).map(mapProductChangeField)
+  }
+}
+
+function mapProductChangeBaselineSummary(
+  row?: BackendProductChangeBaselineSummary
+): CompetitorProductChangeBaselineSummary | undefined {
+  if (!row) return undefined
+  return {
+    monitoredCompetitorCount: numberValue(row.monitoredCompetitorCount),
+    snapshotCompetitorCount: numberValue(row.snapshotCompetitorCount),
+    firstSnapshotDate: stringValue(row.firstSnapshotDate) || undefined,
+    latestSnapshotDate: stringValue(row.latestSnapshotDate) || undefined,
+    latestCapturedAt: stringValue(row.latestCapturedAt) || undefined
   }
 }
 

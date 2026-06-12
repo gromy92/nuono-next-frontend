@@ -96,8 +96,15 @@ const ImageMatchPage = lazyWorkspace(() =>
     default: module.ImageMatchPage
   }))
 );
-const ProcurementWorkspace = lazyWorkspace(() =>
-  import('../procurement/ProcurementWorkspace').then((module) => ({ default: module.ProcurementWorkspace }))
+const PurchaseOrderPage = lazyWorkspace(() =>
+  import('../purchase-order/PurchaseOrderPage').then((module) => ({
+    default: module.PurchaseOrderPage
+  }))
+);
+const WarehouseDispatchWorkbenchPage = lazyWorkspace(() =>
+  import('../warehouse-dispatch/WarehouseDispatchWorkbenchPage').then((module) => ({
+    default: module.WarehouseDispatchWorkbenchPage
+  }))
 );
 const ProcurementRequirementConfirmationPage = lazyWorkspace(() =>
   import('../procurement-confirmation/ProcurementRequirementConfirmationPage').then((module) => ({
@@ -229,11 +236,7 @@ export function ShellWorkspaceContent({
         {shouldRenderProcurementRequirementConfirmation ? (
           <ProcurementRequirementConfirmationPage embedded session={shellSession} />
         ) : (
-          <ProcurementWorkspace
-            session={shellSession}
-            activeOwnerId={activeOwnerId}
-            onOpenProfitCalculatorPrefilled={onOpenProfitCalculatorPrefilled}
-          />
+          <PurchaseOrderPage session={shellSession} />
         )}
       </LazyWorkspaceBoundary>
     );
@@ -326,6 +329,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <LogisticsQuoteBoard />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'warehouse-dispatch') {
+    return (
+      <LazyWorkspaceBoundary>
+        <WarehouseDispatchWorkbenchPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

@@ -59,6 +59,7 @@ import { normalizeError } from '../../shared/api'
 import type {
   CompetitorCandidate,
   CompetitorKeyword,
+  CompetitorProductChangeBaselineSummary,
   CompetitorProductChangeField,
   CompetitorProductChangeGroup,
   CompetitorRankPoint,
@@ -201,6 +202,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
   const [keywordProduct, setKeywordProduct] = useState<CompetitorWatchProduct>()
   const [reportProduct, setReportProduct] = useState<CompetitorWatchProduct>()
   const [changeRows, setChangeRows] = useState<CompetitorProductChangeGroup[]>([])
+  const [changeBaselineSummary, setChangeBaselineSummary] = useState<CompetitorProductChangeBaselineSummary>()
   const [detailOpen, setDetailOpen] = useState(false)
   const [keywordModalOpen, setKeywordModalOpen] = useState(false)
   const [manualModalOpen, setManualModalOpen] = useState(false)
@@ -383,20 +385,28 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     const loadingKey = `report-${product.id || product.productSiteOfferId}`
     setActionLoading(loadingKey)
     const readyProduct = await ensureWatchProduct(product)
-    setActionLoading(null)
     if (!readyProduct?.id) {
+      setActionLoading(null)
       return
     }
-    setSelectedProductId(readyProduct.id)
-    setReportProduct(readyProduct)
+    const detailProduct = await loadProductDetail(readyProduct.id, { showLoading: false })
+    setActionLoading(null)
+    if (!detailProduct?.id) {
+      return
+    }
+    setSelectedProductId(detailProduct.id)
+    setReportProduct(detailProduct)
     setChangeRows([])
+    setChangeBaselineSummary(undefined)
     setReportOpen(true)
     setChangeLoading(true)
     try {
-      const rows = await fetchCompetitorProductChanges(readyProduct.id)
-      setChangeRows(rows)
+      const result = await fetchCompetitorProductChanges(detailProduct.id)
+      setChangeRows(result.items)
+      setChangeBaselineSummary(result.baselineSummary)
     } catch {
       setChangeRows([])
+      setChangeBaselineSummary(undefined)
     } finally {
       setChangeLoading(false)
     }
@@ -1047,6 +1057,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
             product={products.find((product) => sameProductLine(product, reportProduct)) ?? reportProduct}
             storeLabel={selectedStoreLabel}
             changeGroups={changeRows}
+            changeBaselineSummary={changeBaselineSummary}
             changeLoading={changeLoading}
           />
         </Modal>
@@ -1158,14 +1169,22 @@ function ProductChangeModal({
   product,
   storeLabel,
   groups,
+  baselineSummary,
   showIdentity = true
 }: {
   product: CompetitorWatchProduct
   storeLabel?: string
   groups: CompetitorProductChangeGroup[]
+  baselineSummary?: CompetitorProductChangeBaselineSummary
   showIdentity?: boolean
 }) {
   const summary = buildProductChangeSummary(groups)
+  const monitoredCompetitorCount = baselineSummary?.monitoredCompetitorCount ?? product.confirmedCompetitorCount ?? 0
+  const emptyDescription = baselineSummary?.snapshotCompetitorCount
+    ? `已抓取 ${baselineSummary.snapshotCompetitorCount}/${baselineSummary.monitoredCompetitorCount || baselineSummary.snapshotCompetitorCount} 个监控竞品基线，最新 ${formatSnapshotDate(baselineSummary.latestSnapshotDate)}，暂无字段变化`
+    : monitoredCompetitorCount
+      ? `当前有 ${monitoredCompetitorCount} 个监控竞品，暂无字段变化`
+    : '暂无商品详情变化'
 
   return (
     <div className="competitor-analysis-product-change-modal" data-testid="competitor-product-change-modal">
@@ -1204,10 +1223,12 @@ function ProductChangeModal({
       ) : null}
 
       <div className="competitor-analysis-product-change-summary-grid">
+        <ProductChangeSummaryCard label="监控竞品" value={`${monitoredCompetitorCount} 个`} />
+        <ProductChangeSummaryCard label="详情基线" value={`${baselineSummary?.snapshotCompetitorCount ?? 0} 个`} />
         <ProductChangeSummaryCard label="变化日期" value={`${summary.changedDays} 天`} />
         <ProductChangeSummaryCard label="变化字段" value={`${summary.fieldChanges} 项`} />
         <ProductChangeSummaryCard label="价格变化" value={`${summary.priceChanges} 次`} />
-        <ProductChangeSummaryCard label="主图变化" value={`${summary.imageChanges} 次`} />
+        <ProductChangeSummaryCard label="最新基线" value={formatSnapshotDate(baselineSummary?.latestSnapshotDate)} />
       </div>
 
       {groups.length ? (
@@ -1217,7 +1238,7 @@ function ProductChangeModal({
           ))}
         </div>
       ) : (
-        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="近 15 天暂无商品详情变化" />
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={emptyDescription} />
       )}
     </div>
   )
@@ -1284,6 +1305,10 @@ function buildProductChangeSummary(groups: CompetitorProductChangeGroup[]) {
     priceChanges: allChanges.filter((change) => change.fieldKey === 'price').length,
     imageChanges: allChanges.filter((change) => change.fieldKey === 'main_image').length
   }
+}
+
+function formatSnapshotDate(value?: string) {
+  return value ? value.slice(0, 10) : '-'
 }
 
 function productChangeFieldColor(fieldKey: string) {
@@ -1403,11 +1428,13 @@ function SelfRankReportModal({
   product,
   storeLabel,
   changeGroups,
+  changeBaselineSummary,
   changeLoading
 }: {
   product: CompetitorWatchProduct
   storeLabel?: string
   changeGroups: CompetitorProductChangeGroup[]
+  changeBaselineSummary?: CompetitorProductChangeBaselineSummary
   changeLoading: boolean
 }) {
   const reports = useMemo(() => buildSelfRankReport(product), [product])
@@ -1542,6 +1569,7 @@ function SelfRankReportModal({
                   product={product}
                   storeLabel={storeLabel}
                   groups={changeGroups}
+                  baselineSummary={changeBaselineSummary}
                   showIdentity={false}
                 />
               </Spin>

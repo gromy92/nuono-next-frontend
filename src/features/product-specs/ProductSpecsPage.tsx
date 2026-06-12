@@ -1,18 +1,23 @@
-import { App, Button, Empty, Input, InputNumber, Select, Space, Table, Tag, Tooltip, Typography } from 'antd';
+import { App, Button, Empty, Input, InputNumber, Popover, Select, Space, Table, Tag, Tooltip, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { CheckOutlined, CloseOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AuthSession } from '../auth/session';
-import { fetchProductSpecsOverview, saveProductSpecSource, selectProductSpecEffectiveSource } from '../product-management/api';
+import type { AuthSession, AuthSessionStore } from '../auth/session';
+import {
+  fetchProductSpecsOverview,
+  saveProductLogisticsProfile,
+  saveProductSpecSource,
+  selectProductSpecEffectiveSource
+} from '../product-management/api';
 import type {
+  ProductLogisticsProfilePayload,
   ProductVariantSpecPayload,
   ProductVariantSpecSourcePayload,
   ProductVariantSpecSourceType
 } from '../product-management/types';
-import { ProductBaselineIdentity } from '../product-baseline';
-import { formatSnapshotValue } from '../product-management/utils/common';
+import { formatSnapshotValue, normalizeNoonImageUrl } from '../product-management/utils/common';
 
-const { Text } = Typography;
+const { Paragraph, Text } = Typography;
 
 type ProductSpecsPageProps = {
   session: AuthSession;
@@ -60,6 +65,16 @@ type SpecField = {
   precision?: number;
 };
 
+type StoreOption = {
+  value: string;
+  label: string;
+};
+
+type LogisticsOption = {
+  value: string;
+  label: string;
+};
+
 const productSpecFields: SpecField[] = [
   { key: 'productLengthCm', label: '长/cm', min: 0.01, precision: 2 },
   { key: 'productWidthCm', label: '宽/cm', min: 0.01, precision: 2 },
@@ -75,11 +90,52 @@ const cartonSpecFields: SpecField[] = [
   { key: 'cartonQuantity', label: '数量', min: 1, precision: 0 }
 ];
 
+const baseLogisticsOptions: LogisticsOption[] = [
+  { label: '待确认', value: 'unknown' },
+  { label: '无', value: 'none' }
+];
+
+const logisticsSelectOptions: Partial<Record<keyof ProductLogisticsProfilePayload, LogisticsOption[]>> = {
+  batteryType: [
+    ...baseLogisticsOptions,
+    { label: '带电', value: 'battery_equipment' }
+  ],
+  magneticType: [
+    ...baseLogisticsOptions,
+    { label: '磁性', value: 'magnetic' }
+  ],
+  electricType: [
+    ...baseLogisticsOptions,
+    { label: '电器', value: 'electric_equipment_review' }
+  ],
+  liquidType: [
+    ...baseLogisticsOptions,
+    { label: '液体', value: 'liquid' }
+  ],
+  powderType: [
+    ...baseLogisticsOptions,
+    { label: '粉末', value: 'powder' }
+  ],
+  woodenMaterialType: [
+    ...baseLogisticsOptions,
+    { label: '需复核', value: 'wooden_material_review' }
+  ],
+  bladeWeaponType: [
+    ...baseLogisticsOptions,
+    { label: '需复核', value: 'blade_tool_review' }
+  ]
+};
+
+const logisticsStatusOptions: LogisticsOption[] = [
+  { label: '待复核', value: 'needs_review' },
+  { label: '已确认', value: 'confirmed' }
+];
+
 export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPageProps) {
   const { message } = App.useApp();
   const ownerUserId = resolveRequestOwnerUserId(session, activeOwnerId);
-  const storeCode = resolveSpecStoreCode(session);
-  const storeLabel = resolveSpecStoreLabel(session, storeCode);
+  const initialStoreCode = resolveInitialSpecStoreCode(session);
+  const [storeCode, setStoreCode] = useState(initialStoreCode);
   const [keyword, setKeyword] = useState('');
   const [completenessFilter, setCompletenessFilter] = useState<SpecCompletenessFilter>('all');
   const [rows, setRows] = useState<ProductVariantSpecPayload[]>([]);
@@ -88,10 +144,26 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
   const [editingDraft, setEditingDraft] = useState<SpecSourceDraft>(createSpecSourceDraft());
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [selectingEffectiveKey, setSelectingEffectiveKey] = useState<string | null>(null);
+  const [logisticsSavingKey, setLogisticsSavingKey] = useState<string | null>(null);
 
   useEffect(() => {
-    setEditingKey(null);
-  }, [storeCode]);
+    if (initialStoreCode && !storeCode) {
+      setStoreCode(initialStoreCode);
+    }
+  }, [initialStoreCode, storeCode]);
+
+  const storeOptions = useMemo(() => {
+    return buildSpecStoreOptions(session);
+  }, [session.userStores]);
+
+  useEffect(() => {
+    if (!storeOptions.length || !storeCode) {
+      return;
+    }
+    if (!storeOptions.some((option) => option.value === storeCode)) {
+      setStoreCode(storeOptions[0]?.value || '');
+    }
+  }, [storeCode, storeOptions]);
 
   const loadRows = useCallback(async () => {
     const normalizedStoreCode = storeCode.trim();
@@ -195,60 +267,94 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
     [loadRows, message, ownerUserId, storeCode]
   );
 
+  const handleChangeLogisticsProfile = useCallback(
+    async (
+      row: ProductVariantSpecPayload,
+      patch: Partial<ProductLogisticsProfilePayload>
+    ) => {
+      const normalizedStoreCode = storeCode.trim();
+      if (!normalizedStoreCode || !row.variantId) {
+        message.warning('缺少店铺或 SKU 上下文，暂不能保存物流属性');
+        return;
+      }
+      const nextProfile = {
+        ...defaultLogisticsProfile(row, normalizedStoreCode),
+        ...row.logisticsProfile,
+        ...patch
+      };
+      const key = String(row.variantId);
+      setRows((currentRows) => currentRows.map((currentRow) => (
+        currentRow.variantId === row.variantId
+          ? { ...currentRow, logisticsProfile: nextProfile }
+          : currentRow
+      )));
+      setLogisticsSavingKey(key);
+      try {
+        const saved = await saveProductLogisticsProfile({
+          ...nextProfile,
+          ownerUserId,
+          storeCode: normalizedStoreCode,
+          variantId: row.variantId
+        });
+        setRows((currentRows) => currentRows.map((currentRow) => (
+          currentRow.variantId === row.variantId
+            ? { ...currentRow, logisticsProfile: saved }
+            : currentRow
+        )));
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : '保存物流属性失败，已重新加载当前数据');
+        await loadRows();
+      } finally {
+        setLogisticsSavingKey(null);
+      }
+    },
+    [loadRows, message, ownerUserId, storeCode]
+  );
+
   const columns = useMemo<ColumnsType<ProductVariantSpecPayload>>(
     () => [
       {
         title: '商品',
-        width: 262,
+        width: 220,
         render: (_, row) => (
-          <div style={{ width: 254 }}>
-            <ProductBaselineIdentity
-              title={row.title || row.partnerSku || '-'}
-              imageUrl={row.imageUrl}
-              imageCount={row.imageUrl ? 1 : 0}
-              imageAlt={formatSnapshotValue(row.title || row.partnerSku)}
-              imageWidth={72}
-              compact
-              titleMaxWidth={164}
-              codes={[
-                {
-                  label: 'PSKU',
-                  value: formatSnapshotValue(row.partnerSku),
-                  copyText: row.partnerSku
-                },
-                {
-                  value: formatSnapshotValue(storeLabel || row.storeCode || storeCode)
-                }
-              ]}
-            />
-          </div>
+          <ProductIdentityCell row={row} />
         )
       },
       {
-        title: '国内规格',
-        width: 720,
+        title: '国内规格 / Noon规格',
+        width: 620,
         render: (_, row) => (
-          <DomesticSpecMatrix
+          <Space direction="vertical" size={8} style={{ width: '100%' }}>
+            <DomesticSpecMatrix
+              row={row}
+              sources={row.sources || []}
+              effectiveSourceId={row.effectiveSourceId}
+              effectiveSourceType={row.effectiveSourceType}
+              editingKey={editingKey}
+              editingDraft={editingDraft}
+              savingKey={savingKey}
+              selectingEffectiveKey={selectingEffectiveKey}
+              onStartEdit={handleStartEdit}
+              onDraftNumberChange={handleDraftNumberChange}
+              onCancelEdit={handleCancelEdit}
+              onSaveSource={handleSaveSource}
+              onSelectEffectiveSource={handleSelectEffectiveSource}
+            />
+          </Space>
+        )
+      },
+      {
+        title: '物流属性',
+        width: 300,
+        fixed: 'right',
+        render: (_, row) => (
+          <LogisticsInlineEditor
             row={row}
-            sources={row.sources || []}
-            effectiveSourceId={row.effectiveSourceId}
-            effectiveSourceType={row.effectiveSourceType}
-            editingKey={editingKey}
-            editingDraft={editingDraft}
-            savingKey={savingKey}
-            selectingEffectiveKey={selectingEffectiveKey}
-            onStartEdit={handleStartEdit}
-            onDraftNumberChange={handleDraftNumberChange}
-            onCancelEdit={handleCancelEdit}
-            onSaveSource={handleSaveSource}
-            onSelectEffectiveSource={handleSelectEffectiveSource}
+            saving={logisticsSavingKey === String(row.variantId)}
+            savingBlocked={Boolean(logisticsSavingKey)}
+            onChange={handleChangeLogisticsProfile}
           />
         )
-      },
-      {
-        title: 'Noon官方尺寸',
-        width: 185,
-        render: (_, row) => <NoonOfficialSpec source={findSource(row.sources, 'noon_official')} />
       }
     ],
     [
@@ -257,12 +363,13 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
       handleCancelEdit,
       handleDraftNumberChange,
       handleSaveSource,
+      handleChangeLogisticsProfile,
       handleSelectEffectiveSource,
       handleStartEdit,
       savingKey,
+      logisticsSavingKey,
       selectingEffectiveKey,
-      storeCode,
-      storeLabel
+      storeCode
     ]
   );
 
@@ -308,6 +415,17 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
             style={{ width: 150 }}
             onChange={setCompletenessFilter}
           />
+          <Select
+            showSearch
+            value={storeCode || undefined}
+            placeholder="店铺"
+            options={storeOptions}
+            style={{ width: 200 }}
+            onChange={(value) => {
+              setStoreCode(value);
+              setEditingKey(null);
+            }}
+          />
           <Tooltip title="刷新">
             <Button icon={<SyncOutlined />} loading={loading} onClick={() => void loadRows()} />
           </Tooltip>
@@ -320,7 +438,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         loading={loading}
         columns={columns}
         dataSource={filteredRows}
-        scroll={{ x: 1160 }}
+        scroll={{ x: 1140 }}
         pagination={{
           pageSize: 50,
           showSizeChanger: true,
@@ -396,23 +514,152 @@ function DomesticSpecMatrix(props: {
           />
         );
       })}
+      <SpecGridRow
+        label="Noon官方"
+        color={sourceColors.noon_official}
+        source={findSource(sources, 'noon_official')}
+        includeCarton
+        reserveEffectiveColumn
+      />
     </div>
   );
 }
 
-function NoonOfficialSpec({ source }: { source?: ProductVariantSpecSourcePayload }) {
+function LogisticsInlineEditor(props: {
+  row: ProductVariantSpecPayload;
+  saving: boolean;
+  savingBlocked: boolean;
+  onChange: (row: ProductVariantSpecPayload, patch: Partial<ProductLogisticsProfilePayload>) => void | Promise<void>;
+}) {
+  const { row, saving, savingBlocked, onChange } = props;
+  const profile = {
+    ...defaultLogisticsProfile(row, row.storeCode),
+    ...row.logisticsProfile
+  };
+  const disabled = savingBlocked;
   return (
-    <div style={{ display: 'grid', gap: 6 }}>
-      <SpecGridHeader includeCarton={false} includeSource={false} />
-      <SpecGridRow
-        label="Noon官方"
-        color="purple"
-        source={source}
-        includeCarton={false}
-        showSource={false}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 90px)',
+        gap: 5,
+        alignItems: 'end',
+        minWidth: 0
+      }}
+    >
+      <LogisticsSelectField
+        label="状态"
+        value={profile.profileStatus || 'needs_review'}
+        options={logisticsStatusOptions}
+        disabled={disabled}
+        saving={saving}
+        onChange={(value) => void onChange(row, { profileStatus: value, manualConfirmRequired: value !== 'confirmed' })}
+      />
+      <LogisticsSelectField
+        label="带电"
+        value={profile.batteryType || 'unknown'}
+        options={logisticsSelectOptions.batteryType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { batteryType: value })}
+      />
+      <LogisticsSelectField
+        label="电器"
+        value={profile.electricType || 'unknown'}
+        options={logisticsSelectOptions.electricType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { electricType: value })}
+      />
+      <LogisticsSelectField
+        label="磁性"
+        value={profile.magneticType || 'unknown'}
+        options={logisticsSelectOptions.magneticType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { magneticType: value })}
+      />
+      <LogisticsSelectField
+        label="液体"
+        value={profile.liquidType || 'unknown'}
+        options={logisticsSelectOptions.liquidType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { liquidType: value })}
+      />
+      <LogisticsSelectField
+        label="粉末"
+        value={profile.powderType || 'unknown'}
+        options={logisticsSelectOptions.powderType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { powderType: value })}
+      />
+      <LogisticsSelectField
+        label="木材"
+        value={profile.woodenMaterialType || 'unknown'}
+        options={logisticsSelectOptions.woodenMaterialType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { woodenMaterialType: value })}
+      />
+      <LogisticsSelectField
+        label="刀具"
+        value={profile.bladeWeaponType || 'unknown'}
+        options={logisticsSelectOptions.bladeWeaponType || []}
+        disabled={disabled}
+        sensitiveField
+        saving={saving}
+        onChange={(value) => void onChange(row, { bladeWeaponType: value })}
       />
     </div>
   );
+}
+
+function LogisticsSelectField(props: {
+  label: string;
+  value?: string;
+  options: LogisticsOption[];
+  disabled?: boolean;
+  sensitiveField?: boolean;
+  saving?: boolean;
+  onChange: (value: string) => void;
+}) {
+  const { label, value, options, disabled, sensitiveField, saving, onChange } = props;
+  const normalizedValue = value || 'unknown';
+  const hasSensitiveValue = Boolean(sensitiveField && !isNeutralLogisticsValue(normalizedValue));
+  const isNoneValue = normalizedValue === 'none';
+  return (
+    <label style={{ display: 'grid', gap: 3, minWidth: 0 }}>
+      <Text type="secondary" style={{ fontSize: 12, lineHeight: '16px' }}>
+        {label}
+      </Text>
+      <Select
+        size="small"
+        value={normalizedValue}
+        options={options}
+        disabled={disabled}
+        className={[
+          'product-specs-logistics-select',
+          isNoneValue ? 'product-specs-logistics-select--none' : '',
+          hasSensitiveValue ? 'product-specs-logistics-select--sensitive' : '',
+          saving ? 'product-specs-logistics-select--saving' : ''
+        ].filter(Boolean).join(' ')}
+        style={{ width: '100%' }}
+        onChange={onChange}
+      />
+    </label>
+  );
+}
+
+function isNeutralLogisticsValue(value: string) {
+  return value === 'none' || value === 'unknown';
 }
 
 function SpecGridHeader(props: { includeCarton: boolean; includeSource: boolean; includeEffective?: boolean }) {
@@ -451,6 +698,7 @@ function SpecGridRow(props: {
   editable?: boolean;
   effective?: boolean;
   editing?: boolean;
+  reserveEffectiveColumn?: boolean;
   draft?: SpecSourceDraft;
   saving?: boolean;
   selectingEffective?: boolean;
@@ -473,6 +721,7 @@ function SpecGridRow(props: {
     editable,
     effective,
     editing,
+    reserveEffectiveColumn,
     draft,
     saving,
     selectingEffective,
@@ -486,8 +735,9 @@ function SpecGridRow(props: {
   const valueSource = source || fallback;
   const fields = includeCarton ? [...productSpecFields, ...cartonSpecFields] : productSpecFields;
   const canSelectEffective = Boolean(editable && row && sourceType && source?.sourceId);
+  const includeEffectiveColumn = Boolean(editable || reserveEffectiveColumn);
   return (
-    <div style={specGridStyle({ includeCarton, includeSource: showSource, includeEffective: Boolean(editable) })}>
+    <div style={specGridStyle({ includeCarton, includeSource: showSource, includeEffective: includeEffectiveColumn })}>
       {editable ? (
         <Tooltip title={canSelectEffective ? '物流计算使用此来源' : '请先维护该来源规格'}>
           <Button
@@ -515,6 +765,8 @@ function SpecGridRow(props: {
             }}
           />
         </Tooltip>
+      ) : reserveEffectiveColumn ? (
+        <span aria-hidden="true" />
       ) : null}
       {showSource ? (
         <Space size={4} wrap style={{ minWidth: 0 }}>
@@ -589,6 +841,127 @@ function SpecValue({ value }: { value?: number }) {
   );
 }
 
+function ProductIdentityCell({ row }: { row: ProductVariantSpecPayload }) {
+  const title = formatSnapshotValue(row.title);
+  const partnerSku = formatSnapshotValue(row.partnerSku);
+  return (
+    <div style={{ display: 'grid', gap: 5, minWidth: 0, width: 208 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '60px minmax(0, 1fr)',
+          gap: 8,
+          alignItems: 'center',
+          minWidth: 0
+        }}
+      >
+        <ProductThumb src={row.imageUrl} alt={formatSnapshotValue(row.title || row.partnerSku)} />
+        <Tooltip title={partnerSku}>
+          <Text
+            type="secondary"
+            ellipsis
+            style={{
+              maxWidth: 136,
+              fontSize: 12,
+              lineHeight: '16px'
+            }}
+          >
+            PSKU {partnerSku}
+          </Text>
+        </Tooltip>
+      </div>
+      <Paragraph
+        strong
+        ellipsis={{ rows: 3, tooltip: title }}
+        style={{
+          maxWidth: 208,
+          fontSize: 12,
+          lineHeight: '16px',
+          marginBottom: 0
+        }}
+      >
+        {title}
+      </Paragraph>
+    </div>
+  );
+}
+
+function ProductThumb({ src, alt }: { src?: string; alt: string }) {
+  const normalizedSrc = normalizeNoonImageUrl(src);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [normalizedSrc]);
+
+  if (!normalizedSrc || failed) {
+    return (
+      <span
+        style={{
+          flex: '0 0 auto',
+          width: 60,
+          height: 60,
+          borderRadius: 6,
+          border: '1px solid #e5e7eb',
+          background: '#f3f4f6',
+          color: '#94a3b8',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 11
+        }}
+      >
+        无图
+      </span>
+    );
+  }
+  return (
+    <Popover
+      placement="right"
+      mouseEnterDelay={0.12}
+      styles={{ body: { padding: 6 } }}
+      content={
+        <img
+          src={normalizedSrc}
+          alt={alt}
+          style={{
+            width: 240,
+            maxWidth: '60vw',
+            maxHeight: 320,
+            objectFit: 'contain',
+            display: 'block'
+          }}
+        />
+      }
+    >
+      <span
+        style={{
+          flex: '0 0 auto',
+          width: 60,
+          height: 60,
+          display: 'block',
+          cursor: 'zoom-in'
+        }}
+      >
+        <img
+          src={normalizedSrc}
+          alt={alt}
+          onError={() => setFailed(true)}
+          style={{
+            width: 60,
+            height: 60,
+            objectFit: 'cover',
+            borderRadius: 6,
+            border: '1px solid #e5e7eb',
+            background: '#f1f5f9',
+            display: 'block'
+          }}
+        />
+      </span>
+    </Popover>
+  );
+}
+
 function findSource(
   sources: ProductVariantSpecSourcePayload[] | undefined,
   sourceType: ProductVariantSpecSourceType
@@ -617,16 +990,77 @@ function isPositiveSpecValue(value?: number) {
   return typeof value === 'number' && Number.isFinite(value) && value > 0;
 }
 
-function resolveSpecStoreCode(session: AuthSession) {
-  return session.currentStore?.storeCode || '';
+function defaultLogisticsProfile(row: ProductVariantSpecPayload, storeCode?: string): ProductLogisticsProfilePayload {
+  return {
+    storeCode: row.storeCode || storeCode,
+    skuParent: row.skuParent,
+    title: row.title,
+    imageUrl: row.imageUrl,
+    variantId: row.variantId,
+    partnerSku: row.partnerSku,
+    childSku: row.childSku,
+    sizeEn: row.sizeEn,
+    sizeAr: row.sizeAr,
+    profileStatus: 'needs_review',
+    batteryType: 'unknown',
+    electricType: 'unknown',
+    magneticType: 'unknown',
+    liquidType: 'unknown',
+    powderType: 'unknown',
+    woodenMaterialType: 'unknown',
+    bladeWeaponType: 'unknown',
+    manualConfirmRequired: true
+  };
 }
 
-function resolveSpecStoreLabel(session: AuthSession, storeCode: string) {
-  const currentStore = session.currentStore;
-  if (!currentStore || currentStore.storeCode !== storeCode) {
-    return storeCode;
+function buildSpecStoreOptions(session: AuthSession) {
+  const grouped = new Map<string, { option: StoreOption; preferred: boolean }>();
+  (session.userStores || []).forEach((store) => {
+    if (!store.storeCode || store.authorized === false) {
+      return;
+    }
+    const groupKey = specStoreGroupKey(store);
+    const existing = grouped.get(groupKey);
+    const preferred = isPreferredSpecStore(store);
+    if (existing && (!preferred || existing.preferred)) {
+      return;
+    }
+    grouped.set(groupKey, {
+      option: {
+        value: store.storeCode,
+        label: store.projectName || store.projectCode || store.storeCode
+      },
+      preferred
+    });
+  });
+  return Array.from(grouped.values()).map((entry) => entry.option);
+}
+
+function resolveInitialSpecStoreCode(session: AuthSession) {
+  const options = buildSpecStoreOptions(session);
+  if (!options.length) {
+    return '';
   }
-  return currentStore.projectName || currentStore.projectCode || currentStore.storeCode || storeCode;
+  const currentStore = session.currentStore;
+  if (!currentStore?.storeCode) {
+    return options[0]?.value || '';
+  }
+  const currentGroupKey = specStoreGroupKey(currentStore);
+  const matched = buildSpecStoreOptions({
+    ...session,
+    userStores: (session.userStores || []).filter((store) => specStoreGroupKey(store) === currentGroupKey)
+  })[0];
+  return matched?.value || options[0]?.value || '';
+}
+
+function specStoreGroupKey(store: Partial<AuthSessionStore>) {
+  return store.projectCode || store.projectName || store.storeCode || '';
+}
+
+function isPreferredSpecStore(store: Partial<AuthSessionStore>) {
+  const site = String(store.site || '').trim().toUpperCase();
+  const storeCode = String(store.storeCode || '').trim().toUpperCase();
+  return site === 'AE' || storeCode.endsWith('-NAE');
 }
 
 function resolveRequestOwnerUserId(session: AuthSession, activeOwnerId?: number) {
