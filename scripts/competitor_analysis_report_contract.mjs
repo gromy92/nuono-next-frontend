@@ -3,7 +3,9 @@ import path from 'node:path';
 
 const rootDir = path.resolve(new URL('..', import.meta.url).pathname);
 const pagePath = path.join(rootDir, 'src/features/competitor-analysis/CompetitorAnalysisPage.tsx');
+const cssPath = path.join(rootDir, 'src/features/competitor-analysis/CompetitorAnalysisPage.css');
 const source = fs.readFileSync(pagePath, 'utf8');
+const cssSource = fs.readFileSync(cssPath, 'utf8');
 
 const requiredSnippets = [
   ['report button aria label', 'aria-label="报表"'],
@@ -27,12 +29,32 @@ const requiredSnippets = [
   ['tooltip keeps line kind', 'formatRankChartTooltip'],
   ['self organic series label', '本品自然'],
   ['self ad series label', '本品广告'],
-  ['competitor series label', '竞品']
+  ['competitor series label', '竞品'],
+  ['rank tab visible count label', '有排名'],
+  ['rank tab monitored count label', '监控'],
+  ['ranked product count helper', 'rankedProductCount'],
+  ['report monitored count helper', 'reportMonitoredCount'],
+  ['report modal owns compact header', 'competitor-analysis-report-header'],
+  ['report title moved into header body', 'competitor-analysis-report-heading'],
+  ['report bilingual product title helper', 'productTitleLines(product)'],
+  ['report product title cn class', cssSource, 'competitor-analysis-product-title-cn'],
+  ['report product title en class', cssSource, 'competitor-analysis-product-title-en'],
+  ['report header uses image thumb', 'ProductImageThumb'],
+  ['compact primary report tabs', cssSource, 'competitor-analysis-analysis-tabs > .ant-tabs-nav .ant-tabs-tab'],
+  ['compact keyword report tabs', cssSource, 'competitor-analysis-report-tabs .ant-tabs-tab'],
+  ['summary metric keeps value inline', cssSource, 'competitor-analysis-rank-summary-card .ant-typography:last-child'],
+  ['competitor link button', 'competitor-analysis-competitor-link-button'],
+  ['competitor detail url helper', 'buildNoonProductDetailUrl'],
+  ['competitor series uses product code', 'buildCompetitorSeriesName(candidate: CompetitorCandidate)']
 ];
 
 const failures = requiredSnippets
-  .filter(([, snippet]) => !source.includes(snippet))
-  .map(([name, snippet]) => `${name}: missing ${snippet}`);
+  .filter(([, snippetOrSource, maybeSnippet]) => {
+    const checkSource = maybeSnippet ? String(snippetOrSource) : source;
+    const snippet = String(maybeSnippet ?? snippetOrSource);
+    return !checkSource.includes(snippet);
+  })
+  .map(([name, snippetOrSource, maybeSnippet]) => `${name}: missing ${String(maybeSnippet ?? snippetOrSource)}`);
 
 const forbiddenSnippets = [
   ['right-side report table columns', 'reportColumns'],
@@ -48,7 +70,10 @@ const forbiddenSnippets = [
   ['mock competitor organic data', 'buildMockCompetitorRankData'],
   ['mock competitor ad data', 'buildMockCompetitorAdRankData'],
   ['mock report run status', '模拟数据'],
-  ['mock competitor code', 'mock-competitor']
+  ['mock competitor code', 'mock-competitor'],
+  ['old modal title placement', 'title="商品分析"'],
+  ['old product report tag', '商品级报表'],
+  ['old competitor indexed brand label', '竞品 ${index + 1}']
 ];
 
 const forbiddenFailures = forbiddenSnippets

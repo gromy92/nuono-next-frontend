@@ -194,6 +194,8 @@ export type CompetitorWatchProductQuery = {
   keywordSearch?: string
   competitorSearch?: string
   status?: 'active' | 'paused'
+  confirmedCompetitorCountZero?: boolean
+  pendingCandidateCountZero?: boolean
   page?: number
   pageSize?: number
 }
@@ -252,6 +254,8 @@ export async function fetchCompetitorWatchProducts(query: CompetitorWatchProduct
   appendSearchParam(params, 'keywordSearch', query.keywordSearch)
   appendSearchParam(params, 'competitorSearch', query.competitorSearch)
   appendSearchParam(params, 'status', query.status?.toUpperCase())
+  appendBooleanParam(params, 'confirmedCompetitorCountZero', query.confirmedCompetitorCountZero)
+  appendBooleanParam(params, 'pendingCandidateCountZero', query.pendingCandidateCountZero)
   if (query.page) {
     params.set('page', String(query.page))
   }
@@ -275,6 +279,8 @@ export async function fetchCompetitorProductBaselines(query: CompetitorWatchProd
   appendSearchParam(params, 'keywordSearch', query.keywordSearch)
   appendSearchParam(params, 'competitorSearch', query.competitorSearch)
   appendSearchParam(params, 'status', query.status?.toUpperCase())
+  appendBooleanParam(params, 'confirmedCompetitorCountZero', query.confirmedCompetitorCountZero)
+  appendBooleanParam(params, 'pendingCandidateCountZero', query.pendingCandidateCountZero)
   if (query.page) {
     params.set('page', String(query.page))
   }
@@ -710,6 +716,12 @@ function appendSearchParam(params: URLSearchParams, key: string, value?: string)
   const normalized = value?.trim()
   if (normalized) {
     params.set(key, normalized)
+  }
+}
+
+function appendBooleanParam(params: URLSearchParams, key: string, value?: boolean) {
+  if (value) {
+    params.set(key, 'true')
   }
 }
 
