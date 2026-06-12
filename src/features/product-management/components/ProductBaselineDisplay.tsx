@@ -93,6 +93,9 @@ export function ProductBaselineListCell({
   actions
 }: ProductBaselineListCellProps) {
   const title = productSummaryTitle(summary);
+  const titleCn = summary.titleCn?.trim();
+  const displayTitle = titleCn || title;
+  const showEnglishTitle = Boolean(titleCn && title && titleCn !== title);
   const visiblePsku = summary.partnerSku || summary.pskuCode || '-';
   const sourceTypeMeta = productSourceTypeMeta(summary.productSourceType);
   const titleContent = (
@@ -104,15 +107,23 @@ export function ProductBaselineListCell({
         whiteSpace: 'nowrap'
       }}
     >
-      {title}
+      {displayTitle}
     </span>
+  );
+  const titleTooltip = showEnglishTitle ? (
+    <Space direction="vertical" size={2}>
+      <span>{displayTitle}</span>
+      <span>{title}</span>
+    </Space>
+  ) : (
+    displayTitle
   );
 
   return (
     <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', minWidth: 0 }}>
       <ProductImageThumb
         src={imageUrl}
-        alt={imageAlt || title}
+        alt={imageAlt || displayTitle}
         imageCount={imageCount}
         width={72}
         disabled={imageDisabled}
@@ -136,7 +147,7 @@ export function ProductBaselineListCell({
             </Tag>
           </Tooltip>
         </Space>
-        <Tooltip title={title}>
+        <Tooltip title={titleTooltip}>
           {titleHref ? (
             <a
               href={titleHref}
@@ -176,6 +187,24 @@ export function ProductBaselineListCell({
             </span>
           )}
         </Tooltip>
+        {showEnglishTitle ? (
+          <Tooltip title={title}>
+            <Text
+              style={{
+                display: 'block',
+                maxWidth: 360,
+                color: '#6b7280',
+                fontSize: 12,
+                lineHeight: '18px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {title}
+            </Text>
+          </Tooltip>
+        ) : null}
         <Space
           wrap
           size={[10, 2]}

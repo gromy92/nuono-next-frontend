@@ -81,6 +81,7 @@ export type StoreInitializationPayload = {
     offerCode?: string;
     referenceStoreCode?: string;
     title?: string;
+    titleCn?: string;
     brand?: string;
     imageUrl?: string;
     galleryImages?: string[];
@@ -179,6 +180,7 @@ export type ProductListSummaryPayload = {
   pskuCode?: string;
   offerCode?: string;
   title?: string;
+  titleCn?: string;
   brand?: string;
   imageUrl?: string;
   galleryImages?: string[];
@@ -231,6 +233,7 @@ export type ProductSummarySurface = {
   offerCode?: string;
   storeCode?: string;
   title?: string;
+  titleCn?: string;
   titleAr?: string;
   brand?: string;
   imageUrl?: string;
