@@ -613,6 +613,41 @@ test('boss can start real OpenAPI authorization from modal', async ({ page }) =>
   await expect(modal).not.toBeVisible();
 });
 
+test('boss sees configuration warning without opening a blank authorization popup', async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalOpen = window.open.bind(window);
+    (window as typeof window & { __ali1688OpenCalls?: number }).__ali1688OpenCalls = 0;
+    window.open = (...args) => {
+      (window as typeof window & { __ali1688OpenCalls?: number }).__ali1688OpenCalls =
+        ((window as typeof window & { __ali1688OpenCalls?: number }).__ali1688OpenCalls ?? 0) + 1;
+      return originalOpen(...args);
+    };
+  });
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    await route.fulfill({ json: noAuthorizationWorkbench });
+  });
+  await page.route('**/api/procurement/ali1688-orders/authorizations/open-api/start**', async (route) => {
+    await route.fulfill({
+      json: {
+        configured: false,
+        providerCode: 'ALI1688_OPEN_API',
+        message: '1688 OpenAPI 尚未配置 AppKey、AppSecret、回调地址或 token 加密密钥。'
+      }
+    });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+  await page.getByRole('button', { name: '授权 1688' }).click();
+  const modal = page.getByRole('dialog', { name: '授权 1688' });
+  await modal.getByRole('button', { name: '确认授权' }).click();
+
+  await expect(page.getByText('1688 OpenAPI 尚未配置 AppKey、AppSecret、回调地址或 token 加密密钥。')).toBeVisible();
+  await expect(modal).toBeVisible();
+  await expect.poll(() =>
+    page.evaluate(() => (window as typeof window & { __ali1688OpenCalls?: number }).__ali1688OpenCalls ?? 0)
+  ).toBe(0);
+});
+
 test('operations can view authorization status but cannot mutate it', async ({ page }) => {
   await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
     await route.fulfill({
