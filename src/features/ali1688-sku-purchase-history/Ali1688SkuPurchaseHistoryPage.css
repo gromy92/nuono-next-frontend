@@ -307,7 +307,7 @@
 
 .ali1688-sku-batch-table {
   width: 100%;
-  min-width: 860px;
+  min-width: 960px;
   border-collapse: collapse;
   background: #ffffff;
 }
@@ -358,6 +358,52 @@
   margin-top: 3px;
 }
 
+.ali1688-sku-source-match-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ali1688-sku-source-match-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.ali1688-sku-source-match-form label,
+.ali1688-sku-source-match-candidate {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ali1688-sku-source-match-candidate {
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.ali1688-sku-source-match-candidate dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+  margin: 0;
+}
+
+.ali1688-sku-source-match-candidate dt {
+  margin-bottom: 3px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.ali1688-sku-source-match-candidate dd {
+  margin: 0;
+  color: #111827;
+}
+
 @media (max-width: 1380px) {
   .ali1688-sku-purchase-history-filters {
     grid-template-columns: 1fr;
@@ -365,5 +411,11 @@
 
   .ali1688-sku-purchase-history-actions {
     justify-content: flex-end;
+  }
+}
+
+@media (max-width: 760px) {
+  .ali1688-sku-source-match-form {
+    grid-template-columns: 1fr;
   }
 }

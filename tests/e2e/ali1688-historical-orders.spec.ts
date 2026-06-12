@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 const storeSyncOverview = {
   mode: 'mock',
@@ -253,6 +253,14 @@ test.beforeEach(async ({ page }) => {
     await route.fulfill({ json: [] });
   });
 });
+
+function assignmentTargetOptions(dialog: Locator) {
+  return dialog.locator('.ali1688-assignment-target-options');
+}
+
+async function clickAssignmentTarget(dialog: Locator, label: string) {
+  await assignmentTargetOptions(dialog).getByRole('button', { name: label }).click();
+}
 
 test('boss sees historical order page no-auth empty state from real API', async ({ page }) => {
   await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
@@ -1392,8 +1400,9 @@ test('boss can open product link entry before assigning product line', async ({ 
   await expect(actionButton).toBeEnabled();
   await actionButton.click();
   const dialog = page.getByRole('dialog', { name: '分配/关联' });
-  await expect(dialog.getByText('保存分配后选择店铺商品。')).toBeVisible();
-  await expect(dialog.getByRole('combobox', { name: '目标店铺' })).toBeVisible();
+  await expect(dialog.getByText('保存分配后选择店铺商品。')).toHaveCount(0);
+  await expect(assignmentTargetOptions(dialog).getByRole('button', { name: 'canman AE' })).toBeVisible();
+  await expect(dialog.getByRole('combobox', { name: '目标店铺' })).toHaveCount(0);
 });
 
 test('historical order product image border reflects product and store assignment state', async ({ page }) => {
@@ -1562,9 +1571,7 @@ test('boss can assign and link a product line in the same dialog', async ({ page
   await row.getByRole('button', { name: '分配/关联' }).click();
 
   const dialog = page.getByRole('dialog', { name: '分配/关联' });
-  await dialog.getByRole('combobox', { name: '目标店铺' }).click();
-  await page.getByTitle('canman AE').click();
-  await page.keyboard.press('Escape');
+  await clickAssignmentTarget(dialog, 'canman AE');
   await dialog.getByRole('button', { name: '保存分配并继续关联' }).click();
   await expect.poll(() => assignmentPayload).toMatchObject({
     targetType: 'STORE_SITE',
@@ -1583,6 +1590,166 @@ test('boss can assign and link a product line in the same dialog', async ({ page
     pskuCode: 'PSKU-CM-AE-003'
   });
   await expect(page.getByText('已关联: CM-AE-PARTNER-003')).toBeVisible();
+});
+
+test('assign and continue keeps product search and discontinued action after unassigned filter refreshes away the row', async ({ page }) => {
+  const unassignedWorkbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  const assignedDetail = JSON.parse(JSON.stringify(syncedWorkbench.orders[0]));
+  let assigned = false;
+  let assignmentPayload: any;
+  const candidateRequests: string[] = [];
+
+  unassignedWorkbench.orders[0].items = [{
+    ...unassignedWorkbench.orders[0].items[1],
+    assignedQuantity: 0,
+    remainingQuantity: 10,
+    assignmentStatus: 'unassigned',
+    assignmentStatusLabel: '未分配',
+    assignmentBreakdownText: '',
+    assignmentId: undefined,
+    assignmentTargetType: undefined,
+    assignmentTargetStoreCode: undefined,
+    assignmentTargetSiteCode: undefined,
+    productLink: undefined
+  }];
+  assignedDetail.items = [{
+    ...unassignedWorkbench.orders[0].items[0],
+    assignedQuantity: 10,
+    remainingQuantity: 0,
+    assignmentStatus: 'assigned',
+    assignmentStatusLabel: '已分配',
+    assignmentBreakdownText: 'PRJ108065 AE 10',
+    assignmentId: 99003,
+    assignmentTargetType: 'STORE_SITE',
+    assignmentTargetStoreCode: 'PRJ108065',
+    assignmentTargetSiteCode: 'AE',
+    productLink: undefined
+  }];
+
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    const search = new URL(route.request().url()).searchParams;
+    await route.fulfill({
+      json: assigned && search.get('assignmentState') === 'unassigned'
+        ? {
+          ...unassignedWorkbench,
+          orders: [],
+          pagination: { page: 1, pageSize: 20, total: 0 }
+        }
+        : unassignedWorkbench
+    });
+  });
+  await page.route('**/api/procurement/ali1688-orders/93001', async (route) => {
+    await route.fulfill({ json: assignedDetail });
+  });
+  await page.route('**/api/procurement/ali1688-orders/assignments', async (route) => {
+    assignmentPayload = route.request().postDataJSON();
+    assigned = true;
+    await route.fulfill({
+      json: {
+        status: 'assigned',
+        assignedLineCount: 1,
+        assignedQuantity: 10
+      }
+    });
+  });
+  await page.route('**/api/procurement/ali1688-orders/product-link-candidates**', async (route) => {
+    candidateRequests.push(new URL(route.request().url()).search);
+    await route.fulfill({
+      json: [{
+        storeCode: 'PRJ108065',
+        siteCode: 'AE',
+        skuParent: 'CANMAN-AE-SKU-003',
+        partnerSku: 'CM-AE-PARTNER-003',
+        pskuCode: 'PSKU-CM-AE-003',
+        productTitle: 'canman AE 锁心本',
+        productImageUrl: 'https://example.com/canman-ae-notebook.jpg',
+        linkStatus: 'unlinked',
+        linkedAssignmentCount: 0
+      }]
+    });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+  await page.locator('.ant-select:has(input[aria-label="分配店铺"]) .ant-select-selector').click();
+  await page.getByTitle('未分配').click();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')).toHaveCount(0);
+  await expect(page.getByText('跨境B6复古五角星锁心本')).toBeVisible();
+
+  const row = page.getByText('跨境B6复古五角星锁心本').locator('xpath=ancestor::tr');
+  await row.locator('.ali1688-product-line-main').getByRole('button', { name: '分配/关联' }).click();
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
+  await clickAssignmentTarget(dialog, 'canman AE');
+  await dialog.getByRole('button', { name: '保存分配并继续关联' }).click();
+
+  await expect.poll(() => assignmentPayload).toMatchObject({
+    targetType: 'STORE_SITE',
+    targetStoreCode: 'PRJ108065',
+    targetSiteCode: 'AE',
+    lines: [{ itemId: '94002', quantity: 10 }]
+  });
+  await expect.poll(() => candidateRequests[0] || '').toContain('assignmentId=99003');
+  await expect(dialog.getByRole('searchbox', { name: '搜索商品' })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: '标记下架数据' })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: '确认关联' })).toBeVisible();
+  await expect(dialog.getByText('canman AE 锁心本')).toBeVisible();
+});
+
+test('mark discontinued keeps assigned store scope and quantity', async ({ page }) => {
+  const workbench = JSON.parse(JSON.stringify(syncedWorkbench));
+  let revokedAssignmentId: string | undefined;
+  let discontinuedPayload: any;
+  workbench.orders[0].items = [{
+    ...workbench.orders[0].items[2],
+    assignmentId: 99001,
+    assignmentTargetType: 'STORE_SITE',
+    assignmentTargetStoreCode: 'PRJ108065',
+    assignmentTargetSiteCode: 'AE',
+    assignmentBreakdownText: 'PRJ108065 AE 8',
+    productLink: undefined
+  }];
+
+  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
+    await route.fulfill({ json: workbench });
+  });
+  await page.route('**/api/procurement/ali1688-orders/product-link-candidates**', async (route) => {
+    await route.fulfill({ json: [] });
+  });
+  await page.route('**/api/procurement/ali1688-orders/assignments/99001/revoke', async (route) => {
+    revokedAssignmentId = '99001';
+    await route.fulfill({
+      json: {
+        status: 'assigned',
+        assignedLineCount: 1,
+        assignedQuantity: 0
+      }
+    });
+  });
+  await page.route('**/api/procurement/ali1688-orders/assignments', async (route) => {
+    discontinuedPayload = route.request().postDataJSON();
+    await route.fulfill({
+      json: {
+        status: 'assigned',
+        assignedLineCount: 1,
+        assignedQuantity: 8
+      }
+    });
+  });
+
+  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
+  const row = page.getByText('已分配样品货品').locator('xpath=ancestor::tr');
+  await row.locator('.ali1688-product-line-main').getByRole('button', { name: '分配/关联' }).click();
+  const dialog = page.getByRole('dialog', { name: '分配/关联' });
+  await expect(dialog.getByRole('searchbox', { name: '搜索商品' })).toBeVisible();
+  await dialog.getByRole('button', { name: '标记下架数据' }).click();
+
+  await expect.poll(() => revokedAssignmentId).toBe('99001');
+  await expect.poll(() => discontinuedPayload).toMatchObject({
+    targetType: 'DISCONTINUED',
+    targetStoreCode: 'PRJ108065',
+    targetSiteCode: 'AE',
+    lines: [{ itemId: '94003', quantity: 8 }]
+  });
 });
 
 test('procurement role sees product link state as read-only', async ({ page }) => {
@@ -1657,14 +1824,12 @@ test('boss can assign a single product line before product linking', async ({ pa
   const productActionOrder = await productCell.locator('button').evaluateAll((buttons) =>
     buttons.map((button) => button.textContent?.trim()).filter(Boolean)
   );
-  expect(productActionOrder).toEqual(['分配/关联']);
+  expect(productActionOrder).toEqual(['分配/关联', '删除订单']);
   await productCell.getByRole('button', { name: '分配/关联' }).click();
 
   const dialog = page.getByRole('dialog', { name: '分配/关联' });
   await expect(dialog.getByText('单个货品可拆分到多个店铺，请为每个店铺填写数量。')).toBeVisible();
-  await dialog.getByRole('combobox', { name: '目标店铺' }).click();
-  await page.getByTitle('canman SA').click();
-  await page.keyboard.press('Escape');
+  await clickAssignmentTarget(dialog, 'canman SA');
   await expect(dialog.getByRole('spinbutton', { name: '分配数量 canman SA 跨境B6复古五角星锁心本' })).toHaveValue('10');
   await dialog.getByRole('button', { name: '确认分配' }).click();
 
@@ -1716,15 +1881,13 @@ test('boss can split multiple selected product lines across two target stores wi
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('多选货品可拆分到多个店铺，请为每个店铺和货品填写数量。')).toBeVisible();
   await expect(page.locator('.ant-modal:visible')).toHaveCSS('width', '1180px');
-  await dialog.getByRole('combobox', { name: '目标店铺' }).click();
-  await page.getByTitle('canman SA').click();
+  await clickAssignmentTarget(dialog, 'canman SA');
   await expect(dialog.locator('.ali1688-assignment-matrix')).toBeVisible();
   await expect(dialog.locator('.ali1688-assignment-matrix thead th').nth(0)).toContainText('商品');
   await expect(dialog.locator('.ali1688-assignment-matrix thead th').nth(1)).toContainText('canman SA');
   await expect(dialog.getByRole('spinbutton', { name: '分配数量 canman SA 仿真罂粟花束 6 支装 家居装饰' })).toHaveValue('6');
   await expect(dialog.getByRole('spinbutton', { name: '分配数量 canman SA 跨境B6复古五角星锁心本' })).toHaveValue('10');
-  await page.getByTitle('xingyao AE').click();
-  await page.keyboard.press('Escape');
+  await clickAssignmentTarget(dialog, 'xingyao AE');
   await expect(dialog.locator('.ali1688-assignment-matrix thead th').nth(2)).toContainText('xingyao AE');
   await expect(dialog.getByRole('spinbutton', { name: '分配数量 canman SA 仿真罂粟花束 6 支装 家居装饰' })).toHaveValue('3');
   await expect(dialog.getByRole('spinbutton', { name: '分配数量 xingyao AE 仿真罂粟花束 6 支装 家居装饰' })).toHaveValue('3');
@@ -1807,9 +1970,7 @@ test('boss can filter and assign product lines to shared consumables', async ({ 
   await page.getByRole('button', { name: '批量分配/关联' }).click();
 
   const dialog = page.getByRole('dialog', { name: '分配/关联' });
-  await dialog.getByRole('combobox', { name: '目标店铺' }).click();
-  await page.getByTitle('耗材（共用）').click();
-  await page.keyboard.press('Escape');
+  await clickAssignmentTarget(dialog, '耗材（共用）');
   await expect(dialog.getByRole('spinbutton')).toHaveCount(0);
   await dialog.getByRole('button', { name: '确认分配' }).click();
 
@@ -1889,10 +2050,8 @@ test('boss can split one selected product line across multiple owner stores', as
 
   const dialog = page.getByRole('dialog', { name: '分配/关联' });
   await expect(dialog.getByText('单个货品可拆分到多个店铺，请为每个店铺填写数量。')).toBeVisible();
-  await dialog.getByRole('combobox', { name: '目标店铺' }).click();
-  await page.getByTitle('canman SA').click();
-  await page.getByTitle('xingyao AE').click();
-  await page.keyboard.press('Escape');
+  await clickAssignmentTarget(dialog, 'canman SA');
+  await clickAssignmentTarget(dialog, 'xingyao AE');
   await expect(dialog.getByText('canman AE')).toBeVisible();
   await expect(dialog.getByText('chenwu AE')).toBeVisible();
   await expect(dialog.getByText('YI WU SHI SONG GUO GUO ER DIAN ZI SHANG WU YOU XIAN GONG SI SA')).toBeVisible();
