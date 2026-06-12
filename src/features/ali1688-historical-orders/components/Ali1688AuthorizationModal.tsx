@@ -1,10 +1,11 @@
-import { Modal, Typography } from 'antd'
+import { Alert, Modal, Typography } from 'antd'
 
 const { Paragraph, Text } = Typography
 
 type Ali1688AuthorizationModalProps = {
   open: boolean
   submitting: boolean
+  errorMessage?: string
   onCancel: () => void
   onConfirm: () => void
 }
@@ -12,6 +13,7 @@ type Ali1688AuthorizationModalProps = {
 export function Ali1688AuthorizationModal({
   open,
   submitting,
+  errorMessage,
   onCancel,
   onConfirm
 }: Ali1688AuthorizationModalProps) {
@@ -27,6 +29,14 @@ export function Ali1688AuthorizationModal({
       destroyOnClose
     >
       <div className="ali1688-authorization-modal-body">
+        {errorMessage ? (
+          <Alert
+            type="warning"
+            showIcon
+            message={errorMessage}
+            style={{ marginBottom: 16 }}
+          />
+        ) : null}
         <Paragraph>
           系统将读取 1688 历史订单，用于同步订单、商品行、供应商和物流摘要。
         </Paragraph>

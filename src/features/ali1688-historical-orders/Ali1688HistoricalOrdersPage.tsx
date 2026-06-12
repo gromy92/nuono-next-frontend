@@ -146,6 +146,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
   const [importBatchDetail, setImportBatchDetail] = useState<Ali1688ExcelImportBatchDetail>()
   const [importBatchDetailLoading, setImportBatchDetailLoading] = useState(false)
   const [authorizationSubmitting, setAuthorizationSubmitting] = useState(false)
+  const [authorizationErrorMessage, setAuthorizationErrorMessage] = useState<string>()
   const [syncing, setSyncing] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Ali1688HistoricalOrderDetail | null>(null)
   const [selectedLineItemId, setSelectedLineItemId] = useState<string | undefined>()
@@ -356,7 +357,14 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
             </Button>
           ) : null}
           {showAuthorizeButton ? (
-            <Button type="primary" icon={<KeyOutlined />} onClick={() => setAuthorizationModalOpen(true)}>
+            <Button
+              type="primary"
+              icon={<KeyOutlined />}
+              onClick={() => {
+                setAuthorizationErrorMessage(undefined)
+                setAuthorizationModalOpen(true)
+              }}
+            >
               授权 1688
             </Button>
           ) : null}
@@ -780,7 +788,11 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
       <Ali1688AuthorizationModal
         open={authorizationModalOpen}
         submitting={authorizationSubmitting}
-        onCancel={() => setAuthorizationModalOpen(false)}
+        errorMessage={authorizationErrorMessage}
+        onCancel={() => {
+          setAuthorizationErrorMessage(undefined)
+          setAuthorizationModalOpen(false)
+        }}
         onConfirm={() => void confirmOpenApiAuthorization()}
       />
       <Ali1688ExcelImportModal
@@ -798,25 +810,24 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
 
   async function confirmOpenApiAuthorization() {
     setAuthorizationSubmitting(true)
-    const authorizationWindow = window.open('about:blank', '_blank')
+    setAuthorizationErrorMessage(undefined)
     try {
       const start = await startAli1688OpenApiAuthorization()
       if (!start.configured || !start.authorizationUrl) {
-        authorizationWindow?.close()
-        message.warning(start.message || '1688 OpenAPI 尚未配置，暂时不能发起真实授权')
+        setAuthorizationErrorMessage(start.message || '1688 OpenAPI 尚未配置，暂时不能发起真实授权')
         return
       }
-      if (authorizationWindow) {
-        authorizationWindow.location.href = start.authorizationUrl
-      } else {
-        message.warning('浏览器拦截了授权窗口，请允许弹窗后重试')
-        return
+
+      const authorizationWindow = window.open(start.authorizationUrl, '_blank', 'noopener,noreferrer')
+      if (!authorizationWindow) {
+        window.location.assign(start.authorizationUrl)
       }
       setAuthorizationModalOpen(false)
-      message.success('已打开 1688 授权页，完成后返回系统刷新订单')
+      message.success('已打开 1688 授权页，完成后返回系统同步历史订单')
     } catch (error) {
-      authorizationWindow?.close()
-      message.error(error instanceof Error ? error.message : '授权 1688 历史订单失败')
+      const errorMessage = error instanceof Error ? error.message : '授权 1688 历史订单失败'
+      setAuthorizationErrorMessage(errorMessage)
+      message.error(errorMessage)
     } finally {
       setAuthorizationSubmitting(false)
     }
