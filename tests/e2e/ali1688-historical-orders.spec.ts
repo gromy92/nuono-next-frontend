@@ -677,7 +677,7 @@ test('authorized boss can run fake initial sync and inspect product-line detail 
   const controls = page.locator('.ali1688-historical-orders-controls');
   await expect(controls).toBeVisible();
   await expect(controls.getByPlaceholder('供应商')).toBeVisible();
-  await expect(controls.getByRole('button', { name: '刷新订单' })).toBeVisible();
+  await expect(controls.getByRole('button', { name: '同步历史订单' })).toBeVisible();
   await expect(controls.getByRole('button', { name: '刷新', exact: true })).toHaveCount(0);
   await expect(controls.getByRole('button', { name: '批量分配/关联' })).toBeVisible();
   await expect(page.locator('.ali1688-assignment-toolbar')).toHaveCount(0);
@@ -2368,6 +2368,6 @@ test('authorized operations manager can trigger manual refresh without authoriza
   await page.goto('/purchase/ali1688-orders?devSession=1&devRole=operator-manager&grantAli1688HistoricalOrders=1');
 
   await expect(page.getByRole('button', { name: '授权 1688' })).not.toBeVisible();
-  await page.getByRole('button', { name: '刷新订单' }).click();
+  await page.getByRole('button', { name: '同步历史订单' }).click();
   await expect.poll(() => refreshCalled).toBe(true);
 });

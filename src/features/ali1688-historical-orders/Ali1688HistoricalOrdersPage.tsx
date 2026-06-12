@@ -374,7 +374,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
               loading={syncing}
               onClick={() => void runSyncAction()}
             >
-              {hasSyncedOrders ? '刷新订单' : '同步历史订单'}
+              同步历史订单
             </Button>
           ) : (
             <Button
