@@ -1253,7 +1253,7 @@ function ProductKeywordLinks({
               >
                 <SearchOutlined />
                 <span className="competitor-analysis-keyword-text">{keyword.keyword}</span>
-                <span className="competitor-analysis-keyword-monitor-count">{`监控 ${keyword.monitoredCount ?? 0}`}</span>
+                <span className="competitor-analysis-keyword-monitor-count">{keyword.monitoredCount ?? 0}</span>
               </a>
             ))
           ) : (
