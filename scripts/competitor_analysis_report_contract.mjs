@@ -30,8 +30,7 @@ const requiredSnippets = [
   ['self organic series label', '本品自然'],
   ['self ad series label', '本品广告'],
   ['competitor series label', '竞品'],
-  ['rank tab visible count label', '有排名'],
-  ['rank tab monitored count label', '监控'],
+  ['rank tab visible in monitored label', '${rankedCount} in ${monitoredCount}'],
   ['ranked product count helper', 'rankedProductCount'],
   ['report monitored count helper', 'reportMonitoredCount'],
   ['report loads rank history', 'loadReportRankHistory'],
@@ -78,7 +77,9 @@ const forbiddenSnippets = [
   ['mock competitor code', 'mock-competitor'],
   ['old modal title placement', 'title="商品分析"'],
   ['old product report tag', '商品级报表'],
-  ['old competitor indexed brand label', '竞品 ${index + 1}']
+  ['old competitor indexed brand label', '竞品 ${index + 1}'],
+  ['old rank tab visible count label', '有排名 {rankedCount}'],
+  ['old rank tab monitored count label', '监控 {monitoredCount}']
 ];
 
 const forbiddenFailures = forbiddenSnippets

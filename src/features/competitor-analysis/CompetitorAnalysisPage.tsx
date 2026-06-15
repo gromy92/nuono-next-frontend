@@ -1618,8 +1618,7 @@ function SelfRankReportModal({
                           <span className="competitor-analysis-report-tab-label">
                             <SearchOutlined />
                             <span>{report.keyword}</span>
-                            <Tag color={rankedCount ? 'blue' : undefined}>有排名 {rankedCount}</Tag>
-                            <Tag>监控 {monitoredCount}</Tag>
+                            <Tag color={rankedCount ? 'blue' : undefined}>{`${rankedCount} in ${monitoredCount}`}</Tag>
                           </span>
                         ),
                         children: hasRankData ? (
