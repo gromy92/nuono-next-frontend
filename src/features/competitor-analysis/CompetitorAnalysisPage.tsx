@@ -69,6 +69,7 @@ import type {
 import './CompetitorAnalysisPage.css'
 
 const { Text } = Typography
+const DEFAULT_RANK_SCAN_DEPTH = 100
 
 type CompetitorAnalysisPageProps = {
   session: AuthSession
@@ -215,6 +216,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
   const [reportOpen, setReportOpen] = useState(false)
   const [listLoading, setListLoading] = useState(false)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [reportRankLoading, setReportRankLoading] = useState(false)
   const [changeLoading, setChangeLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [productSearch, setProductSearch] = useState('')
@@ -420,6 +422,21 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     setChangeRows([])
     setChangeBaselineSummary(undefined)
     setReportOpen(true)
+    setReportRankLoading(true)
+    loadReportRankHistory(detailProduct)
+      .then(({ product: reportReadyProduct, failedCount }) => {
+        setReportProduct(reportReadyProduct)
+        mergeProduct(reportReadyProduct)
+        if (failedCount > 0) {
+          message.warning(`有 ${failedCount} 个关键词历史排名读取失败`)
+        }
+      })
+      .catch((error) => {
+        message.error(normalizeError(error, '读取历史排名失败'))
+      })
+      .finally(() => {
+        setReportRankLoading(false)
+      })
     setChangeLoading(true)
     try {
       const result = await fetchCompetitorProductChanges(detailProduct.id)
@@ -851,7 +868,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
         return (
           <Space direction="vertical" size={2}>
             <Text>{summary?.label || '暂无排名'}</Text>
-            <Text type="secondary">{summary?.notInTop20Count ?? 0} 次未进前20</Text>
+            <Text type="secondary">{summary?.notInScanDepthCount ?? 0} 次{formatNotInRankRangeText()}</Text>
           </Space>
         )
       }
@@ -1099,8 +1116,9 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
           destroyOnClose={false}
         >
           <SelfRankReportModal
-            product={products.find((product) => sameProductLine(product, reportProduct)) ?? reportProduct}
+            product={reportProduct}
             storeLabel={selectedStoreLabel}
+            rankLoading={reportRankLoading}
             changeGroups={changeRows}
             changeBaselineSummary={changeBaselineSummary}
             changeLoading={changeLoading}
@@ -1117,6 +1135,56 @@ function normalizeSearchText(value: string) {
 
 function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === 'AbortError'
+}
+
+async function loadReportRankHistory(product: CompetitorWatchProduct, rangeDays = 15) {
+  const activeKeywords = product.keywords.filter((keyword) => keyword.status === 'active' && keyword.id)
+  if (!product.id || !activeKeywords.length) {
+    return { product, failedCount: 0 }
+  }
+
+  const results = await Promise.allSettled(
+    activeKeywords.map((keyword) =>
+      fetchCompetitorRankHistory(product.id, {
+        keywordId: keyword.id,
+        rangeDays
+      })
+    )
+  )
+  const rankPoints = results.flatMap((result) => result.status === 'fulfilled' ? result.value : [])
+  const failedCount = results.filter((result) => result.status === 'rejected').length
+  return {
+    product: rankPoints.length ? mergeReportRankPoints(product, rankPoints) : product,
+    failedCount
+  }
+}
+
+function mergeReportRankPoints(product: CompetitorWatchProduct, rankPoints: CompetitorRankPoint[]) {
+  const pointByKey = new Map<string, CompetitorRankPoint>()
+  ;[...product.rankPoints, ...rankPoints].forEach((point) => {
+    pointByKey.set(reportRankPointKey(point), point)
+  })
+  return {
+    ...product,
+    rankPoints: Array.from(pointByKey.values()).sort((left, right) => {
+      const dateCompare = left.factDate.localeCompare(right.factDate)
+      if (dateCompare !== 0) return dateCompare
+      const keywordCompare = left.keywordId.localeCompare(right.keywordId)
+      if (keywordCompare !== 0) return keywordCompare
+      return left.noonProductCode.localeCompare(right.noonProductCode)
+    })
+  }
+}
+
+function reportRankPointKey(point: CompetitorRankPoint) {
+  return [
+    point.keywordId,
+    normalizeNoonProductCode(point.noonProductCode),
+    point.factDate,
+    point.rankChannel || 'organic',
+    point.isSponsored ? 'ad' : 'natural',
+    point.isSelf ? 'self' : 'competitor'
+  ].join(':')
 }
 
 function mergeProductTitleFields(existing: CompetitorWatchProduct, incoming: CompetitorWatchProduct) {
@@ -1185,6 +1253,7 @@ function ProductKeywordLinks({
               >
                 <SearchOutlined />
                 <span className="competitor-analysis-keyword-text">{keyword.keyword}</span>
+                <span className="competitor-analysis-keyword-monitor-count">{`监控 ${keyword.monitoredCount ?? 0}`}</span>
               </a>
             ))
           ) : (
@@ -1419,7 +1488,7 @@ function formatProductChangeValue(value: unknown): string {
   return String(value)
 }
 
-type SelfRankReportStatus = 'ranked' | 'not_in_top_100' | 'missing'
+type SelfRankReportStatus = 'ranked' | 'not_in_scan_depth' | 'missing'
 
 type SelfRankReportPoint = {
   date: string
@@ -1473,7 +1542,8 @@ type ReportChartLineMeta = {
 }
 
 type RankReportSummary = {
-  latestOrganicText: string
+  latestOrganicRank?: number
+  scanDepth: number
   organicChangeText: string
   adDaysText: string
   bestCompetitorText: string
@@ -1483,6 +1553,7 @@ type RankHeatmapCell = {
   dateLabel: string
   rankNo?: number
   adRankNo?: number
+  scanDepth: number
   band: 'top10' | 'top20' | 'top50' | 'top100' | 'missing'
 }
 
@@ -1498,12 +1569,14 @@ type RankHeatmapRow = {
 function SelfRankReportModal({
   product,
   storeLabel,
+  rankLoading,
   changeGroups,
   changeBaselineSummary,
   changeLoading
 }: {
   product: CompetitorWatchProduct
   storeLabel?: string
+  rankLoading: boolean
   changeGroups: CompetitorProductChangeGroup[]
   changeBaselineSummary?: CompetitorProductChangeBaselineSummary
   changeLoading: boolean
@@ -1528,74 +1601,76 @@ function SelfRankReportModal({
               </span>
             ),
             children: (
-              reports.length ? (
-                <Tabs
-                  className="competitor-analysis-report-tabs"
-                  items={reports.map((report) => {
-                    const hasRankData = report.points.length > 0
-                    const rankedCount = rankedProductCount(report)
-                    const monitoredCount = reportMonitoredCount(product, report.keywordId)
-                    const latest = report.points[report.points.length - 1]
-                    const summary = buildReportSummary(report)
-                    const heatmapRows = buildRankHeatmapRows(report)
-                    return {
-                      key: report.keywordId,
-                      label: (
-                        <span className="competitor-analysis-report-tab-label">
-                          <SearchOutlined />
-                          <span>{report.keyword}</span>
-                          <Tag color={rankedCount ? 'blue' : undefined}>有排名 {rankedCount}</Tag>
-                          <Tag>监控 {monitoredCount}</Tag>
-                        </span>
-                      ),
-                      children: hasRankData ? (
-                        <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                          <div className="competitor-analysis-rank-summary-grid">
-                            <RankSummaryMetric label="本品最新自然位" value={summary.latestOrganicText} />
-                            <RankSummaryMetric label={SELF_RANK_REPORT_CHANGE_LABEL} value={summary.organicChangeText} />
-                            <RankSummaryMetric label="本品广告出现" value={summary.adDaysText} />
-                            <RankSummaryMetric label="最强竞品" value={summary.bestCompetitorText} />
-                          </div>
-                          <Card
-                            size="small"
-                            variant="borderless"
-                            className="competitor-analysis-report-keyword-card competitor-analysis-rank-race-card"
-                            title={
-                              <div className="competitor-analysis-race-card-title">
-                                <Space size={6} wrap>
-                                  <Tag color="blue">本品自然 {formatSelfRankReportText(latest.organicStatus, latest.organicRankNo)}</Tag>
-                                  <Tag color="blue">本品广告 {formatSelfRankReportText(latest.adStatus, latest.adRankNo)}</Tag>
-                                  <Tag color="green">竞品 {report.competitorSeries.length}</Tag>
-                                </Space>
-                                <div className="competitor-analysis-rank-zone-legend">
-                                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top10">前10</span>
-                                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top20">11-20</span>
-                                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top50">21-50</span>
-                                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top100">51-100</span>
-                                </div>
-                              </div>
-                            }
-                          >
-                            <div className="competitor-analysis-report-chart-only">
-                              <EChartPanel
-                                testId={`self-rank-chart-${report.keywordId}`}
-                                ariaLabel={`${report.keyword} 本品与竞品排名赛道图`}
-                                height={300}
-                                option={buildSelfRankChartOption(report)}
-                              />
+              <Spin spinning={rankLoading}>
+                {reports.length ? (
+                  <Tabs
+                    className="competitor-analysis-report-tabs"
+                    items={reports.map((report) => {
+                      const hasRankData = report.points.length > 0
+                      const rankedCount = rankedProductCount(report)
+                      const monitoredCount = reportMonitoredCount(product, report.keywordId)
+                      const latest = report.points[report.points.length - 1]
+                      const summary = buildReportSummary(report)
+                      const heatmapRows = buildRankHeatmapRows(report)
+                      return {
+                        key: report.keywordId,
+                        label: (
+                          <span className="competitor-analysis-report-tab-label">
+                            <SearchOutlined />
+                            <span>{report.keyword}</span>
+                            <Tag color={rankedCount ? 'blue' : undefined}>有排名 {rankedCount}</Tag>
+                            <Tag>监控 {monitoredCount}</Tag>
+                          </span>
+                        ),
+                        children: hasRankData ? (
+                          <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                            <div className="competitor-analysis-rank-summary-grid">
+                              <RankSummaryMetric label="本品最新自然位" value={formatSummaryRankText(summary.latestOrganicRank, summary.scanDepth)} />
+                              <RankSummaryMetric label={SELF_RANK_REPORT_CHANGE_LABEL} value={summary.organicChangeText} />
+                              <RankSummaryMetric label="本品广告出现" value={summary.adDaysText} />
+                              <RankSummaryMetric label="最强竞品" value={summary.bestCompetitorText} />
                             </div>
-                          </Card>
-                          <RankHeatmap rows={heatmapRows} dates={report.points.map((point) => point.date.slice(5))} />
-                        </Space>
-                      ) : (
-                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无真实排名数据" />
-                      )
-                    }
-                  })}
-                />
-              ) : (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无真实排名数据" />
-              )
+                            <Card
+                              size="small"
+                              variant="borderless"
+                              className="competitor-analysis-report-keyword-card competitor-analysis-rank-race-card"
+                              title={
+                                <div className="competitor-analysis-race-card-title">
+                                  <Space size={6} wrap>
+                                    <Tag color="blue">本品自然 {formatSelfRankReportText(latest.organicStatus, latest.organicRankNo, latest.scanDepth)}</Tag>
+                                    <Tag color="blue">本品广告 {formatSelfRankReportText(latest.adStatus, latest.adRankNo, latest.scanDepth)}</Tag>
+                                    <Tag color="green">竞品 {report.competitorSeries.length}</Tag>
+                                  </Space>
+                                  <div className="competitor-analysis-rank-zone-legend">
+                                    <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top10">前10</span>
+                                    <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top20">11-20</span>
+                                    <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top50">21-50</span>
+                                    <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top100">51-100</span>
+                                  </div>
+                                </div>
+                              }
+                            >
+                              <div className="competitor-analysis-report-chart-only">
+                                <EChartPanel
+                                  testId={`self-rank-chart-${report.keywordId}`}
+                                  ariaLabel={`${report.keyword} 本品与竞品排名赛道图`}
+                                  height={300}
+                                  option={buildSelfRankChartOption(report)}
+                                />
+                              </div>
+                            </Card>
+                            <RankHeatmap rows={heatmapRows} dates={report.points.map((point) => point.date.slice(5))} />
+                          </Space>
+                        ) : (
+                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无真实排名数据" />
+                        )
+                      }
+                    })}
+                  />
+                ) : (
+                  <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无真实排名数据" />
+                )}
+              </Spin>
             )
           },
           {
@@ -1731,7 +1806,7 @@ function RankHeatmapRowView({ row }: { row: RankHeatmapRow }) {
         <div
           key={`${row.productCode}-${cell.dateLabel}`}
           className={`competitor-analysis-rank-heatmap-cell competitor-analysis-rank-heatmap-cell-${cell.band}`}
-          title={`${row.name} ${cell.dateLabel} ${cell.rankNo ? `第 ${cell.rankNo} 名` : '未进前100'}${cell.adRankNo ? `，广告第 ${cell.adRankNo} 名` : ''}`}
+          title={`${row.name} ${cell.dateLabel} ${cell.rankNo ? `第 ${cell.rankNo} 名` : formatNotInRankRangeText(cell.scanDepth)}${cell.adRankNo ? `，广告第 ${cell.adRankNo} 名` : ''}`}
         >
           <span>{cell.rankNo ? cell.rankNo : '-'}</span>
           {cell.adRankNo ? <em>AD {cell.adRankNo}</em> : null}
@@ -1768,7 +1843,13 @@ function buildSelfRankReport(product: CompetitorWatchProduct): SelfRankKeywordRe
     const pointsByDate = new Map(
       Array.from(new Set(relevantRankPoints.map((point) => point.factDate)))
         .sort((left, right) => left.localeCompare(right))
-        .map((date) => [date, buildEmptySelfRankReportPoint(date)] as const)
+        .map((date) => [
+          date,
+          buildEmptySelfRankReportPoint(
+            date,
+            relevantRankPoints.filter((point) => point.factDate === date)
+          )
+        ] as const)
     )
     relevantRankPoints
       .filter(
@@ -1778,7 +1859,8 @@ function buildSelfRankReport(product: CompetitorWatchProduct): SelfRankKeywordRe
       .forEach((point) => {
         const date = point.factDate
         const existing = pointsByDate.get(date) ?? buildEmptySelfRankReportPoint(date)
-        const status: SelfRankReportStatus = point.rankStatus === 'ranked' ? 'ranked' : 'not_in_top_100'
+        const status: SelfRankReportStatus = point.rankStatus === 'ranked' ? 'ranked' : 'not_in_scan_depth'
+        existing.scanDepth = Math.max(existing.scanDepth, reportScanDepth([point]))
         if (point.isSponsored) {
           existing.adStatus = status
           existing.adRankNo = point.rankNo
@@ -1809,12 +1891,12 @@ function reportMonitoredCount(product: CompetitorWatchProduct, keywordId: string
   return product.candidates.filter((candidate) => candidateStatusForKeyword(candidate, keywordId) === 'confirmed').length
 }
 
-function buildEmptySelfRankReportPoint(date: string): SelfRankReportPoint {
+function buildEmptySelfRankReportPoint(date: string, points: Array<{ scanDepth?: number }> = []): SelfRankReportPoint {
   return {
     date,
     adStatus: 'missing',
     organicStatus: 'missing',
-    scanDepth: 0,
+    scanDepth: reportScanDepth(points),
     runStatus: '真实抓取'
   }
 }
@@ -2031,11 +2113,19 @@ function buildReportSummary(report: SelfRankKeywordReport): RankReportSummary {
     .sort((left, right) => left.rankNo - right.rankNo)[0]
 
   return {
-    latestOrganicText: formatSummaryRankText(latestOrganicRank),
+    latestOrganicRank,
+    scanDepth: reportScanDepth(report.points),
     organicChangeText: formatRankChangeText(firstOrganicRank, latestOrganicRank),
     adDaysText: `${adDays}/${report.points.length} 天`,
     bestCompetitorText: bestCompetitor ? `${bestCompetitor.name} 第 ${bestCompetitor.rankNo} 名` : '暂无竞品排名'
   }
+}
+
+function reportScanDepth(points: Array<{ scanDepth?: number }>) {
+  const depths = points
+    .map((point) => point.scanDepth)
+    .filter((depth): depth is number => typeof depth === 'number' && depth > 0)
+  return depths.length ? Math.max(...depths) : DEFAULT_RANK_SCAN_DEPTH
 }
 
 function buildRankHeatmapRows(report: SelfRankKeywordReport): RankHeatmapRow[] {
@@ -2053,6 +2143,7 @@ function buildRankHeatmapRows(report: SelfRankKeywordReport): RankHeatmapRow[] {
         dateLabel: point.date.slice(5),
         rankNo,
         adRankNo,
+        scanDepth: point.scanDepth,
         band: rankBand(rankNo)
       }
     })
@@ -2112,8 +2203,8 @@ function rankBand(rankNo?: number): RankHeatmapCell['band'] {
   return 'top100'
 }
 
-function formatSummaryRankText(rankNo?: number) {
-  return rankNo ? `第 ${rankNo} 名` : '未进前100'
+function formatSummaryRankText(rankNo?: number, scanDepth = DEFAULT_RANK_SCAN_DEPTH) {
+  return rankNo ? `第 ${rankNo} 名` : formatNotInRankRangeText(scanDepth)
 }
 
 function formatRankChangeText(firstRank?: number, latestRank?: number) {
@@ -2130,12 +2221,12 @@ function formatRankChangeText(firstRank?: number, latestRank?: number) {
   return '持平'
 }
 
-function formatSelfRankReportText(status: SelfRankReportStatus, rankNo?: number) {
+function formatSelfRankReportText(status: SelfRankReportStatus, rankNo?: number, scanDepth = DEFAULT_RANK_SCAN_DEPTH) {
   if (status === 'ranked' && rankNo) {
     return `第 ${rankNo} 名`
   }
-  if (status === 'not_in_top_100') {
-    return '未进100'
+  if (status === 'not_in_scan_depth') {
+    return formatNotInRankRangeText(scanDepth)
   }
   return '-'
 }
@@ -3014,16 +3105,22 @@ function formatRankStatus(rankPoint?: CompetitorRankPoint, fallbackRankNo?: numb
   if (rankPoint?.rankStatus === 'ranked' && rankPoint.rankNo) {
     return `第 ${rankPoint.rankNo} 名`
   }
-  if (rankPoint?.rankStatus === 'not_in_top_20') {
-    return '未进前20'
-  }
-  if (rankPoint?.rankStatus === 'not_in_scan_depth') {
-    return rankPoint.scanDepth ? `未进前${rankPoint.scanDepth}` : '未进扫描范围'
+  if (rankPoint && isNotInRankRange(rankPoint.rankStatus)) {
+    return formatNotInRankRangeText(rankPoint.scanDepth)
   }
   if (fallbackRankNo) {
     return `第 ${fallbackRankNo} 名`
   }
   return '暂无排名'
+}
+
+function formatNotInRankRangeText(scanDepth = DEFAULT_RANK_SCAN_DEPTH) {
+  const depth = Number.isFinite(scanDepth) && scanDepth > 0 ? scanDepth : DEFAULT_RANK_SCAN_DEPTH
+  return `未进前${depth}`
+}
+
+function formatRankPointStatusTag(point: CompetitorRankPoint) {
+  return formatNotInRankRangeText(point.scanDepth)
 }
 
 function isNotInRankRange(rankStatus: CompetitorRankPoint['rankStatus']) {
@@ -3123,7 +3220,7 @@ function rankColumns(product: CompetitorWatchProduct): ColumnsType<ReturnType<ty
         point.rankStatus === 'ranked' ? (
           <Text strong>第 {point.rankNo} 名</Text>
         ) : (
-          <Tag icon={<ClockCircleOutlined />}>未进前20</Tag>
+          <Tag icon={<ClockCircleOutlined />}>{formatRankPointStatusTag(point)}</Tag>
         )
     },
     {

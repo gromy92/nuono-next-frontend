@@ -38,7 +38,10 @@ const checks = [
   ['candidate count centered stack', cssSource, 'justify-items: center'],
   ['candidate count centered row', cssSource, 'justify-content: center'],
   ['keyword links stay visible', pageSource, 'competitor-analysis-keyword-link'],
-  ['keyword text stays visible', pageSource, 'competitor-analysis-keyword-text']
+  ['keyword text stays visible', pageSource, 'competitor-analysis-keyword-text'],
+  ['per-keyword monitored count label', pageSource, '监控 ${keyword.monitoredCount ?? 0}'],
+  ['per-keyword monitored count class', pageSource, 'competitor-analysis-keyword-monitor-count'],
+  ['per-keyword monitored count css', cssSource, '.competitor-analysis-keyword-monitor-count']
 ];
 
 const failures = checks
@@ -47,9 +50,6 @@ const failures = checks
 
 const forbiddenSnippets = [
   ['old zero count checkbox wrapper', pageSource, 'competitor-analysis-zero-filters'],
-  ['per-keyword monitored count label', pageSource, '监控 ${keyword.monitoredCount ?? 0}'],
-  ['per-keyword monitored count class', pageSource, 'competitor-analysis-keyword-monitor-count'],
-  ['per-keyword monitored count css', cssSource, '.competitor-analysis-keyword-monitor-count'],
   ['old bare per-keyword count class', pageSource, 'competitor-analysis-keyword-link-count'],
   ['old bare per-keyword count css', cssSource, '.competitor-analysis-keyword-link-count']
 ];

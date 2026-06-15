@@ -13,11 +13,11 @@ const typesSource = fs.readFileSync(typesPath, 'utf8');
 const cssSource = fs.readFileSync(cssPath, 'utf8');
 
 const checks = [
-  ['analysis modal title', pageSource, 'title="商品分析"'],
+  ['analysis modal title in compact header', pageSource, 'competitor-analysis-report-heading">商品分析'],
   ['changes analysis tab', pageSource, '变化历史'],
   ['changes embedded in report modal', pageSource, 'changeGroups={changeRows}'],
   ['changes modal component', pageSource, 'ProductChangeModal'],
-  ['real empty changes state', pageSource, '近 15 天暂无商品详情变化'],
+  ['real empty changes state', pageSource, '暂无商品详情变化'],
   ['timeline class', pageSource, 'competitor-analysis-product-change-timeline'],
   ['product changes api', apiSource, 'fetchCompetitorProductChanges'],
   ['product change group type', typesSource, 'CompetitorProductChangeGroup'],

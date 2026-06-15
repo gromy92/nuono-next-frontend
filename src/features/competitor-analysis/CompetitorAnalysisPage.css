@@ -174,6 +174,16 @@
   white-space: nowrap;
 }
 
+.competitor-analysis-keyword-monitor-count {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 999px;
+  color: #0958d9;
+  flex: 0 0 auto;
+  font-size: 11px;
+  line-height: 16px;
+  padding: 0 5px;
+}
+
 .competitor-analysis-count-stack {
   display: grid;
   gap: 4px;

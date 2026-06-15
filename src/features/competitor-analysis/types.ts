@@ -113,7 +113,7 @@ export type CompetitorProductOption = {
 export type RankSummary = {
   bestRank?: number
   sponsoredCount: number
-  notInTop20Count: number
+  notInScanDepthCount: number
   label: string
 }
 
