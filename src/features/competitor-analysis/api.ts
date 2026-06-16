@@ -16,6 +16,8 @@ import type {
   SearchRunStatus
 } from './types'
 
+const DEFAULT_RANK_SCAN_DEPTH = 100
+
 type BackendListResponse = {
   items?: BackendWatchProductListItem[]
   pagination?: {
@@ -57,6 +59,8 @@ type BackendWatchProductListItem = BackendWatchProduct & {
   activeKeywordStats?: BackendKeywordCount[]
   pendingCandidateCount?: number
   confirmedCompetitorCount?: number
+  recent7dChangedCompetitorCount?: number
+  recent7dCompetitorChangeCount?: number
 }
 
 type BackendKeywordCount = {
@@ -196,6 +200,13 @@ export type CompetitorWatchProductQuery = {
   status?: 'active' | 'paused'
   confirmedCompetitorCountZero?: boolean
   pendingCandidateCountZero?: boolean
+  sortBy?:
+    | 'candidateCountDesc'
+    | 'candidateCountAsc'
+    | 'monitoredCountDesc'
+    | 'monitoredCountAsc'
+    | 'recent7dChangeCountDesc'
+    | 'recent7dChangeCountAsc'
   page?: number
   pageSize?: number
 }
@@ -256,6 +267,7 @@ export async function fetchCompetitorWatchProducts(query: CompetitorWatchProduct
   appendSearchParam(params, 'status', query.status?.toUpperCase())
   appendBooleanParam(params, 'confirmedCompetitorCountZero', query.confirmedCompetitorCountZero)
   appendBooleanParam(params, 'pendingCandidateCountZero', query.pendingCandidateCountZero)
+  appendSearchParam(params, 'sortBy', query.sortBy)
   if (query.page) {
     params.set('page', String(query.page))
   }
@@ -281,6 +293,7 @@ export async function fetchCompetitorProductBaselines(query: CompetitorWatchProd
   appendSearchParam(params, 'status', query.status?.toUpperCase())
   appendBooleanParam(params, 'confirmedCompetitorCountZero', query.confirmedCompetitorCountZero)
   appendBooleanParam(params, 'pendingCandidateCountZero', query.pendingCandidateCountZero)
+  appendSearchParam(params, 'sortBy', query.sortBy)
   if (query.page) {
     params.set('page', String(query.page))
   }
@@ -474,6 +487,8 @@ function mapListItem(row: BackendWatchProductListItem): CompetitorWatchProduct {
     activeKeywordCount: activeKeywordCount || keywords.length,
     pendingCandidateCount: numberValue(row.pendingCandidateCount),
     confirmedCompetitorCount: numberValue(row.confirmedCompetitorCount),
+    recent7dChangedCompetitorCount: numberValue(row.recent7dChangedCompetitorCount),
+    recent7dCompetitorChangeCount: numberValue(row.recent7dCompetitorChangeCount),
     keywords,
     candidates: [],
     rankPoints: []
@@ -631,15 +646,16 @@ function mapRankPoint(row: BackendRankPoint): CompetitorRankPoint {
   const factTime = stringValue(row.factTime || row.factDate)
   const trackedType = stringValue(row.trackedProductType).toUpperCase()
   const rankChannel = normalizeRankChannel(row.rankChannel, row.sponsored ?? row.isSponsored)
+  const rankStatus = normalizeRankStatus(row.rankStatus)
   return {
     id: idValue(row.id) || `${keywordId}-${noonProductCode}-${factTime}-${rankChannel}`,
     keywordId,
     noonProductCode,
     factDate: formatFactDate(factTime),
-    rankStatus: normalizeRankStatus(row.rankStatus),
+    rankStatus,
     rankNo: row.rankNo,
     rankChannel,
-    scanDepth: row.scanDepth,
+    scanDepth: normalizeRankScanDepth(row.scanDepth, rankStatus),
     isSelf: trackedType === 'SELF',
     isConfirmedCompetitor: trackedType === 'COMPETITOR',
     isSponsored: rankChannel === 'sponsored',
@@ -753,14 +769,20 @@ function normalizeRunStatus(value: unknown): SearchRunStatus {
 }
 
 function normalizeRankStatus(value: unknown): RankStatus {
-  const normalized = String(value || 'NOT_IN_TOP_20').toUpperCase()
+  const normalized = String(value || 'NOT_IN_SCAN_DEPTH').toUpperCase()
   if (normalized === 'RANKED') {
     return 'ranked'
   }
-  if (normalized === 'NOT_IN_SCAN_DEPTH') {
+  if (normalized === 'NOT_IN_SCAN_DEPTH' || normalized === 'NOT_IN_TOP_20') {
     return 'not_in_scan_depth'
   }
-  return 'not_in_top_20'
+  return 'not_in_scan_depth'
+}
+
+function normalizeRankScanDepth(value: unknown, rankStatus: RankStatus) {
+  const numericValue = typeof value === 'number' ? value : Number(value)
+  const normalized = Number.isFinite(numericValue) && numericValue > 0 ? numericValue : DEFAULT_RANK_SCAN_DEPTH
+  return rankStatus === 'ranked' ? normalized : Math.max(DEFAULT_RANK_SCAN_DEPTH, normalized)
 }
 
 function normalizeRankChannel(value: unknown, sponsoredFallback?: unknown): 'organic' | 'sponsored' {

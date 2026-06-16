@@ -105,7 +105,9 @@ try {
           competitorTableClientWidth: competitorTableContent instanceof HTMLElement ? competitorTableContent.clientWidth : null,
           competitorRowActions: rowActionTexts.slice(0, 4),
           competitorHasCanman: bodyText.includes('canman'),
-          competitorHasBaselineCount: bodyText.includes('已筛选 409 个商品基线'),
+          competitorHasZeroFilterInSearch: Boolean(
+            document.querySelector('.competitor-analysis-search-card .competitor-analysis-zero-filter-select')
+          ),
           competitorHasCreateButton: Array.from(document.querySelectorAll('button')).some((button) => button.textContent?.includes('新增监控商品')),
           tableWrapperRects,
           fixedRightCellRects,
@@ -147,7 +149,7 @@ try {
         }
         if (target.label === '竞品分析') {
           assert.equal(metrics.competitorHasCanman, true, 'competitor page is not using canman dev session');
-          assert.equal(metrics.competitorHasBaselineCount, true, 'competitor baseline count missing');
+          assert.equal(metrics.competitorHasZeroFilterInSearch, true, 'competitor zero filter should stay with search controls');
           assert.deepEqual(metrics.competitorRowActions, ['抓取', '添加竞品', '查看详情', '报表']);
           assert.equal(metrics.competitorHasCreateButton, false, 'top create watch product button should stay removed');
           if (viewport.width >= 1280) {

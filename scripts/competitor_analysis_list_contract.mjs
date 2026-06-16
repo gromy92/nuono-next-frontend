@@ -26,8 +26,9 @@ const checks = [
   ['zero pending api param', apiSource, "appendBooleanParam(params, 'pendingCandidateCountZero'"],
   ['zero confirmed filter state', pageSource, 'monitorZeroOnly'],
   ['zero pending filter state', pageSource, 'candidateZeroOnly'],
-  ['zero count filter dropdown placeholder', pageSource, '数量筛选'],
+  ['filter dropdown placeholder', pageSource, '筛选'],
   ['zero count filter dropdown class', pageSource, 'competitor-analysis-zero-filter-select'],
+  ['filter dropdown test id', pageSource, 'competitor-analysis-filter-select'],
   ['zero confirmed filter label', pageSource, '监控为0'],
   ['zero pending filter label', pageSource, '候选为0'],
   ['product bilingual title helper', pageSource, 'productTitleLines(product)'],
@@ -38,7 +39,10 @@ const checks = [
   ['candidate count centered stack', cssSource, 'justify-items: center'],
   ['candidate count centered row', cssSource, 'justify-content: center'],
   ['keyword links stay visible', pageSource, 'competitor-analysis-keyword-link'],
-  ['keyword text stays visible', pageSource, 'competitor-analysis-keyword-text']
+  ['keyword text stays visible', pageSource, 'competitor-analysis-keyword-text'],
+  ['per-keyword monitored count value only', pageSource, '{keyword.monitoredCount ?? 0}'],
+  ['per-keyword monitored count class', pageSource, 'competitor-analysis-keyword-monitor-count'],
+  ['per-keyword monitored count css', cssSource, '.competitor-analysis-keyword-monitor-count']
 ];
 
 const failures = checks
@@ -46,10 +50,10 @@ const failures = checks
   .map(([name, , snippet]) => `${name}: missing ${snippet}`);
 
 const forbiddenSnippets = [
+  ['baseline count helper text', pageSource, '已筛选 {productTotal} 个商品基线'],
+  ['auto enable helper text', pageSource, '行内操作会自动启用竞品分析对象'],
   ['old zero count checkbox wrapper', pageSource, 'competitor-analysis-zero-filters'],
-  ['per-keyword monitored count label', pageSource, '监控 ${keyword.monitoredCount ?? 0}'],
-  ['per-keyword monitored count class', pageSource, 'competitor-analysis-keyword-monitor-count'],
-  ['per-keyword monitored count css', cssSource, '.competitor-analysis-keyword-monitor-count'],
+  ['old per-keyword monitored label', pageSource, '监控 ${keyword.monitoredCount ?? 0}'],
   ['old bare per-keyword count class', pageSource, 'competitor-analysis-keyword-link-count'],
   ['old bare per-keyword count css', cssSource, '.competitor-analysis-keyword-link-count']
 ];

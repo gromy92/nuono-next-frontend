@@ -88,6 +88,8 @@ export type CompetitorWatchProduct = {
   activeKeywordCount?: number
   pendingCandidateCount?: number
   confirmedCompetitorCount?: number
+  recent7dChangedCompetitorCount?: number
+  recent7dCompetitorChangeCount?: number
   keywords: CompetitorKeyword[]
   candidates: CompetitorCandidate[]
   rankPoints: CompetitorRankPoint[]
@@ -113,7 +115,7 @@ export type CompetitorProductOption = {
 export type RankSummary = {
   bestRank?: number
   sponsoredCount: number
-  notInTop20Count: number
+  notInScanDepthCount: number
   label: string
 }
 
