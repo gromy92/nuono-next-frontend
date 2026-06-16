@@ -178,7 +178,10 @@ function assertListItemData(item) {
   assertString(item.storeCode, '列表商品 storeCode');
   assertString(item.siteCode, '列表商品 siteCode');
   assertString(item.partnerSku || item.skuParent || item.childSku, '列表商品 SKU');
-  assertNoonCode(item.selfNoonProductCode, '列表商品 selfNoonProductCode');
+  assertAnyNoonCode(
+    [item.skuParent, item.childSku, item.selfNoonProductCode],
+    '列表商品 Noon 商品码'
+  );
   assertNumber(item.activeKeywordCount, '列表商品 activeKeywordCount');
   assert(Array.isArray(item.activeKeywords), '列表商品 activeKeywords 必须是数组');
   assert(Array.isArray(item.activeKeywordStats), '列表商品 activeKeywordStats 必须是数组');
@@ -199,7 +202,10 @@ function assertDetailData(detail) {
   assertString(product.storeCode, '详情 storeCode');
   assertString(product.siteCode, '详情 siteCode');
   assertString(product.partnerSku || product.skuParent || product.childSku, '详情 SKU');
-  assertNoonCode(product.selfNoonProductCode, '详情 selfNoonProductCode');
+  assertAnyNoonCode(
+    [product.selfNoonProductCode, product.skuParent, product.childSku],
+    '详情 Noon 商品码'
+  );
   assert(Array.isArray(detail.keywords) && detail.keywords.length > 0, '详情必须返回关键词');
   assert(Array.isArray(detail.candidates) && detail.candidates.length > 0, '详情必须返回候选/竞品');
   assert(Array.isArray(detail.keywordRelations), '详情 keywordRelations 必须是数组');
@@ -276,7 +282,16 @@ function assertNumber(value, label) {
 
 function assertNoonCode(value, label) {
   assertString(value, label);
-  assert(/^[ZN][A-Z0-9]{4,79}$/i.test(value), `${label} 必须是 Noon Z/N 码，实际 ${value}`);
+  assert(isNoonCode(value), `${label} 必须是 Noon Z/N 码，实际 ${value}`);
+}
+
+function assertAnyNoonCode(values, label) {
+  const validValue = values.find(isNoonCode);
+  assert(validValue, `${label} 必须包含 Noon Z/N 码，实际 ${values.filter(Boolean).join(' / ') || '-'}`);
+}
+
+function isNoonCode(value) {
+  return typeof value === 'string' && /^[ZN][A-Z0-9]{4,79}(?:-\d+)?$/i.test(value.trim());
 }
 
 function boundedNumber(rawValue, fallback, min, max) {
