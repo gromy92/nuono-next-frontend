@@ -69,6 +69,8 @@ type MockDetail = {
   keywords: MockKeyword[]
   candidates: MockCandidate[]
   keywordRelations: MockRelation[]
+  recent7dChangedCompetitorCount?: number
+  recent7dCompetitorChangeCount?: number
   latestRankPoints: Array<{
     keywordId: number
     keyword: string
@@ -76,6 +78,7 @@ type MockDetail = {
     noonProductCode: string
     rankStatus: string
     rankNo?: number
+    scanDepth?: number
     sponsored: boolean
     priceAmount?: number
     currencyCode?: string
@@ -85,6 +88,10 @@ type MockDetail = {
 
 test('opens operations competitor analysis and reviews candidate workflow', async ({ page }) => {
   const details = createMockDetails()
+  details[180001].recent7dChangedCompetitorCount = 2
+  details[180001].recent7dCompetitorChangeCount = 7
+  details[180002].recent7dChangedCompetitorCount = 3
+  details[180002].recent7dCompetitorChangeCount = 12
   let nextKeywordId = 190100
   let nextCandidateId = 200100
   let refreshPollCount = 0
@@ -281,10 +288,32 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
     await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
   })
 
-  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss')
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss&grantCompetitorAnalysis=1')
 
   await expect(page.getByTestId('competitor-analysis-workbench')).toBeVisible()
   await expect(page.getByText('API Foldable Laundry Basket')).toBeVisible()
+  await expect(page.getByText(/已筛选 .* 个商品基线/)).toHaveCount(0)
+  await expect(page.getByRole('columnheader', { name: '近7日竞品变化' })).toBeVisible()
+  await expect(
+    page.locator('.ant-table-row').filter({ hasText: 'API Foldable Laundry Basket' })
+  ).toContainText('共 2 个商品')
+  await expect(
+    page.locator('.ant-table-row').filter({ hasText: 'API Foldable Laundry Basket' })
+  ).toContainText('共 7 次')
+  const filterSelect = page.getByTestId('competitor-analysis-filter-select')
+  await expect(filterSelect).toBeVisible()
+  await expect(page.locator('.competitor-analysis-search-card').filter({ has: filterSelect })).toBeVisible()
+  await expect(page.getByTestId('competitor-analysis-sort-select')).toHaveCount(0)
+  await filterSelect.locator('.ant-select-selector').click()
+  await expect(page.locator('.ant-select-item-option').filter({ hasText: '候选数↓' })).toBeVisible()
+  await expect(page.locator('.ant-select-item-option').filter({ hasText: '候选数↑' })).toBeVisible()
+  await expect(page.locator('.ant-select-item-option').filter({ hasText: '监控数↓' })).toBeVisible()
+  await expect(page.locator('.ant-select-item-option').filter({ hasText: '监控数↑' })).toBeVisible()
+  await page.locator('.ant-select-item-option').filter({ hasText: '7日变化次数↓' }).click()
+  await expect(page.locator('.ant-table-row').first()).toContainText('API Acrylic Cosmetic Organizer')
+  await filterSelect.locator('.ant-select-selector').click()
+  await page.locator('.ant-select-item-option').filter({ hasText: '7日变化次数↑' }).click()
+  await expect(page.locator('.ant-table-row').first()).toContainText('API Product Without Keywords')
   await expect(page.getByPlaceholder('搜索我方SKU、商品标题、Noon码')).toBeVisible()
   await expect(page.getByPlaceholder('搜索关键词')).toBeVisible()
   await expect(page.getByPlaceholder('搜索竞品Z/N码、品牌、标题')).toBeVisible()
@@ -295,7 +324,7 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
         .first()
         .evaluate((element) => getComputedStyle(element).flexDirection)
     )
-    .toBe('column')
+    .toBe('row')
 
   await page.getByPlaceholder('搜索关键词').fill('makeup organizer')
   await expect(page.getByText('API-ORG-AE-207')).toBeVisible()
@@ -331,9 +360,9 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
   await expect(page.getByRole('button', { name: /laundry basket/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /foldable hamper/ })).toBeVisible()
   await expect(page.getByText(/关键词看板：/)).toBeHidden()
-  await expect(page.getByText('抓取结果 (2)')).toBeVisible()
+  await expect(page.getByText('待选池 (1)')).toBeVisible()
   await expect(page.getByText('已选竞品 (2)')).toBeVisible()
-  await expect(page.locator('.competitor-analysis-candidate-card').filter({ hasText: 'Z6122BASKETSA' }).getByText('已有')).toBeVisible()
+  await expect(page.getByRole('link', { name: /打开 Noon 商品 Z6122BASKETSA/ })).toBeVisible()
   await expect(page.locator('.competitor-analysis-candidate-card').filter({ hasText: 'N70011234A' }).getByText('广告')).toBeVisible()
   await expect(page.locator('.competitor-analysis-candidate-card').first()).toBeVisible()
   await expect(page.getByText('Noon链接')).toBeHidden()
@@ -349,7 +378,7 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
 
   await expect(page.getByText('Premium Woven Storage Basket')).toBeHidden()
   await page.getByRole('button', { name: /foldable hamper/ }).click()
-  await expect(page.getByText('抓取结果 (3)')).toBeVisible()
+  await expect(page.getByText('待选池 (2)')).toBeVisible()
   await expect(page.getByText('已选竞品 (1)')).toBeVisible()
   await expect(page.getByText('Premium Woven Storage Basket')).toBeVisible()
   await expect(page.getByText('排名历史：foldable hamper')).toBeHidden()
@@ -364,7 +393,6 @@ test('opens operations competitor analysis and reviews candidate workflow', asyn
   await expect(page.getByText('已选竞品 (2)')).toBeVisible()
   await page.getByRole('button', { name: /laundry basket/ }).click()
   await expect(page.getByText('0 待选')).toBeVisible()
-  await expect(page.getByText('抓取结果 (2)')).toBeVisible()
   await expect(page.getByText('已选竞品 (3)')).toBeVisible()
 
   await page.keyboard.press('Escape')
@@ -399,7 +427,7 @@ test('manual competitor requires an active keyword', async ({ page }) => {
     await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
   })
 
-  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss')
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss&grantCompetitorAnalysis=1')
   await expect(page.getByTestId('competitor-analysis-workbench')).toBeVisible()
   await page.getByPlaceholder('搜索我方SKU、商品标题、Noon码').fill('API-NOKEY-SA-001')
   await expect(page.getByText('API Product Without Keywords')).toBeVisible()
@@ -424,7 +452,18 @@ test('report uses empty states instead of synthesized ranking or change data', a
       displayOrder: 1
     }
   ]
-  details[180003].latestRankPoints = []
+  details[180003].latestRankPoints = [
+    {
+      keywordId: 190009,
+      keyword: 'plain pencil case',
+      trackedProductType: 'SELF',
+      noonProductCode: 'N51009999A',
+      rankStatus: 'NOT_IN_SCAN_DEPTH',
+      scanDepth: 20,
+      sponsored: false,
+      factTime: '2026-06-05T08:04:00'
+    }
+  ]
 
   await page.route('**/api/competitor-analysis/**', async (route) => {
     const url = new URL(route.request().url())
@@ -455,21 +494,507 @@ test('report uses empty states instead of synthesized ranking or change data', a
     await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
   })
 
-  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss')
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss&grantCompetitorAnalysis=1')
   await expect(page.getByTestId('competitor-analysis-workbench')).toBeVisible()
   await page.getByPlaceholder('搜索我方SKU、商品标题、Noon码').fill('API-NOKEY-SA-001')
   await expect(page.getByText('API Product Without Keywords')).toBeVisible()
 
-  await page.getByLabel('报表').first().click()
+  const reportButton = page.getByLabel('报表').first()
+  await reportButton.hover()
+  await expect(page.locator('.ant-tooltip').filter({ hasText: '报表' })).toBeVisible()
+  await reportButton.click()
   const reportDialog = page.getByRole('dialog').filter({ has: page.getByTestId('competitor-self-rank-report') })
   await expect(reportDialog).toBeVisible()
-  await expect(reportDialog.getByText('暂无真实排名数据')).toBeVisible()
+  await expect(page.locator('.ant-tooltip').filter({ hasText: '报表' })).toBeHidden()
+  await expect(reportDialog.locator('.competitor-analysis-report-keyword-chip-list')).toBeVisible()
+  await expect(reportDialog.getByRole('button', { name: /plain pencil case 0 in 0/ })).toBeVisible()
+  await expect(reportDialog.locator('.competitor-analysis-rank-insight-strip')).toBeVisible()
+  await expect(reportDialog.getByText('本关键词暂无可绘制排名')).toBeVisible()
+  await expect(reportDialog.getByText('本品未进前100，监控竞品 0 in 0')).toBeVisible()
+  await expect(reportDialog.locator('.competitor-analysis-rank-race-card')).toHaveCount(0)
+  await expect(reportDialog.getByTestId(/self-rank-chart-/)).toHaveCount(0)
   await reportDialog.getByRole('tab', { name: /变化历史/ }).click()
-  await expect(reportDialog.getByText('近 15 天暂无商品详情变化')).toBeVisible()
+  await expect(reportDialog.getByText('暂无商品详情变化')).toBeVisible()
   await expect(reportDialog.getByText('模拟数据')).toBeHidden()
   await expect(reportDialog.getByText('mock-change')).toBeHidden()
   await expect(reportDialog.getByText('竞品 1')).toBeHidden()
   await expect(reportDialog.getByText('2026-06-07')).toBeHidden()
+})
+
+test('report change history uses competitor cards with rank and change details', async ({ page }) => {
+  const details = createMockDetails()
+  details[180001].watchProduct.title =
+    'API Foldable Laundry Basket With Extra Long English Title For Wrapping Verification In Product Analysis Modal'
+  details[180001].keywords.push(
+    {
+      id: 190006,
+      watchProductId: 180001,
+      keyword: 'storage basket',
+      keywordNorm: 'storage basket',
+      locale: 'en-SA',
+      status: 'ACTIVE',
+      displayOrder: 3,
+      lastProviderStatus: 'SUCCEEDED',
+      lastSucceededAt: '2026-06-05T08:06:00'
+    },
+    {
+      id: 190007,
+      watchProductId: 180001,
+      keyword: 'cloth hamper',
+      keywordNorm: 'cloth hamper',
+      locale: 'en-SA',
+      status: 'ACTIVE',
+      displayOrder: 4,
+      lastProviderStatus: 'SUCCEEDED',
+      lastSucceededAt: '2026-06-05T08:07:00'
+    }
+  )
+  const basketRelations = details[180001].keywordRelations
+  basketRelations.find((relation) => relation.keywordId === 190001 && relation.competitorProductId === 200001)!.relationStatus =
+    'CONFIRMED'
+  basketRelations.find((relation) => relation.keywordId === 190002 && relation.competitorProductId === 200003)!.relationStatus =
+    'CONFIRMED'
+  details[180001].latestRankPoints.push(
+    {
+      keywordId: 190006,
+      keyword: 'storage basket',
+      trackedProductType: 'COMPETITOR',
+      noonProductCode: 'Z6122BASKETSA',
+      rankStatus: 'RANKED',
+      rankNo: 12,
+      sponsored: false,
+      priceAmount: 48,
+      currencyCode: 'SAR',
+      factTime: '2026-06-05T08:06:00'
+    },
+    {
+      keywordId: 190007,
+      keyword: 'cloth hamper',
+      trackedProductType: 'COMPETITOR',
+      noonProductCode: 'Z6122BASKETSA',
+      rankStatus: 'RANKED',
+      rankNo: 21,
+      sponsored: false,
+      priceAmount: 48,
+      currencyCode: 'SAR',
+      factTime: '2026-06-05T08:07:00'
+    },
+    {
+      keywordId: 190001,
+      keyword: 'laundry basket',
+      trackedProductType: 'COMPETITOR',
+      noonProductCode: 'N70011234A',
+      rankStatus: 'RANKED',
+      rankNo: 3,
+      sponsored: true,
+      priceAmount: 54.9,
+      currencyCode: 'SAR',
+      factTime: '2026-06-05T08:04:00'
+    },
+    {
+      keywordId: 190002,
+      keyword: 'foldable hamper',
+      trackedProductType: 'COMPETITOR',
+      noonProductCode: 'N88990123A',
+      rankStatus: 'RANKED',
+      rankNo: 16,
+      sponsored: false,
+      priceAmount: 72.5,
+      currencyCode: 'SAR',
+      factTime: '2026-06-05T08:05:00'
+    }
+  )
+
+  await page.route('**/api/competitor-analysis/**', async (route) => {
+    const url = new URL(route.request().url())
+    const method = route.request().method()
+    const pathname = url.pathname
+
+    if (
+      method === 'GET' &&
+      (pathname === '/api/competitor-analysis/watch-products' ||
+        pathname === '/api/competitor-analysis/product-baselines')
+    ) {
+      await route.fulfill({ json: buildListResponse(Object.values(details), url.searchParams) })
+      return
+    }
+
+    const watchProductDetailMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)$/)
+    if (method === 'GET' && watchProductDetailMatch) {
+      await route.fulfill({ json: details[Number(watchProductDetailMatch[1])] })
+      return
+    }
+
+    const historyMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)\/rank-history$/)
+    if (method === 'GET' && historyMatch) {
+      const detail = details[Number(historyMatch[1])]
+      const keywordId = Number(url.searchParams.get('keywordId'))
+      await route.fulfill({
+        json: {
+          items: detail.latestRankPoints.filter((point) => point.keywordId === keywordId)
+        }
+      })
+      return
+    }
+
+    const productChangesMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)\/product-changes$/)
+    if (method === 'GET' && productChangesMatch) {
+      await route.fulfill({
+        json: {
+          items: [
+            {
+              id: 'change-z6122-20260615',
+              factDate: '2026-06-15',
+              noonProductCode: 'Z6122BASKETSA',
+              productName: 'Large Fabric Laundry Basket Organizer',
+              subjectType: 'COMPETITOR',
+              changes: [
+                {
+                  fieldKey: 'price',
+                  fieldLabel: '价格',
+                  changeType: 'VALUE_CHANGED',
+                  oldValue: 48,
+                  newValue: 45.5,
+                  severity: 'INFO'
+                },
+                {
+                  fieldKey: 'reviewCount',
+                  fieldLabel: '评论数',
+                  changeType: 'VALUE_CHANGED',
+                  oldValue: 94,
+                  newValue: 98,
+                  severity: 'INFO'
+                }
+              ]
+            },
+            {
+              id: 'change-z6122-20260614',
+              factDate: '2026-06-14',
+              noonProductCode: 'Z6122BASKETSA',
+              productName: 'Large Fabric Laundry Basket Organizer',
+              subjectType: 'COMPETITOR',
+              changes: [
+                {
+                  fieldKey: 'rating',
+                  fieldLabel: '评分',
+                  changeType: 'VALUE_CHANGED',
+                  oldValue: 4.3,
+                  newValue: 4.4,
+                  severity: 'INFO'
+                }
+              ]
+            },
+            {
+              id: 'change-n700-20260615',
+              factDate: '2026-06-15',
+              noonProductCode: 'N70011234A',
+              productName: 'Collapsible Laundry Hamper With Lid',
+              subjectType: 'COMPETITOR',
+              changes: [
+                {
+                  fieldKey: 'rating',
+                  fieldLabel: '评分',
+                  changeType: 'VALUE_CHANGED',
+                  oldValue: 4.3,
+                  newValue: 4.4,
+                  severity: 'INFO'
+                },
+                {
+                  fieldKey: 'mainImage',
+                  fieldLabel: '主图资产',
+                  changeType: 'VALUE_CHANGED',
+                  oldValue: '72b0ab77-da33-4c99-b3c3-622428730e3c.jpg',
+                  newValue: 'pzsku/ZD670640692D5F5E3A940Z/45/_/1773626142/72b0ab77-da33-4c99-b3c3-622428730e3c',
+                  severity: 'INFO'
+                }
+              ]
+            },
+            {
+              id: 'change-n889-20260614',
+              factDate: '2026-06-14',
+              noonProductCode: 'N88990123A',
+              productName: 'Premium Woven Storage Basket',
+              subjectType: 'COMPETITOR',
+              changes: [
+                {
+                  fieldKey: 'mainImage',
+                  fieldLabel: '主图资产',
+                  changeType: 'VALUE_CHANGED',
+                  oldValue: 'old-image.jpg',
+                  newValue: 'pzsku/N88990123A/45/_/1773626142/new-image',
+                  severity: 'INFO'
+                }
+              ]
+            }
+          ],
+          baselineSummary: {
+            monitoredCompetitorCount: 3,
+            snapshotCompetitorCount: 3,
+            firstSnapshotDate: '2026-06-12',
+            latestSnapshotDate: '2026-06-15'
+          }
+        }
+      })
+      return
+    }
+
+    await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
+  })
+
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss&grantCompetitorAnalysis=1')
+  await expect(page.getByTestId('competitor-analysis-workbench')).toBeVisible()
+  await page.getByPlaceholder('搜索我方SKU、商品标题、Noon码').fill('API-BASKET-SA-001')
+  await expect(page.getByText('API Foldable Laundry Basket')).toBeVisible()
+
+  await page.getByLabel('报表').first().click()
+  const reportDialog = page.getByRole('dialog').filter({ has: page.getByTestId('competitor-self-rank-report') })
+  await expect(reportDialog).toBeVisible()
+  await expect(reportDialog.locator('.competitor-analysis-report-product-psku')).toContainText('API-BASKET-SA-001')
+  await expect(reportDialog.locator('.competitor-analysis-report-product-title-en-full')).toContainText(
+    'Extra Long English Title For Wrapping Verification'
+  )
+  const headerSummaryLine = reportDialog.locator(
+    '.competitor-analysis-report-header-body > .competitor-analysis-product-change-summary-line'
+  )
+  await expect(headerSummaryLine).toBeVisible()
+  await expect(headerSummaryLine).toContainText('监控竞品')
+  await expect(headerSummaryLine).toContainText('变化字段')
+  await expect(reportDialog.locator('.competitor-analysis-report-keyword-chip-list')).toBeVisible()
+  await expect(reportDialog.getByRole('button', { name: /laundry basket 2 in 2/ })).toBeVisible()
+  await expect(reportDialog.getByRole('button', { name: /foldable hamper 2 in 2/ })).toBeVisible()
+  await expect(reportDialog.locator('.competitor-analysis-rank-insight-strip')).toBeVisible()
+  await expect(reportDialog.locator('.competitor-analysis-rank-summary-grid')).toHaveCount(0)
+  await expect(reportDialog.locator('.competitor-analysis-rank-race-card')).toBeVisible()
+
+  await reportDialog.getByRole('tab', { name: /变化历史/ }).click()
+  const changeCardList = reportDialog.locator('.competitor-analysis-product-change-competitor-list')
+  const changeCard = reportDialog.locator('.competitor-analysis-product-change-competitor-card')
+  await expect(changeCard).toHaveCount(3)
+  await expect
+    .poll(() =>
+      changeCardList.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length)
+    )
+    .toBe(3)
+  const z6122Card = changeCard.filter({ hasText: 'Z6122BASKETSA' })
+  await expect
+    .poll(() =>
+      z6122Card.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length)
+    )
+    .toBe(2)
+  await expect(z6122Card.locator('.competitor-analysis-product-change-competitor-detail')).toBeVisible()
+  await expect
+    .poll(() =>
+      z6122Card
+        .locator('.competitor-analysis-product-change-competitor-media')
+        .evaluate((element) => Number.parseFloat(getComputedStyle(element).height))
+    )
+    .toBeGreaterThanOrEqual(128)
+  await expect(z6122Card.locator('.competitor-analysis-product-change-competitor-media img')).toBeVisible()
+  await expect(z6122Card.locator('.competitor-analysis-product-change-competitor-meta')).toBeVisible()
+  await expect
+    .poll(() =>
+      z6122Card
+        .locator('.competitor-analysis-product-change-competitor-media img')
+        .evaluate((element) => getComputedStyle(element).objectFit)
+    )
+    .toBe('contain')
+  const z6122Code = z6122Card.locator('.competitor-analysis-product-change-competitor-code')
+  await expect
+    .poll(() => z6122Code.evaluate((element) => Number.parseFloat(getComputedStyle(element).fontWeight) < 600))
+    .toBe(true)
+  await expect
+    .poll(() => z6122Code.evaluate((element) => getComputedStyle(element).whiteSpace))
+    .toBe('normal')
+  await expect
+    .poll(() => z6122Code.evaluate((element) => getComputedStyle(element).overflowWrap))
+    .toBe('anywhere')
+  await expect
+    .poll(() => z6122Code.evaluate((element) => getComputedStyle(element).textOverflow))
+    .toBe('clip')
+  await expect
+    .poll(() =>
+      z6122Card
+        .locator('.competitor-analysis-product-change-competitor-name')
+        .evaluate((element) => getComputedStyle(element).webkitLineClamp)
+    )
+    .toBe('3')
+  await expect(z6122Card.locator('.competitor-analysis-product-change-date-list')).toBeVisible()
+  await expect(z6122Card.locator('.competitor-analysis-product-change-rank-section')).toHaveCount(2)
+  await expect(z6122Card.locator('.competitor-analysis-product-change-field-section')).toHaveCount(2)
+  const z6122DateBlocks = z6122Card.locator('.competitor-analysis-product-change-date-block')
+  await expect(z6122DateBlocks).toHaveCount(2)
+  await expect
+    .poll(() => z6122DateBlocks.first().evaluate((element) => getComputedStyle(element).alignContent))
+    .toBe('start')
+  await expect
+    .poll(() => z6122DateBlocks.nth(1).evaluate((element) => getComputedStyle(element).borderTopStyle))
+    .toBe('solid')
+  const z6122LatestDateBlock = z6122DateBlocks.first()
+  await expect(z6122Card.locator('.competitor-analysis-product-change-rank-row')).toHaveCount(8)
+  await expect(z6122Card.locator('.competitor-analysis-product-change-rank-more')).toHaveCount(0)
+  await expect(z6122Card.locator('.competitor-analysis-product-change-field-row')).toHaveCount(3)
+  await expect(z6122Card.getByText('2026-06-15')).toBeVisible()
+  await expect(z6122Card.getByText('2026-06-14')).toBeVisible()
+  await expect(z6122Card.locator('.competitor-analysis-product-change-section-label').filter({ hasText: '排名' })).toHaveCount(2)
+  await expect(z6122Card.locator('.competitor-analysis-product-change-section-label').filter({ hasText: '变化' })).toHaveCount(2)
+  await expect(
+    z6122LatestDateBlock.locator('.competitor-analysis-product-change-rank-row').filter({ hasText: 'laundry basket' })
+  ).toContainText('第 8 名')
+  await expect(
+    z6122LatestDateBlock.locator('.competitor-analysis-product-change-rank-row').filter({ hasText: 'foldable hamper' })
+  ).toContainText('第 5 名')
+  await expect(z6122Card.getByText('48 → 45.5')).toBeVisible()
+  await expect(z6122Card.getByText('94 → 98')).toBeVisible()
+  await expect(z6122Card.getByText('4.3 → 4.4')).toBeVisible()
+
+  const n700Card = changeCard.filter({ hasText: 'N70011234A' })
+  await expect(n700Card.locator('.competitor-analysis-product-change-rank-row').filter({ hasText: 'laundry basket' })).toContainText(
+    '第 3 名'
+  )
+  await expect(n700Card.getByRole('link', { name: '主图A' })).toHaveCount(0)
+  await expect(n700Card.getByRole('link', { name: '主图B' })).toHaveCount(0)
+
+  const n889Card = changeCard.filter({ hasText: 'N88990123A' })
+  await expect(n889Card.locator('.competitor-analysis-product-change-rank-row').filter({ hasText: 'foldable hamper' })).toContainText(
+    '第 16 名'
+  )
+  await expect(n889Card.getByRole('link', { name: '主图A' })).toHaveAttribute(
+    'href',
+    'https://f.nooncdn.com/p/old-image.jpg'
+  )
+  await expect(n889Card.getByRole('link', { name: '主图B' })).toHaveAttribute(
+    'href',
+    'https://f.nooncdn.com/p/pzsku/N88990123A/45/_/1773626142/new-image.jpg'
+  )
+})
+
+test('report keyword count and change history use untruncated rank semantics', async ({ page }) => {
+  const details = createMockDetails()
+  const detail = details[180001]
+  detail.candidates = Array.from({ length: 10 }, (_, index) => {
+    const ordinal = String(index + 1).padStart(2, '0')
+    return {
+      id: 201000 + index,
+      watchProductId: 180001,
+      noonProductCode: `ZBASKET${ordinal}SA`,
+      codeType: 'Z_CODE',
+      canonicalUrl: `https://www.noon.com/saudi-en/p/ZBASKET${ordinal}SA/p/`,
+      titleSnapshot: `Ranked Basket Competitor ${ordinal}`,
+      brandSnapshot: 'RankBrand',
+      imageUrlSnapshot: transparentPixel,
+      sourceType: 'SEARCH_DISCOVERY',
+      reviewStatus: 'CONFIRMED',
+      lastSeenAt: '2026-06-05T08:04:00'
+    }
+  })
+  detail.keywordRelations = detail.candidates.map((candidate, index) => ({
+    id: 211000 + index,
+    keywordId: 190001,
+    competitorProductId: candidate.id,
+    relationStatus: 'CONFIRMED',
+    lastSeenRunId: 3000,
+    lastSeenRankNo: index + 1,
+    lastSeenSponsored: false,
+    lastSeenAt: '2026-06-05T08:04:00'
+  }))
+  detail.latestRankPoints = [
+    {
+      keywordId: 190001,
+      keyword: 'laundry basket',
+      trackedProductType: 'SELF',
+      noonProductCode: 'N51004211A',
+      rankStatus: 'NOT_IN_SCAN_DEPTH',
+      scanDepth: 20,
+      sponsored: false,
+      factTime: '2026-06-05T08:04:00'
+    },
+    ...detail.candidates.map((candidate, index) => ({
+      keywordId: 190001,
+      keyword: 'laundry basket',
+      trackedProductType: 'COMPETITOR',
+      noonProductCode: candidate.noonProductCode,
+      rankStatus: 'RANKED',
+      rankNo: index + 1,
+      sponsored: false,
+      priceAmount: 40 + index,
+      currencyCode: 'SAR',
+      factTime: '2026-06-05T08:04:00'
+    }))
+  ]
+
+  await page.route('**/api/competitor-analysis/**', async (route) => {
+    const url = new URL(route.request().url())
+    const method = route.request().method()
+    const pathname = url.pathname
+
+    if (
+      method === 'GET' &&
+      (pathname === '/api/competitor-analysis/watch-products' ||
+        pathname === '/api/competitor-analysis/product-baselines')
+    ) {
+      await route.fulfill({ json: buildListResponse(Object.values(details), url.searchParams) })
+      return
+    }
+
+    const watchProductDetailMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)$/)
+    if (method === 'GET' && watchProductDetailMatch) {
+      await route.fulfill({ json: details[Number(watchProductDetailMatch[1])] })
+      return
+    }
+
+    const productChangesMatch = pathname.match(/^\/api\/competitor-analysis\/watch-products\/(\d+)\/product-changes$/)
+    if (method === 'GET' && productChangesMatch) {
+      await route.fulfill({
+        json: {
+          items: [
+            {
+              id: 'change-future-rank-guard',
+              factDate: '2026-06-04',
+              noonProductCode: 'ZNEWFUTURESA',
+              productName: 'Future Ranked Competitor',
+              subjectType: 'COMPETITOR',
+              changes: [
+                {
+                  fieldKey: 'reviewCount',
+                  fieldLabel: '评论数',
+                  changeType: 'VALUE_CHANGED',
+                  oldValue: 0,
+                  newValue: 1,
+                  severity: 'INFO'
+                }
+              ]
+            }
+          ],
+          baselineSummary: {
+            monitoredCompetitorCount: 10,
+            snapshotCompetitorCount: 1,
+            firstSnapshotDate: '2026-06-04',
+            latestSnapshotDate: '2026-06-05'
+          }
+        }
+      })
+      return
+    }
+
+    await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
+  })
+
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss&grantCompetitorAnalysis=1')
+  await expect(page.getByTestId('competitor-analysis-workbench')).toBeVisible()
+  await page.getByPlaceholder('搜索我方SKU、商品标题、Noon码').fill('API-BASKET-SA-001')
+  await expect(page.getByText('API Foldable Laundry Basket')).toBeVisible()
+
+  await page.getByLabel('报表').first().click()
+  const reportDialog = page.getByRole('dialog').filter({ has: page.getByTestId('competitor-self-rank-report') })
+  await expect(reportDialog).toBeVisible()
+  await expect(reportDialog.getByRole('button', { name: /laundry basket 10 in 10/ })).toBeVisible()
+  await expect(reportDialog.getByText('本品自然 未进前100')).toBeVisible()
+
+  await reportDialog.getByRole('tab', { name: /变化历史/ }).click()
+  const futureRankCard = reportDialog.locator('.competitor-analysis-product-change-competitor-card').filter({ hasText: 'ZNEWFUTURESA' })
+  await expect(futureRankCard.locator('.competitor-analysis-product-change-rank-section')).toBeVisible()
+  await expect(futureRankCard.locator('.competitor-analysis-product-change-section-label').filter({ hasText: '排名' })).toBeVisible()
+  await expect(futureRankCard.getByText('暂无排名')).toBeVisible()
 })
 
 test('shows fetch results when keyword relations omit run ids', async ({ page }) => {
@@ -501,12 +1026,13 @@ test('shows fetch results when keyword relations omit run ids', async ({ page })
     await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
   })
 
-  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss')
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss&grantCompetitorAnalysis=1')
   await page.getByRole('button', { name: '查看详情' }).first().click()
 
-  await expect(page.getByText('抓取结果 (2)')).toBeVisible()
+  await expect(page.getByText('待选池 (1)')).toBeVisible()
+  await expect(page.getByText('已选竞品 (1)')).toBeVisible()
   await expect(page.locator('.competitor-analysis-candidate-card').filter({ hasText: 'N70011234A' })).toBeVisible()
-  await expect(page.locator('.competitor-analysis-candidate-card').filter({ hasText: 'Z6122BASKETSA' }).getByText('已有')).toBeVisible()
+  await expect(page.getByRole('link', { name: /打开 Noon 商品 Z6122BASKETSA/ })).toBeVisible()
 })
 
 test('removing a selected competitor hides it even when stale rank facts remain', async ({ page }) => {
@@ -552,7 +1078,7 @@ test('removing a selected competitor hides it even when stale rank facts remain'
     await route.fulfill({ status: 404, json: { message: `unmocked ${method} ${pathname}` } })
   })
 
-  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss')
+  await page.goto('/operations/competitor-analysis?devSession=1&devRole=boss&grantCompetitorAnalysis=1')
   await expect(page.getByTestId('competitor-analysis-workbench')).toBeVisible()
 
   await page.getByPlaceholder('搜索我方SKU、商品标题、Noon码').fill('API-ORG-AE-207')
@@ -923,12 +1449,33 @@ function buildListResponse(details: MockDetail[], searchParams: URLSearchParams)
       matches(competitorFields, competitorSearch)
     )
   })
+  const sorted = [...filtered].sort((left, right) => {
+    const sortBy = searchParams.get('sortBy') || 'candidateCountDesc'
+    if (sortBy === 'candidateCountAsc') {
+      return pendingCount(left) - pendingCount(right) || confirmedCount(left) - confirmedCount(right)
+    }
+    if (sortBy === 'monitoredCountDesc') {
+      return confirmedCount(right) - confirmedCount(left) || pendingCount(right) - pendingCount(left)
+    }
+    if (sortBy === 'monitoredCountAsc') {
+      return confirmedCount(left) - confirmedCount(right) || pendingCount(left) - pendingCount(right)
+    }
+    if (sortBy === 'recent7dChangeCountDesc') {
+      return (right.recent7dCompetitorChangeCount ?? 0) - (left.recent7dCompetitorChangeCount ?? 0)
+    }
+    if (sortBy === 'recent7dChangeCountAsc') {
+      return (left.recent7dCompetitorChangeCount ?? 0) - (right.recent7dCompetitorChangeCount ?? 0)
+    }
+    return pendingCount(right) - pendingCount(left) || confirmedCount(right) - confirmedCount(left)
+  })
   return {
-    items: filtered.map((detail) => ({
+    items: sorted.map((detail) => ({
       ...detail.watchProduct,
       activeKeywordCount: detail.keywords.filter((keyword) => keyword.status === 'ACTIVE').length,
-      pendingCandidateCount: detail.candidates.filter((candidate) => candidate.reviewStatus === 'PENDING').length,
-      confirmedCompetitorCount: detail.candidates.filter((candidate) => candidate.reviewStatus === 'CONFIRMED').length
+      pendingCandidateCount: pendingCount(detail),
+      confirmedCompetitorCount: confirmedCount(detail),
+      recent7dChangedCompetitorCount: detail.recent7dChangedCompetitorCount ?? 0,
+      recent7dCompetitorChangeCount: detail.recent7dCompetitorChangeCount ?? 0
     })),
     pagination: {
       page: 1,
@@ -937,6 +1484,14 @@ function buildListResponse(details: MockDetail[], searchParams: URLSearchParams)
       totalPages: 1
     }
   }
+}
+
+function pendingCount(detail: MockDetail) {
+  return detail.candidates.filter((candidate) => candidate.reviewStatus === 'PENDING').length
+}
+
+function confirmedCount(detail: MockDetail) {
+  return detail.candidates.filter((candidate) => candidate.reviewStatus === 'CONFIRMED').length
 }
 
 function normalize(value: string) {

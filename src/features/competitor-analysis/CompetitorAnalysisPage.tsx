@@ -68,7 +68,7 @@ import type {
 } from './types'
 import './CompetitorAnalysisPage.css'
 
-const { Text } = Typography
+const { Link, Text } = Typography
 const DEFAULT_RANK_SCAN_DEPTH = 100
 
 type CompetitorAnalysisPageProps = {
@@ -83,6 +83,23 @@ const ZERO_COUNT_FILTER_OPTIONS = [
   { label: '候选为0', value: 'candidateZero' }
 ] as const
 type ZeroCountFilterValue = (typeof ZERO_COUNT_FILTER_OPTIONS)[number]['value']
+const PRODUCT_SORT_OPTIONS = [
+  { label: '候选数↓', value: 'candidateCountDesc' },
+  { label: '候选数↑', value: 'candidateCountAsc' },
+  { label: '监控数↓', value: 'monitoredCountDesc' },
+  { label: '监控数↑', value: 'monitoredCountAsc' },
+  { label: '7日变化次数↓', value: 'recent7dChangeCountDesc' },
+  { label: '7日变化次数↑', value: 'recent7dChangeCountAsc' }
+] as const
+type ProductSortValue = (typeof PRODUCT_SORT_OPTIONS)[number]['value']
+type ProductFilterValue = ZeroCountFilterValue | ProductSortValue
+
+const DEFAULT_PRODUCT_SORT_BY: ProductSortValue = 'candidateCountDesc'
+const PRODUCT_SORT_VALUE_SET = new Set<string>(PRODUCT_SORT_OPTIONS.map((option) => option.value))
+
+function isProductSortValue(value: string): value is ProductSortValue {
+  return PRODUCT_SORT_VALUE_SET.has(value)
+}
 
 function siteCodeFromStoreCode(storeCode?: string) {
   const normalized = (storeCode || '').toUpperCase()
@@ -219,11 +236,13 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
   const [reportRankLoading, setReportRankLoading] = useState(false)
   const [changeLoading, setChangeLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [openActionTooltip, setOpenActionTooltip] = useState<string | null>(null)
   const [productSearch, setProductSearch] = useState('')
   const [keywordSearch, setKeywordSearch] = useState('')
   const [competitorSearch, setCompetitorSearch] = useState('')
   const [monitorZeroOnly, setMonitorZeroOnly] = useState(false)
   const [candidateZeroOnly, setCandidateZeroOnly] = useState(false)
+  const [productSortBy, setProductSortBy] = useState<ProductSortValue>(DEFAULT_PRODUCT_SORT_BY)
   const [keywordInput, setKeywordInput] = useState('')
   const [manualInput, setManualInput] = useState('')
   const [manualKeywordId, setManualKeywordId] = useState('')
@@ -231,9 +250,10 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
   const [productPage, setProductPage] = useState(1)
   const [productPageSize, setProductPageSize] = useState(50)
   const [productTotal, setProductTotal] = useState(0)
-  const zeroCountFilterValues: ZeroCountFilterValue[] = [
+  const productFilterValues: ProductFilterValue[] = [
     ...(monitorZeroOnly ? (['monitorZero'] as const) : []),
-    ...(candidateZeroOnly ? (['candidateZero'] as const) : [])
+    ...(candidateZeroOnly ? (['candidateZero'] as const) : []),
+    productSortBy
   ]
 
   const selectedProduct =
@@ -285,6 +305,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
           competitorSearch,
           confirmedCompetitorCountZero: monitorZeroOnly,
           pendingCandidateCountZero: candidateZeroOnly,
+          sortBy: productSortBy,
           page: productPage,
           pageSize: productPageSize
         },
@@ -329,6 +350,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     productPage,
     productPageSize,
     productSearch,
+    productSortBy,
     selectedSiteCode,
     selectedStore?.storeCode
   ])
@@ -405,6 +427,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
   }
 
   const openReport = async (product: CompetitorWatchProduct) => {
+    setOpenActionTooltip(null)
     const loadingKey = `report-${product.id || product.productSiteOfferId}`
     setActionLoading(loadingKey)
     const readyProduct = await ensureWatchProduct(product)
@@ -665,6 +688,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
         competitorSearch,
         confirmedCompetitorCountZero: monitorZeroOnly,
         pendingCandidateCountZero: candidateZeroOnly,
+        sortBy: productSortBy,
         page: productPage,
         pageSize: productPageSize
       })
@@ -784,6 +808,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     setCompetitorSearch('')
     setMonitorZeroOnly(false)
     setCandidateZeroOnly(false)
+    setProductSortBy(DEFAULT_PRODUCT_SORT_BY)
     setProductPage(1)
   }
 
@@ -860,6 +885,22 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       }
     },
     {
+      title: '近7日竞品变化',
+      key: 'recent-competitor-changes',
+      width: 126,
+      align: 'center',
+      render: (_value, product) => {
+        const changedProductCount = product.recent7dChangedCompetitorCount ?? 0
+        const changeCount = product.recent7dCompetitorChangeCount ?? 0
+        return (
+          <Space direction="vertical" size={0}>
+            <Text type={changedProductCount ? undefined : 'secondary'}>共 {changedProductCount} 个商品</Text>
+            <Text type={changeCount ? undefined : 'secondary'}>共 {changeCount} 次</Text>
+          </Space>
+        )
+      }
+    },
+    {
       title: '排名摘要',
       key: 'rank',
       width: 146,
@@ -928,7 +969,13 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
                 onClick={() => void openDetail(product)}
               />
             </Tooltip>
-            <Tooltip title="报表">
+            <Tooltip
+              title="报表"
+              open={openActionTooltip === `report-${product.id || product.productSiteOfferId}` && !reportOpen}
+              onOpenChange={(open) =>
+                setOpenActionTooltip(open ? `report-${product.id || product.productSiteOfferId}` : null)
+              }
+            >
               <Button
                 aria-label="报表"
                 size="small"
@@ -981,15 +1028,18 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
           <Select
             allowClear
             className="competitor-analysis-zero-filter-select"
-            maxTagCount="responsive"
+            data-testid="competitor-analysis-filter-select"
+            maxTagCount={2}
             mode="multiple"
-            options={[...ZERO_COUNT_FILTER_OPTIONS]}
-            placeholder="数量筛选"
-            value={zeroCountFilterValues}
+            options={[...ZERO_COUNT_FILTER_OPTIONS, ...PRODUCT_SORT_OPTIONS]}
+            placeholder="筛选"
+            value={productFilterValues}
             onChange={(values) => {
-              const nextValues = new Set(values as ZeroCountFilterValue[])
+              const nextValues = new Set(values as ProductFilterValue[])
+              const selectedSortValues = (values as ProductFilterValue[]).filter(isProductSortValue)
               setMonitorZeroOnly(nextValues.has('monitorZero'))
               setCandidateZeroOnly(nextValues.has('candidateZero'))
+              setProductSortBy(selectedSortValues[selectedSortValues.length - 1] || DEFAULT_PRODUCT_SORT_BY)
               setProductPage(1)
             }}
           />
@@ -1007,7 +1057,6 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
             <Button onClick={resetSearch}>重置</Button>
           </Space>
         </div>
-        <Text type="secondary">已筛选 {productTotal} 个商品基线；行内操作会自动启用竞品分析对象。</Text>
       </Card>
 
       <Card size="small" className="competitor-analysis-list-card" variant="borderless">
@@ -1028,7 +1077,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
               setProductPageSize(pageSize)
             }
           }}
-          scroll={{ x: 1094 }}
+          scroll={{ x: 1220 }}
           size="middle"
         />
       </Card>
@@ -1108,7 +1157,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       ) : null}
       {reportProduct ? (
         <Modal
-          width={1240}
+          width="min(1680px, calc(100vw - 32px))"
           open={reportOpen}
           title={null}
           footer={null}
@@ -1301,15 +1350,18 @@ function ProductChangeModal({
   storeLabel,
   groups,
   baselineSummary,
-  showIdentity = true
+  showIdentity = true,
+  showSummary = true
 }: {
   product: CompetitorWatchProduct
   storeLabel?: string
   groups: CompetitorProductChangeGroup[]
   baselineSummary?: CompetitorProductChangeBaselineSummary
   showIdentity?: boolean
+  showSummary?: boolean
 }) {
   const summary = buildProductChangeSummary(groups)
+  const competitorCards = buildProductChangeCompetitorCards(product, groups)
   const monitoredCompetitorCount = baselineSummary?.monitoredCompetitorCount ?? product.confirmedCompetitorCount ?? 0
   const titleLines = productTitleLines(product)
   const emptyDescription = baselineSummary?.snapshotCompetitorCount
@@ -1359,19 +1411,18 @@ function ProductChangeModal({
         />
       ) : null}
 
-      <div className="competitor-analysis-product-change-summary-grid">
-        <ProductChangeSummaryCard label="监控竞品" value={`${monitoredCompetitorCount} 个`} />
-        <ProductChangeSummaryCard label="详情基线" value={`${baselineSummary?.snapshotCompetitorCount ?? 0} 个`} />
-        <ProductChangeSummaryCard label="变化日期" value={`${summary.changedDays} 天`} />
-        <ProductChangeSummaryCard label="变化字段" value={`${summary.fieldChanges} 项`} />
-        <ProductChangeSummaryCard label="价格变化" value={`${summary.priceChanges} 次`} />
-        <ProductChangeSummaryCard label="最新基线" value={formatSnapshotDate(baselineSummary?.latestSnapshotDate)} />
-      </div>
+      {showSummary ? (
+        <ProductChangeSummaryLine
+          summary={summary}
+          monitoredCompetitorCount={monitoredCompetitorCount}
+          baselineSummary={baselineSummary}
+        />
+      ) : null}
 
-      {groups.length ? (
-        <div className="competitor-analysis-product-change-timeline">
-          {groups.map((group) => (
-            <ProductChangeGroupCard key={group.id} group={group} />
+      {competitorCards.length ? (
+        <div className="competitor-analysis-product-change-competitor-list">
+          {competitorCards.map((card) => (
+            <ProductChangeCompetitorCard key={card.noonProductCode} product={product} card={card} />
           ))}
         </div>
       ) : (
@@ -1381,67 +1432,259 @@ function ProductChangeModal({
   )
 }
 
-function ProductChangeSummaryCard({ label, value }: { label: string; value: string }) {
+function ProductChangeSummaryLine({
+  summary,
+  monitoredCompetitorCount,
+  baselineSummary
+}: {
+  summary: ReturnType<typeof buildProductChangeSummary>
+  monitoredCompetitorCount: number
+  baselineSummary?: CompetitorProductChangeBaselineSummary
+}) {
   return (
-    <div className="competitor-analysis-product-change-summary-card">
+    <div className="competitor-analysis-product-change-summary-line">
+      <ProductChangeSummaryItem label="监控竞品" value={`${monitoredCompetitorCount} 个`} />
+      <ProductChangeSummaryItem label="详情基线" value={`${baselineSummary?.snapshotCompetitorCount ?? 0} 个`} />
+      <ProductChangeSummaryItem label="变化日期" value={`${summary.changedDays} 天`} />
+      <ProductChangeSummaryItem label="变化字段" value={`${summary.fieldChanges} 项`} />
+      <ProductChangeSummaryItem label="价格变化" value={`${summary.priceChanges} 次`} />
+      <ProductChangeSummaryItem label="最新基线" value={formatSnapshotDate(baselineSummary?.latestSnapshotDate)} />
+    </div>
+  )
+}
+
+function ProductChangeSummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="competitor-analysis-product-change-summary-item">
       <Text type="secondary">{label}</Text>
       <Text strong>{value}</Text>
     </div>
   )
 }
 
-function ProductChangeGroupCard({ group }: { group: CompetitorProductChangeGroup }) {
+type ProductChangeDateGroup = {
+  factDate: string
+  changes: CompetitorProductChangeField[]
+}
+
+type ProductChangeCompetitorCardView = {
+  noonProductCode: string
+  productName: string
+  imageUrl?: string
+  canonicalUrl?: string
+  subjectType: CompetitorProductChangeGroup['subjectType']
+  dateGroups: ProductChangeDateGroup[]
+}
+
+function ProductChangeCompetitorCard({
+  product,
+  card
+}: {
+  product: CompetitorWatchProduct
+  card: ProductChangeCompetitorCardView
+}) {
+  const placeholderText = card.productName.slice(0, 2).toUpperCase()
+  const productLink = card.canonicalUrl || buildNoonProductDetailUrl(card.noonProductCode, product.siteCode)
+  const productLinkLabel = `打开 Noon 商品 ${card.noonProductCode}`
+
   return (
-    <Card
-      size="small"
-      variant="borderless"
-      className="competitor-analysis-product-change-group"
-      title={
-        <div className="competitor-analysis-product-change-group-title">
-          <Space size={8} wrap>
-            <Text strong>{group.factDate}</Text>
-            <Tag color={group.subjectType === 'self' ? 'blue' : 'green'}>{group.subjectType === 'self' ? '本品' : '竞品'}</Tag>
-            <Text strong ellipsis={{ tooltip: group.productName }}>
-              {group.productName}
+    <article className="competitor-analysis-product-change-competitor-card">
+      <div className="competitor-analysis-product-change-competitor-detail">
+        {productLink ? (
+          <a
+            href={productLink}
+            target="_blank"
+            rel="noreferrer"
+            className="competitor-analysis-product-change-competitor-media"
+            aria-label={`${productLinkLabel} 图片`}
+          >
+            {card.imageUrl ? <img src={card.imageUrl} alt="" /> : null}
+            <span>{placeholderText}</span>
+          </a>
+        ) : (
+          <div className="competitor-analysis-product-change-competitor-media">
+            {card.imageUrl ? <img src={card.imageUrl} alt="" /> : null}
+            <span>{placeholderText}</span>
+          </div>
+        )}
+
+        <div className="competitor-analysis-product-change-competitor-meta">
+          {productLink ? (
+            <Link
+              copyable={{ text: card.noonProductCode }}
+              href={productLink}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={productLinkLabel}
+              className="competitor-analysis-product-change-competitor-code"
+            >
+              {card.noonProductCode}
+            </Link>
+          ) : (
+            <Text copyable={{ text: card.noonProductCode }} className="competitor-analysis-product-change-competitor-code">
+              {card.noonProductCode}
             </Text>
-          </Space>
-          <Text type="secondary" copyable={{ text: group.noonProductCode }}>
-            {group.noonProductCode}
+          )}
+          <Text type="secondary" className="competitor-analysis-product-change-competitor-name">
+            {card.productName}
           </Text>
         </div>
-      }
-    >
-      <div className="competitor-analysis-product-change-list">
-        {group.changes.map((change, index) => (
-          <ProductChangeRow key={`${group.id}-${change.fieldKey}-${index}`} change={change} />
+      </div>
+
+      <div className="competitor-analysis-product-change-date-list">
+        {card.dateGroups.map((dateGroup) => (
+          <div key={`${card.noonProductCode}-${dateGroup.factDate}`} className="competitor-analysis-product-change-date-block">
+            <div className="competitor-analysis-product-change-date-title">
+              <Text strong>{dateGroup.factDate}</Text>
+              <Tag color={card.subjectType === 'self' ? 'blue' : 'green'}>{card.subjectType === 'self' ? '本品' : '竞品'}</Tag>
+            </div>
+            <ProductChangeRankSection product={product} noonProductCode={card.noonProductCode} factDate={dateGroup.factDate} />
+            <ProductChangeFieldSection changes={dateGroup.changes} />
+          </div>
         ))}
       </div>
-    </Card>
+    </article>
   )
 }
 
-function ProductChangeRow({ change }: { change: CompetitorProductChangeField }) {
+function ProductChangeRankSection({
+  product,
+  noonProductCode,
+  factDate
+}: {
+  product: CompetitorWatchProduct
+  noonProductCode: string
+  factDate: string
+}) {
+  const rankItems = buildProductChangeRankItems(product, noonProductCode, factDate)
+
   return (
-    <div className={`competitor-analysis-product-change-row competitor-analysis-product-change-row-${change.severity || 'info'}`}>
-      <Tag color={productChangeFieldColor(change.fieldKey)}>{change.fieldLabel}</Tag>
-      <div className="competitor-analysis-product-change-value-flow">
-        <span>{formatProductChangeValue(change.oldValue)}</span>
-        <em>→</em>
-        <span>{formatProductChangeValue(change.newValue)}</span>
+    <div className="competitor-analysis-product-change-rank-section">
+      <Text type="secondary" className="competitor-analysis-product-change-section-label">
+        排名
+      </Text>
+      <div className="competitor-analysis-product-change-rank-list">
+        {rankItems.length ? (
+          rankItems.map((item) => (
+            <div
+              key={`${item.keyword}-${item.channel}-${item.status}`}
+              className="competitor-analysis-product-change-rank-row"
+            >
+              <Text className="competitor-analysis-product-change-rank-keyword">{item.keyword}</Text>
+              <Text type="secondary" className="competitor-analysis-product-change-rank-channel">
+                {item.channel}
+              </Text>
+              <Text strong className="competitor-analysis-product-change-rank-status">
+                {item.status}
+              </Text>
+            </div>
+          ))
+        ) : (
+          <Text type="secondary" className="competitor-analysis-product-change-rank-empty">
+            暂无排名
+          </Text>
+        )}
       </div>
     </div>
   )
 }
 
+function ProductChangeFieldSection({ changes }: { changes: CompetitorProductChangeField[] }) {
+  return (
+    <div className="competitor-analysis-product-change-field-section">
+      <Text type="secondary" className="competitor-analysis-product-change-section-label">
+        变化
+      </Text>
+      <ul className="competitor-analysis-product-change-content-list">
+        {changes.map((change, index) => (
+          <li key={`${change.fieldKey}-${index}`} className="competitor-analysis-product-change-field-row">
+            <Tag color={productChangeFieldColor(change.fieldKey)}>{change.fieldLabel}</Tag>
+            <ProductChangeContent change={change} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function buildProductChangeCompetitorCards(
+  product: CompetitorWatchProduct,
+  groups: CompetitorProductChangeGroup[]
+): ProductChangeCompetitorCardView[] {
+  const candidateByCode = new Map(
+    product.candidates.map((candidate) => [normalizeNoonProductCode(candidate.noonProductCode), candidate])
+  )
+  const cardByCode = new Map<string, ProductChangeCompetitorCardView>()
+
+  groups.forEach((group) => {
+    const normalizedCode = normalizeNoonProductCode(group.noonProductCode)
+    if (!normalizedCode) return
+    const candidate = candidateByCode.get(normalizedCode)
+    const card =
+      cardByCode.get(normalizedCode) ??
+      {
+        noonProductCode: group.noonProductCode,
+        productName: candidate?.title || group.productName || group.noonProductCode,
+        imageUrl: candidate?.imageUrl,
+        canonicalUrl: candidate?.canonicalUrl || buildNoonProductDetailUrl(group.noonProductCode, product.siteCode),
+        subjectType: group.subjectType,
+        dateGroups: []
+      }
+    const visibleChanges = displayProductChanges(group.changes)
+    if (!visibleChanges.length) {
+      return
+    }
+    const dateGroup = card.dateGroups.find((item) => item.factDate === group.factDate)
+    if (dateGroup) {
+      dateGroup.changes.push(...visibleChanges)
+    } else {
+      card.dateGroups.push({ factDate: group.factDate, changes: visibleChanges })
+    }
+    cardByCode.set(normalizedCode, card)
+  })
+
+  return Array.from(cardByCode.values())
+    .map((card) => ({
+      ...card,
+      dateGroups: card.dateGroups
+        .map((dateGroup) => ({
+          ...dateGroup,
+          changes: dateGroup.changes.slice().sort(compareProductChangeFields)
+        }))
+        .sort((left, right) => right.factDate.localeCompare(left.factDate))
+    }))
+    .sort((left, right) => {
+      const latestDateCompare = (right.dateGroups[0]?.factDate || '').localeCompare(left.dateGroups[0]?.factDate || '')
+      if (latestDateCompare !== 0) return latestDateCompare
+      return left.noonProductCode.localeCompare(right.noonProductCode)
+    })
+}
+
 function buildProductChangeSummary(groups: CompetitorProductChangeGroup[]) {
-  const fieldChanges = groups.reduce((total, group) => total + group.changes.length, 0)
-  const allChanges = groups.flatMap((group) => group.changes)
+  const groupsWithChanges = groups
+    .map((group) => ({ ...group, changes: displayProductChanges(group.changes) }))
+    .filter((group) => group.changes.length)
+  const fieldChanges = groupsWithChanges.reduce((total, group) => total + group.changes.length, 0)
+  const allChanges = groupsWithChanges.flatMap((group) => group.changes)
   return {
-    changedDays: new Set(groups.map((group) => group.factDate)).size,
+    changedDays: new Set(groupsWithChanges.map((group) => group.factDate)).size,
     fieldChanges,
     priceChanges: allChanges.filter((change) => change.fieldKey === 'price').length,
-    imageChanges: allChanges.filter((change) => change.fieldKey === 'main_image').length
+    imageChanges: allChanges.filter((change) => productChangeFieldKey(change.fieldKey) === 'mainImage').length
   }
+}
+
+function displayProductChanges(changes: CompetitorProductChangeField[]) {
+  return changes.filter((change) => !isSameResolvedMainImageChange(change))
+}
+
+function isSameResolvedMainImageChange(change: CompetitorProductChangeField) {
+  if (productChangeFieldKey(change.fieldKey) !== 'mainImage') {
+    return false
+  }
+  const oldUrl = buildNoonImageAssetUrl(change.oldValue, change.newValue)
+  const newUrl = buildNoonImageAssetUrl(change.newValue, change.oldValue)
+  return Boolean(oldUrl && newUrl && oldUrl === newUrl)
 }
 
 function formatSnapshotDate(value?: string) {
@@ -1449,11 +1692,193 @@ function formatSnapshotDate(value?: string) {
 }
 
 function productChangeFieldColor(fieldKey: string) {
+  const normalized = productChangeFieldKey(fieldKey)
   if (fieldKey === 'price') return 'orange'
-  if (fieldKey === 'main_image') return 'purple'
-  if (fieldKey === 'supermall_enabled') return 'green'
-  if (fieldKey === 'availability_status') return 'red'
+  if (normalized === 'mainImage') return 'purple'
+  if (normalized === 'supermallEnabled') return 'green'
+  if (normalized === 'availabilityStatus') return 'red'
   return 'blue'
+}
+
+function productChangeFieldKey(fieldKey: string) {
+  if (fieldKey === 'main_image' || fieldKey === 'mainImage') return 'mainImage'
+  if (fieldKey === 'supermall_enabled' || fieldKey === 'supermallEnabled') return 'supermallEnabled'
+  if (fieldKey === 'availability_status' || fieldKey === 'availabilityStatus') return 'availabilityStatus'
+  return fieldKey
+}
+
+function compareProductChangeFields(left: CompetitorProductChangeField, right: CompetitorProductChangeField) {
+  const order = ['mainImage', 'price', 'brand', 'rating', 'reviewCount']
+  const leftOrder = order.indexOf(productChangeFieldKey(left.fieldKey))
+  const rightOrder = order.indexOf(productChangeFieldKey(right.fieldKey))
+  const normalizedLeftOrder = leftOrder >= 0 ? leftOrder : order.length
+  const normalizedRightOrder = rightOrder >= 0 ? rightOrder : order.length
+  if (normalizedLeftOrder !== normalizedRightOrder) {
+    return normalizedLeftOrder - normalizedRightOrder
+  }
+  return left.fieldLabel.localeCompare(right.fieldLabel)
+}
+
+function ProductChangeContent({ change }: { change: CompetitorProductChangeField }) {
+  if (productChangeFieldKey(change.fieldKey) === 'mainImage') {
+    return <ProductChangeMainImageLinks change={change} />
+  }
+  return <Text>{formatProductChangeContent(change)}</Text>
+}
+
+function ProductChangeMainImageLinks({ change }: { change: CompetitorProductChangeField }) {
+  const oldHref = buildNoonImageAssetUrl(change.oldValue, change.newValue)
+  const newHref = buildNoonImageAssetUrl(change.newValue, change.oldValue)
+  return (
+    <span
+      className="competitor-analysis-product-change-image-links"
+      title={`${formatProductChangeValue(change.oldValue)} -> ${formatProductChangeValue(change.newValue)}`}
+    >
+      <ProductChangeImageAssetLink label="主图A" href={oldHref} />
+      <span className="competitor-analysis-product-change-image-arrow">-&gt;</span>
+      <ProductChangeImageAssetLink label="主图B" href={newHref} />
+    </span>
+  )
+}
+
+function ProductChangeImageAssetLink({ label, href }: { label: string; href: string }) {
+  if (!href) {
+    return <Text>{label}</Text>
+  }
+  return (
+    <Link
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="competitor-analysis-product-change-image-link"
+      aria-label={label}
+    >
+      {label}
+    </Link>
+  )
+}
+
+function formatProductChangeContent(change: CompetitorProductChangeField) {
+  return `${formatProductChangeValue(change.oldValue)} → ${formatProductChangeValue(change.newValue)}`
+}
+
+function buildNoonImageAssetUrl(value: unknown, peerValue?: unknown) {
+  const rawValue = productChangeAssetValue(value)
+  if (!rawValue || rawValue === '-') {
+    return ''
+  }
+  if (/^https?:\/\//i.test(rawValue)) {
+    return rawValue
+  }
+  const normalized = normalizeNoonImageAssetPath(rawValue, productChangeAssetValue(peerValue))
+  return normalized ? `https://f.nooncdn.com/p/${encodeURI(normalized)}` : ''
+}
+
+function normalizeNoonImageAssetPath(value: string, peerValue?: string) {
+  const path = value.replace(/^\/+/, '').trim()
+  if (!path) {
+    return ''
+  }
+  const peerPath = (peerValue || '').replace(/^\/+/, '').trim()
+  const extension = noonImageAssetExtension(path) || noonImageAssetExtension(peerPath) || '.jpg'
+  if (path.includes('/')) {
+    return noonImageAssetHasExtension(path) ? path : `${path}${extension}`
+  }
+  if (peerPath.includes('/')) {
+    const peerBase = noonImageAssetBaseName(peerPath)
+    if (assetStem(peerBase) === assetStem(path)) {
+      return `${peerPath.slice(0, peerPath.lastIndexOf('/') + 1)}${noonImageAssetHasExtension(path) ? path : `${path}${extension}`}`
+    }
+  }
+  return noonImageAssetHasExtension(path) ? path : `${path}${extension}`
+}
+
+function noonImageAssetBaseName(path: string) {
+  return path.split(/[?#]/)[0].split('/').filter(Boolean).pop() || ''
+}
+
+function assetStem(value: string) {
+  return noonImageAssetBaseName(value).replace(/\.(?:jpe?g|png|webp|gif|avif)$/i, '')
+}
+
+function noonImageAssetExtension(path: string) {
+  return noonImageAssetBaseName(path).match(/\.(?:jpe?g|png|webp|gif|avif)$/i)?.[0] || ''
+}
+
+function noonImageAssetHasExtension(path: string) {
+  return Boolean(noonImageAssetExtension(path))
+}
+
+function productChangeAssetValue(value: unknown): string {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const record = value as Record<string, unknown>
+    const candidate =
+      record.url ??
+      record.imageUrl ??
+      record.assetUrl ??
+      record.normalizedUrl ??
+      record.assetKey ??
+      record.path ??
+      record.key
+    if (candidate !== undefined && candidate !== null && candidate !== '') {
+      return formatProductChangeValue(candidate).trim()
+    }
+  }
+  return formatProductChangeValue(value).trim()
+}
+
+function buildProductChangeRankItems(product: CompetitorWatchProduct, noonProductCode: string, factDate: string) {
+  const points = selectProductChangeRankPoints(product, noonProductCode, factDate)
+  if (!points.length) {
+    return []
+  }
+  const keywordById = new Map(product.keywords.map((keyword) => [keyword.id, keyword.keyword]))
+  return points
+    .map((point) => {
+      const keyword = keywordById.get(point.keywordId) || '关键词'
+      const channel = point.rankChannel === 'sponsored' ? '广告' : '自然'
+      return {
+        keyword,
+        channel,
+        status: formatRankStatus(point)
+      }
+    })
+}
+
+function selectProductChangeRankPoints(product: CompetitorWatchProduct, noonProductCode: string, factDate: string) {
+  const normalizedCode = normalizeNoonProductCode(noonProductCode)
+  const competitorPoints = product.rankPoints.filter(
+    (point) => !point.isSelf && normalizeNoonProductCode(point.noonProductCode) === normalizedCode
+  )
+  const sameDayPoints = latestRankPointsByKeywordChannel(
+    competitorPoints.filter((point) => point.factDate === factDate)
+  )
+  if (sameDayPoints.length) {
+    return sameDayPoints
+  }
+  const earlierPoints = latestRankPointsByKeywordChannel(
+    competitorPoints.filter((point) => point.factDate <= factDate)
+  )
+  if (earlierPoints.length) {
+    return earlierPoints
+  }
+  return []
+}
+
+function latestRankPointsByKeywordChannel(points: CompetitorRankPoint[]) {
+  const pointByKey = new Map<string, CompetitorRankPoint>()
+  points.forEach((point) => {
+    const key = `${point.keywordId}:${point.rankChannel || 'organic'}`
+    const existing = pointByKey.get(key)
+    if (!existing || point.factDate.localeCompare(existing.factDate) > 0) {
+      pointByKey.set(key, point)
+    }
+  })
+  return Array.from(pointByKey.values()).sort((left, right) => {
+    const keywordCompare = left.keywordId.localeCompare(right.keywordId)
+    if (keywordCompare !== 0) return keywordCompare
+    return (left.rankChannel || 'organic').localeCompare(right.rankChannel || 'organic')
+  })
 }
 
 function formatProductChangeValue(value: unknown): string {
@@ -1582,11 +2007,31 @@ function SelfRankReportModal({
   changeLoading: boolean
 }) {
   const reports = useMemo(() => buildSelfRankReport(product), [product])
+  const [selectedReportId, setSelectedReportId] = useState('')
   const changeSummary = buildProductChangeSummary(changeGroups)
+  const monitoredCompetitorCount = changeBaselineSummary?.monitoredCompetitorCount ?? product.confirmedCompetitorCount ?? 0
+  const selectedReport = reports.find((report) => report.keywordId === selectedReportId) ?? reports[0]
+
+  useEffect(() => {
+    if (!reports.length) {
+      if (selectedReportId) {
+        setSelectedReportId('')
+      }
+      return
+    }
+    if (!reports.some((report) => report.keywordId === selectedReportId)) {
+      setSelectedReportId(reports[0].keywordId)
+    }
+  }, [reports, selectedReportId])
 
   return (
     <div className="competitor-analysis-report-modal" data-testid="competitor-self-rank-report">
-      <ReportProductHeader product={product} />
+      <ReportProductHeader
+        product={product}
+        summary={changeSummary}
+        monitoredCompetitorCount={monitoredCompetitorCount}
+        baselineSummary={changeBaselineSummary}
+      />
 
       <Tabs
         className="competitor-analysis-analysis-tabs"
@@ -1603,69 +2048,15 @@ function SelfRankReportModal({
             children: (
               <Spin spinning={rankLoading}>
                 {reports.length ? (
-                  <Tabs
-                    className="competitor-analysis-report-tabs"
-                    items={reports.map((report) => {
-                      const hasRankData = report.points.length > 0
-                      const rankedCount = rankedProductCount(report)
-                      const monitoredCount = reportMonitoredCount(product, report.keywordId)
-                      const latest = report.points[report.points.length - 1]
-                      const summary = buildReportSummary(report)
-                      const heatmapRows = buildRankHeatmapRows(report)
-                      return {
-                        key: report.keywordId,
-                        label: (
-                          <span className="competitor-analysis-report-tab-label">
-                            <SearchOutlined />
-                            <span>{report.keyword}</span>
-                            <Tag color={rankedCount ? 'blue' : undefined}>{`${rankedCount} in ${monitoredCount}`}</Tag>
-                          </span>
-                        ),
-                        children: hasRankData ? (
-                          <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                            <div className="competitor-analysis-rank-summary-grid">
-                              <RankSummaryMetric label="本品最新自然位" value={formatSummaryRankText(summary.latestOrganicRank, summary.scanDepth)} />
-                              <RankSummaryMetric label={SELF_RANK_REPORT_CHANGE_LABEL} value={summary.organicChangeText} />
-                              <RankSummaryMetric label="本品广告出现" value={summary.adDaysText} />
-                              <RankSummaryMetric label="最强竞品" value={summary.bestCompetitorText} />
-                            </div>
-                            <Card
-                              size="small"
-                              variant="borderless"
-                              className="competitor-analysis-report-keyword-card competitor-analysis-rank-race-card"
-                              title={
-                                <div className="competitor-analysis-race-card-title">
-                                  <Space size={6} wrap>
-                                    <Tag color="blue">本品自然 {formatSelfRankReportText(latest.organicStatus, latest.organicRankNo, latest.scanDepth)}</Tag>
-                                    <Tag color="blue">本品广告 {formatSelfRankReportText(latest.adStatus, latest.adRankNo, latest.scanDepth)}</Tag>
-                                    <Tag color="green">竞品 {report.competitorSeries.length}</Tag>
-                                  </Space>
-                                  <div className="competitor-analysis-rank-zone-legend">
-                                    <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top10">前10</span>
-                                    <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top20">11-20</span>
-                                    <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top50">21-50</span>
-                                    <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top100">51-100</span>
-                                  </div>
-                                </div>
-                              }
-                            >
-                              <div className="competitor-analysis-report-chart-only">
-                                <EChartPanel
-                                  testId={`self-rank-chart-${report.keywordId}`}
-                                  ariaLabel={`${report.keyword} 本品与竞品排名赛道图`}
-                                  height={300}
-                                  option={buildSelfRankChartOption(report)}
-                                />
-                              </div>
-                            </Card>
-                            <RankHeatmap rows={heatmapRows} dates={report.points.map((point) => point.date.slice(5))} />
-                          </Space>
-                        ) : (
-                          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无真实排名数据" />
-                        )
-                      }
-                    })}
-                  />
+                  <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                    <RankKeywordChips
+                      product={product}
+                      reports={reports}
+                      selectedReportId={selectedReport?.keywordId || ''}
+                      onSelect={setSelectedReportId}
+                    />
+                    {selectedReport ? <RankKeywordReportPanel product={product} report={selectedReport} /> : null}
+                  </Space>
                 ) : (
                   <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无真实排名数据" />
                 )}
@@ -1689,6 +2080,7 @@ function SelfRankReportModal({
                   groups={changeGroups}
                   baselineSummary={changeBaselineSummary}
                   showIdentity={false}
+                  showSummary={false}
                 />
               </Spin>
             )
@@ -1699,8 +2091,22 @@ function SelfRankReportModal({
   )
 }
 
-function ReportProductHeader({ product }: { product: CompetitorWatchProduct }) {
+function ReportProductHeader({
+  product,
+  summary,
+  monitoredCompetitorCount,
+  baselineSummary
+}: {
+  product: CompetitorWatchProduct
+  summary: ReturnType<typeof buildProductChangeSummary>
+  monitoredCompetitorCount: number
+  baselineSummary?: CompetitorProductChangeBaselineSummary
+}) {
   const titleLines = productTitleLines(product)
+  const psku = product.partnerSku || product.pskuCode || '-'
+  const chineseTitle = product.titleCn?.trim() || ''
+  const englishTitle = product.title?.trim() || ''
+  const fallbackTitle = chineseTitle || englishTitle ? '' : titleLines.primary
   return (
     <div className="competitor-analysis-report-header">
       <ProductImageThumb
@@ -1712,37 +2118,168 @@ function ReportProductHeader({ product }: { product: CompetitorWatchProduct }) {
       <div className="competitor-analysis-report-header-body">
         <Space size={6} wrap>
           <Text strong className="competitor-analysis-report-heading">商品分析</Text>
+          <Tag color="blue" className="competitor-analysis-report-product-psku" style={{ marginInlineEnd: 0 }}>
+            PSKU {psku}
+          </Tag>
           {product.siteCode ? <Tag style={{ marginInlineEnd: 0 }}>{product.siteCode}</Tag> : null}
         </Space>
         <div className="competitor-analysis-report-product-titles">
-          <Text
-            strong
-            className="competitor-analysis-report-product-title competitor-analysis-product-title-cn"
-            ellipsis={{ tooltip: titleLines.primary }}
-          >
-            {titleLines.primary}
-          </Text>
-          {titleLines.secondary ? (
+          {chineseTitle || fallbackTitle ? (
+            <Text
+              strong
+              className="competitor-analysis-report-product-title competitor-analysis-product-title-cn"
+              ellipsis={{ tooltip: chineseTitle || fallbackTitle }}
+            >
+              {chineseTitle || fallbackTitle}
+            </Text>
+          ) : null}
+          {englishTitle ? (
             <Text
               type="secondary"
-              className="competitor-analysis-report-product-title competitor-analysis-product-title-en"
-              ellipsis={{ tooltip: titleLines.secondary }}
+              className="competitor-analysis-report-product-title competitor-analysis-report-product-title-en-full competitor-analysis-product-title-en"
             >
-              {titleLines.secondary}
+              {englishTitle}
             </Text>
           ) : null}
         </div>
+        <ProductChangeSummaryLine
+          summary={summary}
+          monitoredCompetitorCount={monitoredCompetitorCount}
+          baselineSummary={baselineSummary}
+        />
       </div>
     </div>
   )
 }
 
-function RankSummaryMetric({ label, value }: { label: string; value: string }) {
+function RankKeywordChips({
+  product,
+  reports,
+  selectedReportId,
+  onSelect
+}: {
+  product: CompetitorWatchProduct
+  reports: SelfRankKeywordReport[]
+  selectedReportId: string
+  onSelect: (keywordId: string) => void
+}) {
   return (
-    <div className="competitor-analysis-rank-summary-card">
+    <div className="competitor-analysis-report-keyword-chip-list">
+      {reports.map((report) => {
+        const rankedCount = rankedMonitoredCompetitorCount(product, report.keywordId)
+        const monitoredCount = reportMonitoredCount(product, report.keywordId)
+        const selected = report.keywordId === selectedReportId
+        return (
+          <button
+            key={report.keywordId}
+            type="button"
+            aria-pressed={selected}
+            className={`competitor-analysis-report-keyword-chip${selected ? ' competitor-analysis-report-keyword-chip-active' : ''}`}
+            onClick={() => onSelect(report.keywordId)}
+          >
+            <SearchOutlined />
+            <span>{report.keyword}</span>
+            <Tag color={rankedCount ? 'blue' : undefined}>{`${rankedCount} in ${monitoredCount}`}</Tag>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function RankKeywordReportPanel({ product, report }: { product: CompetitorWatchProduct; report: SelfRankKeywordReport }) {
+  const summary = buildReportSummary(report)
+  const hasRankChartData = hasRenderableRankData(report)
+  const rankedCount = rankedMonitoredCompetitorCount(product, report.keywordId)
+  const monitoredCount = reportMonitoredCount(product, report.keywordId)
+  const latest = report.points[report.points.length - 1] ?? buildEmptySelfRankReportPoint('', [{ scanDepth: summary.scanDepth }])
+  const heatmapRows = hasRankChartData ? buildRankHeatmapRows(report) : []
+
+  return (
+    <div className="competitor-analysis-rank-report-panel">
+      <RankInsightStrip summary={summary} />
+      {hasRankChartData ? (
+        <Space direction="vertical" size={10} style={{ width: '100%' }}>
+          <Card
+            size="small"
+            variant="borderless"
+            className="competitor-analysis-report-keyword-card competitor-analysis-rank-race-card"
+            title={
+              <div className="competitor-analysis-race-card-title">
+                <Space size={6} wrap>
+                  <Tag color="blue">本品自然 {formatSelfRankReportText(latest.organicStatus, latest.organicRankNo, latest.scanDepth)}</Tag>
+                  <Tag color="blue">本品广告 {formatSelfRankReportText(latest.adStatus, latest.adRankNo, latest.scanDepth)}</Tag>
+                  <Tag color="green">竞品 {report.competitorSeries.length}</Tag>
+                </Space>
+                <div className="competitor-analysis-rank-zone-legend">
+                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top10">前10</span>
+                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top20">11-20</span>
+                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top50">21-50</span>
+                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top100">51-100</span>
+                </div>
+              </div>
+            }
+          >
+            <div className="competitor-analysis-report-chart-only">
+              <EChartPanel
+                testId={`self-rank-chart-${report.keywordId}`}
+                ariaLabel={`${report.keyword} 本品与竞品排名赛道图`}
+                height={260}
+                option={buildSelfRankChartOption(report)}
+              />
+            </div>
+          </Card>
+          <RankHeatmap rows={heatmapRows} dates={report.points.map((point) => point.date.slice(5))} />
+        </Space>
+      ) : (
+        <RankCompactEmpty summary={summary} rankedCount={rankedCount} monitoredCount={monitoredCount} />
+      )}
+    </div>
+  )
+}
+
+function RankInsightStrip({ summary }: { summary: RankReportSummary }) {
+  return (
+    <div className="competitor-analysis-rank-insight-strip">
+      <RankInsightItem label="自然位" value={formatSummaryRankText(summary.latestOrganicRank, summary.scanDepth)} tone={summary.latestOrganicRank ? 'strong' : 'muted'} />
+      <RankInsightItem label="15日" value={summary.organicChangeText} tone={summary.organicChangeText === '暂无趋势' ? 'muted' : 'strong'} />
+      <RankInsightItem label="广告" value={summary.adDaysText} tone={summary.adDaysText.startsWith('0/') ? 'muted' : 'strong'} />
+      <RankInsightItem label="最强竞品" value={summary.bestCompetitorText} tone={summary.bestCompetitorText === '暂无竞品排名' ? 'muted' : 'strong'} />
+    </div>
+  )
+}
+
+function RankInsightItem({
+  label,
+  value,
+  tone
+}: {
+  label: string
+  value: string
+  tone: 'strong' | 'muted'
+}) {
+  return (
+    <div className={`competitor-analysis-rank-insight-item competitor-analysis-rank-insight-item-${tone}`}>
       <Text type="secondary">{label}</Text>
-      <Text strong ellipsis={{ tooltip: value }}>
-        {value}
+      <Text strong ellipsis={{ tooltip: value }}>{value}</Text>
+    </div>
+  )
+}
+
+function RankCompactEmpty({
+  summary,
+  rankedCount,
+  monitoredCount
+}: {
+  summary: RankReportSummary
+  rankedCount: number
+  monitoredCount: number
+}) {
+  return (
+    <div className="competitor-analysis-rank-empty-panel">
+      <Text strong>本关键词暂无可绘制排名</Text>
+      <Text type="secondary">
+        本品{formatNotInRankRangeText(summary.scanDepth)}，监控竞品 {rankedCount} in {monitoredCount}
       </Text>
     </div>
   )
@@ -1881,9 +2418,31 @@ function buildSelfRankReport(product: CompetitorWatchProduct): SelfRankKeywordRe
   })
 }
 
-function rankedProductCount(report: SelfRankKeywordReport) {
-  const selfRanked = report.points.some((point) => point.organicRankNo || point.adRankNo)
-  return report.competitorSeries.length + (selfRanked ? 1 : 0)
+function hasRenderableRankData(report: SelfRankKeywordReport) {
+  return buildRankChartProductSeries(report).some(
+    (series) => hasRankValue(series.organicData) || hasRankValue(series.adData)
+  )
+}
+
+function rankedMonitoredCompetitorCount(product: CompetitorWatchProduct, keywordId: string) {
+  const monitoredCodes = new Set(
+    product.candidates
+      .filter((candidate) => candidateStatusForKeyword(candidate, keywordId) === 'confirmed')
+      .map((candidate) => normalizeNoonProductCode(candidate.noonProductCode))
+      .filter(Boolean)
+  )
+  return new Set(
+    product.rankPoints
+      .filter(
+        (point) =>
+          point.keywordId === keywordId &&
+          !point.isSelf &&
+          point.rankStatus === 'ranked' &&
+          Boolean(point.rankNo) &&
+          monitoredCodes.has(normalizeNoonProductCode(point.noonProductCode))
+      )
+      .map((point) => normalizeNoonProductCode(point.noonProductCode))
+  ).size
 }
 
 function reportMonitoredCount(product: CompetitorWatchProduct, keywordId: string) {
@@ -3010,6 +3569,10 @@ function openCandidateLink(url: string) {
   window.open(url, '_blank', 'noopener,noreferrer')
 }
 
+function isNestedInteractiveTarget(target: EventTarget | null) {
+  return target instanceof HTMLElement && Boolean(target.closest('button, a, input, textarea, select, [role="button"]'))
+}
+
 function getCandidatesForKeyword(product: CompetitorWatchProduct, keyword: CompetitorKeyword) {
   return product.candidates.filter((candidate) => candidateStatusForKeyword(candidate, keyword.id) !== 'ignored')
 }
@@ -3114,7 +3677,10 @@ function formatRankStatus(rankPoint?: CompetitorRankPoint, fallbackRankNo?: numb
 }
 
 function formatNotInRankRangeText(scanDepth = DEFAULT_RANK_SCAN_DEPTH) {
-  const depth = Number.isFinite(scanDepth) && scanDepth > 0 ? scanDepth : DEFAULT_RANK_SCAN_DEPTH
+  const depth =
+    Number.isFinite(scanDepth) && scanDepth > 0
+      ? Math.max(DEFAULT_RANK_SCAN_DEPTH, scanDepth)
+      : DEFAULT_RANK_SCAN_DEPTH
   return `未进前${depth}`
 }
 
