@@ -11,6 +11,7 @@ export type AppMenuKey =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'purchase-in-transit-goods'
   | 'warehouse-dispatch'
   | 'operations-competitor-analysis'
   | 'data-sales-analysis'
@@ -74,6 +75,7 @@ export type WorkspaceContentKind =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'purchase-in-transit-goods'
   | 'warehouse-dispatch'
   | 'operations-competitor-analysis'
   | 'sales-analytics'
@@ -246,6 +248,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '物流 / 货代管理',
     tabLabel: '货代管理',
     contentKind: 'purchase-logistics-quote',
+    closable: true
+  },
+  'purchase-in-transit-goods': {
+    key: 'purchase-in-transit-goods',
+    label: '在途商品',
+    path: '/purchase/in-transit-goods',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / 在途商品',
+    tabLabel: '在途商品',
+    contentKind: 'purchase-in-transit-goods',
     closable: true
   },
   'warehouse-dispatch': {
@@ -459,7 +471,8 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
       { type: 'workspace', key: 'purchase-ali1688-historical-orders' },
       { type: 'workspace', key: 'purchase-ali1688-sku-purchase-history' },
       { type: 'workspace', key: 'purchase-ali1688-collection' },
-      { type: 'workspace', key: 'purchase-order' }
+      { type: 'workspace', key: 'purchase-order' },
+      { type: 'workspace', key: 'purchase-in-transit-goods' }
     ]
   },
   {
@@ -638,6 +651,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
+    keys: ['purchase-in-transit-goods'],
+    urlPaths: ['/purchase/in-transit-goods'],
+    urlPathPrefixes: ['/api/in-transit-goods'],
+    menuNames: ['在途商品', '在途物流', '在途物流信息']
+  },
+  {
     keys: ['warehouse-dispatch'],
     urlPaths: ['/warehouse/dispatch'],
     urlPathPrefixes: ['/api/warehouse/dispatch'],
@@ -710,6 +729,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-ali1688-collection',
   'purchase-listing',
   'purchase-order',
+  'purchase-in-transit-goods',
   'purchase-profit',
   'purchase-logistics-quote',
   'warehouse-dispatch',

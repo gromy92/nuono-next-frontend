@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 import { Alert, Card, Spin } from 'antd';
 import type { AuthSession } from '../auth/session';
+import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
 import type { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
 import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProfitCalculatorWorkspace';
@@ -46,6 +47,9 @@ const AiFileParseBoard = lazyWorkspace(() =>
 );
 const LogisticsQuoteBoard = lazyWorkspace(() =>
   import('../logistics-quote/LogisticsQuoteBoard').then((module) => ({ default: module.LogisticsQuoteBoard }))
+);
+const InTransitGoodsPage = lazyWorkspace(() =>
+  import('../in-transit-goods/InTransitGoodsPage').then((module) => ({ default: module.InTransitGoodsPage }))
 );
 const ManualSelectionPage = lazyWorkspace(() =>
   import('../manual-selection/ManualSelectionPage').then((module) => ({ default: module.ManualSelectionPage }))
@@ -164,9 +168,13 @@ type ShellWorkspaceContentProps = {
   shouldRenderProcurementRequirementConfirmation: boolean;
   shellSession: AuthSession;
   onOpenProfitCalculatorPrefilled: OpenProfitCalculatorPrefilled;
+  onOpenInTransitBoxDetailTab: (request: InTransitBoxDetailTabRequest) => void;
+  onCloseInTransitBoxDetailTab: () => Promise<void> | void;
   profitBoard: ReactNode;
   productWorkspace: ProductManagementWorkspace;
   activeOwnerId?: number;
+  inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
+  isInTransitBoxDetailTab: boolean;
   isProductDetailTab: boolean;
   roleManagementTabKey: RoleManagementWorkspaceTabKey;
   canShowStoreManagement: boolean;
@@ -199,9 +207,13 @@ export function ShellWorkspaceContent({
   shouldRenderProcurementRequirementConfirmation,
   shellSession,
   onOpenProfitCalculatorPrefilled,
+  onOpenInTransitBoxDetailTab,
+  onCloseInTransitBoxDetailTab,
   profitBoard,
   productWorkspace,
   activeOwnerId,
+  inTransitBoxDetailTabRequest,
+  isInTransitBoxDetailTab,
   isProductDetailTab,
   roleManagementTabKey,
   canShowStoreManagement,
@@ -329,6 +341,19 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <LogisticsQuoteBoard />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'purchase-in-transit-goods') {
+    return (
+      <LazyWorkspaceBoundary>
+        <InTransitGoodsPage
+          boxDetailRequest={inTransitBoxDetailTabRequest}
+          isBoxDetailTab={isInTransitBoxDetailTab}
+          onCloseBoxDetailTab={onCloseInTransitBoxDetailTab}
+          onOpenBoxDetailTab={onOpenInTransitBoxDetailTab}
+        />
       </LazyWorkspaceBoundary>
     );
   }

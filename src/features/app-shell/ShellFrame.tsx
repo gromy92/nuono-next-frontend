@@ -14,6 +14,7 @@ import type { FormInstance, MenuProps, TabsProps } from 'antd';
 import { WorkspaceTabsBar, type WorkspaceTabItem } from './WorkspaceTabsBar';
 import { ReplicaLoginPage } from '../auth/ReplicaLoginPage';
 import type { AuthRoleView, AuthSession } from '../auth/session';
+import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
 import type { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
 import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProfitCalculatorWorkspace';
@@ -64,6 +65,8 @@ type ShellFrameProps = {
   handleUserDropdownClick: ({ key }: { key: string }) => void;
   handleWorkspaceTabChange: (key: string) => void;
   handleWorkspaceTabEdit: NonNullable<TabsProps['onEdit']>;
+  inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
+  isInTransitBoxDetailTab: boolean;
   isProductDetailTab: boolean;
   loadStoreSync: (ownerUserId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   loginError: string | null;
@@ -73,6 +76,8 @@ type ShellFrameProps = {
   logoutConfirmOpen: boolean;
   noMenuPermission: boolean;
   notifyRoleManagementDataChanged: (source?: 'store-management') => void;
+  onCloseInTransitBoxDetailTab: () => Promise<void> | void;
+  onOpenInTransitBoxDetailTab: (request: InTransitBoxDetailTabRequest) => void;
   onOpenProfitCalculatorPrefilled: OpenProfitCalculatorPrefilled;
   productWorkspace: ProductManagementWorkspace;
   profitBoard: ReactNode;
@@ -118,6 +123,8 @@ export function ShellFrame({
   handleUserDropdownClick,
   handleWorkspaceTabChange,
   handleWorkspaceTabEdit,
+  inTransitBoxDetailTabRequest,
+  isInTransitBoxDetailTab,
   isProductDetailTab,
   loadStoreSync,
   loginError,
@@ -127,6 +134,8 @@ export function ShellFrame({
   logoutConfirmOpen,
   noMenuPermission,
   notifyRoleManagementDataChanged,
+  onCloseInTransitBoxDetailTab,
+  onOpenInTransitBoxDetailTab,
   onOpenProfitCalculatorPrefilled,
   productWorkspace,
   profitBoard,
@@ -258,9 +267,13 @@ export function ShellFrame({
                             shouldRenderProcurementRequirementConfirmation={shouldRenderProcurementRequirementConfirmation}
                             shellSession={shellSession}
                             onOpenProfitCalculatorPrefilled={onOpenProfitCalculatorPrefilled}
+                            onOpenInTransitBoxDetailTab={onOpenInTransitBoxDetailTab}
+                            onCloseInTransitBoxDetailTab={onCloseInTransitBoxDetailTab}
                             profitBoard={profitBoard}
                             productWorkspace={productWorkspace}
                             activeOwnerId={activeOwnerId}
+                            inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}
+                            isInTransitBoxDetailTab={isInTransitBoxDetailTab}
                             isProductDetailTab={isProductDetailTab}
                             roleManagementTabKey={userRoleActiveTabKey}
                             canShowStoreManagement={canShowStoreManagement}

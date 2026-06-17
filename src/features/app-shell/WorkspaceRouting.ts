@@ -24,6 +24,7 @@ export const PURCHASE_LISTING_PATH = workspaceMenuPath('purchase-listing')
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
+export const PURCHASE_IN_TRANSIT_GOODS_PATH = workspaceMenuPath('purchase-in-transit-goods')
 export const WAREHOUSE_DISPATCH_PATH = workspaceMenuPath('warehouse-dispatch')
 export const OPERATIONS_COMPETITOR_ANALYSIS_PATH = workspaceMenuPath('operations-competitor-analysis')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
@@ -80,6 +81,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantFileManagement',
   'grantProfit',
   'grantLogisticsQuote',
+  'grantInTransitGoods',
   'grantWarehouse',
   'grantAli1688HistoricalOrders',
   'grantManualSelection',
@@ -252,6 +254,7 @@ export function resolveSessionLandingMenuKey(
         'purchase-listing',
         'purchase-profit',
         'purchase-order',
+        'purchase-in-transit-goods',
         'warehouse-dispatch',
         'operations-competitor-analysis',
         'data-sales-analysis',
@@ -274,6 +277,7 @@ export function resolveSessionLandingMenuKey(
           'purchase-ali1688-collection',
           'purchase-listing',
           'purchase-order',
+          'purchase-in-transit-goods',
           'product-manage',
           'product-specs',
           'purchase-profit',
@@ -296,6 +300,7 @@ export function resolveSessionLandingMenuKey(
           'purchase-ali1688-collection',
           'purchase-listing',
           'purchase-order',
+          'purchase-in-transit-goods',
           'product-manage',
           'product-specs',
           'user-role',

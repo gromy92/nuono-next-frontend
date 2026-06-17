@@ -21,6 +21,7 @@ import {
   OPERATIONS_LIFECYCLE_RULES_PATH,
   PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH,
   PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH,
+  PURCHASE_IN_TRANSIT_GOODS_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
   WAREHOUSE_DISPATCH_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
@@ -114,6 +115,10 @@ function readDevSessionOverride(): AuthSession | null {
     pathname.startsWith('/purchase/order') ||
     pathname.startsWith(PURCHASE_1688_COLLECTION_PATH) ||
     pathname.startsWith(PURCHASE_LISTING_PATH) ||
+    search.get('grantPurchase') === '1'
+  const includeInTransitGoodsDevMenu =
+    pathname.startsWith(PURCHASE_IN_TRANSIT_GOODS_PATH) ||
+    search.get('grantInTransitGoods') === '1' ||
     search.get('grantPurchase') === '1'
   const includeProfitDevMenu =
     pathname.startsWith(PURCHASE_PROFIT_PATH) ||
@@ -280,6 +285,9 @@ function readDevSessionOverride(): AuthSession | null {
   if (includePurchaseDevMenu) {
     grantedMenus.push({ menuId: 24, menuName: '采购', urlPath: '/api/purchase/order' })
     grantedMenus.push({ menuId: 2401, menuName: '商品上架', urlPath: PURCHASE_LISTING_PATH })
+  }
+  if (includeInTransitGoodsDevMenu) {
+    grantedMenus.push({ menuId: 9302, menuName: '在途商品', urlPath: PURCHASE_IN_TRANSIT_GOODS_PATH })
   }
   if (
     currentAppPathname().startsWith(PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH) ||
