@@ -2,6 +2,8 @@ export type PurchaseSiteCode = string
 
 export type PurchaseTransportMode = 'AIR' | 'SEA' | 'UNSPECIFIED' | string
 
+export type PurchaseOrderFulfillmentType = 'WAREHOUSE_RECEIPT' | 'FACTORY_DIRECT' | string
+
 export type PurchaseCollectionStatus =
   | 'not_started'
   | 'collecting'
@@ -47,6 +49,9 @@ export type PurchaseOrderItem = {
   sourcingSpec?: string
   sourcingSize?: string
   sourcingColor?: string
+  fulfillmentType?: PurchaseOrderFulfillmentType
+  fulfillmentTypeLabel?: string
+  fulfillmentSourceName?: string
   totalQuantity: number
   allocations: SiteAllocation[]
   collectionStatus: PurchaseCollectionStatus
@@ -246,6 +251,8 @@ export type PurchaseOrderItemCommand = {
   site: PurchaseSiteCode
   transportMode: PurchaseTransportMode
   quantity: number
+  fulfillmentType: PurchaseOrderFulfillmentType
+  fulfillmentSourceName?: string
 }
 
 export type PurchaseOrderItemSiteQuantityCommand = {
@@ -268,6 +275,8 @@ export type AddPurchaseOrderItemsPayload = {
 
 export type UpdatePurchaseOrderItemPayload = {
   psku?: string
+  fulfillmentType?: PurchaseOrderFulfillmentType
+  fulfillmentSourceName?: string
   siteQuantities: PurchaseOrderItemSiteQuantityCommand[]
 }
 

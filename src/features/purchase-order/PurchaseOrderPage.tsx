@@ -50,6 +50,7 @@ import {
 import type {
   PurchaseCollectionStatus,
   PurchaseOrder,
+  PurchaseOrderFulfillmentType,
   PurchaseOrderItem,
   PurchaseOrderItemCommand,
   PurchaseOrderItemSiteQuantityCommand,
@@ -84,6 +85,8 @@ type AddItemsFormValues = {
 
 type UpdateItemFormValues = {
   psku?: string
+  fulfillmentType?: PurchaseOrderFulfillmentType
+  fulfillmentSourceName?: string
   siteQuantities?: SiteQuantityFormValue[]
 }
 
@@ -97,6 +100,8 @@ type PskuEntryFormValue = {
   site?: PurchaseSiteCode
   transportMode?: PurchaseTransportMode
   quantity?: number | null
+  fulfillmentType?: PurchaseOrderFulfillmentType
+  fulfillmentSourceName?: string
 }
 
 type SiteQuantityFormValue = {
@@ -183,6 +188,13 @@ const TRANSPORT_MODE_OPTIONS: Array<{ label: string; value: PurchaseTransportMod
 ]
 
 const DEFAULT_TRANSPORT_MODE: PurchaseTransportMode = 'AIR'
+
+const FULFILLMENT_TYPE_OPTIONS: Array<{ label: string; value: PurchaseOrderFulfillmentType }> = [
+  { label: '货到仓库', value: 'WAREHOUSE_RECEIPT' },
+  { label: '货到货代', value: 'FACTORY_DIRECT' }
+]
+
+const DEFAULT_FULFILLMENT_TYPE: PurchaseOrderFulfillmentType = 'WAREHOUSE_RECEIPT'
 
 export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   const [createOrderForm] = Form.useForm<CreateOrderFormValues>()
@@ -426,6 +438,12 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
         message.warning('请至少添加一行 PSKU、站点和数量。')
         return
       }
+      const duplicateMessage = duplicatePskuSiteMessage(items)
+      if (duplicateMessage) {
+        setCreateErrorMessage(duplicateMessage)
+        message.warning(duplicateMessage)
+        return
+      }
       setCreateErrorMessage(undefined)
       setActionKey('create-order')
       const nextOrder = await createPurchaseOrder({
@@ -533,6 +551,8 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     const defaultSite = getOrderSiteOptions(order, session)[0]?.value || DEFAULT_SITE_CODES[0]
     editItemForm.setFieldsValue({
       psku: item.partnerSku,
+      fulfillmentType: normalizeFulfillmentType(item.fulfillmentType),
+      fulfillmentSourceName: item.fulfillmentSourceName,
       siteQuantities: item.allocations?.length
         ? item.allocations.map((allocation) => ({
           siteCode: allocation.site,
@@ -560,6 +580,12 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       const items = normalizePskuEntries(values.items)
       if (!items.length) {
         message.warning('请至少添加一行 PSKU、站点、运输方式和数量。')
+        return
+      }
+      const duplicateMessage = duplicatePskuSiteMessage(items, addItemsOrder)
+      if (duplicateMessage) {
+        setAddItemsErrorMessage(duplicateMessage)
+        message.warning(duplicateMessage)
         return
       }
       setAddItemsErrorMessage(undefined)
@@ -601,6 +627,8 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       setEditItemErrorMessage(undefined)
       const nextOrder = await updatePurchaseOrderItem(order.id, item.id, {
         psku: item.partnerSku,
+        fulfillmentType: normalizeFulfillmentType(values.fulfillmentType),
+        fulfillmentSourceName: values.fulfillmentSourceName?.trim() || undefined,
         siteQuantities
       })
       replaceOrder(nextOrder)
@@ -962,7 +990,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
         okButtonProps={{ loading: actionKey === 'create-order' }}
         onOk={() => void handleCreateOrder()}
         onCancel={closeCreateOrderModal}
-        width={760}
+        width={980}
       >
         <Form form={createOrderForm} layout="vertical" requiredMark={false} className="purchase-create-form">
           {createErrorMessage ? (
@@ -1011,7 +1039,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
         okButtonProps={{ loading: actionKey === `add-items:${addItemsOrder?.id}` }}
         onOk={() => void handleAddItemsToOrder()}
         onCancel={closeAddItemsModal}
-        width={760}
+        width={980}
       >
         <Form form={addItemsForm} layout="vertical" requiredMark={false} className="purchase-create-form">
           {addItemsErrorMessage ? (
@@ -1037,15 +1065,20 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
         okButtonProps={{ loading: actionKey === `edit-item:${editItemTarget?.item.id}` }}
         onOk={() => void handleUpdateItem()}
         onCancel={closeEditItemModal}
-        width={680}
+        width={820}
       >
-        <Form form={editItemForm} layout="vertical" requiredMark={false} className="purchase-create-form">
+        <Form form={editItemForm} layout="vertical" requiredMark={false} className="purchase-create-form purchase-edit-item-form">
           {editItemErrorMessage ? (
             <Alert type="error" showIcon message={editItemErrorMessage} style={{ marginBottom: 12 }} />
           ) : null}
-          <Form.Item label="PSKU" name="psku">
-            <Input disabled />
-          </Form.Item>
+          <div className="purchase-edit-item-header">
+            <Form.Item label="PSKU" name="psku">
+              <Input disabled />
+            </Form.Item>
+            <Form.Item label="到货方式" name="fulfillmentType" rules={[{ required: true, message: '请选择到货方式' }]}>
+              <Select options={FULFILLMENT_TYPE_OPTIONS} />
+            </Form.Item>
+          </div>
           <SiteQuantityFormList
             addButtonText="添加站点数量"
             siteOptions={getOrderSiteOptions(editItemTarget?.order, session)}
@@ -1319,6 +1352,8 @@ function PurchaseItemCard({
   const imageUrl = item.sourceImageUrl || item.productImageUrl
   const titlePair = buildItemTitlePair(item)
   const showInlinePsku = !sameDisplayText(titlePair.cn, item.partnerSku)
+  const fulfillmentType = normalizeFulfillmentType(item.fulfillmentType)
+  const fulfillmentLabel = item.fulfillmentTypeLabel || fulfillmentTypeLabel(fulfillmentType)
 
   return (
     <article className="purchase-item-card">
@@ -1329,6 +1364,7 @@ function PurchaseItemCard({
             <Text strong ellipsis className="purchase-item-title">
               {titlePair.cn}
             </Text>
+            <Tag color={fulfillmentType === 'FACTORY_DIRECT' ? 'gold' : 'blue'}>{fulfillmentLabel}</Tag>
             <ProductDetailButton item={item} imageUrl={imageUrl} titlePair={titlePair} />
           </div>
           {showInlinePsku || titlePair.en ? (
@@ -1678,6 +1714,9 @@ function PskuRowsFormList({
                   <Form.Item name={[field.name, 'transportMode']} rules={[{ required: true, message: '请选择运输方式' }]}>
                     <Select options={TRANSPORT_MODE_OPTIONS} placeholder="运输方式" />
                   </Form.Item>
+                  <Form.Item name={[field.name, 'fulfillmentType']} rules={[{ required: true, message: '请选择到货方式' }]}>
+                    <Select options={FULFILLMENT_TYPE_OPTIONS} placeholder="到货方式" />
+                  </Form.Item>
                   <Form.Item
                     name={[field.name, 'quantity']}
                     rules={[
@@ -1712,7 +1751,8 @@ function createEmptyPskuEntry(site: PurchaseSiteCode): PskuEntryFormValue {
     psku: '',
     site,
     transportMode: DEFAULT_TRANSPORT_MODE,
-    quantity: 1
+    quantity: 1,
+    fulfillmentType: DEFAULT_FULFILLMENT_TYPE
   }
 }
 
@@ -1775,10 +1815,23 @@ function buildProductAutoCompleteOptions(options: ProductOption[]) {
 }
 
 function buildCreateStoreOptions(session?: AuthSession | null) {
-  return availableSessionStores(session).map((store) => ({
-    label: storeOptionLabel(store),
-    value: store.storeCode
-  }))
+  const currentGroupKey = session?.currentStore ? storeGroupKey(session.currentStore) : ''
+  const optionsByGroup = new Map<string, { label: string; value: string }>()
+  availableSessionStores(session).forEach((store) => {
+    const key = storeGroupKey(store)
+    if (!key) {
+      return
+    }
+    const existing = optionsByGroup.get(key)
+    const value = key === currentGroupKey && session?.currentStore?.storeCode
+      ? session.currentStore.storeCode
+      : existing?.value || store.storeCode
+    optionsByGroup.set(key, {
+      label: storeGroupOptionLabel(store),
+      value
+    })
+  })
+  return Array.from(optionsByGroup.values())
 }
 
 function getCreateStoreSiteOptions(session?: AuthSession | null, storeCode?: string) {
@@ -1830,11 +1883,12 @@ function availableSessionStores(session?: AuthSession | null) {
   })
 }
 
-function storeOptionLabel(store: NonNullable<AuthSession['userStores']>[number]) {
-  return [
-    store.projectName || store.projectCode || store.storeCode,
-    normalizeSiteCode(store.site)
-  ].filter(Boolean).join(' / ')
+function storeGroupKey(store: NonNullable<AuthSession['userStores']>[number]) {
+  return store.projectCode || store.projectName || store.orgCode || store.orgName || store.storeCode
+}
+
+function storeGroupOptionLabel(store: NonNullable<AuthSession['userStores']>[number]) {
+  return store.projectName || store.projectCode || store.orgName || store.orgCode || store.storeCode
 }
 
 function normalizeSiteCode(value?: string) {
@@ -1939,14 +1993,66 @@ function normalizePskuEntries(rows?: PskuEntryFormValue[]): PurchaseOrderItemCom
     .filter((row): row is PurchaseOrderItemCommand => Boolean(row))
 }
 
+function duplicatePskuSiteMessage(items: PurchaseOrderItemCommand[], order?: PurchaseOrder | null) {
+  const pending = new Map<string, PurchaseOrderItemCommand>()
+  for (const item of items) {
+    const site = normalizeSiteCode(item.site)
+    const key = pskuSiteKey(item.psku, site)
+    if (!key) {
+      continue
+    }
+    if (pending.has(key)) {
+      return `${item.psku} 在站点 ${site} 重复填写，不能重复添加相同商品相同站点。`
+    }
+    pending.set(key, item)
+  }
+
+  if (!order) {
+    return undefined
+  }
+  for (const item of items) {
+    const site = normalizeSiteCode(item.site)
+    const existingItem = (order.items || []).find((orderItem) => purchaseOrderItemMatchesPsku(orderItem, item.psku))
+    if (existingItem?.allocations?.some((allocation) => normalizeSiteCode(allocation.site) === site)) {
+      return `${item.psku} 已在站点 ${site} 加入采购单，不能重复添加相同商品相同站点。`
+    }
+  }
+  return undefined
+}
+
+function pskuSiteKey(psku?: string, site?: string) {
+  const normalizedPsku = psku?.trim().toUpperCase()
+  const normalizedSite = normalizeSiteCode(site)
+  return normalizedPsku && normalizedSite ? `${normalizedPsku}:${normalizedSite}` : ''
+}
+
+function purchaseOrderItemMatchesPsku(item: PurchaseOrderItem, psku: string) {
+  return sameDisplayText(item.partnerSku, psku)
+    || sameDisplayText(item.skuParent, psku)
+    || (item.allocations || []).some((allocation) => sameDisplayText(allocation.pskuCode, psku))
+}
+
 function normalizePskuEntry(row?: PskuEntryFormValue): PurchaseOrderItemCommand | null {
   const item = {
     psku: row?.psku?.trim() || '',
     site: normalizeSiteCode(row?.site),
     transportMode: normalizeTransportMode(row?.transportMode),
-    quantity: row?.quantity || 0
+    quantity: row?.quantity || 0,
+    fulfillmentType: normalizeFulfillmentType(row?.fulfillmentType),
+    fulfillmentSourceName: row?.fulfillmentSourceName?.trim() || undefined
   }
   return item.psku && item.site && item.transportMode && item.quantity > 0 ? item : null
+}
+
+function normalizeFulfillmentType(value?: PurchaseOrderFulfillmentType | null): PurchaseOrderFulfillmentType {
+  if (value === 'FACTORY_DIRECT') {
+    return 'FACTORY_DIRECT'
+  }
+  return DEFAULT_FULFILLMENT_TYPE
+}
+
+function fulfillmentTypeLabel(value?: PurchaseOrderFulfillmentType | null) {
+  return normalizeFulfillmentType(value) === 'FACTORY_DIRECT' ? '货到货代' : '货到仓库'
 }
 
 function normalizeSiteQuantityEntries(rows?: SiteQuantityFormValue[]): PurchaseOrderItemSiteQuantityCommand[] {

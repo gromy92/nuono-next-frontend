@@ -445,6 +445,11 @@ button.purchase-order-summary-chip:hover {
   padding-inline: 0;
 }
 
+.purchase-item-title-row .ant-tag {
+  flex: 0 0 auto;
+  margin-inline-end: 0;
+}
+
 .purchase-item-title.ant-typography {
   min-width: 0;
   color: #0f172a;
@@ -836,7 +841,14 @@ button.purchase-order-summary-chip:hover {
 }
 
 .purchase-psku-entry-row {
-  grid-template-columns: minmax(170px, 1fr) minmax(116px, 0.58fr) minmax(104px, 0.48fr) 96px 34px;
+  grid-template-columns: minmax(220px, 1fr) 126px 116px 126px 92px 40px;
+}
+
+.purchase-edit-item-header {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 220px;
+  gap: 12px;
+  align-items: start;
 }
 
 .purchase-single-psku-row,
@@ -851,7 +863,12 @@ button.purchase-order-summary-chip:hover {
 }
 
 .purchase-site-quantity-row {
-  grid-template-columns: minmax(116px, 0.62fr) minmax(104px, 0.52fr) 96px 34px;
+  grid-template-columns: minmax(170px, 1fr) 150px 110px 40px;
+}
+
+.purchase-site-quantity-row .ant-input-number,
+.purchase-psku-entry-row .ant-input-number {
+  width: 100%;
 }
 
 .purchase-product-option {
