@@ -1204,3 +1204,23 @@
   color: #1677ff;
   font-weight: 500;
 }
+
+.product-specs-logistics-select--confirmed .ant-select-selector {
+  background: #fffdf2 !important;
+  border-color: #f5c542 !important;
+  box-shadow: 0 0 0 1px rgba(245, 197, 66, 0.16) !important;
+}
+
+.product-specs-logistics-select--missing .ant-select-selector {
+  background: #fff7f7 !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.16) !important;
+}
+
+.product-specs-logistics-select--missing .ant-select-selection-item {
+  color: #b91c1c !important;
+}
+
+.product-specs-logistics-select--saving .ant-select-selector {
+  opacity: 0.72;
+}
