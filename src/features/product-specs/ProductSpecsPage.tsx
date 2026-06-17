@@ -2,7 +2,7 @@ import { App, Button, Empty, Input, InputNumber, Select, Space, Table, Tag, Tool
 import type { ColumnsType } from 'antd/es/table';
 import { CheckOutlined, CloseOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AuthSession, AuthSessionStore } from '../auth/session';
+import type { AuthSession } from '../auth/session';
 import {
   fetchProductSpecsOverview,
   saveProductLogisticsProfile,
@@ -17,7 +17,7 @@ import type {
 } from '../product-management/types';
 import { formatSnapshotValue, normalizeNoonImageUrl } from '../product-management/utils/common';
 
-const { Text } = Typography;
+const { Paragraph, Text } = Typography;
 
 type ProductSpecsPageProps = {
   session: AuthSession;
@@ -48,7 +48,13 @@ type SpecNumberField =
   | 'cartonQuantity';
 
 type EditableSourceType = Extract<ProductVariantSpecSourceType, 'ali1688' | 'warehouse'>;
-type SpecCompletenessFilter = 'all' | 'domestic_missing' | 'official_missing';
+type SpecCompletenessFilter =
+  | 'all'
+  | 'ali1688_missing'
+  | 'warehouse_missing'
+  | 'domestic_missing'
+  | 'official_missing'
+  | 'logistics_missing';
 
 type SpecSourceDraft = Pick<
   ProductVariantSpecSourcePayload,
@@ -63,11 +69,6 @@ type SpecField = {
   label: string;
   min?: number;
   precision?: number;
-};
-
-type StoreOption = {
-  value: string;
-  label: string;
 };
 
 type LogisticsOption = {
@@ -90,31 +91,93 @@ const cartonSpecFields: SpecField[] = [
   { key: 'cartonQuantity', label: '数量', min: 1, precision: 0 }
 ];
 
-const baseLogisticsOptions: LogisticsOption[] = [
-  { label: '待确认', value: 'unknown' },
-  { label: '无', value: 'none' }
+const magneticLogisticsOptions: LogisticsOption[] = [
+  { label: '磁性', value: 'unknown' },
+  { label: '不带磁', value: 'none' },
+  { label: '带磁', value: 'magnetic' }
 ];
 
-const logisticsSelectOptions: Partial<Record<keyof ProductLogisticsProfilePayload, LogisticsOption[]>> = {
-  batteryType: [...baseLogisticsOptions, { label: '带电', value: 'battery_equipment' }],
-  electricType: [...baseLogisticsOptions, { label: '电器', value: 'electric_equipment_review' }],
-  magneticType: [...baseLogisticsOptions, { label: '磁性', value: 'magnetic' }],
-  liquidType: [...baseLogisticsOptions, { label: '液体', value: 'liquid' }],
-  powderType: [...baseLogisticsOptions, { label: '粉末', value: 'powder' }],
-  woodenMaterialType: [...baseLogisticsOptions, { label: '需复核', value: 'wooden_material_review' }],
-  bladeWeaponType: [...baseLogisticsOptions, { label: '需复核', value: 'blade_tool_review' }]
+type LogisticsProfileField =
+  | 'batteryType'
+  | 'electricType'
+  | 'magneticType'
+  | 'liquidType'
+  | 'powderType'
+  | 'woodenMaterialType'
+  | 'bladeWeaponType';
+
+type LogisticsFieldConfig = {
+  field: LogisticsProfileField;
+  ariaLabel: string;
+  options: LogisticsOption[];
 };
 
-const logisticsStatusOptions: LogisticsOption[] = [
-  { label: '待复核', value: 'needs_review' },
-  { label: '已确认', value: 'confirmed' }
+const logisticsFieldConfigs: LogisticsFieldConfig[] = [
+  {
+    field: 'batteryType',
+    ariaLabel: '带电',
+    options: [
+      { label: '带电', value: 'unknown' },
+      { label: '不带电', value: 'none' },
+      { label: '带电', value: 'battery_equipment' }
+    ]
+  },
+  {
+    field: 'electricType',
+    ariaLabel: '电器',
+    options: [
+      { label: '电器', value: 'unknown' },
+      { label: '非电器', value: 'none' },
+      { label: '电器', value: 'electric_equipment_review' }
+    ]
+  },
+  {
+    field: 'magneticType',
+    ariaLabel: '磁性',
+    options: magneticLogisticsOptions
+  },
+  {
+    field: 'liquidType',
+    ariaLabel: '液体',
+    options: [
+      { label: '液体', value: 'unknown' },
+      { label: '非液体', value: 'none' },
+      { label: '液体', value: 'liquid' }
+    ]
+  },
+  {
+    field: 'powderType',
+    ariaLabel: '粉末',
+    options: [
+      { label: '粉末', value: 'unknown' },
+      { label: '非粉末', value: 'none' },
+      { label: '粉末', value: 'powder' }
+    ]
+  },
+  {
+    field: 'woodenMaterialType',
+    ariaLabel: '木材',
+    options: [
+      { label: '木材', value: 'unknown' },
+      { label: '非木材', value: 'none' },
+      { label: '木材', value: 'wooden_material_review' }
+    ]
+  },
+  {
+    field: 'bladeWeaponType',
+    ariaLabel: '刀具',
+    options: [
+      { label: '刀具', value: 'unknown' },
+      { label: '非刀具', value: 'none' },
+      { label: '刀具', value: 'blade_tool_review' }
+    ]
+  }
 ];
 
 export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPageProps) {
   const { message } = App.useApp();
   const ownerUserId = resolveRequestOwnerUserId(session, activeOwnerId);
-  const initialStoreCode = resolveInitialSpecStoreCode(session);
-  const [storeCode, setStoreCode] = useState(initialStoreCode);
+  const storeCode = resolveCurrentSpecStoreCode(session);
   const [keyword, setKeyword] = useState('');
   const [completenessFilter, setCompletenessFilter] = useState<SpecCompletenessFilter>('all');
   const [rows, setRows] = useState<ProductVariantSpecPayload[]>([]);
@@ -125,28 +188,9 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
   const [selectingEffectiveKey, setSelectingEffectiveKey] = useState<string | null>(null);
   const [logisticsSavingKey, setLogisticsSavingKey] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (initialStoreCode && !storeCode) {
-      setStoreCode(initialStoreCode);
-    }
-  }, [initialStoreCode, storeCode]);
-
-  const storeOptions = useMemo(() => {
-    return buildSpecStoreOptions(session);
-  }, [session.userStores]);
-
   const storeLabelByCode = useMemo(() => {
-    return new Map(storeOptions.map((option) => [option.value, option.label]));
-  }, [storeOptions]);
-
-  useEffect(() => {
-    if (!storeOptions.length || !storeCode) {
-      return;
-    }
-    if (!storeOptions.some((option) => option.value === storeCode)) {
-      setStoreCode(storeOptions[0]?.value || '');
-    }
-  }, [storeCode, storeOptions]);
+    return buildStoreLabelByCode(session);
+  }, [session]);
 
   const loadRows = useCallback(async () => {
     const normalizedStoreCode = storeCode.trim();
@@ -263,17 +307,18 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         ...row.logisticsProfile,
         ...patch
       };
+      const normalizedNextProfile = withLogisticsConfirmationStatus(nextProfile);
       const key = String(row.variantId);
       setRows((currentRows) =>
         currentRows.map((currentRow) =>
-          currentRow.variantId === row.variantId ? { ...currentRow, logisticsProfile: nextProfile } : currentRow
+          currentRow.variantId === row.variantId ? { ...currentRow, logisticsProfile: normalizedNextProfile } : currentRow
         )
       );
       setLogisticsSavingKey(key);
 
       try {
         const saved = await saveProductLogisticsProfile({
-          ...nextProfile,
+          ...normalizedNextProfile,
           ownerUserId,
           storeCode: normalizedStoreCode,
           variantId: row.variantId
@@ -297,20 +342,29 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
     () => [
       {
         title: '商品',
-        width: 262,
+        width: 284,
         render: (_, row) => (
-          <Space size={8} align="start" style={{ minWidth: 0, width: 254 }}>
-            <ProductThumb src={row.imageUrl} alt={formatSnapshotValue(row.title || row.partnerSku)} />
-            <Space direction="vertical" size={2} style={{ minWidth: 0, maxWidth: 186 }}>
+          <Space size={8} align="start" style={{ minWidth: 0, width: 276 }}>
+            <ProductThumb
+              src={row.imageUrl}
+              alt={formatSnapshotValue(row.title || row.partnerSku)}
+              variantId={row.variantId}
+            />
+            <Space direction="vertical" size={2} style={{ minWidth: 0, maxWidth: 198 }}>
               <Tooltip title={formatSnapshotValue(row.title)}>
-                <Text strong ellipsis style={{ maxWidth: 186, fontSize: 12 }}>
+                <Paragraph
+                  strong
+                  data-testid={row.variantId ? `product-spec-title-${row.variantId}` : undefined}
+                  ellipsis={{ rows: 3 }}
+                  style={{ maxWidth: 198, fontSize: 12, lineHeight: '16px', marginBottom: 0 }}
+                >
                   {formatSnapshotValue(row.title)}
-                </Text>
+                </Paragraph>
               </Tooltip>
               <Text type="secondary" style={{ fontSize: 12 }}>
                 PSKU {formatSnapshotValue(row.partnerSku)}
               </Text>
-              <Text type="secondary" ellipsis style={{ fontSize: 13, maxWidth: 186 }}>
+              <Text type="secondary" ellipsis style={{ fontSize: 13, maxWidth: 198 }}>
                 {formatSnapshotValue(storeLabelByCode.get(row.storeCode || storeCode) || row.storeCode || storeCode)}
               </Text>
             </Space>
@@ -319,7 +373,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
       },
       {
         title: '国内规格',
-        width: 720,
+        width: 550,
         render: (_, row) => (
           <DomesticSpecMatrix
             row={row}
@@ -339,13 +393,8 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         )
       },
       {
-        title: 'Noon官方尺寸',
-        width: 185,
-        render: (_, row) => <NoonOfficialSpec source={findSource(row.sources, 'noon_official')} />
-      },
-      {
         title: '物流属性',
-        width: 300,
+        width: 250,
         fixed: 'right',
         render: (_, row) => (
           <LogisticsInlineEditor
@@ -376,10 +425,16 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
 
   const filteredRows = useMemo(() => {
     switch (completenessFilter) {
+      case 'ali1688_missing':
+        return rows.filter((row) => isSourceProductSpecMissing(findSource(row.sources, 'ali1688')));
+      case 'warehouse_missing':
+        return rows.filter((row) => isSourceProductSpecMissing(findSource(row.sources, 'warehouse')));
       case 'domestic_missing':
         return rows.filter(isDomesticSpecMissing);
       case 'official_missing':
         return rows.filter(isOfficialSpecMissing);
+      case 'logistics_missing':
+        return rows.filter(isLogisticsProfileMissing);
       default:
         return rows;
     }
@@ -410,22 +465,14 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
             value={completenessFilter}
             options={[
               { value: 'all', label: '全部规格' },
+              { value: 'ali1688_missing', label: '1688规格缺失' },
+              { value: 'warehouse_missing', label: '仓管规格缺失' },
               { value: 'domestic_missing', label: '国内规格缺失' },
-              { value: 'official_missing', label: '官方尺寸缺失' }
+              { value: 'official_missing', label: 'Noon官方尺寸缺失' },
+              { value: 'logistics_missing', label: '物流属性缺失' }
             ]}
-            style={{ width: 150 }}
+            style={{ width: 172 }}
             onChange={setCompletenessFilter}
-          />
-          <Select
-            showSearch
-            value={storeCode || undefined}
-            placeholder="店铺"
-            options={storeOptions}
-            style={{ width: 200 }}
-            onChange={(value) => {
-              setStoreCode(value);
-              setEditingKey(null);
-            }}
           />
           <Tooltip title="刷新">
             <Button icon={<SyncOutlined />} loading={loading} onClick={() => void loadRows()} />
@@ -439,7 +486,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         loading={loading}
         columns={columns}
         dataSource={filteredRows}
-        scroll={{ x: 1460 }}
+        scroll={{ x: 1230 }}
         pagination={{
           pageSize: 50,
           showSizeChanger: true,
@@ -482,7 +529,7 @@ function DomesticSpecMatrix(props: {
     onSelectEffectiveSource
   } = props;
   return (
-    <div style={{ display: 'grid', gap: 6 }}>
+    <div style={{ display: 'grid', gap: 6, width: 550, maxWidth: '100%' }}>
       <SpecGridHeader includeCarton includeSource includeEffective />
       {(['ali1688', 'warehouse'] as EditableSourceType[]).map((sourceType) => {
         const source = findSource(sources, sourceType);
@@ -497,6 +544,7 @@ function DomesticSpecMatrix(props: {
             color={sourceColors[sourceType]}
             row={row}
             sourceType={sourceType}
+            sourceTestId={row.variantId ? `product-specs-source-${sourceType}-${row.variantId}` : undefined}
             source={source}
             fallback={effectiveSourceType === sourceType ? row : undefined}
             includeCarton
@@ -515,20 +563,15 @@ function DomesticSpecMatrix(props: {
           />
         );
       })}
-    </div>
-  );
-}
-
-function NoonOfficialSpec({ source }: { source?: ProductVariantSpecSourcePayload }) {
-  return (
-    <div style={{ display: 'grid', gap: 6 }}>
-      <SpecGridHeader includeCarton={false} includeSource={false} />
       <SpecGridRow
         label="Noon官方"
         color="purple"
-        source={source}
-        includeCarton={false}
-        showSource={false}
+        row={row}
+        source={findSource(sources, 'noon_official')}
+        cellTestSourceType="noon_official"
+        sourceTestId={row.variantId ? `product-specs-source-noon_official-${row.variantId}` : undefined}
+        includeCarton
+        showCartonFields={false}
       />
     </div>
   );
@@ -548,123 +591,80 @@ function LogisticsInlineEditor(props: {
   const disabled = savingBlocked;
   return (
     <div
-      style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 90px)', gap: 5, alignItems: 'end', minWidth: 0 }}
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+        gap: 5,
+        alignItems: 'end',
+        width: 240,
+        maxWidth: '100%',
+        minWidth: 0
+      }}
     >
-      <LogisticsSelectField
-        label="状态"
-        value={profile.profileStatus || 'needs_review'}
-        options={logisticsStatusOptions}
-        disabled={disabled}
-        saving={saving}
-        onChange={(value) => void onChange(row, { profileStatus: value, manualConfirmRequired: value !== 'confirmed' })}
-      />
-      <LogisticsSelectField
-        label="带电"
-        value={profile.batteryType || 'unknown'}
-        options={logisticsSelectOptions.batteryType || []}
-        disabled={disabled}
-        sensitiveField
-        saving={saving}
-        onChange={(value) => void onChange(row, { batteryType: value })}
-      />
-      <LogisticsSelectField
-        label="电器"
-        value={profile.electricType || 'unknown'}
-        options={logisticsSelectOptions.electricType || []}
-        disabled={disabled}
-        sensitiveField
-        saving={saving}
-        onChange={(value) => void onChange(row, { electricType: value })}
-      />
-      <LogisticsSelectField
-        label="磁性"
-        value={profile.magneticType || 'unknown'}
-        options={logisticsSelectOptions.magneticType || []}
-        disabled={disabled}
-        sensitiveField
-        saving={saving}
-        onChange={(value) => void onChange(row, { magneticType: value })}
-      />
-      <LogisticsSelectField
-        label="液体"
-        value={profile.liquidType || 'unknown'}
-        options={logisticsSelectOptions.liquidType || []}
-        disabled={disabled}
-        sensitiveField
-        saving={saving}
-        onChange={(value) => void onChange(row, { liquidType: value })}
-      />
-      <LogisticsSelectField
-        label="粉末"
-        value={profile.powderType || 'unknown'}
-        options={logisticsSelectOptions.powderType || []}
-        disabled={disabled}
-        sensitiveField
-        saving={saving}
-        onChange={(value) => void onChange(row, { powderType: value })}
-      />
-      <LogisticsSelectField
-        label="木材"
-        value={profile.woodenMaterialType || 'unknown'}
-        options={logisticsSelectOptions.woodenMaterialType || []}
-        disabled={disabled}
-        sensitiveField
-        saving={saving}
-        onChange={(value) => void onChange(row, { woodenMaterialType: value })}
-      />
-      <LogisticsSelectField
-        label="刀具"
-        value={profile.bladeWeaponType || 'unknown'}
-        options={logisticsSelectOptions.bladeWeaponType || []}
-        disabled={disabled}
-        sensitiveField
-        saving={saving}
-        onChange={(value) => void onChange(row, { bladeWeaponType: value })}
-      />
+      {logisticsFieldConfigs.map((config) => (
+        <LogisticsSelectField
+          key={config.field}
+          ariaLabel={config.ariaLabel}
+          testId={row.variantId ? `product-specs-logistics-select-${config.field}-${row.variantId}` : undefined}
+          value={profile[config.field] || 'unknown'}
+          options={config.options}
+          disabled={disabled}
+          saving={saving}
+          onChange={(value) => void onChange(row, { [config.field]: value })}
+        />
+      ))}
     </div>
   );
 }
 
 function LogisticsSelectField(props: {
-  label: string;
+  ariaLabel: string;
+  testId?: string;
   value?: string;
   options: LogisticsOption[];
   disabled?: boolean;
-  sensitiveField?: boolean;
   saving?: boolean;
   onChange: (value: string) => void;
 }) {
-  const { label, value, options, disabled, sensitiveField, saving, onChange } = props;
+  const { ariaLabel, testId, value, options, disabled, saving, onChange } = props;
   const normalizedValue = value || 'unknown';
-  const hasSensitiveValue = Boolean(sensitiveField && !isNeutralLogisticsValue(normalizedValue));
-  const isNoneValue = normalizedValue === 'none';
+  const confirmed = isConfirmedLogisticsValue(normalizedValue);
   return (
-    <label style={{ display: 'grid', gap: 3, minWidth: 0 }}>
-      <Text type="secondary" style={{ fontSize: 12, lineHeight: '16px' }}>
-        {label}
-      </Text>
+    <label aria-label={ariaLabel} style={{ display: 'grid', gap: 3, minWidth: 0 }}>
       <Select
+        data-testid={testId}
+        aria-label={ariaLabel}
         size="small"
         value={normalizedValue}
         options={options}
         disabled={disabled}
         className={[
           'product-specs-logistics-select',
-          isNoneValue ? 'product-specs-logistics-select--none' : '',
-          hasSensitiveValue ? 'product-specs-logistics-select--sensitive' : '',
+          confirmed ? 'product-specs-logistics-select--confirmed' : 'product-specs-logistics-select--missing',
           saving ? 'product-specs-logistics-select--saving' : ''
         ]
           .filter(Boolean)
           .join(' ')}
-        style={{ width: '100%' }}
+        style={{ width: '100%', minWidth: 0 }}
         onChange={onChange}
       />
     </label>
   );
 }
 
-function isNeutralLogisticsValue(value: string) {
-  return value === 'none' || value === 'unknown';
+function isConfirmedLogisticsValue(value: string) {
+  return Boolean(value && value !== 'unknown');
+}
+
+function withLogisticsConfirmationStatus(profile: ProductLogisticsProfilePayload): ProductLogisticsProfilePayload {
+  const confirmed = logisticsFieldConfigs.every((config) =>
+    isConfirmedLogisticsValue(String(profile[config.field] || 'unknown'))
+  );
+  return {
+    ...profile,
+    profileStatus: confirmed ? 'confirmed' : 'needs_review',
+    manualConfirmRequired: !confirmed
+  };
 }
 
 function SpecGridHeader(props: { includeCarton: boolean; includeSource: boolean; includeEffective?: boolean }) {
@@ -696,9 +696,12 @@ function SpecGridRow(props: {
   color: string;
   row?: ProductVariantSpecPayload;
   sourceType?: EditableSourceType;
+  cellTestSourceType?: ProductVariantSpecSourceType;
+  sourceTestId?: string;
   source?: ProductVariantSpecSourcePayload;
   fallback?: ProductVariantSpecPayload;
   includeCarton: boolean;
+  showCartonFields?: boolean;
   showSource?: boolean;
   editable?: boolean;
   effective?: boolean;
@@ -718,9 +721,12 @@ function SpecGridRow(props: {
     color,
     row,
     sourceType,
+    cellTestSourceType,
+    sourceTestId,
     source,
     fallback,
     includeCarton,
+    showCartonFields = includeCarton,
     showSource = true,
     editable,
     effective,
@@ -736,7 +742,8 @@ function SpecGridRow(props: {
     onSelectEffectiveSource
   } = props;
   const valueSource = source || fallback;
-  const fields = includeCarton ? [...productSpecFields, ...cartonSpecFields] : productSpecFields;
+  const fields = showCartonFields ? [...productSpecFields, ...cartonSpecFields] : productSpecFields;
+  const testSourceType = cellTestSourceType || sourceType;
   const canSelectEffective = Boolean(editable && row && sourceType && source?.sourceId);
   return (
     <div style={specGridStyle({ includeCarton, includeSource: showSource, includeEffective: Boolean(editable) })}>
@@ -771,7 +778,7 @@ function SpecGridRow(props: {
       {showSource ? (
         <Space size={4} wrap style={{ minWidth: 0 }}>
           <Tag color={color} style={{ marginInlineEnd: 0 }}>
-            {label}
+            <span data-testid={sourceTestId}>{label}</span>
           </Tag>
           {editable && row && sourceType && !editing ? (
             <Tooltip title="编辑">
@@ -826,22 +833,30 @@ function SpecGridRow(props: {
             onChange={(value) => onDraftNumberChange?.(field.key, value)}
           />
         ) : (
-          <SpecValue key={field.key} value={valueSource?.[field.key]} />
+          <SpecValue
+            key={field.key}
+            value={valueSource?.[field.key]}
+            testId={
+              row?.variantId && testSourceType
+                ? `product-specs-spec-cell-${testSourceType}-${field.key}-${row.variantId}`
+                : undefined
+            }
+          />
         )
       )}
     </div>
   );
 }
 
-function SpecValue({ value }: { value?: number }) {
+function SpecValue({ value, testId }: { value?: number; testId?: string }) {
   return (
-    <Text style={{ fontSize: 12, whiteSpace: 'nowrap' }}>
+    <Text data-testid={testId} style={{ display: 'block', width: '100%', fontSize: 12, whiteSpace: 'nowrap' }}>
       {value == null ? '-' : formatCompactNumber(value)}
     </Text>
   );
 }
 
-function ProductThumb({ src, alt }: { src?: string; alt: string }) {
+function ProductThumb({ src, alt, variantId }: { src?: string; alt: string; variantId?: number }) {
   const normalizedSrc = normalizeNoonImageUrl(src);
   const [failed, setFailed] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -854,10 +869,11 @@ function ProductThumb({ src, alt }: { src?: string; alt: string }) {
   if (!normalizedSrc || failed) {
     return (
       <span
+        data-testid={variantId ? `product-spec-thumb-${variantId}` : undefined}
         style={{
           flex: '0 0 auto',
-          width: 60,
-          height: 60,
+          width: 70,
+          height: 90,
           borderRadius: 6,
           border: '1px solid #e5e7eb',
           background: '#f3f4f6',
@@ -874,12 +890,13 @@ function ProductThumb({ src, alt }: { src?: string; alt: string }) {
   }
   return (
     <span
+      data-testid={variantId ? `product-spec-thumb-${variantId}` : undefined}
       onMouseEnter={() => setPreviewOpen(true)}
       onMouseLeave={() => setPreviewOpen(false)}
       style={{
         flex: '0 0 auto',
-        width: 60,
-        height: 60,
+        width: 70,
+        height: 90,
         position: 'relative',
         display: 'block'
       }}
@@ -889,8 +906,8 @@ function ProductThumb({ src, alt }: { src?: string; alt: string }) {
         alt={alt}
         onError={() => setFailed(true)}
         style={{
-          width: 60,
-          height: 60,
+          width: 70,
+          height: 90,
           objectFit: 'cover',
           borderRadius: 6,
           border: '1px solid #e5e7eb',
@@ -902,7 +919,7 @@ function ProductThumb({ src, alt }: { src?: string; alt: string }) {
         <span
           style={{
             position: 'absolute',
-            left: 68,
+            left: 78,
             top: -8,
             zIndex: 20,
             width: 180,
@@ -937,14 +954,23 @@ function findSource(
   return (sources || []).find((source) => source.sourceType === sourceType);
 }
 
+function isOfficialSpecMissing(row: ProductVariantSpecPayload) {
+  return isSourceProductSpecMissing(findSource(row.sources, 'noon_official'));
+}
+
 function isDomesticSpecMissing(row: ProductVariantSpecPayload) {
-  return (['ali1688', 'warehouse'] as EditableSourceType[]).some((sourceType) =>
-    isSourceProductSpecMissing(findSource(row.sources, sourceType))
+  return (
+    isSourceProductSpecMissing(findSource(row.sources, 'ali1688')) &&
+    isSourceProductSpecMissing(findSource(row.sources, 'warehouse'))
   );
 }
 
-function isOfficialSpecMissing(row: ProductVariantSpecPayload) {
-  return isSourceProductSpecMissing(findSource(row.sources, 'noon_official'));
+function isLogisticsProfileMissing(row: ProductVariantSpecPayload) {
+  const profile = {
+    ...defaultLogisticsProfile(row, row.storeCode),
+    ...row.logisticsProfile
+  };
+  return logisticsFieldConfigs.some((config) => !isConfirmedLogisticsValue(String(profile[config.field] || 'unknown')));
 }
 
 function isSourceProductSpecMissing(source?: ProductVariantSpecSourcePayload) {
@@ -981,54 +1007,28 @@ function defaultLogisticsProfile(row: ProductVariantSpecPayload, storeCode?: str
   };
 }
 
-function buildSpecStoreOptions(session: AuthSession) {
-  const grouped = new Map<string, { option: StoreOption; preferred: boolean }>();
+function resolveCurrentSpecStoreCode(session: AuthSession) {
+  if (session.currentStore?.storeCode) {
+    return session.currentStore.storeCode;
+  }
+  return (session.userStores || []).find((store) => store.storeCode && store.authorized !== false)?.storeCode || '';
+}
+
+function buildStoreLabelByCode(session: AuthSession) {
+  const labels = new Map<string, string>();
   (session.userStores || []).forEach((store) => {
-    if (!store.storeCode || store.authorized === false) {
+    if (!store.storeCode || labels.has(store.storeCode)) {
       return;
     }
-    const groupKey = specStoreGroupKey(store);
-    const existing = grouped.get(groupKey);
-    const preferred = isPreferredSpecStore(store);
-    if (existing && (!preferred || existing.preferred)) {
-      return;
-    }
-    grouped.set(groupKey, {
-      option: {
-        value: store.storeCode,
-        label: store.projectName || store.projectCode || store.storeCode
-      },
-      preferred
-    });
+    labels.set(store.storeCode, store.projectName || store.projectCode || store.storeCode);
   });
-  return Array.from(grouped.values()).map((entry) => entry.option);
-}
-
-function resolveInitialSpecStoreCode(session: AuthSession) {
-  const options = buildSpecStoreOptions(session);
-  if (!options.length) {
-    return '';
+  if (session.currentStore?.storeCode) {
+    labels.set(
+      session.currentStore.storeCode,
+      session.currentStore.projectName || session.currentStore.projectCode || session.currentStore.storeCode
+    );
   }
-  const currentStore = session.currentStore;
-  if (!currentStore?.storeCode) {
-    return options[0]?.value || '';
-  }
-  const currentGroupKey = specStoreGroupKey(currentStore);
-  const matched = buildSpecStoreOptions({
-    ...session,
-    userStores: (session.userStores || []).filter((store) => specStoreGroupKey(store) === currentGroupKey)
-  })[0];
-  return matched?.value || options[0]?.value || '';
-}
-
-function specStoreGroupKey(store: Partial<AuthSessionStore>) {
-  return store.projectCode || store.projectName || store.storeCode || '';
-}
-
-function isPreferredSpecStore(store: Partial<AuthSessionStore>) {
-  const site = String(store.site || '').trim().toUpperCase();
-  const storeCode = String(store.storeCode || '').trim().toUpperCase();
-  return site === 'AE' || storeCode.endsWith('-NAE');
+  return labels;
 }
 
 function resolveRequestOwnerUserId(session: AuthSession, activeOwnerId?: number) {
@@ -1042,13 +1042,13 @@ function specGridStyle(props: { includeCarton: boolean; includeSource: boolean; 
   const { includeCarton, includeSource, includeEffective = false } = props;
   const prefixColumns = [
     includeEffective ? '20px' : '',
-    includeSource ? (includeCarton ? '88px' : '0px') : ''
+    includeSource ? (includeCarton ? '76px' : '0px') : ''
   ].filter(Boolean);
-  const valueColumns = includeCarton ? 'repeat(9, minmax(43px, 1fr))' : 'repeat(4, minmax(43px, 1fr))';
+  const valueColumns = includeCarton ? 'repeat(9, minmax(22px, 1fr))' : 'repeat(4, minmax(22px, 1fr))';
   return {
     display: 'grid',
     gridTemplateColumns: [...prefixColumns, valueColumns].join(' '),
-    gap: '5px 6px',
+    gap: '5px 4px',
     alignItems: 'center',
     minWidth: 0
   } as const;
