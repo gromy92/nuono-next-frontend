@@ -2,7 +2,7 @@ import { App, Button, Empty, Input, InputNumber, Select, Space, Table, Tag, Tool
 import type { ColumnsType } from 'antd/es/table';
 import { CheckOutlined, CloseOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AuthSession } from '../auth/session';
+import type { AuthSession, AuthSessionStore } from '../auth/session';
 import {
   fetchProductSpecsOverview,
   saveProductLogisticsProfile,
@@ -177,7 +177,8 @@ const logisticsFieldConfigs: LogisticsFieldConfig[] = [
 export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPageProps) {
   const { message } = App.useApp();
   const ownerUserId = resolveRequestOwnerUserId(session, activeOwnerId);
-  const storeCode = resolveCurrentSpecStoreCode(session);
+  const storeScope = useMemo(() => resolveCurrentSpecStoreScope(session), [session]);
+  const storeCode = storeScope.storeCode;
   const [keyword, setKeyword] = useState('');
   const [completenessFilter, setCompletenessFilter] = useState<SpecCompletenessFilter>('all');
   const [rows, setRows] = useState<ProductVariantSpecPayload[]>([]);
@@ -1014,27 +1015,86 @@ function defaultLogisticsProfile(row: ProductVariantSpecPayload, storeCode?: str
   };
 }
 
-function resolveCurrentSpecStoreCode(session: AuthSession) {
-  if (session.currentStore?.storeCode) {
-    return session.currentStore.storeCode;
+type ProductSpecStoreScope = {
+  storeCode: string;
+};
+
+function resolveCurrentSpecStoreScope(session: AuthSession): ProductSpecStoreScope {
+  const stores = collectSpecStores(session);
+  const currentStore = resolveCurrentSpecBusinessStore(session, stores);
+  if (!currentStore?.storeCode) {
+    return { storeCode: '' };
   }
-  return (session.userStores || []).find((store) => store.storeCode && store.authorized !== false)?.storeCode || '';
+  const currentGroupKey = specBusinessStoreKey(currentStore);
+  const groupStores = stores.filter((store) => specBusinessStoreKey(store) === currentGroupKey);
+  const requestStore =
+    groupStores
+      .filter((store) => store.storeCode && store.authorized !== false)
+      .sort(compareSpecRequestStores)[0] ||
+    groupStores.filter((store) => store.storeCode).sort(compareSpecRequestStores)[0] ||
+    currentStore;
+  return {
+    storeCode: requestStore.storeCode || currentStore.storeCode || ''
+  };
+}
+
+function collectSpecStores(session: AuthSession) {
+  const stores: AuthSessionStore[] = [];
+  const seen = new Set<string>();
+  const addStore = (store?: AuthSessionStore | null) => {
+    if (!store?.storeCode) {
+      return;
+    }
+    const key = `${store.storeCode}::${store.site || ''}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    stores.push(store);
+  };
+  (session.userStores || []).forEach(addStore);
+  addStore(session.currentStore);
+  return stores;
+}
+
+function resolveCurrentSpecBusinessStore(session: AuthSession, stores: AuthSessionStore[]) {
+  const currentStoreCode = session.currentStore?.storeCode;
+  const currentSite = session.currentStore?.site;
+  if (currentStoreCode) {
+    return (
+      stores.find(
+        (store) => store.storeCode === currentStoreCode && String(store.site || '') === String(currentSite || '')
+      ) ||
+      stores.find((store) => store.storeCode === currentStoreCode) ||
+      session.currentStore
+    );
+  }
+  return stores.find((store) => store.authorized !== false) || stores[0];
+}
+
+function specBusinessStoreKey(store: AuthSessionStore) {
+  return store.projectCode || store.orgCode || store.projectName || store.storeCode;
+}
+
+function specBusinessStoreLabel(store: AuthSessionStore) {
+  return store.projectName || store.orgName || store.projectCode || store.storeCode;
+}
+
+function compareSpecRequestStores(left: AuthSessionStore, right: AuthSessionStore) {
+  return (
+    String(left.storeCode || '').localeCompare(String(right.storeCode || '')) ||
+    String(left.site || '').localeCompare(String(right.site || ''))
+  );
 }
 
 function buildStoreLabelByCode(session: AuthSession) {
   const labels = new Map<string, string>();
-  (session.userStores || []).forEach((store) => {
+  collectSpecStores(session).forEach((store) => {
     if (!store.storeCode || labels.has(store.storeCode)) {
       return;
     }
-    labels.set(store.storeCode, store.projectName || store.projectCode || store.storeCode);
+    labels.set(store.storeCode, specBusinessStoreLabel(store));
   });
-  if (session.currentStore?.storeCode) {
-    labels.set(
-      session.currentStore.storeCode,
-      session.currentStore.projectName || session.currentStore.projectCode || session.currentStore.storeCode
-    );
-  }
   return labels;
 }
 

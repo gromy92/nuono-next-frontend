@@ -80,7 +80,7 @@ async function selectCompletenessFilter(page: import('@playwright/test').Page, l
 }
 
 test.describe('商品规格', () => {
-  test('真实授权店铺账号访问时跟随右上角当前店铺且不显示页内店铺切换', async ({ page }) => {
+  test('真实授权店铺账号访问时按业务店铺归一，不按站点拆分规格范围', async ({ page }) => {
     await page.addInitScript(() => {
       window.localStorage.setItem(
         'nuono-next-session',
@@ -159,8 +159,10 @@ test.describe('商品规格', () => {
 
     await expect(page.getByText('PSKU REAL-STORE-PSKU', { exact: true })).toBeVisible();
     await expect(page.getByRole('main').locator('.ant-select-selector').filter({ hasText: 'canman' })).toHaveCount(0);
+    await expect(page.getByRole('table').getByText('canman', { exact: true })).toBeVisible();
+    await expect(page.getByText('STR108065-NSA', { exact: true })).toHaveCount(0);
     expect(requestedOwnerUserIds).toEqual([null]);
-    expect(requestedStoreCodes).toEqual(['STR108065-NSA']);
+    expect(requestedStoreCodes).toEqual(['STR108065-NAE']);
   });
 
   test('支持按 1688、仓管、国内规格、Noon 官方尺寸和物流属性缺失筛选', async ({ page }) => {
