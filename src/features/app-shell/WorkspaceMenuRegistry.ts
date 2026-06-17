@@ -13,6 +13,7 @@ export type AppMenuKey =
   | 'purchase-logistics-quote'
   | 'purchase-in-transit-goods'
   | 'warehouse-dispatch'
+  | 'official-warehouse'
   | 'operations-competitor-analysis'
   | 'data-sales-analysis'
   | 'data-order-analysis'
@@ -77,6 +78,7 @@ export type WorkspaceContentKind =
   | 'purchase-logistics-quote'
   | 'purchase-in-transit-goods'
   | 'warehouse-dispatch'
+  | 'official-warehouse'
   | 'operations-competitor-analysis'
   | 'sales-analytics'
   | 'order-finance'
@@ -269,6 +271,17 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     tabLabel: '仓库发运',
     contentKind: 'warehouse-dispatch',
     closable: true
+  },
+  'official-warehouse': {
+    key: 'official-warehouse',
+    label: 'Noon官方仓',
+    path: '/warehouse/official-warehouse',
+    sectionKey: 'warehouse',
+    pathLabel: '仓储 / Noon官方仓',
+    tabLabel: 'Noon官方仓',
+    contentKind: 'official-warehouse',
+    closable: true,
+    routeAliases: ['/warehouse/fbn', '/storage/warehouse']
   },
   'operations-competitor-analysis': {
     key: 'operations-competitor-analysis',
@@ -487,7 +500,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     iconKey: 'warehouse',
     entries: [
       { type: 'workspace', key: 'warehouse-dispatch' },
-      { type: 'placeholder', key: 'warehouse-fbn', label: 'FBN抢仓', disabled: true }
+      { type: 'workspace', key: 'official-warehouse' }
     ]
   },
   {
@@ -657,10 +670,10 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['在途商品', '在途物流', '在途物流信息']
   },
   {
-    keys: ['warehouse-dispatch'],
-    urlPaths: ['/warehouse/dispatch'],
-    urlPathPrefixes: ['/api/warehouse/dispatch'],
-    menuNames: ['仓库发运', '仓储发运', '采购收货', '发运计划']
+    keys: ['warehouse-dispatch', 'official-warehouse'],
+    urlPaths: ['/warehouse/dispatch', '/warehouse/official-warehouse', '/storage/warehouse'],
+    urlPathPrefixes: ['/api/warehouse/dispatch', '/api/warehouse/official-warehouse'],
+    menuNames: ['仓库发运', '仓储发运', '采购收货', '发运计划', 'Noon官方仓', 'FBN抢仓', '约仓看板']
   },
   {
     keys: ['operations-competitor-analysis'],
@@ -733,6 +746,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-profit',
   'purchase-logistics-quote',
   'warehouse-dispatch',
+  'official-warehouse',
   'operations-competitor-analysis',
   'data-sales-analysis',
   'data-order-analysis',

@@ -110,6 +110,11 @@ const WarehouseDispatchWorkbenchPage = lazyWorkspace(() =>
     default: module.WarehouseDispatchWorkbenchPage
   }))
 );
+const OfficialWarehousePage = lazyWorkspace(() =>
+  import('../official-warehouse/OfficialWarehousePage').then((module) => ({
+    default: module.OfficialWarehousePage
+  }))
+);
 const ProcurementRequirementConfirmationPage = lazyWorkspace(() =>
   import('../procurement-confirmation/ProcurementRequirementConfirmationPage').then((module) => ({
     default: module.ProcurementRequirementConfirmationPage
@@ -362,6 +367,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <WarehouseDispatchWorkbenchPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'official-warehouse') {
+    return (
+      <LazyWorkspaceBoundary>
+        <OfficialWarehousePage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

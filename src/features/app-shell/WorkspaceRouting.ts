@@ -26,6 +26,7 @@ export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
 export const PURCHASE_IN_TRANSIT_GOODS_PATH = workspaceMenuPath('purchase-in-transit-goods')
 export const WAREHOUSE_DISPATCH_PATH = workspaceMenuPath('warehouse-dispatch')
+export const OFFICIAL_WAREHOUSE_PATH = workspaceMenuPath('official-warehouse')
 export const OPERATIONS_COMPETITOR_ANALYSIS_PATH = workspaceMenuPath('operations-competitor-analysis')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
 export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
@@ -76,6 +77,8 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'role',
   'devOwner',
   'devAccount',
+  'devStore',
+  'devSite',
   'previewAli1688',
   'grantAiFileParse',
   'grantFileManagement',
@@ -256,6 +259,7 @@ export function resolveSessionLandingMenuKey(
         'purchase-order',
         'purchase-in-transit-goods',
         'warehouse-dispatch',
+        'official-warehouse',
         'operations-competitor-analysis',
         'data-sales-analysis',
         'data-sales-forecast',
@@ -283,6 +287,7 @@ export function resolveSessionLandingMenuKey(
           'purchase-profit',
           'purchase-logistics-quote',
           'warehouse-dispatch',
+          'official-warehouse',
           'operations-competitor-analysis',
           'data-sales-analysis',
           'data-sales-forecast',
@@ -307,6 +312,7 @@ export function resolveSessionLandingMenuKey(
           'purchase-profit',
           'purchase-logistics-quote',
           'warehouse-dispatch',
+          'official-warehouse',
           'operations-competitor-analysis',
           'data-sales-analysis',
           'data-sales-forecast',

@@ -24,6 +24,7 @@ import {
   PURCHASE_IN_TRANSIT_GOODS_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
   WAREHOUSE_DISPATCH_PATH,
+  OFFICIAL_WAREHOUSE_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
 } from './WorkspaceRouting'
 
@@ -128,6 +129,7 @@ function readDevSessionOverride(): AuthSession | null {
     search.get('grantLogisticsQuote') === '1'
   const includeWarehouseDevMenu =
     pathname.startsWith(WAREHOUSE_DISPATCH_PATH) ||
+    pathname.startsWith(OFFICIAL_WAREHOUSE_PATH) ||
     search.get('grantWarehouse') === '1'
   const includeSystemReportsDevMenu =
     pathname.startsWith(NOON_CALL_STORE_DATA_PATH) ||
@@ -314,6 +316,7 @@ function readDevSessionOverride(): AuthSession | null {
   }
   if (includeWarehouseDevMenu) {
     grantedMenus.push({ menuId: 9251, menuName: '仓库发运', urlPath: WAREHOUSE_DISPATCH_PATH })
+    grantedMenus.push({ menuId: 9252, menuName: 'Noon官方仓', urlPath: OFFICIAL_WAREHOUSE_PATH })
   }
   if (includeSystemReportsDevMenu) {
     grantedMenus.push({ menuId: 9600, menuName: '系统报表', urlPath: NOON_CALL_STORE_DATA_PATH })
