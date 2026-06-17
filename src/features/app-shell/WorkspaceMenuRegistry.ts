@@ -670,7 +670,7 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['在途商品', '在途物流', '在途物流信息']
   },
   {
-    keys: ['warehouse-dispatch', 'official-warehouse'],
+    keys: ['warehouse-dispatch', 'official-warehouse', 'product-specs'],
     urlPaths: ['/warehouse/dispatch', '/warehouse/official-warehouse', '/storage/warehouse'],
     urlPathPrefixes: ['/api/warehouse/dispatch', '/api/warehouse/official-warehouse'],
     menuNames: ['仓库发运', '仓储发运', '采购收货', '发运计划', 'Noon官方仓', 'FBN抢仓', '约仓看板']

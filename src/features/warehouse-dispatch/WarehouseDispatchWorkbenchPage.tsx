@@ -1,5 +1,6 @@
 import {
   CheckCircleOutlined,
+  EditOutlined,
   FileDoneOutlined,
   ReloadOutlined,
   SearchOutlined,
@@ -25,6 +26,7 @@ import {
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { PRODUCT_SPECS_PATH, withCurrentWorkspaceDevQuery } from '../app-shell/WorkspaceRouting'
 import type { AuthSession } from '../auth/session'
 import { fetchProductListDataset } from '../product-management/api'
 import type { ProductListRowPayload } from '../product-management/types'
@@ -629,6 +631,11 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
       title: '站点',
       render: (_value, item) => renderReadySiteCell(item)
     },
+    {
+      title: '规格',
+      width: 112,
+      render: (_value, item) => renderReadySpecAction(item)
+    },
     { title: '可发', dataIndex: 'availableQty' },
     {
       title: '空运数量',
@@ -730,6 +737,32 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     if (!nextOrders.some((order) => order.id === selectedOrderId)) {
       setSelectedOrderId(nextOrders[0].id)
     }
+  }
+
+  function openProductSpecsForReadyItem(item: ReadyShipmentRow) {
+    const params = new URLSearchParams()
+    if (item.psku) {
+      params.set('keyword', item.psku)
+    }
+    const targetPath = withCurrentWorkspaceDevQuery(`${PRODUCT_SPECS_PATH}?${params.toString()}`)
+    window.location.assign(targetPath)
+  }
+
+  function renderReadySpecAction(item: ReadyShipmentRow) {
+    return (
+      <Space direction="vertical" size={4}>
+        {renderSpecStatus(item.specStatus)}
+        <Button
+          aria-label={`编辑 ${item.psku} 规格`}
+          icon={<EditOutlined />}
+          size="small"
+          type={item.specStatus === 'missing' ? 'primary' : 'default'}
+          onClick={() => openProductSpecsForReadyItem(item)}
+        >
+          编辑规格
+        </Button>
+      </Space>
+    )
   }
 
   function renderReceiptIssueCell(row: ReceiptProductRow) {

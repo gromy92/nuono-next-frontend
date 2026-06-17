@@ -174,13 +174,26 @@ const logisticsFieldConfigs: LogisticsFieldConfig[] = [
   }
 ];
 
+type LogisticsAttributeFilter = 'all' | `${LogisticsProfileField}:${string}`;
+
+const logisticsAttributeFilterOptions: Array<{ value: LogisticsAttributeFilter; label: string }> = [
+  { value: 'all', label: '全部物流属性' },
+  ...logisticsFieldConfigs.flatMap((config) =>
+    config.options.map((option) => ({
+      value: `${config.field}:${option.value}` as LogisticsAttributeFilter,
+      label: `${config.ariaLabel}：${logisticsFilterOptionLabel(option)}`
+    }))
+  )
+];
+
 export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPageProps) {
   const { message } = App.useApp();
   const ownerUserId = resolveRequestOwnerUserId(session, activeOwnerId);
   const storeScope = useMemo(() => resolveCurrentSpecStoreScope(session), [session]);
   const storeCode = storeScope.storeCode;
-  const [keyword, setKeyword] = useState('');
+  const [keyword, setKeyword] = useState(() => readInitialProductSpecsKeyword());
   const [completenessFilter, setCompletenessFilter] = useState<SpecCompletenessFilter>('all');
+  const [logisticsAttributeFilter, setLogisticsAttributeFilter] = useState<LogisticsAttributeFilter>('all');
   const [rows, setRows] = useState<ProductVariantSpecPayload[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -426,21 +439,31 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
   );
 
   const filteredRows = useMemo(() => {
+    let result: ProductVariantSpecPayload[];
     switch (completenessFilter) {
       case 'ali1688_missing':
-        return rows.filter((row) => isSourceProductSpecMissing(findSource(row.sources, 'ali1688')));
+        result = rows.filter((row) => isSourceProductSpecMissing(findSource(row.sources, 'ali1688')));
+        break;
       case 'warehouse_missing':
-        return rows.filter((row) => isSourceProductSpecMissing(findSource(row.sources, 'warehouse')));
+        result = rows.filter((row) => isSourceProductSpecMissing(findSource(row.sources, 'warehouse')));
+        break;
       case 'domestic_missing':
-        return rows.filter(isDomesticSpecMissing);
+        result = rows.filter(isDomesticSpecMissing);
+        break;
       case 'official_missing':
-        return rows.filter(isOfficialSpecMissing);
+        result = rows.filter(isOfficialSpecMissing);
+        break;
       case 'logistics_missing':
-        return rows.filter(isLogisticsProfileMissing);
+        result = rows.filter(isLogisticsProfileMissing);
+        break;
       default:
-        return rows;
+        result = rows;
     }
-  }, [completenessFilter, rows]);
+    if (logisticsAttributeFilter === 'all') {
+      return result;
+    }
+    return result.filter((row) => rowMatchesLogisticsAttributeFilter(row, logisticsAttributeFilter));
+  }, [completenessFilter, logisticsAttributeFilter, rows]);
 
   return (
     <div style={{ display: 'grid', gap: 10, minWidth: 0 }}>
@@ -476,6 +499,16 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
             style={{ width: 172 }}
             onChange={setCompletenessFilter}
           />
+          <span data-testid="product-specs-logistics-attribute-filter">
+            <Select<LogisticsAttributeFilter>
+              value={logisticsAttributeFilter}
+              options={logisticsAttributeFilterOptions}
+              showSearch
+              optionFilterProp="label"
+              style={{ width: 190 }}
+              onChange={(value) => setLogisticsAttributeFilter(value)}
+            />
+          </span>
           <Tooltip title="刷新">
             <Button icon={<SyncOutlined />} loading={loading} onClick={() => void loadRows()} />
           </Tooltip>
@@ -498,6 +531,13 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
       />
     </div>
   );
+}
+
+function readInitialProductSpecsKeyword() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return new URLSearchParams(window.location.search).get('keyword')?.trim() || '';
 }
 
 function DomesticSpecMatrix(props: {
@@ -632,6 +672,7 @@ function LogisticsSelectField(props: {
   const { ariaLabel, testId, value, options, disabled, saving, onChange } = props;
   const normalizedValue = value || 'unknown';
   const confirmed = isConfirmedLogisticsValue(normalizedValue);
+  const valueKind = logisticsValueKind(normalizedValue);
   return (
     <label aria-label={ariaLabel} style={{ display: 'grid', gap: 3, minWidth: 0 }}>
       <Select
@@ -641,9 +682,12 @@ function LogisticsSelectField(props: {
         value={normalizedValue}
         options={options}
         disabled={disabled}
+        suffixIcon={null}
         className={[
           'product-specs-logistics-select',
           confirmed ? 'product-specs-logistics-select--confirmed' : 'product-specs-logistics-select--missing',
+          valueKind === 'none' ? 'product-specs-logistics-select--none' : '',
+          valueKind === 'included' ? 'product-specs-logistics-select--included' : '',
           saving ? 'product-specs-logistics-select--saving' : ''
         ]
           .filter(Boolean)
@@ -655,8 +699,19 @@ function LogisticsSelectField(props: {
   );
 }
 
+function logisticsFilterOptionLabel(option: LogisticsOption) {
+  return option.value === 'unknown' ? '未选择' : option.label;
+}
+
 function isConfirmedLogisticsValue(value: string) {
   return Boolean(value && value !== 'unknown');
+}
+
+function logisticsValueKind(value: string) {
+  if (!isConfirmedLogisticsValue(value)) {
+    return 'missing';
+  }
+  return value === 'none' ? 'none' : 'included';
 }
 
 function withLogisticsConfirmationStatus(profile: ProductLogisticsProfilePayload): ProductLogisticsProfilePayload {
@@ -979,6 +1034,26 @@ function isLogisticsProfileMissing(row: ProductVariantSpecPayload) {
     ...row.logisticsProfile
   };
   return logisticsFieldConfigs.some((config) => !isConfirmedLogisticsValue(String(profile[config.field] || 'unknown')));
+}
+
+function rowMatchesLogisticsAttributeFilter(row: ProductVariantSpecPayload, filter: LogisticsAttributeFilter) {
+  if (filter === 'all') {
+    return true;
+  }
+  const separatorIndex = filter.indexOf(':');
+  if (separatorIndex < 0) {
+    return true;
+  }
+  const field = filter.slice(0, separatorIndex) as LogisticsProfileField;
+  const expectedValue = filter.slice(separatorIndex + 1);
+  if (!logisticsFieldConfigs.some((config) => config.field === field)) {
+    return true;
+  }
+  const profile = {
+    ...defaultLogisticsProfile(row, row.storeCode),
+    ...row.logisticsProfile
+  };
+  return String(profile[field] || 'unknown') === expectedValue;
 }
 
 function isSourceProductSpecMissing(source?: ProductVariantSpecSourcePayload) {
