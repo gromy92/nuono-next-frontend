@@ -82,6 +82,9 @@ export type StoreInitializationPayload = {
     referenceStoreCode?: string;
     title?: string;
     titleCn?: string;
+    titleZh?: string;
+    productTitleCn?: string;
+    chineseTitle?: string;
     brand?: string;
     imageUrl?: string;
     galleryImages?: string[];

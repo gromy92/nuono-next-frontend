@@ -1,5 +1,6 @@
 import {
   CheckCircleOutlined,
+  EditOutlined,
   FileDoneOutlined,
   ReloadOutlined,
   SearchOutlined,
@@ -11,6 +12,7 @@ import {
   Empty,
   Input,
   InputNumber,
+  Modal,
   Popover,
   Popconfirm,
   Segmented,
@@ -26,27 +28,53 @@ import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { AuthSession } from '../auth/session'
-import { fetchProductListDataset } from '../product-management/api'
-import type { ProductListRowPayload } from '../product-management/types'
+import {
+  fetchProductListDataset,
+  fetchProductSpecDetail,
+  saveProductSpecSource,
+  selectProductSpecEffectiveSource
+} from '../product-management/api'
+import type { ProductListRowPayload, ProductVariantSpecSourcePayload } from '../product-management/types'
 import { normalizeNoonImageUrl } from '../product-management/utils'
 import {
-  createDispatchPlan,
   createFulfillmentConfirmation,
+  createOutboundOrders,
+  createPackingList,
+  createShippingBatch,
+  createShippingTargetOption,
   loadDispatchPlans,
+  loadPurchaseOrderLogisticsComparisons,
+  loadShippingBatch,
+  loadOutboundOrders,
+  loadPackingLists,
   loadReadyShipmentItems,
+  loadShippingBatches,
   loadWarehouseReceiptOrders,
-  markDispatchPlanReadyForLogistics
+  markDispatchPlanReadyForLogistics,
+  selectShippingOption
 } from './api'
 import type {
   DispatchPlan,
   DispatchPlanLine,
   DispatchPlanStatus,
+  OutboundOrder,
+  OutboundOrderStatus,
+  PackingList,
+  PackingListStatus,
   ProductSpecStatus,
+  PurchaseOrderLogisticsComparison,
+  PurchaseOrderLogisticsSegment,
   PurchaseReceiptItem,
   PurchaseReceiptOrder,
   ReadyShipmentItem,
   ReceiptStatus,
   RouteGroup,
+  ShippingBatch,
+  ShippingBatchStatus,
+  ShippingEvaluationStatus,
+  ShippingForwarderPlanType,
+  ShippingSuggestionLine,
+  ShippingSuggestionOption,
   WarehouseFulfillmentType,
   WarehouseSiteCode,
   WarehouseTransportMode
@@ -55,10 +83,15 @@ import './WarehouseDispatchWorkbenchPage.css'
 
 const { Text } = Typography
 
-type WarehouseDispatchTabKey = 'receipt-list' | 'receipt-confirm' | 'ship-ready' | 'dispatch-plan'
+type WarehouseDispatchTabKey = 'receipt-list' | 'receipt-confirm' | 'ship-ready' | 'shipping-batch' | 'dispatch-plan'
 
 type WarehouseDispatchWorkbenchPageProps = {
   session?: AuthSession | null
+}
+
+type ShippingTargetForwarderDraft = {
+  airForwarderCode: string
+  seaForwarderCode: string
 }
 
 type ReceiptOrderSummary = {
@@ -72,7 +105,7 @@ type ReceiptOrderSummary = {
   status: ReceiptStatus
 }
 
-type ReadyFilterKey = 'all' | 'SA-AIR' | 'SA-SEA' | 'AE-AIR' | 'AE-SEA' | 'missing'
+type ReadyFilterKey = 'all' | 'SA-AIR' | 'SA-SEA' | 'AE-AIR' | 'AE-SEA' | 'missing' | 'review'
 
 type ReceiptSiteFilterKey = 'all' | WarehouseSiteCode
 type ReceiptScopeFilterKey = 'todo' | 'all'
@@ -86,6 +119,7 @@ type ProductBaselineSummary = {
   psku: string
   skuParent?: string
   title?: string
+  titleCn?: string
   imageUrl?: string
   productFulltype?: string
   detailBaselineStatus?: string
@@ -100,11 +134,13 @@ type ReceiptProductRow = {
   storeName: string
   psku: string
   title: string
+  titleCn?: string
   imageUrl?: string
   expectedQty: number
   receivedQty: number
   plannedQty: number
   specStatus: ProductSpecStatus
+  isNewProduct?: boolean
   items: PurchaseReceiptItem[]
   baseline?: ProductBaselineSummary
 }
@@ -132,15 +168,42 @@ type ReceiptIssueDraft = {
   reshipQty?: number
 }
 
+type WarehouseSpecNumberField =
+  | 'productLengthCm'
+  | 'productWidthCm'
+  | 'productHeightCm'
+  | 'productWeightG'
+  | 'cartonLengthCm'
+  | 'cartonWidthCm'
+  | 'cartonHeightCm'
+  | 'cartonWeightKg'
+  | 'cartonQuantity'
+
+type WarehouseSpecDraft = Partial<Record<WarehouseSpecNumberField, number>>
+
+type WarehouseSpecField = {
+  key: WarehouseSpecNumberField
+  label: string
+  min: number
+  precision: number
+}
+
+type WarehouseSpecEditContext = {
+  storeCode: string
+  variantId: number
+}
+
 type WarehouseDataset = {
   orders: PurchaseReceiptOrder[]
   readyItems: ReadyShipmentRow[]
   dispatchPlans: DispatchPlan[]
+  shippingBatches: ShippingBatch[]
+  logisticsComparisons: PurchaseOrderLogisticsComparison[]
 }
 
 const SITE_LABELS: Record<WarehouseSiteCode, string> = {
-  SA: 'SA',
-  AE: 'AE'
+  SA: '沙特',
+  AE: '阿联酋'
 }
 
 const TRANSPORT_LABELS: Record<WarehouseTransportMode, string> = {
@@ -170,13 +233,76 @@ const DISPATCH_STATUS_META: Record<DispatchPlanStatus, { label: string; color: s
   cancelled: { label: '已取消', color: 'default' }
 }
 
+const SHIPPING_BATCH_STATUS_META: Record<ShippingBatchStatus, { label: string; color: string }> = {
+  draft: { label: '待选方案', color: 'gold' },
+  option_selected: { label: '已选方案', color: 'blue' },
+  outbound_created: { label: '已出库', color: 'purple' },
+  packing: { label: '装箱中', color: 'cyan' },
+  packed: { label: '已装箱', color: 'green' },
+  cancelled: { label: '已取消', color: 'default' }
+}
+
+const OUTBOUND_STATUS_META: Record<OutboundOrderStatus, { label: string; color: string }> = {
+  draft: { label: '待装箱', color: 'gold' },
+  packing: { label: '装箱中', color: 'blue' },
+  packed: { label: '已装箱', color: 'green' },
+  cancelled: { label: '已取消', color: 'default' }
+}
+
+const PACKING_STATUS_META: Record<PackingListStatus, { label: string; color: string }> = {
+  draft: { label: '草稿', color: 'gold' },
+  confirmed: { label: '已确认', color: 'green' },
+  cancelled: { label: '已取消', color: 'default' }
+}
+
+const FORWARDER_PLAN_META: Record<ShippingForwarderPlanType, { label: string; color: string }> = {
+  AUTO: { label: '自动推荐', color: 'green' },
+  SINGLE: { label: '单货代', color: 'blue' },
+  COMBINATION: { label: '组合货代', color: 'purple' },
+  CUSTOM: { label: '自定义', color: 'default' }
+}
+
+const SHIPPING_EVALUATION_META: Record<ShippingEvaluationStatus, { label: string; color: string }> = {
+  ready: { label: '可发', color: 'green' },
+  needs_review: { label: '需复核', color: 'gold' },
+  blocked: { label: '暂不可发', color: 'red' },
+  pending: { label: '待评估', color: 'default' }
+}
+
+const SHIPPING_AIR_FORWARDER_OPTIONS = [
+  { label: '众鸫', value: 'ZD' },
+  { label: '易通', value: 'ET' }
+]
+
+const SHIPPING_SEA_FORWARDER_OPTIONS = [
+  { label: '义特', value: 'YT' },
+  { label: '众鸫', value: 'ZD' },
+  { label: '易通', value: 'ET' }
+]
+
 const READY_FILTER_OPTIONS: Array<{ label: string; value: ReadyFilterKey }> = [
   { label: '全部', value: 'all' },
-  { label: 'SA 空', value: 'SA-AIR' },
-  { label: 'SA 海', value: 'SA-SEA' },
-  { label: 'AE 空', value: 'AE-AIR' },
-  { label: 'AE 海', value: 'AE-SEA' },
-  { label: '规格缺失', value: 'missing' }
+  { label: '沙特空运', value: 'SA-AIR' },
+  { label: '沙特海运', value: 'SA-SEA' },
+  { label: '阿联酋空运', value: 'AE-AIR' },
+  { label: '阿联酋海运', value: 'AE-SEA' },
+  { label: '规格缺失', value: 'missing' },
+  { label: '需确认', value: 'review' }
+]
+
+const WAREHOUSE_PRODUCT_SPEC_FIELDS: WarehouseSpecField[] = [
+  { key: 'productLengthCm', label: '长/cm', min: 0.01, precision: 2 },
+  { key: 'productWidthCm', label: '宽/cm', min: 0.01, precision: 2 },
+  { key: 'productHeightCm', label: '高/cm', min: 0.01, precision: 2 },
+  { key: 'productWeightG', label: '重量/g', min: 0.01, precision: 2 }
+]
+
+const WAREHOUSE_CARTON_SPEC_FIELDS: WarehouseSpecField[] = [
+  { key: 'cartonLengthCm', label: '箱长/cm', min: 0.01, precision: 2 },
+  { key: 'cartonWidthCm', label: '箱宽/cm', min: 0.01, precision: 2 },
+  { key: 'cartonHeightCm', label: '箱高/cm', min: 0.01, precision: 2 },
+  { key: 'cartonWeightKg', label: '箱重/kg', min: 0.001, precision: 3 },
+  { key: 'cartonQuantity', label: '箱装数', min: 1, precision: 0 }
 ]
 
 const RECEIPT_ORDER_TABLE_PAGINATION = {
@@ -231,15 +357,35 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
   const [selectedReadyItemIds, setSelectedReadyItemIds] = useState<string[]>([])
   const [readySplitDraft, setReadySplitDraft] = useState<Record<string, TransportSplitDraft>>({})
   const [dispatchPlans, setDispatchPlans] = useState<DispatchPlan[]>([])
+  const [shippingBatches, setShippingBatches] = useState<ShippingBatch[]>([])
+  const [logisticsComparisons, setLogisticsComparisons] = useState<PurchaseOrderLogisticsComparison[]>([])
   const [selectedPlanId, setSelectedPlanId] = useState<string>()
+  const [selectedShippingBatchId, setSelectedShippingBatchId] = useState<string>()
+  const [previewShippingOptionId, setPreviewShippingOptionId] = useState<string>()
+  const [targetForwarderModalOpen, setTargetForwarderModalOpen] = useState(false)
+  const [targetForwarderDraft, setTargetForwarderDraft] = useState<ShippingTargetForwarderDraft>({
+    airForwarderCode: 'ZD',
+    seaForwarderCode: 'YT'
+  })
+  const [outboundOrdersByBatchId, setOutboundOrdersByBatchId] = useState<Record<string, OutboundOrder[]>>({})
+  const [packingListsByOutboundOrderId, setPackingListsByOutboundOrderId] = useState<Record<string, PackingList[]>>({})
   const [dataLoading, setDataLoading] = useState(false)
   const [dataError, setDataError] = useState<string>()
   const [readyItemsLoaded, setReadyItemsLoaded] = useState(false)
   const [dispatchPlansLoaded, setDispatchPlansLoaded] = useState(false)
+  const [shippingBatchesLoaded, setShippingBatchesLoaded] = useState(false)
+  const [logisticsComparisonsLoaded, setLogisticsComparisonsLoaded] = useState(false)
   const [receiptSubmitting, setReceiptSubmitting] = useState(false)
   const [receiptRowSubmittingId, setReceiptRowSubmittingId] = useState<string>()
-  const [planSubmitting, setPlanSubmitting] = useState(false)
+  const [shippingSubmitting, setShippingSubmitting] = useState(false)
+  const [outboundSubmitting, setOutboundSubmitting] = useState(false)
+  const [packingSubmittingId, setPackingSubmittingId] = useState<string>()
   const [logisticsSubmitting, setLogisticsSubmitting] = useState(false)
+  const [specEditItem, setSpecEditItem] = useState<ReadyShipmentRow | null>(null)
+  const [specEditContext, setSpecEditContext] = useState<WarehouseSpecEditContext | null>(null)
+  const [specEditDraft, setSpecEditDraft] = useState<WarehouseSpecDraft>({})
+  const [specEditLoading, setSpecEditLoading] = useState(false)
+  const [specEditSaving, setSpecEditSaving] = useState(false)
 
   const orderSummaries = useMemo(() => {
     return new Map(orders.map((order) => [order.id, summarizeReceiptOrder(order)] as const))
@@ -305,12 +451,29 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     [allReadyItems, readyFilter]
   )
   const selectedReadyItems = useMemo(
-    () => allReadyItems.filter((item) => selectedReadyItemIds.includes(item.id)),
-    [allReadyItems, selectedReadyItemIds]
+    () => visibleReadyItems.filter((item) => selectedReadyItemIds.includes(item.id)),
+    [selectedReadyItemIds, visibleReadyItems]
   )
   const selectedPlan = useMemo(
     () => dispatchPlans.find((plan) => plan.id === selectedPlanId) || dispatchPlans[0],
     [dispatchPlans, selectedPlanId]
+  )
+  const selectedShippingBatch = useMemo(
+    () => shippingBatches.find((batch) => batch.id === selectedShippingBatchId) || shippingBatches[0],
+    [selectedShippingBatchId, shippingBatches]
+  )
+  const selectedShippingOption = useMemo(
+    () => selectedShippingBatch?.options.find((option) => option.id === previewShippingOptionId)
+      || selectedShippingBatch?.options.find((option) => option.selectedFlag)
+      || selectedShippingBatch?.options.find((option) => option.autoRecommended)
+      || selectedShippingBatch?.options[0],
+    [previewShippingOptionId, selectedShippingBatch]
+  )
+  const selectedBatchOutboundOrders = selectedShippingBatch
+    ? outboundOrdersByBatchId[selectedShippingBatch.id] || []
+    : []
+  const packingListsForSelectedBatch = selectedBatchOutboundOrders.flatMap((order) =>
+    packingListsByOutboundOrderId[order.id] || []
   )
   const selectedPlanRouteGroups = useMemo(
     () => selectedPlan ? buildRouteGroups(selectedPlan.lines) : [],
@@ -418,6 +581,66 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
   }, [activeTab, dispatchPlansLoaded])
 
   useEffect(() => {
+    if (activeTab !== 'shipping-batch' || shippingBatchesLoaded) {
+      return
+    }
+    let cancelled = false
+    setDataLoading(true)
+    setDataError(undefined)
+    loadShippingBatches()
+      .then((nextBatches) => {
+        if (cancelled) {
+          return
+        }
+        setShippingBatches(nextBatches)
+        setShippingBatchesLoaded(true)
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setDataError(error instanceof Error ? error.message : '货运计划读取失败')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setDataLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab, shippingBatchesLoaded])
+
+  useEffect(() => {
+    if (activeTab !== 'shipping-batch' || logisticsComparisonsLoaded) {
+      return
+    }
+    let cancelled = false
+    setDataLoading(true)
+    setDataError(undefined)
+    loadPurchaseOrderLogisticsComparisons(10)
+      .then((nextComparisons) => {
+        if (cancelled) {
+          return
+        }
+        setLogisticsComparisons(nextComparisons)
+        setLogisticsComparisonsLoaded(true)
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setDataError(error instanceof Error ? error.message : '采购单物流比价读取失败')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setDataLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab, logisticsComparisonsLoaded])
+
+  useEffect(() => {
     if (!orders.length) {
       setSelectedOrderId('')
       return
@@ -436,6 +659,42 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
       setSelectedPlanId(dispatchPlans[0].id)
     }
   }, [dispatchPlans, selectedPlanId])
+
+  useEffect(() => {
+    if (!shippingBatches.length) {
+      setSelectedShippingBatchId(undefined)
+      return
+    }
+    if (!selectedShippingBatchId || !shippingBatches.some((batch) => batch.id === selectedShippingBatchId)) {
+      setSelectedShippingBatchId(shippingBatches[0].id)
+    }
+  }, [selectedShippingBatchId, shippingBatches])
+
+  useEffect(() => {
+    if (activeTab !== 'shipping-batch' || !selectedShippingBatchId) {
+      return
+    }
+    const currentBatch = shippingBatches.find((batch) => batch.id === selectedShippingBatchId)
+    if (currentBatch?.options.length) {
+      return
+    }
+    let cancelled = false
+    loadShippingBatch(selectedShippingBatchId)
+      .then((detail) => {
+        if (cancelled) {
+          return
+        }
+        setShippingBatches((current) => upsertShippingBatch(current, detail))
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          message.error(error instanceof Error ? error.message : '货运计划详情读取失败')
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab, selectedShippingBatchId, shippingBatches])
 
   useEffect(() => {
     if (!pendingReceiptProductRows.length) {
@@ -507,8 +766,12 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     setOrders(dataset.orders)
     setReadyItems(dataset.readyItems)
     setDispatchPlans(dataset.dispatchPlans)
+    setShippingBatches(dataset.shippingBatches)
+    setLogisticsComparisons(dataset.logisticsComparisons)
     setReadyItemsLoaded(true)
     setDispatchPlansLoaded(true)
+    setShippingBatchesLoaded(true)
+    setLogisticsComparisonsLoaded(true)
   }
 
   const receiptOrderColumns: ColumnsType<PurchaseReceiptOrder> = [
@@ -584,6 +847,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
       render: (_value, row) => (
         <InputNumber
           className="warehouse-dispatch-receipt-number"
+          controls={false}
           size="small"
           min={0}
           max={row.expectedQty}
@@ -610,6 +874,9 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     }
   ]
 
+  const isReadyTransportScope = isReadyTransportScopeFilter(readyFilter)
+  const showReadyAirQuantityColumn = readyFilter.endsWith('-AIR')
+  const showReadySeaQuantityColumn = readyFilter.endsWith('-SEA')
   const readyItemColumns: ColumnsType<ReadyShipmentRow> = [
     {
       title: '商品',
@@ -629,48 +896,54 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
       title: '站点',
       render: (_value, item) => renderReadySiteCell(item)
     },
-    { title: '可发', dataIndex: 'availableQty' },
     {
-      title: '空运数量',
-      width: 130,
-      render: (_value, item) => (
-        <InputNumber
-          min={0}
-          max={item.availableQty}
-          precision={0}
-          value={getReadySplitDraft(item).AIR}
-          onChange={(value) => updateReadySplitDraft(item, 'AIR', Number(value || 0))}
-        />
-      )
+      title: '规格',
+      width: 132,
+      render: (_value, item) => renderReadySpecCell(item)
     },
-    {
-      title: '海运数量',
-      width: 130,
-      render: (_value, item) => (
-        <InputNumber
-          min={0}
-          max={item.availableQty}
-          precision={0}
-          value={getReadySplitDraft(item).SEA}
-          onChange={(value) => updateReadySplitDraft(item, 'SEA', Number(value || 0))}
-        />
-      )
-    }
+    { title: '可发', dataIndex: 'availableQty' },
+    ...(showReadyAirQuantityColumn
+      ? [{
+          title: '空运数量',
+          width: 130,
+          render: (_value, item) => (
+            <InputNumber
+              controls={false}
+              min={0}
+              max={item.availableQty}
+              precision={0}
+              value={getReadySplitDraft(item).AIR}
+              onChange={(value) => updateReadySplitDraft(item, 'AIR', Number(value || 0))}
+            />
+          )
+        } satisfies ColumnsType<ReadyShipmentRow>[number]]
+      : []),
+    ...(showReadySeaQuantityColumn
+      ? [{
+          title: '海运数量',
+          width: 130,
+          render: (_value, item) => (
+            <InputNumber
+              controls={false}
+              min={0}
+              max={item.availableQty}
+              precision={0}
+              value={getReadySplitDraft(item).SEA}
+              onChange={(value) => updateReadySplitDraft(item, 'SEA', Number(value || 0))}
+            />
+          )
+        } satisfies ColumnsType<ReadyShipmentRow>[number]]
+      : [])
   ]
 
   const dispatchPlanLineColumns: ColumnsType<DispatchPlanLine> = [
     {
-      title: 'PSKU',
+      title: '商品',
       dataIndex: 'psku',
-      render: (_value, line) => (
-        <Space direction="vertical" size={0}>
-          <Text strong>{line.psku}</Text>
-          <Text type="secondary">{line.title}</Text>
-        </Space>
-      )
+      render: (_value, line) => renderDispatchPlanProductCell(line)
     },
     { title: '总数量', dataIndex: 'totalQuantity' },
-    { title: '站点', dataIndex: 'siteCode', render: (site: WarehouseSiteCode) => <Tag color="blue">{site}</Tag> },
+    { title: '站点', dataIndex: 'siteCode', render: renderSiteTag },
     { title: '运输', dataIndex: 'transportMode', render: renderTransportMode },
     {
       title: '履约',
@@ -682,7 +955,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
         <div className="warehouse-dispatch-source-list">
           {line.sources.map((source) => (
             <div key={`${source.sourceItemId}-${source.quantity}`}>
-              {source.orderNo} / {source.storeName}: {source.quantity}
+              采购单：{source.orderNo}，店铺：{source.storeName}，数量：{source.quantity}
             </div>
           ))}
         </div>
@@ -745,6 +1018,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
       <div className="warehouse-dispatch-issue-editor">
         <span>退</span>
         <InputNumber
+          controls={false}
           size="small"
           min={0}
           max={row.expectedQty}
@@ -754,6 +1028,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
         />
         <span>损</span>
         <InputNumber
+          controls={false}
           size="small"
           min={0}
           max={row.expectedQty}
@@ -763,6 +1038,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
         />
         <span>补</span>
         <InputNumber
+          controls={false}
           size="small"
           min={0}
           max={row.expectedQty}
@@ -774,6 +1050,25 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     )
   }
 
+  function renderReceiptPassConfirmDescription(row: ReceiptProductRow) {
+    const arrivingQty = Math.max(0, row.expectedQty - row.receivedQty)
+    const title = selectWarehouseProductTitle(row.titleCn, row.baseline?.titleCn, row.title, row.baseline?.title) || row.psku
+    const imageUrl = normalizeNoonImageUrl(row.baseline?.imageUrl || row.imageUrl)
+    return (
+      <div className="warehouse-dispatch-pass-confirm">
+      <div className="warehouse-dispatch-pass-confirm-thumb">
+          {imageUrl ? <img src={imageUrl} alt={title} /> : <span>图</span>}
+      </div>
+        <div className="warehouse-dispatch-pass-confirm-main">
+          <Text strong>{title}</Text>
+          <Text>
+            确认到货 <Text strong>{arrivingQty}</Text> 个，破损 <Text strong>0</Text> 个，缺 <Text strong>0</Text> 个？
+          </Text>
+        </div>
+      </div>
+    )
+  }
+
   function renderReceiptRowActions(row: ReceiptProductRow) {
     const isEditing = receiptIssueEditingIds.includes(row.id)
     const rowSubmitting = receiptRowSubmittingId === row.id
@@ -781,7 +1076,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
       <Space size={6}>
         <Popconfirm
           title="确认验货通过？"
-          description={`${row.psku} 将按应收数量确认收货，通过后从验货列表移除。`}
+          description={renderReceiptPassConfirmDescription(row)}
           okText="确认通过"
           cancelText="取消"
           onConfirm={() => confirmReceiptRowPassed(row)}
@@ -870,6 +1165,117 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     })
   }
 
+  function renderReadySpecCell(item: ReadyShipmentRow) {
+    if (item.specStatus === 'complete') {
+      return renderSpecStatus(item.specStatus)
+    }
+    return (
+      <Space direction="vertical" size={4}>
+        {renderSpecStatus(item.specStatus)}
+        <Button
+          size="small"
+          icon={<EditOutlined aria-hidden />}
+          onClick={(event) => {
+            event.stopPropagation()
+            openProductSpecEditor(item)
+          }}
+        >
+          编辑规格
+        </Button>
+      </Space>
+    )
+  }
+
+  async function openProductSpecEditor(item: ReadyShipmentRow) {
+    const variantId = resolveReadyItemVariantId(item)
+    const storeCode = resolveReadyItemStoreCode(item, session)
+    if (!variantId) {
+      message.warning('当前商品缺少货号标识，暂不能编辑规格。')
+      return
+    }
+    if (!storeCode) {
+      message.warning('当前商品缺少店铺上下文，暂不能编辑规格。')
+      return
+    }
+    setSpecEditItem(item)
+    setSpecEditContext({ storeCode, variantId })
+    setSpecEditDraft({})
+    setSpecEditLoading(true)
+    try {
+      const detail = await fetchProductSpecDetail({
+        ownerUserId: productBaselineOwnerUserId,
+        storeCode,
+        variantId
+      })
+      const warehouseSource = (detail.sources || []).find((source) => source.sourceType === 'warehouse')
+      setSpecEditDraft(createWarehouseSpecDraft(warehouseSource || detail.effectiveSpec))
+    } catch (error) {
+      setSpecEditDraft({})
+      message.warning(error instanceof Error ? `现有规格读取失败：${error.message}` : '现有规格读取失败，可直接填写新规格。')
+    } finally {
+      setSpecEditLoading(false)
+    }
+  }
+
+  function closeProductSpecEditor() {
+    if (specEditSaving) {
+      return
+    }
+    setSpecEditItem(null)
+    setSpecEditContext(null)
+    setSpecEditDraft({})
+    setSpecEditLoading(false)
+  }
+
+  function updateSpecEditDraft(field: WarehouseSpecNumberField, value: number | string | null) {
+    setSpecEditDraft((current) => ({
+      ...current,
+      [field]: normalizeSpecDraftNumber(value)
+    }))
+  }
+
+  async function saveProductSpecEditor() {
+    if (!specEditItem || !specEditContext) {
+      return
+    }
+    const missingProductField = WAREHOUSE_PRODUCT_SPEC_FIELDS.find((field) => !isPositiveSpecValue(specEditDraft[field.key]))
+    if (missingProductField) {
+      message.warning(`请填写${missingProductField.label}`)
+      return
+    }
+    setSpecEditSaving(true)
+    try {
+      const savedSource = await saveProductSpecSource({
+        ownerUserId: productBaselineOwnerUserId,
+        storeCode: specEditContext.storeCode,
+        variantId: specEditContext.variantId,
+        sourceType: 'warehouse',
+        ...specEditDraft,
+        cartonSourceType: hasCartonSpecValues(specEditDraft) ? 'warehouse_measured' : 'derived_from_warehouse',
+        batteryMagneticType: 'unknown',
+        liquidPowderType: 'unknown'
+      })
+      if (!savedSource.sourceId) {
+        throw new Error('规格来源保存后未返回来源 ID')
+      }
+      await selectProductSpecEffectiveSource({
+        ownerUserId: productBaselineOwnerUserId,
+        storeCode: specEditContext.storeCode,
+        variantId: specEditContext.variantId,
+        sourceId: savedSource.sourceId
+      })
+      await refreshWarehouseData()
+      message.success(`${specEditItem.psku} 规格已保存。`)
+      setSpecEditItem(null)
+      setSpecEditContext(null)
+      setSpecEditDraft({})
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '保存商品规格失败')
+    } finally {
+      setSpecEditSaving(false)
+    }
+  }
+
   async function confirmReceipt() {
     if (!selectedReceiptOrder || !receiptProductRows.length) {
       return
@@ -946,7 +1352,11 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     }
   }
 
-  async function createDispatchPlanFromSelection() {
+  async function createShippingBatchFromSelection() {
+    if (!isReadyTransportScopeFilter(readyFilter)) {
+      message.warning('请先选择具体站点和运输方式标签，再生成货运计划。')
+      return
+    }
     const drafts = selectedReadyItems.flatMap((item) => {
       const split = getReadySplitDraft(item)
       return [
@@ -955,7 +1365,12 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
       ]
     })
     if (!drafts.length) {
-      message.warning('请先选择要加入发运计划的商品。')
+      message.warning('请先选择要生成货运计划的商品。')
+      return
+    }
+    const missingSpecDraft = drafts.find((draft) => draft.item.specStatus === 'missing')
+    if (missingSpecDraft) {
+      message.warning(`${missingSpecDraft.item.psku} 商品规格缺失，请先让仓管编辑商品尺寸。`)
       return
     }
     const invalidDraft = selectedReadyItems.find((item) => {
@@ -966,32 +1381,138 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
       message.warning(`${invalidDraft.psku} 空运和海运数量合计不能超过可发数量。`)
       return
     }
-    setPlanSubmitting(true)
-    try {
-      const sources = drafts
-        .filter((draft) => draft.item.fulfillmentBalanceId)
-        .map((draft) => ({
-          fulfillmentBalanceId: Number(draft.item.fulfillmentBalanceId),
-          quantity: draft.quantity,
-          actualTransportMode: draft.actualTransportMode
-        }))
-      if (!sources.length) {
-        message.warning('当前可发运来源缺少余额编号，请刷新后重试。')
+    const quantityByBalanceId = new Map<number, number>()
+    drafts.forEach((draft) => {
+      if (!draft.item.fulfillmentBalanceId) {
         return
       }
-      const created = await createDispatchPlan({
-        sources
-      })
-      const dataset = await refreshWarehouseData()
-      setSelectedPlanId(created.id || dataset.dispatchPlans[0]?.id)
+      const balanceId = Number(draft.item.fulfillmentBalanceId)
+      quantityByBalanceId.set(balanceId, (quantityByBalanceId.get(balanceId) || 0) + draft.quantity)
+    })
+    const sources = Array.from(quantityByBalanceId.entries()).map(([fulfillmentBalanceId, quantity]) => ({
+      fulfillmentBalanceId,
+      quantity
+    }))
+    if (!sources.length) {
+      message.warning('当前可发运来源缺少余额编号，请刷新后重试。')
+      return
+    }
+    setShippingSubmitting(true)
+    try {
+      const created = await createShippingBatch({ sources })
+      setShippingBatches((current) => upsertShippingBatch(current, created))
+      setSelectedShippingBatchId(created.id)
       setSelectedReadyItemIds([])
       setReadySplitDraft({})
-      setActiveTab('dispatch-plan')
-      message.success('已生成发运计划草稿。')
+      setActiveTab('shipping-batch')
+      const nextReadyItems = await loadReadyShipmentItems()
+      setReadyItems(nextReadyItems)
+      message.success('已生成货运计划候选。')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '生成发运计划失败')
+      message.error(error instanceof Error ? error.message : '生成货运计划失败')
     } finally {
-      setPlanSubmitting(false)
+      setShippingSubmitting(false)
+    }
+  }
+
+  async function createTargetForwarderOption() {
+    if (!selectedShippingBatch) {
+      return
+    }
+    setShippingSubmitting(true)
+    try {
+      const option = await createShippingTargetOption(selectedShippingBatch.id, {
+        airForwarderCode: targetForwarderDraft.airForwarderCode,
+        seaForwarderCode: targetForwarderDraft.seaForwarderCode
+      })
+      setShippingBatches((current) => current.map((batch) => (
+        batch.id === selectedShippingBatch.id
+          ? { ...batch, options: upsertShippingOption(batch.options, option) }
+          : batch
+      )))
+      setPreviewShippingOptionId(option.id)
+      setTargetForwarderModalOpen(false)
+      message.success('已生成目标货代评估方案。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '生成目标货代方案失败')
+    } finally {
+      setShippingSubmitting(false)
+    }
+  }
+
+  async function chooseShippingOption(option: ShippingSuggestionOption) {
+    if (!selectedShippingBatch) {
+      return
+    }
+    setShippingSubmitting(true)
+    try {
+      await selectShippingOption(selectedShippingBatch.id, option.id)
+      const detail = await loadShippingBatch(selectedShippingBatch.id)
+      setShippingBatches((current) => upsertShippingBatch(current, detail))
+      message.success('已选择货运计划方案。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '选择货运计划方案失败')
+    } finally {
+      setShippingSubmitting(false)
+    }
+  }
+
+  async function createOutboundOrdersForSelectedBatch() {
+    if (!selectedShippingBatch) {
+      return
+    }
+    setOutboundSubmitting(true)
+    try {
+      const orders = await createOutboundOrders(selectedShippingBatch.id)
+      setOutboundOrdersByBatchId((current) => ({ ...current, [selectedShippingBatch.id]: orders }))
+      const detail = await loadShippingBatch(selectedShippingBatch.id)
+      setShippingBatches((current) => upsertShippingBatch(current, detail))
+      message.success('已生成出库单。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '生成出库单失败')
+    } finally {
+      setOutboundSubmitting(false)
+    }
+  }
+
+  async function loadOutboundOrdersForSelectedBatch() {
+    if (!selectedShippingBatch) {
+      return
+    }
+    try {
+      const orders = await loadOutboundOrders(selectedShippingBatch.id)
+      setOutboundOrdersByBatchId((current) => ({ ...current, [selectedShippingBatch.id]: orders }))
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '读取出库单失败')
+    }
+  }
+
+  async function createPackingListForOutboundOrder(order: OutboundOrder) {
+    setPackingSubmittingId(order.id)
+    try {
+      const packingList = await createPackingList(order.id)
+      setPackingListsByOutboundOrderId((current) => ({
+        ...current,
+        [order.id]: [...(current[order.id] || []), packingList]
+      }))
+      const orders = selectedShippingBatch ? await loadOutboundOrders(selectedShippingBatch.id) : []
+      if (selectedShippingBatch) {
+        setOutboundOrdersByBatchId((current) => ({ ...current, [selectedShippingBatch.id]: orders }))
+      }
+      message.success('已创建装箱单。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '创建装箱单失败')
+    } finally {
+      setPackingSubmittingId(undefined)
+    }
+  }
+
+  async function loadPackingListsForOutboundOrder(order: OutboundOrder) {
+    try {
+      const lists = await loadPackingLists(order.id)
+      setPackingListsByOutboundOrderId((current) => ({ ...current, [order.id]: lists }))
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '读取装箱单失败')
     }
   }
 
@@ -1027,7 +1548,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
               <Input
                 className="warehouse-dispatch-search"
                 allowClear
-                prefix={<SearchOutlined />}
+                prefix={<SearchOutlined aria-hidden />}
                 placeholder="搜索采购单 / 店铺"
                 value={receiptKeyword}
                 onChange={(event) => setReceiptKeyword(event.target.value)}
@@ -1088,8 +1609,8 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
               <Input
                 className="warehouse-dispatch-search warehouse-dispatch-receipt-confirm-search"
                 allowClear
-                prefix={<SearchOutlined />}
-                placeholder="搜索 PSKU / 店铺 / 标题"
+                prefix={<SearchOutlined aria-hidden />}
+                placeholder="搜索货号 / 店铺 / 标题"
                 value={receiptConfirmKeyword}
                 onChange={(event) => setReceiptConfirmKeyword(event.target.value)}
               />
@@ -1099,7 +1620,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
               {productBaselineError ? <Tag color="gold">商品基线读取失败</Tag> : null}
               <Button
                 type="primary"
-                icon={<CheckCircleOutlined />}
+                icon={<CheckCircleOutlined aria-hidden />}
                 loading={receiptSubmitting}
                 onClick={confirmReceipt}
               >
@@ -1141,7 +1662,11 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
                 size="small"
                 value={readyFilter}
                 options={READY_FILTER_OPTIONS.map((option) => ({ ...option, label: option.label }))}
-                onChange={(value) => setReadyFilter(value as ReadyFilterKey)}
+                onChange={(value) => {
+                  setReadyFilter(value as ReadyFilterKey)
+                  setSelectedReadyItemIds([])
+                  setReadySplitDraft({})
+                }}
               />
               <Text type="secondary">已选 {selectedReadyItemIds.length} 行</Text>
             </div>
@@ -1149,11 +1674,12 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
               <Button onClick={() => setSelectedReadyItemIds([])}>清空选择</Button>
               <Button
                 type="primary"
-                icon={<FileDoneOutlined />}
-                loading={planSubmitting}
-                onClick={createDispatchPlanFromSelection}
+                icon={<FileDoneOutlined aria-hidden />}
+                disabled={!isReadyTransportScope || !selectedReadyItemIds.length}
+                loading={shippingSubmitting}
+                onClick={createShippingBatchFromSelection}
               >
-                生成发运计划
+                生成货运计划
               </Button>
             </div>
           </div>
@@ -1164,12 +1690,170 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
             dataSource={visibleReadyItems}
             loading={dataLoading}
             pagination={READY_ITEM_TABLE_PAGINATION}
-            rowSelection={{
-              selectedRowKeys: selectedReadyItemIds,
-              onChange: (keys) => setSelectedReadyItemIds(keys.map(String))
-            }}
+            rowSelection={isReadyTransportScope
+              ? {
+                  columnTitle: (checkboxNode) => <span title="全选">{checkboxNode}</span>,
+                  selectedRowKeys: selectedReadyItemIds,
+                  onChange: (keys) => setSelectedReadyItemIds(keys.map(String))
+                }
+              : undefined}
             locale={{ emptyText: <Empty description="暂无已收货待发运商品" /> }}
           />
+        </div>
+      )
+    },
+    {
+      key: 'shipping-batch',
+      label: buildTabLabel('货运计划', shippingBatches.length),
+      children: (
+        <div className="warehouse-dispatch-panel">
+          <div className="warehouse-dispatch-toolbar">
+            <div className="warehouse-dispatch-toolbar-left">
+              <Segmented
+                size="small"
+                value={selectedShippingBatch?.id}
+                options={shippingBatches.map((batch) => ({ label: batch.batchNo, value: batch.id }))}
+                onChange={(value) => setSelectedShippingBatchId(String(value))}
+              />
+              {selectedShippingBatch ? renderShippingBatchStatus(selectedShippingBatch.status) : null}
+            </div>
+            <div className="warehouse-dispatch-toolbar-right">
+              <Button icon={<ReloadOutlined aria-hidden />} loading={dataLoading} onClick={() => { void refreshWarehouseData() }}>
+                刷新
+              </Button>
+              <Button
+                icon={<EditOutlined aria-hidden />}
+                disabled={!selectedShippingBatch || !['draft', 'option_selected'].includes(selectedShippingBatch.status)}
+                loading={shippingSubmitting}
+                onClick={() => setTargetForwarderModalOpen(true)}
+              >
+                选择货代商
+              </Button>
+              <Button
+                type="primary"
+                icon={<FileDoneOutlined aria-hidden />}
+                disabled={!selectedShippingBatch || selectedShippingBatch.status !== 'option_selected'}
+                loading={outboundSubmitting}
+                onClick={createOutboundOrdersForSelectedBatch}
+              >
+                生成出库单
+              </Button>
+            </div>
+          </div>
+          {renderPurchaseOrderLogisticsComparisonPanel(logisticsComparisons, dataLoading)}
+          {selectedShippingBatch ? (
+            <div className="warehouse-dispatch-plan-layout">
+              <div>
+                {renderSummaryGrid([
+                  ['来源', selectedShippingBatch.sourceCount],
+                  ['商品数', selectedShippingBatch.skuCount],
+                  ['总数量', selectedShippingBatch.totalQuantity],
+                  ['出库单', selectedBatchOutboundOrders.length],
+                  ['装箱单', packingListsForSelectedBatch.length]
+                ])}
+                {selectedShippingOption ? renderShippingEvaluationResult(selectedShippingOption) : null}
+                <div className="warehouse-dispatch-option-list">
+                  {selectedShippingBatch.options.length ? (
+                    selectedShippingBatch.options.map((option) => (
+                      <div key={option.id} className="warehouse-dispatch-option-card">
+                        <div className="warehouse-dispatch-option-header">
+                          <Space>
+                            <Text strong>{option.optionName}</Text>
+                            {renderForwarderPlanType(option.forwarderPlanType)}
+                            {option.autoRecommended ? <Tag color="green">推荐</Tag> : null}
+                            {option.selectedFlag ? <Tag color="blue">已选择</Tag> : null}
+                            {option.warningCount ? <Tag color="gold">提醒 {option.warningCount}</Tag> : null}
+                          </Space>
+                          <Button
+                            size="small"
+                            type={option.selectedFlag ? 'default' : 'primary'}
+                            disabled={option.selectedFlag || !['draft', 'option_selected'].includes(selectedShippingBatch.status)}
+                            loading={shippingSubmitting}
+                            onClick={() => chooseShippingOption(option)}
+                          >
+                            {option.selectedFlag ? '当前方案' : '选择'}
+                          </Button>
+                        </div>
+                        <div className="warehouse-dispatch-option-summary">
+                          <span>目标 {formatForwarderNames(option)}</span>
+                          <span>总量 {option.totalQuantity}</span>
+                          <span>空 {option.airQuantity}</span>
+                          <span>海 {option.seaQuantity}</span>
+                          <span>商品数 {option.skuCount}</span>
+                          {option.routeCodes.length ? <span>线路 {option.routeCodes.length}</span> : null}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <Empty description="正在读取货运计划详情" />
+                  )}
+                </div>
+              </div>
+              <div className="warehouse-dispatch-route-list">
+                <div className="warehouse-dispatch-side-section">
+                  <Text strong>目标货代线路</Text>
+                  {selectedShippingOption?.lines.length ? (
+                    selectedShippingOption.lines.map((line) => renderShippingLineTarget(line))
+                  ) : (
+                    <Empty description="暂无线路明细" />
+                  )}
+                </div>
+                <div className="warehouse-dispatch-side-section">
+                  <div className="warehouse-dispatch-side-header">
+                    <Text strong>出库单</Text>
+                    <Button size="small" onClick={loadOutboundOrdersForSelectedBatch}>读取</Button>
+                  </div>
+                  {selectedBatchOutboundOrders.length ? (
+                    selectedBatchOutboundOrders.map((order) => (
+                      <div key={order.id} className="warehouse-dispatch-side-card">
+                        <Space direction="vertical" size={4}>
+                          <Space>
+                            <Text strong>{order.outboundNo}</Text>
+                            {renderOutboundStatus(order.status)}
+                          </Space>
+                          <Text type="secondary">
+                            {renderFulfillmentType(order.originType)} / {order.originName || '-'} / {order.totalQuantity}
+                          </Text>
+                          <Space>
+                            <Button
+                              size="small"
+                              loading={packingSubmittingId === order.id}
+                              onClick={() => createPackingListForOutboundOrder(order)}
+                            >
+                              创建装箱单
+                            </Button>
+                            <Button size="small" onClick={() => loadPackingListsForOutboundOrder(order)}>
+                              读取装箱单
+                            </Button>
+                          </Space>
+                        </Space>
+                      </div>
+                    ))
+                  ) : (
+                    <Empty description="暂无出库单" />
+                  )}
+                </div>
+                <div className="warehouse-dispatch-side-section">
+                  <Text strong>装箱单</Text>
+                  {packingListsForSelectedBatch.length ? (
+                    packingListsForSelectedBatch.map((packingList) => (
+                      <div key={packingList.id} className="warehouse-dispatch-side-card">
+                        <Space>
+                          <Text strong>{packingList.packingNo}</Text>
+                          {renderPackingStatus(packingList.status)}
+                          <Text type="secondary">箱 {packingList.boxCount} / 件 {packingList.packedQuantity}</Text>
+                        </Space>
+                      </div>
+                    ))
+                  ) : (
+                    <Empty description="暂无装箱单" />
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Empty className="warehouse-dispatch-empty" description="暂无货运计划，请先从可发运商品生成" />
+          )}
         </div>
       )
     },
@@ -1189,12 +1873,12 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
               {selectedPlan ? renderDispatchStatus(selectedPlan.status) : null}
             </div>
             <div className="warehouse-dispatch-toolbar-right">
-              <Button icon={<ReloadOutlined />} loading={dataLoading} onClick={() => { void refreshWarehouseData() }}>
+              <Button icon={<ReloadOutlined aria-hidden />} loading={dataLoading} onClick={() => { void refreshWarehouseData() }}>
                 刷新
               </Button>
               <Button
                 type="primary"
-                icon={<TruckOutlined />}
+                icon={<TruckOutlined aria-hidden />}
                 disabled={!selectedPlan || !['draft', 'handoff_failed'].includes(selectedPlan.status)}
                 loading={logisticsSubmitting}
                 onClick={generateLogisticsPlan}
@@ -1209,7 +1893,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
                 {renderSummaryGrid([
                   ['来源采购单', countPlanSourceOrders(selectedPlan)],
                   ['店铺', countPlanStores(selectedPlan)],
-                  ['PSKU', selectedPlan.lines.length],
+                  ['商品数', selectedPlan.lines.length],
                   ['总数量', sumPlanQuantity(selectedPlan)],
                   ['预计物流计划', selectedPlanRouteGroups.length]
                 ])}
@@ -1265,17 +1949,140 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
         />
       </div>
 
+      <Modal
+        title="选择目标货代"
+        open={targetForwarderModalOpen}
+        okText="生成评估方案"
+        cancelText="取消"
+        confirmLoading={shippingSubmitting}
+        destroyOnClose
+        onCancel={() => setTargetForwarderModalOpen(false)}
+        onOk={() => { void createTargetForwarderOption() }}
+      >
+        <div className="warehouse-dispatch-spec-modal">
+          <Text type="secondary">
+            空运和海运选择同一货代时生成单货代方案；选择不同货代时生成组合货代方案。
+          </Text>
+          <div className="warehouse-dispatch-spec-modal-section">
+            <Text strong>目标货代</Text>
+            <div className="warehouse-dispatch-spec-modal-grid">
+              <label className="warehouse-dispatch-spec-modal-field">
+                <span>空运目标货代</span>
+                <Select
+                  options={SHIPPING_AIR_FORWARDER_OPTIONS}
+                  value={targetForwarderDraft.airForwarderCode}
+                  onChange={(value) => setTargetForwarderDraft((current) => ({
+                    ...current,
+                    airForwarderCode: value
+                  }))}
+                />
+              </label>
+              <label className="warehouse-dispatch-spec-modal-field">
+                <span>海运目标货代</span>
+                <Select
+                  options={SHIPPING_SEA_FORWARDER_OPTIONS}
+                  value={targetForwarderDraft.seaForwarderCode}
+                  onChange={(value) => setTargetForwarderDraft((current) => ({
+                    ...current,
+                    seaForwarderCode: value
+                  }))}
+                />
+              </label>
+            </div>
+          </div>
+          <Text type="secondary">
+            当前将生成
+            {targetForwarderDraft.airForwarderCode === targetForwarderDraft.seaForwarderCode
+              ? '单货代'
+              : '组合货代'}
+            成本评估，不会直接生成出库单。
+          </Text>
+        </div>
+      </Modal>
+
+      <Modal
+        title="编辑商品规格"
+        open={Boolean(specEditItem)}
+        okText="保存规格"
+        cancelText="取消"
+        confirmLoading={specEditSaving}
+        okButtonProps={{ disabled: specEditLoading }}
+        destroyOnClose
+        onCancel={closeProductSpecEditor}
+        onOk={() => { void saveProductSpecEditor() }}
+      >
+        {specEditItem ? (
+          <div className="warehouse-dispatch-spec-modal">
+            {renderReadyProductCell(specEditItem, productBaselineByPsku)}
+            <div className="warehouse-dispatch-spec-modal-section">
+              <Text strong>单品尺寸</Text>
+              <div className="warehouse-dispatch-spec-modal-grid">
+                {WAREHOUSE_PRODUCT_SPEC_FIELDS.map((field) => (
+                  <label className="warehouse-dispatch-spec-modal-field" key={field.key}>
+                    <span>{field.label}</span>
+                    <InputNumber
+                      controls={false}
+                      disabled={specEditLoading}
+                      min={field.min}
+                      precision={field.precision}
+                      value={specEditDraft[field.key] ?? null}
+                      onChange={(value) => updateSpecEditDraft(field.key, value)}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="warehouse-dispatch-spec-modal-section">
+              <Text strong>外箱规格</Text>
+              <div className="warehouse-dispatch-spec-modal-grid">
+                {WAREHOUSE_CARTON_SPEC_FIELDS.map((field) => (
+                  <label className="warehouse-dispatch-spec-modal-field" key={field.key}>
+                    <span>{field.label}</span>
+                    <InputNumber
+                      controls={false}
+                      disabled={specEditLoading}
+                      min={field.min}
+                      precision={field.precision}
+                      value={specEditDraft[field.key] ?? null}
+                      onChange={(value) => updateSpecEditDraft(field.key, value)}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+            {specEditLoading ? <Text type="secondary">正在读取已有规格...</Text> : null}
+          </div>
+        ) : null}
+      </Modal>
     </div>
   )
 }
 
 async function loadWarehouseDataset(): Promise<WarehouseDataset> {
-  const [orders, readyItems, dispatchPlans] = await Promise.all([
+  const [orders, readyItems, dispatchPlans, shippingBatches, logisticsComparisons] = await Promise.all([
     loadWarehouseReceiptOrders(),
     loadReadyShipmentItems(),
-    loadDispatchPlans()
+    loadDispatchPlans(),
+    loadShippingBatches(),
+    loadPurchaseOrderLogisticsComparisons(10)
   ])
-  return { orders, readyItems, dispatchPlans }
+  return { orders, readyItems, dispatchPlans, shippingBatches, logisticsComparisons }
+}
+
+function upsertShippingBatch(batches: ShippingBatch[], nextBatch: ShippingBatch) {
+  const existingIndex = batches.findIndex((batch) => batch.id === nextBatch.id)
+  if (existingIndex < 0) {
+    return [nextBatch, ...batches]
+  }
+  return batches.map((batch, index) => (index === existingIndex ? nextBatch : batch))
+}
+
+function upsertShippingOption(options: ShippingSuggestionOption[], nextOption: ShippingSuggestionOption) {
+  const existingIndex = options.findIndex((option) => option.id === nextOption.id)
+  if (existingIndex < 0) {
+    return [nextOption, ...options]
+  }
+  return options.map((option, index) => (index === existingIndex ? nextOption : option))
 }
 
 function buildTabLabel(label: string, count: number) {
@@ -1387,7 +2194,9 @@ function filterReceiptProductRows(rows: ReceiptProductRow[], keyword: string) {
   return rows.filter((row) =>
     [
       row.psku,
+      row.titleCn,
       row.title,
+      row.baseline?.titleCn,
       row.baseline?.title,
       row.storeName,
       receiptProductRowDisplayStoreName(row),
@@ -1407,6 +2216,8 @@ function receiptOrderMatchesKeyword(order: PurchaseReceiptOrder, normalizedKeywo
 
 function receiptItemMatchesKeyword(item: PurchaseReceiptItem, normalizedKeyword: string) {
   return [
+    item.psku,
+    item.titleCn,
     item.title,
     item.siteCode,
     item.transportMode
@@ -1474,6 +2285,52 @@ function renderSummaryGrid(items: Array<[string, ReactNode]>, className?: string
   )
 }
 
+function resolveReadyItemVariantId(item: ReadyShipmentRow) {
+  const variantIds = [
+    item.productVariantId,
+    ...item.items.map((source) => source.productVariantId)
+  ]
+  return variantIds.find((variantId) => typeof variantId === 'number' && Number.isFinite(variantId) && variantId > 0)
+}
+
+function resolveReadyItemStoreCode(item: ReadyShipmentRow, session?: AuthSession | null) {
+  return uniqueStoreCodes([
+    item.storeCode,
+    ...item.items.map((source) => source.storeCode),
+    session?.currentStore?.storeCode
+  ])[0]
+}
+
+function createWarehouseSpecDraft(
+  source?: Partial<Record<WarehouseSpecNumberField, number>> | ProductVariantSpecSourcePayload
+): WarehouseSpecDraft {
+  if (!source) {
+    return {}
+  }
+  return Object.fromEntries(
+    [...WAREHOUSE_PRODUCT_SPEC_FIELDS, ...WAREHOUSE_CARTON_SPEC_FIELDS].map((field) => [
+      field.key,
+      source[field.key]
+    ])
+  ) as WarehouseSpecDraft
+}
+
+function normalizeSpecDraftNumber(value: number | string | null) {
+  if (value === null || value === '') {
+    return undefined
+  }
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
+function isPositiveSpecValue(value?: number) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
+function hasCartonSpecValues(draft: WarehouseSpecDraft) {
+  return WAREHOUSE_CARTON_SPEC_FIELDS.some((field) => isPositiveSpecValue(draft[field.key]))
+}
+
 function renderReceiptOrderSummary(order: PurchaseReceiptOrder, summary?: ReceiptOrderSummary) {
   const safeSummary = summary ?? summarizeReceiptOrder(order)
   return (
@@ -1508,11 +2365,40 @@ function renderDispatchStatus(status: DispatchPlanStatus) {
   return <Tag color={meta.color}>{meta.label}</Tag>
 }
 
+function renderShippingBatchStatus(status: ShippingBatchStatus) {
+  const meta = SHIPPING_BATCH_STATUS_META[status]
+  return <Tag color={meta.color}>{meta.label}</Tag>
+}
+
+function renderForwarderPlanType(type: ShippingForwarderPlanType) {
+  const meta = FORWARDER_PLAN_META[type] || FORWARDER_PLAN_META.CUSTOM
+  return <Tag color={meta.color}>{meta.label}</Tag>
+}
+
+function renderShippingEvaluationStatus(status: ShippingEvaluationStatus) {
+  const meta = SHIPPING_EVALUATION_META[status] || SHIPPING_EVALUATION_META.pending
+  return <Tag color={meta.color}>{meta.label}</Tag>
+}
+
+function renderOutboundStatus(status: OutboundOrderStatus) {
+  const meta = OUTBOUND_STATUS_META[status]
+  return <Tag color={meta.color}>{meta.label}</Tag>
+}
+
+function renderPackingStatus(status: PackingListStatus) {
+  const meta = PACKING_STATUS_META[status]
+  return <Tag color={meta.color}>{meta.label}</Tag>
+}
+
 function renderTransportMode(mode: WarehouseTransportMode) {
   if (mode === 'UNSPECIFIED') {
     return <Tag>{TRANSPORT_LABELS[mode]}</Tag>
   }
   return <Tag color={mode === 'AIR' ? 'geekblue' : 'cyan'}>{TRANSPORT_LABELS[mode]}</Tag>
+}
+
+function renderSiteTag(siteCode: WarehouseSiteCode) {
+  return <Tag color="blue">{SITE_LABELS[siteCode]}</Tag>
 }
 
 function renderFulfillmentType(type?: WarehouseFulfillmentType) {
@@ -1541,8 +2427,10 @@ function renderReceiptProductCell(row: ReceiptProductRow) {
   return renderWarehouseProductCell({
     psku: row.psku,
     title: row.title,
+    titleCn: row.titleCn,
     imageUrl: row.imageUrl,
-    baseline: row.baseline
+    baseline: row.baseline,
+    isNewProduct: row.isNewProduct
   })
 }
 
@@ -1553,30 +2441,52 @@ function renderReadyProductCell(
   return renderWarehouseProductCell({
     psku: item.psku,
     title: item.title,
+    titleCn: item.titleCn,
     imageUrl: item.imageUrl,
-    baseline: productBaselineByPsku[normalizeProductKey(item.psku)]
+    baseline: productBaselineByPsku[normalizeProductKey(item.psku)],
+    isNewProduct: item.isNewProduct,
+    manualConfirmRequired: item.manualConfirmRequired
   })
+}
+
+function renderDispatchPlanProductCell(line: DispatchPlanLine) {
+  const title = selectWarehouseProductTitle(line.title)
+  return (
+    <Space direction="vertical" size={0}>
+      <Text strong>{title || '未命名商品'}</Text>
+      <Text type="secondary">货号：{line.psku}</Text>
+    </Space>
+  )
 }
 
 function renderWarehouseProductCell({
   psku,
   title: fallbackTitle,
+  titleCn,
   imageUrl: fallbackImageUrl,
-  baseline
+  baseline,
+  isNewProduct,
+  manualConfirmRequired
 }: {
   psku: string
   title?: string
+  titleCn?: string
   imageUrl?: string
   baseline?: ProductBaselineSummary
+  isNewProduct?: boolean
+  manualConfirmRequired?: boolean
 }) {
   const imageUrl = normalizeNoonImageUrl(baseline?.imageUrl || fallbackImageUrl)
-  const title = selectWarehouseProductTitle(fallbackTitle, baseline?.title)
+  const title = selectWarehouseProductTitle(titleCn, baseline?.titleCn, fallbackTitle, baseline?.title)
+  const displayTitle = title || '未命名商品'
   return (
     <div className="warehouse-dispatch-product-cell">
-      {renderWarehouseProductThumb(imageUrl, title || psku, psku)}
+      {renderWarehouseProductThumb(imageUrl, displayTitle)}
       <div className="warehouse-dispatch-product-main">
         <div className="warehouse-dispatch-product-title-line">
-          <Text strong>{psku}</Text>
+          <Text strong>{displayTitle}</Text>
+          {isNewProduct ? <Tag color="magenta">新品</Tag> : null}
+          {manualConfirmRequired ? <Tag color="gold">需人工确认</Tag> : null}
           {baseline?.detailBaselineStatus ? (
             <Tag color={baseline.detailBaselineStatus === 'ready' ? 'green' : 'gold'}>
               基线{baselineStatusLabel(baseline.detailBaselineStatus)}
@@ -1584,17 +2494,17 @@ function renderWarehouseProductCell({
           ) : null}
         </div>
         <Text className="warehouse-dispatch-product-title" type="secondary">
-          {title || '未命名商品'}
+          货号：{psku}
         </Text>
       </div>
     </div>
   )
 }
 
-function renderWarehouseProductThumb(imageUrl: string | undefined, alt: string, psku: string) {
+function renderWarehouseProductThumb(imageUrl: string | undefined, alt: string) {
   const thumb = (
     <div className={`warehouse-dispatch-product-thumb${imageUrl ? ' is-previewable' : ''}`}>
-      {imageUrl ? <img src={imageUrl} alt={alt} loading="lazy" decoding="async" /> : <span>{psku.slice(0, 2)}</span>}
+      {imageUrl ? <img src={imageUrl} alt={alt} loading="lazy" decoding="async" /> : <span>图</span>}
     </div>
   )
 
@@ -1626,11 +2536,8 @@ function renderWarehouseProductThumb(imageUrl: string | undefined, alt: string, 
   )
 }
 
-function selectWarehouseProductTitle(primaryTitle?: string, fallbackTitle?: string) {
-  if (hasCjkText(primaryTitle)) {
-    return primaryTitle
-  }
-  return primaryTitle || fallbackTitle
+function selectWarehouseProductTitle(...candidates: Array<string | undefined>) {
+  return candidates.map((value) => String(value || '').trim()).find(hasCjkText)
 }
 
 function hasCjkText(value?: string) {
@@ -1661,7 +2568,7 @@ function renderReadySourceCell(item: ReadyShipmentRow, orderMetaById: Map<string
             <Text type="secondary">{formatReceiptSourceDate(source.orderCreatedAt)}</Text>
           </span>
           <span className="warehouse-dispatch-ready-source-meta">
-            <Tag color="blue">{source.siteCode}</Tag>
+            {renderSiteTag(source.siteCode)}
             <span className="warehouse-dispatch-source-qty">可发 {source.availableQty}</span>
             <span className="warehouse-dispatch-source-qty">原计划 {TRANSPORT_LABELS[source.plannedTransportMode]}</span>
           </span>
@@ -1687,7 +2594,7 @@ function renderReadySiteCell(item: ReadyShipmentRow) {
   return (
     <Space size={0} wrap>
       {uniqueReadySiteCodes(item).map((siteCode) => (
-        <Tag color="blue" key={siteCode}>{siteCode}</Tag>
+        <span key={siteCode}>{renderSiteTag(siteCode)}</span>
       ))}
     </Space>
   )
@@ -1734,6 +2641,199 @@ function renderRouteGroup(group: RouteGroup) {
       </div>
     </div>
   )
+}
+
+function formatForwarderNames(option: ShippingSuggestionOption) {
+  return option.targetForwarderNames.length ? option.targetForwarderNames.join(' + ') : '待选择'
+}
+
+function renderPurchaseOrderLogisticsComparisonPanel(
+  comparisons: PurchaseOrderLogisticsComparison[],
+  loading: boolean
+) {
+  return (
+    <div className="warehouse-dispatch-logistics-comparison">
+      <div className="warehouse-dispatch-logistics-comparison-header">
+        <Space direction="vertical" size={0}>
+          <Text strong>采购单物流比价</Text>
+          <Text type="secondary">按采购计划数量、目的地和运输方式生成多货代成本预估</Text>
+        </Space>
+        <Badge count={comparisons.length} showZero color="#0f766e" />
+      </div>
+      {comparisons.length ? (
+        <div className="warehouse-dispatch-logistics-comparison-list">
+          {comparisons.map((comparison) => (
+            <div className="warehouse-dispatch-logistics-order-card" key={comparison.purchaseOrderId}>
+              <div className="warehouse-dispatch-logistics-order-main">
+                <Space direction="vertical" size={2}>
+                  <Space wrap>
+                    <Text strong>{comparison.purchaseOrderNo || comparison.purchaseOrderId}</Text>
+                    {comparison.sourceStoreName || comparison.sourceStoreCode ? (
+                      <Tag>{comparison.sourceStoreName || comparison.sourceStoreCode}</Tag>
+                    ) : null}
+                    <Tag color="cyan">{comparison.quantityBasisLabel || '按采购计划数量预估'}</Tag>
+                  </Space>
+                  <Text type="secondary">{comparison.purchaseOrderTitle || '未命名采购单'}</Text>
+                  <Text type="secondary">
+                    {comparison.fulfillmentReadinessNote || '采购阶段物流成本预估；仓库验收后才可生成实际货运计划。'}
+                  </Text>
+                </Space>
+                <Space direction="vertical" size={2} align="end">
+                  <Text strong>{formatMoney(comparison.recommendedEstimatedAmount, comparison.currency)}</Text>
+                  <Text type="secondary">推荐：{comparison.recommendedOptionName || '待补充方案'}</Text>
+                </Space>
+              </div>
+              <div className="warehouse-dispatch-logistics-order-metrics">
+                <span>商品 {comparison.skuCount}</span>
+                <span>计划数量 {comparison.totalQuantity}</span>
+                <span>实重 {formatMeasure(comparison.actualWeightKg, 'kg')}</span>
+                <span>体积 {formatMeasure(comparison.volumeCbm, 'CBM')}</span>
+              </div>
+              {comparison.defects.length ? (
+                <div className="warehouse-dispatch-logistics-tags">
+                  {comparison.defects.map((defect) => <Tag color="gold" key={defect}>{defect}</Tag>)}
+                </div>
+              ) : null}
+              <div className="warehouse-dispatch-logistics-segment-list">
+                {comparison.segments.map((segment) => renderPurchaseOrderLogisticsSegment(segment))}
+              </div>
+              {comparison.missingPlanSuggestions.length ? (
+                <div className="warehouse-dispatch-logistics-suggestions">
+                  {comparison.missingPlanSuggestions.map((suggestion) => <Text key={suggestion}>• {suggestion}</Text>)}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Empty
+          className="warehouse-dispatch-logistics-empty"
+          description={loading ? '正在读取采购单物流比价' : '暂无可按采购计划比价的采购单'}
+        />
+      )}
+    </div>
+  )
+}
+
+function renderPurchaseOrderLogisticsSegment(segment: PurchaseOrderLogisticsSegment) {
+  return (
+    <div className="warehouse-dispatch-logistics-segment-card" key={segment.segmentKey}>
+      <div className="warehouse-dispatch-logistics-segment-header">
+        <Space wrap>
+          {renderSiteTag(segment.siteCode)}
+          {renderTransportMode(segment.plannedTransportMode)}
+          <Text type="secondary">商品 {segment.skuCount}</Text>
+          <Text type="secondary">计划数量 {segment.totalQuantity}</Text>
+        </Space>
+        <Text strong>{formatMoney(segment.recommendedEstimatedAmount, segment.currency)}</Text>
+      </div>
+      <div className="warehouse-dispatch-logistics-option-grid">
+        {segment.options.map((option) => (
+          <div
+            className={`warehouse-dispatch-logistics-option${option.id === segment.recommendedOptionId ? ' is-recommended' : ''}`}
+            key={option.id}
+          >
+            <div className="warehouse-dispatch-logistics-option-title">
+              <Text strong>{option.optionName}</Text>
+              {option.id === segment.recommendedOptionId ? <Tag color="green">推荐</Tag> : null}
+            </div>
+            <div className="warehouse-dispatch-logistics-option-meta">
+              <span>{formatForwarderNames(option)}</span>
+              <span>{formatMoney(option.estimatedTotalAmount, option.currency)}</span>
+            </div>
+            <div className="warehouse-dispatch-logistics-option-meta">
+              <span>{renderShippingEvaluationStatus(option.evaluationStatus)}</span>
+              <span>均件 {formatMoney(option.avgUnitAmount, option.currency)}</span>
+            </div>
+            {option.blockedReasons.length ? (
+              <div className="warehouse-dispatch-logistics-tags">
+                {option.blockedReasons.slice(0, 3).map((reason) => <Tag color="gold" key={reason}>{reason}</Tag>)}
+              </div>
+            ) : null}
+          </div>
+        ))}
+      </div>
+      {segment.missingPlanSuggestions.length ? (
+        <div className="warehouse-dispatch-logistics-suggestions">
+          {segment.missingPlanSuggestions.map((suggestion) => <Text key={suggestion}>• {suggestion}</Text>)}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function renderShippingEvaluationResult(option: ShippingSuggestionOption) {
+  return (
+    <div className="warehouse-dispatch-evaluation-card">
+      <div className="warehouse-dispatch-evaluation-header">
+        <Space>
+          <Text strong>{option.optionName}</Text>
+          {renderShippingEvaluationStatus(option.evaluationStatus)}
+          {renderForwarderPlanType(option.forwarderPlanType)}
+        </Space>
+        <Text strong>{formatMoney(option.estimatedTotalAmount, option.currency)}</Text>
+      </div>
+      {renderSummaryGrid([
+        ['目标货代', formatForwarderNames(option)],
+        ['总实重', formatMeasure(option.actualWeightKg, 'kg')],
+        ['总体积', formatMeasure(option.volumeCbm, 'CBM')],
+        ['计费量', formatMeasure(option.chargeableWeightKg, 'kg')],
+        ['平均每件', formatMoney(option.avgUnitAmount, option.currency)]
+      ], 'warehouse-dispatch-evaluation-summary')}
+      {option.blockedReasons.length ? (
+        <div className="warehouse-dispatch-evaluation-reasons">
+          {option.blockedReasons.map((reason) => <Tag color="gold" key={reason}>{reason}</Tag>)}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function renderShippingLineTarget(line: ShippingSuggestionLine) {
+  return (
+    <div className="warehouse-dispatch-line-target-card" key={line.id}>
+      <div className="warehouse-dispatch-line-target-title">
+        <Text strong>{line.psku}</Text>
+        <Space size={4}>
+          {renderSiteTag(line.siteCode)}
+          {renderTransportMode(line.actualTransportMode)}
+          {line.cargoCategoryName ? (
+            <Tag color={line.cargoCategoryReviewRequired ? 'gold' : 'blue'}>{formatCargoCategory(line)}</Tag>
+          ) : null}
+          {line.quoteCargoCategoryName && line.quoteCargoCategoryName !== line.cargoCategoryName ? (
+            <Tag color="cyan">报价 {line.quoteCargoCategoryName}</Tag>
+          ) : null}
+        </Space>
+      </div>
+      <div className="warehouse-dispatch-line-target-meta">
+        {line.targetForwarderName || line.targetForwarderCode || '待匹配货代'}
+        {line.routeName ? ` / ${line.routeName}` : ''}
+      </div>
+      <div className="warehouse-dispatch-line-target-meta">
+        数量 {line.quantity} / 实重 {formatMeasure(line.actualWeightKg, 'kg')} / 体积 {formatMeasure(line.volumeCbm, 'CBM')} / 预估 {formatMoney(line.estimatedAmount, line.currency)}
+      </div>
+    </div>
+  )
+}
+
+function formatCargoCategory(line: ShippingSuggestionLine) {
+  const prefix = line.cargoCategoryCode ? `${line.cargoCategoryCode}类` : '货类'
+  return `${prefix} ${line.cargoCategoryName || ''}`.trim()
+}
+
+function formatMeasure(value: number | undefined, unit: string) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return '-'
+  }
+  return `${value.toFixed(unit === 'CBM' ? 4 : 3)} ${unit}`
+}
+
+function formatMoney(value: number | undefined, currency?: string) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return '-'
+  }
+  const prefix = currency === 'CNY' || currency === 'RMB' || !currency ? '¥' : `${currency} `
+  return `${prefix}${value.toFixed(2)}`
 }
 
 function summarizeReceiptOrder(order: PurchaseReceiptOrder): ReceiptOrderSummary {
@@ -1803,10 +2903,12 @@ function buildProductBaselineMap(items: ProductListRowPayload[]) {
   const result: Record<string, ProductBaselineSummary> = {}
   items.forEach((item) => {
     const imageUrl = normalizeNoonImageUrl(item.imageUrl || item.galleryImages?.[0])
+    const titleCn = selectWarehouseProductTitle(item.titleCn, item.titleZh, item.productTitleCn, item.chineseTitle, item.title)
     const summary: ProductBaselineSummary = {
       psku: item.pskuCode || item.partnerSku || item.skuParent,
       skuParent: item.skuParent,
       title: item.title,
+      titleCn,
       imageUrl,
       productFulltype: item.productFulltype,
       detailBaselineStatus: item.detailBaselineStatus
@@ -1837,7 +2939,11 @@ function buildReceiptProductRows(
         currentRow.receivedQty += item.receivedQty
         currentRow.plannedQty += item.plannedQty
         currentRow.specStatus = currentRow.specStatus === 'missing' || item.specStatus === 'missing' ? 'missing' : 'complete'
+        currentRow.isNewProduct = Boolean(currentRow.isNewProduct || item.isNewProduct)
         currentRow.items.push(item)
+        if (!currentRow.titleCn && hasCjkText(item.titleCn)) {
+          currentRow.titleCn = item.titleCn
+        }
         if (!hasCjkText(currentRow.title) && hasCjkText(item.title)) {
           currentRow.title = item.title
         }
@@ -1855,11 +2961,13 @@ function buildReceiptProductRows(
         storeName: order.storeName,
         psku: item.psku,
         title: item.title || baseline?.title || item.psku,
+        titleCn: selectWarehouseProductTitle(item.titleCn, baseline?.titleCn, item.title, baseline?.title),
         imageUrl: normalizeNoonImageUrl(item.imageUrl),
         expectedQty: item.expectedQty,
         receivedQty: item.receivedQty,
         plannedQty: item.plannedQty,
         specStatus: item.specStatus,
+        isNewProduct: item.isNewProduct,
         items: [item],
         baseline
       })
@@ -1944,6 +3052,13 @@ function mergeReadyShipmentRowsByProduct(items: ReadyShipmentRow[]) {
       current.items.push(...sourceItems)
       current.specStatus = current.specStatus === 'missing' || item.specStatus === 'missing' ? 'missing' : 'complete'
       current.transportMode = inferReadyDominantTransport(current.items)
+      current.isNewProduct = Boolean(current.isNewProduct || item.isNewProduct || sourceItems.some((source) => source.isNewProduct))
+      current.manualConfirmRequired = Boolean(
+        current.manualConfirmRequired || item.manualConfirmRequired || sourceItems.some((source) => source.manualConfirmRequired)
+      )
+      if (!current.titleCn && hasCjkText(item.titleCn)) {
+        current.titleCn = item.titleCn
+      }
       if (!hasCjkText(current.title) && hasCjkText(item.title)) {
         current.title = item.title
       }
@@ -2014,7 +3129,17 @@ function inferReadyDominantTransport(items: ReadyShipmentItem[]): WarehouseTrans
   const airQty = items
     .filter((item) => item.transportMode === 'AIR')
     .reduce((total, item) => total + item.availableQty, 0)
-  return seaQty > airQty ? 'SEA' : 'AIR'
+  if (seaQty > airQty) {
+    return 'SEA'
+  }
+  if (airQty > 0) {
+    return 'AIR'
+  }
+  return 'UNSPECIFIED'
+}
+
+function isReadyTransportScopeFilter(filter: ReadyFilterKey) {
+  return filter.endsWith('-AIR') || filter.endsWith('-SEA')
 }
 
 function expandReadyRowDrafts(
@@ -2041,7 +3166,7 @@ function buildDefaultTransportSplit(row: ReadyShipmentRow): Required<TransportSp
   const sourceItems = row.items.length ? row.items : [row]
   return {
     AIR: sourceItems
-      .filter((item) => item.transportMode !== 'SEA')
+      .filter((item) => item.transportMode === 'AIR')
       .reduce((total, item) => total + item.availableQty, 0),
     SEA: sourceItems
       .filter((item) => item.transportMode === 'SEA')
@@ -2195,12 +3320,45 @@ function filterReadyItems(items: ReadyShipmentRow[], filter: ReadyFilterKey) {
     return items
   }
   if (filter === 'missing') {
-    return items.filter((item) => item.specStatus === 'missing')
+    return items
+      .map((item) => sliceReadyRowSources(item, (source) => source.specStatus === 'missing'))
+      .filter((item): item is ReadyShipmentRow => Boolean(item))
+  }
+  if (filter === 'review') {
+    return items
+      .map((item) => sliceReadyRowSources(item, (source) => Boolean(source.manualConfirmRequired)))
+      .filter((item): item is ReadyShipmentRow => Boolean(item))
   }
   const [siteCode, transportMode] = filter.split('-') as [WarehouseSiteCode, WarehouseTransportMode]
-  return items.filter((item) =>
-    item.items.some((source) => source.siteCode === siteCode && source.transportMode === transportMode)
-  )
+  return items
+    .map((item) => sliceReadyRowSources(item, (source) => source.siteCode === siteCode && source.transportMode === transportMode))
+    .filter((item): item is ReadyShipmentRow => Boolean(item))
+}
+
+function sliceReadyRowSources(
+  item: ReadyShipmentRow,
+  predicate: (source: ReadyShipmentItem) => boolean
+): ReadyShipmentRow | undefined {
+  const sourceItems = item.items.length ? item.items : [item]
+  const matchedSources = sourceItems.filter(predicate)
+  if (!matchedSources.length) {
+    return undefined
+  }
+  const firstSource = matchedSources[0]
+  return {
+    ...item,
+    siteCode: firstSource.siteCode,
+    transportMode: inferReadyDominantTransport(matchedSources),
+    fulfillmentType: firstSource.fulfillmentType || item.fulfillmentType,
+    specStatus: matchedSources.some((source) => source.specStatus === 'missing') ? 'missing' : 'complete',
+    isNewProduct: matchedSources.some((source) => source.isNewProduct),
+    manualConfirmRequired: matchedSources.some((source) => source.manualConfirmRequired),
+    expectedQty: sum(matchedSources.map((source) => source.expectedQty)),
+    receivedQty: sum(matchedSources.map((source) => source.receivedQty)),
+    plannedQty: sum(matchedSources.map((source) => source.plannedQty)),
+    availableQty: sum(matchedSources.map((source) => source.availableQty)),
+    items: matchedSources
+  }
 }
 
 function buildRouteGroups(lines: DispatchPlanLine[]): RouteGroup[] {
