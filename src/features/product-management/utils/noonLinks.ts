@@ -29,7 +29,8 @@ export function buildNoonProductUrl(summary: ProductSummarySurface) {
     return undefined;
   }
   const locale = noonLocaleFromSite(productSummaryPrimarySite(summary));
-  const slug = noonSlugFromTitle(productSummaryTitle(summary));
+  const slugTitle = textInputValue(summary.title).trim() || productSummaryTitle(summary);
+  const slug = noonSlugFromTitle(slugTitle);
   return `https://www.noon.com/${locale}/${slug}/${encodeURIComponent(skuParent)}/p/`;
 }
 

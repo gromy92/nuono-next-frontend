@@ -348,7 +348,7 @@ export function productSummaryPriceLine(summary: ProductSummarySurface) {
 }
 
 export function productSummaryTitle(summary: ProductSummarySurface) {
-  return summary.title || summary.skuParent;
+  return summary.titleCn || summary.title || summary.skuParent;
 }
 
 export function productSummaryIdentityLine(summary: ProductSummarySurface) {

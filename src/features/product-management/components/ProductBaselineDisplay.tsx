@@ -92,10 +92,10 @@ export function ProductBaselineListCell({
   onImageClick,
   actions
 }: ProductBaselineListCellProps) {
-  const title = productSummaryTitle(summary);
+  const displayTitle = productSummaryTitle(summary);
   const titleCn = summary.titleCn?.trim();
-  const displayTitle = titleCn || title;
-  const showEnglishTitle = Boolean(titleCn && title && titleCn !== title);
+  const titleEn = summary.title?.trim();
+  const showEnglishTitle = Boolean(titleCn && titleEn && titleCn !== titleEn);
   const visiblePsku = summary.partnerSku || summary.pskuCode || '-';
   const sourceTypeMeta = productSourceTypeMeta(summary.productSourceType);
   const titleContent = (
@@ -113,7 +113,7 @@ export function ProductBaselineListCell({
   const titleTooltip = showEnglishTitle ? (
     <Space direction="vertical" size={2}>
       <span>{displayTitle}</span>
-      <span>{title}</span>
+      <span>{titleEn}</span>
     </Space>
   ) : (
     displayTitle
@@ -188,7 +188,7 @@ export function ProductBaselineListCell({
           )}
         </Tooltip>
         {showEnglishTitle ? (
-          <Tooltip title={title}>
+          <Tooltip title={titleEn}>
             <Text
               style={{
                 display: 'block',
@@ -201,7 +201,7 @@ export function ProductBaselineListCell({
                 whiteSpace: 'nowrap'
               }}
             >
-              {title}
+              {titleEn}
             </Text>
           </Tooltip>
         ) : null}
