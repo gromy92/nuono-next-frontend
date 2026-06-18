@@ -40,7 +40,7 @@ type StatusMeta = {
 }
 
 type ProcurementStageMeta = {
-  status: ProcurementInquiryStatus
+  status: string
   label: string
   color: string
   description: string
@@ -81,6 +81,33 @@ const CANDIDATE_LEVEL_META: Record<Ali1688CandidateLevel, StatusMeta> = {
   recommended: { label: '推荐', color: 'success', tone: 'green' },
   review: { label: '待确认', color: 'warning', tone: 'orange' },
   reject: { label: '淘汰', color: 'default', tone: 'neutral' }
+}
+
+const DETAIL_ENRICHMENT_META: Record<string, StatusMeta> = {
+  not_requested: { label: '详情未采', color: 'default', tone: 'neutral' },
+  pending: { label: '详情待采', color: 'processing', tone: 'blue' },
+  completed: { label: '详情已采', color: 'success', tone: 'green' },
+  failed: { label: '详情失败', color: 'error', tone: 'red' },
+  unavailable: { label: '详情不可用', color: 'default', tone: 'neutral' }
+}
+
+const PRICE_PREVIEW_META: Record<string, StatusMeta> = {
+  price_probe_pending: { label: '待取价', color: 'processing', tone: 'blue' },
+  price_probe_failed: { label: '取价失败', color: 'error', tone: 'red' },
+  price_confirmed: { label: '真实价已确认', color: 'success', tone: 'green' }
+}
+
+const CANDIDATE_GATE_STAGE_META: Record<string, ProcurementStageMeta> = {
+  not_top5: { status: 'not_top5', label: '待入Top5', color: 'default', description: '未进入推荐候选' },
+  ai_pending: { status: 'ai_pending', label: '待AI评分', color: 'processing', description: '等待匹配/规格补分' },
+  ai_failed: { status: 'ai_failed', label: 'AI失败', color: 'error', description: '需重试或人工复核' },
+  mismatch_rejected: { status: 'mismatch_rejected', label: '匹配不足', color: 'default', description: '不允许自动询盘' },
+  spec_uncertain: { status: 'spec_uncertain', label: '规格待确认', color: 'warning', description: '规格信息不足' },
+  risk_blocked: { status: 'risk_blocked', label: '风险拦截', color: 'error', description: '不允许自动询盘' },
+  price_probe_pending: { status: 'price_probe_pending', label: '待取价', color: 'processing', description: '等待真实价格预览' },
+  price_probe_failed: { status: 'price_probe_failed', label: '取价失败', color: 'error', description: '需处理失败原因' },
+  price_confirmed: { status: 'price_confirmed', label: '价格已确认', color: 'success', description: '真实价格快照可用' },
+  inquiry_eligible: { status: 'inquiry_eligible', label: '可询盘', color: 'success', description: 'AI 与真实价格已通过' }
 }
 
 const PROCUREMENT_STAGE_LABELS: Record<ProcurementInquiryStatus, string> = {
@@ -477,6 +504,8 @@ function CandidateCard(props: {
 }) {
   const { candidate } = props
   const levelMeta = CANDIDATE_LEVEL_META[candidate.level]
+  const detailMeta = DETAIL_ENRICHMENT_META[candidate.detailEnrichmentStatus || 'not_requested'] || DETAIL_ENRICHMENT_META.not_requested
+  const priceMeta = PRICE_PREVIEW_META[candidate.pricePreviewStatus || 'price_probe_pending'] || PRICE_PREVIEW_META.price_probe_pending
   const stage = resolveCandidateStage(candidate)
   const scoring = resolveCandidateScoring(candidate)
   const images = buildCandidateImages(candidate, props.fallbackImage)
@@ -487,6 +516,8 @@ function CandidateCard(props: {
         <div className="ali1688-candidate-topline">
           <div className="ali1688-candidate-tags">
             <Tag color={levelMeta.color}>{levelMeta.label}</Tag>
+            <Tag color={detailMeta.color}>{detailMeta.label}</Tag>
+            <Tag color={priceMeta.color}>{priceMeta.label}</Tag>
             <Text type="secondary">{candidate.locationText || '地区待解析'}</Text>
           </div>
           <ScoreBadge score={scoring.totalScore} label={scoring.label} />
@@ -497,10 +528,17 @@ function CandidateCard(props: {
         <div className="ali1688-candidate-supplier">{candidate.supplierName}</div>
         <CandidateStageLine stage={stage} />
         <div className="ali1688-candidate-price-line">
-          <span>价格 {candidate.priceText || '待解析'}</span>
+          <span>列表价 {candidate.priceText || '待解析'}</span>
+          <strong>真实价 {candidate.confirmedRealPriceText || priceMeta.label}</strong>
           <span>起订 {candidate.moqText || '待解析'}</span>
         </div>
+        {candidate.pricePreviewFailureMessage ? (
+          <Text type="secondary" className="ali1688-candidate-price-warning">
+            取价失败：{candidate.pricePreviewFailureMessage}
+          </Text>
+        ) : null}
         <ScoreBreakdownPanel scoring={scoring} />
+        <DetailEnrichmentPanel candidate={candidate} />
         <div className="ali1688-candidate-actions">
           <Button size="small" icon={<LinkOutlined />} onClick={() => openUrl(candidate.candidateUrl)}>
             打开1688
@@ -508,6 +546,81 @@ function CandidateCard(props: {
         </div>
       </div>
     </article>
+  )
+}
+
+function DetailEnrichmentPanel(props: { candidate: Ali1688CandidatePreview }) {
+  const { candidate } = props
+  const attributes = candidate.detailAttributes || []
+  const skuOptions = candidate.detailSkuOptions || []
+  const serviceLabels = candidate.detailServiceLabels || []
+  const supplier = (candidate.detailSupplierProfile || {}) as Record<string, unknown>
+  const priceHint = (candidate.detailPagePriceHint || {}) as Record<string, unknown>
+  const shipping = (candidate.detailShippingSnapshot || {}) as Record<string, unknown>
+  const text = (value: unknown) => (value == null || value === '' ? undefined : String(value))
+  const hasV2 =
+    attributes.length > 0 ||
+    skuOptions.length > 0 ||
+    serviceLabels.length > 0 ||
+    Boolean(candidate.detailSkuCount) ||
+    Object.keys(supplier).length > 0 ||
+    Object.keys(priceHint).length > 0 ||
+    Object.keys(shipping).length > 0
+
+  if (!hasV2) {
+    return null
+  }
+
+  const priceClue = text(priceHint.priceScale) || text(priceHint.offerPriceDisplay)
+  const shipFrom = text(shipping.shipFrom)
+  const shipTo = text(shipping.shipToText)
+
+  return (
+    <div className="ali1688-detail-v2" data-testid="ali1688-detail-v2">
+      <div className="ali1688-detail-v2-title">
+        详情补全 v2
+        {candidate.detailUnit ? ` · 单位 ${candidate.detailUnit}` : ''}
+        {candidate.detailSkuCount ? ` · SKU ${candidate.detailSkuCount}` : ''}
+      </div>
+      {attributes.length ? (
+        <div className="ali1688-detail-v2-attrs">
+          {attributes.slice(0, 8).map((attr) => (
+            <Tag key={attr.name}>{attr.name}: {(attr.values || []).join(' / ')}</Tag>
+          ))}
+        </div>
+      ) : null}
+      {skuOptions.length ? (
+        <div className="ali1688-detail-v2-line">规格维度：{skuOptions.map((option) => option.name).join('、')}</div>
+      ) : null}
+      {priceClue ? (
+        <div className="ali1688-detail-v2-line">
+          价格线索：{priceClue}
+          {text(priceHint.originalPriceScale) ? `（原价 ${text(priceHint.originalPriceScale)}）` : ''}
+        </div>
+      ) : null}
+      {Object.keys(supplier).length ? (
+        <div className="ali1688-detail-v2-line">
+          供应商：{text(supplier.companyName) || candidate.supplierName}
+          {text(supplier.sellerServiceScore) ? ` · 服务 ${text(supplier.sellerServiceScore)}` : ''}
+          {text(supplier.goodRates) ? ` · 好评 ${text(supplier.goodRates)}` : ''}
+          {text(supplier.buyerRepeatRate) ? ` · 回购 ${text(supplier.buyerRepeatRate)}` : ''}
+        </div>
+      ) : null}
+      {shipFrom || shipTo ? (
+        <div className="ali1688-detail-v2-line">
+          物流线索：{shipFrom || '-'}
+          {shipTo ? ` → ${shipTo}` : ''}
+          {text(shipping.unitWeight) ? ` · ${text(shipping.unitWeight)}kg` : ''}
+          {text(shipping.freightText) ? ` · 运费 ${text(shipping.freightText)}` : ''}
+        </div>
+      ) : null}
+      {serviceLabels.length ? (
+        <div className="ali1688-detail-v2-line">服务：{serviceLabels.slice(0, 6).join('、')}</div>
+      ) : null}
+      <Text type="secondary" className="ali1688-detail-v2-note">
+        页面价/物流价仅作 AI 线索，真实价以价格预览或未支付订单为准
+      </Text>
+    </div>
   )
 }
 
@@ -644,6 +757,9 @@ function resolvePendingSlotStage(_status: Ali1688CollectionStatus, _index: numbe
 }
 
 function resolveCandidateStage(candidate: Ali1688CandidatePreview): ProcurementStageMeta {
+  if (candidate.candidateGateStatus && CANDIDATE_GATE_STAGE_META[candidate.candidateGateStatus]) {
+    return CANDIDATE_GATE_STAGE_META[candidate.candidateGateStatus]
+  }
   const candidateWithStage = candidate as Ali1688CandidatePreview & {
     inquiryStatus?: string
     procurementInquiryStatus?: string
@@ -669,10 +785,16 @@ function resolveCandidateStage(candidate: Ali1688CandidatePreview): ProcurementS
 
 function buildCandidateImages(candidate: Ali1688CandidatePreview, fallbackImage?: string) {
   const candidateWithImages = candidate as Ali1688CandidatePreview & {
+    detailImageUrls?: string[]
     imageUrls?: string[]
   }
   return Array.from(
-    new Set([candidate.imageUrl, ...(candidateWithImages.imageUrls || []), fallbackImage].filter(Boolean) as string[])
+    new Set([
+      candidate.imageUrl,
+      ...(candidateWithImages.imageUrls || []),
+      ...(candidateWithImages.detailImageUrls || []),
+      fallbackImage
+    ].filter(Boolean) as string[])
   )
 }
 
