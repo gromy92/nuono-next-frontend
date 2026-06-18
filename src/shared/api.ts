@@ -43,6 +43,10 @@ export function devSessionHeaders(): Record<string, string> {
   if (window.location.hostname !== '127.0.0.1' && window.location.hostname !== 'localhost') {
     return {};
   }
+  const urlHeaders = devSessionHeadersFromUrl();
+  if (urlHeaders) {
+    return urlHeaders;
+  }
   try {
     const rawSession = window.localStorage.getItem(SESSION_STORAGE_KEY);
     if (!rawSession) {
@@ -66,6 +70,38 @@ export function devSessionHeaders(): Record<string, string> {
   } catch {
     return {};
   }
+}
+
+function devSessionHeadersFromUrl() {
+  const search = new URLSearchParams(window.location.search);
+  if (search.get('devSession') !== '1') {
+    return undefined;
+  }
+  const devRole = (search.get('devRole') || search.get('role') || '').trim().toLowerCase();
+  if (['admin', 'system-admin', 'administrator', '管理员', '系统管理员'].includes(devRole)) {
+    return buildDevSessionHeaders(10003, 1, 0);
+  }
+  if (['ops-manager', 'operation-manager', 'operations-manager', '运营主管', '运营管理'].includes(devRole)) {
+    return buildDevSessionHeaders(90005, 3, 2);
+  }
+  if (['operator', 'ops', 'operation', '运营'].includes(devRole)) {
+    return buildDevSessionHeaders(90003, 4, 3);
+  }
+  if (['procurement', 'purchase', 'purchasing', 'buyer', '采购'].includes(devRole)) {
+    return buildDevSessionHeaders(90001, 5, 3);
+  }
+  if (['warehouse', 'stock', 'storekeeper', '仓管'].includes(devRole)) {
+    return buildDevSessionHeaders(90004, 6, 3);
+  }
+  return buildDevSessionHeaders(307, 2, 1);
+}
+
+function buildDevSessionHeaders(userId: number, roleId: number, level: number) {
+  return {
+    'X-Nuono-Dev-Session-User-Id': String(userId),
+    'X-Nuono-Dev-Session-Role-Id': String(roleId),
+    'X-Nuono-Dev-Session-Level': String(level)
+  };
 }
 
 export function apiFetch(input: RequestInfo | URL, init?: RequestInit) {

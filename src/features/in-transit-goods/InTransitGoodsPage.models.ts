@@ -1,4 +1,5 @@
 import type { InTransitBatch, InTransitGoodsLine, InTransitBoxDetailTabRequest } from './types'
+import type { AuthSession } from '../auth/session'
 
 export type PageState =
   | { status: 'idle' | 'loading'; data?: InTransitBatch[]; message?: string }
@@ -52,6 +53,7 @@ export type InTransitProductGroup = {
 export type BoxDetailTabKey = 'box' | 'product'
 
 export type InTransitGoodsPageProps = {
+  session?: AuthSession | null
   isBoxDetailTab?: boolean
   boxDetailRequest?: InTransitBoxDetailTabRequest | null
   onOpenBoxDetailTab?: (request: InTransitBoxDetailTabRequest) => void

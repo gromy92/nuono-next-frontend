@@ -1,5 +1,5 @@
 import { Button, DatePicker, Input, Select, Space } from 'antd'
-import { PlusOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons'
+import { PlusOutlined, ReloadOutlined, SearchOutlined, UploadOutlined } from '@ant-design/icons'
 import type { InTransitBatchFilters } from './types'
 
 const { RangePicker } = DatePicker
@@ -20,6 +20,7 @@ type InTransitBatchToolbarProps = {
   onForwarderChange: (value?: string) => void
   onFilterChange: (patch: Partial<InTransitBatchFilters>) => void
   onRefresh: () => void
+  onOpenSuperSearch: () => void
   onOpenImport: () => void
   onOpenCreate: () => void
 }
@@ -35,6 +36,7 @@ export function InTransitBatchToolbar({
   onForwarderChange,
   onFilterChange,
   onRefresh,
+  onOpenSuperSearch,
   onOpenImport,
   onOpenCreate
 }: InTransitBatchToolbarProps) {
@@ -94,6 +96,9 @@ export function InTransitBatchToolbar({
         })}
       />
       <Space className="in-transit-page__toolbar-actions">
+        <Button icon={<SearchOutlined />} onClick={onOpenSuperSearch}>
+          超级搜索
+        </Button>
         <Button icon={<ReloadOutlined />} onClick={onRefresh} loading={loading}>
           刷新
         </Button>

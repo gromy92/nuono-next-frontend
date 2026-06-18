@@ -14,6 +14,8 @@ import type {
   InTransitImportPreview,
   InTransitLogisticsNode,
   InTransitLogisticsNodeList,
+  InTransitSuperSearchParams,
+  InTransitSuperSearchResult,
   InTransitSkuFreightCostHistory,
   SaveInTransitGoodsLineRequest,
   SaveInTransitForwarderAliasRequest,
@@ -64,6 +66,29 @@ export async function fetchInTransitBatches(filters: InTransitBatchFilters = {})
   })
   const response = await apiFetch(url.pathname + url.search)
   return readJson<InTransitBatchList>(response)
+}
+
+export function buildInTransitSuperSearchUrl(origin: string, params: InTransitSuperSearchParams): string {
+  const url = new URL('/api/in-transit-goods/super-search', origin)
+  const keyword = params.keyword.trim()
+  if (keyword) {
+    url.searchParams.set('keyword', keyword)
+  }
+  if (params.includeHistory) {
+    url.searchParams.set('includeHistory', 'true')
+  }
+  if (params.limit !== undefined && params.limit !== null && Number.isFinite(params.limit)) {
+    url.searchParams.set('limit', String(params.limit))
+  }
+  if (params.projectCode && params.projectCode.trim()) {
+    url.searchParams.set('projectCode', params.projectCode.trim())
+  }
+  return url.pathname + url.search
+}
+
+export async function fetchInTransitSuperSearch(params: InTransitSuperSearchParams): Promise<InTransitSuperSearchResult> {
+  const response = await apiFetch(buildInTransitSuperSearchUrl(window.location.origin, params))
+  return readJson<InTransitSuperSearchResult>(response)
 }
 
 export async function saveInTransitBatch(request: SaveInTransitBatchRequest): Promise<InTransitBatch> {

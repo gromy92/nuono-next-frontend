@@ -103,6 +103,47 @@ export type InTransitBatchFilters = {
   sortDirection?: 'asc' | 'desc'
 }
 
+export type InTransitSuperSearchParams = {
+  keyword: string
+  includeHistory?: boolean
+  limit?: number
+  projectCode?: string
+}
+
+export type InTransitSuperSearchItem = {
+  psku: string
+  productName?: string | null
+  productTitle?: string | null
+  productTitleCn?: string | null
+  productImageUrl?: string | null
+  batchId: number
+  batchReferenceNo?: string | null
+  rawForwarderName?: string | null
+  standardForwarderName?: string | null
+  transportMode?: string | null
+  batchStatus?: string | null
+  targetStoreCode?: string | null
+  targetSiteCode?: string | null
+  targetWarehouseName?: string | null
+  sourceCreatedAt?: string | null
+  domesticReceivedAt?: string | null
+  latestNodeHappenedAt?: string | null
+  latestNodeStatus?: string | null
+  latestNodeDescription?: string | null
+  etaDate?: string | null
+  boxCount?: number | null
+  shippedQuantityTotal?: number | null
+  receivedQuantityTotal?: number | null
+  remainingQuantityTotal?: number | null
+}
+
+export type InTransitSuperSearchResult = {
+  keyword: string
+  includeHistory: boolean
+  totalCount: number
+  items: InTransitSuperSearchItem[]
+}
+
 export type SaveInTransitBatchRequest = {
   batchId?: number
   standardForwarderId?: number

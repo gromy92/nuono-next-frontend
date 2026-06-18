@@ -1,7 +1,13 @@
 import { useState } from 'react'
 import { normalizeNoonImageUrl } from '../product-management/utils/common'
 
-export function InTransitProductThumb({ imageUrl, title }: { imageUrl?: string | null; title: string }) {
+type InTransitProductThumbProps = {
+  imageUrl?: string | null
+  title: string
+  loading?: 'lazy' | 'eager'
+}
+
+export function InTransitProductThumb({ imageUrl, title, loading = 'lazy' }: InTransitProductThumbProps) {
   const [failed, setFailed] = useState(false)
   const normalizedImageUrl = normalizeNoonImageUrl(imageUrl)
   if (!normalizedImageUrl || failed) {
@@ -12,7 +18,8 @@ export function InTransitProductThumb({ imageUrl, title }: { imageUrl?: string |
       className="in-transit-product-thumb"
       src={normalizedImageUrl}
       alt={title}
-      loading="lazy"
+      loading={loading}
+      decoding="async"
       onError={() => setFailed(true)}
     />
   )

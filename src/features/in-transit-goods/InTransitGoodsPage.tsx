@@ -1,10 +1,13 @@
 import { Alert, Table } from 'antd'
+import { useMemo } from 'react'
+import type { AuthSessionStore } from '../auth/session'
 import { InTransitBatchToolbar } from './InTransitBatchToolbar'
 import { InTransitBoxDetailView } from './InTransitBoxDetailView'
 import { InTransitAliasDrawer } from './InTransitAliasDrawer'
 import { InTransitImportDrawer } from './InTransitImportDrawer'
 import { InTransitBatchEditorDrawer } from './InTransitBatchEditorDrawer'
 import { InTransitSkuFreightDrawer } from './InTransitSkuFreightDrawer'
+import { InTransitSuperSearchDrawer } from './InTransitSuperSearchDrawer'
 import type { InTransitGoodsPageProps } from './InTransitGoodsPage.models'
 import { stripedRowClassName } from './InTransitGoodsPage.utils'
 import { useInTransitBatchColumns } from './useInTransitBatchColumns'
@@ -14,9 +17,11 @@ import { useInTransitBoxDetail } from './useInTransitBoxDetail'
 import { useInTransitForwarderAlias } from './useInTransitForwarderAlias'
 import { useInTransitImport } from './useInTransitImport'
 import { useInTransitSkuFreight } from './useInTransitSkuFreight'
+import { useInTransitSuperSearch } from './useInTransitSuperSearch'
 import './InTransitGoodsPage.css'
 
 export function InTransitGoodsPage({
+  session,
   isBoxDetailTab = false,
   boxDetailRequest,
   onOpenBoxDetailTab,
@@ -26,6 +31,11 @@ export function InTransitGoodsPage({
   const batchEditor = useInTransitBatchEditor(batchList.filters, batchList.load)
   const alias = useInTransitForwarderAlias(batchList.filters, batchList.load)
   const importer = useInTransitImport(batchList.filters, batchList.load)
+  const superSearch = useInTransitSuperSearch()
+  const superSearchStoreOptions = useMemo(
+    () => buildSuperSearchStoreOptions([...(session?.userStores ?? []), ...(session?.currentStore ? [session.currentStore] : [])]),
+    [session?.currentStore, session?.userStores]
+  )
   const boxDetail = useInTransitBoxDetail({
     isBoxDetailTab,
     boxDetailRequest,
@@ -74,6 +84,7 @@ export function InTransitGoodsPage({
         onForwarderChange={batchList.updateForwarderFilter}
         onFilterChange={batchList.updateFilters}
         onRefresh={() => void batchList.load(batchList.filters)}
+        onOpenSuperSearch={superSearch.openPanel}
         onOpenImport={importer.openImportDrawer}
         onOpenCreate={batchEditor.openCreate}
       />
@@ -122,6 +133,15 @@ export function InTransitGoodsPage({
         transportLabel={batchList.transportLabel}
         formatDestination={batchList.formatDestination}
       />
+      <InTransitSuperSearchDrawer
+        search={superSearch}
+        storeOptions={superSearchStoreOptions}
+        statusLabel={batchList.statusLabel}
+        transportLabel={batchList.transportLabel}
+        nodeStatusLabel={batchList.nodeStatusLabel}
+        formatDestination={batchList.formatDestination}
+        onOpenBatch={(batch) => boxDetail.openBoxDetail(batch, 'product')}
+      />
       <InTransitBatchEditorDrawer
         editor={batchEditor}
         forwarderOptions={batchList.forwarderOptions}
@@ -133,6 +153,21 @@ export function InTransitGoodsPage({
       />
     </div>
   )
+}
+
+function buildSuperSearchStoreOptions(stores: AuthSessionStore[]) {
+  const options = new Map<string, { label: string; value: string }>()
+  stores.forEach((store) => {
+    const projectCode = store.projectCode?.trim()
+    if (!projectCode || options.has(projectCode)) {
+      return
+    }
+    options.set(projectCode, {
+      value: projectCode,
+      label: store.projectName?.trim() || projectCode
+    })
+  })
+  return Array.from(options.values())
 }
 
 export default InTransitGoodsPage
