@@ -57,11 +57,11 @@
 
 .official-warehouse-metric {
   display: flex;
-  flex: 1 1 0;
+  flex: 1 0 108px;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-width: 0;
+  min-width: 108px;
   min-height: 34px;
   padding: 6px 8px;
   border: 1px solid #d9e2ec;
@@ -79,13 +79,16 @@
 }
 
 .official-warehouse-metric-value {
+  flex: 0 0 auto;
   color: #0f172a;
   font-size: 14px;
   font-weight: 760;
   line-height: 18px;
+  white-space: nowrap;
 }
 
 .official-warehouse-metric-label {
+  flex: 0 0 auto;
   color: #64748b;
   font-size: 12px;
   line-height: 18px;
