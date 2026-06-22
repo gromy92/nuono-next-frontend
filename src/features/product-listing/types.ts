@@ -50,6 +50,7 @@ export type ProductListingTaskView = {
   draftId: number
   ownerUserId?: number
   storeCode: string
+  partnerSku?: string
   mode: string
   status: string
   sourceTaskId?: number

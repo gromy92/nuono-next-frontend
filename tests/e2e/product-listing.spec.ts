@@ -87,6 +87,7 @@ test.describe('商品上架', () => {
           taskNo: 'PLT-20002',
           draftId: 10001,
           storeCode: 'STR245027-NAE',
+          partnerSku: 'E2E-PL-001',
           mode: 'REAL_RUN',
           status: 'succeeded',
           sourceTaskId: 20001,
@@ -148,7 +149,10 @@ test.describe('商品上架', () => {
     await page.locator('.ant-modal button', { hasText: '确认上架' }).click();
 
     await expect(page.getByText('PLT-20002', { exact: true })).toBeVisible();
-    await expect(page.getByText('E2E-PL-001', { exact: true })).toBeVisible();
+    await page.getByLabel('新增 PSKU', { exact: true }).fill('E2E-PL-CHANGED');
+    const realRunSummary = page.locator('.ant-descriptions').filter({ hasText: 'PLT-20002' });
+    await expect(realRunSummary.getByText('E2E-PL-001', { exact: true })).toBeVisible();
+    await expect(realRunSummary.getByText('E2E-PL-CHANGED', { exact: true })).toHaveCount(0);
     await expect(page.getByText('PSKU-E2E-001', { exact: true })).toBeVisible();
     await expect(page.getByText('ZPARENT-E2E', { exact: true })).toBeVisible();
     await expect(page.getByText('3', { exact: true })).toBeVisible();

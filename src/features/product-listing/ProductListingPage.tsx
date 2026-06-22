@@ -340,7 +340,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
                     </Space>
                   </Descriptions.Item>
                   <Descriptions.Item label="来源任务">{realRunTaskView.sourceTaskId || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="Partner SKU">{listingDraft.psku || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="Partner SKU">{realRunTaskView.partnerSku || '-'}</Descriptions.Item>
                   <Descriptions.Item label="pskuCode">{realRunReferences.pskuCode || '-'}</Descriptions.Item>
                   <Descriptions.Item label="skuParent">{realRunReferences.skuParent || '-'}</Descriptions.Item>
                   <Descriptions.Item label="readback attempts">
