@@ -50,6 +50,7 @@ export type ProductListingTaskView = {
   draftId: number
   ownerUserId?: number
   storeCode: string
+  partnerSku?: string
   mode: string
   status: string
   sourceTaskId?: number
@@ -57,6 +58,7 @@ export type ProductListingTaskView = {
   failureCategory?: string
   failureCode?: string
   failureMessage?: string
+  noonResult?: ProductListingNoonWriteResult
   submittedAt?: string
   startedAt?: string
   completedAt?: string
@@ -65,4 +67,20 @@ export type ProductListingTaskView = {
 export type ProductListingRealRunCommand = {
   confirmRealNoonWrite: boolean
   confirmationNote?: string
+}
+
+export type ProductListingNoonWriteResult = {
+  success: boolean
+  failureCategory?: string
+  failureCode?: string
+  failureMessage?: string
+  steps: ProductListingNoonWriteStepResult[]
+}
+
+export type ProductListingNoonWriteStepResult = {
+  stepKey: string
+  status: string
+  externalReference?: string
+  failureCode?: string
+  failureMessage?: string
 }

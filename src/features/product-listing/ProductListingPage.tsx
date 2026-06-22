@@ -20,6 +20,7 @@ import { normalizeError } from '../../shared/api'
 import { ProductListingDetailEditor } from './ProductListingDetailEditor'
 import {
   confirmProductListingRealRun,
+  fetchProductListingTask,
   saveProductListingDraft,
   submitProductListingDryRun
 } from './api'
@@ -32,9 +33,25 @@ import {
   type ProductListingMetadataFormValues
 } from './productDetailAdapter'
 import { readProductListingSourcePrefill, type ProductListingSourcePrefill } from './sourcePrefill'
-import type { ProductListingDraftView, ProductListingTaskView } from './types'
+import type {
+  ProductListingDraftView,
+  ProductListingNoonWriteResult,
+  ProductListingNoonWriteStepResult,
+  ProductListingTaskView
+} from './types'
 
 const { Text } = Typography
+
+const REAL_RUN_WRITE_STEPS = [
+  'create_product',
+  'sku_cache',
+  'upsert_zsku_base',
+  'upload_images',
+  'upsert_zsku_content_en',
+  'upsert_zsku_content_ar',
+  'upsert_price',
+  'verify_noon_readback'
+] as const
 
 type ProductListingPageProps = {
   storeCode?: string
@@ -52,6 +69,8 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [draftView, setDraftView] = useState<ProductListingDraftView>()
   const [taskView, setTaskView] = useState<ProductListingTaskView>()
   const [realRunTaskView, setRealRunTaskView] = useState<ProductListingTaskView>()
+  const [pollingRealRun, setPollingRealRun] = useState(false)
+  const [realRunPollError, setRealRunPollError] = useState<string>()
   const [sourcePrefill, setSourcePrefill] = useState<ProductListingSourcePrefill>()
 
   useEffect(() => {
@@ -88,6 +107,51 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     return draftView?.validationIssues ?? []
   }, [draftView?.validationIssues, taskView?.validationIssues])
   const realWriteAttemptLocked = hasRealWriteAttempt(realRunTaskView)
+  const realRunReferences = useMemo(
+    () => extractNoonWriteReferences(realRunTaskView?.noonResult),
+    [realRunTaskView?.noonResult]
+  )
+  const realRunStepRows = useMemo(
+    () => buildNoonWriteStepRows(realRunTaskView?.noonResult?.steps),
+    [realRunTaskView?.noonResult?.steps]
+  )
+
+  useEffect(() => {
+    const taskId = realRunTaskView?.taskId
+    if (!taskId || !isActiveRealRunStatus(realRunTaskView.status)) {
+      setPollingRealRun(false)
+      return
+    }
+    let disposed = false
+    setPollingRealRun(true)
+    setRealRunPollError(undefined)
+
+    const pollTask = async () => {
+      try {
+        const refreshed = await fetchProductListingTask(taskId)
+        if (disposed) {
+          return
+        }
+        setRealRunTaskView(refreshed)
+        setRealRunPollError(undefined)
+      } catch (error) {
+        if (!disposed) {
+          setRealRunPollError(normalizeError(error, '刷新真实上架任务失败'))
+        }
+      }
+    }
+
+    void pollTask()
+    const timer = window.setInterval(() => {
+      void pollTask()
+    }, 3000)
+
+    return () => {
+      disposed = true
+      window.clearInterval(timer)
+      setPollingRealRun(false)
+    }
+  }, [realRunTaskView?.status, realRunTaskView?.taskId])
 
   const saveDraftFromForm = async (options?: { silent?: boolean }) => {
     setSaving(true)
@@ -264,17 +328,69 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
             {realRunTaskView?.failureCode === 'real_run_already_attempted' ? (
               <Alert type="warning" showIcon message="该 dry-run 已提交过真实上架尝试，请重新 dry-run 后再操作。" />
             ) : null}
+            {realRunPollError ? <Alert type="warning" showIcon message={realRunPollError} /> : null}
             {realRunTaskView ? (
-              <Descriptions size="small" column={{ xs: 1, md: 2 }}>
-                <Descriptions.Item label="任务号">{realRunTaskView.taskNo || realRunTaskView.taskId}</Descriptions.Item>
-                <Descriptions.Item label="状态">
-                  <Tag color={statusColor(realRunTaskView.status)}>{realRunTaskView.status}</Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="来源任务">{realRunTaskView.sourceTaskId || '-'}</Descriptions.Item>
-                <Descriptions.Item label="失败分类">{realRunTaskView.failureCategory || '-'}</Descriptions.Item>
-                <Descriptions.Item label="失败代码">{realRunTaskView.failureCode || '-'}</Descriptions.Item>
-                <Descriptions.Item label="失败信息">{realRunTaskView.failureMessage || '-'}</Descriptions.Item>
-              </Descriptions>
+              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                <Descriptions size="small" column={{ xs: 1, md: 2 }}>
+                  <Descriptions.Item label="任务号">{realRunTaskView.taskNo || realRunTaskView.taskId}</Descriptions.Item>
+                  <Descriptions.Item label="状态">
+                    <Space size={8}>
+                      <Tag color={statusColor(realRunTaskView.status)}>{realRunTaskView.status}</Tag>
+                      {pollingRealRun ? <Tag color="blue">polling</Tag> : null}
+                    </Space>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="来源任务">{realRunTaskView.sourceTaskId || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="Partner SKU">{realRunTaskView.partnerSku || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="pskuCode">{realRunReferences.pskuCode || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="skuParent">{realRunReferences.skuParent || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="readback attempts">
+                    {realRunReferences.readBackAttempts || '-'}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="失败分类">{realRunTaskView.failureCategory || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="失败代码">{realRunTaskView.failureCode || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="失败信息">{realRunTaskView.failureMessage || '-'}</Descriptions.Item>
+                </Descriptions>
+                <Table
+                  size="small"
+                  pagination={false}
+                  dataSource={realRunStepRows}
+                  rowKey="rowKey"
+                  columns={[
+                    { title: '步骤', dataIndex: 'stepKey', width: 210 },
+                    {
+                      title: '状态',
+                      dataIndex: 'status',
+                      width: 110,
+                      render: (value: string) => <Tag color={statusColor(value)}>{value}</Tag>
+                    },
+                    {
+                      title: '引用',
+                      dataIndex: 'externalReference',
+                      width: 260,
+                      render: (value?: string) => value || '-'
+                    },
+                    {
+                      title: '失败代码',
+                      dataIndex: 'failureCode',
+                      width: 170,
+                      render: (value?: string) => value || '-'
+                    },
+                    {
+                      title: 'Noon 错误',
+                      dataIndex: 'failureMessage',
+                      render: (value?: string) =>
+                        value ? (
+                          <Typography.Paragraph style={{ marginBottom: 0 }} ellipsis={{ rows: 2, expandable: true }}>
+                            {value}
+                          </Typography.Paragraph>
+                        ) : (
+                          '-'
+                        )
+                    }
+                  ]}
+                  locale={{ emptyText: '暂无 Noon 写入步骤' }}
+                />
+              </Space>
             ) : (
               <Text type="secondary">尚未提交真实上架确认</Text>
             )}
@@ -358,6 +474,9 @@ function statusColor(status: string) {
   if (status === 'rejected') {
     return 'orange'
   }
+  if (status === 'skipped' || status === 'not_started') {
+    return 'default'
+  }
   return 'default'
 }
 
@@ -370,4 +489,73 @@ function hasRealWriteAttempt(task?: ProductListingTaskView) {
     task.failureCode === 'real_run_already_active' ||
     task.failureCode === 'real_run_already_attempted'
   )
+}
+
+function isActiveRealRunStatus(status?: string) {
+  return status === 'running' || status === 'submitted'
+}
+
+type ProductListingWriteStepRow = ProductListingNoonWriteStepResult & {
+  rowKey: string
+}
+
+function buildNoonWriteStepRows(steps?: ProductListingNoonWriteStepResult[]): ProductListingWriteStepRow[] {
+  const byStepKey = new Map((steps ?? []).map((step) => [step.stepKey, step]))
+  const rows = REAL_RUN_WRITE_STEPS.map<ProductListingWriteStepRow>((stepKey) => {
+    const step = byStepKey.get(stepKey)
+    return {
+      rowKey: stepKey,
+      stepKey,
+      status: step?.status ?? 'not_started',
+      externalReference: step?.externalReference,
+      failureCode: step?.failureCode,
+      failureMessage: step?.failureMessage
+    }
+  })
+  for (const step of steps ?? []) {
+    if (!REAL_RUN_WRITE_STEPS.includes(step.stepKey as (typeof REAL_RUN_WRITE_STEPS)[number])) {
+      rows.push({
+        ...step,
+        rowKey: `${step.stepKey}-${rows.length}`
+      })
+    }
+  }
+  return rows
+}
+
+function extractNoonWriteReferences(result?: ProductListingNoonWriteResult) {
+  const references = {
+    skuParent: '',
+    pskuCode: '',
+    readBackAttempts: ''
+  }
+  for (const step of result?.steps ?? []) {
+    const parsed = parseExternalReference(step.externalReference)
+    if (!references.skuParent && parsed.skuParent) {
+      references.skuParent = parsed.skuParent
+    }
+    if (!references.pskuCode && parsed.pskuCode) {
+      references.pskuCode = parsed.pskuCode
+    }
+    if (step.stepKey === 'verify_noon_readback' && parsed.readBackAttempts) {
+      references.readBackAttempts = parsed.readBackAttempts
+    }
+  }
+  return references
+}
+
+function parseExternalReference(value?: string) {
+  const result: Record<string, string> = {}
+  for (const part of value?.split(';') ?? []) {
+    const separatorIndex = part.indexOf('=')
+    if (separatorIndex <= 0) {
+      continue
+    }
+    const key = part.slice(0, separatorIndex).trim()
+    const referenceValue = part.slice(separatorIndex + 1).trim()
+    if (key && referenceValue) {
+      result[key] = referenceValue
+    }
+  }
+  return result
 }
