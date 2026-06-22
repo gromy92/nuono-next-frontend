@@ -21,6 +21,7 @@ export const PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH = workspaceMenuPath('purcha
 export const PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH = workspaceMenuPath('purchase-ali1688-sku-purchase-history')
 export const PURCHASE_LISTING_PATH = workspaceMenuPath('purchase-listing')
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
+export const PURCHASE_PRE_ORDER_PROFIT_PATH = workspaceMenuPath('purchase-pre-order-profit')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
@@ -252,6 +253,7 @@ export function resolveSessionLandingMenuKey(
         'system-report-noon-data-gaps',
         'data-activity-config',
         'operations-lifecycle-rules',
+        'purchase-pre-order-profit',
         'product-manual-selection',
         'product-specs',
         'product-manage'
@@ -266,6 +268,7 @@ export function resolveSessionLandingMenuKey(
           'purchase-order',
           'product-manage',
           'product-specs',
+          'purchase-pre-order-profit',
           'purchase-profit',
           'purchase-logistics-quote',
           'data-sales-analysis',
@@ -286,6 +289,7 @@ export function resolveSessionLandingMenuKey(
           'product-manage',
           'product-specs',
           'user-role',
+          'purchase-pre-order-profit',
           'purchase-profit',
           'purchase-logistics-quote',
           'data-sales-analysis',

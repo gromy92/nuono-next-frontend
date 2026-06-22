@@ -18,6 +18,7 @@ import {
   OPERATIONS_LIFECYCLE_RULES_PATH,
   PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH,
   PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH,
+  PURCHASE_PRE_ORDER_PROFIT_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
 } from './WorkspaceRouting'
@@ -104,6 +105,7 @@ function readDevSessionOverride(): AuthSession | null {
     pathname.startsWith('/purchase/order') ||
     pathname.startsWith(PURCHASE_1688_COLLECTION_PATH) ||
     pathname.startsWith(PURCHASE_LISTING_PATH) ||
+    pathname.startsWith(PURCHASE_PRE_ORDER_PROFIT_PATH) ||
     search.get('grantPurchase') === '1'
   const includeLogisticsQuoteDevMenu =
     pathname.startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
@@ -259,6 +261,7 @@ function readDevSessionOverride(): AuthSession | null {
   if (includePurchaseDevMenu) {
     grantedMenus.push({ menuId: 24, menuName: '采购', urlPath: '/api/purchase/order' })
     grantedMenus.push({ menuId: 2401, menuName: '商品上架', urlPath: PURCHASE_LISTING_PATH })
+    grantedMenus.push({ menuId: 9301, menuName: '选品池', urlPath: PURCHASE_PRE_ORDER_PROFIT_PATH })
   }
   if (
     currentAppPathname().startsWith(PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH) ||

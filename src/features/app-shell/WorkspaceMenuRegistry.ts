@@ -8,6 +8,7 @@ export type AppMenuKey =
   | 'purchase-ali1688-sku-purchase-history'
   | 'purchase-listing'
   | 'purchase-order'
+  | 'purchase-pre-order-profit'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'data-sales-analysis'
@@ -66,6 +67,7 @@ export type WorkspaceContentKind =
   | 'purchase-ali1688-sku-purchase-history'
   | 'product-listing'
   | 'purchase-order'
+  | 'purchase-pre-order-profit'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'sales-analytics'
@@ -208,6 +210,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '采购 / 采购单',
     tabLabel: '采购单',
     contentKind: 'purchase-order',
+    closable: true
+  },
+  'purchase-pre-order-profit': {
+    key: 'purchase-pre-order-profit',
+    label: '选品池',
+    path: '/purchase/pre-order-profit',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / 选品池',
+    tabLabel: '选品池',
+    contentKind: 'purchase-pre-order-profit',
     closable: true
   },
   'purchase-profit': {
@@ -417,6 +429,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     iconKey: 'purchase',
     entries: [
       { type: 'workspace', key: 'purchase-listing' },
+      { type: 'workspace', key: 'purchase-pre-order-profit' },
       { type: 'workspace', key: 'purchase-profit' },
       { type: 'workspace', key: 'purchase-ali1688-historical-orders' },
       { type: 'workspace', key: 'purchase-ali1688-sku-purchase-history' },
@@ -574,9 +587,10 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['商品上架']
   },
   {
-    keys: ['purchase-profit'],
-    urlPaths: ['/api/sku/cost'],
-    menuNames: ['利润计算与上架']
+    keys: ['purchase-pre-order-profit', 'purchase-profit'],
+    urlPaths: ['/purchase/pre-order-profit', '/api/pre-order-profit', '/api/sku/cost'],
+    urlPathPrefixes: ['/api/pre-order-profit/'],
+    menuNames: ['利润计算与上架', '选品池', '选品利润预估', '出单前利润计算']
   },
   {
     keys: ['purchase-logistics-quote'],
@@ -643,6 +657,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-ali1688-collection',
   'purchase-listing',
   'purchase-order',
+  'purchase-pre-order-profit',
   'purchase-profit',
   'purchase-logistics-quote',
   'data-sales-analysis',

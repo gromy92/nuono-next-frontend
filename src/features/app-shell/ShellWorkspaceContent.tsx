@@ -69,6 +69,11 @@ const ProductListingPage = lazyWorkspace(() =>
     default: module.ProductListingPage
   }))
 );
+const PreOrderProfitPage = lazyWorkspace(() =>
+  import('../pre-order-profit/PreOrderProfitPage').then((module) => ({
+    default: module.PreOrderProfitPage
+  }))
+);
 const MasterDataBoard = lazyWorkspace(() =>
   import('../master-data/MasterDataBoard').then((module) => ({ default: module.MasterDataBoard }))
 );
@@ -299,6 +304,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <ProductListingPage storeCode={shellSession.currentStore?.storeCode} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'purchase-pre-order-profit') {
+    return (
+      <LazyWorkspaceBoundary>
+        <PreOrderProfitPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }
