@@ -18,6 +18,7 @@ import {
 } from 'antd';
 import {
   CalculatorOutlined,
+  CloudUploadOutlined,
   DeleteOutlined,
   EditOutlined,
   PlusOutlined,
@@ -25,7 +26,9 @@ import {
   SearchOutlined
 } from '@ant-design/icons';
 import { normalizeError } from '../../shared/api';
+import { PURCHASE_LISTING_PATH, withCurrentWorkspaceDevQuery } from '../app-shell/WorkspaceRouting';
 import type { AuthSession } from '../auth/session';
+import { savePreOrderProfitListingPrefill } from '../product-listing/sourcePrefill';
 import {
   addPreOrderProfitCandidateToPurchaseOrder,
   addPreOrderProfitCompetitor,
@@ -619,6 +622,15 @@ export function PreOrderProfitPage({ session }: PreOrderProfitPageProps) {
     );
   };
 
+  const openProductListing = (candidate: PreOrderProfitInput) => {
+    savePreOrderProfitListingPrefill(candidate, preOrderProfitContext.storeCode);
+    const params = new URLSearchParams({
+      listingSource: 'pre-order-profit',
+      sourceCandidateId: candidate.id
+    });
+    window.location.assign(withCurrentWorkspaceDevQuery(`${PURCHASE_LISTING_PATH}?${params.toString()}`));
+  };
+
   const costColumns: TableColumnsType<PreOrderProfitCostLine> = [
     {
       title: '成本项',
@@ -845,7 +857,20 @@ export function PreOrderProfitPage({ session }: PreOrderProfitPageProps) {
 
         {selectedCandidate ? (
         <div className="pre-order-profit-analysis" data-testid="pre-order-profit-analysis">
-          <Card className="pre-order-profit-card" title="选品分析">
+          <Card
+            className="pre-order-profit-card"
+            title="选品分析"
+            extra={
+              <Button
+                type="primary"
+                icon={<CloudUploadOutlined />}
+                data-testid="pre-order-profit-listing-button"
+                onClick={() => openProductListing(selectedCandidate)}
+              >
+                上架
+              </Button>
+            }
+          >
             <Space direction="vertical" size={12} style={{ width: '100%' }}>
               <div className="pre-order-profit-selection-summary">
                 <Text strong>{selectedCandidate.title}</Text>

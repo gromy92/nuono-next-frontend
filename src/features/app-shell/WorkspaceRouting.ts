@@ -254,7 +254,6 @@ export function resolveSessionLandingMenuKey(
         'data-activity-config',
         'operations-lifecycle-rules',
         'purchase-pre-order-profit',
-        'product-manual-selection',
         'product-specs',
         'product-manage'
       ] as AppMenuKey[])
@@ -277,8 +276,7 @@ export function resolveSessionLandingMenuKey(
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
           'data-activity-config',
-          'operations-lifecycle-rules',
-          'product-manual-selection'
+          'operations-lifecycle-rules'
         ] as AppMenuKey[])
       : ([
           'purchase-ali1688-historical-orders',
@@ -298,8 +296,7 @@ export function resolveSessionLandingMenuKey(
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
           'data-activity-config',
-          'operations-lifecycle-rules',
-          'product-manual-selection'
+          'operations-lifecycle-rules'
         ] as AppMenuKey[])
 
   for (const menuKey of preferredOrder) {

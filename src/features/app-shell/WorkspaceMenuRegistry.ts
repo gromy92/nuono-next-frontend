@@ -419,8 +419,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
       { type: 'workspace', key: 'product-manage' },
       { type: 'workspace', key: 'product-groups' },
       { type: 'workspace', key: 'product-specs' },
-      { type: 'placeholder', key: 'product-category-collect', label: '类目采集', disabled: true },
-      { type: 'workspace', key: 'product-manual-selection' }
+      { type: 'placeholder', key: 'product-category-collect', label: '类目采集', disabled: true }
     ]
   },
   {
@@ -651,7 +650,6 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'product-manage',
   'product-groups',
   'product-specs',
-  'product-manual-selection',
   'purchase-ali1688-historical-orders',
   'purchase-ali1688-sku-purchase-history',
   'purchase-ali1688-collection',

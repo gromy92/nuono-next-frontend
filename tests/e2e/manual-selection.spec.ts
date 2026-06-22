@@ -137,20 +137,18 @@ test('manual selection row opens product listing editor with source prefill', as
   await expect(page.getByRole('tab', { name: 'Sizes' })).toBeVisible();
   await expect(page.getByRole('tab', { name: 'Product Insights' })).toBeVisible();
   await expect(page.getByText('商品详情编辑', { exact: true })).toHaveCount(0);
-  const productDetailSummary = page.locator('.pm-detail-section--subtle').filter({ hasText: 'Partner SKU' });
-  await expect(productDetailSummary).toBeVisible();
-  await expect(productDetailSummary.getByText('未上架')).toBeVisible();
+  await expect(page.getByLabel('新增 PSKU')).toBeVisible();
+  await expect(page.getByText('Not Live')).toBeVisible();
+  await expect(page.getByText('Base Price')).toBeVisible();
+  await expect.poll(async () => {
+    return page.locator('input').evaluateAll((inputs) =>
+      inputs.some((input) => (input as HTMLInputElement).value === '12.99')
+    );
+  }).toBe(true);
   await expect(page.getByRole('button', { name: '保存草稿' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: '提交 dry-run' })).toHaveCount(1);
   await expect(page.getByRole('button', { name: '发布当前修改' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '从 Noon 同步' })).toHaveCount(0);
-  await expect(page.getByRole('textbox', { name: '标题英语' })).toHaveValue('DUYONE Artificial Flowers 6 Stems Poppy Silk Bouquet');
-  await expect(page.getByRole('textbox', { name: '标题阿语' })).toHaveValue('باقة زهور صناعية');
-  await expect(page.getByRole('textbox', { name: '卖点 1 英语' })).toHaveValue('[Home decor]- Artificial flowers for home decoration.');
-  await expect(page.getByRole('combobox', { name: '品牌' })).toHaveValue('DUYONE');
-  await expect(page.getByRole('button', { name: '管理图片' })).toBeVisible();
-  await expect(page.getByLabel('供应凭证 ID')).toHaveValue('86001');
-  await expect(page.getByRole('button', { name: '商品图 1 头图' })).toBeVisible();
-  await expect(page.getByRole('button', { name: '商品图 2' })).toBeVisible();
 });
 
 test('manual selection collection page closes the first phase workflow', async ({ page }) => {

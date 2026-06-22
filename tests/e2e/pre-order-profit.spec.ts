@@ -77,6 +77,19 @@ test.describe('选品池 API 交互', () => {
     await expect(page.locator('body')).not.toContainText('不通过');
   });
 
+  test('opens product listing draft from selected candidate', async ({ page }) => {
+    await page.goto(appPath('/purchase/pre-order-profit'));
+
+    await expect(page.getByTestId('pre-order-profit-analysis')).toContainText('吃饭碗四个勺子四个');
+    await page.getByTestId('pre-order-profit-listing-button').click();
+
+    await expect(page).toHaveURL(/\/purchase\/listing\?listingSource=pre-order-profit&sourceCandidateId=260001/);
+    await expect(page.getByText('来源：选品池')).toBeVisible();
+    await expect(page.getByText('260001')).toBeVisible();
+    await expect(page.getByText('吃饭碗四个勺子四个')).toBeVisible();
+    await expect(page.getByLabel('新增 PSKU')).toHaveValue('SGGRB360');
+  });
+
   test('creates, edits, and deletes product candidates through API state', async ({ page }) => {
     await page.goto(appPath('/purchase/pre-order-profit'));
 
@@ -274,6 +287,7 @@ async function installSelectionProfitSession(page: Page) {
           }
         ],
         grantedMenus: [
+          { menuId: 2401, menuName: '商品上架', urlPath: '/purchase/listing' },
           { menuId: 9300, menuName: '利润计算与上架', urlPath: '/api/sku/cost' }
         ]
       })
