@@ -261,7 +261,7 @@ function readDevSessionOverride(): AuthSession | null {
   if (includePurchaseDevMenu) {
     grantedMenus.push({ menuId: 24, menuName: '采购', urlPath: '/api/purchase/order' })
     grantedMenus.push({ menuId: 2401, menuName: '商品上架', urlPath: PURCHASE_LISTING_PATH })
-    grantedMenus.push({ menuId: 9301, menuName: '选品池', urlPath: PURCHASE_PRE_ORDER_PROFIT_PATH })
+    grantedMenus.push({ menuId: 9303, menuName: '选品池', urlPath: PURCHASE_PRE_ORDER_PROFIT_PATH })
   }
   if (
     currentAppPathname().startsWith(PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH) ||
