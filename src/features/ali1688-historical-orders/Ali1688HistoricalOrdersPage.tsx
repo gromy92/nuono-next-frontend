@@ -45,7 +45,7 @@ type OrderFilterState = {
   placedRange: [Dayjs | null, Dayjs | null] | null
   orderStatus?: string
   assignmentFilter?: string
-  productLinkFilter?: string
+  productLinkFilter?: ProductLinkFilter
   supplierKeyword: string
   keyword: string
 }
@@ -89,6 +89,7 @@ type ProductLinkActionControls = {
 }
 
 type ProductLinkStatusFilter = 'all' | 'unlinked' | 'linked'
+type ProductLinkFilter = 'linked' | 'unlinked' | 'discontinued'
 
 const CONSUMABLE_ASSIGNMENT_VALUE = '__CONSUMABLE__'
 
@@ -174,7 +175,18 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
   const [productLinkUnlinkingAssignmentId, setProductLinkUnlinkingAssignmentId] = useState<number>()
   const [markingDiscontinued, setMarkingDiscontinued] = useState(false)
   const didMountFilters = useRef(false)
+  const workbenchRequestSeq = useRef(0)
   const productLinkCandidateRequestSeq = useRef(0)
+  const productLinkSearchRef = useRef('')
+  const productLinkStatusFilterRef = useRef<ProductLinkStatusFilter>('all')
+  const productLinkCandidateRequestState = useRef<{
+    assignmentId?: number
+    linkStatus: ProductLinkStatusFilter
+    keyword: string
+  }>({
+    linkStatus: 'all',
+    keyword: ''
+  })
   const productLineRows = useMemo(() => buildProductLineRows(workbench.orders || []), [workbench.orders])
   const assignmentFilteredProductLineRows = useMemo(
     () => filterProductLineRowsByAssignment(productLineRows, filters.assignmentFilter),
@@ -221,18 +233,26 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
     : undefined
 
   async function loadWorkbench(nextQuery: Ali1688HistoricalOrderQuery = query) {
+    const requestSeq = workbenchRequestSeq.current + 1
+    workbenchRequestSeq.current = requestSeq
     setLoading(true)
     try {
       setQuery(nextQuery)
       const nextWorkbench = await loadAli1688HistoricalOrderWorkbench(nextQuery)
-      setWorkbench(nextWorkbench)
+      if (requestSeq === workbenchRequestSeq.current) {
+        setWorkbench(nextWorkbench)
+      }
       return nextWorkbench
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '读取 1688 历史订单失败')
-      setWorkbench(EMPTY_WORKBENCH)
+      if (requestSeq === workbenchRequestSeq.current) {
+        message.error(error instanceof Error ? error.message : '读取 1688 历史订单失败')
+        setWorkbench(EMPTY_WORKBENCH)
+      }
       return EMPTY_WORKBENCH
     } finally {
-      setLoading(false)
+      if (requestSeq === workbenchRequestSeq.current) {
+        setLoading(false)
+      }
     }
   }
 
@@ -295,7 +315,13 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
             allowClear
             placeholder="分配店铺"
             value={filters.assignmentFilter}
-            onChange={(value) => setFilters((current) => ({ ...current, assignmentFilter: value }))}
+            onChange={(value) => setFilters((current) => ({
+              ...current,
+              assignmentFilter: value,
+              productLinkFilter: value && current.productLinkFilter === 'discontinued'
+                ? undefined
+                : current.productLinkFilter
+            }))}
             options={[
               { label: '未分配', value: 'state:unassigned' },
               { label: '耗材', value: 'state:consumable' },
@@ -314,10 +340,15 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
             allowClear
             placeholder="商品关联"
             value={filters.productLinkFilter}
-            onChange={(value) => setFilters((current) => ({ ...current, productLinkFilter: value }))}
+            onChange={(value) => setFilters((current) => ({
+              ...current,
+              productLinkFilter: value,
+              assignmentFilter: value === 'discontinued' ? undefined : current.assignmentFilter
+            }))}
             options={[
               { label: '已关联', value: 'linked' },
-              { label: '未关联', value: 'unlinked' }
+              { label: '未关联', value: 'unlinked' },
+              { label: '已下架', value: 'discontinued' }
             ]}
             style={{ width: 140 }}
           />
@@ -938,8 +969,8 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
     const defaultLinkStatus: ProductLinkStatusFilter = 'all'
     setProductLinkRow(primaryRow)
     setProductLinkRows(rows)
-    setProductLinkStatusFilter(defaultLinkStatus)
-    setProductLinkSearch('')
+    updateProductLinkStatusFilter(defaultLinkStatus)
+    updateProductLinkSearch('')
     setSelectedProductCandidate(null)
     setProductLinkCandidates([])
     setAssignmentTargetValues([])
@@ -951,13 +982,46 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
     }
   }
 
+  function updateProductLinkSearch(nextSearch: string) {
+    productLinkSearchRef.current = nextSearch.trim()
+    setProductLinkSearch(nextSearch)
+  }
+
+  function updateProductLinkStatusFilter(nextStatus: ProductLinkStatusFilter) {
+    productLinkStatusFilterRef.current = nextStatus
+    setProductLinkStatusFilter(nextStatus)
+  }
+
+  function invalidateProductLinkCandidateRequests() {
+    productLinkCandidateRequestSeq.current += 1
+    productLinkCandidateRequestState.current = {
+      linkStatus: productLinkStatusFilterRef.current,
+      keyword: productLinkSearchRef.current
+    }
+  }
+
   async function changeProductLinkStatusFilter(linkStatus: ProductLinkStatusFilter) {
-    setProductLinkStatusFilter(linkStatus)
-    setProductLinkSearch('')
+    updateProductLinkStatusFilter(linkStatus)
+    updateProductLinkSearch('')
     setSelectedProductCandidate(null)
     if (productLinkCandidateSourceRow) {
       await loadProductLinkCandidatesForRow(productLinkCandidateSourceRow, linkStatus, '')
     }
+  }
+
+  function isCurrentProductLinkCandidateRequest(
+    requestSeq: number,
+    assignmentId: number,
+    linkStatus: ProductLinkStatusFilter,
+    keyword: string
+  ) {
+    const currentRequest = productLinkCandidateRequestState.current
+    return requestSeq === productLinkCandidateRequestSeq.current
+      && currentRequest.assignmentId === assignmentId
+      && currentRequest.linkStatus === linkStatus
+      && currentRequest.keyword === keyword
+      && productLinkStatusFilterRef.current === linkStatus
+      && productLinkSearchRef.current === keyword
   }
 
   async function loadProductLinkCandidatesForRow(row: ProductLineRow, linkStatus: ProductLinkStatusFilter, keyword?: string) {
@@ -967,7 +1031,12 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
     }
     const requestSeq = productLinkCandidateRequestSeq.current + 1
     productLinkCandidateRequestSeq.current = requestSeq
-    const trimmedKeyword = keyword?.trim()
+    const trimmedKeyword = keyword?.trim() || ''
+    productLinkCandidateRequestState.current = {
+      assignmentId,
+      linkStatus,
+      keyword: trimmedKeyword
+    }
     setProductLinkLoading(true)
     try {
       const candidates = await loadAli1688HistoricalOrderProductLinkCandidates({
@@ -975,26 +1044,27 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
         ...(linkStatus === 'all' ? {} : { linkStatus }),
         ...(trimmedKeyword ? { keyword: trimmedKeyword } : {})
       })
-      if (requestSeq === productLinkCandidateRequestSeq.current) {
+      if (isCurrentProductLinkCandidateRequest(requestSeq, assignmentId, linkStatus, trimmedKeyword)) {
         setProductLinkCandidates(candidates)
       }
     } catch (error) {
-      if (requestSeq === productLinkCandidateRequestSeq.current) {
+      if (isCurrentProductLinkCandidateRequest(requestSeq, assignmentId, linkStatus, trimmedKeyword)) {
         message.error(error instanceof Error ? error.message : '读取商品关联候选失败')
         setProductLinkCandidates([])
       }
     } finally {
-      if (requestSeq === productLinkCandidateRequestSeq.current) {
+      if (isCurrentProductLinkCandidateRequest(requestSeq, assignmentId, linkStatus, trimmedKeyword)) {
         setProductLinkLoading(false)
       }
     }
   }
 
   function resetProductLinkState() {
+    invalidateProductLinkCandidateRequests()
     setProductLinkRow(null)
     setProductLinkRows([])
-    setProductLinkStatusFilter('all')
-    setProductLinkSearch('')
+    updateProductLinkStatusFilter('all')
+    updateProductLinkSearch('')
     setSelectedProductCandidate(null)
     setProductLinkCandidates([])
     setProductLinkLoading(false)
@@ -1245,7 +1315,8 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
         const nextCandidateRow = nextRows.find(canLinkProductLine)
         setProductLinkRows(nextRows)
         setProductLinkRow(nextCandidateRow || nextRows[0] || rowsToAssign[0] || null)
-        setProductLinkStatusFilter('all')
+        updateProductLinkStatusFilter('all')
+        updateProductLinkSearch('')
         setAssignmentTargetValues([])
         setAssignmentTargetQuantities({})
         setSelectedProductCandidate(null)
@@ -1393,11 +1464,11 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
                   value={productLinkSearch}
                   onChange={(event) => {
                     setSelectedProductCandidate(null)
-                    setProductLinkSearch(event.target.value)
+                    updateProductLinkSearch(event.target.value)
                   }}
                   onSearch={(value) => {
                     setSelectedProductCandidate(null)
-                    setProductLinkSearch(value)
+                    updateProductLinkSearch(value)
                   }}
                 />
                 <Segmented
@@ -1627,9 +1698,12 @@ function assignmentFilterQuery(
 
 function productLinkFilterQuery(
   productLinkFilter?: string
-): Pick<Ali1688HistoricalOrderQuery, 'productLinkState'> {
+): Pick<Ali1688HistoricalOrderQuery, 'assignmentState' | 'productLinkState'> {
   if (productLinkFilter === 'linked' || productLinkFilter === 'unlinked') {
     return { productLinkState: productLinkFilter }
+  }
+  if (productLinkFilter === 'discontinued') {
+    return { assignmentState: 'discontinued' }
   }
   return {}
 }
@@ -1676,7 +1750,16 @@ function filterProductLineRowsByProductLink(rows: ProductLineRow[], productLinkF
   if (productLinkFilter === 'unlinked') {
     return rows.filter((row) => canLinkProductLine(row) && !row.item?.productLink?.skuParent)
   }
+  if (productLinkFilter === 'discontinued') {
+    return rows.filter(hasDiscontinuedAssignment)
+  }
   return rows
+}
+
+function hasDiscontinuedAssignment(row: ProductLineRow) {
+  return row.item?.assignmentTargetType === 'DISCONTINUED'
+    || parseAssignmentBreakdownTargets(row.item?.assignmentBreakdownText)
+      .some((entry) => entry.targetType === 'DISCONTINUED')
 }
 
 function buildProductLineRows(orders: Ali1688HistoricalOrderRow[]): ProductLineRow[] {
