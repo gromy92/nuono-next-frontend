@@ -158,9 +158,9 @@
 .ali1688-product-line-spec {
   display: block;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .ali1688-supplier-name {
