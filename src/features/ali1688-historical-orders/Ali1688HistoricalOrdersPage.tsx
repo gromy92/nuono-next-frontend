@@ -318,7 +318,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
             onChange={(value) => setFilters((current) => ({
               ...current,
               assignmentFilter: value,
-              productLinkFilter: value && current.productLinkFilter === 'discontinued'
+              productLinkFilter: value && !isAssignmentTargetFilter(value) && current.productLinkFilter === 'discontinued'
                 ? undefined
                 : current.productLinkFilter
             }))}
@@ -343,7 +343,11 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
             onChange={(value) => setFilters((current) => ({
               ...current,
               productLinkFilter: value,
-              assignmentFilter: value === 'discontinued' ? undefined : current.assignmentFilter
+              assignmentFilter: value === 'discontinued'
+                && current.assignmentFilter
+                && !isAssignmentTargetFilter(current.assignmentFilter)
+                ? undefined
+                : current.assignmentFilter
             }))}
             options={[
               { label: '已关联', value: 'linked' },
@@ -1706,6 +1710,10 @@ function productLinkFilterQuery(
     return { assignmentState: 'discontinued' }
   }
   return {}
+}
+
+function isAssignmentTargetFilter(assignmentFilter?: string) {
+  return Boolean(assignmentFilter?.startsWith('target:'))
 }
 
 function filterProductLineRowsByAssignment(rows: ProductLineRow[], assignmentFilter?: string) {
