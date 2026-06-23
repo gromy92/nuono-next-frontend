@@ -6,6 +6,16 @@ function hasOwnField<T extends object>(value: T, field: PropertyKey) {
   return Object.prototype.hasOwnProperty.call(value, field);
 }
 
+function firstNonBlankText(...values: unknown[]) {
+  for (const value of values) {
+    const text = textInputValue(value).trim();
+    if (text) {
+      return text;
+    }
+  }
+  return '';
+}
+
 export function mergeProductListItemWithSummary(
   current: StoreInitializationPayload['productItems'][number],
   summary: ProductListSummaryPayload
@@ -299,6 +309,16 @@ export function buildProductSummarySurfaceFromWorkbench(
     siteOffers.find((item) => Boolean(item.reference)) ??
     siteOffers.find((item) => textInputValue(item.storeCode) === textInputValue(draft.storeContext.storeCode)) ??
     siteOffers[0];
+  const currentPrice = firstNonBlankText(
+    referenceSiteOffer?.finalPrice,
+    referenceSiteOffer?.final_price,
+    referenceSiteOffer?.salePrice,
+    referenceSiteOffer?.price,
+    draft.pricing.finalPrice,
+    draft.pricing.final_price,
+    draft.pricing.salePrice,
+    draft.pricing.price
+  );
 
   return {
     skuParent: textInputValue(draft.identity.skuParent),
@@ -315,7 +335,7 @@ export function buildProductSummarySurfaceFromWorkbench(
     galleryImages: mergeGalleryImageUrls(draft.content.images, draft.content.mainImageUrl),
     barcode: barcodeFromKeyAttributes(draft.keyAttributes),
     currency: textInputValue(referenceSiteOffer?.currency) || undefined,
-    referencePrice: textInputValue(referenceSiteOffer?.price) || undefined,
+    referencePrice: currentPrice || undefined,
     originalPrice: textInputValue(referenceSiteOffer?.price) || undefined,
     salePrice: textInputValue(referenceSiteOffer?.salePrice) || undefined,
     productFulltype: textInputValue(draft.taxonomy.productFulltype) || undefined,
@@ -343,8 +363,13 @@ export function productSummaryPrimarySite(summary: ProductSummarySurface) {
   return summary.siteLabels[0] || summary.storeCode || '-';
 }
 
+export function productSummaryCurrentPrice(summary: Pick<ProductSummarySurface, 'referencePrice' | 'salePrice' | 'originalPrice'>) {
+  return firstNonBlankText(summary.referencePrice, summary.salePrice, summary.originalPrice);
+}
+
 export function productSummaryPriceLine(summary: ProductSummarySurface) {
-  return summary.referencePrice ? `${summary.currency || ''} ${summary.referencePrice}`.trim() : '-';
+  const currentPrice = productSummaryCurrentPrice(summary);
+  return currentPrice ? `${summary.currency || ''} ${currentPrice}`.trim() : '-';
 }
 
 export function productSummaryTitle(summary: ProductSummarySurface) {

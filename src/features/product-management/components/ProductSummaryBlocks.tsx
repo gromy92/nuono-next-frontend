@@ -88,7 +88,7 @@ export function ProductSummaryMetricTags({
   return (
     <Space wrap size={[8, 8]}>
       <Tag color="success" style={{ marginInlineEnd: 0 }}>
-        参考价 {productSummaryPriceLine(summary)}
+        当前价 {productSummaryPriceLine(summary)}
       </Tag>
       {summary.originalPrice ? (
         <Tag color="default" style={{ marginInlineEnd: 0 }}>

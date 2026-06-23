@@ -90,6 +90,10 @@ function firstExternalUrl(...values: unknown[]) {
   return /^https?:\/\//i.test(url) ? url : '';
 }
 
+function sourceLooksPromotional(value: string) {
+  return /promo|promotion|campaign|deal|sale|activity/i.test(value);
+}
+
 function parseOfferTime(value: unknown) {
   const rawValue = textInputValue(value).trim();
   if (!rawValue) {
@@ -155,8 +159,7 @@ function resolvePricingSummary(
   const salePrice = firstTextValue(activeProductSiteOffer?.salePrice, productSnapshotView?.pricing.salePrice);
   const basePrice = firstTextValue(activeProductSiteOffer?.price, productSnapshotView?.pricing.price);
   const saleActive = isSalePriceActive(productSnapshotView, activeProductSiteOffer);
-  const hasActivityPrice = Boolean(salePrice);
-  const finalPrice = explicitFinalPrice || (hasActivityPrice ? salePrice : basePrice);
+  const currentPrice = explicitFinalPrice || salePrice || basePrice;
   const promoName = firstTextValue(
     activeProductSiteOffer?.activePromotionName,
     activeProductSiteOffer?.activePromotionCode,
@@ -187,12 +190,24 @@ function resolvePricingSummary(
     productSnapshotView?.pricing.campaignUrl,
     productSnapshotView?.pricing.dealUrl
   );
+  const sourceText = firstTextValue(
+    activeProductSiteOffer?.finalPriceSource,
+    activeProductSiteOffer?.final_price_source,
+    productSnapshotView?.pricing.finalPriceSource,
+    productSnapshotView?.pricing.final_price_source,
+    activeProductSiteOffer?.priceSource,
+    productSnapshotView?.pricing.priceSource
+  );
+  const hasActivityPrice = Boolean(salePrice || promoName || promoUrl || sourceLooksPromotional(sourceText));
+  const activityText = hasActivityPrice
+    ? promoName || (saleActive ? '活动价' : '活动价不在当前时间窗')
+    : '暂无活动价';
 
   return {
-    finalPrice,
-    priceSource: hasActivityPrice || explicitFinalPrice ? '活动' : '基础售价',
-    promoName: hasActivityPrice || explicitFinalPrice ? promoName || (saleActive ? '活动价' : '活动价不在当前时间窗') : '',
-    promoUrl: hasActivityPrice || explicitFinalPrice ? promoUrl : ''
+    currentPrice,
+    priceSource: currentPrice ? (hasActivityPrice ? '活动价' : '基础售价') : '未返回价格',
+    activityText,
+    promoUrl: hasActivityPrice ? promoUrl : ''
   };
 }
 
@@ -278,11 +293,11 @@ export function ProductOfferPricingSection(props: {
       </div>
 
       <Descriptions column={{ xs: 1, md: 4 }} size="small" colon={false} style={{ marginTop: 12 }}>
-        <Descriptions.Item label="最终价格">
-          <Text strong>{formatSnapshotValue(pricingSummary.finalPrice)}</Text>
+        <Descriptions.Item label="当前售价">
+          <Text strong>{formatSnapshotValue(pricingSummary.currentPrice)}</Text>
         </Descriptions.Item>
         <Descriptions.Item label="价格来源">{pricingSummary.priceSource}</Descriptions.Item>
-        <Descriptions.Item label="具体活动">
+        <Descriptions.Item label="活动价">
           {pricingSummary.promoUrl ? (
             <Button
               href={pricingSummary.promoUrl}
@@ -292,10 +307,10 @@ export function ProductOfferPricingSection(props: {
               size="small"
               style={{ height: 'auto', padding: 0 }}
             >
-              {pricingSummary.promoName || '查看活动'}
+              {pricingSummary.activityText || '查看活动'}
             </Button>
           ) : (
-            formatSnapshotValue(pricingSummary.promoName)
+            formatSnapshotValue(pricingSummary.activityText)
           )}
         </Descriptions.Item>
       </Descriptions>

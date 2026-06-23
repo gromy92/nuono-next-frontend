@@ -4,7 +4,9 @@ import type { ProductListRowPayload } from '../types';
 import {
   buildNoonProductUrl,
   buildProductSummarySurfaceFromListItem,
-  mergeGalleryImageUrls
+  mergeGalleryImageUrls,
+  productSummaryCurrentPrice,
+  productSummaryPriceLine
 } from '../utils';
 import { ProductBaselineListCell } from './ProductBaselineDisplay';
 
@@ -165,9 +167,11 @@ export function PriceCell(props: {
   record: ProductListRowPayload;
 }) {
   const { record } = props;
-  const priceLabel = record.referencePrice ? `${record.currency || ''} ${record.referencePrice}` : '-';
-  const priceMode = record.salePrice ? '促销' : record.originalPrice ? '售价' : '手动';
-  const priceColor = record.salePrice ? 'success' : record.originalPrice ? 'warning' : 'default';
+  const summary = buildProductSummarySurfaceFromListItem(record);
+  const currentPrice = productSummaryCurrentPrice(summary);
+  const priceLabel = productSummaryPriceLine(summary);
+  const priceMode = record.salePrice ? '活动价' : currentPrice ? '售价' : '未返回价格';
+  const priceColor = record.salePrice ? 'success' : currentPrice ? 'warning' : 'default';
 
   return (
     <Space direction="vertical" size={5}>
