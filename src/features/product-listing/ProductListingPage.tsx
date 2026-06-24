@@ -193,10 +193,12 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         <Alert
           type="success"
           showIcon
-          message="来源：人工采集"
+          message={`来源：${sourcePrefill.source === 'pre-order-profit' ? '选品池' : '人工采集'}`}
           description={
             <Space wrap size={[8, 4]}>
-              <Text>{sourcePrefill.collectionNo || sourcePrefill.sourceCollectionId}</Text>
+              <Text>
+                {sourcePrefill.collectionNo || sourcePrefill.sourceCollectionId || sourcePrefill.sourceCandidateId}
+              </Text>
               {sourcePrefill.sourcePlatform ? <Tag>{sourcePrefill.sourcePlatform}</Tag> : null}
               {sourcePrefill.sourceTitleCn ? <Text type="secondary">{sourcePrefill.sourceTitleCn}</Text> : null}
               {sourcePrefill.sourceUrl ? (

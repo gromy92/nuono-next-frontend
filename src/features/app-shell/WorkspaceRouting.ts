@@ -23,6 +23,7 @@ export const PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH = workspaceMenuPath('purcha
 export const PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH = workspaceMenuPath('purchase-ali1688-sku-purchase-history')
 export const PURCHASE_LISTING_PATH = workspaceMenuPath('purchase-listing')
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
+export const PURCHASE_PRE_ORDER_PROFIT_PATH = workspaceMenuPath('purchase-pre-order-profit')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
 export const PURCHASE_PRODUCT_LOGISTICS_COSTS_PATH = workspaceMenuPath('purchase-product-logistics-costs')

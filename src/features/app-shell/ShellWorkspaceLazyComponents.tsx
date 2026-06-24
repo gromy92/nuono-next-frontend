@@ -70,6 +70,9 @@ export const ProductListingPage = lazyWorkspace(() =>
     default: module.ProductListingPage
   }))
 );
+export const PreOrderProfitPage = lazyWorkspace(() =>
+  import('../pre-order-profit/PreOrderProfitPage').then((module) => ({ default: module.PreOrderProfitPage }))
+);
 export const MasterDataBoard = lazyWorkspace(() =>
   import('../master-data/MasterDataBoard').then((module) => ({ default: module.MasterDataBoard }))
 );
