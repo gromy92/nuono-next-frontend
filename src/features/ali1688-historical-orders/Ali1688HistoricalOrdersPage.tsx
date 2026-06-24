@@ -559,7 +559,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
                       <Text strong>{selectedDetailItem?.title || '未返回'}</Text>
                       {renderMissingFields(selectedDetailItem?.missingFields)}
                       {renderInfoGrid([
-                        { label: '规格', value: selectedDetailItem?.skuText },
+                        { label: '规格', value: itemDisplaySpec(selectedDetailItem) },
                         { label: '型号', value: selectedDetailItem?.modelText },
                         { label: 'Offer ID', value: selectedDetailItem?.offerId },
                         { label: 'SKU ID', value: selectedDetailItem?.skuId },
@@ -1437,7 +1437,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
             <>
               <Text strong>{productLinkRow?.item?.title || '未返回'}</Text>
               {renderInfoGrid([
-                { label: '规格', value: compactJoin([productLinkRow?.item?.skuText, productLinkRow?.item?.modelText], ' / ') },
+                { label: '规格', value: itemDisplaySpec(productLinkRow?.item) },
                 { label: '货号', value: productLinkRow?.item?.productCode || productLinkRow?.item?.singleProductCode },
                 { label: '供应商', value: productLinkRow?.order.supplierName },
                 { label: '数量', value: quantityText(productLinkRow?.item) },
@@ -2248,7 +2248,7 @@ function renderProductCell(
           <Text strong className="ali1688-product-line-title">{title}</Text>
         </Tooltip>
         <Text type="secondary" className="ali1688-product-line-spec">
-          {labeledValue('规格', compactJoin([item?.skuText, item?.modelText], ' / ') || '未返回')}
+          {labeledValue('规格', itemDisplaySpec(item) || '未返回')}
         </Text>
         <Space size={4} wrap className="ali1688-product-line-tags">
           {item?.productCode ? <Tag>货号 {item.productCode}</Tag> : null}
@@ -2590,6 +2590,34 @@ function assignmentStatusLabel(item: Ali1688HistoricalOrderItem) {
 
 function compactJoin(values: Array<string | undefined>, separator: string) {
   return values.filter((value): value is string => Boolean(value?.trim())).join(separator)
+}
+
+function itemDisplaySpec(item?: Ali1688HistoricalOrderItem) {
+  const skuText = item?.skuText?.trim()
+  const modelText = item?.modelText?.trim()
+  if (skuText) {
+    return compactJoin([skuText, modelText], ' / ')
+  }
+  const titleSpec = extractSpecFromTitle(item?.title)
+  if (titleSpec) {
+    return compactJoin([
+      titleSpec,
+      modelText && !titleSpec.includes(modelText) ? modelText : undefined
+    ], ' / ')
+  }
+  return modelText
+}
+
+function extractSpecFromTitle(title?: string) {
+  const normalized = title?.replace(/\s+/g, ' ').trim()
+  if (!normalized) {
+    return undefined
+  }
+  const match = normalized.match(/(?:灯光颜色|电源功率|规格型号|商品规格|产品规格|颜色|尺寸|尺码|规格|型号|款式)\s*[:：]/)
+  if (!match || match.index === undefined) {
+    return undefined
+  }
+  return normalized.slice(match.index).trim()
 }
 
 const missingFieldLabels: Record<string, string> = {
