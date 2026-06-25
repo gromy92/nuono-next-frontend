@@ -49,6 +49,18 @@
   max-width: 220px;
 }
 
+.ali1688-sku-purchase-count-filter {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 260px);
+  gap: 10px;
+  align-items: center;
+  min-width: 270px;
+}
+
+.ali1688-sku-purchase-count-filter .ant-slider {
+  margin: 6px 10px 18px;
+}
+
 .ali1688-sku-purchase-history-actions {
   display: flex;
   flex-wrap: wrap;
@@ -182,6 +194,57 @@
   gap: 5px;
 }
 
+.ali1688-sku-history-summary[role='button'] {
+  cursor: pointer;
+}
+
+.ali1688-sku-history-summary[role='button']:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.ali1688-sku-metric-line {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.ali1688-sku-metric-line .ant-typography {
+  flex: 0 0 auto;
+}
+
+.ali1688-sku-metric-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #334155;
+  font-weight: 500;
+}
+
+.ali1688-sku-metric-value--strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+.ali1688-sku-metric-value--money {
+  color: #0f766e;
+  font-weight: 700;
+}
+
+.ali1688-sku-metric-value--time {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.ali1688-sku-metric-value--danger {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.ali1688-sku-metric-value--muted {
+  color: #94a3b8;
+}
+
 .ali1688-sku-history-cell {
   display: flex;
   flex-direction: column;
@@ -275,6 +338,54 @@
 .ali1688-sku-source-order-detail dd {
   margin: 0;
   color: #111827;
+}
+
+.ali1688-sku-batch-label-cell,
+.ali1688-sku-batch-component-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ali1688-sku-batch-label-cell .ant-tag {
+  width: fit-content;
+  margin-inline-end: 0;
+}
+
+.ali1688-sku-batch-component-wrap {
+  padding: 8px 0;
+}
+
+.ali1688-sku-batch-component-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.ali1688-sku-batch-component-table th,
+.ali1688-sku-batch-component-table td {
+  padding: 7px 9px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.ali1688-sku-batch-component-table th {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f8fafc;
+}
+
+.ali1688-sku-batch-component-table td {
+  color: #111827;
+  font-size: 12px;
+}
+
+.ali1688-sku-batch-component-table tr:last-child td {
+  border-bottom: 0;
 }
 
 .ali1688-sku-batch-drawer,

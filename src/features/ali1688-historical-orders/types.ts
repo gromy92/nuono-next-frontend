@@ -64,6 +64,9 @@ export type Ali1688SkuPurchaseHistoryQuery = {
   linkStatus?: 'linked' | 'unlinked' | string
   purchaseTimeFrom?: string
   purchaseTimeTo?: string
+  purchaseCountMin?: number
+  purchaseCountMax?: number
+  priceAnomalyOnly?: boolean
   page?: number
   pageSize?: number
 }
@@ -289,17 +292,32 @@ export type Ali1688SkuPurchaseHistoryBatchSource = {
   orderId?: number
   itemId?: number
   assignmentId?: number
+  componentSequence?: number
+  componentRole?: string
   orderNo?: string
   orderTime?: string
   supplierName?: string
+  sourceOfferId?: string
+  sourceSkuId?: string
+  sourceTitle?: string
+  sourceSpec?: string
+  sourceQuantity?: string | number | null
+  sourceUnit?: string
+  sourceUnitPrice?: string | number | null
+  sourceAmount?: string | number | null
+  sourceQuantityPerCountedUnit?: string | number | null
 }
 
 export type Ali1688SkuPurchaseHistoryBatch = {
   id?: number
   label?: string
   batchSequence?: number
+  batchType?: string
   countedQuantity?: string | number | null
+  countedQuantityUnit?: string
   countedCost?: string | number | null
+  componentCount?: number
+  expectedComponentCount?: number
   unitPrice?: string | number | null
   note?: string
   sources?: Ali1688SkuPurchaseHistoryBatchSource[]
@@ -333,6 +351,8 @@ export type Ali1688SkuPurchaseHistoryItem = {
   recentPurchaseTime?: string
   lowestUnitPrice?: string
   highestUnitPrice?: string
+  priceAnomalyCount?: number
+  stableAverageUnitPrice?: string | number | null
   amountBasis?: string
   dataQualityFlags?: string[]
   history?: Ali1688SkuPurchaseHistoryRecord[]
@@ -353,8 +373,12 @@ export type Ali1688SkuPurchaseBatchSaveRequest = {
   pskuCode?: string
   batches: Array<{
     label?: string
+    batchType?: string
     countedQuantity?: number | null
+    countedQuantityUnit?: string
     countedCost?: number | null
+    componentCount?: number | null
+    expectedComponentCount?: number | null
     note?: string
     sources: Ali1688SkuPurchaseHistoryBatchSource[]
   }>

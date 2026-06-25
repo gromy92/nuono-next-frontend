@@ -1,5 +1,5 @@
-import { LineChartOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
-import { Alert, Button, Checkbox, DatePicker, Drawer, Empty, Input, InputNumber, Modal, Popover, Select, Space, Spin, Table, Tag, Tooltip, Typography, message } from 'antd'
+import { LineChartOutlined, ReloadOutlined } from '@ant-design/icons'
+import { Alert, Button, Checkbox, DatePicker, Drawer, Empty, Input, InputNumber, Modal, Popover, Select, Slider, Space, Spin, Table, Tag, Tooltip, Typography, message } from 'antd'
 import type { Dayjs } from 'dayjs'
 import type { EChartsCoreOption } from 'echarts/core'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -44,6 +44,7 @@ type FilterState = {
   siteCode?: string
   keyword: string
   linkStatus: 'all' | 'linked' | 'unlinked'
+  purchaseCountRange: [number, number]
   purchaseRange: [Dayjs | null, Dayjs | null] | null
 }
 
@@ -52,9 +53,20 @@ type PurchaseBatchSource = {
   orderId?: number
   itemId?: number
   assignmentId?: number
+  componentSequence?: number
+  componentRole?: string
   orderNo?: string
   orderTime?: string
   supplierName?: string
+  sourceOfferId?: string
+  sourceSkuId?: string
+  sourceTitle?: string
+  sourceSpec?: string
+  sourceQuantity?: string | number | null
+  sourceUnit?: string
+  sourceUnitPrice?: string | number | null
+  sourceAmount?: string | number | null
+  sourceQuantityPerCountedUnit?: string | number | null
   assignedQuantity?: string | number | null
   allocatedCost?: string | number | null
   unitPrice?: string | number | null
@@ -67,8 +79,12 @@ type PurchaseBatch = {
   batchId?: number
   label: string
   sources: PurchaseBatchSource[]
+  batchType?: string
   countedQuantity: number | null
+  countedQuantityUnit?: string
   countedCost: number | null
+  componentCount?: number
+  expectedComponentCount?: number
   note?: string
 }
 
@@ -81,6 +97,7 @@ type SourceMatchFormState = {
 type PurchaseBatchMetrics = {
   purchaseCount: number
   totalQuantity: number | null
+  quantityUnit?: string
   totalCost: number | null
   averageUnitPrice: number | null
   recentUnitPrice: number | null
@@ -105,6 +122,16 @@ const EMPTY_SOURCE_MATCH_FORM: SourceMatchFormState = {
   skuId: ''
 }
 
+const PURCHASE_COUNT_MAX_BUCKET = 10
+const DEFAULT_PURCHASE_COUNT_RANGE: [number, number] = [0, PURCHASE_COUNT_MAX_BUCKET]
+const PURCHASE_COUNT_MARKS: Record<number, string> = {
+  0: '0',
+  1: '1',
+  2: '2',
+  5: '5',
+  10: '10+'
+}
+
 const SOURCE_MATCH_REJECTION_MESSAGES: Record<string, string> = {
   unsafe_match_key: '请完整填写订单号、offer_id、sku_id。',
   batch_not_found: '批次不存在或已删除，请刷新后重试。',
@@ -120,6 +147,7 @@ export function Ali1688SkuPurchaseHistoryPage({ storeCode, siteCode }: Ali1688Sk
     siteCode: initialSiteCode,
     keyword: '',
     linkStatus: 'all',
+    purchaseCountRange: DEFAULT_PURCHASE_COUNT_RANGE,
     purchaseRange: null
   })
   const [query, setQuery] = useState<Ali1688SkuPurchaseHistoryQuery>({
@@ -167,6 +195,7 @@ export function Ali1688SkuPurchaseHistoryPage({ storeCode, siteCode }: Ali1688Sk
       siteCode: nextSiteCode,
       keyword: '',
       linkStatus: 'all',
+      purchaseCountRange: DEFAULT_PURCHASE_COUNT_RANGE,
       purchaseRange: null
     }
     const nextQuery = buildQuery(nextFilters, 1, query.pageSize || 20)
@@ -187,16 +216,31 @@ export function Ali1688SkuPurchaseHistoryPage({ storeCode, siteCode }: Ali1688Sk
       pskuCode: record.pskuCode,
       batches: batches.map((batch) => ({
         label: batch.label,
+        batchType: batch.batchType,
         countedQuantity: batch.countedQuantity,
+        countedQuantityUnit: batch.countedQuantityUnit,
         countedCost: batch.countedCost,
+        componentCount: batch.componentCount ?? null,
+        expectedComponentCount: batch.expectedComponentCount ?? null,
         note: batch.note,
         sources: batch.sources.map((source) => ({
           orderId: source.orderId,
           itemId: source.itemId,
           assignmentId: source.assignmentId,
+          componentSequence: source.componentSequence,
+          componentRole: source.componentRole,
           orderNo: source.orderNo,
           orderTime: source.orderTime,
-          supplierName: source.supplierName
+          supplierName: source.supplierName,
+          sourceOfferId: source.sourceOfferId,
+          sourceSkuId: source.sourceSkuId,
+          sourceTitle: source.sourceTitle,
+          sourceSpec: source.sourceSpec,
+          sourceQuantity: source.sourceQuantity,
+          sourceUnit: source.sourceUnit,
+          sourceUnitPrice: source.sourceUnitPrice,
+          sourceAmount: source.sourceAmount,
+          sourceQuantityPerCountedUnit: source.sourceQuantityPerCountedUnit
         }))
       }))
     })
@@ -220,7 +264,7 @@ export function Ali1688SkuPurchaseHistoryPage({ storeCode, siteCode }: Ali1688Sk
       render: (_: unknown, record: Ali1688SkuPurchaseHistoryItem) => <ProductInfoCell record={record} />
     },
     {
-      title: '采购历史',
+      title: '批次概要',
       key: 'history',
       width: 300,
       sorter: (left: Ali1688SkuPurchaseHistoryItem, right: Ali1688SkuPurchaseHistoryItem) =>
@@ -245,7 +289,7 @@ export function Ali1688SkuPurchaseHistoryPage({ storeCode, siteCode }: Ali1688Sk
       )
     },
     {
-      title: '采购总结',
+      title: '总计情况',
       key: 'summary',
       width: 280,
       sorter: (left: Ali1688SkuPurchaseHistoryItem, right: Ali1688SkuPurchaseHistoryItem) =>
@@ -256,8 +300,14 @@ export function Ali1688SkuPurchaseHistoryPage({ storeCode, siteCode }: Ali1688Sk
     }
   ]
 
-  function submitSearch() {
-    void loadHistory(buildQuery(filters, 1, query.pageSize || 20))
+  function submitSearch(nextFilters: FilterState = filters) {
+    void loadHistory(buildQuery(nextFilters, 1, query.pageSize || 20))
+  }
+
+  function applyFilterPatch(patch: Partial<FilterState>) {
+    const nextFilters = { ...filters, ...patch }
+    setFilters(nextFilters)
+    submitSearch(nextFilters)
   }
 
   return (
@@ -271,7 +321,7 @@ export function Ali1688SkuPurchaseHistoryPage({ storeCode, siteCode }: Ali1688Sk
             placeholder="名称 / SKU"
             value={filters.keyword}
             onChange={(event) => setFilters((current) => ({ ...current, keyword: event.target.value }))}
-            onPressEnter={submitSearch}
+            onPressEnter={() => submitSearch()}
           />
           <Select
             aria-label="关联"
@@ -284,21 +334,33 @@ export function Ali1688SkuPurchaseHistoryPage({ storeCode, siteCode }: Ali1688Sk
             ]}
             value={filters.linkStatus}
             onChange={(value) =>
-              setFilters((current) => ({ ...current, linkStatus: value as FilterState['linkStatus'] }))
+              applyFilterPatch({ linkStatus: value as FilterState['linkStatus'] })
             }
           />
           <RangePicker
             allowClear
             value={filters.purchaseRange}
-            onChange={(value) => setFilters((current) => ({ ...current, purchaseRange: value }))}
+            onChange={(value) => applyFilterPatch({ purchaseRange: value })}
             placeholder={['采购开始', '采购结束']}
             format="YYYY-MM-DD"
           />
+          <div className="ali1688-sku-purchase-count-filter">
+            <Text type="secondary">采购次数</Text>
+            <Slider
+              range
+              min={0}
+              max={PURCHASE_COUNT_MAX_BUCKET}
+              marks={PURCHASE_COUNT_MARKS}
+              value={filters.purchaseCountRange}
+              onChange={(value) => {
+                const nextRange = normalizePurchaseCountRange(value)
+                setFilters((current) => ({ ...current, purchaseCountRange: nextRange }))
+              }}
+              onChangeComplete={(value) => applyFilterPatch({ purchaseCountRange: normalizePurchaseCountRange(value) })}
+            />
+          </div>
         </div>
         <div className="ali1688-sku-purchase-history-actions">
-          <Button type="primary" icon={<SearchOutlined />} onClick={submitSearch}>
-            查询
-          </Button>
           <Button icon={<ReloadOutlined />} onClick={() => void loadHistory(query)}>
             刷新
           </Button>
@@ -439,6 +501,8 @@ function PurchaseHistoryCell({
   onOpenBatches: () => void
 }) {
   const latest = getLatestPurchaseBatch(batches)
+  const metrics = calculatePurchaseBatchMetrics(batches)
+  const anomalyCount = Number(record.priceAnomalyCount || 0)
   const content = (
     <div className="ali1688-sku-history-popover">
       {batches.slice(0, 8).map((batch) => (
@@ -454,7 +518,7 @@ function PurchaseHistoryCell({
             </Text>
           ))}
           <Text type="secondary">
-            计入数量 {formatNumberText(batch.countedQuantity)} · 计入成本 {formatCurrency(batch.countedCost)}
+            计入数量 {formatBatchQuantity(batch)} · 计入成本 {formatCurrency(batch.countedCost)}
           </Text>
         </div>
       ))}
@@ -468,18 +532,29 @@ function PurchaseHistoryCell({
         <div
           className="ali1688-sku-history-summary"
           data-testid={`sku-purchase-history-summary-${record.skuParent || 'unknown'}`}
+          role="button"
+          tabIndex={0}
+          onClick={batches.length ? onOpenBatches : undefined}
+          onKeyDown={(event) => {
+            if (!batches.length) {
+              return
+            }
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              onOpenBatches()
+            }
+          }}
         >
-          <Text strong>{latest ? formatCurrency(purchaseBatchUnitPrice(latest)) : '未返回信息'}</Text>
-          <Text type="secondary">{latest ? displayText(purchaseBatchLatestOrderTime(latest)) : '暂无最近采购'}</Text>
-          <Text type="secondary">
-            {latest ? displayText(purchaseBatchSupplierNames(latest).join('、')) : '暂无供应商'}
-          </Text>
-          <Text type="secondary">{latest ? `来源 ${displayText(purchaseBatchOrderNos(latest).join('、'))}` : '无订单号'}</Text>
+          <MetricLine label="采购次数" value={`${metrics.purchaseCount} 次`} tone="strong" />
+          <MetricLine label="最近单价" value={latest ? formatCurrency(purchaseBatchUnitPrice(latest)) : '未返回信息'} tone="money" />
+          <MetricLine label="最近时间" value={latest ? displayText(purchaseBatchLatestOrderTime(latest)) : '暂无最近采购'} tone="time" />
+          <MetricLine
+            label="价格异常"
+            value={`${anomalyCount} 次`}
+            tone={anomalyCount > 0 ? 'danger' : 'muted'}
+          />
         </div>
       </Popover>
-      <Button size="small" onClick={onOpenBatches} disabled={!batches.length}>
-        批次明细
-      </Button>
     </div>
   )
 }
@@ -504,6 +579,23 @@ function PurchaseTrendCell({
         <Text type="secondary">最高 {formatCurrency(metrics.highestUnitPrice)}</Text>
       </Space>
     </div>
+  )
+}
+
+function MetricLine({
+  label,
+  value,
+  tone = 'default'
+}: {
+  label: string
+  value: string
+  tone?: 'default' | 'strong' | 'money' | 'time' | 'danger' | 'muted'
+}) {
+  return (
+    <span className="ali1688-sku-metric-line">
+      <Text type="secondary">{label}</Text>
+      <span className={`ali1688-sku-metric-value ali1688-sku-metric-value--${tone}`}>{value}</span>
+    </span>
   )
 }
 
@@ -555,14 +647,15 @@ function Sparkline({ points, skuParent, onOpen }: { points: number[]; skuParent?
 }
 
 function PurchaseSummaryCell({ metrics }: { metrics: PurchaseBatchMetrics }) {
+  const totalQuantityLabel = metrics.quantityUnit ? `采购总${metrics.quantityUnit}数` : '采购总件数'
   return (
     <div className="ali1688-sku-summary-cell">
-      <Text strong>采购次数: {metrics.purchaseCount}</Text>
-      <Text>采购总费用: {formatCurrency(metrics.totalCost)}</Text>
-      <Text>采购总件数: {formatNumberText(metrics.totalQuantity)}</Text>
-      <Text type="secondary">平均采购单价: {formatCurrency(metrics.averageUnitPrice)}</Text>
-      <Text type="secondary">最近采购单价: {formatCurrency(metrics.recentUnitPrice)}</Text>
-      <Text type="secondary">最近采购时间: {displayText(metrics.recentPurchaseTime)}</Text>
+      <MetricLine label="采购次数" value={`${metrics.purchaseCount} 次`} tone="strong" />
+      <MetricLine label="采购总费用" value={formatCurrency(metrics.totalCost)} tone="money" />
+      <MetricLine label={totalQuantityLabel} value={formatNumberText(metrics.totalQuantity)} tone="strong" />
+      <MetricLine label="平均采购单价" value={formatCurrency(metrics.averageUnitPrice)} tone="default" />
+      <MetricLine label="最近采购单价" value={formatCurrency(metrics.recentUnitPrice)} tone="money" />
+      <MetricLine label="最近采购时间" value={displayText(metrics.recentPurchaseTime)} tone="time" />
     </div>
   )
 }
@@ -599,12 +692,25 @@ function TrendDetailDrawer({
             pagination={false}
             dataSource={batches}
             scroll={{ x: 780 }}
+            expandable={{
+              expandedRowRender: (batch) => <PurchaseBatchComponentTable batch={batch} />,
+              rowExpandable: (batch) => isComboPurchaseBatch(batch) || batch.sources.length > 1
+            }}
             columns={[
               {
                 title: '批次',
                 dataIndex: 'label',
-                width: 90,
-                render: (value) => displayText(value)
+                width: 130,
+                render: (value, batch) => (
+                  <div className="ali1688-sku-batch-label-cell">
+                    <Text strong>{displayText(value)}</Text>
+                    {purchaseBatchComponentSummary(batch) ? (
+                      <Tag color={isComboPurchaseBatch(batch) ? 'purple' : 'default'}>
+                        {purchaseBatchComponentSummary(batch)}
+                      </Tag>
+                    ) : null}
+                  </div>
+                )
               },
               {
                 title: '采购时间',
@@ -624,7 +730,7 @@ function TrendDetailDrawer({
               {
                 title: '采购数量',
                 width: 90,
-                render: (_: unknown, batch) => formatNumberText(batch.countedQuantity)
+                render: (_: unknown, batch) => formatBatchQuantity(batch)
               },
               {
                 title: '分摊金额',
@@ -646,6 +752,47 @@ function TrendDetailDrawer({
         </div>
       ) : null}
     </Drawer>
+  )
+}
+
+function PurchaseBatchComponentTable({ batch }: { batch: PurchaseBatch }) {
+  return (
+    <div className="ali1688-sku-batch-component-wrap">
+      <table className="ali1688-sku-batch-component-table">
+        <thead>
+          <tr>
+            <th>型号</th>
+            <th>1688 SKU</th>
+            <th>订单号</th>
+            <th>数量</th>
+            <th>单价</th>
+            <th>金额</th>
+          </tr>
+        </thead>
+        <tbody>
+          {batch.sources.map((source, index) => (
+            <tr key={source.key}>
+              <td>
+                <span className="ali1688-sku-batch-component-main">
+                  <Text strong>{displayText(source.componentRole, source.sourceSpec || `组件 ${index + 1}`)}</Text>
+                  {source.sourceTitle ? <Text type="secondary">{source.sourceTitle}</Text> : null}
+                </span>
+              </td>
+              <td>
+                <span className="ali1688-sku-batch-component-main">
+                  <Text>{displayText(source.sourceOfferId)}</Text>
+                  <Text type="secondary">{displayText(source.sourceSkuId)}</Text>
+                </span>
+              </td>
+              <td>{displayText(source.orderNo)}</td>
+              <td>{formatSourceQuantity(source)}</td>
+              <td>{formatCurrency(source.sourceUnitPrice ?? source.unitPrice)}</td>
+              <td>{formatCurrency(source.sourceAmount ?? source.allocatedCost)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }
 
@@ -830,7 +977,7 @@ function PurchaseBatchDrawer({
         <div className="ali1688-sku-batch-drawer">
           <div className="ali1688-sku-batch-toolbar">
             <Text strong>
-              批次汇总: 采购次数 {metrics.purchaseCount} · 总费用 {formatCurrency(metrics.totalCost)} · 总件数{' '}
+              批次汇总: 采购次数 {metrics.purchaseCount} · 总费用 {formatCurrency(metrics.totalCost)} · {metrics.quantityUnit ? `总${metrics.quantityUnit}数` : '总件数'}{' '}
               {formatNumberText(metrics.totalQuantity)}
             </Text>
             <Space>
@@ -903,7 +1050,7 @@ function PurchaseBatchDrawer({
                       <td>
                         <Text strong>{batch.label}</Text>
                         <Text type="secondary" className="ali1688-sku-batch-order-count">
-                          {batch.sources.length} 单
+                          {purchaseBatchComponentSummary(batch) || `${batch.sources.length} 单`}
                         </Text>
                       </td>
                       <td>{displayText(purchaseBatchOrderNos(batch).join('、'))}</td>
@@ -1114,7 +1261,7 @@ function buildPurchaseBatchPriceTrendOption(batches: PurchaseBatch[]): EChartsCo
             <span>采购单价</span>
             <span style="font-weight:700;color:#111827;">${escapeChartHtml(formatCurrency(point.value))}</span>
           </div>
-          <div style="color:#64748b;">数量 ${escapeChartHtml(formatNumberText(point.batch.countedQuantity))} · 成本 ${escapeChartHtml(formatCurrency(point.batch.countedCost))}</div>
+          <div style="color:#64748b;">数量 ${escapeChartHtml(formatBatchQuantity(point.batch))} · 成本 ${escapeChartHtml(formatCurrency(point.batch.countedCost))}</div>
           <div style="color:#64748b;">订单 ${escapeChartHtml(displayText(orderNos))}</div>
           <div style="color:#64748b;">供应商 ${escapeChartHtml(displayText(supplierNames))}</div>
         `
@@ -1215,6 +1362,7 @@ function escapeChartHtml(value: string) {
 }
 
 function buildQuery(filters: FilterState, page: number, pageSize: number): Ali1688SkuPurchaseHistoryQuery {
+  const [purchaseCountMin, purchaseCountMax] = filters.purchaseCountRange
   return {
     storeCode: filters.storeCode,
     siteCode: filters.siteCode,
@@ -1222,9 +1370,20 @@ function buildQuery(filters: FilterState, page: number, pageSize: number): Ali16
     linkStatus: filters.linkStatus === 'all' ? undefined : filters.linkStatus,
     purchaseTimeFrom: filters.purchaseRange?.[0]?.format('YYYY-MM-DD'),
     purchaseTimeTo: filters.purchaseRange?.[1]?.format('YYYY-MM-DD'),
+    purchaseCountMin: purchaseCountMin > 0 ? purchaseCountMin : undefined,
+    purchaseCountMax: purchaseCountMax < PURCHASE_COUNT_MAX_BUCKET ? purchaseCountMax : undefined,
     page,
     pageSize
   }
+}
+
+function normalizePurchaseCountRange(value: number | number[]): [number, number] {
+  const values = Array.isArray(value) ? value : [0, value]
+  const left = Number(values[0] ?? 0)
+  const right = Number(values[1] ?? PURCHASE_COUNT_MAX_BUCKET)
+  const min = Math.max(0, Math.min(PURCHASE_COUNT_MAX_BUCKET, Math.floor(Math.min(left, right))))
+  const max = Math.max(0, Math.min(PURCHASE_COUNT_MAX_BUCKET, Math.floor(Math.max(left, right))))
+  return [min, max]
 }
 
 function skuPurchaseHistoryRowKey(record: Ali1688SkuPurchaseHistoryItem) {
@@ -1288,8 +1447,12 @@ function purchaseBatchFromPersistedBatch(
     batchId: batch.id,
     label,
     sources: (batch.sources || []).map((source, sourceIndex) => persistedPurchaseBatchSource(source, sourceIndex)),
+    batchType: batch.batchType,
     countedQuantity: normalizeNullableInteger(batch.countedQuantity ?? null),
+    countedQuantityUnit: batch.countedQuantityUnit,
     countedCost: normalizeNullableNumber(batch.countedCost ?? null),
+    componentCount: batch.componentCount,
+    expectedComponentCount: batch.expectedComponentCount,
     note: batch.note
   }
 }
@@ -1303,9 +1466,20 @@ function persistedPurchaseBatchSource(
     orderId: source.orderId,
     itemId: source.itemId,
     assignmentId: source.assignmentId,
+    componentSequence: source.componentSequence,
+    componentRole: source.componentRole,
     orderNo: source.orderNo,
     orderTime: source.orderTime,
-    supplierName: source.supplierName
+    supplierName: source.supplierName,
+    sourceOfferId: source.sourceOfferId,
+    sourceSkuId: source.sourceSkuId,
+    sourceTitle: source.sourceTitle,
+    sourceSpec: source.sourceSpec,
+    sourceQuantity: source.sourceQuantity,
+    sourceUnit: source.sourceUnit,
+    sourceUnitPrice: source.sourceUnitPrice,
+    sourceAmount: source.sourceAmount,
+    sourceQuantityPerCountedUnit: source.sourceQuantityPerCountedUnit
   }
 }
 
@@ -1330,7 +1504,10 @@ function sourceMatchCandidateToBatchSource(
     assignmentId: candidate.assignmentId,
     orderNo: candidate.orderNo,
     orderTime: candidate.orderTime,
-    supplierName: candidate.supplierName
+    supplierName: candidate.supplierName,
+    sourceOfferId: candidate.offerId,
+    sourceSkuId: candidate.skuId,
+    sourceQuantity: candidate.assignedQuantity
   }
 }
 
@@ -1346,6 +1523,9 @@ function purchaseBatchSourceFromMatchCandidate(
     orderNo: candidate.orderNo,
     orderTime: candidate.orderTime,
     supplierName: candidate.supplierName,
+    sourceOfferId: candidate.offerId,
+    sourceSkuId: candidate.skuId,
+    sourceQuantity: candidate.assignedQuantity,
     assignedQuantity: candidate.assignedQuantity
   }
 }
@@ -1456,6 +1636,34 @@ function purchaseBatchUnitPrice(batch: PurchaseBatch) {
   return batch.countedCost / batch.countedQuantity
 }
 
+function formatBatchQuantity(batch: PurchaseBatch) {
+  const quantity = formatNumberText(batch.countedQuantity)
+  const unit = displayOptionalText(batch.countedQuantityUnit)
+  return unit ? `${quantity} ${unit}` : quantity
+}
+
+function formatSourceQuantity(source: PurchaseBatchSource) {
+  const quantity = formatNumberText(source.sourceQuantity ?? source.assignedQuantity)
+  const unit = displayOptionalText(source.sourceUnit)
+  return unit ? `${quantity} ${unit}` : quantity
+}
+
+function isComboPurchaseBatch(batch: PurchaseBatch) {
+  return batch.batchType === 'combo_set' || Boolean(batch.expectedComponentCount && batch.expectedComponentCount > 1)
+}
+
+function purchaseBatchComponentSummary(batch: PurchaseBatch) {
+  const expected = batch.expectedComponentCount
+  const actual = batch.componentCount ?? batch.sources.length
+  if (isComboPurchaseBatch(batch)) {
+    return expected ? `套装 ${actual}/${expected} 型号` : `套装 ${actual} 型号`
+  }
+  if (actual > 1) {
+    return `${actual} 来源`
+  }
+  return ''
+}
+
 function purchaseBatchPriceQuality(batch: PurchaseBatch) {
   if (purchaseBatchUnitPrice(batch) === null || batch.sources.some((source) => source.priceQuality === 'missing_price_basis')) {
     return 'missing_price_basis'
@@ -1473,6 +1681,7 @@ function calculatePurchaseBatchMetrics(batches: PurchaseBatch[]): PurchaseBatchM
   return {
     purchaseCount: batches.length,
     totalQuantity,
+    quantityUnit: purchaseBatchMetricsQuantityUnit(batches),
     totalCost,
     averageUnitPrice: totalQuantity && totalCost !== null ? totalCost / totalQuantity : null,
     recentUnitPrice: latestBatch ? purchaseBatchUnitPrice(latestBatch) : null,
@@ -1480,6 +1689,11 @@ function calculatePurchaseBatchMetrics(batches: PurchaseBatch[]): PurchaseBatchM
     lowestUnitPrice: unitPrices.length ? Math.min(...unitPrices) : null,
     highestUnitPrice: unitPrices.length ? Math.max(...unitPrices) : null
   }
+}
+
+function purchaseBatchMetricsQuantityUnit(batches: PurchaseBatch[]) {
+  const units = uniqueNonEmpty(batches.map((batch) => batch.countedQuantityUnit))
+  return units.length === 1 ? units[0] : undefined
 }
 
 function sumBatchNumbers(batches: PurchaseBatch[], field: 'countedQuantity' | 'countedCost') {
