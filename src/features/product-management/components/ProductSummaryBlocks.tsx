@@ -13,6 +13,7 @@ import {
   productSummaryTitle,
   productSyncStatusMeta
 } from '../utils';
+import { ProductBaselineIdentity } from '../../product-baseline';
 
 const { Text } = Typography;
 
@@ -157,53 +158,23 @@ export function ProductSummaryEntry(props: {
         </Button>
       ]}
     >
-      <Space size={compact ? 12 : 14} align="start" style={{ width: '100%' }}>
-        <div
-          style={{
-            width: compact ? 48 : 56,
-            height: compact ? 48 : 56,
-            borderRadius: 8,
-            border: '1px solid #dbe4ea',
-            background: '#f8fafc',
-            overflow: 'hidden',
-            flexShrink: 0
-          }}
-        >
-          {summary.imageUrl ? (
-            <img
-              src={summary.imageUrl}
-              alt={summary.title || summary.skuParent}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : null}
-        </div>
-
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ marginBottom: 8 }}>
-            <ProductSummaryPrimaryTags summary={summary} />
-          </div>
-
-          <Text strong style={{ color: '#0f172a' }}>
-            {productSummaryTitle(summary)}
-          </Text>
-          <div
-            style={{
-              marginTop: 4,
-              color: '#64748b',
-              display: '-webkit-box',
-              WebkitLineClamp: compact ? 2 : 3,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden'
-            }}
-          >
-            {productSummaryIdentityLine(summary)}
-          </div>
-
-          <div style={{ marginTop: 8 }}>
-            <ProductSummaryMetricTags summary={summary} />
-          </div>
-        </div>
-      </Space>
+      <ProductBaselineIdentity
+        title={productSummaryTitle(summary)}
+        imageUrl={summary.imageUrl || summary.galleryImages[0]}
+        imageCount={summary.galleryImages.length}
+        imageAlt={summary.title || summary.skuParent}
+        imageWidth={compact ? 56 : 72}
+        compact={compact}
+        titleMaxWidth="100%"
+        codes={[
+          {
+            value: productSummaryIdentityLine(summary),
+            copyText: summary.skuParent
+          }
+        ]}
+        tags={<ProductSummaryPrimaryTags summary={summary} />}
+        extra={<ProductSummaryMetricTags summary={summary} />}
+      />
     </List.Item>
   );
 }

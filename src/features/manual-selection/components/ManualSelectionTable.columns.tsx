@@ -20,6 +20,7 @@ const { Text } = Typography
 type ManualSelectionTableColumnOptions = {
   recollecting: boolean
   onOpenDetail: (record: ProductSelectionSourceCollection) => void
+  onOpenListing: (record: ProductSelectionSourceCollection) => void
   onRecollect: (record: ProductSelectionSourceCollection) => void
 }
 
@@ -91,7 +92,7 @@ export function buildManualSelectionTableColumns(
     {
       title: '操作',
       key: 'action',
-      width: 160,
+      width: 170,
       fixed: 'right',
       render: (_value, record) => <ActionCell record={record} {...options} />
     }

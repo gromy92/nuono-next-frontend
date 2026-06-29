@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useProfitCalculatorWorkspace } from '../profit-calculator/useProfitCalculatorWorkspace';
 import { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
 import type { ProductDetailTabRequest, ProductWorkspaceTabKey } from '../product-management/types';
+import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import { ShellFrame } from './ShellFrame';
 import { useStoreSyncController } from './useStoreSyncController';
 import { useShellWorkspaceNavigation } from './useShellWorkspaceNavigation';
@@ -25,8 +26,12 @@ export function AppShellRuntime() {
     visibleWorkspaceMenuItems
   } = useShellSessionState();
   const [productDetailTabRequest, setProductDetailTabRequest] = useState<ProductDetailTabRequest | null>(null);
+  const [inTransitBoxDetailTabRequest, setInTransitBoxDetailTabRequest] =
+    useState<InTransitBoxDetailTabRequest | null>(null);
   const [activeProductWorkspaceTabKey, setActiveProductWorkspaceTabKey] =
     useState<ProductWorkspaceTabKey>('product-manage');
+  const [activeInTransitWorkspaceTabKey, setActiveInTransitWorkspaceTabKey] =
+    useState<'purchase-in-transit-goods' | 'in-transit-box-detail'>('purchase-in-transit-goods');
   const {
     activeOwnerId,
     canManageStoreBinding,
@@ -44,7 +49,9 @@ export function AppShellRuntime() {
     setActiveMenuKey('purchase-profit');
   }, []);
 
-  const { profitBoard, openProfitCalculatorPrefilled } = useProfitCalculatorWorkspace(openProfitWorkspace);
+  const { profitBoard, openProfitCalculatorPrefilled } = useProfitCalculatorWorkspace(openProfitWorkspace, shellSession, {
+    enabled: activeMenuKey === 'purchase-profit'
+  });
   const productWorkspace = useProductManagementWorkspace({
     session,
     enabled: isProductWorkspaceMenu(activeMenuKey),
@@ -117,6 +124,31 @@ export function AppShellRuntime() {
     activeProductWorkspaceTabKey === 'product-detail' && hasProductDetailTab ? 'product-detail' : 'product-manage';
   const isProductDetailTab =
     activeMenuKey === 'product-manage' && resolvedProductWorkspaceTabKey === 'product-detail';
+  const hasInTransitBoxDetailTab = Boolean(inTransitBoxDetailTabRequest);
+  const resolvedInTransitWorkspaceTabKey =
+    activeInTransitWorkspaceTabKey === 'in-transit-box-detail' && hasInTransitBoxDetailTab
+      ? 'in-transit-box-detail'
+      : 'purchase-in-transit-goods';
+  const isInTransitBoxDetailTab =
+    activeMenuKey === 'purchase-in-transit-goods' && resolvedInTransitWorkspaceTabKey === 'in-transit-box-detail';
+
+  const openInTransitBoxDetailTab = useCallback(
+    (request: InTransitBoxDetailTabRequest) => {
+      setInTransitBoxDetailTabRequest(request);
+      setActiveMenuKey('purchase-in-transit-goods');
+      setActiveInTransitWorkspaceTabKey('in-transit-box-detail');
+      syncWorkspacePathForMenuKey('purchase-in-transit-goods');
+    },
+    [setActiveMenuKey, syncWorkspacePathForMenuKey]
+  );
+
+  const requestCloseInTransitBoxDetailTab = useCallback(() => {
+    setInTransitBoxDetailTabRequest(null);
+    setActiveInTransitWorkspaceTabKey('purchase-in-transit-goods');
+    if (activeMenuKey === 'purchase-in-transit-goods') {
+      syncWorkspacePathForMenuKey('purchase-in-transit-goods');
+    }
+  }, [activeMenuKey, syncWorkspacePathForMenuKey]);
 
   const {
     activeMenuPathLabel,
@@ -136,12 +168,17 @@ export function AppShellRuntime() {
     activeMenuKey,
     goBackToProductManage,
     hasProductDetailTab,
+    hasInTransitBoxDetailTab,
+    inTransitBoxDetailTabRequest,
     productDetailSummarySurface,
     productDetailTabRequest,
+    requestCloseInTransitBoxDetailTab,
     requestCloseProductDetailTab,
+    resolvedInTransitWorkspaceTabKey,
     resolvedProductWorkspaceTabKey,
     sessionAllowedMenuKeySet,
     setActiveMenuKey,
+    setActiveInTransitWorkspaceTabKey,
     setActiveProductWorkspaceTabKey,
     shouldRenderProcurementRequirementConfirmation,
     syncWorkspacePathForMenuKey,
@@ -168,6 +205,8 @@ export function AppShellRuntime() {
       handleUserDropdownClick={handleUserDropdownClick}
       handleWorkspaceTabChange={handleWorkspaceTabChange}
       handleWorkspaceTabEdit={handleWorkspaceTabEdit}
+      inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}
+      isInTransitBoxDetailTab={isInTransitBoxDetailTab}
       isProductDetailTab={isProductDetailTab}
       loadStoreSync={loadStoreSync}
       loginError={loginError}
@@ -177,6 +216,8 @@ export function AppShellRuntime() {
       logoutConfirmOpen={logoutConfirmOpen}
       noMenuPermission={!usingProcurementRequirementDemoSession && !sessionAllowedMenuKeys.length}
       notifyRoleManagementDataChanged={notifyRoleManagementDataChanged}
+      onCloseInTransitBoxDetailTab={requestCloseInTransitBoxDetailTab}
+      onOpenInTransitBoxDetailTab={openInTransitBoxDetailTab}
       onOpenProfitCalculatorPrefilled={openProfitCalculatorPrefilled}
       productWorkspace={productWorkspace}
       profitBoard={profitBoard}

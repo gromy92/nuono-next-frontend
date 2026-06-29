@@ -1,5 +1,6 @@
 import type {
   ProductHistoryPayload,
+  ProductLogisticsProfileListPayload,
   ProductLogisticsProfilePayload,
   ProductLogisticsProfileSaveRequest,
   ProductListDatasetPayload,
@@ -194,6 +195,21 @@ export async function fetchProductVariantSpecs(request: ProductHistoryRequest) {
 
 export async function saveProductVariantSpec(request: ProductVariantSpecSaveRequest) {
   return postJson<ProductVariantSpecPayload>('/api/product-variant-specs', request, '保存商品规格失败');
+}
+
+export async function fetchProductLogisticsProfiles(request: ProductHistoryRequest) {
+  const query = new URLSearchParams({
+    ownerUserId: String(request.ownerUserId),
+    storeCode: request.storeCode,
+    skuParent: request.skuParent
+  });
+  const response = await apiFetch(`/api/product-logistics-profiles?${query.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, `物流属性返回 ${response.status}`));
+  }
+
+  return (await response.json()) as ProductLogisticsProfileListPayload;
 }
 
 export async function saveProductLogisticsProfile(request: ProductLogisticsProfileSaveRequest) {

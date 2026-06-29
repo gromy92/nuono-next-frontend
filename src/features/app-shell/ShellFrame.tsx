@@ -14,6 +14,7 @@ import type { FormInstance, MenuProps, TabsProps } from 'antd';
 import { WorkspaceTabsBar, type WorkspaceTabItem } from './WorkspaceTabsBar';
 import { ReplicaLoginPage } from '../auth/ReplicaLoginPage';
 import type { AuthRoleView, AuthSession } from '../auth/session';
+import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
 import type { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
 import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProfitCalculatorWorkspace';
@@ -25,6 +26,8 @@ import type { SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
 import { WorkspaceErrorBoundary } from './WorkspaceErrorBoundary';
 import { isProductWorkspaceMenu } from './WorkspaceMenuRegistry';
+import type { LoadStoreSyncOptions } from './useStoreSyncController';
+import './shell-layout.css';
 
 const { Content } = Layout;
 const { Text } = Typography;
@@ -62,8 +65,10 @@ type ShellFrameProps = {
   handleUserDropdownClick: ({ key }: { key: string }) => void;
   handleWorkspaceTabChange: (key: string) => void;
   handleWorkspaceTabEdit: NonNullable<TabsProps['onEdit']>;
+  inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
+  isInTransitBoxDetailTab: boolean;
   isProductDetailTab: boolean;
-  loadStoreSync: (ownerUserId?: number, options?: { preserveConnectionFeedback?: boolean }) => Promise<void> | void;
+  loadStoreSync: (ownerUserId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   loginError: string | null;
   loginForm: FormInstance;
   loginSubmitting: boolean;
@@ -71,6 +76,8 @@ type ShellFrameProps = {
   logoutConfirmOpen: boolean;
   noMenuPermission: boolean;
   notifyRoleManagementDataChanged: (source?: 'store-management') => void;
+  onCloseInTransitBoxDetailTab: () => Promise<void> | void;
+  onOpenInTransitBoxDetailTab: (request: InTransitBoxDetailTabRequest) => void;
   onOpenProfitCalculatorPrefilled: OpenProfitCalculatorPrefilled;
   productWorkspace: ProductManagementWorkspace;
   profitBoard: ReactNode;
@@ -116,6 +123,8 @@ export function ShellFrame({
   handleUserDropdownClick,
   handleWorkspaceTabChange,
   handleWorkspaceTabEdit,
+  inTransitBoxDetailTabRequest,
+  isInTransitBoxDetailTab,
   isProductDetailTab,
   loadStoreSync,
   loginError,
@@ -125,6 +134,8 @@ export function ShellFrame({
   logoutConfirmOpen,
   noMenuPermission,
   notifyRoleManagementDataChanged,
+  onCloseInTransitBoxDetailTab,
+  onOpenInTransitBoxDetailTab,
   onOpenProfitCalculatorPrefilled,
   productWorkspace,
   profitBoard,
@@ -206,6 +217,7 @@ export function ShellFrame({
             }}
           >
             <Layout
+              className="nuono-shell-layout"
               style={{
                 minHeight: '100vh',
                 background: 'linear-gradient(180deg, #fbfbfd 0%, #f5f7fb 100%)'
@@ -220,7 +232,7 @@ export function ShellFrame({
                 onMouseLeave={() => setSidebarOpenKeys(activeSidebarOpenKeys)}
                 onOpenKeysChange={setSidebarOpenKeys}
               />
-              <Layout style={{ background: 'transparent' }}>
+              <Layout className="nuono-shell-main" style={{ background: 'transparent' }}>
                 <ShellHeader
                   activeMenuPathLabel={activeMenuPathLabel}
                   session={shellSession}
@@ -229,8 +241,11 @@ export function ShellFrame({
                   onSessionStoreChange={handleSessionStoreChange}
                   onUserDropdownClick={handleUserDropdownClick}
                 />
-                <Content style={{ padding: isProductWorkspaceMenu(activeMenuKey) ? '10px 10px 20px' : '16px 16px 24px' }}>
-                  <div style={{ width: '100%' }}>
+                <Content
+                  className="nuono-shell-content"
+                  style={{ padding: isProductWorkspaceMenu(activeMenuKey) ? '10px 10px 20px' : '16px 16px 24px' }}
+                >
+                  <div className="nuono-shell-content-inner">
                     {shouldRenderWorkspaceTabs ? (
                       <WorkspaceErrorBoundary boundaryName="workspace-tabs">
                         <WorkspaceTabsBar
@@ -243,8 +258,8 @@ export function ShellFrame({
                       </WorkspaceErrorBoundary>
                     ) : null}
 
-                    <Row gutter={[16, 16]} align="top">
-                      <Col span={24}>
+                    <Row className="nuono-shell-workspace-row" gutter={[16, 16]} align="top">
+                      <Col className="nuono-shell-workspace-col" span={24}>
                         <WorkspaceErrorBoundary boundaryName="main-content">
                           <ShellWorkspaceContent
                             activeMenuKey={activeMenuKey}
@@ -252,9 +267,13 @@ export function ShellFrame({
                             shouldRenderProcurementRequirementConfirmation={shouldRenderProcurementRequirementConfirmation}
                             shellSession={shellSession}
                             onOpenProfitCalculatorPrefilled={onOpenProfitCalculatorPrefilled}
+                            onOpenInTransitBoxDetailTab={onOpenInTransitBoxDetailTab}
+                            onCloseInTransitBoxDetailTab={onCloseInTransitBoxDetailTab}
                             profitBoard={profitBoard}
                             productWorkspace={productWorkspace}
                             activeOwnerId={activeOwnerId}
+                            inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}
+                            isInTransitBoxDetailTab={isInTransitBoxDetailTab}
                             isProductDetailTab={isProductDetailTab}
                             roleManagementTabKey={userRoleActiveTabKey}
                             canShowStoreManagement={canShowStoreManagement}

@@ -42,7 +42,11 @@ export function filterAndSortProductListItems({
       [item.skuParent, item.partnerSku, item.pskuCode, item.offerCode, item.barcode]
         .filter(Boolean)
         .some((value) => String(value).toLowerCase().includes(skuQuery));
-    const matchesTitle = !titleQuery || String(item.title ?? '').toLowerCase().includes(titleQuery);
+    const matchesTitle =
+      !titleQuery ||
+      [item.title, item.titleCn]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(titleQuery));
     const matchesBrand = !brandQuery || String(item.brand ?? '').toLowerCase().includes(brandQuery);
     const matchesIssue = filters.issueFilter === 'all' || productListIssueTags(item).includes(filters.issueFilter);
     const online = isProductListRowOnline(item);

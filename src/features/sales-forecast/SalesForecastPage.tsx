@@ -2,6 +2,7 @@ import { Alert, Button, Card, Descriptions, Drawer, Empty, Input, Segmented, Sel
 import { AppstoreOutlined, EyeOutlined, ReloadOutlined, StarFilled, StarOutlined, TableOutlined } from '@ant-design/icons'
 import { useCallback, useEffect, useMemo, useState, type HTMLAttributes } from 'react'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
+import { ProductBaselineIdentity } from '../product-baseline'
 import {
   exportSalesForecastCsv,
   fetchSalesForecastOverview,
@@ -205,11 +206,15 @@ export function SalesForecastPage({ session }: SalesForecastPageProps) {
         dataIndex: 'partnerSku',
         width: 260,
         render: (_: string, row: SalesForecastRow) => (
-          <Space direction="vertical" size={2}>
-            <Text strong>{row.productTitle || row.partnerSku}</Text>
-            <Text type="secondary">{row.partnerSku}</Text>
-            <Text type="secondary">{row.sku}</Text>
-          </Space>
+          <ProductBaselineIdentity
+            title={row.productTitle || row.partnerSku}
+            showImage={false}
+            compact
+            codes={[
+              { label: 'PSKU', value: row.partnerSku, copyText: row.partnerSku },
+              { label: 'SKU', value: row.sku, copyText: row.sku }
+            ]}
+          />
         )
       },
       {
@@ -547,11 +552,15 @@ function ForecastCardGrid({
             gap: 8
           }}
         >
-          <Space direction="vertical" size={2}>
-            <Text strong>{row.productTitle || row.partnerSku}</Text>
-            <Text type="secondary">{row.partnerSku}</Text>
-            <Text type="secondary">{row.sku}</Text>
-          </Space>
+          <ProductBaselineIdentity
+            title={row.productTitle || row.partnerSku}
+            showImage={false}
+            compact
+            codes={[
+              { label: 'PSKU', value: row.partnerSku, copyText: row.partnerSku },
+              { label: 'SKU', value: row.sku, copyText: row.sku }
+            ]}
+          />
           <Space size={8} wrap>
             <Tag color="blue">{forecastWindow}天 {forecastUnits(row, forecastWindow)}</Tag>
             <Tag color={confidenceColor(row.confidenceLevel)}>置信度 {row.confidenceLabel || '-'}</Tag>
@@ -590,11 +599,15 @@ function SalesForecastDetailDrawer({ row }: { row: SalesForecastRow }) {
   return (
     <div data-testid="sales-forecast-detail-drawer">
       <Space direction="vertical" size={16} style={{ width: '100%' }}>
-        <Space direction="vertical" size={2}>
-          <Text strong>{row.productTitle || row.partnerSku}</Text>
-          <Text type="secondary">{row.partnerSku}</Text>
-          <Text type="secondary">{row.sku}</Text>
-        </Space>
+        <ProductBaselineIdentity
+          title={row.productTitle || row.partnerSku}
+          showImage={false}
+          compact
+          codes={[
+            { label: 'PSKU', value: row.partnerSku, copyText: row.partnerSku },
+            { label: 'SKU', value: row.sku, copyText: row.sku }
+          ]}
+        />
 
         <Descriptions size="small" column={1} bordered>
           <Descriptions.Item label="特征值">

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { message } from 'antd';
 import type { AuthSession } from '../../auth/session';
 import { fetchStoreInitializationStatus, startStoreInitializationRequest } from '../api';
 import { findProductStoreByCode, pickPreferredBoundStore, resolveProductApiStoreCode } from '../workspaceHelpers';
+import type { LoadProductListDatasetOptions } from './useProductListDatasetLoader';
 import {
   buildAuthorizedStoreOptions,
   resolvePreferredInitializationStoreCode,
@@ -15,16 +16,17 @@ import type { StoreSyncOverviewState } from '../workspaceContracts';
 import type { ProductListDatasetState, StoreInitializationPayload, StoreInitializationState } from '../types';
 type UseProductStoreInitializationParams = {
   activeOwnerId?: number;
-  autoInitializationStoreCode?: string;
-  enableProductBootAutoInit: boolean;
   enableProductBootDataset: boolean;
   enableProductBootInitStatus: boolean;
   enableProductBootStoreSelection: boolean;
   lastInitializationStoreCodeRef: MutableRefObject<string | undefined>;
-  loadProductListDataset: (storeCode: string, ownerUserId?: number) => Promise<void>;
+  loadProductListDataset: (
+    storeCode: string,
+    ownerUserId?: number,
+    options?: LoadProductListDatasetOptions
+  ) => Promise<void>;
   selectedInitializationStoreCodeOverride?: string;
   session: AuthSession | null;
-  setAutoInitializationStoreCode: Dispatch<SetStateAction<string | undefined>>;
   setProductListDatasetState: Dispatch<SetStateAction<ProductListDatasetState>>;
   setSelectedInitializationStoreCodeOverride: Dispatch<SetStateAction<string | undefined>>;
   setSelectedProductRowKeys: Dispatch<SetStateAction<string[]>>;
@@ -37,8 +39,6 @@ type UseProductStoreInitializationParams = {
 
 export function useProductStoreInitialization({
   activeOwnerId,
-  autoInitializationStoreCode,
-  enableProductBootAutoInit,
   enableProductBootDataset,
   enableProductBootInitStatus,
   enableProductBootStoreSelection,
@@ -46,7 +46,6 @@ export function useProductStoreInitialization({
   loadProductListDataset,
   selectedInitializationStoreCodeOverride,
   session,
-  setAutoInitializationStoreCode,
   setProductListDatasetState,
   setSelectedInitializationStoreCodeOverride,
   setSelectedProductRowKeys,
@@ -56,6 +55,8 @@ export function useProductStoreInitialization({
   storeSyncOwnerId,
   storeSyncState
 }: UseProductStoreInitializationParams) {
+  const storeInitializationRequestSeqRef = useRef(0);
+
   useEffect(() => {
     if (!session?.currentStore?.storeCode) {
       return;
@@ -67,18 +68,27 @@ export function useProductStoreInitialization({
     async (storeCode: string, ownerUserId?: number) => {
       const effectiveOwnerUserId = ownerUserId ?? storeSyncOwnerId ?? session?.defaultOwnerUserId;
       if (!effectiveOwnerUserId || !storeCode) {
+        storeInitializationRequestSeqRef.current += 1;
         setStoreInitializationState({ status: 'idle' });
         return;
       }
 
+      const requestSeq = (storeInitializationRequestSeqRef.current += 1);
+      const isLatestRequest = () => storeInitializationRequestSeqRef.current === requestSeq;
       setStoreInitializationState({ status: 'loading' });
       try {
         const payload = await fetchStoreInitializationStatus({
           ownerUserId: effectiveOwnerUserId,
           storeCode
         });
+        if (!isLatestRequest()) {
+          return;
+        }
         setStoreInitializationState({ status: 'success', data: payload });
       } catch (error) {
+        if (!isLatestRequest()) {
+          return;
+        }
         const errorMessage = error instanceof Error ? error.message : '店铺初始化状态暂时不可用';
         if (
           errorMessage.includes('当前店铺不在选中的老板名下') ||
@@ -156,6 +166,7 @@ export function useProductStoreInitialization({
     }
 
     lastInitializationStoreCodeRef.current = selectedInitializationStoreCode;
+    storeInitializationRequestSeqRef.current += 1;
     setSelectedProductRowKeys([]);
     setStoreInitializationState({ status: 'idle' });
     setProductListDatasetState({ status: 'idle' });
@@ -234,7 +245,7 @@ export function useProductStoreInitialization({
           storeCode
         });
         setStoreInitializationState({ status: 'success', data: payload });
-        void loadProductListDataset(storeCode, activeOwnerId);
+        void loadProductListDataset(storeCode, activeOwnerId, { force: true });
         if (!options?.silent) {
           message.success('正在后台准备当前店铺的商品列表。');
         }
@@ -253,7 +264,7 @@ export function useProductStoreInitialization({
     if (!selectedInitializationStoreCode || !activeOwnerId) {
       return;
     }
-    void loadProductListDataset(selectedInitializationStoreCode, activeOwnerId);
+    void loadProductListDataset(selectedInitializationStoreCode, activeOwnerId, { force: true });
     void loadStoreInitializationStatus(selectedInitializationStoreCode, activeOwnerId);
   }, [activeOwnerId, loadProductListDataset, loadStoreInitializationStatus, selectedInitializationStoreCode]);
 
@@ -280,31 +291,6 @@ export function useProductStoreInitialization({
     }
     void loadProductListDataset(selectedInitializationStoreCode, activeOwnerId);
   }, [activeOwnerId, enableProductBootDataset, loadProductListDataset, selectedInitializationStoreCode, storeInitializationState]);
-
-  useEffect(() => {
-    if (!enableProductBootAutoInit) {
-      return;
-    }
-    if (!selectedInitializationStoreCode || storeInitializationState.status !== 'success') {
-      return;
-    }
-    if (storeInitializationState.data.status !== 'IDLE') {
-      return;
-    }
-    if (autoInitializationStoreCode === selectedInitializationStoreCode) {
-      return;
-    }
-
-    setAutoInitializationStoreCode(selectedInitializationStoreCode);
-    void startStoreInitialization(selectedInitializationStoreCode, { silent: true });
-  }, [
-    autoInitializationStoreCode,
-    selectedInitializationStoreCode,
-    setAutoInitializationStoreCode,
-    startStoreInitialization,
-    storeInitializationState,
-    enableProductBootAutoInit
-  ]);
 
   return {
     loadStoreInitializationStatus,

@@ -1,12 +1,14 @@
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 import { Alert, Card, Spin } from 'antd';
 import type { AuthSession } from '../auth/session';
+import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
 import type { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
 import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProfitCalculatorWorkspace';
 import type { StoreSyncOverviewState } from '../store-sync/types';
 import type { AppMenuKey } from './WorkspaceRouting';
 import { workspaceMenuContentKind } from './WorkspaceMenuRegistry';
+import type { LoadStoreSyncOptions } from './useStoreSyncController';
 
 const DYNAMIC_IMPORT_RELOAD_KEY = 'nuono:dynamic-import-reload';
 
@@ -46,12 +48,30 @@ const AiFileParseBoard = lazyWorkspace(() =>
 const LogisticsQuoteBoard = lazyWorkspace(() =>
   import('../logistics-quote/LogisticsQuoteBoard').then((module) => ({ default: module.LogisticsQuoteBoard }))
 );
+const InTransitGoodsPage = lazyWorkspace(() =>
+  import('../in-transit-goods/InTransitGoodsPage').then((module) => ({ default: module.InTransitGoodsPage }))
+);
 const ManualSelectionPage = lazyWorkspace(() =>
   import('../manual-selection/ManualSelectionPage').then((module) => ({ default: module.ManualSelectionPage }))
 );
 const Ali1688CollectionPage = lazyWorkspace(() =>
   import('../ali1688-collection/Ali1688CollectionPage').then((module) => ({
     default: module.Ali1688CollectionPage
+  }))
+);
+const Ali1688HistoricalOrdersPage = lazyWorkspace(() =>
+  import('../ali1688-historical-orders/Ali1688HistoricalOrdersPage').then((module) => ({
+    default: module.Ali1688HistoricalOrdersPage
+  }))
+);
+const Ali1688SkuPurchaseHistoryPage = lazyWorkspace(() =>
+  import('../ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage').then((module) => ({
+    default: module.Ali1688SkuPurchaseHistoryPage
+  }))
+);
+const ProductListingPage = lazyWorkspace(() =>
+  import('../product-listing/ProductListingPage').then((module) => ({
+    default: module.ProductListingPage
   }))
 );
 const MasterDataBoard = lazyWorkspace(() =>
@@ -80,8 +100,15 @@ const ImageMatchPage = lazyWorkspace(() =>
     default: module.ImageMatchPage
   }))
 );
-const ProcurementWorkspace = lazyWorkspace(() =>
-  import('../procurement/ProcurementWorkspace').then((module) => ({ default: module.ProcurementWorkspace }))
+const PurchaseOrderPage = lazyWorkspace(() =>
+  import('../purchase-order/PurchaseOrderPage').then((module) => ({
+    default: module.PurchaseOrderPage
+  }))
+);
+const WarehouseDispatchWorkbenchPage = lazyWorkspace(() =>
+  import('../warehouse-dispatch/WarehouseDispatchWorkbenchPage').then((module) => ({
+    default: module.WarehouseDispatchWorkbenchPage
+  }))
 );
 const OfficialWarehouseWorkbenchPage = lazyWorkspace(() =>
   import('../official-warehouse/OfficialWarehouseWorkbenchPage').then((module) => ({
@@ -117,6 +144,11 @@ const OrderFinancePage = lazyWorkspace(() =>
 const SalesForecastPage = lazyWorkspace(() =>
   import('../sales-forecast/SalesForecastPage').then((module) => ({ default: module.SalesForecastPage }))
 );
+const CompetitorAnalysisPage = lazyWorkspace(() =>
+  import('../competitor-analysis/CompetitorAnalysisPage').then((module) => ({
+    default: module.CompetitorAnalysisPage
+  }))
+);
 const OperationConfigSuiteVersionPage = lazyWorkspace(() =>
   import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
     default: module.OperationConfigSuiteVersionPage
@@ -141,9 +173,13 @@ type ShellWorkspaceContentProps = {
   shouldRenderProcurementRequirementConfirmation: boolean;
   shellSession: AuthSession;
   onOpenProfitCalculatorPrefilled: OpenProfitCalculatorPrefilled;
+  onOpenInTransitBoxDetailTab: (request: InTransitBoxDetailTabRequest) => void;
+  onCloseInTransitBoxDetailTab: () => Promise<void> | void;
   profitBoard: ReactNode;
   productWorkspace: ProductManagementWorkspace;
   activeOwnerId?: number;
+  inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
+  isInTransitBoxDetailTab: boolean;
   isProductDetailTab: boolean;
   roleManagementTabKey: RoleManagementWorkspaceTabKey;
   canShowStoreManagement: boolean;
@@ -154,7 +190,7 @@ type ShellWorkspaceContentProps = {
   canManageStoreBinding: boolean;
   onRoleManagementTabChange: (nextKey: RoleManagementWorkspaceTabKey) => void;
   onStoreOwnerChange: (ownerId: number) => void;
-  onStoreRefresh: (ownerId?: number, options?: { preserveConnectionFeedback?: boolean }) => Promise<void> | void;
+  onStoreRefresh: (ownerId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   onRoleManagementDataChanged: (source?: 'store-management') => void;
 };
 
@@ -176,9 +212,13 @@ export function ShellWorkspaceContent({
   shouldRenderProcurementRequirementConfirmation,
   shellSession,
   onOpenProfitCalculatorPrefilled,
+  onOpenInTransitBoxDetailTab,
+  onCloseInTransitBoxDetailTab,
   profitBoard,
   productWorkspace,
   activeOwnerId,
+  inTransitBoxDetailTabRequest,
+  isInTransitBoxDetailTab,
   isProductDetailTab,
   roleManagementTabKey,
   canShowStoreManagement,
@@ -213,11 +253,7 @@ export function ShellWorkspaceContent({
         {shouldRenderProcurementRequirementConfirmation ? (
           <ProcurementRequirementConfirmationPage embedded session={shellSession} />
         ) : (
-          <ProcurementWorkspace
-            session={shellSession}
-            activeOwnerId={activeOwnerId}
-            onOpenProfitCalculatorPrefilled={onOpenProfitCalculatorPrefilled}
-          />
+          <PurchaseOrderPage session={shellSession} />
         )}
       </LazyWorkspaceBoundary>
     );
@@ -271,10 +307,66 @@ export function ShellWorkspaceContent({
     );
   }
 
+  if (activeContentKind === 'purchase-ali1688-historical-orders') {
+    return (
+      <LazyWorkspaceBoundary>
+        <Ali1688HistoricalOrdersPage
+          storeName={shellSession.currentStore?.projectName || shellSession.currentStore?.projectCode}
+          storeCode={shellSession.currentStore?.projectCode || shellSession.currentStore?.storeCode}
+          siteCode={shellSession.currentStore?.site}
+          ownerUserId={shellSession.defaultOwnerUserId ?? shellSession.userId}
+          operatorRoleName={shellSession.roleName}
+          availableStores={shellSession.userStores}
+        />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'purchase-ali1688-sku-purchase-history') {
+    return (
+      <LazyWorkspaceBoundary>
+        <Ali1688SkuPurchaseHistoryPage
+          storeCode={shellSession.currentStore?.projectCode || shellSession.currentStore?.storeCode}
+          siteCode={shellSession.currentStore?.site}
+          availableStores={shellSession.userStores}
+        />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'product-listing') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ProductListingPage storeCode={shellSession.currentStore?.storeCode} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
   if (activeContentKind === 'purchase-logistics-quote') {
     return (
       <LazyWorkspaceBoundary>
         <LogisticsQuoteBoard />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'purchase-in-transit-goods') {
+    return (
+      <LazyWorkspaceBoundary>
+        <InTransitGoodsPage
+          boxDetailRequest={inTransitBoxDetailTabRequest}
+          isBoxDetailTab={isInTransitBoxDetailTab}
+          onCloseBoxDetailTab={onCloseInTransitBoxDetailTab}
+          onOpenBoxDetailTab={onOpenInTransitBoxDetailTab}
+        />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'warehouse-dispatch') {
+    return (
+      <LazyWorkspaceBoundary>
+        <WarehouseDispatchWorkbenchPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }
@@ -339,6 +431,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <SalesForecastPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'operations-competitor-analysis') {
+    return (
+      <LazyWorkspaceBoundary>
+        <CompetitorAnalysisPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

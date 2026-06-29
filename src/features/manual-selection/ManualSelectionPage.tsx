@@ -5,6 +5,8 @@ import { ManualSelectionDetailModal } from './components/ManualSelectionDetailMo
 import { ManualSelectionToolbar } from './components/ManualSelectionToolbar'
 import { NewCollectionModal } from './components/NewCollectionModal'
 import { useManualSelectionCollections } from './hooks/useManualSelectionCollections'
+import { saveManualSelectionListingPrefill } from '../product-listing/sourcePrefill'
+import { PURCHASE_LISTING_PATH, withCurrentWorkspaceDevQuery } from '../app-shell/WorkspaceRouting'
 import type {
   ManualSelectionPageProps,
   ManualSelectionSearchValues,
@@ -40,6 +42,15 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
     }
   }
 
+  const handleOpenListing = (record: ProductSelectionSourceCollection) => {
+    saveManualSelectionListingPrefill(record, props.storeCode)
+    const params = new URLSearchParams({
+      listingSource: 'manual-selection',
+      sourceCollectionId: record.id
+    })
+    window.location.assign(withCurrentWorkspaceDevQuery(`${PURCHASE_LISTING_PATH}?${params.toString()}`))
+  }
+
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
       <Card bordered={false} bodyStyle={{ padding: 0 }} style={{ border: '1px solid #e5e7eb' }}>
@@ -55,6 +66,7 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
           loading={loading}
           recollecting={submitting}
           onOpenDetail={setSelectedCollection}
+          onOpenListing={handleOpenListing}
           onRecollect={(record) => void recollect(record)}
         />
       </Card>

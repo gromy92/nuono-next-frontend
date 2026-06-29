@@ -9,6 +9,7 @@ import {
   testStoreSyncConnection
 } from '../store-sync/api';
 import type { StoreSyncOverviewState, StoreSyncStore } from '../store-sync/types';
+import type { LoadStoreSyncOptions } from '../app-shell/useStoreSyncController';
 
 const { Text } = Typography;
 
@@ -49,7 +50,7 @@ type Props = {
   canSelectOwner: boolean;
   canManageBinding: boolean;
   onOwnerChange: (ownerId: number) => void;
-  onRefresh: (ownerId?: number, options?: { preserveConnectionFeedback?: boolean }) => Promise<void> | void;
+  onRefresh: (ownerId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   onDataChanged?: () => void;
 };
 
@@ -142,11 +143,11 @@ export function StoreManagementBoard({
   const [createStoreSubmitting, setCreateStoreSubmitting] = useState(false);
   const [createStoreForm] = Form.useForm<StoreCreateFormValues>();
 
-  const refresh = async (nextOwnerId?: number, options?: { preserveConnectionFeedback?: boolean }) => {
+  const refresh = async (nextOwnerId?: number, options?: LoadStoreSyncOptions) => {
     if (!options?.preserveConnectionFeedback) {
       setStoreConnectionTestFeedback(undefined);
     }
-    await onRefresh(nextOwnerId, options);
+    await onRefresh(nextOwnerId, { ...options, force: true });
   };
 
   const storeManagementStats = useMemo(() => {

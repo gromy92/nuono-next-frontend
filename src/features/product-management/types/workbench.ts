@@ -210,6 +210,16 @@ export type ProductVariantSpecEffectiveSourceRequest = {
   sourceId: number;
 };
 
+export type ProductVariantSpecModalState = {
+  open: boolean;
+  ownerUserId?: number;
+  storeCode?: string;
+  skuParent?: string;
+  title?: string;
+  partnerSku?: string;
+  imageUrl?: string;
+};
+
 export type ProductLogisticsProfilePayload = {
   profileId?: number;
   storeCode?: string;
@@ -252,20 +262,18 @@ export type ProductLogisticsProfilePayload = {
   gmtUpdated?: string;
 };
 
+export type ProductLogisticsProfileListPayload = {
+  ready: boolean;
+  ownerUserId?: number;
+  storeCode?: string;
+  skuParent?: string;
+  items: ProductLogisticsProfilePayload[];
+};
+
 export type ProductLogisticsProfileSaveRequest = ProductLogisticsProfilePayload & {
   ownerUserId?: number;
   storeCode: string;
   variantId: number;
-};
-
-export type ProductVariantSpecModalState = {
-  open: boolean;
-  ownerUserId?: number;
-  storeCode?: string;
-  skuParent?: string;
-  title?: string;
-  partnerSku?: string;
-  imageUrl?: string;
 };
 
 export type ProductWorkbenchPayload = ProductMasterSnapshotPayload & {

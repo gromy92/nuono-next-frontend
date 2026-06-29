@@ -36,5 +36,6 @@ export type ManualSelectionTableProps = {
   loading: boolean
   recollecting: boolean
   onOpenDetail: (record: ProductSelectionSourceCollection) => void
+  onOpenListing: (record: ProductSelectionSourceCollection) => void
   onRecollect: (record: ProductSelectionSourceCollection) => void
 }

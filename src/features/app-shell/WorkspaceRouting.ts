@@ -18,10 +18,16 @@ export const PRODUCT_SPECS_PATH = workspaceMenuPath('product-specs')
 export const PRODUCT_IMAGE_MATCH_PATH = workspaceMenuPath('product-image-match')
 export const PRODUCT_MANUAL_SELECTION_PATH = workspaceMenuPath('product-manual-selection')
 export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688-collection')
+export const PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH = workspaceMenuPath('purchase-ali1688-historical-orders')
+export const PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH = workspaceMenuPath('purchase-ali1688-sku-purchase-history')
+export const PURCHASE_LISTING_PATH = workspaceMenuPath('purchase-listing')
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
+export const PURCHASE_IN_TRANSIT_GOODS_PATH = workspaceMenuPath('purchase-in-transit-goods')
+export const WAREHOUSE_DISPATCH_PATH = workspaceMenuPath('warehouse-dispatch')
 export const OFFICIAL_WAREHOUSE_PATH = workspaceMenuPath('official-warehouse')
+export const OPERATIONS_COMPETITOR_ANALYSIS_PATH = workspaceMenuPath('operations-competitor-analysis')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
 export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
@@ -71,12 +77,18 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'role',
   'devOwner',
   'devAccount',
+  'devStore',
+  'devSite',
   'previewAli1688',
   'grantAiFileParse',
   'grantFileManagement',
+  'grantProfit',
   'grantLogisticsQuote',
+  'grantInTransitGoods',
   'grantWarehouse',
+  'grantAli1688HistoricalOrders',
   'grantManualSelection',
+  'grantCompetitorAnalysis',
   'grantImageMatch',
   'grantPurchase',
   'grantSalesAnalytics',
@@ -84,10 +96,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantSystemReports',
   'grantOperationsConfig',
   'grantRoleAssignment',
-  'grantSystemRole',
-  'devStore',
-  'devSite',
-  'preserveDevStore'
+  'grantSystemRole'
 ])
 
 export function withCurrentWorkspaceDevQuery(path: string) {
@@ -245,53 +254,72 @@ export function resolveSessionLandingMenuKey(
         'system-file-management',
         'user-account',
         'system-menu',
+        'purchase-listing',
         'purchase-profit',
         'purchase-order',
+        'purchase-in-transit-goods',
+        'warehouse-dispatch',
+        'official-warehouse',
+        'operations-competitor-analysis',
         'data-sales-analysis',
         'data-sales-forecast',
         'noon-call-store-data',
         'system-report-noon-data-completeness',
         'system-report-noon-data-gaps',
+        'operations-config-versions',
         'data-activity-config',
         'operations-lifecycle-rules',
         'product-manual-selection',
         'product-specs',
-        'official-warehouse',
         'product-manage'
       ] as AppMenuKey[])
     : isBossManagementSession(session)
       ? ([
           'user-role',
+          'purchase-ali1688-historical-orders',
+          'purchase-ali1688-sku-purchase-history',
           'purchase-ali1688-collection',
+          'purchase-listing',
           'purchase-order',
+          'purchase-in-transit-goods',
           'product-manage',
           'product-specs',
           'purchase-profit',
           'purchase-logistics-quote',
+          'warehouse-dispatch',
           'official-warehouse',
+          'operations-competitor-analysis',
           'data-sales-analysis',
           'data-sales-forecast',
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
+          'operations-config-versions',
           'data-activity-config',
           'operations-lifecycle-rules',
           'product-manual-selection'
         ] as AppMenuKey[])
       : ([
+          'purchase-ali1688-historical-orders',
+          'purchase-ali1688-sku-purchase-history',
           'purchase-ali1688-collection',
+          'purchase-listing',
           'purchase-order',
+          'purchase-in-transit-goods',
           'product-manage',
           'product-specs',
           'user-role',
           'purchase-profit',
           'purchase-logistics-quote',
+          'warehouse-dispatch',
           'official-warehouse',
+          'operations-competitor-analysis',
           'data-sales-analysis',
           'data-sales-forecast',
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
+          'operations-config-versions',
           'data-activity-config',
           'operations-lifecycle-rules',
           'product-manual-selection'

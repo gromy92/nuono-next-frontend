@@ -22,6 +22,7 @@ import {
   type ProductHistoryChange,
   type ProductHistoryItem
 } from './ProductHistoryModal.utils';
+import { ProductBaselineIdentity } from '../../product-baseline';
 
 const { Text } = Typography;
 
@@ -231,29 +232,34 @@ export function ProductHistoryAuditList(props: {
 export function ProductHistoryHeaderSummary({ summary }: { summary: ProductSummarySurface }) {
   const syncMeta = summary.syncStatus ? productSyncStatusMeta(summary.syncStatus) : null;
   const title = productSummaryTitle(summary);
+  const imageUrl = summary.imageUrl || summary.galleryImages[0];
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '56px minmax(0, 1fr)', gap: 12, padding: 12, borderRadius: 8, border: '1px solid #e5e7eb', background: '#f8fafc' }}>
-      <div style={{ width: 56, height: 56, borderRadius: 6, border: '1px solid #e5e7eb', background: '#ffffff', overflow: 'hidden' }}>
-        {summary.imageUrl ? <img src={summary.imageUrl} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
-      </div>
-      <div style={{ minWidth: 0 }}>
-        <Tooltip title={title}>
-          <Text strong style={{ display: 'block', color: '#0f172a', lineHeight: '20px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {title}
-          </Text>
-        </Tooltip>
-        <Text type="secondary" style={{ display: 'block', marginTop: 3, fontSize: 12 }}>
-          {productSummaryIdentityLine(summary)}
-        </Text>
-        <Space wrap size={[6, 6]} style={{ marginTop: 8 }}>
-          {syncMeta ? <Tag color={syncMeta.color} style={{ marginInlineEnd: 0 }}>{syncMeta.label}</Tag> : null}
-          {summary.brand ? <Tag style={{ marginInlineEnd: 0 }}>{summary.brand}</Tag> : null}
-          <Tag style={{ marginInlineEnd: 0 }}>{productSummaryPrimarySite(summary)}</Tag>
-          <Tag color="green" style={{ marginInlineEnd: 0 }}>
-            {productSummaryPriceLine(summary)}
-          </Tag>
-        </Space>
-      </div>
+    <div style={{ padding: 12, borderRadius: 8, border: '1px solid #e5e7eb', background: '#f8fafc' }}>
+      <ProductBaselineIdentity
+        title={title}
+        imageUrl={imageUrl}
+        imageCount={summary.galleryImages.length}
+        imageAlt={title}
+        imageWidth={72}
+        compact
+        titleMaxWidth={760}
+        codes={[
+          {
+            value: productSummaryIdentityLine(summary),
+            copyText: summary.skuParent
+          }
+        ]}
+        tags={
+          <>
+            {syncMeta ? <Tag color={syncMeta.color} style={{ marginInlineEnd: 0 }}>{syncMeta.label}</Tag> : null}
+            {summary.brand ? <Tag style={{ marginInlineEnd: 0 }}>{summary.brand}</Tag> : null}
+            <Tag style={{ marginInlineEnd: 0 }}>{productSummaryPrimarySite(summary)}</Tag>
+            <Tag color="green" style={{ marginInlineEnd: 0 }}>
+              {productSummaryPriceLine(summary)}
+            </Tag>
+          </>
+        }
+      />
     </div>
   );
 }

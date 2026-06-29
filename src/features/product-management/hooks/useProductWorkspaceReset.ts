@@ -14,7 +14,6 @@ import type {
 type UseProductWorkspaceResetParams = {
   productDetailTabHandledRef: MutableRefObject<string | null>;
   setActiveProductWorkspaceTabKey: Dispatch<SetStateAction<ProductWorkspaceTabKey>>;
-  setAutoInitializationStoreCode: Dispatch<SetStateAction<string | undefined>>;
   setProductDetailTabRequest: Dispatch<SetStateAction<ProductDetailTabRequest | null>>;
   setProductGalleryImages: Dispatch<SetStateAction<string[]>>;
   setProductGalleryOpen: Dispatch<SetStateAction<boolean>>;
@@ -33,7 +32,6 @@ type UseProductWorkspaceResetParams = {
 export function useProductWorkspaceReset({
   productDetailTabHandledRef,
   setActiveProductWorkspaceTabKey,
-  setAutoInitializationStoreCode,
   setProductDetailTabRequest,
   setProductGalleryImages,
   setProductGalleryOpen,
@@ -52,7 +50,6 @@ export function useProductWorkspaceReset({
     setSelectedInitializationStoreCodeOverride(undefined);
     setStoreInitializationState({ status: 'idle' });
     setProductListDatasetState({ status: 'idle' });
-    setAutoInitializationStoreCode(undefined);
     setProductListDraftFilters({ ...defaultProductListFilters });
     setProductListFilters({ ...defaultProductListFilters });
     setSelectedProductRowKeys([]);
@@ -68,7 +65,6 @@ export function useProductWorkspaceReset({
   }, [
     productDetailTabHandledRef,
     setActiveProductWorkspaceTabKey,
-    setAutoInitializationStoreCode,
     setProductDetailTabRequest,
     setProductGalleryImages,
     setProductGalleryOpen,

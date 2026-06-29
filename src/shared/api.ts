@@ -7,13 +7,31 @@ export async function readApiErrorMessage(response: Response, fallback?: string)
     }
     try {
       const payload = JSON.parse(text) as { message?: string; error?: string };
-      return payload.message || payload.error || text;
+      const payloadMessage = normalizeApiMessage(payload.message);
+      if (payloadMessage && !isBackendDefaultEmptyMessage(payloadMessage)) {
+        return payloadMessage;
+      }
+      if (payloadMessage && isBackendDefaultEmptyMessage(payloadMessage)) {
+        return message;
+      }
+      return normalizeApiMessage(payload.error) || message;
     } catch {
+      if (isBackendDefaultEmptyMessage(text)) {
+        return message;
+      }
       return text;
     }
   } catch {
     return message;
   }
+}
+
+function normalizeApiMessage(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function isBackendDefaultEmptyMessage(messageText: string) {
+  return messageText === 'No message available';
 }
 
 const SESSION_STORAGE_KEY = 'nuono-next-session';

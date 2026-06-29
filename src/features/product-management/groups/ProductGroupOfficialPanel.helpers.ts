@@ -3,9 +3,24 @@ import { normalizeNoonImageUrl, textInputValue } from '../utils';
 import type { ProductGroupMemberCardView } from './productGroupMemberTypes';
 import type { ProductGroupMemberDraft } from './ProductGroupMemberEditModal';
 
-function firstImage(content: Record<string, unknown>) {
+function contentImages(content: Record<string, unknown>) {
   const images = Array.isArray(content.images) ? content.images : [];
-  return normalizeNoonImageUrl(images[0] ?? content.mainImageUrl);
+  return [content.mainImageUrl, ...images].map(normalizeNoonImageUrl).filter(Boolean);
+}
+
+function firstImage(content: Record<string, unknown>) {
+  return contentImages(content)[0];
+}
+
+function recordImages(record: Record<string, unknown>) {
+  const images = Array.isArray(record.galleryImages) ? record.galleryImages : [];
+  return [
+    record.imageUrl,
+    record.mainImageUrl,
+    record.imageKey,
+    record.image_key,
+    ...images
+  ].map(normalizeNoonImageUrl).filter(Boolean);
 }
 
 export function attributeValue(snapshot: ProductWorkbenchPayload | undefined, code?: string) {
@@ -57,6 +72,7 @@ function currentMemberView(
     brand: textInputValue(snapshot.identity.brand),
     title: textInputValue(snapshot.content.titleEn || snapshot.content.fullTitleEn),
     imageUrl: firstImage(snapshot.content),
+    galleryImages: contentImages(snapshot.content),
     axisLabel,
     axisValue: attributeValue(snapshot, axisCode),
     current: true
@@ -80,7 +96,8 @@ export function memberView(
     childSku: textInputValue(record.childSku || record.skuChild),
     brand: textInputValue(record.brand || snapshot.identity.brand),
     title: textInputValue(record.title || record.titleEn || record.productTitle),
-    imageUrl: normalizeNoonImageUrl(record.imageUrl || record.mainImageUrl || record.imageKey || record.image_key),
+    imageUrl: recordImages(record)[0],
+    galleryImages: recordImages(record),
     axisLabel,
     axisValue: recordAxisValue(record, axisCode),
     current: false
@@ -104,6 +121,8 @@ export function memberDraftFromView(member: ProductGroupMemberCardView): Product
     childSku: member.childSku,
     brand: member.brand,
     title: member.title,
+    imageUrl: member.imageUrl,
+    galleryImages: member.galleryImages,
     axisValue: member.axisValue,
     axisValues,
     axisRows: member.axisRows

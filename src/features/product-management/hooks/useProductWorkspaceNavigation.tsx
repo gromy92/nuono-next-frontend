@@ -32,6 +32,7 @@ type ProductQuickOpenSample = {
 type UseProductWorkspaceNavigationParams = {
   activeOwnerId?: number;
   activeProductWorkspaceTabKey: ProductWorkspaceTabKey;
+  enabled: boolean;
   currentProductSkuParent?: string;
   productDetailTabHandledRef: MutableRefObject<string | null>;
   productDetailTabRequest: ProductDetailTabRequest | null;
@@ -44,7 +45,6 @@ type UseProductWorkspaceNavigationParams = {
   setActiveProductMenu: () => void;
   setActiveProductWorkspaceTabKey: Dispatch<SetStateAction<ProductWorkspaceTabKey>>;
   setActiveSiteOfferCode: Dispatch<SetStateAction<string | undefined>>;
-  setAutoInitializationStoreCode: Dispatch<SetStateAction<string | undefined>>;
   setProductDetailTabRequest: Dispatch<SetStateAction<ProductDetailTabRequest | null>>;
   setProductGalleryImages: Dispatch<SetStateAction<string[]>>;
   setProductGalleryOpen: Dispatch<SetStateAction<boolean>>;
@@ -77,6 +77,7 @@ type UseProductWorkspaceNavigationParams = {
 export function useProductWorkspaceNavigation({
   activeOwnerId,
   activeProductWorkspaceTabKey,
+  enabled,
   currentProductSkuParent,
   productDetailTabHandledRef,
   productDetailTabRequest,
@@ -89,7 +90,6 @@ export function useProductWorkspaceNavigation({
   setActiveProductMenu,
   setActiveProductWorkspaceTabKey,
   setActiveSiteOfferCode,
-  setAutoInitializationStoreCode,
   setProductDetailTabRequest,
   setProductGalleryImages,
   setProductGalleryOpen,
@@ -299,6 +299,7 @@ export function useProductWorkspaceNavigation({
   useProductDetailTabLifecycle({
     activeOwnerId,
     activeProductWorkspaceTabKey,
+    enabled,
     openMockProductWorkbench,
     productDetailTabHandledRef,
     productDetailTabRequest,
@@ -354,7 +355,6 @@ export function useProductWorkspaceNavigation({
   const resetProductWorkspace = useProductWorkspaceReset({
     productDetailTabHandledRef,
     setActiveProductWorkspaceTabKey,
-    setAutoInitializationStoreCode,
     setProductDetailTabRequest,
     setProductGalleryImages,
     setProductGalleryOpen,

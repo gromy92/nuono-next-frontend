@@ -34,6 +34,7 @@ function ProductDomainStatusBadge({ domain }: { domain?: ProductFieldDomainSurfa
 
 export function ProductDetailOfficialTabs(props: ProductDetailOfficialTabsProps) {
   const {
+    defaultActiveKey,
     productSiteDomain,
     productSharedDomainDirtyCount
   } = props;
@@ -77,5 +78,5 @@ export function ProductDetailOfficialTabs(props: ProductDetailOfficialTabsProps)
     });
   }
 
-  return <Tabs defaultActiveKey="offer" items={items} />;
+  return <Tabs defaultActiveKey={defaultActiveKey ?? 'offer'} items={items} />;
 }

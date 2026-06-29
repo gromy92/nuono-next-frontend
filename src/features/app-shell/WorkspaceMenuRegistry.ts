@@ -5,10 +5,16 @@ export type AppMenuKey =
   | 'product-image-match'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
+  | 'purchase-ali1688-historical-orders'
+  | 'purchase-ali1688-sku-purchase-history'
+  | 'purchase-listing'
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'purchase-in-transit-goods'
+  | 'warehouse-dispatch'
   | 'official-warehouse'
+  | 'operations-competitor-analysis'
   | 'data-sales-analysis'
   | 'data-order-analysis'
   | 'data-sales-forecast'
@@ -32,6 +38,7 @@ export type WorkspaceSectionKey =
   | 'logistics'
   | 'warehouse'
   | 'campaign'
+  | 'operations'
   | 'operation-config'
   | 'task'
   | 'data'
@@ -47,6 +54,7 @@ export type WorkspaceSectionIconKey =
   | 'logistics'
   | 'warehouse'
   | 'campaign'
+  | 'operations'
   | 'operation-config'
   | 'task'
   | 'data'
@@ -62,10 +70,16 @@ export type WorkspaceContentKind =
   | 'product-image-match'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
+  | 'purchase-ali1688-historical-orders'
+  | 'purchase-ali1688-sku-purchase-history'
+  | 'product-listing'
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'purchase-in-transit-goods'
+  | 'warehouse-dispatch'
   | 'official-warehouse'
+  | 'operations-competitor-analysis'
   | 'sales-analytics'
   | 'order-finance'
   | 'sales-forecast'
@@ -178,6 +192,36 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'purchase-ali1688-collection',
     closable: true
   },
+  'purchase-ali1688-historical-orders': {
+    key: 'purchase-ali1688-historical-orders',
+    label: '1688 历史订单',
+    path: '/purchase/ali1688-orders',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / 1688 历史订单',
+    tabLabel: '1688 历史订单',
+    contentKind: 'purchase-ali1688-historical-orders',
+    closable: true
+  },
+  'purchase-ali1688-sku-purchase-history': {
+    key: 'purchase-ali1688-sku-purchase-history',
+    label: 'SKU 采购历史',
+    path: '/purchase/ali1688-sku-purchase-history',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / SKU 采购历史',
+    tabLabel: 'SKU 采购历史',
+    contentKind: 'purchase-ali1688-sku-purchase-history',
+    closable: true
+  },
+  'purchase-listing': {
+    key: 'purchase-listing',
+    label: '商品上架',
+    path: '/purchase/listing',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / 商品上架',
+    tabLabel: '商品上架',
+    contentKind: 'product-listing',
+    closable: true
+  },
   'purchase-order': {
     key: 'purchase-order',
     label: '采购单',
@@ -208,6 +252,26 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'purchase-logistics-quote',
     closable: true
   },
+  'purchase-in-transit-goods': {
+    key: 'purchase-in-transit-goods',
+    label: '在途商品',
+    path: '/purchase/in-transit-goods',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / 在途商品',
+    tabLabel: '在途商品',
+    contentKind: 'purchase-in-transit-goods',
+    closable: true
+  },
+  'warehouse-dispatch': {
+    key: 'warehouse-dispatch',
+    label: '仓库发运',
+    path: '/warehouse/dispatch',
+    sectionKey: 'warehouse',
+    pathLabel: '仓储 / 仓库发运',
+    tabLabel: '仓库发运',
+    contentKind: 'warehouse-dispatch',
+    closable: true
+  },
   'official-warehouse': {
     key: 'official-warehouse',
     label: 'Noon官方仓',
@@ -218,6 +282,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'official-warehouse',
     closable: true,
     routeAliases: ['/warehouse/fbn', '/storage/warehouse', '/warehouse/official-warehouse-stock']
+  },
+  'operations-competitor-analysis': {
+    key: 'operations-competitor-analysis',
+    label: '竞品分析',
+    path: '/operations/competitor-analysis',
+    sectionKey: 'operations',
+    pathLabel: '运营 / 竞品分析',
+    tabLabel: '竞品分析',
+    contentKind: 'operations-competitor-analysis',
+    closable: true
   },
   'data-sales-analysis': {
     key: 'data-sales-analysis',
@@ -291,8 +365,7 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     tabLabel: '运营配置版本',
     contentKind: 'operations-config-versions',
     closable: true,
-    visibleInSidebar: false,
-    visibleInWorkspaceTabs: false
+    visibleInWorkspaceTabs: true
   },
   'data-activity-config': {
     key: 'data-activity-config',
@@ -406,10 +479,13 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     label: '采购',
     iconKey: 'purchase',
     entries: [
-      { type: 'placeholder', key: 'purchase-listing', label: '商品上架', disabled: true },
+      { type: 'workspace', key: 'purchase-listing' },
       { type: 'workspace', key: 'purchase-profit' },
+      { type: 'workspace', key: 'purchase-ali1688-historical-orders' },
+      { type: 'workspace', key: 'purchase-ali1688-sku-purchase-history' },
       { type: 'workspace', key: 'purchase-ali1688-collection' },
-      { type: 'workspace', key: 'purchase-order' }
+      { type: 'workspace', key: 'purchase-order' },
+      { type: 'workspace', key: 'purchase-in-transit-goods' }
     ]
   },
   {
@@ -422,7 +498,10 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     key: 'warehouse',
     label: '仓储',
     iconKey: 'warehouse',
-    entries: [{ type: 'workspace', key: 'official-warehouse' }]
+    entries: [
+      { type: 'workspace', key: 'warehouse-dispatch' },
+      { type: 'workspace', key: 'official-warehouse' }
+    ]
   },
   {
     key: 'campaign',
@@ -431,10 +510,17 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     entries: [{ type: 'placeholder', key: 'campaign-list', label: '活动列表', disabled: true }]
   },
   {
+    key: 'operations',
+    label: '运营',
+    iconKey: 'operations',
+    entries: [{ type: 'workspace', key: 'operations-competitor-analysis' }]
+  },
+  {
     key: 'operation-config',
     label: '运营配置',
     iconKey: 'operation-config',
     entries: [
+      { type: 'workspace', key: 'operations-config-versions' },
       { type: 'workspace', key: 'data-activity-config' },
       { type: 'workspace', key: 'operations-lifecycle-rules' }
     ]
@@ -556,9 +642,21 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['1688查询展示', '1688查询']
   },
   {
+    keys: ['purchase-ali1688-historical-orders', 'purchase-ali1688-sku-purchase-history'],
+    urlPaths: ['/purchase/ali1688-orders', '/purchase/ali1688-sku-purchase-history'],
+    urlPathPrefixes: ['/api/procurement/ali1688-orders'],
+    menuNames: ['1688 历史订单', 'SKU 采购历史']
+  },
+  {
+    keys: ['purchase-listing'],
+    urlPaths: ['/purchase/listing', '/api/product-listing'],
+    urlPathPrefixes: ['/api/product-listing/'],
+    menuNames: ['商品上架']
+  },
+  {
     keys: ['purchase-profit'],
-    urlPaths: ['/api/sku/cost'],
-    menuNames: ['利润计算与上架']
+    urlPaths: ['/purchase/profit', '/api/sku/cost'],
+    menuNames: ['利润计算', '利润计算与上架']
   },
   {
     keys: ['purchase-logistics-quote'],
@@ -566,10 +664,22 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
-    keys: ['official-warehouse', 'product-specs'],
-    urlPaths: ['/warehouse/official-warehouse', '/warehouse/official-warehouse-stock', '/storage/warehouse'],
-    urlPathPrefixes: ['/api/warehouse/official-warehouse'],
-    menuNames: ['Noon官方仓', 'FBN抢仓', '约仓看板', '官方仓库存']
+    keys: ['purchase-in-transit-goods'],
+    urlPaths: ['/purchase/in-transit-goods'],
+    urlPathPrefixes: ['/api/in-transit-goods'],
+    menuNames: ['在途商品', '在途物流', '在途物流信息']
+  },
+  {
+    keys: ['warehouse-dispatch', 'official-warehouse', 'product-specs'],
+    urlPaths: ['/warehouse/dispatch', '/warehouse/official-warehouse', '/warehouse/official-warehouse-stock', '/storage/warehouse'],
+    urlPathPrefixes: ['/api/warehouse/dispatch', '/api/warehouse/official-warehouse'],
+    menuNames: ['仓库发运', '仓储发运', '采购收货', '发运计划', 'Noon官方仓', 'FBN抢仓', '约仓看板', '官方仓库存']
+  },
+  {
+    keys: ['operations-competitor-analysis'],
+    urlPaths: ['/operations/competitor-analysis', '/api/competitor-analysis'],
+    urlPathPrefixes: ['/api/competitor-analysis/'],
+    menuNames: ['竞品分析', '运营竞品分析']
   },
   {
     keys: ['data-sales-analysis', 'data-order-analysis', 'data-sales-forecast'],
@@ -627,17 +737,24 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'product-specs',
   'product-image-match',
   'product-manual-selection',
+  'purchase-ali1688-historical-orders',
+  'purchase-ali1688-sku-purchase-history',
   'purchase-ali1688-collection',
+  'purchase-listing',
   'purchase-order',
+  'purchase-in-transit-goods',
   'purchase-profit',
   'purchase-logistics-quote',
+  'warehouse-dispatch',
   'official-warehouse',
+  'operations-competitor-analysis',
   'data-sales-analysis',
   'data-order-analysis',
   'data-sales-forecast',
   'noon-call-store-data',
   'system-report-noon-data-completeness',
   'system-report-noon-data-gaps',
+  'operations-config-versions',
   'data-activity-config',
   'operations-lifecycle-rules'
 ]

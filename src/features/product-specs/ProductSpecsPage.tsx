@@ -2,7 +2,7 @@ import { App, Button, Empty, Input, InputNumber, Select, Space, Table, Tag, Tool
 import type { ColumnsType } from 'antd/es/table';
 import { CheckOutlined, CloseOutlined, EditOutlined, SyncOutlined } from '@ant-design/icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AuthSession } from '../auth/session';
+import type { AuthSession, AuthSessionStore } from '../auth/session';
 import {
   fetchProductSpecsOverview,
   saveProductLogisticsProfile,
@@ -174,12 +174,26 @@ const logisticsFieldConfigs: LogisticsFieldConfig[] = [
   }
 ];
 
+type LogisticsAttributeFilter = 'all' | `${LogisticsProfileField}:${string}`;
+
+const logisticsAttributeFilterOptions: Array<{ value: LogisticsAttributeFilter; label: string }> = [
+  { value: 'all', label: '全部物流属性' },
+  ...logisticsFieldConfigs.flatMap((config) =>
+    config.options.map((option) => ({
+      value: `${config.field}:${option.value}` as LogisticsAttributeFilter,
+      label: `${config.ariaLabel}：${logisticsFilterOptionLabel(option)}`
+    }))
+  )
+];
+
 export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPageProps) {
   const { message } = App.useApp();
   const ownerUserId = resolveRequestOwnerUserId(session, activeOwnerId);
-  const storeCode = resolveCurrentSpecStoreCode(session);
-  const [keyword, setKeyword] = useState('');
+  const storeScope = useMemo(() => resolveCurrentSpecStoreScope(session), [session]);
+  const storeCode = storeScope.storeCode;
+  const [keyword, setKeyword] = useState(() => readInitialProductSpecsKeyword());
   const [completenessFilter, setCompletenessFilter] = useState<SpecCompletenessFilter>('all');
+  const [logisticsAttributeFilter, setLogisticsAttributeFilter] = useState<LogisticsAttributeFilter>('all');
   const [rows, setRows] = useState<ProductVariantSpecPayload[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingKey, setEditingKey] = useState<string | null>(null);
@@ -295,13 +309,15 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
   );
 
   const handleChangeLogisticsProfile = useCallback(
-    async (row: ProductVariantSpecPayload, patch: Partial<ProductLogisticsProfilePayload>) => {
+    async (
+      row: ProductVariantSpecPayload,
+      patch: Partial<ProductLogisticsProfilePayload>
+    ) => {
       const normalizedStoreCode = storeCode.trim();
       if (!normalizedStoreCode || !row.variantId) {
         message.warning('缺少店铺或 SKU 上下文，暂不能保存物流属性');
         return;
       }
-
       const nextProfile = {
         ...defaultLogisticsProfile(row, normalizedStoreCode),
         ...row.logisticsProfile,
@@ -315,7 +331,6 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         )
       );
       setLogisticsSavingKey(key);
-
       try {
         const saved = await saveProductLogisticsProfile({
           ...normalizedNextProfile,
@@ -323,11 +338,11 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
           storeCode: normalizedStoreCode,
           variantId: row.variantId
         });
-        setRows((currentRows) =>
-          currentRows.map((currentRow) =>
-            currentRow.variantId === row.variantId ? { ...currentRow, logisticsProfile: saved } : currentRow
-          )
-        );
+        setRows((currentRows) => currentRows.map((currentRow) => (
+          currentRow.variantId === row.variantId
+            ? { ...currentRow, logisticsProfile: saved }
+            : currentRow
+        )));
       } catch (error) {
         message.error(error instanceof Error ? error.message : '保存物流属性失败，已重新加载当前数据');
         await loadRows();
@@ -424,21 +439,31 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
   );
 
   const filteredRows = useMemo(() => {
+    let result: ProductVariantSpecPayload[];
     switch (completenessFilter) {
       case 'ali1688_missing':
-        return rows.filter((row) => isSourceProductSpecMissing(findSource(row.sources, 'ali1688')));
+        result = rows.filter((row) => isSourceProductSpecMissing(findSource(row.sources, 'ali1688')));
+        break;
       case 'warehouse_missing':
-        return rows.filter((row) => isSourceProductSpecMissing(findSource(row.sources, 'warehouse')));
+        result = rows.filter((row) => isSourceProductSpecMissing(findSource(row.sources, 'warehouse')));
+        break;
       case 'domestic_missing':
-        return rows.filter(isDomesticSpecMissing);
+        result = rows.filter(isDomesticSpecMissing);
+        break;
       case 'official_missing':
-        return rows.filter(isOfficialSpecMissing);
+        result = rows.filter(isOfficialSpecMissing);
+        break;
       case 'logistics_missing':
-        return rows.filter(isLogisticsProfileMissing);
+        result = rows.filter(isLogisticsProfileMissing);
+        break;
       default:
-        return rows;
+        result = rows;
     }
-  }, [completenessFilter, rows]);
+    if (logisticsAttributeFilter === 'all') {
+      return result;
+    }
+    return result.filter((row) => rowMatchesLogisticsAttributeFilter(row, logisticsAttributeFilter));
+  }, [completenessFilter, logisticsAttributeFilter, rows]);
 
   return (
     <div style={{ display: 'grid', gap: 10, minWidth: 0 }}>
@@ -474,6 +499,16 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
             style={{ width: 172 }}
             onChange={setCompletenessFilter}
           />
+          <span data-testid="product-specs-logistics-attribute-filter">
+            <Select<LogisticsAttributeFilter>
+              value={logisticsAttributeFilter}
+              options={logisticsAttributeFilterOptions}
+              showSearch
+              optionFilterProp="label"
+              style={{ width: 190 }}
+              onChange={(value) => setLogisticsAttributeFilter(value)}
+            />
+          </span>
           <Tooltip title="刷新">
             <Button icon={<SyncOutlined />} loading={loading} onClick={() => void loadRows()} />
           </Tooltip>
@@ -496,6 +531,13 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
       />
     </div>
   );
+}
+
+function readInitialProductSpecsKeyword() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return new URLSearchParams(window.location.search).get('keyword')?.trim() || '';
 }
 
 function DomesticSpecMatrix(props: {
@@ -565,12 +607,13 @@ function DomesticSpecMatrix(props: {
       })}
       <SpecGridRow
         label="Noon官方"
-        color="purple"
+        color={sourceColors.noon_official}
         row={row}
         source={findSource(sources, 'noon_official')}
         cellTestSourceType="noon_official"
         sourceTestId={row.variantId ? `product-specs-source-noon_official-${row.variantId}` : undefined}
         includeCarton
+        reserveEffectiveColumn
         showCartonFields={false}
       />
     </div>
@@ -629,6 +672,7 @@ function LogisticsSelectField(props: {
   const { ariaLabel, testId, value, options, disabled, saving, onChange } = props;
   const normalizedValue = value || 'unknown';
   const confirmed = isConfirmedLogisticsValue(normalizedValue);
+  const valueKind = logisticsValueKind(normalizedValue);
   return (
     <label aria-label={ariaLabel} style={{ display: 'grid', gap: 3, minWidth: 0 }}>
       <Select
@@ -638,9 +682,12 @@ function LogisticsSelectField(props: {
         value={normalizedValue}
         options={options}
         disabled={disabled}
+        suffixIcon={null}
         className={[
           'product-specs-logistics-select',
           confirmed ? 'product-specs-logistics-select--confirmed' : 'product-specs-logistics-select--missing',
+          valueKind === 'none' ? 'product-specs-logistics-select--none' : '',
+          valueKind === 'included' ? 'product-specs-logistics-select--included' : '',
           saving ? 'product-specs-logistics-select--saving' : ''
         ]
           .filter(Boolean)
@@ -652,8 +699,19 @@ function LogisticsSelectField(props: {
   );
 }
 
+function logisticsFilterOptionLabel(option: LogisticsOption) {
+  return option.value === 'unknown' ? '未选择' : option.label;
+}
+
 function isConfirmedLogisticsValue(value: string) {
   return Boolean(value && value !== 'unknown');
+}
+
+function logisticsValueKind(value: string) {
+  if (!isConfirmedLogisticsValue(value)) {
+    return 'missing';
+  }
+  return value === 'none' ? 'none' : 'included';
 }
 
 function withLogisticsConfirmationStatus(profile: ProductLogisticsProfilePayload): ProductLogisticsProfilePayload {
@@ -706,6 +764,7 @@ function SpecGridRow(props: {
   editable?: boolean;
   effective?: boolean;
   editing?: boolean;
+  reserveEffectiveColumn?: boolean;
   draft?: SpecSourceDraft;
   saving?: boolean;
   selectingEffective?: boolean;
@@ -731,6 +790,7 @@ function SpecGridRow(props: {
     editable,
     effective,
     editing,
+    reserveEffectiveColumn,
     draft,
     saving,
     selectingEffective,
@@ -745,8 +805,9 @@ function SpecGridRow(props: {
   const fields = showCartonFields ? [...productSpecFields, ...cartonSpecFields] : productSpecFields;
   const testSourceType = cellTestSourceType || sourceType;
   const canSelectEffective = Boolean(editable && row && sourceType && source?.sourceId);
+  const includeEffectiveColumn = Boolean(editable || reserveEffectiveColumn);
   return (
-    <div style={specGridStyle({ includeCarton, includeSource: showSource, includeEffective: Boolean(editable) })}>
+    <div style={specGridStyle({ includeCarton, includeSource: showSource, includeEffective: includeEffectiveColumn })}>
       {editable ? (
         <Tooltip title={canSelectEffective ? '物流计算使用此来源' : '请先维护该来源规格'}>
           <Button
@@ -774,6 +835,8 @@ function SpecGridRow(props: {
             }}
           />
         </Tooltip>
+      ) : reserveEffectiveColumn ? (
+        <span aria-hidden="true" />
       ) : null}
       {showSource ? (
         <Space size={4} wrap style={{ minWidth: 0 }}>
@@ -973,6 +1036,26 @@ function isLogisticsProfileMissing(row: ProductVariantSpecPayload) {
   return logisticsFieldConfigs.some((config) => !isConfirmedLogisticsValue(String(profile[config.field] || 'unknown')));
 }
 
+function rowMatchesLogisticsAttributeFilter(row: ProductVariantSpecPayload, filter: LogisticsAttributeFilter) {
+  if (filter === 'all') {
+    return true;
+  }
+  const separatorIndex = filter.indexOf(':');
+  if (separatorIndex < 0) {
+    return true;
+  }
+  const field = filter.slice(0, separatorIndex) as LogisticsProfileField;
+  const expectedValue = filter.slice(separatorIndex + 1);
+  if (!logisticsFieldConfigs.some((config) => config.field === field)) {
+    return true;
+  }
+  const profile = {
+    ...defaultLogisticsProfile(row, row.storeCode),
+    ...row.logisticsProfile
+  };
+  return String(profile[field] || 'unknown') === expectedValue;
+}
+
 function isSourceProductSpecMissing(source?: ProductVariantSpecSourcePayload) {
   if (!source) {
     return true;
@@ -1007,27 +1090,86 @@ function defaultLogisticsProfile(row: ProductVariantSpecPayload, storeCode?: str
   };
 }
 
-function resolveCurrentSpecStoreCode(session: AuthSession) {
-  if (session.currentStore?.storeCode) {
-    return session.currentStore.storeCode;
+type ProductSpecStoreScope = {
+  storeCode: string;
+};
+
+function resolveCurrentSpecStoreScope(session: AuthSession): ProductSpecStoreScope {
+  const stores = collectSpecStores(session);
+  const currentStore = resolveCurrentSpecBusinessStore(session, stores);
+  if (!currentStore?.storeCode) {
+    return { storeCode: '' };
   }
-  return (session.userStores || []).find((store) => store.storeCode && store.authorized !== false)?.storeCode || '';
+  const currentGroupKey = specBusinessStoreKey(currentStore);
+  const groupStores = stores.filter((store) => specBusinessStoreKey(store) === currentGroupKey);
+  const requestStore =
+    groupStores
+      .filter((store) => store.storeCode && store.authorized !== false)
+      .sort(compareSpecRequestStores)[0] ||
+    groupStores.filter((store) => store.storeCode).sort(compareSpecRequestStores)[0] ||
+    currentStore;
+  return {
+    storeCode: requestStore.storeCode || currentStore.storeCode || ''
+  };
+}
+
+function collectSpecStores(session: AuthSession) {
+  const stores: AuthSessionStore[] = [];
+  const seen = new Set<string>();
+  const addStore = (store?: AuthSessionStore | null) => {
+    if (!store?.storeCode) {
+      return;
+    }
+    const key = `${store.storeCode}::${store.site || ''}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    stores.push(store);
+  };
+  (session.userStores || []).forEach(addStore);
+  addStore(session.currentStore);
+  return stores;
+}
+
+function resolveCurrentSpecBusinessStore(session: AuthSession, stores: AuthSessionStore[]) {
+  const currentStoreCode = session.currentStore?.storeCode;
+  const currentSite = session.currentStore?.site;
+  if (currentStoreCode) {
+    return (
+      stores.find(
+        (store) => store.storeCode === currentStoreCode && String(store.site || '') === String(currentSite || '')
+      ) ||
+      stores.find((store) => store.storeCode === currentStoreCode) ||
+      session.currentStore
+    );
+  }
+  return stores.find((store) => store.authorized !== false) || stores[0];
+}
+
+function specBusinessStoreKey(store: AuthSessionStore) {
+  return store.projectCode || store.orgCode || store.projectName || store.storeCode;
+}
+
+function specBusinessStoreLabel(store: AuthSessionStore) {
+  return store.projectName || store.orgName || store.projectCode || store.storeCode;
+}
+
+function compareSpecRequestStores(left: AuthSessionStore, right: AuthSessionStore) {
+  return (
+    String(left.storeCode || '').localeCompare(String(right.storeCode || '')) ||
+    String(left.site || '').localeCompare(String(right.site || ''))
+  );
 }
 
 function buildStoreLabelByCode(session: AuthSession) {
   const labels = new Map<string, string>();
-  (session.userStores || []).forEach((store) => {
+  collectSpecStores(session).forEach((store) => {
     if (!store.storeCode || labels.has(store.storeCode)) {
       return;
     }
-    labels.set(store.storeCode, store.projectName || store.projectCode || store.storeCode);
+    labels.set(store.storeCode, specBusinessStoreLabel(store));
   });
-  if (session.currentStore?.storeCode) {
-    labels.set(
-      session.currentStore.storeCode,
-      session.currentStore.projectName || session.currentStore.projectCode || session.currentStore.storeCode
-    );
-  }
   return labels;
 }
 

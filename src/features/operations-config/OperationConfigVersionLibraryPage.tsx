@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Alert, Button, DatePicker, Drawer, Input, InputNumber, Modal, Select, Space, Table, Tag, Tooltip, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs, { type Dayjs } from 'dayjs'
 import type { AuthSession } from '../auth/session'
+import { ProductDimensionOptionLabel } from '../product-baseline'
 import {
   copyOperationConfigVersion,
   deleteOperationConfigVersion,
@@ -52,8 +53,9 @@ type CalendarScopePickerState = {
 
 type CalendarScopePickerOption = {
   value: string
-  label: string
+  label: ReactNode
   title: string
+  searchText: string
 }
 
 const CALENDAR_SCOPE_OPTIONS: Array<{ value: CalendarScopeType; label: string; requiresValue: boolean }> = [
@@ -239,8 +241,9 @@ function calendarScopeRequiresValue(type: CalendarScopeType) {
 function productDimensionSelectOptions(options?: OperationConfigProductDimensionOption[]): CalendarScopePickerOption[] {
   return (options ?? []).map((option) => ({
     value: option.value,
-    label: option.label || option.value,
-    title: option.label || option.value
+    label: <ProductDimensionOptionLabel label={option.label} value={option.value} usageCount={option.usageCount} />,
+    title: option.label || option.value,
+    searchText: `${option.label || ''} ${option.value}`
   }))
 }
 
@@ -269,7 +272,7 @@ function filterCalendarScopePickerOptions(options: CalendarScopePickerOption[], 
   if (!normalizedQuery) {
     return options
   }
-  return options.filter((option) => `${option.label} ${option.value}`.toLowerCase().includes(normalizedQuery))
+  return options.filter((option) => option.searchText.toLowerCase().includes(normalizedQuery))
 }
 
 function calendarScopeText(resultShape?: string | null) {

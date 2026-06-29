@@ -38,7 +38,6 @@ export function useProductManagementWorkspace({
   const workspaceState = useProductWorkspaceState();
   const {
     activeSiteOfferCode,
-    autoInitializationStoreCode,
     productDetailTabHandledRef,
     productListDatasetState,
     productListDraftFilters,
@@ -52,7 +51,6 @@ export function useProductManagementWorkspace({
     selectedInitializationStoreCodeOverride,
     selectedProductRowKeys,
     setActiveSiteOfferCode,
-    setAutoInitializationStoreCode,
     setProductActionSubmitting,
     setProductGalleryImages,
     setProductGalleryIndex,
@@ -84,8 +82,6 @@ export function useProductManagementWorkspace({
 
   const storeInitialization = useProductStoreInitialization({
     activeOwnerId,
-    autoInitializationStoreCode,
-    enableProductBootAutoInit: enabled,
     enableProductBootDataset: enabled,
     enableProductBootInitStatus: enabled,
     enableProductBootStoreSelection: enabled,
@@ -93,7 +89,6 @@ export function useProductManagementWorkspace({
     loadProductListDataset,
     selectedInitializationStoreCodeOverride,
     session,
-    setAutoInitializationStoreCode,
     setProductListDatasetState,
     setSelectedInitializationStoreCodeOverride,
     setSelectedProductRowKeys,
@@ -261,6 +256,9 @@ export function useProductManagementWorkspace({
   const { submitProductSnapshot } = workbenchApiActions;
 
   useEffect(() => {
+    if (!enabled) {
+      return undefined;
+    }
     if (productWorkbenchSurfaceState.status !== 'ready') {
       return undefined;
     }
@@ -303,11 +301,12 @@ export function useProductManagementWorkspace({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [activeOwnerId, applyProductWorkbenchResponse, productWorkbenchSurfaceState, updateReadyProductWorkbenchSurface]);
+  }, [activeOwnerId, applyProductWorkbenchResponse, enabled, productWorkbenchSurfaceState, updateReadyProductWorkbenchSurface]);
 
   const navigation = useProductWorkspaceNavigation({
     activeOwnerId,
     activeProductWorkspaceTabKey,
+    enabled,
     currentProductSkuParent,
     productDetailTabHandledRef,
     productDetailTabRequest,
@@ -320,7 +319,6 @@ export function useProductManagementWorkspace({
     setActiveProductMenu,
     setActiveProductWorkspaceTabKey,
     setActiveSiteOfferCode,
-    setAutoInitializationStoreCode,
     setProductDetailTabRequest,
     setProductGalleryImages,
     setProductGalleryOpen,

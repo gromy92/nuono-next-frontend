@@ -1,6 +1,7 @@
 import { Empty, Space, Typography } from 'antd';
 import type { ProductListRowPayload } from '../types';
 import { formatSnapshotValue, normalizeNoonImageUrl } from '../utils';
+import { ProductImageThumb } from '../components/ProductBaselineDisplay';
 import { ProductGroupMemberList, type ProductGroupMemberListItem } from './ProductGroupMemberList';
 
 const { Text } = Typography;
@@ -49,42 +50,16 @@ function UngroupedSummaryPane({ products }: ProductUngroupedPanelProps) {
           <Text type="secondary">{products.length} 个</Text>
         </Space>
       </div>
-      <div style={{ padding: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(38px, 38px))', gap: 6 }}>
+      <div style={{ padding: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(48px, 48px))', gap: 6 }}>
         {products.map((item) => {
           const imageUrl = productLeadImage(item);
           return (
-            <div
+            <span
               key={item.skuParent}
               title={item.title || item.skuParent}
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 6,
-                border: '1px solid var(--pm-subtle-border)',
-                overflow: 'hidden',
-                background: 'var(--pm-subtle-bg)'
-              }}
             >
-              {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={item.title || item.skuParent}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <Text
-                  style={{
-                    display: 'block',
-                    lineHeight: '36px',
-                    textAlign: 'center',
-                    color: 'var(--pm-text-faint)',
-                    fontSize: 10
-                  }}
-                >
-                  无图
-                </Text>
-              )}
-            </div>
+              <ProductImageThumb src={imageUrl} alt={item.title || item.skuParent} imageCount={imageUrl ? 1 : 0} width={48} />
+            </span>
           );
         })}
       </div>

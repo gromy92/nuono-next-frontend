@@ -9,8 +9,9 @@ import {
   productSummaryTitle
 } from '../utils';
 import { ProductSummaryPrimaryTags } from './ProductSummaryBlocks';
+import { ProductBaselineIdentity } from '../../product-baseline';
 
-const { Paragraph, Text, Title } = Typography;
+const { Text } = Typography;
 
 type ProductDetailPreviewPanelProps = {
   message?: string;
@@ -39,64 +40,41 @@ export function ProductDetailPreviewPanel({ message, summary, status = 'loading'
       <div style={{ border: '1px solid #dbe4ea', borderRadius: 8, background: '#f8fafc', padding: 20 }}>
         <Row gutter={[20, 20]} align="top">
           <Col xs={24} xl={18}>
-            <Space align="start" size={16} style={{ width: '100%' }}>
-              <div
-                style={{
-                  width: 112,
-                  minWidth: 112,
-                  height: 112,
-                  padding: 0,
-                  borderRadius: 8,
-                  overflow: 'hidden',
-                  border: '1px solid #dbe4ea',
-                  background: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                {summary.imageUrl ? (
-                  <img
-                    src={summary.imageUrl}
-                    alt={productSummaryTitle(summary)}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                  />
-                ) : (
-                  <Text style={{ color: '#94a3b8' }}>暂无图片</Text>
-                )}
-              </div>
+            <Space direction="vertical" size={12} style={{ width: '100%' }}>
+              <ProductBaselineIdentity
+                title={productSummaryTitle(summary)}
+                imageUrl={summary.imageUrl || summary.galleryImages[0]}
+                imageCount={summary.galleryImages.length}
+                imageAlt={productSummaryTitle(summary)}
+                imageWidth={128}
+                titleMaxWidth="100%"
+                codes={[
+                  {
+                    value: productSummaryIdentityLine(summary),
+                    copyText: summary.skuParent
+                  }
+                ]}
+                tags={<ProductSummaryPrimaryTags summary={summary} includeSite />}
+              />
 
-              <Space direction="vertical" size={10} style={{ flex: 1, minWidth: 260 }}>
-                <ProductSummaryPrimaryTags summary={summary} includeSite />
-
-                <div>
-                  <Title level={4} style={{ margin: 0, color: '#0f172a' }}>
-                    {productSummaryTitle(summary)}
-                  </Title>
-                  <Paragraph style={{ margin: '6px 0 0', color: '#64748b' }}>
-                    {productSummaryIdentityLine(summary)}
-                  </Paragraph>
-                </div>
-
-                <Descriptions column={{ xs: 1, sm: 2, xl: 3 }} size="small" colon={false}>
-                  <Descriptions.Item label="SKU Parent">{formatSnapshotValue(summary.skuParent)}</Descriptions.Item>
-                  <Descriptions.Item label="PSKU">{formatSnapshotValue(summary.partnerSku)}</Descriptions.Item>
-                  <Descriptions.Item label="PSKU Code">{formatSnapshotValue(summary.pskuCode)}</Descriptions.Item>
-                  <Descriptions.Item label="品牌">{formatSnapshotValue(summary.brand)}</Descriptions.Item>
-                  <Descriptions.Item label="类目">{formatSnapshotValue(summary.productFulltype)}</Descriptions.Item>
-                  <Descriptions.Item label="参考价">{productSummaryPriceLine(summary)}</Descriptions.Item>
-                  <Descriptions.Item label="经营站点">{summary.siteOfferCount ?? summary.siteLabels.length}</Descriptions.Item>
-                  <Descriptions.Item label="变体/尺码">{summary.variantCount ?? '-'}</Descriptions.Item>
-                  <Descriptions.Item label="上架时间">
-                    {productNotListed
-                      ? '未上架'
-                      : summary.listingStartedAt
-                        ? `${formatSnapshotValue(summary.listingStartedAt)}${listingStartedSourceLabel ? ` · ${listingStartedSourceLabel}` : ''}`
-                        : listingStartedSourceLabel || '-'}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="最近同步">{formatSnapshotValue(summary.lastSyncedAt)}</Descriptions.Item>
-                </Descriptions>
-              </Space>
+              <Descriptions column={{ xs: 1, sm: 2, xl: 3 }} size="small" colon={false}>
+                <Descriptions.Item label="SKU Parent">{formatSnapshotValue(summary.skuParent)}</Descriptions.Item>
+                <Descriptions.Item label="PSKU">{formatSnapshotValue(summary.partnerSku)}</Descriptions.Item>
+                <Descriptions.Item label="PSKU Code">{formatSnapshotValue(summary.pskuCode)}</Descriptions.Item>
+                <Descriptions.Item label="品牌">{formatSnapshotValue(summary.brand)}</Descriptions.Item>
+                <Descriptions.Item label="类目">{formatSnapshotValue(summary.productFulltype)}</Descriptions.Item>
+                <Descriptions.Item label="参考价">{productSummaryPriceLine(summary)}</Descriptions.Item>
+                <Descriptions.Item label="经营站点">{summary.siteOfferCount ?? summary.siteLabels.length}</Descriptions.Item>
+                <Descriptions.Item label="变体/尺码">{summary.variantCount ?? '-'}</Descriptions.Item>
+                <Descriptions.Item label="上架时间">
+                  {productNotListed
+                    ? '未上架'
+                    : summary.listingStartedAt
+                      ? `${formatSnapshotValue(summary.listingStartedAt)}${listingStartedSourceLabel ? ` · ${listingStartedSourceLabel}` : ''}`
+                      : listingStartedSourceLabel || '-'}
+                </Descriptions.Item>
+                <Descriptions.Item label="最近同步">{formatSnapshotValue(summary.lastSyncedAt)}</Descriptions.Item>
+              </Descriptions>
             </Space>
           </Col>
 
