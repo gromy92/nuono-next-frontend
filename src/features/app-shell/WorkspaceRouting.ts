@@ -25,6 +25,8 @@ export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
 export const PURCHASE_IN_TRANSIT_GOODS_PATH = workspaceMenuPath('purchase-in-transit-goods')
+export const WAREHOUSE_SHIPPING_ORDER_PATH = workspaceMenuPath('warehouse-shipping-order')
+export const WAREHOUSE_LOGISTICS_BILL_PATH = workspaceMenuPath('warehouse-logistics-bill')
 export const WAREHOUSE_DISPATCH_PATH = workspaceMenuPath('warehouse-dispatch')
 export const OFFICIAL_WAREHOUSE_PATH = workspaceMenuPath('official-warehouse')
 export const OPERATIONS_COMPETITOR_ANALYSIS_PATH = workspaceMenuPath('operations-competitor-analysis')
@@ -258,6 +260,8 @@ export function resolveSessionLandingMenuKey(
         'purchase-profit',
         'purchase-order',
         'purchase-in-transit-goods',
+        'warehouse-shipping-order',
+        'warehouse-logistics-bill',
         'warehouse-dispatch',
         'official-warehouse',
         'operations-competitor-analysis',
@@ -286,6 +290,8 @@ export function resolveSessionLandingMenuKey(
           'product-specs',
           'purchase-profit',
           'purchase-logistics-quote',
+          'warehouse-shipping-order',
+          'warehouse-logistics-bill',
           'warehouse-dispatch',
           'official-warehouse',
           'operations-competitor-analysis',
@@ -311,6 +317,8 @@ export function resolveSessionLandingMenuKey(
           'user-role',
           'purchase-profit',
           'purchase-logistics-quote',
+          'warehouse-shipping-order',
+          'warehouse-logistics-bill',
           'warehouse-dispatch',
           'official-warehouse',
           'operations-competitor-analysis',

@@ -15,6 +15,10 @@ export type DispatchPlanStatus =
 
 export type ProductSpecStatus = 'complete' | 'missing'
 
+export type LogisticsQuoteStatus = 'PENDING_QUOTE' | 'CONFIRMED' | string
+
+export type LogisticsShippingSubmitStatus = 'NOT_SUBMITTED' | 'SUBMITTED' | string
+
 export type PurchaseReceiptItem = {
   id: string
   orderId: string
@@ -50,6 +54,9 @@ export type ReadyShipmentItem = PurchaseReceiptItem & {
   orderCreatedAt?: string
   availableQty: number
   fulfillmentBalanceId?: number
+  logisticsQuoteStatus?: LogisticsQuoteStatus
+  logisticsShippingSubmitStatus?: LogisticsShippingSubmitStatus
+  logisticsQuoteBlocking?: boolean
 }
 
 export type DispatchPlanSource = {

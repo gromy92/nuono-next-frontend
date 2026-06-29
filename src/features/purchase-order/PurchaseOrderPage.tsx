@@ -8,11 +8,13 @@ import {
   FileSearchOutlined,
   PlusOutlined,
   SearchOutlined,
+  SendOutlined,
   TruckOutlined
 } from '@ant-design/icons'
 import {
   AutoComplete,
   Button,
+  Checkbox,
   Descriptions,
   Empty,
   Form,
@@ -27,6 +29,7 @@ import {
   Tag,
   Tooltip,
   Typography,
+  Upload,
   message
 } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -37,13 +40,17 @@ import {
   addPurchaseOrderItems,
   collectPurchaseOrder,
   createPurchaseOrder,
+  createShippingOrder,
   deletePurchaseOrder,
   deletePurchaseOrderItem,
   generatePurchaseOrderLogisticsPlan,
   loadPurchaseOrderAli1688History,
+  loadShippingOrder,
+  loadShippingOrders,
   loadProductOptions,
   loadPurchaseOrders,
   previewPurchaseOrderLogisticsPlan,
+  submitPurchaseOrder,
   updatePurchaseOrder,
   updatePurchaseOrderItem
 } from './api'
@@ -163,6 +170,7 @@ const ORDER_STATUS_META: Record<PurchaseOrderStatus, { label: string; color: str
   partial_done: { label: '部分完成', color: 'warning', icon: <ClockCircleOutlined /> },
   done: { label: '采集完成', color: 'success', icon: <CheckCircleOutlined /> },
   exception: { label: '有异常', color: 'error', icon: <ExclamationCircleOutlined /> },
+  submitted: { label: '已提交', color: 'green', icon: <CheckCircleOutlined /> },
   deleted: { label: '已删除', color: 'default', icon: <DeleteOutlined /> }
 }
 
@@ -214,6 +222,11 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   const [logisticsPlanPreview, setLogisticsPlanPreview] = useState<PurchaseOrderLogisticsPlan | null>(null)
   const [logisticsPlan, setLogisticsPlan] = useState<PurchaseOrderLogisticsPlan | null>(null)
   const [actionKey, setActionKey] = useState<string>()
+  const [shippingMergeMode, setShippingMergeMode] = useState(false)
+  const [selectedShippingMergeOrderIds, setSelectedShippingMergeOrderIds] = useState<string[]>([])
+  const [shippingMergeAssignedOrderIds, setShippingMergeAssignedOrderIds] = useState<string[]>([])
+  const [shippingMergeAssignmentLoading, setShippingMergeAssignmentLoading] = useState(false)
+  const [shippingMergeErrorMessage, setShippingMergeErrorMessage] = useState<string>()
   const [createErrorMessage, setCreateErrorMessage] = useState<string>()
   const [addItemsErrorMessage, setAddItemsErrorMessage] = useState<string>()
   const [editItemErrorMessage, setEditItemErrorMessage] = useState<string>()
@@ -268,16 +281,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     () => buildProductAutoCompleteOptions(productSearchOptions),
     [productSearchOptions]
   )
-
   const loadOrders = useCallback(async () => {
-    if (!storeCode) {
-      setOrders([])
-      setSelectedOrderId(undefined)
-      return
-    }
     setLoading(true)
     try {
-      const nextOrders = await loadPurchaseOrders({ storeCode })
+      const nextOrders = await loadPurchaseOrders({})
       setOrders(nextOrders)
       setSelectedOrderId((current) => {
         if (current && nextOrders.some((order) => order.id === current)) {
@@ -292,7 +299,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     } finally {
       setLoading(false)
     }
-  }, [storeCode])
+  }, [])
 
   useEffect(() => {
     void loadOrders()
@@ -365,9 +372,53 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       return text.includes(normalized)
     })
   }, [keyword, orders])
+  const submittedVisibleOrders = useMemo(
+    () => visibleOrders.filter(isSubmittedOrder),
+    [visibleOrders]
+  )
+  const shippingMergeAssignedOrderIdSet = useMemo(
+    () => new Set(shippingMergeAssignedOrderIds),
+    [shippingMergeAssignedOrderIds]
+  )
+  const availableShippingMergeOrders = useMemo(
+    () => visibleOrders.filter((order) => isOrderAvailableForShippingMerge(order, shippingMergeAssignedOrderIdSet)),
+    [shippingMergeAssignedOrderIdSet, visibleOrders]
+  )
+  const selectedShippingMergeOrders = useMemo(
+    () => orders.filter((order) => (
+      selectedShippingMergeOrderIds.includes(order.id)
+      && isOrderAvailableForShippingMerge(order, shippingMergeAssignedOrderIdSet)
+    )),
+    [orders, selectedShippingMergeOrderIds, shippingMergeAssignedOrderIdSet]
+  )
+  const selectedShippingMergeTotalQuantity = useMemo(
+    () => selectedShippingMergeOrders.reduce((sum, order) => sum + summarizeOrder(order).totalQuantity, 0),
+    [selectedShippingMergeOrders]
+  )
+
+  useEffect(() => {
+    setSelectedShippingMergeOrderIds((current) => current.filter((orderId) => {
+      const order = orders.find((candidate) => candidate.id === orderId)
+      return order && isOrderAvailableForShippingMerge(order, shippingMergeAssignedOrderIdSet)
+    }))
+  }, [orders, shippingMergeAssignedOrderIdSet])
 
   function handleSelectOrder(order: PurchaseOrder) {
     setSelectedOrderId(order.id)
+    if (!shippingMergeMode) {
+      return
+    }
+    if (!isSubmittedOrder(order)) {
+      message.warning('采购单已提交后才可合并发货单。')
+      return
+    }
+    if (shippingMergeAssignedOrderIdSet.has(order.id)) {
+      message.warning('该采购单已在发货单中，不能重复合并。')
+      return
+    }
+    setSelectedShippingMergeOrderIds((current) => current.includes(order.id)
+      ? current.filter((orderId) => orderId !== order.id)
+      : [...current, order.id])
   }
 
   function handleOrderCardKeyDown(event: KeyboardEvent<HTMLElement>, order: PurchaseOrder) {
@@ -394,6 +445,100 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     setCreateModalOpen(true)
   }
 
+  async function openShippingMergeMode() {
+    if (!submittedVisibleOrders.length) {
+      message.warning('当前列表没有已提交采购单。')
+      return
+    }
+    setShippingMergeAssignmentLoading(true)
+    setShippingMergeErrorMessage(undefined)
+    let assignedOrderIds = new Set(shippingMergeAssignedOrderIds)
+    try {
+      assignedOrderIds = await loadShippingMergeAssignedOrderIds()
+      setShippingMergeAssignedOrderIds([...assignedOrderIds])
+    } catch (error) {
+      const errorMessage = normalizeError(error, '读取已有发货单占用失败')
+      setShippingMergeErrorMessage(errorMessage)
+      message.error(errorMessage)
+    } finally {
+      setShippingMergeAssignmentLoading(false)
+    }
+    const nextAvailableOrders = submittedVisibleOrders.filter((order) => !assignedOrderIds.has(order.id))
+    setShippingMergeMode(true)
+    setSelectedShippingMergeOrderIds((current) => {
+      const validIds = current.filter((orderId) => nextAvailableOrders.some((order) => order.id === orderId))
+      if (validIds.length) {
+        return validIds
+      }
+      return selectedOrder && nextAvailableOrders.some((order) => order.id === selectedOrder.id) ? [selectedOrder.id] : []
+    })
+    if (!nextAvailableOrders.length) {
+      setShippingMergeErrorMessage('当前列表没有可合并采购单；已提交采购单可能已经在发货单中。')
+    }
+  }
+
+  function closeShippingMergeMode() {
+    setShippingMergeMode(false)
+    setSelectedShippingMergeOrderIds([])
+    setShippingMergeErrorMessage(undefined)
+  }
+
+  function handleSelectAllVisibleSubmittedOrders() {
+    setSelectedShippingMergeOrderIds(availableShippingMergeOrders.map((order) => order.id))
+  }
+
+  function handleClearShippingMergeSelection() {
+    setSelectedShippingMergeOrderIds([])
+  }
+
+  function handleToggleShippingMergeOrder(order: PurchaseOrder, checked: boolean) {
+    if (!isSubmittedOrder(order)) {
+      message.warning('采购单已提交后才可合并发货单。')
+      return
+    }
+    if (shippingMergeAssignedOrderIdSet.has(order.id)) {
+      message.warning('该采购单已在发货单中，不能重复合并。')
+      return
+    }
+    setShippingMergeErrorMessage(undefined)
+    setSelectedShippingMergeOrderIds((current) => {
+      if (checked) {
+        return current.includes(order.id) ? current : [...current, order.id]
+      }
+      return current.filter((orderId) => orderId !== order.id)
+    })
+  }
+
+  async function handleCreateShippingOrderFromSelection() {
+    const purchaseOrderIds = selectedShippingMergeOrders.map((order) => order.id)
+    if (!purchaseOrderIds.length) {
+      message.warning('请选择已提交采购单。')
+      return
+    }
+    setActionKey('create-shipping-order-selection')
+    setShippingMergeErrorMessage(undefined)
+    try {
+      const shippingOrder = await createShippingOrder({ purchaseOrderIds })
+      closeShippingMergeMode()
+      message.success(`已创建发货单 ${shippingOrder.shippingOrderNo}。`)
+      window.location.href = '/warehouse/shipping-orders?devSession=1&grantPurchase=1&grantWarehouse=1'
+    } catch (error) {
+      const errorMessage = normalizeError(error, '创建发货单失败')
+      setShippingMergeErrorMessage(errorMessage)
+      message.error(errorMessage)
+    } finally {
+      setActionKey((current) => (current === 'create-shipping-order-selection' ? undefined : current))
+    }
+  }
+
+  async function loadShippingMergeAssignedOrderIds() {
+    const shippingOrders = await loadShippingOrders()
+    const details = await Promise.all(shippingOrders.map((shippingOrder) => loadShippingOrder(shippingOrder.id)))
+    return new Set(details.flatMap((shippingOrder) => (
+      shippingOrder.lines || []
+    ).map((line) => line.purchaseOrderId).filter(Boolean)))
+  }
+
   function handleCreateStoreChange(nextStoreCode: string) {
     const nextSite = defaultCreateStoreSite(session, nextStoreCode)
     const currentItems = createOrderForm.getFieldValue('items') as PskuEntryFormValue[] | undefined
@@ -414,6 +559,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   }
 
   function openEditOrderModal(order: PurchaseOrder) {
+    if (isSubmittedOrder(order)) {
+      message.warning('采购单已提交，不能再更改。')
+      return
+    }
     editOrderForm.setFieldsValue({
       title: order.title,
       remark: order.remark || ''
@@ -496,7 +645,29 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     }
   }
 
+  async function handleSubmitOrder(order: PurchaseOrder) {
+    if (!order.items?.length) {
+      message.warning('当前采购单还没有商品。')
+      return
+    }
+    setActionKey(`submit-order:${order.id}`)
+    try {
+      const nextOrder = await submitPurchaseOrder(order.id)
+      replaceOrder(nextOrder)
+      setSelectedOrderId(nextOrder.id)
+      message.success('已提交采购单。')
+    } catch (error) {
+      message.error(normalizeError(error, '提交采购单失败'))
+    } finally {
+      setActionKey((current) => (current === `submit-order:${order.id}` ? undefined : current))
+    }
+  }
+
   function openAddItemsModal(order: PurchaseOrder) {
+    if (isSubmittedOrder(order)) {
+      message.warning('采购单已提交，不能再更改。')
+      return
+    }
     const defaultSite = getOrderSiteOptions(order, session)[0]?.value || DEFAULT_SITE_CODES[0]
     addItemsForm.setFieldsValue({
       items: [createEmptyPskuEntry(defaultSite)]
@@ -548,6 +719,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   }, [])
 
   function openEditItemModal(order: PurchaseOrder, item: PurchaseOrderItem) {
+    if (isSubmittedOrder(order)) {
+      message.warning('采购单已提交，不能再更改。')
+      return
+    }
     const defaultSite = getOrderSiteOptions(order, session)[0]?.value || DEFAULT_SITE_CODES[0]
     editItemForm.setFieldsValue({
       psku: item.partnerSku,
@@ -615,6 +790,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       return
     }
     const { order, item } = editItemTarget
+    if (isSubmittedOrder(order)) {
+      message.warning('采购单已提交，不能再更改。')
+      return
+    }
     const currentActionKey = `edit-item:${item.id}`
     setActionKey(currentActionKey)
     try {
@@ -654,6 +833,11 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     if (!deleteTargetOrder) {
       return
     }
+    if (isSubmittedOrder(deleteTargetOrder)) {
+      message.warning('采购单已提交，不能再更改。')
+      setDeleteTargetOrder(null)
+      return
+    }
     const targetId = deleteTargetOrder.id
     setActionKey(`delete:${targetId}`)
     try {
@@ -685,6 +869,11 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       return
     }
     const { order, item } = deleteTargetItem
+    if (isSubmittedOrder(order)) {
+      message.warning('采购单已提交，不能再更改。')
+      setDeleteTargetItem(null)
+      return
+    }
     const currentActionKey = `delete-item:${item.id}`
     setActionKey(currentActionKey)
     try {
@@ -704,6 +893,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   }
 
   async function handleCollectOrder(order: PurchaseOrder) {
+    if (isSubmittedOrder(order)) {
+      message.warning('采购单已提交，不能再更改。')
+      return
+    }
     if (!order.items?.length) {
       message.warning('当前采购单还没有商品。')
       return
@@ -722,6 +915,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   }
 
   async function handlePreviewLogisticsPlan(order: PurchaseOrder) {
+    if (isSubmittedOrder(order)) {
+      message.warning('采购单已提交，不能再更改。')
+      return
+    }
     if (!order.items?.length) {
       message.warning('当前采购单还没有商品。')
       return
@@ -740,6 +937,12 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   async function handleGenerateLogisticsPlan() {
     const orderId = logisticsPlanPreview?.purchaseOrderId
     if (!orderId) {
+      return
+    }
+    const order = orders.find((candidate) => candidate.id === orderId)
+    if (order && isSubmittedOrder(order)) {
+      message.warning('采购单已提交，不能再更改。')
+      setLogisticsPlanPreview(null)
       return
     }
     setActionKey(`logistics-plan:${orderId}`)
@@ -773,17 +976,83 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                 onChange={(event) => setKeyword(event.target.value)}
                 className="purchase-order-search"
               />
-              <Button type="primary" icon={<PlusOutlined />} onClick={openCreateOrderModal} disabled={!storeCode}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={openCreateOrderModal} disabled={!createStoreOptions.length}>
                 新建采购单
               </Button>
             </div>
+            {shippingMergeMode ? (
+              <div className="purchase-order-shipping-merge-panel">
+                <div className="purchase-order-shipping-merge-summary">
+                  <div>
+                    <Text strong>已选 {selectedShippingMergeOrders.length} 单</Text>
+                    <Text type="secondary"> / 可选 {availableShippingMergeOrders.length} 单</Text>
+                  </div>
+                  <Text type="secondary">{selectedShippingMergeTotalQuantity} 件</Text>
+                </div>
+                {shippingMergeErrorMessage ? (
+                  <Alert
+                    type="warning"
+                    showIcon
+                    message={shippingMergeErrorMessage}
+                    className="purchase-order-shipping-merge-alert"
+                  />
+                ) : null}
+                <div className="purchase-order-shipping-merge-actions">
+                  <Button size="small" onClick={closeShippingMergeMode}>
+                    取消
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={handleSelectAllVisibleSubmittedOrders}
+                    disabled={
+                      shippingMergeAssignmentLoading
+                      || !availableShippingMergeOrders.length
+                      || selectedShippingMergeOrders.length === availableShippingMergeOrders.length
+                    }
+                  >
+                    全选已提交
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={handleClearShippingMergeSelection}
+                    disabled={!selectedShippingMergeOrders.length}
+                  >
+                    清空
+                  </Button>
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<TruckOutlined />}
+                    disabled={shippingMergeAssignmentLoading || !selectedShippingMergeOrders.length}
+                    loading={actionKey === 'create-shipping-order-selection'}
+                    onClick={() => void handleCreateShippingOrderFromSelection()}
+                  >
+                    创建发货单
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                block
+                icon={<TruckOutlined />}
+                className="purchase-order-shipping-link"
+                loading={shippingMergeAssignmentLoading}
+                onClick={() => void openShippingMergeMode()}
+              >
+                多选合并发货单
+              </Button>
+            )}
             {visibleOrders.length ? (
               visibleOrders.map((order) => {
                 const summary = orderSummaries.get(order.id) || emptySummary()
                 const meta = ORDER_STATUS_META[summary.status] || ORDER_STATUS_META.draft
+                const submitted = isSubmittedOrder(order)
+                const alreadyAssigned = shippingMergeAssignedOrderIdSet.has(order.id)
+                const availableForShippingMerge = isOrderAvailableForShippingMerge(order, shippingMergeAssignedOrderIdSet)
+                const selectedForShippingMerge = selectedShippingMergeOrderIds.includes(order.id)
                 return (
                   <article
-                    className={`purchase-order-card${order.id === selectedOrder?.id ? ' is-active' : ''}`}
+                    className={`purchase-order-card${shippingMergeMode ? ' is-merge-mode' : ''}${order.id === selectedOrder?.id ? ' is-active' : ''}${selectedForShippingMerge ? ' is-merge-selected' : ''}${shippingMergeMode && !availableForShippingMerge ? ' is-merge-disabled' : ''}`}
                     key={order.id}
                   >
                     <div
@@ -794,6 +1063,25 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                       onClick={() => handleSelectOrder(order)}
                       onKeyDown={(event) => handleOrderCardKeyDown(event, order)}
                     >
+                      {shippingMergeMode ? (
+                        <div
+                          className="purchase-order-merge-row"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <Checkbox
+                            className="purchase-order-merge-checkbox"
+                            checked={selectedForShippingMerge}
+                            disabled={!availableForShippingMerge}
+                            aria-label={`选择${order.title}`}
+                            onChange={(event) => handleToggleShippingMergeOrder(order, event.target.checked)}
+                          >
+                            选择
+                          </Checkbox>
+                          <Tag color={availableForShippingMerge ? 'blue' : 'default'} className="purchase-order-merge-status">
+                            {availableForShippingMerge ? '已提交可合并' : alreadyAssigned ? '已在发货单' : '未提交不可合并'}
+                          </Tag>
+                        </div>
+                      ) : null}
                       <div className="purchase-order-card-top">
                         <div className="purchase-order-card-titleline">
                           <Text strong ellipsis className="purchase-order-card-title">{order.title}</Text>
@@ -807,6 +1095,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                             icon={<EditOutlined />}
                             aria-label="编辑采购单"
                             title="编辑采购单"
+                            disabled={submitted}
                             className="purchase-order-card-icon-button"
                             onClick={(event) => {
                               event.stopPropagation()
@@ -819,6 +1108,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                             icon={<DeleteOutlined />}
                             aria-label="删除采购单"
                             title="删除采购单"
+                            disabled={submitted}
                             className="purchase-order-card-icon-button"
                             onClick={(event) => {
                               event.stopPropagation()
@@ -840,7 +1130,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                 )
               })
             ) : (
-              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={storeCode ? '暂无采购单' : '请先选择店铺'} />
+              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无采购单" />
             )}
           </aside>
 
@@ -875,9 +1165,22 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                     ) : null}
                   </div>
                   <div className="purchase-order-detail-actions">
+                    {isSubmittedOrder(selectedOrder) ? null : (
+                      <Button
+                        size="small"
+                        type="primary"
+                        icon={<SendOutlined />}
+                        disabled={!selectedOrder.items?.length}
+                        loading={actionKey === `submit-order:${selectedOrder.id}`}
+                        onClick={() => void handleSubmitOrder(selectedOrder)}
+                      >
+                        提交采购单
+                      </Button>
+                    )}
                     <Button
                       size="small"
                       icon={<PlusOutlined />}
+                      disabled={isSubmittedOrder(selectedOrder)}
                       onClick={() => openAddItemsModal(selectedOrder)}
                     >
                       添加商品
@@ -885,7 +1188,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                     <Button
                       size="small"
                       icon={<TruckOutlined />}
-                      disabled={!selectedOrder.items?.length}
+                      disabled={!selectedOrder.items?.length || isSubmittedOrder(selectedOrder)}
                       loading={actionKey === `logistics-plan-preview:${selectedOrder.id}`}
                       onClick={() => void handlePreviewLogisticsPlan(selectedOrder)}
                     >
@@ -893,9 +1196,9 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                     </Button>
                     <Button
                       size="small"
-                      type="primary"
+                      type={isSubmittedOrder(selectedOrder) ? 'default' : 'primary'}
                       icon={<CloudSyncOutlined />}
-                      disabled={!selectedOrder.items?.length}
+                      disabled={!selectedOrder.items?.length || isSubmittedOrder(selectedOrder)}
                       loading={actionKey === `collect-order:${selectedOrder.id}`}
                       onClick={() => void handleCollectOrder(selectedOrder)}
                     >
@@ -966,6 +1269,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                       ali1688HistoryEntries={ali1688HistoryEntriesForItem(selectedOrder, item, ali1688HistoryByKey)}
                       ali1688HistoryLoading={ali1688HistoryLoading}
                       ali1688HistoryError={ali1688HistoryError}
+                      locked={isSubmittedOrder(selectedOrder)}
                       onEdit={() => openEditItemModal(selectedOrder, item)}
                       onDelete={() => setDeleteTargetItem({ order: selectedOrder, item })}
                       onOpenTop5={() => openTop5(item, selectedOrder)}
@@ -1333,6 +1637,7 @@ function PurchaseItemCard({
   ali1688HistoryEntries,
   ali1688HistoryLoading,
   ali1688HistoryError,
+  locked,
   onEdit,
   onDelete,
   onOpenTop5
@@ -1344,6 +1649,7 @@ function PurchaseItemCard({
   ali1688HistoryEntries: PurchaseOrderAli1688HistoryEntry[]
   ali1688HistoryLoading: boolean
   ali1688HistoryError?: string
+  locked: boolean
   onEdit: () => void
   onDelete: () => void
   onOpenTop5: () => void
@@ -1427,6 +1733,7 @@ function PurchaseItemCard({
           size="small"
           icon={<EditOutlined />}
           loading={editing}
+          disabled={locked}
           aria-label="编辑"
           title="编辑"
           onClick={onEdit}
@@ -1436,6 +1743,7 @@ function PurchaseItemCard({
           danger
           icon={<DeleteOutlined />}
           loading={deleting}
+          disabled={locked}
           aria-label="删除"
           title="删除"
           onClick={onDelete}
@@ -2098,8 +2406,16 @@ function summarizeOrder(order: PurchaseOrder): OrderSummary {
     skuCount,
     totalQuantity,
     progress,
-    status: order.status === 'deleted' ? 'deleted' : deriveStatus(items)
+    status: order.status === 'deleted' || order.status === 'submitted' ? order.status : deriveStatus(items)
   }
+}
+
+function isSubmittedOrder(order?: PurchaseOrder | null) {
+  return order?.status === 'submitted'
+}
+
+function isOrderAvailableForShippingMerge(order: PurchaseOrder, assignedOrderIds: Set<string>) {
+  return isSubmittedOrder(order) && !assignedOrderIds.has(order.id)
 }
 
 function emptySummary(): OrderSummary {

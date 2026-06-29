@@ -515,7 +515,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
 
   const receiptOrderColumns: ColumnsType<PurchaseReceiptOrder> = [
     {
-      title: '采购单',
+      title: '发货单',
       dataIndex: 'title',
       render: (_value, order) => (
         <Space direction="vertical" size={0}>
@@ -621,6 +621,11 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     {
       title: '来源',
       render: (_value, item) => renderReadySourceCell(item, receiptOrderMetaById)
+    },
+    {
+      title: '报价',
+      width: 116,
+      render: (_value, item) => renderReadyQuoteCell(item)
     },
     {
       title: '履约',
@@ -834,38 +839,47 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     if (!selectedReceiptOrder) {
       return
     }
-    const linesByFulfillment = new Map<WarehouseFulfillmentType, Array<{
+    const confirmationDrafts = new Map<string, {
+      purchaseOrderId: string
+      confirmationType: WarehouseFulfillmentType
+      lines: Array<{
       purchaseOrderItemId: string
       confirmedQuantity: number
       abnormalQuantity: number
-    }>>()
+      }>
+    }>()
     row.items.forEach((item) => {
       const remainingQuantity = Math.max(0, item.expectedQty - item.receivedQty)
       if (remainingQuantity <= 0) {
         return
       }
       const fulfillmentType = item.fulfillmentType || 'WAREHOUSE_RECEIPT'
-      const lines = linesByFulfillment.get(fulfillmentType) || []
-      lines.push({
+      const key = `${item.orderId}:${fulfillmentType}`
+      const draft = confirmationDrafts.get(key) || {
+        purchaseOrderId: item.orderId,
+        confirmationType: fulfillmentType,
+        lines: []
+      }
+      draft.lines.push({
         purchaseOrderItemId: item.id,
         confirmedQuantity: remainingQuantity,
         abnormalQuantity: 0
       })
-      linesByFulfillment.set(fulfillmentType, lines)
+      confirmationDrafts.set(key, draft)
     })
-    if (!linesByFulfillment.size) {
+    if (!confirmationDrafts.size) {
       message.info('该商品已完成验货。')
       await refreshWarehouseData()
       return
     }
     setReceiptRowSubmittingId(row.id)
     try {
-      await Promise.all(Array.from(linesByFulfillment.entries()).map(([confirmationType, lines]) =>
+      await Promise.all(Array.from(confirmationDrafts.values()).map((draft) =>
         createFulfillmentConfirmation({
-          purchaseOrderId: selectedReceiptOrder.id,
-          confirmationType,
-          sourcePartyName: selectedReceiptOrder.storeName,
-          lines
+          purchaseOrderId: draft.purchaseOrderId,
+          confirmationType: draft.confirmationType,
+          sourcePartyName: selectedReceiptOrder.orderNo,
+          lines: draft.lines
         })
       ))
       setReceiptDraft((current) => omitRecordKey(current, row.id))
@@ -927,12 +941,16 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
       buildReceiptProductRows([selectedReceiptOrder], productBaselineByPsku),
       receiptIssueDraft
     )
-    const linesByFulfillment = new Map<WarehouseFulfillmentType, Array<{
+    const confirmationDrafts = new Map<string, {
+      purchaseOrderId: string
+      confirmationType: WarehouseFulfillmentType
+      lines: Array<{
       purchaseOrderItemId: string
       confirmedQuantity: number
       abnormalQuantity: number
       exceptionReason?: string
-    }>>()
+      }>
+    }>()
     for (const item of selectedReceiptOrder.items) {
       const nextReceivedQty = receivedQuantityByItemId.get(item.id) ?? item.receivedQty
       if (nextReceivedQty < item.receivedQty) {
@@ -945,28 +963,33 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
         continue
       }
       const fulfillmentType = item.fulfillmentType || 'WAREHOUSE_RECEIPT'
-      const lines = linesByFulfillment.get(fulfillmentType) || []
-      lines.push({
+      const key = `${item.orderId}:${fulfillmentType}`
+      const draft = confirmationDrafts.get(key) || {
+        purchaseOrderId: item.orderId,
+        confirmationType: fulfillmentType,
+        lines: []
+      }
+      draft.lines.push({
         purchaseOrderItemId: item.id,
         confirmedQuantity: delta,
         abnormalQuantity,
         exceptionReason: issueReasonByItemId.get(item.id)
           || (nextReceivedQty < item.expectedQty ? `少货 ${item.expectedQty - nextReceivedQty}` : undefined)
       })
-      linesByFulfillment.set(fulfillmentType, lines)
+      confirmationDrafts.set(key, draft)
     }
-    if (!linesByFulfillment.size) {
+    if (!confirmationDrafts.size) {
       message.warning('没有新增验收数量。')
       return
     }
     setReceiptSubmitting(true)
     try {
-      await Promise.all(Array.from(linesByFulfillment.entries()).map(([confirmationType, lines]) =>
+      await Promise.all(Array.from(confirmationDrafts.values()).map((draft) =>
         createFulfillmentConfirmation({
-          purchaseOrderId: selectedReceiptOrder.id,
-          confirmationType,
-          sourcePartyName: selectedReceiptOrder.storeName,
-          lines
+          purchaseOrderId: draft.purchaseOrderId,
+          confirmationType: draft.confirmationType,
+          sourcePartyName: selectedReceiptOrder.orderNo,
+          lines: draft.lines
         })
       ))
       await refreshWarehouseData()
@@ -989,6 +1012,13 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     })
     if (!drafts.length) {
       message.warning('请先选择要加入发运计划的商品。')
+      return
+    }
+    const quoteBlockingItem = selectedReadyItems.find((item) =>
+      item.logisticsQuoteBlocking || item.items.some((source) => source.logisticsQuoteBlocking)
+    )
+    if (quoteBlockingItem) {
+      message.warning(`${quoteBlockingItem.psku} 物流报价未确认或运营未提交发货。`)
       return
     }
     const invalidDraft = selectedReadyItems.find((item) => {
@@ -1061,7 +1091,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
                 className="warehouse-dispatch-search"
                 allowClear
                 prefix={<SearchOutlined />}
-                placeholder="搜索采购单 / 店铺"
+                placeholder="搜索发货单 / 店铺"
                 value={receiptKeyword}
                 onChange={(event) => setReceiptKeyword(event.target.value)}
               />
@@ -1153,12 +1183,12 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
                 pagination={RECEIPT_ITEM_TABLE_PAGINATION}
                 scroll={{ x: 1168 }}
                 locale={{
-                  emptyText: <Empty description={receiptConfirmKeyword ? '没有匹配的验收商品' : '当前采购单已无待验货商品'} />
+                  emptyText: <Empty description={receiptConfirmKeyword ? '没有匹配的验收商品' : '当前发货单已无待验货商品'} />
                 }}
               />
             </div>
           ) : (
-            <Empty className="warehouse-dispatch-empty" description="暂无采购单" />
+            <Empty className="warehouse-dispatch-empty" description="暂无发货单" />
           )}
         </div>
       )
@@ -1199,7 +1229,11 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
             pagination={READY_ITEM_TABLE_PAGINATION}
             rowSelection={{
               selectedRowKeys: selectedReadyItemIds,
-              onChange: (keys) => setSelectedReadyItemIds(keys.map(String))
+              onChange: (keys) => setSelectedReadyItemIds(keys.map(String)),
+              getCheckboxProps: (record) => ({
+                disabled: Boolean(record.logisticsQuoteBlocking),
+                title: record.logisticsQuoteBlocking ? '物流报价未确认或运营未提交发货' : undefined
+              })
             }}
             locale={{ emptyText: <Empty description="暂无已收货待发运商品" /> }}
           />
@@ -1278,7 +1312,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
         {renderSummaryGrid(
           [
             ['待处理', totalSummary.receiptTodoOrderCount],
-            ['全部采购单', totalSummary.orderCount],
+            ['全部发货单', totalSummary.orderCount],
             ['应收件数', totalSummary.expectedQty],
             ['已收件数', totalSummary.receivedQty],
             ['可发运', totalSummary.readyQty],
@@ -1511,7 +1545,7 @@ function renderReceiptOrderSummary(order: PurchaseReceiptOrder, summary?: Receip
   const safeSummary = summary ?? summarizeReceiptOrder(order)
   return (
     <div className="warehouse-dispatch-receipt-summary-card">
-      {renderReceiptSummaryItem('采购单', order.title || order.orderNo, true)}
+      {renderReceiptSummaryItem('发货单', order.title || order.orderNo, true)}
       {renderReceiptSummaryItem('应收总数', safeSummary.expectedQty)}
       {renderReceiptSummaryItem('当前已收', safeSummary.receivedQty)}
       {renderReceiptSummaryItem('可发运', safeSummary.readyQty)}
@@ -1695,6 +1729,7 @@ function renderReadySourceCell(item: ReadyShipmentRow, orderMetaById: Map<string
           </span>
           <span className="warehouse-dispatch-ready-source-meta">
             <Tag color="blue">{source.siteCode}</Tag>
+            {renderLogisticsQuoteStatus(source.logisticsQuoteStatus, source.logisticsShippingSubmitStatus)}
             <span className="warehouse-dispatch-source-qty">可发 {source.availableQty}</span>
             <span className="warehouse-dispatch-source-qty">原计划 {TRANSPORT_LABELS[source.plannedTransportMode]}</span>
           </span>
@@ -1702,6 +1737,26 @@ function renderReadySourceCell(item: ReadyShipmentRow, orderMetaById: Map<string
       ))}
     </div>
   )
+}
+
+function renderReadyQuoteCell(item: ReadyShipmentRow) {
+  const blockingCount = item.items.filter((source) => source.logisticsQuoteBlocking).length
+  return (
+    <Space direction="vertical" size={2}>
+      {renderLogisticsQuoteStatus(item.logisticsQuoteStatus, item.logisticsShippingSubmitStatus)}
+      {blockingCount ? <Text type="secondary">{blockingCount} 个来源待处理</Text> : null}
+    </Space>
+  )
+}
+
+function renderLogisticsQuoteStatus(quoteStatus?: string, shippingSubmitStatus?: string) {
+  if (quoteStatus !== 'CONFIRMED') {
+    return <Tag color="gold">待报价</Tag>
+  }
+  if (shippingSubmitStatus !== 'SUBMITTED') {
+    return <Tag color="orange">未提交发货</Tag>
+  }
+  return <Tag color="green">可装箱</Tag>
 }
 
 function renderReadyFulfillmentCell(item: ReadyShipmentRow) {
@@ -1977,6 +2032,12 @@ function mergeReadyShipmentRowsByProduct(items: ReadyShipmentRow[]) {
       current.items.push(...sourceItems)
       current.specStatus = current.specStatus === 'missing' || item.specStatus === 'missing' ? 'missing' : 'complete'
       current.transportMode = inferReadyDominantTransport(current.items)
+      current.logisticsQuoteBlocking = Boolean(current.logisticsQuoteBlocking || item.logisticsQuoteBlocking)
+      current.logisticsQuoteStatus = mergeReadyQuoteStatus(current.logisticsQuoteStatus, item.logisticsQuoteStatus)
+      current.logisticsShippingSubmitStatus = mergeReadyShippingSubmitStatus(
+        current.logisticsShippingSubmitStatus,
+        item.logisticsShippingSubmitStatus
+      )
       if (!hasCjkText(current.title) && hasCjkText(item.title)) {
         current.title = item.title
       }
@@ -2005,6 +2066,9 @@ function groupReadySources(items: ReadyShipmentItem[], orderMetaById: Map<string
       siteCode: WarehouseSiteCode
       plannedTransportMode: WarehouseTransportMode
       availableQty: number
+      logisticsQuoteStatus?: string
+      logisticsShippingSubmitStatus?: string
+      logisticsQuoteBlocking?: boolean
     }
   >()
   items.forEach((item) => {
@@ -2015,6 +2079,12 @@ function groupReadySources(items: ReadyShipmentItem[], orderMetaById: Map<string
     const current = sourceMap.get(key)
     if (current) {
       current.availableQty += item.availableQty
+      current.logisticsQuoteBlocking = Boolean(current.logisticsQuoteBlocking || item.logisticsQuoteBlocking)
+      current.logisticsQuoteStatus = mergeReadyQuoteStatus(current.logisticsQuoteStatus, item.logisticsQuoteStatus)
+      current.logisticsShippingSubmitStatus = mergeReadyShippingSubmitStatus(
+        current.logisticsShippingSubmitStatus,
+        item.logisticsShippingSubmitStatus
+      )
       return
     }
     sourceMap.set(key, {
@@ -2024,10 +2094,21 @@ function groupReadySources(items: ReadyShipmentItem[], orderMetaById: Map<string
       orderCreatedAt,
       siteCode: item.siteCode,
       plannedTransportMode: item.transportMode,
-      availableQty: item.availableQty
+      availableQty: item.availableQty,
+      logisticsQuoteStatus: item.logisticsQuoteStatus,
+      logisticsShippingSubmitStatus: item.logisticsShippingSubmitStatus,
+      logisticsQuoteBlocking: item.logisticsQuoteBlocking
     })
   })
   return Array.from(sourceMap.values())
+}
+
+function mergeReadyQuoteStatus(current?: string, next?: string) {
+  return current === 'PENDING_QUOTE' || next === 'PENDING_QUOTE' ? 'PENDING_QUOTE' : 'CONFIRMED'
+}
+
+function mergeReadyShippingSubmitStatus(current?: string, next?: string) {
+  return current === 'NOT_SUBMITTED' || next === 'NOT_SUBMITTED' ? 'NOT_SUBMITTED' : 'SUBMITTED'
 }
 
 function uniqueReadySiteCodes(item: ReadyShipmentRow) {

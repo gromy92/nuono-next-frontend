@@ -1,5 +1,5 @@
-import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
-import { Alert, Card, Spin } from 'antd';
+import type { ReactNode } from 'react';
+import { Alert, Card } from 'antd';
 import type { AuthSession } from '../auth/session';
 import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
@@ -7,163 +7,41 @@ import type { useProductManagementWorkspace } from '../product-management/usePro
 import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProfitCalculatorWorkspace';
 import type { StoreSyncOverviewState } from '../store-sync/types';
 import type { AppMenuKey } from './WorkspaceRouting';
+import {
+  AiFileParseBoard,
+  Ali1688CollectionPage,
+  Ali1688HistoricalOrdersPage,
+  Ali1688SkuPurchaseHistoryPage,
+  BusinessCalendarVersionLibraryPage,
+  CompetitorAnalysisPage,
+  ImageMatchPage,
+  InTransitGoodsPage,
+  LazyWorkspaceBoundary,
+  LifecycleVersionLibraryPage,
+  LogisticsQuoteBoard,
+  ManualSelectionPage,
+  MasterDataBoard,
+  NoonCallStoreDataPage,
+  NoonDataCompletenessPage,
+  NoonDataGapPatrolPage,
+  OfficialWarehouseWorkbenchPage,
+  OperationConfigSuiteVersionPage,
+  OrderFinancePage,
+  ProcurementRequirementConfirmationPage,
+  ProductGroupManagementPage,
+  ProductListingPage,
+  ProductManagementWorkspacePage,
+  ProductSpecsPage,
+  PurchaseOrderPage,
+  RoleManagementWorkspace,
+  SalesAnalyticsPage,
+  SalesForecastPage,
+  WarehouseDispatchWorkbenchPage,
+  WarehouseLogisticsBillPage,
+  WarehouseShippingOrderPage
+} from './ShellWorkspaceLazyComponents';
 import { workspaceMenuContentKind } from './WorkspaceMenuRegistry';
 import type { LoadStoreSyncOptions } from './useStoreSyncController';
-
-const DYNAMIC_IMPORT_RELOAD_KEY = 'nuono:dynamic-import-reload';
-
-function isDynamicImportLoadFailure(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error || '');
-  return message.includes('Failed to fetch dynamically imported module') || message.includes('Importing a module script failed');
-}
-
-function lazyWorkspace<T extends ComponentType<any>>(
-  loader: () => Promise<{ default: T }>
-) {
-  return lazy(() =>
-    loader()
-      .then((module) => {
-        if (typeof window !== 'undefined') {
-          window.sessionStorage.removeItem(DYNAMIC_IMPORT_RELOAD_KEY);
-        }
-        return module;
-      })
-      .catch((error) => {
-        if (
-          isDynamicImportLoadFailure(error) &&
-          typeof window !== 'undefined' &&
-          window.sessionStorage.getItem(DYNAMIC_IMPORT_RELOAD_KEY) !== '1'
-        ) {
-          window.sessionStorage.setItem(DYNAMIC_IMPORT_RELOAD_KEY, '1');
-          window.location.reload();
-        }
-        throw error;
-      })
-  );
-}
-
-const AiFileParseBoard = lazyWorkspace(() =>
-  import('../ai-file-parse/AiFileParseBoard').then((module) => ({ default: module.AiFileParseBoard }))
-);
-const LogisticsQuoteBoard = lazyWorkspace(() =>
-  import('../logistics-quote/LogisticsQuoteBoard').then((module) => ({ default: module.LogisticsQuoteBoard }))
-);
-const InTransitGoodsPage = lazyWorkspace(() =>
-  import('../in-transit-goods/InTransitGoodsPage').then((module) => ({ default: module.InTransitGoodsPage }))
-);
-const ManualSelectionPage = lazyWorkspace(() =>
-  import('../manual-selection/ManualSelectionPage').then((module) => ({ default: module.ManualSelectionPage }))
-);
-const Ali1688CollectionPage = lazyWorkspace(() =>
-  import('../ali1688-collection/Ali1688CollectionPage').then((module) => ({
-    default: module.Ali1688CollectionPage
-  }))
-);
-const Ali1688HistoricalOrdersPage = lazyWorkspace(() =>
-  import('../ali1688-historical-orders/Ali1688HistoricalOrdersPage').then((module) => ({
-    default: module.Ali1688HistoricalOrdersPage
-  }))
-);
-const Ali1688SkuPurchaseHistoryPage = lazyWorkspace(() =>
-  import('../ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage').then((module) => ({
-    default: module.Ali1688SkuPurchaseHistoryPage
-  }))
-);
-const ProductListingPage = lazyWorkspace(() =>
-  import('../product-listing/ProductListingPage').then((module) => ({
-    default: module.ProductListingPage
-  }))
-);
-const MasterDataBoard = lazyWorkspace(() =>
-  import('../master-data/MasterDataBoard').then((module) => ({ default: module.MasterDataBoard }))
-);
-const RoleManagementWorkspace = lazyWorkspace(() =>
-  import('../master-data/RoleManagementWorkspace').then((module) => ({ default: module.RoleManagementWorkspace }))
-);
-const ProductManagementWorkspacePage = lazyWorkspace(() =>
-  import('../product-management/ProductManagementWorkspacePage').then((module) => ({
-    default: module.ProductManagementWorkspacePage
-  }))
-);
-const ProductGroupManagementPage = lazyWorkspace(() =>
-  import('../product-management/groups/ProductGroupManagementPage').then((module) => ({
-    default: module.ProductGroupManagementPage
-  }))
-);
-const ProductSpecsPage = lazyWorkspace(() =>
-  import('../product-specs/ProductSpecsPage').then((module) => ({
-    default: module.ProductSpecsPage
-  }))
-);
-const ImageMatchPage = lazyWorkspace(() =>
-  import('../image-match/ImageMatchPage').then((module) => ({
-    default: module.ImageMatchPage
-  }))
-);
-const PurchaseOrderPage = lazyWorkspace(() =>
-  import('../purchase-order/PurchaseOrderPage').then((module) => ({
-    default: module.PurchaseOrderPage
-  }))
-);
-const WarehouseDispatchWorkbenchPage = lazyWorkspace(() =>
-  import('../warehouse-dispatch/WarehouseDispatchWorkbenchPage').then((module) => ({
-    default: module.WarehouseDispatchWorkbenchPage
-  }))
-);
-const OfficialWarehouseWorkbenchPage = lazyWorkspace(() =>
-  import('../official-warehouse/OfficialWarehouseWorkbenchPage').then((module) => ({
-    default: module.OfficialWarehouseWorkbenchPage
-  }))
-);
-const ProcurementRequirementConfirmationPage = lazyWorkspace(() =>
-  import('../procurement-confirmation/ProcurementRequirementConfirmationPage').then((module) => ({
-    default: module.ProcurementRequirementConfirmationPage
-  }))
-);
-const NoonCallStoreDataPage = lazyWorkspace(() =>
-  import('../system-reports/NoonCallStoreDataPage').then((module) => ({
-    default: module.NoonCallStoreDataPage
-  }))
-);
-const NoonDataCompletenessPage = lazyWorkspace(() =>
-  import('../system-reports/NoonDataCompletenessPage').then((module) => ({
-    default: module.NoonDataCompletenessPage
-  }))
-);
-const NoonDataGapPatrolPage = lazyWorkspace(() =>
-  import('../system-reports/NoonDataGapPatrolPage').then((module) => ({
-    default: module.NoonDataGapPatrolPage
-  }))
-);
-const SalesAnalyticsPage = lazyWorkspace(() =>
-  import('../sales-analytics/SalesAnalyticsPage').then((module) => ({ default: module.SalesAnalyticsPage }))
-);
-const OrderFinancePage = lazyWorkspace(() =>
-  import('../order-finance/OrderFinancePage').then((module) => ({ default: module.OrderFinancePage }))
-);
-const SalesForecastPage = lazyWorkspace(() =>
-  import('../sales-forecast/SalesForecastPage').then((module) => ({ default: module.SalesForecastPage }))
-);
-const CompetitorAnalysisPage = lazyWorkspace(() =>
-  import('../competitor-analysis/CompetitorAnalysisPage').then((module) => ({
-    default: module.CompetitorAnalysisPage
-  }))
-);
-const OperationConfigSuiteVersionPage = lazyWorkspace(() =>
-  import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
-    default: module.OperationConfigSuiteVersionPage
-  }))
-);
-const BusinessCalendarVersionLibraryPage = lazyWorkspace(() =>
-  import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
-    default: module.BusinessCalendarVersionLibraryPage
-  }))
-);
-const LifecycleVersionLibraryPage = lazyWorkspace(() =>
-  import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
-    default: module.LifecycleVersionLibraryPage
-  }))
-);
 
 type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
 
@@ -193,18 +71,6 @@ type ShellWorkspaceContentProps = {
   onStoreRefresh: (ownerId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   onRoleManagementDataChanged: (source?: 'store-management') => void;
 };
-
-function WorkspaceLoadingFallback() {
-  return (
-    <Card variant="borderless" style={{ boxShadow: 'none', background: '#ffffff' }}>
-      <Spin size="small" />
-    </Card>
-  );
-}
-
-function LazyWorkspaceBoundary({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<WorkspaceLoadingFallback />}>{children}</Suspense>;
-}
 
 export function ShellWorkspaceContent({
   activeMenuKey,
@@ -362,7 +228,20 @@ export function ShellWorkspaceContent({
       </LazyWorkspaceBoundary>
     );
   }
-
+  if (activeContentKind === 'warehouse-shipping-order') {
+    return (
+      <LazyWorkspaceBoundary>
+        <WarehouseShippingOrderPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+  if (activeContentKind === 'warehouse-logistics-bill') {
+    return (
+      <LazyWorkspaceBoundary>
+        <WarehouseLogisticsBillPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
   if (activeContentKind === 'warehouse-dispatch') {
     return (
       <LazyWorkspaceBoundary>

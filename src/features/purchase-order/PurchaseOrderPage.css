@@ -33,6 +33,53 @@
   font-size: 12px;
 }
 
+.purchase-order-shipping-link.ant-btn {
+  height: 32px;
+  border-color: #2563eb;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.purchase-order-shipping-merge-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #eff6ff;
+}
+
+.purchase-order-shipping-merge-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.purchase-order-shipping-merge-alert.ant-alert {
+  padding: 4px 6px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.purchase-order-shipping-merge-alert .ant-alert-message {
+  font-size: 12px;
+}
+
+.purchase-order-shipping-merge-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.purchase-order-shipping-merge-actions .ant-btn {
+  height: 26px;
+  padding-inline: 6px;
+  font-size: 12px;
+}
+
 .purchase-order-workbench,
 .purchase-order-items {
   padding: 8px;
@@ -52,8 +99,24 @@
   box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
 }
 
+.purchase-order-card.is-merge-selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: inset 0 0 0 1px #2563eb;
+}
+
+.purchase-order-card.is-merge-disabled {
+  background: #f8fafc;
+}
+
 .purchase-order-card-select {
   padding: 6px 7px;
+}
+
+.purchase-order-card.is-merge-mode .purchase-order-card-select {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 .purchase-order-card-top {
@@ -74,6 +137,37 @@
   margin: 0;
   color: #0f172a;
   font-size: 13px;
+  line-height: 18px;
+}
+
+.purchase-order-merge-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 24px;
+  padding: 3px 5px;
+  border: 1px solid #dbeafe;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.purchase-order-merge-checkbox.ant-checkbox-wrapper {
+  margin-inline-start: 0;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.purchase-order-merge-checkbox .ant-checkbox {
+  transform: scale(1.15);
+}
+
+.purchase-order-merge-status.ant-tag {
+  margin-inline-end: 0;
+  padding-inline: 5px;
+  font-size: 11px;
   line-height: 18px;
 }
 

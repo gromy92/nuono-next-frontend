@@ -12,6 +12,8 @@ export type AppMenuKey =
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'purchase-in-transit-goods'
+  | 'warehouse-shipping-order'
+  | 'warehouse-logistics-bill'
   | 'warehouse-dispatch'
   | 'official-warehouse'
   | 'operations-competitor-analysis'
@@ -77,6 +79,8 @@ export type WorkspaceContentKind =
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'purchase-in-transit-goods'
+  | 'warehouse-shipping-order'
+  | 'warehouse-logistics-bill'
   | 'warehouse-dispatch'
   | 'official-warehouse'
   | 'operations-competitor-analysis'
@@ -260,6 +264,26 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '采购 / 在途商品',
     tabLabel: '在途商品',
     contentKind: 'purchase-in-transit-goods',
+    closable: true
+  },
+  'warehouse-shipping-order': {
+    key: 'warehouse-shipping-order',
+    label: '发货单',
+    path: '/warehouse/shipping-orders',
+    sectionKey: 'warehouse',
+    pathLabel: '仓储 / 发货单',
+    tabLabel: '发货单',
+    contentKind: 'warehouse-shipping-order',
+    closable: true
+  },
+  'warehouse-logistics-bill': {
+    key: 'warehouse-logistics-bill',
+    label: '物流账单',
+    path: '/warehouse/logistics-bills',
+    sectionKey: 'warehouse',
+    pathLabel: '仓储 / 物流账单',
+    tabLabel: '物流账单',
+    contentKind: 'warehouse-logistics-bill',
     closable: true
   },
   'warehouse-dispatch': {
@@ -499,6 +523,8 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     label: '仓储',
     iconKey: 'warehouse',
     entries: [
+      { type: 'workspace', key: 'warehouse-shipping-order' },
+      { type: 'workspace', key: 'warehouse-logistics-bill' },
       { type: 'workspace', key: 'warehouse-dispatch' },
       { type: 'workspace', key: 'official-warehouse' }
     ]
@@ -670,10 +696,29 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['在途商品', '在途物流', '在途物流信息']
   },
   {
-    keys: ['warehouse-dispatch', 'official-warehouse', 'product-specs'],
-    urlPaths: ['/warehouse/dispatch', '/warehouse/official-warehouse', '/warehouse/official-warehouse-stock', '/storage/warehouse'],
+    keys: ['warehouse-shipping-order', 'warehouse-logistics-bill', 'warehouse-dispatch', 'official-warehouse', 'product-specs'],
+    urlPaths: [
+      '/warehouse/shipping-orders',
+      '/warehouse/logistics-bills',
+      '/warehouse/dispatch',
+      '/warehouse/official-warehouse',
+      '/warehouse/official-warehouse-stock',
+      '/storage/warehouse'
+    ],
     urlPathPrefixes: ['/api/warehouse/dispatch', '/api/warehouse/official-warehouse'],
-    menuNames: ['仓库发运', '仓储发运', '采购收货', '发运计划', 'Noon官方仓', 'FBN抢仓', '约仓看板', '官方仓库存']
+    menuNames: [
+      '发货单',
+      '仓库发货单',
+      '物流账单',
+      '仓库发运',
+      '仓储发运',
+      '采购收货',
+      '发运计划',
+      'Noon官方仓',
+      'FBN抢仓',
+      '约仓看板',
+      '官方仓库存'
+    ]
   },
   {
     keys: ['operations-competitor-analysis'],
@@ -745,6 +790,8 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-in-transit-goods',
   'purchase-profit',
   'purchase-logistics-quote',
+  'warehouse-shipping-order',
+  'warehouse-logistics-bill',
   'warehouse-dispatch',
   'official-warehouse',
   'operations-competitor-analysis',

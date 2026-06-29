@@ -12,6 +12,7 @@
     "layout:overflow-smoke": "node scripts/layout_overflow_smoke.mjs",
     "product-baseline:display-contract": "node scripts/product_baseline_display_contract.mjs",
     "product:workspace-smoke": "node scripts/product_workspace_smoke.mjs",
+    "warehouse:logistics-quote-contract": "node scripts/warehouse_dispatch_logistics_quote_contract_check.mjs",
     "product-management:08-smoke": "node scripts/product_management_08_api_smoke.mjs",
     "product-management:10-page-acceptance": "node scripts/product_management_10_page_acceptance.mjs",
     "procurement:dual-channel-smoke": "node scripts/procurement_dual_channel_smoke.mjs",

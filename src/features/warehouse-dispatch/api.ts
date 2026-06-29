@@ -62,6 +62,9 @@ type ApiReadyItem = {
   fulfillmentType?: string
   specStatus?: string
   availableQuantity?: number
+  logisticsQuoteStatus?: string
+  logisticsShippingSubmitStatus?: string
+  logisticsQuoteBlocking?: boolean
   sources?: ApiReadySource[]
 }
 
@@ -76,6 +79,9 @@ type ApiReadySource = {
   purchaseOrderItemSiteId?: number
   plannedTransportMode?: string
   availableQuantity?: number
+  logisticsQuoteStatus?: string
+  logisticsShippingSubmitStatus?: string
+  logisticsQuoteBlocking?: boolean
 }
 
 type ApiDispatchPlan = {
@@ -216,9 +222,21 @@ function mapReadyItem(item: ApiReadyItem): ReadyShipmentRow {
       plannedQty: 0,
       specStatus,
       availableQty,
-      fulfillmentBalanceId: source.fulfillmentBalanceId
+      fulfillmentBalanceId: source.fulfillmentBalanceId,
+      logisticsQuoteStatus: normalizeLogisticsQuoteStatus(source.logisticsQuoteStatus || item.logisticsQuoteStatus),
+      logisticsShippingSubmitStatus: normalizeLogisticsShippingSubmitStatus(
+        source.logisticsShippingSubmitStatus || item.logisticsShippingSubmitStatus
+      ),
+      logisticsQuoteBlocking: Boolean(source.logisticsQuoteBlocking ?? item.logisticsQuoteBlocking)
     }
   })
+  const logisticsQuoteValues = sourceItems.length
+    ? sourceItems.map((source) => source.logisticsQuoteStatus)
+    : [item.logisticsQuoteStatus]
+  const logisticsShippingValues = sourceItems.length
+    ? sourceItems.map((source) => source.logisticsShippingSubmitStatus)
+    : [item.logisticsShippingSubmitStatus]
+  const logisticsQuoteBlocking = Boolean(item.logisticsQuoteBlocking || sourceItems.some((source) => source.logisticsQuoteBlocking))
   return {
     id: rowId,
     orderId: '',
@@ -235,6 +253,9 @@ function mapReadyItem(item: ApiReadyItem): ReadyShipmentRow {
     plannedQty: 0,
     specStatus,
     availableQty: Number(item.availableQuantity || 0),
+    logisticsQuoteStatus: mergeLogisticsQuoteStatus(logisticsQuoteValues),
+    logisticsShippingSubmitStatus: mergeLogisticsShippingSubmitStatus(logisticsShippingValues),
+    logisticsQuoteBlocking,
     items: sourceItems
   }
 }
@@ -321,6 +342,24 @@ function normalizeFulfillmentType(value?: string): WarehouseFulfillmentType {
 function normalizeSpecStatus(value?: string): ProductSpecStatus {
   const normalized = String(value || '').toUpperCase()
   return normalized === 'SPEC_MISSING' || normalized === 'MISSING' ? 'missing' : 'complete'
+}
+
+function normalizeLogisticsQuoteStatus(value?: string) {
+  return String(value || '').toUpperCase() === 'CONFIRMED' ? 'CONFIRMED' : 'PENDING_QUOTE'
+}
+
+function normalizeLogisticsShippingSubmitStatus(value?: string) {
+  return String(value || '').toUpperCase() === 'SUBMITTED' ? 'SUBMITTED' : 'NOT_SUBMITTED'
+}
+
+function mergeLogisticsQuoteStatus(values: Array<string | undefined>) {
+  return values.some((value) => normalizeLogisticsQuoteStatus(value) !== 'CONFIRMED') ? 'PENDING_QUOTE' : 'CONFIRMED'
+}
+
+function mergeLogisticsShippingSubmitStatus(values: Array<string | undefined>) {
+  return values.some((value) => normalizeLogisticsShippingSubmitStatus(value) !== 'SUBMITTED')
+    ? 'NOT_SUBMITTED'
+    : 'SUBMITTED'
 }
 
 function normalizeDispatchStatus(value?: string): DispatchPlanStatus {

@@ -23,6 +23,8 @@ import {
   PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH,
   PURCHASE_IN_TRANSIT_GOODS_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
+  WAREHOUSE_LOGISTICS_BILL_PATH,
+  WAREHOUSE_SHIPPING_ORDER_PATH,
   WAREHOUSE_DISPATCH_PATH,
   OFFICIAL_WAREHOUSE_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
@@ -145,6 +147,7 @@ function readDevSessionOverride(): AuthSession | null {
     pathname.startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
     search.get('grantLogisticsQuote') === '1'
   const includeWarehouseDevMenu =
+    pathname.startsWith(WAREHOUSE_SHIPPING_ORDER_PATH) ||
     pathname.startsWith(WAREHOUSE_DISPATCH_PATH) ||
     pathname.startsWith(OFFICIAL_WAREHOUSE_PATH) ||
     search.get('grantWarehouse') === '1'
@@ -332,8 +335,10 @@ function readDevSessionOverride(): AuthSession | null {
     grantedMenus.push({ menuId: 9201, menuName: '货代管理', urlPath: PURCHASE_LOGISTICS_QUOTE_PATH })
   }
   if (includeWarehouseDevMenu) {
-    grantedMenus.push({ menuId: 9251, menuName: '仓库发运', urlPath: WAREHOUSE_DISPATCH_PATH })
-    grantedMenus.push({ menuId: 9252, menuName: 'Noon官方仓', urlPath: OFFICIAL_WAREHOUSE_PATH })
+    grantedMenus.push({ menuId: 9250, menuName: '仓库发货单', urlPath: WAREHOUSE_SHIPPING_ORDER_PATH })
+    grantedMenus.push({ menuId: 9251, menuName: '物流账单', urlPath: WAREHOUSE_LOGISTICS_BILL_PATH })
+    grantedMenus.push({ menuId: 9252, menuName: '仓库发运', urlPath: WAREHOUSE_DISPATCH_PATH })
+    grantedMenus.push({ menuId: 9253, menuName: 'Noon官方仓', urlPath: OFFICIAL_WAREHOUSE_PATH })
   }
   if (includeSystemReportsDevMenu) {
     grantedMenus.push({ menuId: 9600, menuName: '系统报表', urlPath: NOON_CALL_STORE_DATA_PATH })
