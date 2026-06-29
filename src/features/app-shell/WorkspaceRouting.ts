@@ -21,6 +21,7 @@ export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
+export const OFFICIAL_WAREHOUSE_PATH = workspaceMenuPath('official-warehouse')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
 export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
@@ -74,6 +75,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantAiFileParse',
   'grantFileManagement',
   'grantLogisticsQuote',
+  'grantWarehouse',
   'grantManualSelection',
   'grantImageMatch',
   'grantPurchase',
@@ -82,7 +84,10 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantSystemReports',
   'grantOperationsConfig',
   'grantRoleAssignment',
-  'grantSystemRole'
+  'grantSystemRole',
+  'devStore',
+  'devSite',
+  'preserveDevStore'
 ])
 
 export function withCurrentWorkspaceDevQuery(path: string) {
@@ -251,6 +256,7 @@ export function resolveSessionLandingMenuKey(
         'operations-lifecycle-rules',
         'product-manual-selection',
         'product-specs',
+        'official-warehouse',
         'product-manage'
       ] as AppMenuKey[])
     : isBossManagementSession(session)
@@ -262,6 +268,7 @@ export function resolveSessionLandingMenuKey(
           'product-specs',
           'purchase-profit',
           'purchase-logistics-quote',
+          'official-warehouse',
           'data-sales-analysis',
           'data-sales-forecast',
           'noon-call-store-data',
@@ -279,6 +286,7 @@ export function resolveSessionLandingMenuKey(
           'user-role',
           'purchase-profit',
           'purchase-logistics-quote',
+          'official-warehouse',
           'data-sales-analysis',
           'data-sales-forecast',
           'noon-call-store-data',

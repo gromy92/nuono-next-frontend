@@ -17,6 +17,7 @@ import {
   DATA_ACTIVITY_CONFIG_PATH,
   OPERATIONS_LIFECYCLE_RULES_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
+  OFFICIAL_WAREHOUSE_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
 } from './WorkspaceRouting'
 
@@ -43,6 +44,57 @@ function shouldSkipStoredSessionRestore() {
   }
 
   return currentAppPathname().startsWith('/login')
+}
+
+function readStoredCurrentStore() {
+  try {
+    const rawValue = window.localStorage.getItem(SESSION_STORAGE_KEY)
+    if (!rawValue) {
+      return null
+    }
+    const storedSession = JSON.parse(rawValue) as AuthSession
+    return storedSession.currentStore ?? null
+  } catch {
+    return null
+  }
+}
+
+function resolveDevCurrentStore(
+  devStores: AuthSessionStore[],
+  options: { restoreStored?: boolean; storeCode?: string | null; siteCode?: string | null } = {}
+) {
+  const requestedStoreCode = options.storeCode?.trim()
+  const requestedSiteCode = options.siteCode?.trim().toUpperCase()
+  if (requestedStoreCode) {
+    return (
+      devStores.find(
+        (store) =>
+          store.storeCode === requestedStoreCode &&
+          (!requestedSiteCode || String(store.site || '').toUpperCase() === requestedSiteCode)
+      ) ??
+      devStores.find((store) => store.storeCode === requestedStoreCode) ??
+      devStores[0]
+    )
+  }
+
+  if (!options.restoreStored) {
+    return devStores[0]
+  }
+
+  const storedCurrentStore = readStoredCurrentStore()
+  if (!storedCurrentStore?.storeCode) {
+    return devStores[0]
+  }
+
+  return (
+    devStores.find(
+      (store) =>
+        store.storeCode === storedCurrentStore.storeCode &&
+        String(store.site || '') === String(storedCurrentStore.site || '')
+    ) ??
+    devStores.find((store) => store.storeCode === storedCurrentStore.storeCode) ??
+    devStores[0]
+  )
 }
 
 function readDevSessionOverride(): AuthSession | null {
@@ -77,6 +129,9 @@ function readDevSessionOverride(): AuthSession | null {
   const includeLogisticsQuoteDevMenu =
     pathname.startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
     search.get('grantLogisticsQuote') === '1'
+  const includeWarehouseDevMenu =
+    pathname.startsWith(OFFICIAL_WAREHOUSE_PATH) ||
+    search.get('grantWarehouse') === '1'
   const includeSystemReportsDevMenu =
     pathname.startsWith(NOON_CALL_STORE_DATA_PATH) ||
     pathname.startsWith(SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH) ||
@@ -190,6 +245,9 @@ function readDevSessionOverride(): AuthSession | null {
   if (includeLogisticsQuoteDevMenu) {
     grantedMenus.push({ menuId: 9201, menuName: '货代管理', urlPath: PURCHASE_LOGISTICS_QUOTE_PATH })
   }
+  if (includeWarehouseDevMenu) {
+    grantedMenus.push({ menuId: 9302, menuName: 'Noon官方仓', urlPath: OFFICIAL_WAREHOUSE_PATH })
+  }
   if (includeSystemReportsDevMenu) {
     grantedMenus.push({ menuId: 9600, menuName: '系统报表', urlPath: NOON_CALL_STORE_DATA_PATH })
     grantedMenus.push({ menuId: 9602, menuName: '数据完整度', urlPath: SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH })
@@ -223,7 +281,11 @@ function readDevSessionOverride(): AuthSession | null {
     bindingStatus: 'PROJECT_BOUND',
     defaultOwnerUserId: useBossDevSession ? 307 : 10002,
     activeRoleView: useBossDevSession ? 'boss' : undefined,
-    currentStore: devStores[0],
+    currentStore: resolveDevCurrentStore(devStores, {
+      restoreStored: search.get('preserveDevStore') === '1',
+      storeCode: search.get('devStore'),
+      siteCode: search.get('devSite')
+    }),
     userStores: devStores,
     grantedMenus
   }

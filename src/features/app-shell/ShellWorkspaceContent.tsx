@@ -83,6 +83,11 @@ const ImageMatchPage = lazyWorkspace(() =>
 const ProcurementWorkspace = lazyWorkspace(() =>
   import('../procurement/ProcurementWorkspace').then((module) => ({ default: module.ProcurementWorkspace }))
 );
+const OfficialWarehouseWorkbenchPage = lazyWorkspace(() =>
+  import('../official-warehouse/OfficialWarehouseWorkbenchPage').then((module) => ({
+    default: module.OfficialWarehouseWorkbenchPage
+  }))
+);
 const ProcurementRequirementConfirmationPage = lazyWorkspace(() =>
   import('../procurement-confirmation/ProcurementRequirementConfirmationPage').then((module) => ({
     default: module.ProcurementRequirementConfirmationPage
@@ -270,6 +275,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <LogisticsQuoteBoard />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'official-warehouse') {
+    return (
+      <LazyWorkspaceBoundary>
+        <OfficialWarehouseWorkbenchPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

@@ -8,6 +8,7 @@ export type AppMenuKey =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'official-warehouse'
   | 'data-sales-analysis'
   | 'data-order-analysis'
   | 'data-sales-forecast'
@@ -64,6 +65,7 @@ export type WorkspaceContentKind =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'official-warehouse'
   | 'sales-analytics'
   | 'order-finance'
   | 'sales-forecast'
@@ -205,6 +207,17 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     tabLabel: '货代管理',
     contentKind: 'purchase-logistics-quote',
     closable: true
+  },
+  'official-warehouse': {
+    key: 'official-warehouse',
+    label: 'Noon官方仓',
+    path: '/warehouse/official-warehouse',
+    sectionKey: 'warehouse',
+    pathLabel: '仓储 / Noon官方仓',
+    tabLabel: 'Noon官方仓',
+    contentKind: 'official-warehouse',
+    closable: true,
+    routeAliases: ['/warehouse/fbn', '/storage/warehouse', '/warehouse/official-warehouse-stock']
   },
   'data-sales-analysis': {
     key: 'data-sales-analysis',
@@ -409,7 +422,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     key: 'warehouse',
     label: '仓储',
     iconKey: 'warehouse',
-    entries: [{ type: 'placeholder', key: 'warehouse-fbn', label: 'FBN抢仓', disabled: true }]
+    entries: [{ type: 'workspace', key: 'official-warehouse' }]
   },
   {
     key: 'campaign',
@@ -553,6 +566,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
+    keys: ['official-warehouse', 'product-specs'],
+    urlPaths: ['/warehouse/official-warehouse', '/warehouse/official-warehouse-stock', '/storage/warehouse'],
+    urlPathPrefixes: ['/api/warehouse/official-warehouse'],
+    menuNames: ['Noon官方仓', 'FBN抢仓', '约仓看板', '官方仓库存']
+  },
+  {
     keys: ['data-sales-analysis', 'data-order-analysis', 'data-sales-forecast'],
     urlPaths: [
       '/data/sales-analysis',
@@ -612,6 +631,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-order',
   'purchase-profit',
   'purchase-logistics-quote',
+  'official-warehouse',
   'data-sales-analysis',
   'data-order-analysis',
   'data-sales-forecast',
