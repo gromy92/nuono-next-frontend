@@ -281,7 +281,7 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     tabLabel: 'Noon官方仓',
     contentKind: 'official-warehouse',
     closable: true,
-    routeAliases: ['/warehouse/fbn', '/storage/warehouse']
+    routeAliases: ['/warehouse/fbn', '/storage/warehouse', '/warehouse/official-warehouse-stock']
   },
   'operations-competitor-analysis': {
     key: 'operations-competitor-analysis',
@@ -671,9 +671,9 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
   },
   {
     keys: ['warehouse-dispatch', 'official-warehouse', 'product-specs'],
-    urlPaths: ['/warehouse/dispatch', '/warehouse/official-warehouse', '/storage/warehouse'],
+    urlPaths: ['/warehouse/dispatch', '/warehouse/official-warehouse', '/warehouse/official-warehouse-stock', '/storage/warehouse'],
     urlPathPrefixes: ['/api/warehouse/dispatch', '/api/warehouse/official-warehouse'],
-    menuNames: ['仓库发运', '仓储发运', '采购收货', '发运计划', 'Noon官方仓', 'FBN抢仓', '约仓看板']
+    menuNames: ['仓库发运', '仓储发运', '采购收货', '发运计划', 'Noon官方仓', 'FBN抢仓', '约仓看板', '官方仓库存']
   },
   {
     keys: ['operations-competitor-analysis'],

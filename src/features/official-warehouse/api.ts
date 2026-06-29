@@ -34,6 +34,7 @@ export type OfficialWarehouseProductCandidate = {
   woodenMaterialType?: string
   bladeWeaponType?: string
   manualConfirmRequired?: boolean
+  batchAvailableQuantity?: number
   missingTags?: string[]
 }
 
@@ -65,6 +66,57 @@ export type OfficialWarehouseAsnLine = {
   replToolAsn?: boolean
   lineStatus: string
   errorMessage?: string
+  shippingBatchLinks?: OfficialWarehouseAsnShippingBatchLink[]
+}
+
+export type OfficialWarehouseShippingBatchCandidate = {
+  id: string
+  sourceKind?: string
+  batchNo: string
+  trackingNo?: string
+  externalShipmentNo?: string
+  forwarderName?: string
+  transportMode?: string
+  status: string
+  latestNodeStatus?: string
+  selectedOptionId?: string
+  totalQuantity?: number
+  storeSiteQuantity?: number
+  linkedQuantity?: number
+  remainingQuantity?: number
+  skuCount?: number
+  purchaseOrderCount?: number
+  updatedAt?: string
+}
+
+export type OfficialWarehouseAsnShippingBatchLink = {
+  id: string
+  asnId?: string
+  asnLineId?: string
+  shippingBatchId?: string
+  shippingBatchNo?: string
+  shippingBatchSourceId?: string
+  inTransitBatchId?: string
+  batchReferenceNo?: string
+  trackingNo?: string
+  externalShipmentNo?: string
+  forwarderName?: string
+  transportMode?: string
+  latestNodeStatus?: string
+  inTransitGoodsLineId?: string
+  fulfillmentBalanceId?: string
+  purchaseOrderId?: string
+  purchaseOrderNo?: string
+  purchaseOrderItemId?: string
+  purchaseOrderItemSiteId?: string
+  productMasterId?: string
+  productVariantId?: string
+  partnerSku?: string
+  pskuCode?: string
+  quantity?: number
+  relationStatus?: string
+  relationBasis?: string
+  createdAt?: string
 }
 
 export type OfficialWarehouseRoutingWarehouse = {
@@ -105,6 +157,7 @@ export type OfficialWarehouseAsn = {
   updatedAt?: string
   routingWarehouses?: OfficialWarehouseRoutingWarehouse[]
   lines?: OfficialWarehouseAsnLine[]
+  shippingBatchLinks?: OfficialWarehouseAsnShippingBatchLink[]
   appointment?: OfficialWarehouseAppointment
 }
 
@@ -176,6 +229,7 @@ export type CreateOfficialWarehouseAsnPayload = {
   storeCode: string
   siteCode: string
   sourceType?: string
+  shippingBatchIds?: string[]
   lines: Array<{
     productVariantId: number
     productSiteOfferId?: number
@@ -241,6 +295,7 @@ type CandidateFilters = {
   storeCode: string
   siteCode: string
   keyword?: string
+  shippingBatchIds?: string[]
 }
 
 export async function loadOfficialWarehouseAsns(filters: AsnFilters = {}) {
@@ -273,8 +328,18 @@ export async function loadOfficialWarehouseCandidates(filters: CandidateFilters)
   appendParam(params, 'storeCode', filters.storeCode)
   appendParam(params, 'siteCode', filters.siteCode)
   appendParam(params, 'keyword', filters.keyword)
+  filters.shippingBatchIds?.forEach((id) => appendParam(params, 'shippingBatchIds', id))
   const response = await apiFetch(`/api/warehouse/official-warehouse/product-candidates?${params.toString()}`)
   return parseApiResponse<OfficialWarehouseProductCandidate[]>(response, '读取可创建 ASN 商品失败')
+}
+
+export async function loadOfficialWarehouseShippingBatches(filters: CandidateFilters) {
+  const params = new URLSearchParams()
+  appendParam(params, 'storeCode', filters.storeCode)
+  appendParam(params, 'siteCode', filters.siteCode)
+  appendParam(params, 'keyword', filters.keyword)
+  const response = await apiFetch(`/api/warehouse/official-warehouse/shipping-batches?${params.toString()}`)
+  return parseApiResponse<OfficialWarehouseShippingBatchCandidate[]>(response, '读取物流批次失败')
 }
 
 export async function createOfficialWarehouseAsn(payload: CreateOfficialWarehouseAsnPayload) {
@@ -393,6 +458,6 @@ export function officialWarehouseError(error: unknown, fallback: string) {
 
 function appendParam(params: URLSearchParams, key: string, value?: string) {
   if (value?.trim()) {
-    params.set(key, value.trim())
+    params.append(key, value.trim())
   }
 }

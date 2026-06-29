@@ -182,6 +182,13 @@
   line-height: 20px;
 }
 
+.official-warehouse-identity .ant-tag,
+.official-warehouse-stack .ant-tag {
+  align-self: flex-start;
+  width: auto;
+  max-width: 100%;
+}
+
 .official-warehouse-actions {
   max-width: 100%;
 }
@@ -202,6 +209,10 @@
   background: #f8fafc;
 }
 
+.official-warehouse-delivery-time {
+  color: #666;
+}
+
 .official-warehouse-modal-body {
   display: flex;
   flex-direction: column;
@@ -214,6 +225,29 @@
 
 .official-warehouse-modal-toolbar .official-warehouse-search {
   width: 360px;
+}
+
+.official-warehouse-shipping-picker {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.official-warehouse-shipping-picker-header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.official-warehouse-batch-search {
+  width: 220px;
 }
 
 .official-warehouse-modal-body .ant-select,
@@ -236,6 +270,35 @@
   min-width: 0;
   flex-direction: column;
   gap: 12px;
+}
+
+.official-warehouse-link-summary {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.official-warehouse-link-summary-list {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.official-warehouse-link-summary-item {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid #dbeafe;
+  border-radius: 6px;
+  background: #ffffff;
 }
 
 .official-warehouse-appointment-form {
@@ -421,6 +484,17 @@
 .official-warehouse-image-placeholder {
   border: 1px solid #e2e8f0;
   background: #f8fafc;
+}
+
+.official-warehouse-product-cell--candidate {
+  grid-template-columns: 60px minmax(0, 1fr);
+}
+
+.official-warehouse-product-cell--candidate .ant-image,
+.official-warehouse-product-cell--candidate .ant-image-img,
+.official-warehouse-product-cell--candidate .official-warehouse-image-placeholder {
+  width: 60px;
+  height: 60px;
 }
 
 .official-warehouse-code-line {

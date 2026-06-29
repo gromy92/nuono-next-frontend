@@ -66,7 +66,24 @@ function readStoredCurrentStore() {
   }
 }
 
-function resolveDevCurrentStore(devStores: AuthSessionStore[], options: { restoreStored?: boolean } = {}) {
+function resolveDevCurrentStore(
+  devStores: AuthSessionStore[],
+  options: { restoreStored?: boolean; storeCode?: string | null; siteCode?: string | null } = {}
+) {
+  const requestedStoreCode = options.storeCode?.trim()
+  const requestedSiteCode = options.siteCode?.trim().toUpperCase()
+  if (requestedStoreCode) {
+    return (
+      devStores.find(
+        (store) =>
+          store.storeCode === requestedStoreCode &&
+          (!requestedSiteCode || String(store.site || '').toUpperCase() === requestedSiteCode)
+      ) ??
+      devStores.find((store) => store.storeCode === requestedStoreCode) ??
+      devStores[0]
+    )
+  }
+
   if (!options.restoreStored) {
     return devStores[0]
   }
@@ -398,7 +415,11 @@ function readDevSessionOverride(): AuthSession | null {
                 companyName: 'Nuono',
                 level: 0
               };
-  const currentStore = resolveDevCurrentStore(devStores, { restoreStored: search.get('preserveDevStore') === '1' })
+  const currentStore = resolveDevCurrentStore(devStores, {
+    restoreStored: search.get('preserveDevStore') === '1',
+    storeCode: search.get('devStore'),
+    siteCode: search.get('devSite')
+  })
 
   return {
     userId: devProfile.userId,

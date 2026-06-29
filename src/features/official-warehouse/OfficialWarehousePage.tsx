@@ -42,6 +42,7 @@ import {
   loadOfficialWarehouseAppointments,
   loadOfficialWarehouseAsns,
   loadOfficialWarehouseCandidates,
+  loadOfficialWarehouseShippingBatches,
   officialWarehouseError,
   queryOfficialWarehouseAppointmentAvailability,
   runOfficialWarehouseAppointmentOnce,
@@ -55,6 +56,7 @@ import {
   type OfficialWarehouseAppointmentAvailability,
   type OfficialWarehouseProductCandidate,
   type OfficialWarehouseRoutingWarehouse,
+  type OfficialWarehouseShippingBatchCandidate,
   type UpsertOfficialWarehouseAppointmentPayload
 } from './api'
 import {
@@ -68,6 +70,9 @@ import {
   officialWarehousePublicAsnNo
 } from './domain'
 import { printFbnTransferPdf } from './printFbnTransferPdf'
+import { loadOfficialWarehouseInboundStatistics } from './statisticsApi'
+import { inboundStageLabel } from './statisticsDomain'
+import type { OfficialWarehouseInboundStatisticsRow } from './statisticsTypes'
 import './OfficialWarehousePage.css'
 
 const { Text } = Typography
@@ -135,6 +140,35 @@ function formatCubicFeet(value?: number) {
   return `${Number(value).toFixed(5).replace(/\.?0+$/, '')} ft³`
 }
 
+function shippingBatchStatusText(status?: string) {
+  const normalized = (status || '').toLowerCase()
+  if (normalized === 'shipped') return '已出库'
+  if (normalized === 'in_transit') return '运输中'
+  if (normalized === 'customs_clearance') return '清关中'
+  if (normalized === 'delivering') return '派送中'
+  if (normalized === 'warehouse_received') return '已到海外仓'
+  if (normalized === 'completed') return '已完成'
+  if (normalized === 'cancelled') return '已取消'
+  if (normalized === 'departed_origin') return '已离港'
+  if (normalized === 'arrived_port') return '已到港'
+  if (normalized === 'customs_released') return '已放行'
+  const legacy = (status || '').toUpperCase()
+  if (legacy === 'OUTBOUND_CREATED') return '已出库'
+  if (legacy === 'OPTION_SELECTED') return '已选方案'
+  return status || '-'
+}
+
+function shippingBatchOptionText(row: OfficialWarehouseShippingBatchCandidate) {
+  const quantity = Number(row.remainingQuantity ?? row.storeSiteQuantity ?? 0).toLocaleString()
+  const skuCount = Number(row.skuCount || 0).toLocaleString()
+  const poCount = Number(row.purchaseOrderCount || 0).toLocaleString()
+  const batchNo = row.batchNo || row.trackingNo || row.externalShipmentNo || row.id
+  const forwarder = row.forwarderName ? ` · ${row.forwarderName}` : ''
+  const transport = row.transportMode ? ` · ${row.transportMode === 'AIR' ? '空运' : row.transportMode === 'SEA' ? '海运' : row.transportMode}` : ''
+  const purchaseText = poCount === '0' ? '' : ` · ${poCount} PO`
+  return `${batchNo}${forwarder}${transport} · ${shippingBatchStatusText(row.latestNodeStatus || row.status)} · 待约仓 ${quantity}件 · ${skuCount} SKU${purchaseText}`
+}
+
 function lineStatusTag(status?: string) {
   const normalized = (status || '').toUpperCase()
   if (normalized === 'CREATED') {
@@ -149,8 +183,86 @@ function lineStatusTag(status?: string) {
   return <Tag>{status || '-'}</Tag>
 }
 
+function inboundStageTag(status?: string) {
+  const normalized = (status || '').trim().toUpperCase()
+  if (normalized === 'GRN_COMPLETED') {
+    return <Tag color="green">{inboundStageLabel(status)}</Tag>
+  }
+  if (normalized === 'RECEIVING') {
+    return <Tag color="blue">{inboundStageLabel(status)}</Tag>
+  }
+  if (normalized === 'FAILED') {
+    return <Tag color="red">{inboundStageLabel(status)}</Tag>
+  }
+  return <Tag>{inboundStageLabel(status)}</Tag>
+}
+
+function normalizeAsnStatus(status?: string) {
+  return (status || '').trim().toUpperCase()
+}
+
+function asnInboundStage(row: Pick<OfficialWarehouseAsn, 'status' | 'noonAsnStatus'>) {
+  const noonStatus = normalizeAsnStatus(row.noonAsnStatus)
+  if (noonStatus === 'GRN_COMPLETED' || noonStatus === 'PUTAWAY_COMPLETED') {
+    return 'GRN_COMPLETED'
+  }
+  if (noonStatus === 'RECEIVING') {
+    return 'RECEIVING'
+  }
+  if (['EXPIRED', 'CANCELED', 'CANCELLED'].includes(noonStatus) || normalizeAsnStatus(row.status) === 'FAILED') {
+    return 'FAILED'
+  }
+  return noonStatus || normalizeAsnStatus(row.status)
+}
+
+function asnHasInboundResult(row: Pick<OfficialWarehouseAsn, 'status' | 'noonAsnStatus'>) {
+  return ['GRN_COMPLETED', 'RECEIVING'].includes(asnInboundStage(row))
+}
+
+function asnIsExpired(row: Pick<OfficialWarehouseAsn, 'noonAsnStatus'>) {
+  return normalizeAsnStatus(row.noonAsnStatus) === 'EXPIRED'
+}
+
+function asnWarehouseLabel(row: Pick<OfficialWarehouseAsn, 'selectedWarehousePartnerCode' | 'selectedWarehouseName'>) {
+  return row.selectedWarehousePartnerCode || row.selectedWarehouseName || '-'
+}
+
 function businessErrorText(message?: string, failureType?: string) {
   return officialWarehouseBusinessErrorText(message, failureType)
+}
+
+function inboundDetailSearchKeyword(row: OfficialWarehouseAsn) {
+  const publicAsnNo = officialWarehousePublicAsnNo(row)
+  return publicAsnNo !== '-' ? publicAsnNo : row.localAsnNo || row.inboundNo || row.id
+}
+
+function normalizedInboundLookupKey(value?: string | number) {
+  return String(value ?? '').trim().toUpperCase()
+}
+
+function inboundLookupKeys(values: Array<string | number | undefined>) {
+  return values.map(normalizedInboundLookupKey).filter(Boolean)
+}
+
+function filterInboundDetailRows(rows: OfficialWarehouseInboundStatisticsRow[], asn: OfficialWarehouseAsn) {
+  const publicAsnNo = officialWarehousePublicAsnNo(asn)
+  const asnKeys = new Set(
+    inboundLookupKeys([
+      asn.id,
+      asn.inboundNo,
+      asn.localAsnNo,
+      asn.asnNo,
+      asn.noonAsnNr,
+      publicAsnNo !== '-' ? publicAsnNo : undefined
+    ])
+  )
+  const matchedRows = rows.filter((row) =>
+    inboundLookupKeys([row.asnId, row.localAsnNo, row.noonAsnNr]).some((key) => asnKeys.has(key))
+  )
+  if (matchedRows.length || rows.length !== 1) {
+    return matchedRows
+  }
+  return rows
 }
 
 function appointmentDurationText(appointment?: OfficialWarehouseAppointment) {
@@ -179,6 +291,26 @@ function appointmentDurationText(appointment?: OfficialWarehouseAppointment) {
   return isActive ? `已等待 ${duration}` : `总用时 ${duration}`
 }
 
+function appointmentDeliveryTimeText(appointment?: OfficialWarehouseAppointment) {
+  if (!appointment) {
+    return ''
+  }
+  if (appointment.appointmentDate) {
+    return `${appointment.appointmentDate} ${appointment.appointmentTime || ''}`.trim()
+  }
+  if (appointment.apStartDate && appointment.apEndDate) {
+    return `${appointment.apStartDate} - ${appointment.apEndDate}`
+  }
+  return ''
+}
+
+function asnProductCountText(asn: OfficialWarehouseAsn) {
+  const productCount = Number(asn.productCount || 0)
+  const lineCount = Number(asn.lines?.length || 0)
+  const resolvedCount = productCount > 0 ? productCount : lineCount
+  return resolvedCount > 0 ? `${resolvedCount.toLocaleString()} SKU` : '-'
+}
+
 function formatDuration(totalMinutes: number) {
   if (totalMinutes < 1) {
     return '<1分钟'
@@ -198,6 +330,31 @@ function formatDuration(totalMinutes: number) {
 function isAutoAppointmentRunning(row: OfficialWarehouseAsn) {
   const status = row.appointment?.status
   return status === 'PENDING' || status === 'RUNNING'
+}
+
+function shippingLinkSummaryItems(asn: OfficialWarehouseAsn) {
+  const grouped = new Map<string, { batchNo: string; quantity: number; purchaseOrders: Set<string> }>()
+  ;(asn.shippingBatchLinks || []).forEach((link) => {
+    const batchNo = link.batchReferenceNo || link.trackingNo || link.externalShipmentNo || link.shippingBatchNo
+    const key = link.inTransitBatchId || link.shippingBatchId || batchNo || link.id
+    if (!key) return
+    const item = grouped.get(key) || {
+      batchNo: batchNo || key,
+      quantity: 0,
+      purchaseOrders: new Set<string>()
+    }
+    item.quantity += Number(link.quantity || 0)
+    if (link.purchaseOrderNo) {
+      item.purchaseOrders.add(link.purchaseOrderNo)
+    }
+    grouped.set(key, item)
+  })
+  return Array.from(grouped.entries()).map(([key, value]) => ({
+    key,
+    batchNo: value.batchNo,
+    quantity: value.quantity,
+    purchaseOrders: Array.from(value.purchaseOrders)
+  }))
 }
 
 type AppointmentFormState = {
@@ -248,10 +405,16 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [asnSyncing, setAsnSyncing] = useState(false)
   const [asnSyncFeedback, setAsnSyncFeedback] = useState<AppointmentSubmitFeedback>()
   const [selectedAsn, setSelectedAsn] = useState<OfficialWarehouseAsn>()
+  const [selectedInboundRows, setSelectedInboundRows] = useState<OfficialWarehouseInboundStatisticsRow[]>([])
+  const [selectedInboundLoading, setSelectedInboundLoading] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
   const [candidateKeyword, setCandidateKeyword] = useState('')
   const [candidateLoading, setCandidateLoading] = useState(false)
   const [candidates, setCandidates] = useState<OfficialWarehouseProductCandidate[]>([])
+  const [shippingBatchKeyword, setShippingBatchKeyword] = useState('')
+  const [shippingBatchLoading, setShippingBatchLoading] = useState(false)
+  const [shippingBatches, setShippingBatches] = useState<OfficialWarehouseShippingBatchCandidate[]>([])
+  const [selectedShippingBatchIds, setSelectedShippingBatchIds] = useState<string[]>([])
   const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<Key[]>([])
   const [quantityByVariantId, setQuantityByVariantId] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -280,8 +443,13 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [correctionSubmitting, setCorrectionSubmitting] = useState(false)
   const availabilityInFlightKeyRef = useRef<string | null>(null)
   const appointmentStatusFilterInitializedRef = useRef(false)
+  const inboundDetailRequestRef = useRef(0)
 
-  const summary = useMemo(() => buildOfficialWarehouseAsnSummary(asns), [asns])
+  const visibleAsns = useMemo(
+    () => (keyword.trim() ? asns : asns.filter((row) => !asnIsExpired(row))),
+    [asns, keyword]
+  )
+  const summary = useMemo(() => buildOfficialWarehouseAsnSummary(visibleAsns), [visibleAsns])
   const appointmentHistorySummary = useMemo(() => buildAppointmentHistorySummary(appointments), [appointments])
 
   const appointmentTimeOptions = useMemo(
@@ -295,12 +463,31 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
 
   const appointmentWarehouseOptions = useMemo(() => {
     const warehouses = appointmentTarget?.routingWarehouses || []
-    return warehouses.map((warehouse) => ({
-      label: `${warehouse.partnerCode || '-'} / ${warehouse.code || '-'}`,
-      value: warehouse.partnerCode || warehouse.code || '',
-      code: warehouse.code
-    })).filter((item) => item.value)
+    const selectedWarehousePartnerCode = appointmentTarget?.selectedWarehousePartnerCode?.trim()
+    const selectedWarehouseCode = appointmentTarget?.selectedWarehouseCode?.trim()
+    const hasCurrentAsnWarehouse = Boolean(selectedWarehousePartnerCode || selectedWarehouseCode)
+    const matchesCurrentAsnWarehouse = (warehouse: OfficialWarehouseRoutingWarehouse) =>
+      Boolean(
+        (selectedWarehousePartnerCode && warehouse.partnerCode === selectedWarehousePartnerCode) ||
+        (selectedWarehouseCode && warehouse.code === selectedWarehouseCode)
+      )
+    const needsCurrentWarehouseFallback = hasCurrentAsnWarehouse && !warehouses.some(matchesCurrentAsnWarehouse)
+    const optionWarehouses = needsCurrentWarehouseFallback
+      ? [{ partnerCode: selectedWarehousePartnerCode, code: selectedWarehouseCode }, ...warehouses]
+      : warehouses
+    return optionWarehouses.map((warehouse) => (
+      {
+        label: `${warehouse.partnerCode || '-'} / ${warehouse.code || '-'}`,
+        value: warehouse.partnerCode || warehouse.code || '',
+        code: warehouse.code
+      }
+    )).filter((item) => item.value)
   }, [appointmentTarget])
+
+  const shippingBatchOptions = useMemo(
+    () => shippingBatches.map((batch) => ({ label: shippingBatchOptionText(batch), value: batch.id })),
+    [shippingBatches]
+  )
 
   const appointmentWarehouseFromOptions = useMemo(() => {
     const options = new Map<string, string>()
@@ -383,7 +570,10 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
 
   useEffect(() => {
     if (createOpen) {
-      void loadCandidates()
+      setCandidateKeyword('')
+      setSelectedShippingBatchIds([])
+      void loadCandidates([], '')
+      void loadShippingBatches()
     }
   }, [createOpen])
 
@@ -521,29 +711,56 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     }
   }
 
-  async function loadCandidates() {
+  async function loadCandidates(
+    batchIds: string[] = selectedShippingBatchIds,
+    keywordValue: string = candidateKeyword
+  ) {
     if (!storeCode || !siteCode) {
       message.warning('请选择店铺和站点')
       return
     }
     setCandidateLoading(true)
     try {
-      const rows = await loadOfficialWarehouseCandidates({ storeCode, siteCode, keyword: candidateKeyword })
+      const rows = await loadOfficialWarehouseCandidates({
+        storeCode,
+        siteCode,
+        keyword: keywordValue,
+        shippingBatchIds: batchIds
+      })
       setCandidates(rows)
       setSelectedCandidateKeys([])
-      setQuantityByVariantId((current) => {
-        const next = { ...current }
-        rows.forEach((row) => {
-          if (!next[row.productVariantId]) {
-            next[row.productVariantId] = 1
-          }
-        })
-        return next
-      })
+      setQuantityByVariantId(
+        rows.reduce<Record<string, number>>((next, row) => {
+          const batchQuantity = Number(row.batchAvailableQuantity || 0)
+          next[row.productVariantId] = batchIds.length && batchQuantity > 0 ? batchQuantity : 1
+          return next
+        }, {})
+      )
     } catch (error) {
       message.error(officialWarehouseError(error, '读取可创建 ASN 商品失败'))
     } finally {
       setCandidateLoading(false)
+    }
+  }
+
+  async function loadShippingBatches() {
+    if (!storeCode || !siteCode) {
+      message.warning('请选择店铺和站点')
+      return
+    }
+    setShippingBatchLoading(true)
+    try {
+      const rows = await loadOfficialWarehouseShippingBatches({
+        storeCode,
+        siteCode,
+        keyword: shippingBatchKeyword
+      })
+      setShippingBatches(rows)
+      setSelectedShippingBatchIds((current) => current.filter((id) => rows.some((row) => row.id === id)))
+    } catch (error) {
+      message.error(officialWarehouseError(error, '读取物流批次失败'))
+    } finally {
+      setShippingBatchLoading(false)
     }
   }
 
@@ -558,12 +775,21 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       message.warning(`${invalid.partnerSku || invalid.pskuCode} 数量必须大于 0`)
       return
     }
+    const overLimit = selectedRows.find((row) => {
+      const batchLimit = selectedShippingBatchIds.length ? Number(row.batchAvailableQuantity || 0) : 0
+      return batchLimit > 0 && (quantityByVariantId[row.productVariantId] || 0) > batchLimit
+    })
+    if (overLimit) {
+      message.warning(`${overLimit.partnerSku || overLimit.pskuCode} 数量超过所选物流批次可用数量`)
+      return
+    }
     setSubmitting(true)
     try {
       await createOfficialWarehouseAsn({
         storeCode,
         siteCode,
         sourceType: 'MANUAL',
+        shippingBatchIds: selectedShippingBatchIds,
         lines: selectedRows.map((row) => ({
           productVariantId: Number(row.productVariantId),
           productSiteOfferId: toNumber(row.productSiteOfferId),
@@ -583,8 +809,41 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     }
   }
 
-  function openDetail(row: OfficialWarehouseAsn) {
+  async function openDetail(row: OfficialWarehouseAsn) {
     setSelectedAsn(row)
+    setSelectedInboundRows([])
+    if (!storeCode || !siteCode) {
+      return
+    }
+    const requestId = inboundDetailRequestRef.current + 1
+    inboundDetailRequestRef.current = requestId
+    setSelectedInboundLoading(true)
+    try {
+      const view = await loadOfficialWarehouseInboundStatistics({
+        storeCode,
+        siteCode,
+        keyword: inboundDetailSearchKeyword(row)
+      })
+      if (inboundDetailRequestRef.current !== requestId) {
+        return
+      }
+      setSelectedInboundRows(filterInboundDetailRows(view.rows || [], row))
+    } catch (error) {
+      if (inboundDetailRequestRef.current === requestId) {
+        message.error(officialWarehouseError(error, '读取 ASN 入仓详情失败'))
+      }
+    } finally {
+      if (inboundDetailRequestRef.current === requestId) {
+        setSelectedInboundLoading(false)
+      }
+    }
+  }
+
+  function closeDetail() {
+    inboundDetailRequestRef.current += 1
+    setSelectedAsn(undefined)
+    setSelectedInboundRows([])
+    setSelectedInboundLoading(false)
   }
 
   function requestOpenAppointment(row: OfficialWarehouseAsn, mode: AppointmentSubmitMode) {
@@ -834,7 +1093,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const asnColumns: ColumnsType<OfficialWarehouseAsn> = [
     {
       title: 'ASN / 状态',
-      width: 170,
+      width: 150,
       fixed: 'left',
       render: (_, row) => {
         const asnNo = officialWarehousePublicAsnNo(row)
@@ -853,29 +1112,28 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       }
     },
     {
-      title: '货量',
-      width: 126,
-      render: (_, row) => (
-        <div className="official-warehouse-quantity">
-          <span>{row.productCount || 0} SKU</span>
-          <span>{row.totalQuantity || 0} 件</span>
-        </div>
-      )
-    },
-    {
-      title: '路由仓',
-      width: 160,
+      title: '货量 / 路由仓',
+      width: 120,
       render: (_, row) => (
         <div className="official-warehouse-stack">
-          <Text>{row.selectedWarehouseCode || '-'}</Text>
-          <Text type="secondary">{row.selectedWarehousePartnerCode || row.selectedWarehouseName || '-'}</Text>
+          <div className="official-warehouse-quantity">
+            <span>{Number(row.totalQuantity || 0).toLocaleString()} 件</span>
+          </div>
+          <Text type="secondary">{asnWarehouseLabel(row)}</Text>
         </div>
       )
     },
     {
-      title: '约仓',
-      width: 180,
+      title: '状态',
+      width: 190,
       render: (_, row) => {
+        if (asnHasInboundResult(row)) {
+          return (
+            <div className="official-warehouse-stack">
+              {inboundStageTag(asnInboundStage(row))}
+            </div>
+          )
+        }
         const appointment = row.appointment
         if (!appointment) {
           return (
@@ -885,31 +1143,24 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             </div>
           )
         }
+        const deliveryTimeText = appointmentDeliveryTimeText(appointment)
+        const shouldLabelDeliveryTime = appointment.status === 'SCHEDULED' && !asnHasInboundResult(row)
         return (
           <div className="official-warehouse-stack">
-            {noonAsnStatusTag(row.noonAsnStatus, appointment.status)}
-            <Text type="secondary">
-              {appointment.appointmentDate
-                ? `${appointment.appointmentDate} ${appointment.appointmentTime || ''}`.trim()
-                : `${appointment.apStartDate} - ${appointment.apEndDate}`}
-            </Text>
+            {appointmentStatusTag(appointment.status)}
+            {deliveryTimeText ? (
+              shouldLabelDeliveryTime ? (
+                <Text className="official-warehouse-delivery-time">送仓时间：{deliveryTimeText}</Text>
+              ) : (
+                <Text type="secondary">{deliveryTimeText}</Text>
+              )
+            ) : null}
           </div>
         )
       }
     },
     {
-      title: '失败信息',
-      dataIndex: 'errorMessage',
-      width: 240,
-      ellipsis: true,
-      render: (value: string | undefined, row: OfficialWarehouseAsn) =>
-        value || row.failureType || row.appointment?.errorMessage || row.appointment?.failureType
-          ? <Text type="danger">{businessErrorText(value || row.appointment?.errorMessage, row.failureType || row.appointment?.failureType)}</Text>
-          : '-'
-    },
-    {
       title: '创建时间',
-      width: 170,
       render: (_, row) => (
         <div className="official-warehouse-stack">
           <Text>{row.createdAt || '-'}</Text>
@@ -919,61 +1170,64 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     },
     {
       title: '操作',
-      width: 210,
+      width: 400,
       fixed: 'right',
-      render: (_, row) => (
-        <Space size={4} wrap className="official-warehouse-actions">
-          <Button size="small" icon={<EyeOutlined />} onClick={() => void openDetail(row)}>
-            查看
-          </Button>
-          {row.appointment?.status === 'SCHEDULED' ? (
-            <Button
-              size="small"
-              icon={<DownloadOutlined />}
-              loading={pdfPrintingAsnId === row.id}
-              onClick={() => void downloadFbnTransferPdf(row)}
-            >
-              下载 PDF
+      render: (_, row) => {
+        const inboundOnly = asnHasInboundResult(row)
+        return (
+          <Space size={4} wrap className="official-warehouse-actions">
+            <Button size="small" icon={<EyeOutlined />} onClick={() => void openDetail(row)}>
+              {inboundOnly ? '入仓详情' : '查看'}
             </Button>
-          ) : null}
-          {row.status === 'LINES_CREATED' ? (
-            <Button
-              size="small"
-              icon={<ThunderboltOutlined />}
-              disabled={isAutoAppointmentRunning(row)}
-              title={isAutoAppointmentRunning(row) ? '自动约仓处理中，不能手动约仓' : undefined}
-              onClick={() => requestOpenAppointment(row, 'manual')}
-            >
-              手动约仓
-            </Button>
-          ) : null}
-          {row.status === 'LINES_CREATED' ? (
-            <Button size="small" icon={<CalendarOutlined />} onClick={() => requestOpenAppointment(row, 'auto')}>
-              自动约仓
-            </Button>
-          ) : null}
-          {row.appointment && !['SCHEDULED', 'CANCELED'].includes(row.appointment.status) ? (
-            <Button
-              size="small"
-              icon={<ThunderboltOutlined />}
-              loading={appointmentRunningId === row.appointment.id}
-              onClick={() => void runAppointmentNow(row.appointment!)}
-            >
-              执行一次
-            </Button>
-          ) : null}
-          {row.appointment && ['PENDING', 'RUNNING', 'FAILED'].includes(row.appointment.status) ? (
-            <Button
-              size="small"
-              danger
-              loading={appointmentRunningId === row.appointment.id}
-              onClick={() => void cancelAppointment(row.appointment!)}
-            >
-              取消
-            </Button>
-          ) : null}
-        </Space>
-      )
+            {!inboundOnly && row.appointment?.status === 'SCHEDULED' ? (
+              <Button
+                size="small"
+                icon={<DownloadOutlined />}
+                loading={pdfPrintingAsnId === row.id}
+                onClick={() => void downloadFbnTransferPdf(row)}
+              >
+                下载 PDF
+              </Button>
+            ) : null}
+            {!inboundOnly && row.status === 'LINES_CREATED' ? (
+              <Button
+                size="small"
+                icon={<ThunderboltOutlined />}
+                disabled={isAutoAppointmentRunning(row)}
+                title={isAutoAppointmentRunning(row) ? '自动约仓处理中，不能手动约仓' : undefined}
+                onClick={() => requestOpenAppointment(row, 'manual')}
+              >
+                手动约仓
+              </Button>
+            ) : null}
+            {!inboundOnly && row.status === 'LINES_CREATED' ? (
+              <Button size="small" icon={<CalendarOutlined />} onClick={() => requestOpenAppointment(row, 'auto')}>
+                自动约仓
+              </Button>
+            ) : null}
+            {!inboundOnly && row.appointment && !['SCHEDULED', 'CANCELED'].includes(row.appointment.status) ? (
+              <Button
+                size="small"
+                icon={<ThunderboltOutlined />}
+                loading={appointmentRunningId === row.appointment.id}
+                onClick={() => void runAppointmentNow(row.appointment!)}
+              >
+                执行一次
+              </Button>
+            ) : null}
+            {!inboundOnly && row.appointment && ['PENDING', 'RUNNING', 'FAILED'].includes(row.appointment.status) ? (
+              <Button
+                size="small"
+                danger
+                loading={appointmentRunningId === row.appointment.id}
+                onClick={() => void cancelAppointment(row.appointment!)}
+              >
+                取消
+              </Button>
+            ) : null}
+          </Space>
+        )
+      }
     }
   ]
 
@@ -1080,21 +1334,20 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       title: '商品',
       width: 330,
       render: (_, row) => (
-        <div className="official-warehouse-product-cell">
+        <div className="official-warehouse-product-cell official-warehouse-product-cell--candidate">
           {row.imageUrl ? (
             <Image
               src={row.imageUrl}
               fallback={PRODUCT_IMAGE_FALLBACK}
-              width={42}
-              height={42}
-              preview={false}
+              width={60}
+              height={60}
+              preview={{ mask: '查看大图' }}
             />
           ) : (
             <div className="official-warehouse-image-placeholder" />
           )}
           <div className="official-warehouse-stack">
             <Text strong>{row.title || row.partnerSku || row.pskuCode}</Text>
-            <Text type="secondary">{row.partnerSku || row.skuParent}</Text>
             <Text className="official-warehouse-code-line" type="secondary" copyable>
               PSKU: {displayPsku(row)}
             </Text>
@@ -1104,12 +1357,16 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     },
     {
       title: 'Noon SKU',
-      width: 190,
-      render: (_, row) => (
-        <div className="official-warehouse-stack">
-          <Text copyable>{row.noonSku}</Text>
-        </div>
-      )
+      width: 260,
+      render: (_, row) => {
+        const batchLimit = selectedShippingBatchIds.length ? Number(row.batchAvailableQuantity || 0) : 0
+        return (
+          <div className="official-warehouse-stack">
+            <Text copyable>{row.noonSku}</Text>
+            {batchLimit > 0 ? <Text type="secondary">批次可用 {batchLimit}</Text> : null}
+          </div>
+        )
+      }
     },
     {
       title: '尺寸 / 体积',
@@ -1130,19 +1387,30 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     {
       title: '数量',
       width: 120,
-      render: (_, row) => (
-        <InputNumber
-          min={1}
-          precision={0}
-          value={quantityByVariantId[row.productVariantId] || 1}
-          onChange={(value) =>
-            setQuantityByVariantId((current) => ({
-              ...current,
-              [row.productVariantId]: Number(value || 0)
-            }))
-          }
-        />
-      )
+      render: (_, row) => {
+        const batchLimit = selectedShippingBatchIds.length ? Number(row.batchAvailableQuantity || 0) : 0
+        const maxQuantity = batchLimit > 0 ? batchLimit : undefined
+        const quantity = quantityByVariantId[row.productVariantId] || maxQuantity || 1
+        return (
+          <div className="official-warehouse-stack">
+            <InputNumber
+              min={1}
+              max={maxQuantity}
+              precision={0}
+              value={quantity}
+              onChange={(value) =>
+                setQuantityByVariantId((current) => {
+                  const normalized = Math.max(1, Number(value || 0))
+                  return {
+                    ...current,
+                    [row.productVariantId]: maxQuantity ? Math.min(normalized, maxQuantity) : normalized
+                  }
+                })
+              }
+            />
+          </div>
+        )
+      }
     },
     {
       title: '数据状态',
@@ -1186,21 +1454,46 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     { title: '商品状态', dataIndex: 'lineStatus', width: 96, render: lineStatusTag }
   ]
 
-  const routeColumns: ColumnsType<OfficialWarehouseRoutingWarehouse> = [
+  const inboundDetailColumns: ColumnsType<OfficialWarehouseInboundStatisticsRow> = [
     {
-      title: '仓库',
-      dataIndex: 'partnerCode',
-      width: 150,
-      render: (value?: string, row?: OfficialWarehouseRoutingWarehouse) => (
-        <Space size={6}>
-          <Text>{value || '-'}</Text>
-          {selectedAsn?.selectedWarehousePartnerCode === value || selectedAsn?.selectedWarehouseCode === row?.code ? (
-            <Tag color="green">已选择</Tag>
-          ) : null}
-        </Space>
+      title: 'ASN / 入仓单',
+      width: 190,
+      render: (_, row) => (
+        <div className="official-warehouse-stack">
+          <Text strong>{row.noonAsnNr || row.localAsnNo || '-'}</Text>
+          {row.localAsnNo && row.noonAsnNr !== row.localAsnNo ? <Text type="secondary">{row.localAsnNo}</Text> : null}
+        </div>
       )
     },
-    { title: '仓库编码', dataIndex: 'code', width: 180 }
+    {
+      title: '入仓状态',
+      dataIndex: 'inboundStage',
+      width: 110,
+      render: inboundStageTag
+    },
+    {
+      title: '件数',
+      dataIndex: 'totalQuantity',
+      width: 88,
+      render: (value: number) => Number(value || 0).toLocaleString()
+    },
+    {
+      title: '预约状态',
+      dataIndex: 'appointmentStatus',
+      width: 110,
+      render: appointmentStatusTag
+    },
+    {
+      title: 'Noon状态',
+      dataIndex: 'noonAsnStatus',
+      width: 120,
+      render: (value: string | undefined, row) => noonAsnStatusTag(value, row.appointmentStatus)
+    },
+    {
+      title: 'Noon仓',
+      width: 150,
+      render: (_, row) => row.selectedWarehousePartnerCode || '-'
+    }
   ]
 
   return (
@@ -1266,13 +1559,14 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
 
       <div className="official-warehouse-table-panel">
         <Table
+          className="official-warehouse-asn-table"
           rowKey="id"
           size="small"
           loading={loading}
           columns={asnColumns}
-          dataSource={asns}
+          dataSource={visibleAsns}
           pagination={{ pageSize: 20, showSizeChanger: false }}
-          scroll={{ x: 1160 }}
+          scroll={{ x: 1320 }}
           locale={{ emptyText: <Empty description="暂无 Noon 官方仓 ASN" /> }}
         />
       </div>
@@ -1343,6 +1637,46 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         destroyOnClose
       >
         <div className="official-warehouse-modal-body">
+          <div className="official-warehouse-shipping-picker">
+            <div className="official-warehouse-shipping-picker-header">
+              <div className="official-warehouse-stack">
+                <Text strong>物流批次号</Text>
+                <Text type="secondary">可多选；仅显示真实在途或已到海外仓且仍有待约仓数量的物流批次号，采购单关系存在确认记录时展示。</Text>
+              </div>
+              <Space>
+                <Input
+                  className="official-warehouse-batch-search"
+                  allowClear
+                  prefix={<SearchOutlined />}
+                  placeholder="搜索物流批次号"
+                  value={shippingBatchKeyword}
+                  onChange={(event) => setShippingBatchKeyword(event.target.value)}
+                  onPressEnter={() => void loadShippingBatches()}
+                />
+                <Button icon={<SearchOutlined />} onClick={() => void loadShippingBatches()} loading={shippingBatchLoading}>
+                  搜索物流批次号
+                </Button>
+              </Space>
+            </div>
+            <Select
+              mode="multiple"
+              allowClear
+              showSearch
+              placeholder="选择物流批次号"
+              loading={shippingBatchLoading}
+              value={selectedShippingBatchIds}
+              options={shippingBatchOptions}
+              filterOption={(input, option) =>
+                String(option?.label || '').toLowerCase().includes(input.toLowerCase())
+              }
+              onChange={(value) => {
+                const nextBatchIds = Array.isArray(value) ? value : []
+                setSelectedShippingBatchIds(nextBatchIds)
+                void loadCandidates(nextBatchIds, candidateKeyword)
+              }}
+              maxTagCount="responsive"
+            />
+          </div>
           <div className="official-warehouse-toolbar official-warehouse-modal-toolbar">
             <div className="official-warehouse-toolbar-left">
               <Input
@@ -1352,9 +1686,13 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
                 placeholder="搜索 SKU / PSKU / 中文标题 / 英文标题"
                 value={candidateKeyword}
                 onChange={(event) => setCandidateKeyword(event.target.value)}
-                onPressEnter={() => void loadCandidates()}
+                onPressEnter={() => void loadCandidates(selectedShippingBatchIds, candidateKeyword)}
               />
-              <Button icon={<SearchOutlined />} onClick={() => void loadCandidates()} loading={candidateLoading}>
+              <Button
+                icon={<SearchOutlined />}
+                onClick={() => void loadCandidates(selectedShippingBatchIds, candidateKeyword)}
+                loading={candidateLoading}
+              >
                 搜索
               </Button>
             </div>
@@ -1365,14 +1703,20 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             loading={candidateLoading}
             columns={candidateColumns}
             dataSource={candidates}
-            pagination={{ pageSize: 8, showSizeChanger: false }}
+            pagination={false}
             scroll={{ x: 1160 }}
             rowSelection={{
               selectedRowKeys: selectedCandidateKeys,
               onChange: setSelectedCandidateKeys,
               getCheckboxProps: (row) => ({ disabled: Boolean(row.missingTags?.length) })
             }}
-            locale={{ emptyText: <Empty description="暂无可创建 ASN 的商品" /> }}
+            locale={{
+              emptyText: (
+                <Empty
+                  description={selectedShippingBatchIds.length ? '所选物流批次没有匹配当前站点商品' : '暂无可创建 ASN 的商品'}
+                />
+              )
+            }}
           />
         </div>
       </Modal>
@@ -1683,7 +2027,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         title={selectedAsn ? `${officialWarehousePublicAsnNo(selectedAsn)} 详情` : 'ASN详情'}
         width={860}
         open={Boolean(selectedAsn)}
-        onClose={() => setSelectedAsn(undefined)}
+        onClose={closeDetail}
       >
         {selectedAsn ? (
           <div className="official-warehouse-detail-section">
@@ -1691,20 +2035,15 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
               <Descriptions.Item label="状态">{statusTag(selectedAsn.status)}</Descriptions.Item>
               <Descriptions.Item label="Noon ASN">{officialWarehousePublicAsnNo(selectedAsn)}</Descriptions.Item>
               <Descriptions.Item label="站点">{selectedAsn.siteCode}</Descriptions.Item>
-              <Descriptions.Item label="商品种类">{selectedAsn.productCount || 0} SKU</Descriptions.Item>
-              <Descriptions.Item label="到达仓库">
-                {[selectedAsn.selectedWarehousePartnerCode, selectedAsn.selectedWarehouseCode].filter(Boolean).join(' / ') || '-'}
-              </Descriptions.Item>
+              <Descriptions.Item label="商品种类">{asnProductCountText(selectedAsn)}</Descriptions.Item>
               <Descriptions.Item label="总件数">{selectedAsn.totalQuantity || 0}</Descriptions.Item>
               <Descriptions.Item label="约仓状态">
-                {noonAsnStatusTag(selectedAsn.noonAsnStatus, selectedAsn.appointment?.status)}
+                {selectedAsn.appointment
+                  ? appointmentStatusTag(selectedAsn.appointment.status)
+                  : noonAsnStatusTag(selectedAsn.noonAsnStatus)}
               </Descriptions.Item>
               <Descriptions.Item label="约仓时间">
-                {selectedAsn.appointment?.appointmentDate
-                  ? `${selectedAsn.appointment.appointmentDate} ${selectedAsn.appointment.appointmentTime || ''}`.trim()
-                  : selectedAsn.appointment
-                    ? `${selectedAsn.appointment.apStartDate} - ${selectedAsn.appointment.apEndDate}`
-                    : '-'}
+                {appointmentDeliveryTimeText(selectedAsn.appointment) || '-'}
               </Descriptions.Item>
               <Descriptions.Item label="失败信息" span={2}>
                 {selectedAsn.errorMessage || selectedAsn.appointment?.errorMessage ? (
@@ -1717,6 +2056,33 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
                 ) : '-'}
               </Descriptions.Item>
             </Descriptions>
+            {selectedAsn.shippingBatchLinks?.length ? (
+              <div className="official-warehouse-link-summary">
+                <Text strong>物流批次号关联</Text>
+                <div className="official-warehouse-link-summary-list">
+                  {shippingLinkSummaryItems(selectedAsn).map((item) => (
+                    <div className="official-warehouse-link-summary-item" key={item.key}>
+                      <Text strong>{item.batchNo}</Text>
+                      <Text>{Number(item.quantity || 0).toLocaleString()} 件</Text>
+                      <Text type="secondary">
+                        {item.purchaseOrders.length ? `${item.purchaseOrders.length} 个采购单` : '采购单未记录'}
+                      </Text>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <Table
+              rowKey={(row) => `${row.asnId || ''}-${row.noonAsnNr || ''}-${row.localAsnNo || ''}`}
+              size="small"
+              columns={inboundDetailColumns}
+              dataSource={selectedInboundRows}
+              loading={selectedInboundLoading}
+              pagination={false}
+              scroll={{ x: 760 }}
+              locale={{ emptyText: <Empty description="暂无入仓详情" /> }}
+              title={() => '入仓详情'}
+            />
             <Table
               rowKey="id"
               size="small"
@@ -1725,15 +2091,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
               pagination={false}
               scroll={{ x: 860 }}
               title={() => '商品明细'}
-            />
-            <Table
-              rowKey={(row) => `${row.partnerCode || ''}-${row.code || ''}`}
-              size="small"
-              columns={routeColumns}
-              dataSource={selectedAsn.routingWarehouses || []}
-              pagination={false}
-              scroll={{ x: 420 }}
-              title={() => '可选到达仓库'}
             />
           </div>
         ) : null}
