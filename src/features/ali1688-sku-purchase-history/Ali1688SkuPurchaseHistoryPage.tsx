@@ -360,7 +360,7 @@ function SkuPurchaseHistoryEmptyState({ unlinkedAssignedLineCount }: { unlinkedA
 
 function ProductInfoCell({ record }: { record: Ali1688SkuPurchaseHistoryItem }) {
   const title = displayText(record.productTitle, record.partnerSku || record.skuParent)
-  const visiblePsku = displayText(record.partnerSku, record.pskuCode)
+  const visiblePsku = displayText(record.partnerSku)
   const visibleSku = displayText(record.skuParent)
   const titleCn = displayOptionalText(record.productTitleCn)
   return (
@@ -1228,7 +1228,7 @@ function buildQuery(filters: FilterState, page: number, pageSize: number): Ali16
 }
 
 function skuPurchaseHistoryRowKey(record: Ali1688SkuPurchaseHistoryItem) {
-  const productKey = record.skuParent || record.partnerSku || record.pskuCode || ''
+  const productKey = record.partnerSku || record.skuParent || ''
   if (record.linkStatus === 'unlinked') {
     return `${record.storeCode || ''}-${record.siteCode || ''}-unlinked-${productKey || record.assignmentId || record.itemId || record.orderNo || ''}`
   }

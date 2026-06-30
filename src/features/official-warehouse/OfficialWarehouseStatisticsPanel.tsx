@@ -203,7 +203,7 @@ export function OfficialWarehouseStatisticsPanel({ storeCode, siteCode, mode = '
         title: '商品详情',
         width: 300,
         render: (_, row) => {
-          const psku = row.partnerSku || row.pskuCode || '-'
+          const psku = row.partnerSku || '-'
           const titleCn = row.titleCn?.trim() || (!row.titleEn?.trim() ? row.title?.trim() : '')
           const titleEn = row.titleEn || row.title || '-'
           return (
@@ -336,7 +336,7 @@ export function OfficialWarehouseStatisticsPanel({ storeCode, siteCode, mode = '
   const productTable = (
     <Table
       className="official-warehouse-product-stock-table"
-      rowKey={(row: OfficialWarehouseStockStatisticsRow) => `${row.skuParent || row.productSiteOfferId || row.pskuCode || row.partnerSku || row.noonSku}`}
+      rowKey={(row: OfficialWarehouseStockStatisticsRow) => `${row.partnerSku || row.productSiteOfferId || row.skuParent || row.noonSku}`}
       size="small"
       loading={loading}
       tableLayout="fixed"
@@ -516,7 +516,7 @@ export function OfficialWarehouseStatisticsPanel({ storeCode, siteCode, mode = '
         <Drawer
           width={760}
           open={Boolean(selectedStockRow)}
-          title={selectedStockRow?.partnerSku || selectedStockRow?.pskuCode || '商品详情'}
+          title={selectedStockRow?.partnerSku || selectedStockRow?.noonSku || '商品详情'}
           onClose={() => {
             setSelectedStockRow(undefined)
             setSelectedSourceSegment(undefined)

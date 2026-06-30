@@ -1892,14 +1892,14 @@ function buildProductBaselineMap(items: ProductListRowPayload[]) {
   items.forEach((item) => {
     const imageUrl = normalizeNoonImageUrl(item.imageUrl || item.galleryImages?.[0])
     const summary: ProductBaselineSummary = {
-      psku: item.pskuCode || item.partnerSku || item.skuParent,
+      psku: item.partnerSku || item.skuParent,
       skuParent: item.skuParent,
       title: item.title,
       imageUrl,
       productFulltype: item.productFulltype,
       detailBaselineStatus: item.detailBaselineStatus
     }
-    ;[item.pskuCode, item.partnerSku, item.skuParent].forEach((key) => {
+    ;[item.partnerSku, item.skuParent].forEach((key) => {
       const normalizedKey = normalizeProductKey(key)
       if (normalizedKey && !result[normalizedKey]) {
         result[normalizedKey] = summary

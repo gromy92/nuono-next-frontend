@@ -1440,7 +1440,7 @@ export function Ali1688HistoricalOrdersPage({ storeCode, siteCode, ownerUserId, 
                             <Space size={6} wrap>
                               <Tag>SKU {product.skuParent}</Tag>
                               {product.partnerSku ? <Tag>Partner {product.partnerSku}</Tag> : null}
-                              {product.pskuCode ? <Tag>PSKU {product.pskuCode}</Tag> : null}
+                              {product.pskuCode ? <Tag>Noon pskuCode {product.pskuCode}</Tag> : null}
                               {product.siteCode ? <Text type="secondary">{product.siteCode}</Text> : null}
                               {product.linkStatus === 'linked'
                                 ? <Tag color="blue">已关联{product.linkedAssignmentCount ? ` ${product.linkedAssignmentCount}` : ''}</Tag>
@@ -2246,7 +2246,7 @@ function productLinkDisplayText(productLink?: Ali1688HistoricalOrderProductLink)
   if (!productLink?.skuParent) {
     return undefined
   }
-  return `已关联: ${productLink.partnerSku || productLink.skuParent || productLink.pskuCode}`
+  return `已关联: ${productLink.partnerSku || productLink.skuParent}`
 }
 
 function renderSupplierCell(order: Ali1688HistoricalOrderRow) {

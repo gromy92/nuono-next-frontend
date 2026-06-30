@@ -65,7 +65,7 @@ function siteCodeFromStoreCode(storeCode?: string) {
 }
 
 export function profitRowKey(record: ProductListRowPayload) {
-  return record.skuParent || record.partnerSku || record.pskuCode || record.offerCode || record.title || 'unknown';
+  return record.partnerSku || record.skuParent || record.offerCode || record.title || 'unknown';
 }
 
 function rowSkuId(record: ProductListRowPayload) {

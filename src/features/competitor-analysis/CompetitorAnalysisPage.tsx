@@ -1261,7 +1261,7 @@ function productTitleLines(product: CompetitorWatchProduct) {
 }
 
 function productListIdentityCodes(product: CompetitorWatchProduct) {
-  const psku = product.partnerSku || product.pskuCode || ''
+  const psku = product.partnerSku || ''
   return [
     { value: psku || '-', copyText: psku || undefined },
     ...(product.selfNoonProductCode
@@ -1389,8 +1389,8 @@ function ProductChangeModal({
             { label: '店铺', value: storeLabel || product.storeCode || '-' },
             {
               label: 'psku',
-              value: product.partnerSku || product.pskuCode || '-',
-              copyText: product.partnerSku || product.pskuCode || undefined
+              value: product.partnerSku || '-',
+              copyText: product.partnerSku || undefined
             },
             ...(product.selfNoonProductCode
               ? [
@@ -2103,7 +2103,7 @@ function ReportProductHeader({
   baselineSummary?: CompetitorProductChangeBaselineSummary
 }) {
   const titleLines = productTitleLines(product)
-  const psku = product.partnerSku || product.pskuCode || '-'
+  const psku = product.partnerSku || '-'
   const chineseTitle = product.titleCn?.trim() || ''
   const englishTitle = product.title?.trim() || ''
   const fallbackTitle = chineseTitle || englishTitle ? '' : titleLines.primary
@@ -2906,8 +2906,8 @@ function ProductDetail({
               { label: '店铺', value: storeLabel || product.storeCode || '-' },
               {
                 label: 'psku',
-                value: product.partnerSku || product.pskuCode || '-',
-                copyText: product.partnerSku || product.pskuCode || undefined
+                value: product.partnerSku || '-',
+                copyText: product.partnerSku || undefined
               },
               ...(product.selfNoonProductCode
                 ? [

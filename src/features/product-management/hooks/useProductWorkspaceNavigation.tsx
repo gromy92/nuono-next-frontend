@@ -146,6 +146,23 @@ export function useProductWorkspaceNavigation({
       });
 
       if (isSameProductDetailRequest(productDetailTabRequest, nextRequest)) {
+        const currentRequestKey = productDetailTabRequest ? JSON.stringify(productDetailTabRequest) : '';
+        const nextRequestKey = JSON.stringify(nextRequest);
+        if (currentRequestKey !== nextRequestKey) {
+          productDetailTabHandledRef.current = null;
+          setProductWorkbenchSurfaceState({
+            status: 'loading',
+            context: nextContext,
+            message: '正在读取本地商品详情...'
+          });
+          productSnapshotForm.setFieldsValue({
+            storeCode: nextRequest.storeCode,
+            skuParent: nextRequest.skuParent,
+            partnerSku: nextRequest.partnerSku,
+            pskuCode: nextRequest.pskuCode
+          });
+          setProductDetailTabRequest(nextRequest);
+        }
         focusProductDetailTab();
         return;
       }

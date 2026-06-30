@@ -1804,7 +1804,7 @@ function PurchaseAli1688HistoryPopover({ entry }: { entry: PurchaseOrderAli1688H
   return (
     <div className="purchase-ali1688-history-popover">
       <div className="purchase-ali1688-history-popover-summary">
-        <Text strong>{displayShortText(record?.partnerSku || record?.pskuCode || record?.skuParent, '未知 PSKU')}</Text>
+        <Text strong>{displayShortText(record?.partnerSku, '未知 PSKU')}</Text>
         <Text type="secondary">
           {displayShortText(record?.storeCode)} · {displayShortText(record?.siteCode || entry.siteCode)}
         </Text>
@@ -2336,8 +2336,6 @@ function pskuSiteKey(psku?: string, site?: string) {
 
 function purchaseOrderItemMatchesPsku(item: PurchaseOrderItem, psku: string) {
   return sameDisplayText(item.partnerSku, psku)
-    || sameDisplayText(item.skuParent, psku)
-    || (item.allocations || []).some((allocation) => sameDisplayText(allocation.pskuCode, psku))
 }
 
 function normalizePskuEntry(row?: PskuEntryFormValue): PurchaseOrderItemCommand | null {
@@ -2543,9 +2541,6 @@ function ali1688HistoryRecordMatchesItem(
 ) {
   return (
     sameDisplayText(record.partnerSku, item.partnerSku)
-    || sameDisplayText(record.pskuCode, item.partnerSku)
-    || sameDisplayText(record.skuParent, item.skuParent)
-    || (item.allocations || []).some((allocation) => sameDisplayText(record.pskuCode, allocation.pskuCode))
   )
 }
 

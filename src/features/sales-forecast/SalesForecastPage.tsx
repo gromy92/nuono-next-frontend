@@ -135,7 +135,6 @@ export function SalesForecastPage({ session }: SalesForecastPageProps) {
           storeCode: query.storeCode,
           siteCode: query.siteCode,
           partnerSku: row.partnerSku,
-          sku: row.sku,
           marked: nextMarked
         })
         setOverview((previous) =>
@@ -143,7 +142,7 @@ export function SalesForecastPage({ session }: SalesForecastPageProps) {
             ? {
                 ...previous,
                 rows: previous.rows.map((item) =>
-                  item.partnerSku === result.partnerSku && item.sku === result.sku
+                  item.partnerSku === result.partnerSku
                     ? { ...item, followUpMarked: result.marked }
                     : item
                 )
@@ -460,7 +459,7 @@ export function SalesForecastPage({ session }: SalesForecastPageProps) {
             <>
               {viewMode === 'table' ? (
                 <Table
-                  rowKey={(row) => `${row.partnerSku}|${row.sku}`}
+                  rowKey={rowKey}
                   dataSource={filteredRows}
                   columns={columns}
                   pagination={false}
@@ -671,7 +670,7 @@ function forecastUnits(row: SalesForecastRow, forecastWindow: ForecastWindow) {
 }
 
 function rowKey(row: SalesForecastRow) {
-  return `${row.partnerSku}|${row.sku}`
+  return row.partnerSku || row.sku || ''
 }
 
 function filterForecastRows(

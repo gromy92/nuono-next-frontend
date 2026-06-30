@@ -238,7 +238,7 @@ export function SalesAnalyticsPage({ session, mode = 'analytics' }: SalesAnalyti
         ...query,
         dateFrom: range[0].format('YYYY-MM-DD'),
         dateTo: range[1].format('YYYY-MM-DD')
-      }, row.partnerSku, row.sku))
+      }, row.partnerSku))
     } catch (error) {
       message.error(error instanceof Error ? error.message : '销量详情加载失败')
     } finally {
@@ -314,7 +314,7 @@ export function SalesAnalyticsPage({ session, mode = 'analytics' }: SalesAnalyti
     setSelectedProducts([])
   }
 
-  const productRowKey = (row: SalesProductRow) => `${row.partnerSku}|${row.sku}`
+  const productRowKey = (row: SalesProductRow) => row.partnerSku || row.sku || ''
 
   const refreshAll = () => {
     if (!isActivityConfigMode) {

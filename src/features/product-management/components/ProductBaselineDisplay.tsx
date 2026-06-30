@@ -96,7 +96,7 @@ export function ProductBaselineListCell({
   const titleCn = summary.titleCn?.trim();
   const displayTitle = titleCn || title;
   const showEnglishTitle = Boolean(titleCn && title && titleCn !== title);
-  const visiblePsku = summary.partnerSku || summary.pskuCode || '-';
+  const visiblePsku = summary.partnerSku || '-';
   const sourceTypeMeta = productSourceTypeMeta(summary.productSourceType);
   const titleContent = (
     <span
@@ -263,7 +263,7 @@ export function ProductBaselineHeader({
   actions
 }: ProductBaselineHeaderProps) {
   const title = summary ? productSummaryTitle(summary) : '当前商品';
-  const partnerSku = summary?.partnerSku || summary?.pskuCode || '-';
+  const partnerSku = summary?.partnerSku || '-';
   const sourceTypeMeta = productSourceTypeMeta(summary?.productSourceType);
 
   return (
