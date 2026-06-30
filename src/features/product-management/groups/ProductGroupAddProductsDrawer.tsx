@@ -136,8 +136,8 @@ export function ProductGroupAddProductsDrawer(props: {
                     codes={[
                       {
                         label: 'PSKU',
-                        value: formatSnapshotValue(product.partnerSku || product.pskuCode),
-                        copyText: product.partnerSku || product.pskuCode
+                        value: formatSnapshotValue(product.partnerSku),
+                        copyText: product.partnerSku
                       },
                       {
                         label: 'SKU',

@@ -86,7 +86,7 @@ export function useProductGroupMemberActions(params: UseProductGroupMemberAction
       .map((product) => {
         const draft: ProductGroupMemberDraft = {
           skuParent: textInputValue(product.skuParent),
-          childSku: textInputValue(product.offerCode || product.pskuCode || product.partnerSku),
+          childSku: textInputValue(product.offerCode || product.partnerSku),
           brand: textInputValue(product.brand),
           title: textInputValue(product.title),
           axisValue: ''

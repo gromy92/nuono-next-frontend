@@ -67,8 +67,8 @@ export function ProductSiteCompareModal({ workspace }: ProductSiteCompareModalPr
                 },
                 {
                   label: 'PSKU',
-                  value: formatSnapshotValue(summary.partnerSku || summary.pskuCode),
-                  copyText: summary.partnerSku || summary.pskuCode
+                  value: formatSnapshotValue(summary.partnerSku),
+                  copyText: summary.partnerSku
                 }
               ]}
             />

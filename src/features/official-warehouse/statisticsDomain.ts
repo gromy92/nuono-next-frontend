@@ -660,7 +660,6 @@ function deduplicateProductInboundReceiptRows(rows: OfficialWarehouseProductInbo
     const key = [
       row.noonAsnNr || '',
       row.partnerSku || '',
-      row.pskuCode || '',
       row.noonSku || '',
       row.pbarcodeCanonical || '',
       nonNegativeInteger(row.qtyExpected),

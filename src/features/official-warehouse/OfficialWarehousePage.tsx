@@ -772,7 +772,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     }
     const invalid = selectedRows.find((row) => (quantityByVariantId[row.productVariantId] || 0) <= 0)
     if (invalid) {
-      message.warning(`${invalid.partnerSku || invalid.pskuCode} 数量必须大于 0`)
+      message.warning(`${displayPsku(invalid)} 数量必须大于 0`)
       return
     }
     const overLimit = selectedRows.find((row) => {
@@ -780,7 +780,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       return batchLimit > 0 && (quantityByVariantId[row.productVariantId] || 0) > batchLimit
     })
     if (overLimit) {
-      message.warning(`${overLimit.partnerSku || overLimit.pskuCode} 数量超过所选物流批次可用数量`)
+      message.warning(`${displayPsku(overLimit)} 数量超过所选物流批次可用数量`)
       return
     }
     setSubmitting(true)
@@ -1347,7 +1347,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             <div className="official-warehouse-image-placeholder" />
           )}
           <div className="official-warehouse-stack">
-            <Text strong>{row.title || row.partnerSku || row.pskuCode}</Text>
+            <Text strong>{row.title || displayPsku(row)}</Text>
             <Text className="official-warehouse-code-line" type="secondary" copyable>
               PSKU: {displayPsku(row)}
             </Text>

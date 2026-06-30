@@ -38,7 +38,18 @@ export function useProductListSource({
     ? undefined
     : resolveProductInitializationStatus(productListDatasetState, storeInitializationState);
   const productListItemBySkuParent = useMemo(
-    () => new Map(productListSourceItems.map((item) => [item.skuParent, item] as const)),
+    () => {
+      const itemsByKey = new Map<string, (typeof productListSourceItems)[number]>();
+      productListSourceItems.forEach((item) => {
+        if (item.partnerSku) {
+          itemsByKey.set(item.partnerSku, item);
+        }
+        if (item.skuParent) {
+          itemsByKey.set(item.skuParent, item);
+        }
+      });
+      return itemsByKey;
+    },
     [productListSourceItems]
   );
   const initializationSummaryItems = useMemo(

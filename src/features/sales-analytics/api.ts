@@ -62,10 +62,9 @@ export async function saveSalesActivityWindow(input: SalesActivityWindowInput) {
   return payload as SalesActivityWindow
 }
 
-export function fetchSalesProductDetail(query: SalesAnalyticsQuery, partnerSku: string, sku: string) {
+export function fetchSalesProductDetail(query: SalesAnalyticsQuery, partnerSku: string) {
   const params = queryParams(query)
   params.set('partnerSku', partnerSku)
-  params.set('sku', sku)
   return getJson<SalesProductDetail>(`/api/sales-data/analytics/product-detail?${params.toString()}`)
 }
 

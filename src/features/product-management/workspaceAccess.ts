@@ -86,11 +86,19 @@ export function isSameProductDetailRequest(
     return false;
   }
 
-  return (
+  const currentPartnerSku = (currentValue.partnerSku ?? '').trim();
+  const nextPartnerSku = (nextValue.partnerSku ?? '').trim();
+  const sameScope =
     currentValue.mode === nextValue.mode &&
+    (currentValue.storeCode ?? '') === (nextValue.storeCode ?? '');
+
+  if (currentPartnerSku && nextPartnerSku) {
+    return sameScope && currentPartnerSku === nextPartnerSku;
+  }
+
+  return (
+    sameScope &&
     currentValue.skuParent === nextValue.skuParent &&
-    (currentValue.storeCode ?? '') === (nextValue.storeCode ?? '') &&
-    (currentValue.partnerSku ?? '') === (nextValue.partnerSku ?? '') &&
-    (currentValue.pskuCode ?? '') === (nextValue.pskuCode ?? '')
+    currentPartnerSku === nextPartnerSku
   );
 }

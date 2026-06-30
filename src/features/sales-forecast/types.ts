@@ -25,13 +25,13 @@ export type SalesForecastFollowUpInput = {
   storeCode: string
   siteCode: string
   partnerSku: string
-  sku: string
+  sku?: string | null
   marked: boolean
 }
 
 export type SalesForecastFollowUpResult = {
   partnerSku: string
-  sku: string
+  sku?: string | null
   marked: boolean
 }
 
