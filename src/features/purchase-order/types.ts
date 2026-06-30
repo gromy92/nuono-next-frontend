@@ -112,6 +112,9 @@ export type ShippingOrderLine = {
   quoteStatus?: 'PENDING_QUOTE' | 'CONFIRMED' | string
   shippingSubmitStatus?: 'NOT_SUBMITTED' | 'PARTIAL_SUBMITTED' | 'SUBMITTED' | string
   fulfillmentType?: PurchaseOrderFulfillmentType
+  unitPrice?: string | number | null
+  currency?: string
+  billingUnit?: string
   quantity: number
 }
 

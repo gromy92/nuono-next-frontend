@@ -53,6 +53,7 @@ import type {
   ShippingOrderSegment,
   ShippingOrderLine
 } from '../purchase-order/types'
+import { buildYiteMaterialCellModel } from './WarehouseShippingOrderPage.models'
 import './WarehouseShippingOrderPage.css'
 
 const { Text, Title } = Typography
@@ -839,7 +840,7 @@ export function WarehouseShippingOrderPage({ session }: WarehouseShippingOrderPa
           <Table<ShippingOrderLine>
             size="small"
             rowKey="id"
-            scroll={{ x: 1205 }}
+            scroll={{ x: 1180 }}
             pagination={{ pageSize: 8, showSizeChanger: false }}
             columns={[
               {
@@ -892,17 +893,6 @@ export function WarehouseShippingOrderPage({ session }: WarehouseShippingOrderPa
                 )
               },
               {
-                title: '店铺',
-                dataIndex: 'sourceStoreName',
-                width: 90,
-                render: (_, line) => line.sourceStoreCode || '-'
-              },
-              {
-                title: '站点',
-                dataIndex: 'siteCode',
-                width: 60
-              },
-              {
                 title: '数量',
                 dataIndex: 'quantity',
                 width: 70,
@@ -913,18 +903,34 @@ export function WarehouseShippingOrderPage({ session }: WarehouseShippingOrderPa
                 title: '义特材质',
                 dataIndex: 'yiteMaterial',
                 width: 150,
-                render: (_, line) => (
-                  <Select
-                    size="small"
-                    allowClear
-                    placeholder="选择材质"
-                    options={YITE_MATERIAL_OPTIONS}
-                    value={line.yiteMaterial || undefined}
-                    disabled={detailShippingOrderTarget?.shippingSubmitStatus === 'SUBMITTED'}
-                    loading={actionKey === `update-yite-material:${line.id}`}
-                    onChange={(value) => void handleUpdateLineYiteMaterial(line, value)}
-                  />
-                )
+                render: (_, line) => {
+                  const cellModel = buildYiteMaterialCellModel(line)
+                  return (
+                    <Select
+                      size="small"
+                      allowClear
+                      placeholder="选择材质"
+                      options={YITE_MATERIAL_OPTIONS}
+                      value={cellModel.value}
+                      disabled={!cellModel.editable}
+                      loading={actionKey === `update-yite-material:${line.id}`}
+                      onChange={(value) => void handleUpdateLineYiteMaterial(line, value)}
+                    />
+                  )
+                }
+              },
+              {
+                title: '义特价格',
+                dataIndex: 'unitPrice',
+                width: 125,
+                render: (_, line) => {
+                  const cellModel = buildYiteMaterialCellModel(line)
+                  return (
+                    <Text type="secondary" className="warehouse-shipping-order-yite-price">
+                      {cellModel.priceText}
+                    </Text>
+                  )
+                }
               }
             ]}
             dataSource={visibleDetailLines}
