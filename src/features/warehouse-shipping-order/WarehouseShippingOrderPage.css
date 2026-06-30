@@ -183,6 +183,14 @@
   line-height: 20px;
 }
 
+.warehouse-shipping-order-yite-price {
+  display: block;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
 .warehouse-shipping-order-create-modal,
 .warehouse-shipping-order-edit-form {
   display: grid;
