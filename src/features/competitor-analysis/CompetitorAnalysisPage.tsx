@@ -34,7 +34,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import type { EChartsCoreOption } from 'echarts/core'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
-import { ProductBaselineIdentity, ProductImageThumb } from '../product-baseline'
+import { ProductBaselineIdentity } from '../product-baseline'
 import { EChartPanel } from '../../shared/charts'
 import {
   addCompetitorKeyword,
@@ -2109,45 +2109,49 @@ function ReportProductHeader({
   const fallbackTitle = chineseTitle || englishTitle ? '' : titleLines.primary
   return (
     <div className="competitor-analysis-report-header">
-      <ProductImageThumb
-        src={product.imageUrl}
-        alt={titleLines.alt}
+      <ProductBaselineIdentity
+        imageUrl={product.imageUrl}
+        imageAlt={titleLines.alt}
         imageCount={product.imageUrl ? 1 : 0}
-        width={72}
+        imageWidth={72}
+        title="商品分析"
+        tags={(
+          <>
+            <Tag color="blue" className="competitor-analysis-report-product-psku" style={{ marginInlineEnd: 0 }}>
+              PSKU {psku}
+            </Tag>
+            {product.siteCode ? <Tag style={{ marginInlineEnd: 0 }}>{product.siteCode}</Tag> : null}
+          </>
+        )}
+        extra={(
+          <>
+            <div className="competitor-analysis-report-product-titles">
+              {chineseTitle || fallbackTitle ? (
+                <Text
+                  strong
+                  className="competitor-analysis-report-product-title competitor-analysis-product-title-cn"
+                  ellipsis={{ tooltip: chineseTitle || fallbackTitle }}
+                >
+                  {chineseTitle || fallbackTitle}
+                </Text>
+              ) : null}
+              {englishTitle ? (
+                <Text
+                  type="secondary"
+                  className="competitor-analysis-report-product-title competitor-analysis-report-product-title-en-full competitor-analysis-product-title-en"
+                >
+                  {englishTitle}
+                </Text>
+              ) : null}
+            </div>
+            <ProductChangeSummaryLine
+              summary={summary}
+              monitoredCompetitorCount={monitoredCompetitorCount}
+              baselineSummary={baselineSummary}
+            />
+          </>
+        )}
       />
-      <div className="competitor-analysis-report-header-body">
-        <Space size={6} wrap>
-          <Text strong className="competitor-analysis-report-heading">商品分析</Text>
-          <Tag color="blue" className="competitor-analysis-report-product-psku" style={{ marginInlineEnd: 0 }}>
-            PSKU {psku}
-          </Tag>
-          {product.siteCode ? <Tag style={{ marginInlineEnd: 0 }}>{product.siteCode}</Tag> : null}
-        </Space>
-        <div className="competitor-analysis-report-product-titles">
-          {chineseTitle || fallbackTitle ? (
-            <Text
-              strong
-              className="competitor-analysis-report-product-title competitor-analysis-product-title-cn"
-              ellipsis={{ tooltip: chineseTitle || fallbackTitle }}
-            >
-              {chineseTitle || fallbackTitle}
-            </Text>
-          ) : null}
-          {englishTitle ? (
-            <Text
-              type="secondary"
-              className="competitor-analysis-report-product-title competitor-analysis-report-product-title-en-full competitor-analysis-product-title-en"
-            >
-              {englishTitle}
-            </Text>
-          ) : null}
-        </div>
-        <ProductChangeSummaryLine
-          summary={summary}
-          monitoredCompetitorCount={monitoredCompetitorCount}
-          baselineSummary={baselineSummary}
-        />
-      </div>
     </div>
   )
 }
