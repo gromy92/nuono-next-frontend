@@ -5,6 +5,7 @@ import type {
   OfficialWarehouseProductInboundReceiptRow,
   OfficialWarehouseProductStockSourceCandidate,
   OfficialWarehouseStockStatisticsRow,
+  OfficialWarehouseStockWarehouse,
   OfficialWarehouseStockStatisticsView
 } from './statisticsTypes'
 
@@ -29,6 +30,92 @@ export function stockStatisticsInventoryNotice(stats?: OfficialWarehouseStockSta
 
 export function stockRowNeedsReview(row: OfficialWarehouseStockStatisticsRow) {
   return Boolean(row.pendingConfirmationStock > 0 || row.anomalyFlags?.length)
+}
+
+export type CurrentStockWarehouseType = 'FBN' | 'SUPERMALL' | 'UNKNOWN'
+
+export type CurrentStockWarehouseBreakdownRow = {
+  key: string
+  warehouseCode: string
+  warehouseType: CurrentStockWarehouseType
+  warehouseTypeLabel: string
+  currentStock: number
+  effectiveStock: number
+  returnStock: number
+  failedOrExceptionStock: number
+  pendingConfirmationStock: number
+}
+
+export type CurrentStockWarehouseBreakdown = {
+  totalStock: number
+  fbnEffectiveStock: number
+  supermallEffectiveStock: number
+  otherEffectiveStock: number
+  rows: CurrentStockWarehouseBreakdownRow[]
+}
+
+export function buildCurrentStockWarehouseBreakdown(
+  totalStock: number,
+  warehouseStocks?: OfficialWarehouseStockWarehouse[] | null
+): CurrentStockWarehouseBreakdown {
+  const rows = (warehouseStocks || [])
+    .map((stock, index) => {
+      const warehouseCode = (stock.warehouseCode || '').trim() || '未标仓'
+      const warehouseType = currentStockWarehouseType(warehouseCode)
+      return {
+        key: `${warehouseCode}-${index}`,
+        warehouseCode,
+        warehouseType,
+        warehouseTypeLabel: currentStockWarehouseTypeLabel(warehouseType),
+        currentStock: nonNegativeInteger(stock.currentStock),
+        effectiveStock: nonNegativeInteger(stock.effectiveStock),
+        returnStock: nonNegativeInteger(stock.returnStock),
+        failedOrExceptionStock: nonNegativeInteger(stock.failedOrExceptionStock),
+        pendingConfirmationStock: nonNegativeInteger(stock.pendingConfirmationStock)
+      }
+    })
+    .filter((stock) => stock.currentStock > 0)
+    .sort((left, right) => {
+      if (right.effectiveStock !== left.effectiveStock) {
+        return right.effectiveStock - left.effectiveStock
+      }
+      if (right.currentStock !== left.currentStock) {
+        return right.currentStock - left.currentStock
+      }
+      return left.warehouseCode.localeCompare(right.warehouseCode)
+    })
+
+  return {
+    totalStock: nonNegativeInteger(totalStock),
+    fbnEffectiveStock: rows
+      .filter((stock) => stock.warehouseType === 'FBN')
+      .reduce((sum, stock) => sum + stock.effectiveStock, 0),
+    supermallEffectiveStock: rows
+      .filter((stock) => stock.warehouseType === 'SUPERMALL')
+      .reduce((sum, stock) => sum + stock.effectiveStock, 0),
+    otherEffectiveStock: rows
+      .filter((stock) => stock.warehouseType === 'UNKNOWN')
+      .reduce((sum, stock) => sum + stock.effectiveStock, 0),
+    rows
+  }
+}
+
+function currentStockWarehouseType(warehouseCode: string): CurrentStockWarehouseType {
+  const normalized = warehouseCode.trim().toUpperCase()
+  if (!normalized || normalized === '未标仓') {
+    return 'UNKNOWN'
+  }
+  return normalized === 'RUH01S' ? 'FBN' : 'SUPERMALL'
+}
+
+function currentStockWarehouseTypeLabel(type: CurrentStockWarehouseType) {
+  if (type === 'FBN') {
+    return '仓'
+  }
+  if (type === 'SUPERMALL') {
+    return 'Supermall'
+  }
+  return '未标仓'
 }
 
 export function inboundReceiptReportStatusText(connected?: boolean) {

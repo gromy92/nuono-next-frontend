@@ -8,6 +8,7 @@ import {
   loadOfficialWarehouseStockStatistics
 } from './statisticsApi'
 import {
+  buildCurrentStockWarehouseBreakdown,
   buildProductStockSourceChain,
   inferProductStockSourceByTotal,
   inboundStageLabel,
@@ -971,56 +972,67 @@ function ProductThumb({ row }: { row: OfficialWarehouseStockStatisticsRow }) {
 }
 
 function CurrentStockDetail({ row }: { row: OfficialWarehouseStockStatisticsRow }) {
-  const warehouseStocks = (row.warehouseStocks || []).filter((stock) => Number(stock.currentStock || 0) > 0)
+  const breakdown = buildCurrentStockWarehouseBreakdown(Number(row.currentStock || 0), row.warehouseStocks)
+  const summaryItems = [
+    {
+      key: 'fbn',
+      label: '仓',
+      value: breakdown.fbnEffectiveStock,
+      className: 'official-warehouse-current-stock-summary-fbn'
+    },
+    {
+      key: 'supermall',
+      label: 'Supermall',
+      value: breakdown.supermallEffectiveStock,
+      className: 'official-warehouse-current-stock-summary-supermall'
+    },
+    {
+      key: 'other',
+      label: '未标仓',
+      value: breakdown.otherEffectiveStock,
+      className: 'official-warehouse-current-stock-summary-other'
+    }
+  ].filter((item) => item.value > 0)
   return (
     <div className="official-warehouse-current-stock-detail">
-      <Text strong>总计 {Number(row.currentStock || 0).toLocaleString()}</Text>
-      {warehouseStocks.length ? (
-        <div className="official-warehouse-current-stock-warehouses">
-          {warehouseStocks.map((stock) => {
-            const warehouseCode = stock.warehouseCode?.trim() || '未标仓'
-            const tone = warehouseCode.toUpperCase() === 'RUH01S' ? 'fbn' : 'supermall'
-            const warehouseLabel = tone === 'fbn' ? `${warehouseCode} 仓` : `${warehouseCode} Supermall`
-            const visibleBuckets = [
-              {
-                className: 'official-warehouse-current-stock-bucket-effective',
-                text: `有效 ${Number(stock.effectiveStock || 0).toLocaleString()}`,
-                value: Number(stock.effectiveStock || 0)
-              },
-              {
-                className: 'official-warehouse-current-stock-bucket-returned',
-                text: `退货 ${Number(stock.returnStock || 0).toLocaleString()}`,
-                value: Number(stock.returnStock || 0)
-              },
-              {
-                className: 'official-warehouse-current-stock-bucket-exception',
-                text: `异常 ${Number(stock.failedOrExceptionStock || 0).toLocaleString()}`,
-                value: Number(stock.failedOrExceptionStock || 0)
-              },
-              {
-                className: 'official-warehouse-current-stock-bucket-pending',
-                text: `待确认 ${Number(stock.pendingConfirmationStock || 0).toLocaleString()}`,
-                value: Number(stock.pendingConfirmationStock || 0)
-              }
+      <div className="official-warehouse-current-stock-head">
+        <div className="official-warehouse-current-stock-total">
+          <span>总计</span>
+          <strong>{breakdown.totalStock.toLocaleString()}</strong>
+          <span>件</span>
+        </div>
+        {summaryItems.length
+          ? summaryItems.map((item) => (
+            <span className={`official-warehouse-current-stock-summary-pill ${item.className}`} key={item.key}>
+              <span>{item.label}</span>
+              <strong>{item.value.toLocaleString()}</strong>
+            </span>
+          ))
+          : null}
+      </div>
+      {breakdown.rows.length ? (
+        <div className="official-warehouse-current-stock-warehouse-chips">
+          {breakdown.rows.map((stock) => {
+            const extraBuckets = [
+              { label: '退货', value: stock.returnStock },
+              { label: '异常', value: stock.failedOrExceptionStock },
+              { label: '待确认', value: stock.pendingConfirmationStock }
             ].filter((bucket) => bucket.value > 0)
+            const title = [
+              `${stock.warehouseCode} ${stock.warehouseTypeLabel}`,
+              `有效 ${stock.effectiveStock.toLocaleString()}`,
+              ...extraBuckets.map((bucket) => `${bucket.label} ${bucket.value.toLocaleString()}`)
+            ].join(' · ')
             return (
-              <Text
-                className={`official-warehouse-current-stock-warehouse-line official-warehouse-current-stock-warehouse-line-${tone}`}
-                key={stock.warehouseCode || 'UNMARKED'}
+              <span
+                className={`official-warehouse-current-stock-warehouse-chip official-warehouse-current-stock-warehouse-chip-${stock.warehouseType.toLowerCase()}`}
+                key={stock.key}
+                title={title}
               >
-                <span className="official-warehouse-current-stock-warehouse-name">{warehouseLabel}</span>{' '}
-                {visibleBuckets.map((bucket, index) => (
-                  <span key={bucket.className}>
-                    {index > 0 ? (
-                      <>
-                        {' '}
-                        <span className="official-warehouse-current-stock-bucket-separator">/</span>{' '}
-                      </>
-                    ) : null}
-                    <span className={bucket.className}>{bucket.text}</span>
-                  </span>
-                ))}
-              </Text>
+                <span className="official-warehouse-current-stock-warehouse-code">{stock.warehouseCode}</span>
+                <strong>{stock.effectiveStock.toLocaleString()}</strong>
+                {extraBuckets.length ? <span className="official-warehouse-current-stock-warehouse-alert">!</span> : null}
+              </span>
             )
           })}
         </div>

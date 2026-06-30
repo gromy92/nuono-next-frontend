@@ -101,6 +101,26 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantSystemRole'
 ])
 
+const OFFICIAL_WAREHOUSE_TAB_QUERY_KEY = 'officialWarehouseTab'
+const OFFICIAL_WAREHOUSE_STOCK_ALIAS_PATH = '/warehouse/official-warehouse-stock'
+
+function stripPathSearchAndHash(path: string) {
+  const hashIndex = path.indexOf('#')
+  const pathWithoutHash = hashIndex >= 0 ? path.slice(0, hashIndex) : path
+  const searchIndex = pathWithoutHash.indexOf('?')
+  return searchIndex >= 0 ? pathWithoutHash.slice(0, searchIndex) : pathWithoutHash
+}
+
+function shouldCarryOfficialWarehouseStockTab(path: string, currentSearch: URLSearchParams) {
+  if (normalizePath(stripPathSearchAndHash(path)) !== OFFICIAL_WAREHOUSE_PATH) {
+    return false
+  }
+  return (
+    normalizePath(currentAppPathname()) === OFFICIAL_WAREHOUSE_STOCK_ALIAS_PATH ||
+    currentSearch.get(OFFICIAL_WAREHOUSE_TAB_QUERY_KEY) === 'stock'
+  )
+}
+
 export function withCurrentWorkspaceDevQuery(path: string) {
   if (typeof window === 'undefined' || !path || path.startsWith('http://') || path.startsWith('https://')) {
     return path
@@ -113,6 +133,9 @@ export function withCurrentWorkspaceDevQuery(path: string) {
       preservedSearch.append(key, value)
     }
   })
+  if (shouldCarryOfficialWarehouseStockTab(path, currentSearch)) {
+    preservedSearch.set(OFFICIAL_WAREHOUSE_TAB_QUERY_KEY, 'stock')
+  }
 
   const preservedSearchText = preservedSearch.toString()
   if (!preservedSearchText) {

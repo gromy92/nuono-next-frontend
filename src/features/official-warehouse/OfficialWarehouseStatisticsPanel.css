@@ -173,68 +173,121 @@
 
 .official-warehouse-current-stock-detail {
   display: flex;
-  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 190px;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
-.official-warehouse-current-stock-warehouses {
+.official-warehouse-current-stock-head {
   display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.official-warehouse-current-stock-warehouse {
-  min-width: 0;
-}
-
-.official-warehouse-current-stock-warehouse-main {
-  display: flex;
-  min-width: 0;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 4px 6px;
 }
 
-.official-warehouse-current-stock-warehouse-buckets {
-  display: block;
-  overflow: hidden;
-  max-width: 100%;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.official-warehouse-current-stock-total {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  color: #0f172a;
+}
+
+.official-warehouse-current-stock-total span {
+  color: #475569;
   font-size: 12px;
 }
 
-.official-warehouse-current-stock-warehouse-line {
-  display: block;
-  overflow: hidden;
-  max-width: 100%;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12px;
+.official-warehouse-current-stock-total strong {
+  font-size: 18px;
+  line-height: 1;
 }
 
-.official-warehouse-current-stock-warehouse-line-fbn .official-warehouse-current-stock-warehouse-name {
+.official-warehouse-current-stock-summary-pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  padding: 1px 6px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.official-warehouse-current-stock-summary-pill strong {
+  color: #0f172a;
+}
+
+.official-warehouse-current-stock-summary-fbn strong {
   color: #15803d;
 }
 
-.official-warehouse-current-stock-warehouse-line-supermall .official-warehouse-current-stock-warehouse-name {
+.official-warehouse-current-stock-summary-supermall strong {
   color: #2563eb;
 }
 
-.official-warehouse-current-stock-bucket-effective,
-.official-warehouse-current-stock-bucket-separator {
-  color: #64748b;
+.official-warehouse-current-stock-warehouse-chips {
+  display: flex;
+  overflow-y: auto;
+  max-height: 52px;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-.official-warehouse-current-stock-bucket-returned,
-.official-warehouse-current-stock-bucket-pending {
-  color: #ea580c;
+.official-warehouse-current-stock-warehouse-chip {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #dbeafe;
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: #f8fbff;
+  color: #1e293b;
+  font-size: 12px;
+  line-height: 18px;
 }
 
-.official-warehouse-current-stock-bucket-exception {
+.official-warehouse-current-stock-warehouse-chip-fbn {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.official-warehouse-current-stock-warehouse-chip-unknown {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
+.official-warehouse-current-stock-warehouse-code {
+  overflow: hidden;
+  max-width: 88px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.official-warehouse-current-stock-warehouse-chip strong {
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.official-warehouse-current-stock-warehouse-chip-fbn .official-warehouse-current-stock-warehouse-code,
+.official-warehouse-current-stock-warehouse-chip-fbn strong {
+  color: #15803d;
+}
+
+.official-warehouse-current-stock-warehouse-chip-supermall strong {
+  color: #2563eb;
+}
+
+.official-warehouse-current-stock-warehouse-alert {
   color: #dc2626;
+  font-weight: 700;
 }
 
 .official-warehouse-source-inference-summary {
