@@ -7,6 +7,7 @@ import {
   workspaceMenuContentKind,
   workspaceMenuPath
 } from './WorkspaceMenuRegistry'
+import { withCurrentWorkspaceDevQuery } from './WorkspaceRouting'
 
 assert.equal(workspaceMenuPath('official-warehouse'), '/warehouse/official-warehouse')
 assert.equal(workspaceMenuContentKind('official-warehouse'), 'official-warehouse')
@@ -23,3 +24,26 @@ assert.deepEqual(
   warehouseMenuKeys.filter((key) => key === 'official-warehouse'),
   ['official-warehouse']
 )
+
+const previousWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
+Object.defineProperty(globalThis, 'window', {
+  configurable: true,
+  value: {
+    location: {
+      pathname: '/warehouse/official-warehouse-stock',
+      search: '?devSession=1'
+    }
+  }
+})
+try {
+  assert.equal(
+    withCurrentWorkspaceDevQuery('/warehouse/official-warehouse'),
+    '/warehouse/official-warehouse?devSession=1&officialWarehouseTab=stock'
+  )
+} finally {
+  if (previousWindowDescriptor) {
+    Object.defineProperty(globalThis, 'window', previousWindowDescriptor)
+  } else {
+    delete (globalThis as { window?: unknown }).window
+  }
+}

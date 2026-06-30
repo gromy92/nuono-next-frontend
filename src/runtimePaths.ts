@@ -1,4 +1,4 @@
-const rawBasePath = import.meta.env.BASE_URL || '/';
+const rawBasePath = import.meta.env?.BASE_URL || '/';
 const SESSION_STORAGE_KEY = 'nuono-next-session';
 const LOCAL_DEV_SESSION_USER_HEADER = 'X-Nuono-Dev-Session-User-Id';
 const LOCAL_DEV_SESSION_ROLE_HEADER = 'X-Nuono-Dev-Session-Role-Id';
