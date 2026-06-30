@@ -1,5 +1,6 @@
 import {
   canImportFbnReportExport,
+  buildCurrentStockWarehouseBreakdown,
   buildProductStockSourceChain,
   fbnReportImportActionLabel,
   fbnReportStatusLabel,
@@ -405,6 +406,51 @@ if (stockCorrectionActionLabel() !== '订正分类') {
 
 if (stockSourceLabel('FBN_INVENTORY_API') !== 'FBN库存') {
   throw new Error('expected FBN inventory source label')
+}
+
+const currentStockBreakdown = buildCurrentStockWarehouseBreakdown(56, [
+  {
+    warehouseCode: 'DMMMS01',
+    currentStock: 2,
+    effectiveStock: 2,
+    returnStock: 0,
+    failedOrExceptionStock: 0,
+    pendingConfirmationStock: 0
+  },
+  {
+    warehouseCode: 'RUH01S',
+    currentStock: 25,
+    effectiveStock: 25,
+    returnStock: 0,
+    failedOrExceptionStock: 0,
+    pendingConfirmationStock: 0
+  },
+  {
+    warehouseCode: 'RUHMS03',
+    currentStock: 3,
+    effectiveStock: 3,
+    returnStock: 0,
+    failedOrExceptionStock: 0,
+    pendingConfirmationStock: 0
+  }
+])
+
+if (
+  currentStockBreakdown.totalStock !== 56 ||
+  currentStockBreakdown.fbnEffectiveStock !== 25 ||
+  currentStockBreakdown.supermallEffectiveStock !== 5
+) {
+  throw new Error('expected current stock breakdown to summarize warehouse and Supermall quantities')
+}
+
+if (
+  currentStockBreakdown.rows.length !== 3 ||
+  currentStockBreakdown.rows[0]?.warehouseCode !== 'RUH01S' ||
+  currentStockBreakdown.rows[0]?.warehouseTypeLabel !== '仓' ||
+  currentStockBreakdown.rows[1]?.warehouseCode !== 'RUHMS03' ||
+  currentStockBreakdown.rows[1]?.warehouseTypeLabel !== 'Supermall'
+) {
+  throw new Error('expected current stock breakdown rows to sort by effective stock and label warehouse type')
 }
 
 const completedReceivedExport: OfficialWarehouseFbnReportExportItem = {
