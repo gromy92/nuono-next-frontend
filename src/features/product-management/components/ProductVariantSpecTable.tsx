@@ -148,7 +148,7 @@ export function ProductVariantSpecTable({ scope, onSaved }: ProductVariantSpecTa
     async (row: ProductVariantSpecPayload) => {
       const rowPartnerSku = textInputValue(row.partnerSku || partnerSku).trim();
       const rowCurrentZCode = textInputValue(row.currentZCode || row.skuParent || currentZCode).trim();
-      if (!ownerUserId || !storeCode || !rowPartnerSku) {
+      if (!ownerUserId || !storeCode || !(rowPartnerSku || row.variantId)) {
         message.warning('缺少商品或 SKU 上下文，无法保存规格');
         return;
       }
@@ -163,7 +163,7 @@ export function ProductVariantSpecTable({ scope, onSaved }: ProductVariantSpecTa
           storeCode,
           skuParent: rowCurrentZCode,
           currentZCode: rowCurrentZCode,
-          partnerSku: rowPartnerSku
+          partnerSku: rowPartnerSku || undefined
         });
         updateRow(rowKey, saved);
         setSavedKey(rowKey);

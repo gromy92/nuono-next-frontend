@@ -27,7 +27,7 @@ export function getProductIdentityStoreCode(value: ProductIdentityLike | undefin
 export function getProductStableIdentityKey(value: ProductIdentityLike | undefined) {
   const storeCode = getProductIdentityStoreCode(value);
   const partnerSku = normalizeProductIdentityValue(value?.partnerSku);
-  if (partnerSku) {
+  if (storeCode && partnerSku) {
     return [storeCode, `psku:${partnerSku}`].filter(Boolean).join('|');
   }
 
@@ -46,10 +46,8 @@ export function getProductIdentityLookupKeys(value: ProductIdentityLike | undefi
   const storeCode = getProductIdentityStoreCode(value);
   const partnerSku = normalizeProductIdentityValue(value?.partnerSku);
 
-  if (partnerSku) {
+  if (storeCode && partnerSku) {
     keys.add([storeCode, `psku:${partnerSku}`].filter(Boolean).join('|'));
-    keys.add(`psku:${partnerSku}`);
-    keys.add(partnerSku);
   }
 
   const compatibilityRef = normalizeProductIdentityValue(
@@ -86,8 +84,7 @@ export function isSameStableProductIdentity(
 
   const currentStoreCode = getProductIdentityStoreCode(currentValue);
   const nextStoreCode = getProductIdentityStoreCode(nextValue);
-  const sameStoreScope = !currentStoreCode || !nextStoreCode || currentStoreCode === nextStoreCode;
-  if (!sameStoreScope) {
+  if (!currentStoreCode || !nextStoreCode || currentStoreCode !== nextStoreCode) {
     return false;
   }
 

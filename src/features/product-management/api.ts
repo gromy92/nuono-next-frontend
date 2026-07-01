@@ -271,11 +271,55 @@ export async function saveProductVariantSpec(request: ProductVariantSpecSaveRequ
     });
     return productSpecDetailToVariantSpecPayload(detail);
   }
+  if (request.variantId) {
+    const currentZCode = request.currentZCode || request.skuParent;
+    const source = await saveProductSpecSource({
+      ...request,
+      currentZCode,
+      skuParent: currentZCode,
+      sourceType: 'warehouse'
+    });
+    if (!source.sourceId) {
+      throw new Error('规格来源保存后缺少来源编号');
+    }
+    const detail = await selectProductSpecEffectiveSource({
+      ownerUserId: request.ownerUserId,
+      storeCode: request.storeCode,
+      variantId: request.variantId,
+      currentZCode,
+      skuParent: currentZCode,
+      sourceId: source.sourceId
+    });
+    return productSpecDetailToVariantSpecPayload(detail);
+  }
   return postJson<ProductVariantSpecPayload>('/api/product-variant-specs', request, '保存商品规格失败');
 }
 
 export async function fetchProductLogisticsProfiles(request: ProductHistoryRequest) {
   const normalizedRequest = normalizeProductIdentityRequest(request);
+  if (normalizedRequest.partnerSku) {
+    const query = new URLSearchParams({
+      ownerUserId: String(normalizedRequest.ownerUserId),
+      storeCode: normalizedRequest.storeCode,
+      partnerSku: normalizedRequest.partnerSku
+    });
+    const response = await apiFetch(`/api/product-logistics-profiles/by-psku?${query.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, `物流属性返回 ${response.status}`));
+    }
+
+    const item = (await response.json()) as ProductLogisticsProfilePayload;
+    return {
+      ready: true,
+      ownerUserId: normalizedRequest.ownerUserId,
+      storeCode: item.storeCode || normalizedRequest.storeCode,
+      skuParent: item.currentZCode || item.skuParent || normalizedRequest.currentZCode,
+      currentZCode: item.currentZCode || item.skuParent || normalizedRequest.currentZCode,
+      partnerSku: item.partnerSku || normalizedRequest.partnerSku,
+      items: [item]
+    } as ProductLogisticsProfileListPayload;
+  }
   const query = new URLSearchParams({
     ownerUserId: String(normalizedRequest.ownerUserId),
     storeCode: normalizedRequest.storeCode,
@@ -437,6 +481,27 @@ export async function selectProductSpecEffectiveSource(request: ProductVariantSp
       : null;
   if (!url) {
     throw new Error('缺少商品规格上下文，无法切换生效规格');
+  }
+  if (partnerSku) {
+    const response = await apiFetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...body,
+        variantId,
+        partnerSku,
+        currentZCode: zCode,
+        skuParent: zCode
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, '切换生效规格失败'));
+    }
+
+    return (await response.json()) as ProductVariantSpecDetailPayload;
   }
   return postJson<ProductVariantSpecDetailPayload>(
     url,

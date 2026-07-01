@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { selectProductSpecEffectiveSource } from './api';
 
 const productManagementDir = dirname(fileURLToPath(import.meta.url));
 const repoFeatureDir = join(productManagementDir, '..');
@@ -114,8 +115,26 @@ assert.doesNotMatch(
 
 assert.doesNotMatch(
   productIdentity,
+  /keys\.add\(`psku:\$\{partnerSku\}`\)|keys\.add\(partnerSku\)/,
+  'product identity lookup keys must not expose partnerSku aliases without store scope'
+);
+
+assert.match(
+  productIdentity,
+  /if \(storeCode && partnerSku\)/,
+  'product identity lookup keys must require store scope for partnerSku'
+);
+
+assert.doesNotMatch(
+  productIdentity,
   /currentZCode && nextZCode && currentZCode === nextZCode/,
   'stable identity comparison must not fall back to current Z code equality'
+);
+
+assert.doesNotMatch(
+  productIdentity,
+  /!currentStoreCode \|\| !nextStoreCode \|\| currentStoreCode === nextStoreCode/,
+  'stable identity comparison must not treat missing store scope as a match'
 );
 
 assert.doesNotMatch(
@@ -198,6 +217,18 @@ assert.match(
 
 assert.match(
   api,
+  /if \(partnerSku\)[\s\S]*method: 'PUT'[\s\S]*return \(await response\.json\(\)\) as ProductVariantSpecDetailPayload/,
+  'by-psku effective-source requests must use PUT'
+);
+
+assert.match(
+  specTable,
+  /!\(rowPartnerSku \|\| row\.variantId\)/,
+  'embedded product spec table legacy fallback must allow variantId-only saves'
+);
+
+assert.match(
+  api,
   /\/api\/product-logistics-profiles\/by-psku/,
   'product logistics profile requests must prefer the by-psku API'
 );
@@ -237,3 +268,43 @@ assert.doesNotMatch(
   /encodeURIComponent\(partnerSku\)/,
   'Noon product/catalog links must not use partnerSku as the Z-code path segment'
 );
+
+const originalFetch = globalThis.fetch;
+const apiCalls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
+globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  apiCalls.push({ input, init });
+  return new Response(JSON.stringify({ ready: true }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}) as typeof fetch;
+
+try {
+  await selectProductSpecEffectiveSource({
+    storeCode: 'STR69486-NSA',
+    partnerSku: 'SGGRB113',
+    currentZCode: 'Z20152FFCAE5DA47AC88EZ',
+    sourceId: 10
+  });
+  assert.equal(apiCalls[0]?.init?.method, 'PUT', 'by-psku effective-source must use PUT');
+  assert.match(
+    String(apiCalls[0]?.input ?? ''),
+    /\/api\/product-specs\/by-psku\/effective-source\?storeCode=STR69486-NSA&partnerSku=SGGRB113/,
+    'by-psku effective-source URL must include storeCode and partnerSku query params'
+  );
+
+  await selectProductSpecEffectiveSource({
+    storeCode: 'STR69486-NSA',
+    variantId: 123,
+    currentZCode: 'Z20152FFCAE5DA47AC88EZ',
+    sourceId: 11
+  });
+  assert.equal(apiCalls[1]?.init?.method, 'POST', 'legacy variant effective-source must continue to use POST');
+  assert.match(
+    String(apiCalls[1]?.input ?? ''),
+    /\/api\/product-specs\/123\/effective-source/,
+    'legacy variant effective-source URL must use variantId route'
+  );
+} finally {
+  globalThis.fetch = originalFetch;
+}

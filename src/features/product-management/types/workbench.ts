@@ -198,7 +198,7 @@ export type ProductVariantSpecSaveRequest = ProductVariantSpecPayload & {
   storeCode: string;
   skuParent?: string;
   currentZCode?: string;
-  partnerSku: string;
+  partnerSku?: string;
 };
 
 export type ProductVariantSpecSourceSaveRequest = ProductVariantSpecSourcePayload & {

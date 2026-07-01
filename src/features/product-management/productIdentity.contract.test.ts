@@ -114,8 +114,17 @@ assert.deepEqual(
     skuParent: 'Z20152FFCAE5DA47AC88EZ',
     partnerSku: 'SGGRB113'
   }),
-  ['STR69486-NSA|psku:SGGRB113', 'psku:SGGRB113', 'SGGRB113'],
+  ['STR69486-NSA|psku:SGGRB113'],
   'product identity lookup keys must not include current Z code aliases when partnerSku is present'
+);
+
+assert.deepEqual(
+  getProductIdentityLookupKeys({
+    currentZCode: 'Z20152FFCAE5DA47AC88EZ',
+    partnerSku: 'SGGRB113'
+  }),
+  [],
+  'product identity lookup keys must not match partnerSku globally without store scope'
 );
 
 assert.deepEqual(
@@ -146,6 +155,47 @@ assert.equal(
   }),
   'STR69486-NSA|psku:SGGRB113',
   'stable product key must use store + partnerSku'
+);
+
+assert.equal(
+  getProductStableIdentityKey({
+    currentZCode: 'ZOLD',
+    partnerSku: 'SGGRB113'
+  }),
+  '',
+  'stable product key must not use partnerSku without store scope'
+);
+
+assert.equal(
+  isSameStableProductIdentity(
+    {
+      currentZCode: 'ZOLD',
+      partnerSku: 'SGGRB113'
+    },
+    {
+      currentZCode: 'ZNEW',
+      partnerSku: 'SGGRB113'
+    }
+  ),
+  false,
+  'stable product identity comparisons must require store scope'
+);
+
+assert.equal(
+  isSameStableProductIdentity(
+    {
+      storeCode: 'STR69486-NSA',
+      currentZCode: 'ZOLD',
+      partnerSku: 'SGGRB113'
+    },
+    {
+      storeCode: 'STR245027-NAE',
+      currentZCode: 'ZOLD',
+      partnerSku: 'SGGRB113'
+    }
+  ),
+  false,
+  'stable product identity comparisons must not match the same partnerSku across stores'
 );
 
 assert.equal(
