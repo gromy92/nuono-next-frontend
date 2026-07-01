@@ -352,7 +352,7 @@ export function useProductManagementWorkspace({
   });
 
   const productListColumns = createProductListColumns({
-    deletingProductSkuParent: productLocalDeletion.deletingProductSkuParent,
+    deletingProductKey: productLocalDeletion.deletingProductKey,
     productSnapshotSubmitting,
     usingMockProductList,
     productListUiStates,

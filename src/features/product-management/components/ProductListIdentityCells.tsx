@@ -16,6 +16,63 @@ function productName(record: ProductListRowPayload) {
   return record.title || record.partnerSku || record.skuParent || '当前商品';
 }
 
+function productIdentityLabel(record: ProductListRowPayload) {
+  if (record.partnerSku) {
+    return `PSKU: ${record.partnerSku}`;
+  }
+  if (record.skuParent) {
+    return `SKU: ${record.skuParent}`;
+  }
+  return '';
+}
+
+function ProductDeleteConfirmDescription({ record }: { record: ProductListRowPayload }) {
+  const identityLabel = productIdentityLabel(record);
+
+  return (
+    <Space
+      direction="vertical"
+      size={8}
+      style={{ width: 360, maxWidth: 'calc(100vw - 72px)' }}
+    >
+      <Space direction="vertical" size={2} style={{ width: '100%' }}>
+        <Text type="secondary" style={{ fontSize: 12 }}>
+          删除对象
+        </Text>
+        <Text
+          strong
+          style={{
+            display: 'block',
+            lineHeight: '20px',
+            maxHeight: 60,
+            overflow: 'hidden',
+            wordBreak: 'break-word'
+          }}
+        >
+          {productName(record)}
+        </Text>
+        {identityLabel ? (
+          <Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
+            {identityLabel}
+          </Text>
+        ) : null}
+      </Space>
+      <div
+        style={{
+          background: '#fff7ed',
+          border: '1px solid #fed7aa',
+          borderRadius: 6,
+          padding: '8px 10px'
+        }}
+      >
+        <Text style={{ color: '#9a3412', display: 'block', fontSize: 12, lineHeight: '18px' }}>
+          系统会先删除 Noon 商品并回查确认，成功后再清理本地商品目录。
+        </Text>
+      </div>
+    </Space>
+  );
+}
+
 function productVariantSpecMissing(record: ProductListRowPayload) {
   const status = record.productVariantSpecStatus;
   return Boolean(status && status !== 'ready');
@@ -126,7 +183,7 @@ export function ProductDetailsCell(props: {
           </Button>
           <Popconfirm
             title="确认删除商品？"
-            description={`将从本地商品目录删除「${productName(record)}」。此操作不会写回 Noon。`}
+            description={<ProductDeleteConfirmDescription record={record} />}
             okText="删除"
             cancelText="取消"
             okButtonProps={{ danger: true }}
@@ -142,9 +199,6 @@ export function ProductDetailsCell(props: {
               size="small"
               icon={<DeleteOutlined />}
               loading={deleting}
-              onClick={(event) => {
-                event.stopPropagation();
-              }}
               style={{ height: 20, padding: 0, fontSize: 12 }}
             >
               删除

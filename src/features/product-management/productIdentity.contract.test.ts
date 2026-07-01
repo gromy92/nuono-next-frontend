@@ -236,3 +236,39 @@ assert.equal(
   false,
   'ProductBaselineDisplay must not display external pskuCode as business PSKU fallback'
 );
+
+const productDeleteRow = {
+  storeCode: 'STR69486-NSA',
+  skuParent: 'ZOLDPSKU001',
+  partnerSku: 'SGGRB113',
+  pskuCode: 'old-noon-psku-code',
+  siteLabels: [],
+  liveStatuses: [],
+  issueTags: []
+};
+
+assert.equal(
+  getProductListRowIdentityKey(productDeleteRow),
+  'STR69486-NSA|psku:SGGRB113',
+  'product delete pending state should key by store + partnerSku, not skuParent or external pskuCode'
+);
+
+const productListIdentityCellsSource = readFileSync(
+  new URL('./components/ProductListIdentityCells.tsx', import.meta.url),
+  'utf8'
+);
+
+assert.equal(
+  productListIdentityCellsSource.includes('icon={<DeleteOutlined />}') &&
+    productListIdentityCellsSource.includes('event.stopPropagation();\n              }}\n              style={{ height: 20'),
+  false,
+  'product list delete button must not stop propagation before Popconfirm can open'
+);
+
+assert.equal(
+  productListIdentityCellsSource.includes('description={<ProductDeleteConfirmDescription record={record} />}') &&
+    productListIdentityCellsSource.includes("style={{ width: 360, maxWidth: 'calc(100vw - 72px)' }}") &&
+    productListIdentityCellsSource.includes("wordBreak: 'break-word'"),
+  true,
+  'product delete confirmation popup should constrain width and wrap long product names'
+);

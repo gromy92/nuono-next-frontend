@@ -12,7 +12,7 @@ import type { ProductListRowPayload, ProductListUiState } from './types';
 import { getProductListRowIdentityKey } from './utils';
 
 type ProductListColumnsParams = {
-  deletingProductSkuParent?: string;
+  deletingProductKey?: string;
   productSnapshotSubmitting: boolean;
   usingMockProductList: boolean;
   productListUiStates: Record<string, ProductListUiState>;
@@ -26,7 +26,7 @@ type ProductListColumnsParams = {
 };
 
 export function createProductListColumns({
-  deletingProductSkuParent,
+  deletingProductKey,
   productSnapshotSubmitting,
   usingMockProductList,
   productListUiStates,
@@ -47,7 +47,7 @@ export function createProductListColumns({
         <ProductDetailsCell
           record={record}
           productSnapshotSubmitting={productSnapshotSubmitting}
-          deleting={deletingProductSkuParent === getProductListRowIdentityKey(record)}
+          deleting={deletingProductKey === getProductListRowIdentityKey(record)}
           openProductListGallery={openProductListGallery}
           openProductWorkbenchInPageTab={openProductWorkbenchInPageTab}
           openProductHistoryModal={openProductHistoryModal}
