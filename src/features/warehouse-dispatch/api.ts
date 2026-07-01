@@ -201,7 +201,11 @@ function mapReadyItem(item: ApiReadyItem): ReadyShipmentRow {
   const specStatus = normalizeSpecStatus(item.specStatus)
   const psku = item.partnerSku || item.skuParent || ''
   const title = item.productTitle || psku
-  const rowId = ['ready', item.productVariantId || psku, siteCode, fulfillmentType, specStatus].join('__')
+  const sourceStoreKey = Array.from(
+    new Set((item.sources || []).map((source) => source.sourceStoreCode).filter(Boolean))
+  ).sort().join('+')
+  const productKey = item.partnerSku ? `psku:${item.partnerSku}` : `legacy:${item.productVariantId || item.skuParent || ''}`
+  const rowId = ['ready', sourceStoreKey || 'store', productKey, siteCode, fulfillmentType, specStatus].join('__')
   const sourceItems = (item.sources || []).map((source) => {
     const availableQty = Number(source.availableQuantity || 0)
     return {

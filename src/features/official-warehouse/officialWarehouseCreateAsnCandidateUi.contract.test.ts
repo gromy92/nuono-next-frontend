@@ -13,8 +13,8 @@ const candidateColumnsSource = pageSource.slice(
 )
 
 const candidateTableSource = pageSource.slice(
-  pageSource.indexOf('<Table\n            rowKey="productVariantId"'),
-  pageSource.indexOf('locale={{\n              emptyText:', pageSource.indexOf('<Table\n            rowKey="productVariantId"'))
+  pageSource.indexOf('<Table\n            rowKey={officialWarehouseCandidateKey}'),
+  pageSource.indexOf('locale={{\n              emptyText:', pageSource.indexOf('<Table\n            rowKey={officialWarehouseCandidateKey}'))
 )
 
 assert.match(
@@ -40,6 +40,11 @@ assert.doesNotMatch(
   'quantity column should not show batch available quantity'
 )
 assert.match(candidateTableSource, /pagination=\{false\}/, 'candidate table should not paginate')
+assert.match(
+  candidateTableSource,
+  /rowKey=\{officialWarehouseCandidateKey\}/,
+  'candidate table should use stable store + site + PSKU row keys'
+)
 
 assert.match(
   styleSource,

@@ -496,11 +496,15 @@ function mapListItem(row: BackendWatchProductListItem): CompetitorWatchProduct {
 }
 
 function mapListKeywords(
-  product: Pick<CompetitorWatchProduct, 'id' | 'productSiteOfferId' | 'partnerSku' | 'siteCode'>,
+  product: Pick<CompetitorWatchProduct, 'id' | 'storeCode' | 'partnerSku' | 'siteCode'>,
   activeKeywordStats?: BackendKeywordCount[],
   activeKeywords?: string[]
 ): CompetitorKeyword[] {
-  const baseId = product.id || product.productSiteOfferId || product.partnerSku || 'product'
+  const store = product.storeCode?.trim() || ''
+  const site = product.siteCode?.trim() || ''
+  const partnerSku = product.partnerSku?.trim() || ''
+  const businessKey = store && site && partnerSku ? `${store}::${site}::psku:${partnerSku}` : ''
+  const baseId = businessKey || product.id || 'missing-psku-product'
   const keywordRows = activeKeywordStats?.length
     ? activeKeywordStats.map((item) => ({
         keyword: stringValue(item.keyword),
@@ -557,7 +561,7 @@ function mapWatchProductBase(row: BackendWatchProduct) {
     siteCode: stringValue(row.siteCode),
     partnerSku: stringValue(row.partnerSku),
     childSku: stringValue(row.childSku),
-    pskuCode: stringValue(row.pskuCode) || stringValue(row.skuParent) || selfNoonProductCode,
+    pskuCode: stringValue(row.pskuCode),
     productFulltype: stringValue(row.productFulltype),
     selfNoonProductCode,
     status: normalizeActiveStatus(row.status),

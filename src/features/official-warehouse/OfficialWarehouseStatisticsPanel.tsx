@@ -30,6 +30,19 @@ import './OfficialWarehouseStatisticsPanel.css'
 
 const { Text } = Typography
 
+function officialWarehouseStockRowKey(
+  row: OfficialWarehouseStockStatisticsRow,
+  scope: { storeCode?: string; siteCode?: string }
+) {
+  const store = row.storeCode?.trim() || scope.storeCode?.trim() || ''
+  const site = row.siteCode?.trim() || scope.siteCode?.trim() || ''
+  const partnerSku = row.partnerSku?.trim() || ''
+  if (store && site && partnerSku) {
+    return `${store}::${site}::psku:${partnerSku}`
+  }
+  return `legacy-stock-row:${row.productVariantId || row.productSiteOfferId || row.skuParent || row.noonSku || 'unknown'}`
+}
+
 type OfficialWarehouseStatisticsPanelProps = {
   storeCode?: string
   siteCode?: string
@@ -337,7 +350,7 @@ export function OfficialWarehouseStatisticsPanel({ storeCode, siteCode, mode = '
   const productTable = (
     <Table
       className="official-warehouse-product-stock-table"
-      rowKey={(row: OfficialWarehouseStockStatisticsRow) => `${row.partnerSku || row.productSiteOfferId || row.skuParent || row.noonSku}`}
+      rowKey={(row: OfficialWarehouseStockStatisticsRow) => officialWarehouseStockRowKey(row, { storeCode, siteCode })}
       size="small"
       loading={loading}
       tableLayout="fixed"

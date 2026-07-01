@@ -327,7 +327,7 @@ function toPrintLine(line: OfficialWarehouseAsnLine): FbnTransferPrintLine {
     name: textOrDash(line.titleEn || line.title || line.partnerSku || line.noonSku || line.childSku),
     subLabel: textOrDash(line.brand),
     imageUrl: line.imageUrl,
-    partnerBarcode: partnerSku === '-' ? textOrDash(line.pskuCode) : partnerSku,
+    partnerBarcode: partnerSku,
     partnerSku,
     noonSku: textOrDash(line.noonSku || line.childSku),
     quantity: line.quantity || 0

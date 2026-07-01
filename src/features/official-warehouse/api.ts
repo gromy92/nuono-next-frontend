@@ -233,6 +233,7 @@ export type CreateOfficialWarehouseAsnPayload = {
   lines: Array<{
     productVariantId: number
     productSiteOfferId?: number
+    partnerSku?: string
     quantity: number
   }>
 }
