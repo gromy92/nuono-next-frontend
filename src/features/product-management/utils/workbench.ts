@@ -24,6 +24,7 @@ const ACTIVE_PUBLISH_TASK_STATUSES = new Set([
   'verifying',
   'pending_effective',
   'write_unknown',
+  'write_retry_scheduled',
   'verify_timeout'
 ]);
 
@@ -41,6 +42,24 @@ export function isProductPublishTaskNeedsAttention(task?: ProductPublishTaskPayl
 export function productPublishTaskStatusLabel(task?: ProductPublishTaskPayload) {
   if (!task?.status) {
     return '';
+  }
+  if (task.taskType === 'product-delete') {
+    if (task.status === 'synced') {
+      return '删除成功';
+    }
+    if (task.status === 'failed') {
+      return '删除失败';
+    }
+    if (task.status === 'pending_manual_check') {
+      return '删除待核对';
+    }
+    if (isProductPublishTaskActive(task)) {
+      return '删除中';
+    }
+    if (task.status === 'cancelled') {
+      return '已取消';
+    }
+    return String(task.status);
   }
   if (task.status === 'synced') {
     return '发布成功';

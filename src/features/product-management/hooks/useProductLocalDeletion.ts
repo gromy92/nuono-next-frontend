@@ -19,7 +19,7 @@ export function useProductLocalDeletion({
   selectedInitializationStoreCode,
   setProductListDatasetState
 }: UseProductLocalDeletionParams) {
-  const [deletingProductSkuParent, setDeletingProductSkuParent] = useState<string>();
+  const [deletingProductKey, setDeletingProductKey] = useState<string>();
 
   const requestDeleteLocalProduct = useCallback(
     async (record: ProductListRowPayload) => {
@@ -30,7 +30,7 @@ export function useProductLocalDeletion({
         return;
       }
 
-      setDeletingProductSkuParent(getProductListRowIdentityKey(record));
+      setDeletingProductKey(getProductListRowIdentityKey(record));
       try {
         const payload = await deleteLocalProduct({
           ownerUserId: activeOwnerId,
@@ -44,11 +44,11 @@ export function useProductLocalDeletion({
         if (currentProductIdentityKey === getProductListRowIdentityKey(record)) {
           closeProductDetailTab();
         }
-        message.success('商品已从本地商品目录删除。');
+        message.success(payload.message || '商品删除已提交后台处理，请在发布状态和历史中查看进度。');
       } catch (error) {
         message.error(error instanceof Error ? error.message : '删除商品失败');
       } finally {
-        setDeletingProductSkuParent(undefined);
+        setDeletingProductKey(undefined);
       }
     },
     [
@@ -61,7 +61,7 @@ export function useProductLocalDeletion({
   );
 
   return {
-    deletingProductSkuParent,
+    deletingProductKey,
     productLocalDeletionConfirmModal: null,
     requestDeleteLocalProduct
   };
