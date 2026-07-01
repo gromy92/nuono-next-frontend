@@ -10,6 +10,8 @@ import {
   buildProductWorkbenchPayloadFromState,
   buildProductWorkbenchState,
   cloneRecordList,
+  findProductByIdentity,
+  getProductStableIdentityKey,
   nowSyncTime
 } from '../utils';
 import type {
@@ -55,7 +57,20 @@ export function useProductWorkbenchSurfaceActions({
         typeof nextWorkbenchState.draft.identity.skuParent === 'string'
           ? nextWorkbenchState.draft.identity.skuParent
           : context?.skuParent;
-      const matchedListItem = skuParent ? productListItemBySkuParent.get(skuParent) : undefined;
+      const currentZCode =
+        typeof nextWorkbenchState.draft.identity.currentZCode === 'string'
+          ? nextWorkbenchState.draft.identity.currentZCode
+          : skuParent;
+      const partnerSku =
+        typeof nextWorkbenchState.draft.identity.partnerSku === 'string'
+          ? nextWorkbenchState.draft.identity.partnerSku
+          : context?.partnerSku;
+      const matchedListItem = findProductByIdentity(productListItemBySkuParent, {
+        storeCode: context?.storeCode,
+        partnerSku,
+        currentZCode,
+        skuParent
+      });
       const nextSummary = buildProductSummarySurfaceFromWorkbench(nextWorkbenchState, matchedListItem);
       const nextContext =
         context ??
@@ -68,10 +83,8 @@ export function useProductWorkbenchSurfaceActions({
                   ? nextWorkbenchState.draft.storeContext.storeCode
                   : undefined,
               skuParent,
-              partnerSku:
-                typeof nextWorkbenchState.draft.identity.partnerSku === 'string'
-                  ? nextWorkbenchState.draft.identity.partnerSku
-                  : undefined,
+              currentZCode,
+              partnerSku,
               pskuCode:
                 typeof nextWorkbenchState.draft.identity.pskuCode === 'string'
                   ? nextWorkbenchState.draft.identity.pskuCode
@@ -97,7 +110,7 @@ export function useProductWorkbenchSurfaceActions({
       if (payload.listSummary) {
         applyProductListSummary(payload.listSummary);
       } else {
-        updateProductListUiState(skuParent, {
+        updateProductListUiState(getProductStableIdentityKey({ storeCode: context?.storeCode, partnerSku, currentZCode, skuParent }), {
           syncStatus: nextWorkbenchState.syncStatus,
           lastSyncedAt: nextWorkbenchState.lastSyncedAt,
           note: nextWorkbenchState.note
@@ -131,9 +144,21 @@ export function useProductWorkbenchSurfaceActions({
         );
         const nextSummary = buildProductSummarySurfaceFromWorkbench(
           result.workbench,
-          result.workbench.draft.identity.skuParent
-            ? productListItemBySkuParent.get(String(result.workbench.draft.identity.skuParent))
-            : undefined
+          findProductByIdentity(productListItemBySkuParent, {
+            storeCode: currentValue.context.storeCode,
+            partnerSku:
+              typeof result.workbench.draft.identity.partnerSku === 'string'
+                ? result.workbench.draft.identity.partnerSku
+                : currentValue.context.partnerSku,
+            currentZCode:
+              typeof result.workbench.draft.identity.currentZCode === 'string'
+                ? result.workbench.draft.identity.currentZCode
+                : undefined,
+            skuParent:
+              typeof result.workbench.draft.identity.skuParent === 'string'
+                ? result.workbench.draft.identity.skuParent
+                : currentValue.context.skuParent
+          })
         );
         return {
           ...currentValue,
@@ -174,6 +199,7 @@ export function useProductWorkbenchSurfaceActions({
           source: 'quick-open',
           storeCode: mockItem.referenceStoreCode,
           skuParent: mockItem.skuParent,
+          currentZCode: mockItem.currentZCode || mockItem.skuParent,
           partnerSku: mockItem.partnerSku,
           pskuCode: mockItem.pskuCode,
           summaryPreview: buildProductSummarySurfaceFromSample(mockItem)

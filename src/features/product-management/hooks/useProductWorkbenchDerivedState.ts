@@ -10,6 +10,8 @@ import {
   buildProductSummarySurfaceFromWorkbench,
   buildProductWarehouseStockRows,
   countProductContentProgress,
+  findProductByIdentity,
+  getProductStableIdentityKey,
   normalizeSnapshotTextList,
   normalizeStringList,
   pickAttributeValue,
@@ -106,13 +108,41 @@ export function useProductWorkbenchDerivedState({
     productSnapshotView && typeof productSnapshotView.identity.skuParent === 'string'
       ? productSnapshotView.identity.skuParent
       : undefined;
+  const currentProductIdentityKey = productSnapshotView
+    ? getProductStableIdentityKey({
+        storeCode:
+          typeof productSnapshotView.storeContext.storeCode === 'string'
+            ? productSnapshotView.storeContext.storeCode
+            : productWorkbenchContext?.storeCode,
+        partnerSku:
+          typeof productSnapshotView.identity.partnerSku === 'string'
+            ? productSnapshotView.identity.partnerSku
+            : productWorkbenchContext?.partnerSku,
+        currentZCode:
+          typeof productSnapshotView.identity.currentZCode === 'string'
+            ? productSnapshotView.identity.currentZCode
+            : undefined,
+        skuParent: currentProductSkuParent || productWorkbenchContext?.skuParent
+      })
+    : undefined;
   const currentProductSummarySurface = useMemo(
     () =>
       buildProductSummarySurfaceFromWorkbench(
         productWorkbenchState,
-        currentProductSkuParent ? productListItemBySkuParent.get(currentProductSkuParent) : undefined
+        findProductByIdentity(productListItemBySkuParent, {
+          storeCode: productWorkbenchContext?.storeCode,
+          partnerSku:
+            productSnapshotView && typeof productSnapshotView.identity.partnerSku === 'string'
+              ? productSnapshotView.identity.partnerSku
+              : productWorkbenchContext?.partnerSku,
+          currentZCode:
+            productSnapshotView && typeof productSnapshotView.identity.currentZCode === 'string'
+              ? productSnapshotView.identity.currentZCode
+              : undefined,
+          skuParent: currentProductSkuParent || productWorkbenchContext?.skuParent
+        })
       ),
-    [currentProductSkuParent, productListItemBySkuParent, productWorkbenchState]
+    [currentProductSkuParent, productListItemBySkuParent, productSnapshotView, productWorkbenchContext, productWorkbenchState]
   );
   const productDetailSummarySurface = currentProductSummarySurface ?? productWorkbenchSummaryPreview;
   const productWorkbenchSessionSkuParent =
@@ -239,6 +269,7 @@ export function useProductWorkbenchDerivedState({
     productSnapshotState,
     productSnapshotView,
     currentProductSkuParent,
+    currentProductIdentityKey,
     currentProductSummarySurface,
     productDetailSummarySurface,
     productWorkbenchSessionSkuParent,

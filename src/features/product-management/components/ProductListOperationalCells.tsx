@@ -6,6 +6,7 @@ import type { ProductListRowPayload, ProductListUiState } from '../types';
 import {
   buildProductSummarySurfaceFromListItem,
   formatDateTimeParts,
+  getProductListRowIdentityKey,
   hasProductBlockingIssues,
   isLiveStatusActive,
   isProductIssueBlocking,
@@ -99,7 +100,9 @@ export function SellerStatusCell(props: {
 }) {
   const { record, usingMockProductList, productListUiStates } = props;
   const rowUiState = usingMockProductList
-    ? productListUiStates[record.skuParent] ?? MOCK_PRODUCT_LIST_UI_STATES[record.skuParent]
+    ? productListUiStates[getProductListRowIdentityKey(record)] ??
+      productListUiStates[record.skuParent] ??
+      MOCK_PRODUCT_LIST_UI_STATES[record.skuParent]
     : undefined;
   const syncStatus = rowUiState?.syncStatus ?? record.syncStatus ?? 'synced';
   const rowSyncMeta = productSyncStatusMeta(syncStatus);
@@ -306,7 +309,9 @@ export function LiveStatusCell(props: {
   const summary = buildProductSummarySurfaceFromListItem(record);
   const primaryLiveStatus = productSummaryPrimaryLiveStatus(summary);
   const rowUiState = usingMockProductList
-    ? productListUiStates[record.skuParent] ?? MOCK_PRODUCT_LIST_UI_STATES[record.skuParent]
+    ? productListUiStates[getProductListRowIdentityKey(record)] ??
+      productListUiStates[record.skuParent] ??
+      MOCK_PRODUCT_LIST_UI_STATES[record.skuParent]
     : undefined;
   const liveActive = isLiveStatusActive(primaryLiveStatus);
   const issueTags = productListIssueTags(record);
@@ -320,7 +325,7 @@ export function LiveStatusCell(props: {
       : undefined;
 
   const commitLiveStatus = (nextLiveActive: boolean) => {
-    updateProductListLiveStatus(record.skuParent, nextLiveActive);
+    updateProductListLiveStatus(getProductListRowIdentityKey(record), nextLiveActive);
     message.success(nextLiveActive ? '已标记为上架' : '已标记为下架');
   };
 

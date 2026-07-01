@@ -93,6 +93,7 @@ export type ProductVariantSpecCartonSourceType =
 export type ProductVariantSpecPayload = {
   storeCode?: string;
   skuParent?: string;
+  currentZCode?: string;
   title?: string;
   imageUrl?: string;
   variantId?: number;
@@ -158,6 +159,8 @@ export type ProductVariantSpecListPayload = {
   ownerUserId?: number;
   storeCode?: string;
   skuParent?: string;
+  currentZCode?: string;
+  partnerSku?: string;
   warnings?: string[];
   items: ProductVariantSpecPayload[];
 };
@@ -180,6 +183,7 @@ export type ProductVariantSpecDetailPayload = {
   partnerSku?: string;
   childSku?: string;
   skuParent?: string;
+  currentZCode?: string;
   title?: string;
   imageUrl?: string;
   effectiveSourceId?: number;
@@ -192,21 +196,28 @@ export type ProductVariantSpecDetailPayload = {
 export type ProductVariantSpecSaveRequest = ProductVariantSpecPayload & {
   ownerUserId?: number;
   storeCode: string;
-  skuParent: string;
+  skuParent?: string;
+  currentZCode?: string;
   partnerSku: string;
 };
 
 export type ProductVariantSpecSourceSaveRequest = ProductVariantSpecSourcePayload & {
   ownerUserId?: number;
   storeCode: string;
-  variantId: number;
+  variantId?: number;
+  partnerSku?: string;
+  skuParent?: string;
+  currentZCode?: string;
   sourceType: ProductVariantSpecSourceType;
 };
 
 export type ProductVariantSpecEffectiveSourceRequest = {
   ownerUserId?: number;
   storeCode: string;
-  variantId: number;
+  variantId?: number;
+  partnerSku?: string;
+  skuParent?: string;
+  currentZCode?: string;
   sourceId: number;
 };
 
@@ -215,8 +226,10 @@ export type ProductVariantSpecModalState = {
   ownerUserId?: number;
   storeCode?: string;
   skuParent?: string;
+  currentZCode?: string;
   title?: string;
   partnerSku?: string;
+  variantId?: number;
   imageUrl?: string;
 };
 
@@ -224,6 +237,7 @@ export type ProductLogisticsProfilePayload = {
   profileId?: number;
   storeCode?: string;
   skuParent?: string;
+  currentZCode?: string;
   title?: string;
   imageUrl?: string;
   variantId?: number;
@@ -267,13 +281,17 @@ export type ProductLogisticsProfileListPayload = {
   ownerUserId?: number;
   storeCode?: string;
   skuParent?: string;
+  currentZCode?: string;
+  partnerSku?: string;
   items: ProductLogisticsProfilePayload[];
 };
 
 export type ProductLogisticsProfileSaveRequest = ProductLogisticsProfilePayload & {
   ownerUserId?: number;
   storeCode: string;
-  variantId: number;
+  variantId?: number;
+  partnerSku?: string;
+  currentZCode?: string;
 };
 
 export type ProductWorkbenchPayload = ProductMasterSnapshotPayload & {
@@ -338,6 +356,7 @@ export type ProductWorkbenchContext = {
   source: 'list-row' | 'quick-open' | 'init-carrier' | 'manual-open' | 'route-open' | 'unknown';
   storeCode?: string;
   skuParent?: string;
+  currentZCode?: string;
   partnerSku?: string;
   pskuCode?: string;
   summaryPreview: ProductSummarySurface | null;

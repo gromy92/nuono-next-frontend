@@ -15,6 +15,7 @@ type ProductWorkspaceState = ReturnType<typeof useProductWorkspaceState>;
 type UseProductMediaAndHistoryActionsParams = {
   activeOwnerId?: number;
   applyProductListSummary: (summary?: ProductListSummaryPayload) => void;
+  currentProductIdentityKey?: string;
   currentProductSkuParent?: string;
   currentProductSummarySurface: ProductSummarySurface | null;
   productImageUrls: string[];
@@ -30,6 +31,7 @@ type UseProductMediaAndHistoryActionsParams = {
 export function useProductMediaAndHistoryActions({
   activeOwnerId,
   applyProductListSummary,
+  currentProductIdentityKey,
   currentProductSkuParent,
   currentProductSummarySurface,
   productImageUrls,

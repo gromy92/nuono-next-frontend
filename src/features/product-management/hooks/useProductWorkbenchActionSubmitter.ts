@@ -25,6 +25,7 @@ type UseProductWorkbenchActionSubmitterParams = {
   activeProductSiteOffer?: Record<string, unknown>;
   applyMockProductAction: (action: ProductWorkbenchAction) => void;
   applyProductWorkbenchResponse: (payload: ProductWorkbenchPayload) => ProductWorkbenchState;
+  currentProductIdentityKey?: string;
   currentProductSkuParent?: string;
   productDraftDirty: boolean;
   productSnapshotForm: FormInstance;
@@ -41,6 +42,7 @@ export function useProductWorkbenchActionSubmitter({
   activeProductSiteOffer,
   applyMockProductAction,
   applyProductWorkbenchResponse,
+  currentProductIdentityKey,
   currentProductSkuParent,
   productDraftDirty,
   productSnapshotForm,
@@ -92,6 +94,11 @@ export function useProductWorkbenchActionSubmitter({
         skuParent:
           formValues.skuParent ??
           (typeof productSnapshotView.identity.skuParent === 'string' ? productSnapshotView.identity.skuParent : undefined),
+        currentZCode:
+          formValues.currentZCode ??
+          (typeof productSnapshotView.identity.currentZCode === 'string' ? productSnapshotView.identity.currentZCode : undefined) ??
+          formValues.skuParent ??
+          (typeof productSnapshotView.identity.skuParent === 'string' ? productSnapshotView.identity.skuParent : undefined),
         partnerSku:
           formValues.partnerSku ??
           (typeof productSnapshotView.identity.partnerSku === 'string' ? productSnapshotView.identity.partnerSku : undefined),
@@ -99,7 +106,7 @@ export function useProductWorkbenchActionSubmitter({
           formValues.pskuCode ??
           (typeof productSnapshotView.identity.pskuCode === 'string' ? productSnapshotView.identity.pskuCode : undefined)
       };
-      if (!requestValues.storeCode || !requestValues.skuParent) {
+      if (!requestValues.storeCode || !(requestValues.partnerSku || requestValues.currentZCode || requestValues.skuParent)) {
         message.error('当前商品缺少最小定位信息，暂时不能执行详情动作。');
         return;
       }
@@ -112,6 +119,7 @@ export function useProductWorkbenchActionSubmitter({
           noonUser: requestValues.noonUser,
           noonPassword: requestValues.noonPassword,
           skuParent: requestValues.skuParent,
+          currentZCode: requestValues.currentZCode,
           partnerSku: requestValues.partnerSku,
           pskuCode: requestValues.pskuCode,
           action,
@@ -175,7 +183,7 @@ export function useProductWorkbenchActionSubmitter({
             }
           };
         });
-        updateProductListUiState(currentProductSkuParent, {
+        updateProductListUiState(currentProductIdentityKey || currentProductSkuParent, {
           syncStatus: 'failed',
           lastSyncedAt: productWorkbenchState.lastSyncedAt,
           note: errorMessage
@@ -191,6 +199,7 @@ export function useProductWorkbenchActionSubmitter({
       applyMockProductAction,
       applyProductWorkbenchResponse,
       currentProductSkuParent,
+      currentProductIdentityKey,
       productDraftDirty,
       productSnapshotForm,
       productSnapshotView,

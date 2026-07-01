@@ -2,6 +2,7 @@ export * from './utils/common';
 export * from './utils/fieldDomainIssues';
 export * from './utils/fieldDomain';
 export * from './utils/noonLinks';
+export * from './utils/productIdentity';
 export * from './utils/productSourceType';
 export * from './utils/productListFilters';
 export * from './utils/siteCompare';

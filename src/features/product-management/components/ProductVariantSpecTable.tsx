@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { fetchProductVariantSpecs, saveProductVariantSpec } from '../api';
 import type { ProductVariantSpecLogisticsValue, ProductVariantSpecPayload } from '../types';
 import { formatSnapshotValue, textInputValue } from '../utils/common';
+import { getProductStableIdentityKey } from '../utils';
 
 const { Text } = Typography;
 
@@ -10,6 +11,9 @@ export type ProductVariantSpecScope = {
   ownerUserId?: number;
   storeCode?: string;
   skuParent?: string;
+  currentZCode?: string;
+  partnerSku?: string;
+  variantId?: number;
 };
 
 type ProductVariantSpecTableProps = {
@@ -101,10 +105,11 @@ export function ProductVariantSpecTable({ scope, onSaved }: ProductVariantSpecTa
 
   const ownerUserId = Number(scope?.ownerUserId) || undefined;
   const storeCode = textInputValue(scope?.storeCode).trim();
-  const skuParent = textInputValue(scope?.skuParent).trim();
+  const currentZCode = textInputValue(scope?.currentZCode || scope?.skuParent).trim();
+  const partnerSku = textInputValue(scope?.partnerSku).trim();
 
   useEffect(() => {
-    if (!ownerUserId || !storeCode || !skuParent) {
+    if (!ownerUserId || !storeCode || !(partnerSku || currentZCode)) {
       setRows([]);
       setLoading(false);
       return;
@@ -113,7 +118,7 @@ export function ProductVariantSpecTable({ scope, onSaved }: ProductVariantSpecTa
     let cancelled = false;
     setRows([]);
     setLoading(true);
-    void fetchProductVariantSpecs({ ownerUserId, storeCode, skuParent })
+    void fetchProductVariantSpecs({ ownerUserId, storeCode, partnerSku, currentZCode, skuParent: currentZCode })
       .then((payload) => {
         if (!cancelled) {
           setRows(payload.items ?? []);
@@ -133,7 +138,7 @@ export function ProductVariantSpecTable({ scope, onSaved }: ProductVariantSpecTa
     return () => {
       cancelled = true;
     };
-  }, [ownerUserId, storeCode, skuParent]);
+  }, [currentZCode, ownerUserId, partnerSku, storeCode]);
 
   const updateRow = useCallback((rowKey: string, patch: Partial<ProductVariantSpecPayload>) => {
     setRows((currentRows) => currentRows.map((row) => (specRowKey(row) === rowKey ? { ...row, ...patch } : row)));
@@ -141,8 +146,9 @@ export function ProductVariantSpecTable({ scope, onSaved }: ProductVariantSpecTa
 
   const saveRow = useCallback(
     async (row: ProductVariantSpecPayload) => {
-      const partnerSku = textInputValue(row.partnerSku).trim();
-      if (!ownerUserId || !storeCode || !skuParent || !partnerSku) {
+      const rowPartnerSku = textInputValue(row.partnerSku || partnerSku).trim();
+      const rowCurrentZCode = textInputValue(row.currentZCode || row.skuParent || currentZCode).trim();
+      if (!ownerUserId || !storeCode || !rowPartnerSku) {
         message.warning('缺少商品或 SKU 上下文，无法保存规格');
         return;
       }
@@ -155,8 +161,9 @@ export function ProductVariantSpecTable({ scope, onSaved }: ProductVariantSpecTa
           ...row,
           ownerUserId,
           storeCode,
-          skuParent,
-          partnerSku
+          skuParent: rowCurrentZCode,
+          currentZCode: rowCurrentZCode,
+          partnerSku: rowPartnerSku
         });
         updateRow(rowKey, saved);
         setSavedKey(rowKey);
@@ -167,7 +174,7 @@ export function ProductVariantSpecTable({ scope, onSaved }: ProductVariantSpecTa
         setSavingKey(undefined);
       }
     },
-    [onSaved, ownerUserId, skuParent, storeCode, updateRow]
+    [currentZCode, onSaved, ownerUserId, partnerSku, storeCode, updateRow]
   );
 
   useEffect(() => {
@@ -320,7 +327,10 @@ const specLayoutRowStyle = {
 } as const;
 
 function specRowKey(row: ProductVariantSpecPayload) {
-  return [row.variantId, row.partnerSku, row.childSku].map((value) => textInputValue(value).trim()).join(':');
+  return [
+    getProductStableIdentityKey(row),
+    row.childSku || row.sizeEn || row.sizeAr || row.variantId
+  ].map((value) => textInputValue(value).trim()).join(':');
 }
 
 function ProductVariantSpecNumberField(props: {

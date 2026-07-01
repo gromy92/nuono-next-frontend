@@ -4,6 +4,7 @@ import {
   isProductNotListedSource,
   productListingStartedSourceLabel,
   formatSnapshotValue,
+  getProductCurrentZCode,
   productSummaryIdentityLine,
   productSummaryPriceLine,
   productSummaryTitle
@@ -23,6 +24,7 @@ export function ProductDetailPreviewPanel({ message, summary, status = 'loading'
   const loading = status === 'loading';
   const listingStartedSourceLabel = productListingStartedSourceLabel(summary.listingStartedSource);
   const productNotListed = isProductNotListedSource(summary.listingStartedSource);
+  const currentZCode = getProductCurrentZCode(summary);
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
       <Alert
@@ -58,9 +60,9 @@ export function ProductDetailPreviewPanel({ message, summary, status = 'loading'
               />
 
               <Descriptions column={{ xs: 1, sm: 2, xl: 3 }} size="small" colon={false}>
-                <Descriptions.Item label="SKU Parent">{formatSnapshotValue(summary.skuParent)}</Descriptions.Item>
+                <Descriptions.Item label="当前Z码">{formatSnapshotValue(currentZCode)}</Descriptions.Item>
                 <Descriptions.Item label="PSKU">{formatSnapshotValue(summary.partnerSku)}</Descriptions.Item>
-                <Descriptions.Item label="PSKU Code">{formatSnapshotValue(summary.pskuCode)}</Descriptions.Item>
+                <Descriptions.Item label="Noon pskuCode">{formatSnapshotValue(summary.pskuCode)}</Descriptions.Item>
                 <Descriptions.Item label="品牌">{formatSnapshotValue(summary.brand)}</Descriptions.Item>
                 <Descriptions.Item label="类目">{formatSnapshotValue(summary.productFulltype)}</Descriptions.Item>
                 <Descriptions.Item label="参考价">{productSummaryPriceLine(summary)}</Descriptions.Item>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { openProductWorkbenchSnapshot } from '../api';
-import { mergeGalleryImageUrls, productSummaryTitle } from '../utils';
+import { getProductCurrentZCode, mergeGalleryImageUrls, productSummaryTitle } from '../utils';
 import type {
   ProductListSummaryPayload,
   ProductMasterSnapshotPayload,
@@ -123,15 +123,16 @@ export function useProductGalleryActions({
   const openProductListGallery = useCallback(
     async (record: StoreInitializationPayload['productItems'][number]) => {
       const galleryImages = mergeGalleryImageUrls(record.galleryImages, record.imageUrl);
+      const currentZCode = getProductCurrentZCode(record);
       const galleryOptions: { title?: string; subtitle?: string } = {};
       const galleryTitle = record.title || record.skuParent;
       if (galleryTitle) {
         galleryOptions.title = galleryTitle;
       }
-      if (record.skuParent) {
-        galleryOptions.subtitle = record.skuParent;
+      if (currentZCode) {
+        galleryOptions.subtitle = currentZCode;
       }
-      if (galleryImages.length > 1 || !activeOwnerId || !record.skuParent) {
+      if (galleryImages.length > 1 || !activeOwnerId || !(record.partnerSku || currentZCode)) {
         openProductGallery(galleryImages, galleryOptions);
         return;
       }
@@ -146,7 +147,8 @@ export function useProductGalleryActions({
         const payload = await openProductWorkbenchSnapshot({
           ownerUserId: activeOwnerId,
           storeCode: effectiveStoreCode,
-          skuParent: record.skuParent,
+          skuParent: currentZCode,
+          currentZCode,
           partnerSku: record.partnerSku,
           pskuCode: record.pskuCode
         });

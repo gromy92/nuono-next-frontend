@@ -1,5 +1,6 @@
 import { Alert, Space, Spin, Table, Tag, Typography } from 'antd';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
+import { getProductListRowIdentityKey } from '../utils';
 
 const { Text } = Typography;
 
@@ -25,7 +26,7 @@ export function ProductCatalogTablePanel({ workspace }: ProductCatalogTablePanel
     productListShellMeta,
     productListColumns,
     productRowSelection,
-    currentProductSkuParent
+    currentProductIdentityKey
   } = workspace;
   const catalogSummaryText = productListAvailable
     ? `共 ${productListSourceItems.length} 个商品 · 当前显示 ${filteredProductListItems.length}`
@@ -93,7 +94,7 @@ export function ProductCatalogTablePanel({ workspace }: ProductCatalogTablePanel
         <Table
           columns={productListColumns}
           dataSource={filteredProductListItems}
-          rowKey={(record) => record.skuParent}
+          rowKey={(record) => getProductListRowIdentityKey(record)}
           rowSelection={productRowSelection}
           size="small"
           pagination={{ pageSize: 20, showSizeChanger: false, showTotal: (total) => `共 ${total} 个商品` }}
@@ -101,7 +102,7 @@ export function ProductCatalogTablePanel({ workspace }: ProductCatalogTablePanel
           style={{ borderTop: '1px solid #f3f4f6' }}
           onRow={(record) => ({
             style: {
-              background: currentProductSkuParent === record.skuParent ? '#f0fdfa' : undefined
+              background: currentProductIdentityKey === getProductListRowIdentityKey(record) ? '#f0fdfa' : undefined
             }
           })}
         />

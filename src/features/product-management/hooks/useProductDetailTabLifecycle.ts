@@ -24,6 +24,7 @@ type UseProductDetailTabLifecycleParams = {
       noonUser: string;
       noonPassword: string;
       skuParent: string;
+      currentZCode: string;
       partnerSku: string;
       pskuCode: string;
     }>,
@@ -79,6 +80,7 @@ export function useProductDetailTabLifecycle({
       {
         storeCode,
         skuParent: productDetailTabRequest.skuParent,
+        currentZCode: productDetailTabRequest.currentZCode || productDetailTabRequest.skuParent,
         partnerSku: productDetailTabRequest.partnerSku,
         pskuCode: productDetailTabRequest.pskuCode
       },

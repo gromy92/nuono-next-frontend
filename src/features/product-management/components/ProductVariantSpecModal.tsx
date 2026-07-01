@@ -19,10 +19,13 @@ export function ProductVariantSpecModal({ workspace }: ProductVariantSpecModalPr
     ownerUserId,
     storeCode,
     skuParent,
+    currentZCode,
     title,
     partnerSku,
+    variantId,
     imageUrl
   } = productVariantSpecModalState;
+  const zCode = currentZCode || skuParent;
 
   const closeModal = () => {
     setProductVariantSpecModalState({ open: false });
@@ -64,9 +67,9 @@ export function ProductVariantSpecModal({ workspace }: ProductVariantSpecModalPr
             titleMaxWidth={860}
             codes={[
               {
-                label: 'SKU',
-                value: formatSnapshotValue(skuParent),
-                copyText: skuParent
+                label: '当前Z码',
+                value: formatSnapshotValue(zCode),
+                copyText: zCode
               },
               {
                 label: 'PSKU',
@@ -80,7 +83,10 @@ export function ProductVariantSpecModal({ workspace }: ProductVariantSpecModalPr
             ]}
           />
         </div>
-        <ProductVariantSpecTable scope={{ ownerUserId, storeCode, skuParent }} onSaved={handleSaved} />
+        <ProductVariantSpecTable
+          scope={{ ownerUserId, storeCode, partnerSku, currentZCode: zCode, skuParent: zCode, variantId }}
+          onSaved={handleSaved}
+        />
       </Space>
     </Modal>
   );

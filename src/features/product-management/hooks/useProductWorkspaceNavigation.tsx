@@ -3,7 +3,7 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { FormInstance } from 'antd';
 import { findMockProductItem } from '../mockData';
 import { isSameProductDetailRequest } from '../workspaceHelpers';
-import { buildProductSummarySurfaceFromListItem, buildProductWorkbenchContext } from '../utils';
+import { buildProductSummarySurfaceFromListItem, buildProductWorkbenchContext, findProductByIdentity } from '../utils';
 import type {
   ProductDetailTabMode,
   ProductDetailTabRequest,
@@ -23,6 +23,7 @@ import { useProductWorkspaceReset } from './useProductWorkspaceReset';
 
 type ProductQuickOpenSample = {
   skuParent: string;
+  currentZCode?: string;
   partnerSku?: string;
   pskuCode?: string;
   storeCode?: string;
@@ -64,6 +65,7 @@ type UseProductWorkspaceNavigationParams = {
       noonUser: string;
       noonPassword: string;
       skuParent: string;
+      currentZCode: string;
       partnerSku: string;
       pskuCode: string;
     }>,
@@ -129,17 +131,19 @@ export function useProductWorkspaceNavigation({
 
       const nextRequest = {
         skuParent: sample.skuParent,
+        currentZCode: sample.currentZCode || sample.skuParent,
         partnerSku: sample.partnerSku,
         pskuCode: sample.pskuCode,
         storeCode: sample.storeCode || sample.referenceStoreCode || selectedInitializationStoreCode,
         mode
       } satisfies ProductDetailTabRequest;
-      const matchedListItem = productListItemBySkuParent.get(sample.skuParent);
+      const matchedListItem = findProductByIdentity(productListItemBySkuParent, nextRequest);
       const nextContext = buildProductWorkbenchContext({
         mode,
         source: 'list-row',
         storeCode: nextRequest.storeCode,
         skuParent: nextRequest.skuParent,
+        currentZCode: nextRequest.currentZCode,
         partnerSku: nextRequest.partnerSku,
         pskuCode: nextRequest.pskuCode,
         summaryPreview: matchedListItem ? buildProductSummarySurfaceFromListItem(matchedListItem) : null
@@ -158,6 +162,7 @@ export function useProductWorkspaceNavigation({
           productSnapshotForm.setFieldsValue({
             storeCode: nextRequest.storeCode,
             skuParent: nextRequest.skuParent,
+            currentZCode: nextRequest.currentZCode,
             partnerSku: nextRequest.partnerSku,
             pskuCode: nextRequest.pskuCode
           });
@@ -197,6 +202,7 @@ export function useProductWorkspaceNavigation({
       productSnapshotForm.setFieldsValue({
         storeCode: nextRequest.storeCode,
         skuParent: nextRequest.skuParent,
+        currentZCode: nextRequest.currentZCode,
         partnerSku: nextRequest.partnerSku,
         pskuCode: nextRequest.pskuCode
       });
@@ -236,15 +242,17 @@ export function useProductWorkspaceNavigation({
       const requestValues = {
         storeCode: sample.storeCode || sample.referenceStoreCode || selectedInitializationStoreCode,
         skuParent: sample.skuParent,
+        currentZCode: sample.currentZCode || sample.skuParent,
         partnerSku: sample.partnerSku,
         pskuCode: sample.pskuCode
       };
-      const matchedListItem = productListItemBySkuParent.get(sample.skuParent);
+      const matchedListItem = findProductByIdentity(productListItemBySkuParent, requestValues);
       const nextContext = buildProductWorkbenchContext({
         mode,
         source: 'quick-open',
         storeCode: requestValues.storeCode,
         skuParent: requestValues.skuParent,
+        currentZCode: requestValues.currentZCode,
         partnerSku: requestValues.partnerSku,
         pskuCode: requestValues.pskuCode,
         summaryPreview: matchedListItem ? buildProductSummarySurfaceFromListItem(matchedListItem) : null
@@ -265,7 +273,7 @@ export function useProductWorkspaceNavigation({
       productSnapshotForm.setFieldsValue(requestValues);
 
       if (mode === 'mock') {
-        openMockProductWorkbench(sample.skuParent);
+        openMockProductWorkbench(requestValues.currentZCode);
         return true;
       }
 

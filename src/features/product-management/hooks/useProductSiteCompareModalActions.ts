@@ -4,7 +4,8 @@ import { openProductWorkbenchSnapshot } from '../api';
 import { createMockProductWorkbenchPayload } from '../workspaceHelpers';
 import {
   buildProductSiteCompareModalFromRecord,
-  buildProductSiteCompareModalFromWorkbench
+  buildProductSiteCompareModalFromWorkbench,
+  getProductCurrentZCode
 } from '../utils';
 import type { ProductListRowPayload, ProductSiteCompareModalState } from '../types';
 
@@ -34,7 +35,8 @@ export function useProductSiteCompareModalActions({
       }
 
       const effectiveStoreCode = record.referenceStoreCode || selectedInitializationStoreCode;
-      if (!activeOwnerId || !effectiveStoreCode || !record.skuParent) {
+      const currentZCode = getProductCurrentZCode(record);
+      if (!activeOwnerId || !effectiveStoreCode || !(record.partnerSku || currentZCode)) {
         setProductSiteCompareModalState(buildProductSiteCompareModalFromRecord(record, {
           loading: false,
           note: '当前商品缺少老板、店铺或 SKU 上下文，暂时只能展示列表聚合数据。'
@@ -46,7 +48,8 @@ export function useProductSiteCompareModalActions({
         const payload = await openProductWorkbenchSnapshot({
           ownerUserId: activeOwnerId,
           storeCode: effectiveStoreCode,
-          skuParent: record.skuParent,
+          skuParent: currentZCode,
+          currentZCode,
           partnerSku: record.partnerSku,
           pskuCode: record.pskuCode
         });
