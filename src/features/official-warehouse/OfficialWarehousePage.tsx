@@ -133,6 +133,16 @@ function displayPsku(row: Pick<OfficialWarehouseProductCandidate, 'partnerSku' |
   return row.partnerSku || row.skuParent || row.childSku || '-'
 }
 
+function officialWarehouseCandidateKey(row: OfficialWarehouseProductCandidate) {
+  const store = row.storeCode?.trim() || ''
+  const site = row.siteCode?.trim() || ''
+  const partnerSku = row.partnerSku?.trim() || ''
+  if (store && site && partnerSku) {
+    return `${store}::${site}::psku:${partnerSku}`
+  }
+  return `legacy-row:${row.productVariantId || row.productSiteOfferId || row.noonSku || row.pskuCode}`
+}
+
 function formatCubicFeet(value?: number) {
   if (value == null || Number.isNaN(Number(value))) {
     return '-'
@@ -416,7 +426,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [shippingBatches, setShippingBatches] = useState<OfficialWarehouseShippingBatchCandidate[]>([])
   const [selectedShippingBatchIds, setSelectedShippingBatchIds] = useState<string[]>([])
   const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<Key[]>([])
-  const [quantityByVariantId, setQuantityByVariantId] = useState<Record<string, number>>({})
+  const [quantityByCandidateKey, setQuantityByCandidateKey] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
   const [appointmentOpen, setAppointmentOpen] = useState(false)
   const [appointmentTarget, setAppointmentTarget] = useState<OfficialWarehouseAsn>()
@@ -729,10 +739,10 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       })
       setCandidates(rows)
       setSelectedCandidateKeys([])
-      setQuantityByVariantId(
+      setQuantityByCandidateKey(
         rows.reduce<Record<string, number>>((next, row) => {
           const batchQuantity = Number(row.batchAvailableQuantity || 0)
-          next[row.productVariantId] = batchIds.length && batchQuantity > 0 ? batchQuantity : 1
+          next[officialWarehouseCandidateKey(row)] = batchIds.length && batchQuantity > 0 ? batchQuantity : 1
           return next
         }, {})
       )
@@ -765,19 +775,19 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   }
 
   async function submitCreateAsn() {
-    const selectedRows = candidates.filter((candidate) => selectedCandidateKeys.includes(candidate.productVariantId))
+    const selectedRows = candidates.filter((candidate) => selectedCandidateKeys.includes(officialWarehouseCandidateKey(candidate)))
     if (!selectedRows.length) {
       message.warning('请选择至少一个商品')
       return
     }
-    const invalid = selectedRows.find((row) => (quantityByVariantId[row.productVariantId] || 0) <= 0)
+    const invalid = selectedRows.find((row) => (quantityByCandidateKey[officialWarehouseCandidateKey(row)] || 0) <= 0)
     if (invalid) {
       message.warning(`${displayPsku(invalid)} 数量必须大于 0`)
       return
     }
     const overLimit = selectedRows.find((row) => {
       const batchLimit = selectedShippingBatchIds.length ? Number(row.batchAvailableQuantity || 0) : 0
-      return batchLimit > 0 && (quantityByVariantId[row.productVariantId] || 0) > batchLimit
+      return batchLimit > 0 && (quantityByCandidateKey[officialWarehouseCandidateKey(row)] || 0) > batchLimit
     })
     if (overLimit) {
       message.warning(`${displayPsku(overLimit)} 数量超过所选物流批次可用数量`)
@@ -793,7 +803,8 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         lines: selectedRows.map((row) => ({
           productVariantId: Number(row.productVariantId),
           productSiteOfferId: toNumber(row.productSiteOfferId),
-          quantity: quantityByVariantId[row.productVariantId] || 1
+          partnerSku: row.partnerSku,
+          quantity: quantityByCandidateKey[officialWarehouseCandidateKey(row)] || 1
         }))
       })
       message.success('Noon ASN 已创建')
@@ -1390,7 +1401,8 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       render: (_, row) => {
         const batchLimit = selectedShippingBatchIds.length ? Number(row.batchAvailableQuantity || 0) : 0
         const maxQuantity = batchLimit > 0 ? batchLimit : undefined
-        const quantity = quantityByVariantId[row.productVariantId] || maxQuantity || 1
+        const candidateKey = officialWarehouseCandidateKey(row)
+        const quantity = quantityByCandidateKey[candidateKey] || maxQuantity || 1
         return (
           <div className="official-warehouse-stack">
             <InputNumber
@@ -1399,11 +1411,11 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
               precision={0}
               value={quantity}
               onChange={(value) =>
-                setQuantityByVariantId((current) => {
+                setQuantityByCandidateKey((current) => {
                   const normalized = Math.max(1, Number(value || 0))
                   return {
                     ...current,
-                    [row.productVariantId]: maxQuantity ? Math.min(normalized, maxQuantity) : normalized
+                    [candidateKey]: maxQuantity ? Math.min(normalized, maxQuantity) : normalized
                   }
                 })
               }
@@ -1698,7 +1710,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             </div>
           </div>
           <Table
-            rowKey="productVariantId"
+            rowKey={officialWarehouseCandidateKey}
             size="small"
             loading={candidateLoading}
             columns={candidateColumns}
@@ -1708,7 +1720,10 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             rowSelection={{
               selectedRowKeys: selectedCandidateKeys,
               onChange: setSelectedCandidateKeys,
-              getCheckboxProps: (row) => ({ disabled: Boolean(row.missingTags?.length) })
+              getCheckboxProps: (row) => ({
+                disabled: Boolean(row.missingTags?.length || !row.partnerSku),
+                title: row.partnerSku ? undefined : '缺少 PSKU，不能创建 ASN'
+              })
             }}
             locale={{
               emptyText: (

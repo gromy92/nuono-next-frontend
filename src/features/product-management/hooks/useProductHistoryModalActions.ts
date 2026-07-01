@@ -7,6 +7,8 @@ import { buildProductHistoryFallback } from '../workspaceHelpers';
 import {
   buildProductSummarySurfaceFromListItem,
   buildProductSummarySurfaceFromListSummary,
+  getProductCurrentZCode,
+  getProductListRowIdentityKey,
   productHistoryEntryMeta,
   productSummaryTitle
 } from '../utils';
@@ -21,7 +23,7 @@ import type {
 type UseProductHistoryModalActionsParams = {
   activeOwnerId?: number;
   applyProductListSummary: (summary?: ProductListSummaryPayload) => void;
-  currentProductSkuParent?: string;
+  currentProductIdentityKey?: string;
   currentProductSummarySurface: ProductSummarySurface | null;
   productListUiStates: Record<string, ProductListUiState>;
   productWorkbenchState: ProductWorkbenchState | null;
@@ -47,7 +49,7 @@ type UseProductHistoryModalActionsParams = {
 export function useProductHistoryModalActions({
   activeOwnerId,
   applyProductListSummary,
-  currentProductSkuParent,
+  currentProductIdentityKey,
   currentProductSummarySurface,
   productListUiStates,
   productWorkbenchState,
@@ -70,9 +72,13 @@ export function useProductHistoryModalActions({
   const openProductHistoryModal = useCallback(
     async (record: StoreInitializationPayload['productItems'][number]) => {
       const rowUiState = usingMockProductList
-        ? productListUiStates[record.skuParent] ?? MOCK_PRODUCT_LIST_UI_STATES[record.skuParent]
+        ? productListUiStates[getProductListRowIdentityKey(record)] ??
+          productListUiStates[record.skuParent] ??
+          MOCK_PRODUCT_LIST_UI_STATES[record.skuParent]
         : undefined;
-      const useCurrentWorkbench = currentProductSkuParent === record.skuParent && productWorkbenchState;
+      const currentZCode = getProductCurrentZCode(record);
+      const useCurrentWorkbench =
+        currentProductIdentityKey === getProductListRowIdentityKey(record) && productWorkbenchState;
       const useMockFallback = usingMockProductList && !useCurrentWorkbench;
       const historySummary =
         useCurrentWorkbench && currentProductSummarySurface
@@ -119,7 +125,7 @@ export function useProductHistoryModalActions({
 
       const effectiveOwnerUserId = activeOwnerId ?? sessionDefaultOwnerUserId;
       const effectiveStoreCode = record.referenceStoreCode || selectedInitializationStoreCode;
-      if (!effectiveOwnerUserId || !effectiveStoreCode || !record.skuParent) {
+      if (!effectiveOwnerUserId || !effectiveStoreCode || !(record.partnerSku || currentZCode)) {
         setProductHistoryModalNote('缺少老板上下文或店铺编码，暂时不能读取真实历史明细。');
         return;
       }
@@ -129,7 +135,9 @@ export function useProductHistoryModalActions({
         const payload = await fetchProductHistory({
           ownerUserId: effectiveOwnerUserId,
           storeCode: effectiveStoreCode,
-          skuParent: record.skuParent
+          skuParent: currentZCode,
+          currentZCode,
+          partnerSku: record.partnerSku
         });
         if (payload.listSummary) {
           applyProductListSummary(payload.listSummary);
@@ -176,7 +184,7 @@ export function useProductHistoryModalActions({
     [
       activeOwnerId,
       applyProductListSummary,
-      currentProductSkuParent,
+      currentProductIdentityKey,
       currentProductSummarySurface,
       productListUiStates,
       productWorkbenchState,

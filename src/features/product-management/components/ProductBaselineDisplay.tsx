@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { ProductSummarySurface } from '../types';
 import {
   formatDateTimeParts,
+  getProductCurrentZCode,
   isProductNotListedSource,
   productListingStartedSourceLabel,
   productSourceTypeMeta,
@@ -97,6 +98,7 @@ export function ProductBaselineListCell({
   const displayTitle = titleCn || title;
   const showEnglishTitle = Boolean(titleCn && title && titleCn !== title);
   const visiblePsku = summary.partnerSku || '-';
+  const currentZCode = getProductCurrentZCode(summary);
   const sourceTypeMeta = productSourceTypeMeta(summary.productSourceType);
   const titleContent = (
     <span
@@ -218,12 +220,12 @@ export function ProductBaselineListCell({
             </Text>
           </span>
           <span>
-            <Text style={{ color: '#9ca3af', fontSize: 12 }}>SKU: </Text>
+            <Text style={{ color: '#9ca3af', fontSize: 12 }}>当前Z码: </Text>
             <Text
-              copyable={summary.skuParent ? { text: summary.skuParent, tooltips: ['复制 SKU', '已复制'] } : false}
+              copyable={currentZCode ? { text: currentZCode, tooltips: ['复制 Z 码', '已复制'] } : false}
               style={{ color: '#9ca3af', fontSize: 12 }}
             >
-              {summary.skuParent || '-'}
+              {currentZCode || '-'}
             </Text>
           </span>
         </Space>

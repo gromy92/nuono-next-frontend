@@ -96,9 +96,5 @@ export function isSameProductDetailRequest(
     return sameScope && currentPartnerSku === nextPartnerSku;
   }
 
-  return (
-    sameScope &&
-    currentValue.skuParent === nextValue.skuParent &&
-    currentPartnerSku === nextPartnerSku
-  );
+  return false;
 }

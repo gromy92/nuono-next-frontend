@@ -9,6 +9,7 @@ import {
   SellerStatusCell
 } from './components/ProductListColumnCells';
 import type { ProductListRowPayload, ProductListUiState } from './types';
+import { getProductListRowIdentityKey } from './utils';
 
 type ProductListColumnsParams = {
   deletingProductSkuParent?: string;
@@ -46,7 +47,7 @@ export function createProductListColumns({
         <ProductDetailsCell
           record={record}
           productSnapshotSubmitting={productSnapshotSubmitting}
-          deleting={deletingProductSkuParent === record.skuParent}
+          deleting={deletingProductSkuParent === getProductListRowIdentityKey(record)}
           openProductListGallery={openProductListGallery}
           openProductWorkbenchInPageTab={openProductWorkbenchInPageTab}
           openProductHistoryModal={openProductHistoryModal}

@@ -140,6 +140,11 @@ function storeDisplayName(store?: AuthSessionStore | null) {
 }
 
 function sameProductLine(left: CompetitorWatchProduct, right: CompetitorWatchProduct) {
+  const leftBusinessKey = competitorProductBusinessKey(left)
+  const rightBusinessKey = competitorProductBusinessKey(right)
+  if (leftBusinessKey && rightBusinessKey) {
+    return leftBusinessKey === rightBusinessKey
+  }
   if (left.id && right.id && left.id === right.id) {
     return true
   }
@@ -148,6 +153,36 @@ function sameProductLine(left: CompetitorWatchProduct, right: CompetitorWatchPro
       right.productSiteOfferId &&
       left.productSiteOfferId === right.productSiteOfferId
   )
+}
+
+function competitorProductBusinessKey(
+  product: Pick<CompetitorWatchProduct, 'storeCode' | 'siteCode' | 'partnerSku'>
+) {
+  const store = product.storeCode?.trim() || ''
+  const site = product.siteCode?.trim() || ''
+  const partnerSku = product.partnerSku?.trim() || ''
+  return store && site && partnerSku ? `${store}::${site}::psku:${partnerSku}` : ''
+}
+
+function competitorProductKey(
+  product: Pick<CompetitorWatchProduct, 'id' | 'storeCode' | 'siteCode' | 'partnerSku'> &
+    Partial<Pick<CompetitorWatchProduct, 'selfNoonProductCode' | 'skuParent'>>
+) {
+  return competitorProductBusinessKey(product) || product.id || `missing-psku:${product.selfNoonProductCode || product.skuParent || 'product'}`
+}
+
+function competitorActionKey(
+  action: string,
+  product: Parameters<typeof competitorProductKey>[0]
+) {
+  return `${action}-${competitorProductKey(product)}`
+}
+
+function matchesCompetitorProductKey(product: CompetitorWatchProduct, key: string) {
+  if (!key) {
+    return false
+  }
+  return competitorProductKey(product) === key || product.id === key
 }
 
 function hasValidSelfNoonCode(product: CompetitorWatchProduct) {
@@ -258,9 +293,9 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
 
   const selectedProduct =
     selectedProductDetail &&
-    (selectedProductDetail.id === selectedProductId || selectedProductDetail.productSiteOfferId === selectedProductId)
+    matchesCompetitorProductKey(selectedProductDetail, selectedProductId)
       ? selectedProductDetail
-      : products.find((product) => product.id === selectedProductId || product.productSiteOfferId === selectedProductId) ?? products[0]
+      : products.find((product) => matchesCompetitorProductKey(product, selectedProductId)) ?? products[0]
   const allowedStores = useMemo(
     () => uniqueStores(session.userStores, session.currentStore),
     [session.currentStore, session.userStores]
@@ -318,13 +353,13 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
             if (
               current &&
               result.items.some(
-                (product) => product.id === current || product.productSiteOfferId === current
+                  (product) => matchesCompetitorProductKey(product, current)
               )
             ) {
               return current
             }
             const first = result.items[0]
-            return first?.id || first?.productSiteOfferId || ''
+            return first ? competitorProductKey(first) : ''
           })
         })
         .catch((error) => {
@@ -415,20 +450,20 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
   }
 
   const openDetail = async (product: CompetitorWatchProduct) => {
-    setActionLoading(`ensure-${product.id || product.productSiteOfferId}`)
+    setActionLoading(competitorActionKey('ensure', product))
     const readyProduct = await ensureWatchProduct(product)
     setActionLoading(null)
     if (!readyProduct?.id) {
       return
     }
-    setSelectedProductId(readyProduct.id)
+    setSelectedProductId(competitorProductKey(readyProduct))
     setDetailOpen(true)
     void loadProductDetail(readyProduct.id)
   }
 
   const openReport = async (product: CompetitorWatchProduct) => {
     setOpenActionTooltip(null)
-    const loadingKey = `report-${product.id || product.productSiteOfferId}`
+    const loadingKey = competitorActionKey('report', product)
     setActionLoading(loadingKey)
     const readyProduct = await ensureWatchProduct(product)
     if (!readyProduct?.id) {
@@ -440,7 +475,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
     if (!detailProduct?.id) {
       return
     }
-    setSelectedProductId(detailProduct.id)
+    setSelectedProductId(competitorProductKey(detailProduct))
     setReportProduct(detailProduct)
     setChangeRows([])
     setChangeBaselineSummary(undefined)
@@ -474,13 +509,13 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
   }
 
   const openManualModal = async (product: CompetitorWatchProduct) => {
-    setActionLoading(`ensure-${product.id || product.productSiteOfferId}`)
+    setActionLoading(competitorActionKey('ensure', product))
     const readyProduct = await ensureWatchProduct(product)
     setActionLoading(null)
     if (!readyProduct?.id) {
       return
     }
-    setSelectedProductId(readyProduct.id)
+    setSelectedProductId(competitorProductKey(readyProduct))
     setManualInput('')
     setManualKeywordId('')
     const detail = await loadProductDetail(readyProduct.id)
@@ -503,13 +538,13 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
   }
 
   const openKeywordModal = async (product: CompetitorWatchProduct) => {
-    setActionLoading(`ensure-${product.id || product.productSiteOfferId}`)
+    setActionLoading(competitorActionKey('ensure', product))
     const readyProduct = await ensureWatchProduct(product)
     setActionLoading(null)
     if (!readyProduct?.id) {
       return
     }
-    setSelectedProductId(readyProduct.id)
+    setSelectedProductId(competitorProductKey(readyProduct))
     setKeywordProduct(readyProduct)
     setKeywordInput('')
     setKeywordModalOpen(true)
@@ -955,7 +990,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
                 size="small"
                 icon={<PlusOutlined />}
                 shape="circle"
-                loading={actionLoading === `ensure-${product.id || product.productSiteOfferId}`}
+                loading={actionLoading === competitorActionKey('ensure', product)}
                 onClick={() => void openManualModal(product)}
               />
             </Tooltip>
@@ -965,15 +1000,15 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
                 size="small"
                 icon={<EyeOutlined />}
                 shape="circle"
-                loading={actionLoading === `ensure-${product.id || product.productSiteOfferId}`}
+                loading={actionLoading === competitorActionKey('ensure', product)}
                 onClick={() => void openDetail(product)}
               />
             </Tooltip>
             <Tooltip
               title="报表"
-              open={openActionTooltip === `report-${product.id || product.productSiteOfferId}` && !reportOpen}
+              open={openActionTooltip === competitorActionKey('report', product) && !reportOpen}
               onOpenChange={(open) =>
-                setOpenActionTooltip(open ? `report-${product.id || product.productSiteOfferId}` : null)
+                setOpenActionTooltip(open ? competitorActionKey('report', product) : null)
               }
             >
               <Button
@@ -981,7 +1016,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
                 size="small"
                 icon={<LineChartOutlined />}
                 shape="circle"
-                loading={actionLoading === `report-${product.id || product.productSiteOfferId}`}
+                loading={actionLoading === competitorActionKey('report', product)}
                 onClick={() => void openReport(product)}
               />
             </Tooltip>
@@ -1062,7 +1097,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       <Card size="small" className="competitor-analysis-list-card" variant="borderless">
         <Table
           className="competitor-analysis-table"
-          rowKey={(product) => product.id || product.productSiteOfferId || product.partnerSku}
+          rowKey={competitorProductKey}
           columns={productColumns}
           dataSource={products}
           loading={listLoading}

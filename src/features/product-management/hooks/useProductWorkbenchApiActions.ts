@@ -6,7 +6,8 @@ import { findMockProductItem } from '../mockData';
 import {
   buildProductSummarySurfaceFromListItem,
   buildProductWorkbenchContext,
-  cloneSnapshotPayload
+  cloneSnapshotPayload,
+  findProductByIdentity
 } from '../utils';
 import type {
   ProductListRowPayload,
@@ -26,12 +27,14 @@ type ProductSnapshotRequestValues = Partial<{
   noonUser: string;
   noonPassword: string;
   skuParent: string;
+  currentZCode: string;
   partnerSku: string;
   pskuCode: string;
 }>;
 
 type ProductQuickOpenSample = {
   skuParent: string;
+  currentZCode?: string;
   partnerSku?: string;
   pskuCode?: string;
   storeCode?: string;
@@ -43,6 +46,7 @@ type UseProductWorkbenchApiActionsParams = {
   activeProductSiteOffer?: Record<string, unknown>;
   applyMockProductAction: (action: ProductWorkbenchAction) => void;
   applyProductWorkbenchResponse: (payload: ProductWorkbenchPayload, context?: ProductWorkbenchContext) => ProductWorkbenchState;
+  currentProductIdentityKey?: string;
   currentProductSkuParent?: string;
   openMockProductWorkbench: (skuParent?: string) => void;
   productDraftDirty: boolean;
@@ -85,6 +89,7 @@ export function useProductWorkbenchApiActions({
   activeProductSiteOffer,
   applyMockProductAction,
   applyProductWorkbenchResponse,
+  currentProductIdentityKey,
   currentProductSkuParent,
   openMockProductWorkbench,
   productDraftDirty,
@@ -107,6 +112,7 @@ export function useProductWorkbenchApiActions({
     activeProductSiteOffer,
     applyMockProductAction,
     applyProductWorkbenchResponse,
+    currentProductIdentityKey,
     currentProductSkuParent,
     productDraftDirty,
     productSnapshotForm,
@@ -131,11 +137,12 @@ export function useProductWorkbenchApiActions({
         noonUser: nextValues?.noonUser ?? currentValues.noonUser,
         noonPassword: nextValues?.noonPassword ?? currentValues.noonPassword,
         skuParent: nextValues?.skuParent ?? currentValues.skuParent,
+        currentZCode: nextValues?.currentZCode ?? currentValues.currentZCode ?? nextValues?.skuParent ?? currentValues.skuParent,
         partnerSku: nextValues?.partnerSku ?? currentValues.partnerSku,
         pskuCode: nextValues?.pskuCode ?? currentValues.pskuCode
       };
 
-      if (!requestValues.storeCode || !requestValues.skuParent) {
+      if (!requestValues.storeCode || !(requestValues.partnerSku || requestValues.currentZCode || requestValues.skuParent)) {
         message.error('当前商品缺少最小定位信息，暂时不能读取详情。');
         return;
       }
@@ -144,11 +151,11 @@ export function useProductWorkbenchApiActions({
       openSnapshotRequestSeqRef.current = requestSeq;
 
       if (usingMockProductList && !options?.forceReal) {
-        openMockProductWorkbench(requestValues.skuParent);
+        openMockProductWorkbench(requestValues.currentZCode || requestValues.skuParent);
         return;
       }
 
-      const matchedListItem = requestValues.skuParent ? productListItemBySkuParent.get(requestValues.skuParent) : undefined;
+      const matchedListItem = findProductByIdentity(productListItemBySkuParent, requestValues);
       const requestContext =
         options?.context ??
         (productWorkbenchSurfaceState.status === 'idle'
@@ -157,6 +164,7 @@ export function useProductWorkbenchApiActions({
               source: 'manual-open',
               storeCode: requestValues.storeCode,
               skuParent: requestValues.skuParent,
+              currentZCode: requestValues.currentZCode,
               partnerSku: requestValues.partnerSku,
               pskuCode: requestValues.pskuCode,
               summaryPreview: matchedListItem ? buildProductSummarySurfaceFromListItem(matchedListItem) : null
@@ -167,6 +175,7 @@ export function useProductWorkbenchApiActions({
               source: 'manual-open',
               storeCode: requestValues.storeCode,
               skuParent: requestValues.skuParent,
+              currentZCode: requestValues.currentZCode,
               partnerSku: requestValues.partnerSku,
               pskuCode: requestValues.pskuCode,
               summaryPreview: matchedListItem ? buildProductSummarySurfaceFromListItem(matchedListItem) : null
@@ -187,6 +196,7 @@ export function useProductWorkbenchApiActions({
           noonUser: requestValues.noonUser,
           noonPassword: requestValues.noonPassword,
           skuParent: requestValues.skuParent,
+          currentZCode: requestValues.currentZCode,
           partnerSku: requestValues.partnerSku,
           pskuCode: requestValues.pskuCode
         });
@@ -236,23 +246,25 @@ export function useProductWorkbenchApiActions({
       const requestValues = {
         storeCode: sample.storeCode || sample.referenceStoreCode || selectedInitializationStoreCode,
         skuParent: sample.skuParent,
+        currentZCode: sample.currentZCode || sample.skuParent,
         partnerSku: sample.partnerSku,
         pskuCode: sample.pskuCode
       };
-      const matchedListItem = productListItemBySkuParent.get(sample.skuParent);
+      const matchedListItem = findProductByIdentity(productListItemBySkuParent, requestValues);
       const requestContext = buildProductWorkbenchContext({
-        mode: usingMockProductList || Boolean(findMockProductItem(sample.skuParent)) ? 'mock' : 'real',
+        mode: usingMockProductList || Boolean(findMockProductItem(requestValues.currentZCode)) ? 'mock' : 'real',
         source: 'quick-open',
         storeCode: requestValues.storeCode,
         skuParent: requestValues.skuParent,
+        currentZCode: requestValues.currentZCode,
         partnerSku: requestValues.partnerSku,
         pskuCode: requestValues.pskuCode,
         summaryPreview: matchedListItem ? buildProductSummarySurfaceFromListItem(matchedListItem) : null
       });
       productSnapshotForm.setFieldsValue(requestValues);
 
-      if (usingMockProductList || findMockProductItem(sample.skuParent)) {
-        openMockProductWorkbench(sample.skuParent);
+      if (usingMockProductList || findMockProductItem(requestValues.currentZCode)) {
+        openMockProductWorkbench(requestValues.currentZCode);
         return;
       }
 

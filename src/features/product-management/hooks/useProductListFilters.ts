@@ -15,6 +15,7 @@ import {
   countProductListStatuses,
   filterAndSortProductListItems
 } from '../utils/productListFilters';
+import { getProductListRowIdentityKey } from '../utils';
 import type {
   ProductListDatasetState,
   ProductListFilters,
@@ -90,7 +91,9 @@ export function useProductListFilters({
 
   useEffect(() => {
     setSelectedProductRowKeys((currentValue) => {
-      const nextValue = currentValue.filter((key) => filteredProductListItems.some((item) => item.skuParent === key));
+      const nextValue = currentValue.filter((key) =>
+        filteredProductListItems.some((item) => getProductListRowIdentityKey(item) === key)
+      );
       if (nextValue.length === currentValue.length && nextValue.every((key, index) => key === currentValue[index])) {
         return currentValue;
       }

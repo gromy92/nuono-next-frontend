@@ -144,7 +144,7 @@ export function productListingEditorDraftToSnapshot(draft: ProductListingEditorD
     identity: {
       skuParent: psku || 'NEW-LISTING',
       partnerSku: psku,
-      pskuCode: psku,
+      pskuCode: '',
       productSourceType: 'SELF_BUILT',
       brand: text(draft.productBrand),
       brandCode: text(draft.productBrandCode),
@@ -231,7 +231,7 @@ export function productListingEditorDraftToSummary(draft: ProductListingEditorDr
     skuParent: text(draft.psku) || 'NEW-LISTING',
     productSourceType: 'SELF_BUILT',
     partnerSku: text(draft.psku),
-    pskuCode: text(draft.psku),
+    pskuCode: '',
     storeCode: text(draft.storeCode),
     title: text(draft.productTitleEn),
     titleAr: text(draft.productTitleAr),

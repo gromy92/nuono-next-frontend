@@ -107,6 +107,7 @@ export function buildProductWorkbenchContext(params: {
   source?: ProductWorkbenchContext['source'];
   storeCode?: string;
   skuParent?: string;
+  currentZCode?: string;
   partnerSku?: string;
   pskuCode?: string;
   summaryPreview?: ProductSummarySurface | null;
@@ -115,7 +116,8 @@ export function buildProductWorkbenchContext(params: {
     mode: params.mode ?? 'real',
     source: params.source ?? 'unknown',
     storeCode: params.storeCode,
-    skuParent: params.skuParent,
+    skuParent: params.currentZCode || params.skuParent,
+    currentZCode: params.currentZCode || params.skuParent,
     partnerSku: params.partnerSku,
     pskuCode: params.pskuCode,
     summaryPreview: params.summaryPreview ?? null,

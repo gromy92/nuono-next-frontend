@@ -33,7 +33,8 @@ export type ProductWorkbenchOpenRequest = {
   storeCode: string;
   noonUser?: string;
   noonPassword?: string;
-  skuParent: string;
+  skuParent?: string;
+  currentZCode?: string;
   partnerSku?: string;
   pskuCode?: string;
 };
@@ -49,7 +50,9 @@ export type ProductWorkbenchActionRequest = ProductWorkbenchOpenRequest & {
 export type ProductHistoryRequest = {
   ownerUserId: number;
   storeCode: string;
-  skuParent: string;
+  skuParent?: string;
+  currentZCode?: string;
+  partnerSku?: string;
 };
 
 export type ProductGroupCandidatesRequest = ProductHistoryRequest;
@@ -148,12 +151,44 @@ async function postJson<TResponse>(url: string, body: unknown, fallbackError: st
   return (await response.json()) as TResponse;
 }
 
+function normalizeProductIdentityRequest<T extends ProductWorkbenchOpenRequest | ProductHistoryRequest>(request: T) {
+  const currentZCode = request.currentZCode || request.skuParent;
+  return {
+    ...request,
+    currentZCode,
+    skuParent: currentZCode
+  };
+}
+
+function productSpecDetailToVariantSpecPayload(detail: ProductVariantSpecDetailPayload): ProductVariantSpecPayload {
+  const effectiveSpec = detail.effectiveSpec ?? {};
+  const currentZCode = detail.currentZCode || detail.skuParent || effectiveSpec.currentZCode || effectiveSpec.skuParent;
+  return {
+    ...effectiveSpec,
+    storeCode: detail.storeCode || effectiveSpec.storeCode,
+    skuParent: currentZCode,
+    currentZCode,
+    title: detail.title || effectiveSpec.title,
+    imageUrl: detail.imageUrl || effectiveSpec.imageUrl,
+    variantId: detail.variantId || effectiveSpec.variantId,
+    partnerSku: detail.partnerSku || effectiveSpec.partnerSku,
+    childSku: detail.childSku || effectiveSpec.childSku,
+    effectiveSourceId: detail.effectiveSourceId || effectiveSpec.effectiveSourceId,
+    effectiveSourceType: detail.effectiveSourceType || effectiveSpec.effectiveSourceType,
+    sources: detail.sources ?? effectiveSpec.sources
+  };
+}
+
 export async function fetchProductListDataset(request: ProductListDatasetRequest) {
   return postJson<ProductListDatasetPayload>('/api/product-master/list', request, '商品接口当前不可用');
 }
 
 export async function deleteLocalProduct(request: ProductWorkbenchOpenRequest) {
-  return postJson<ProductListDatasetPayload>('/api/product-master/delete', request, '删除商品失败');
+  return postJson<ProductListDatasetPayload>(
+    '/api/product-master/delete',
+    normalizeProductIdentityRequest(request),
+    '删除商品失败'
+  );
 }
 
 export async function fetchStoreInitializationStatus({
@@ -175,14 +210,34 @@ export async function startStoreInitializationRequest(request: ProductStoreIniti
 }
 
 export async function openProductWorkbenchSnapshot(request: ProductWorkbenchOpenRequest) {
-  return postJson<ProductWorkbenchPayload>('/api/product-master/open', request, '读取商品主档失败');
+  return postJson<ProductWorkbenchPayload>(
+    '/api/product-master/open',
+    normalizeProductIdentityRequest(request),
+    '读取商品主档失败'
+  );
 }
 
 export async function fetchProductVariantSpecs(request: ProductHistoryRequest) {
+  const normalizedRequest = normalizeProductIdentityRequest(request);
+  if (normalizedRequest.partnerSku) {
+    const detail = await fetchProductSpecDetail(normalizedRequest);
+    return {
+      ready: detail.ready,
+      source: 'by-psku',
+      ownerUserId: normalizedRequest.ownerUserId,
+      storeCode: detail.storeCode || normalizedRequest.storeCode,
+      skuParent: detail.skuParent || normalizedRequest.currentZCode,
+      currentZCode: detail.currentZCode || detail.skuParent || normalizedRequest.currentZCode,
+      partnerSku: detail.partnerSku || normalizedRequest.partnerSku,
+      warnings: detail.warnings ?? [],
+      items: [productSpecDetailToVariantSpecPayload(detail)]
+    } as ProductVariantSpecListPayload;
+  }
   const query = new URLSearchParams({
-    ownerUserId: String(request.ownerUserId),
-    storeCode: request.storeCode,
-    skuParent: request.skuParent
+    ownerUserId: String(normalizedRequest.ownerUserId),
+    storeCode: normalizedRequest.storeCode,
+    ...(normalizedRequest.currentZCode ? { currentZCode: normalizedRequest.currentZCode } : {}),
+    ...(normalizedRequest.skuParent ? { skuParent: normalizedRequest.skuParent } : {})
   });
   const response = await apiFetch(`/api/product-variant-specs?${query.toString()}`);
 
@@ -194,14 +249,83 @@ export async function fetchProductVariantSpecs(request: ProductHistoryRequest) {
 }
 
 export async function saveProductVariantSpec(request: ProductVariantSpecSaveRequest) {
+  if (request.partnerSku) {
+    const currentZCode = request.currentZCode || request.skuParent;
+    const source = await saveProductSpecSource({
+      ...request,
+      currentZCode,
+      skuParent: currentZCode,
+      sourceType: 'warehouse'
+    });
+    if (!source.sourceId) {
+      throw new Error('规格来源保存后缺少来源编号');
+    }
+    const detail = await selectProductSpecEffectiveSource({
+      ownerUserId: request.ownerUserId,
+      storeCode: request.storeCode,
+      variantId: request.variantId,
+      partnerSku: request.partnerSku,
+      currentZCode,
+      skuParent: currentZCode,
+      sourceId: source.sourceId
+    });
+    return productSpecDetailToVariantSpecPayload(detail);
+  }
+  if (request.variantId) {
+    const currentZCode = request.currentZCode || request.skuParent;
+    const source = await saveProductSpecSource({
+      ...request,
+      currentZCode,
+      skuParent: currentZCode,
+      sourceType: 'warehouse'
+    });
+    if (!source.sourceId) {
+      throw new Error('规格来源保存后缺少来源编号');
+    }
+    const detail = await selectProductSpecEffectiveSource({
+      ownerUserId: request.ownerUserId,
+      storeCode: request.storeCode,
+      variantId: request.variantId,
+      currentZCode,
+      skuParent: currentZCode,
+      sourceId: source.sourceId
+    });
+    return productSpecDetailToVariantSpecPayload(detail);
+  }
   return postJson<ProductVariantSpecPayload>('/api/product-variant-specs', request, '保存商品规格失败');
 }
 
 export async function fetchProductLogisticsProfiles(request: ProductHistoryRequest) {
+  const normalizedRequest = normalizeProductIdentityRequest(request);
+  if (normalizedRequest.partnerSku) {
+    const query = new URLSearchParams({
+      ownerUserId: String(normalizedRequest.ownerUserId),
+      storeCode: normalizedRequest.storeCode,
+      partnerSku: normalizedRequest.partnerSku
+    });
+    const response = await apiFetch(`/api/product-logistics-profiles/by-psku?${query.toString()}`);
+
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, `物流属性返回 ${response.status}`));
+    }
+
+    const item = (await response.json()) as ProductLogisticsProfilePayload;
+    return {
+      ready: true,
+      ownerUserId: normalizedRequest.ownerUserId,
+      storeCode: item.storeCode || normalizedRequest.storeCode,
+      skuParent: item.currentZCode || item.skuParent || normalizedRequest.currentZCode,
+      currentZCode: item.currentZCode || item.skuParent || normalizedRequest.currentZCode,
+      partnerSku: item.partnerSku || normalizedRequest.partnerSku,
+      items: [item]
+    } as ProductLogisticsProfileListPayload;
+  }
   const query = new URLSearchParams({
-    ownerUserId: String(request.ownerUserId),
-    storeCode: request.storeCode,
-    skuParent: request.skuParent
+    ownerUserId: String(normalizedRequest.ownerUserId),
+    storeCode: normalizedRequest.storeCode,
+    ...(normalizedRequest.partnerSku ? { partnerSku: normalizedRequest.partnerSku } : {}),
+    ...(normalizedRequest.currentZCode ? { currentZCode: normalizedRequest.currentZCode } : {}),
+    ...(normalizedRequest.skuParent ? { skuParent: normalizedRequest.skuParent } : {})
   });
   const response = await apiFetch(`/api/product-logistics-profiles?${query.toString()}`);
 
@@ -213,7 +337,32 @@ export async function fetchProductLogisticsProfiles(request: ProductHistoryReque
 }
 
 export async function saveProductLogisticsProfile(request: ProductLogisticsProfileSaveRequest) {
-  const { variantId, ...body } = request;
+  const { variantId, currentZCode, skuParent, partnerSku, ...body } = request;
+  const zCode = currentZCode || skuParent;
+  if (partnerSku) {
+    const response = await apiFetch('/api/product-logistics-profiles/by-psku', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...body,
+        variantId,
+        partnerSku,
+        currentZCode: zCode,
+        skuParent: zCode
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, '保存物流属性失败'));
+    }
+
+    return (await response.json()) as ProductLogisticsProfilePayload;
+  }
+  if (!variantId) {
+    throw new Error('缺少商品规格上下文，无法保存物流属性');
+  }
   const response = await apiFetch(`/api/product-logistics-profiles/${variantId}`, {
     method: 'PUT',
     headers: {
@@ -253,15 +402,29 @@ export async function fetchProductSpecsOverview(request: ProductSpecsOverviewReq
 export type ProductSpecDetailRequest = {
   ownerUserId?: number;
   storeCode: string;
-  variantId: number;
+  variantId?: number;
+  partnerSku?: string;
+  currentZCode?: string;
+  skuParent?: string;
 };
 
 export async function fetchProductSpecDetail(request: ProductSpecDetailRequest) {
   const query = new URLSearchParams({
     ...(request.ownerUserId ? { ownerUserId: String(request.ownerUserId) } : {}),
-    storeCode: request.storeCode
+    storeCode: request.storeCode,
+    ...(request.partnerSku ? { partnerSku: request.partnerSku } : {}),
+    ...(request.currentZCode || request.skuParent ? { currentZCode: request.currentZCode || request.skuParent || '' } : {}),
+    ...(request.skuParent || request.currentZCode ? { skuParent: request.skuParent || request.currentZCode || '' } : {})
   });
-  const response = await apiFetch(`/api/product-specs/${request.variantId}?${query.toString()}`);
+  const url = request.partnerSku
+    ? `/api/product-specs/by-psku?${query.toString()}`
+    : request.variantId
+      ? `/api/product-specs/${request.variantId}?${query.toString()}`
+      : null;
+  if (!url) {
+    throw new Error('缺少商品规格上下文，无法读取详情');
+  }
+  const response = await apiFetch(url);
 
   if (!response.ok) {
     throw new Error(await readBackendError(response, `商品规格详情返回 ${response.status}`));
@@ -271,13 +434,31 @@ export async function fetchProductSpecDetail(request: ProductSpecDetailRequest) 
 }
 
 export async function saveProductSpecSource(request: ProductVariantSpecSourceSaveRequest) {
-  const { variantId, sourceType, ...body } = request;
-  const response = await apiFetch(`/api/product-specs/${variantId}/sources/${sourceType}`, {
+  const { variantId, sourceType, partnerSku, currentZCode, skuParent, ...body } = request;
+  const zCode = currentZCode || skuParent;
+  const byPskuQuery = partnerSku
+    ? `?${new URLSearchParams({ storeCode: request.storeCode, partnerSku }).toString()}`
+    : '';
+  const url = partnerSku
+    ? `/api/product-specs/by-psku/sources/${sourceType}${byPskuQuery}`
+    : variantId
+      ? `/api/product-specs/${variantId}/sources/${sourceType}`
+      : null;
+  if (!url) {
+    throw new Error('缺少商品规格上下文，无法保存规格来源');
+  }
+  const response = await apiFetch(url, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify({
+      ...body,
+      variantId,
+      partnerSku,
+      currentZCode: zCode,
+      skuParent: zCode
+    })
   });
 
   if (!response.ok) {
@@ -288,16 +469,59 @@ export async function saveProductSpecSource(request: ProductVariantSpecSourceSav
 }
 
 export async function selectProductSpecEffectiveSource(request: ProductVariantSpecEffectiveSourceRequest) {
-  const { variantId, ...body } = request;
+  const { variantId, partnerSku, currentZCode, skuParent, ...body } = request;
+  const zCode = currentZCode || skuParent;
+  const byPskuQuery = partnerSku
+    ? `?${new URLSearchParams({ storeCode: request.storeCode, partnerSku }).toString()}`
+    : '';
+  const url = partnerSku
+    ? `/api/product-specs/by-psku/effective-source${byPskuQuery}`
+    : variantId
+      ? `/api/product-specs/${variantId}/effective-source`
+      : null;
+  if (!url) {
+    throw new Error('缺少商品规格上下文，无法切换生效规格');
+  }
+  if (partnerSku) {
+    const response = await apiFetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...body,
+        variantId,
+        partnerSku,
+        currentZCode: zCode,
+        skuParent: zCode
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(await readBackendError(response, '切换生效规格失败'));
+    }
+
+    return (await response.json()) as ProductVariantSpecDetailPayload;
+  }
   return postJson<ProductVariantSpecDetailPayload>(
-    `/api/product-specs/${variantId}/effective-source`,
-    body,
+    url,
+    {
+      ...body,
+      variantId,
+      partnerSku,
+      currentZCode: zCode,
+      skuParent: zCode
+    },
     '切换生效规格失败'
   );
 }
 
 export async function executeProductWorkbenchAction(request: ProductWorkbenchActionRequest) {
-  return postJson<ProductWorkbenchPayload>('/api/product-master/action', request, '商品详情动作执行失败');
+  return postJson<ProductWorkbenchPayload>(
+    '/api/product-master/action',
+    normalizeProductIdentityRequest(request),
+    '商品详情动作执行失败'
+  );
 }
 
 export async function fetchProductPublishTask(taskId: number, ownerUserId: number) {
@@ -330,11 +554,19 @@ export async function cancelProductPublishTask(taskId: number, ownerUserId: numb
 }
 
 export async function fetchProductHistory(request: ProductHistoryRequest) {
-  return postJson<ProductHistoryPayload>('/api/product-master/history', request, '商品修改历史暂时不可用');
+  return postJson<ProductHistoryPayload>(
+    '/api/product-master/history',
+    normalizeProductIdentityRequest(request),
+    '商品修改历史暂时不可用'
+  );
 }
 
 export async function fetchProductGroupCandidates(request: ProductGroupCandidatesRequest) {
-  return postJson<ProductGroupCandidatesResponse>('/api/product-master/group-candidates', request, '读取同类目商品失败');
+  return postJson<ProductGroupCandidatesResponse>(
+    '/api/product-master/group-candidates',
+    normalizeProductIdentityRequest(request),
+    '读取同类目商品失败'
+  );
 }
 
 export async function fetchProductClassificationOptions(request: ProductClassificationOptionsRequest) {

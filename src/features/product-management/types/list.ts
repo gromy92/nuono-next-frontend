@@ -56,6 +56,7 @@ export type StoreInitializationPayload = {
   }>;
   sampleProducts: Array<{
     skuParent: string;
+    currentZCode?: string;
     productSourceType?: string;
     partnerSku?: string;
     pskuCode?: string;
@@ -75,6 +76,10 @@ export type StoreInitializationPayload = {
   }>;
   productItems: Array<{
     skuParent: string;
+    currentZCode?: string;
+    productMasterId?: number;
+    productVariantId?: number;
+    productSiteOfferId?: number;
     productSourceType?: string;
     partnerSku?: string;
     pskuCode?: string;
@@ -175,6 +180,10 @@ export type ProductListSummaryPayload = {
   warnings: string[];
   storeCode?: string;
   skuParent?: string;
+  currentZCode?: string;
+  productMasterId?: number;
+  productVariantId?: number;
+  productSiteOfferId?: number;
   productSourceType?: string;
   partnerSku?: string;
   pskuCode?: string;
@@ -227,6 +236,10 @@ export type ProductListSummaryPayload = {
 
 export type ProductSummarySurface = {
   skuParent: string;
+  currentZCode?: string;
+  productMasterId?: number;
+  productVariantId?: number;
+  productSiteOfferId?: number;
   productSourceType?: string;
   partnerSku?: string;
   pskuCode?: string;

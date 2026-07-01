@@ -125,6 +125,7 @@ export function useProductManagementWorkspace({
   });
   const {
     activeProductSiteOffer,
+    currentProductIdentityKey,
     currentProductSkuParent,
     currentProductSummarySurface,
     dirtySiteOfferCodes,
@@ -189,6 +190,7 @@ export function useProductManagementWorkspace({
   const mediaAndHistoryActions = useProductMediaAndHistoryActions({
     activeOwnerId,
     applyProductListSummary,
+    currentProductIdentityKey,
     currentProductSkuParent,
     currentProductSummarySurface,
     productImageUrls,
@@ -206,10 +208,10 @@ export function useProductManagementWorkspace({
     (record: ProductListRowPayload) => {
       const ownerUserId = activeOwnerId ?? session?.defaultOwnerUserId;
       const storeCode = selectedInitializationStoreCode ?? record.referenceStoreCode;
-      const skuParent = record.skuParent;
+      const skuParent = record.currentZCode || record.skuParent;
 
-      if (!ownerUserId || !storeCode || !skuParent) {
-        message.warning('缺少老板、店铺或商品 SKU 上下文，暂时不能维护规格。');
+      if (!ownerUserId || !storeCode || !(record.partnerSku || skuParent)) {
+        message.warning('缺少老板、店铺或商品上下文，暂时不能维护规格。');
         return;
       }
 
@@ -218,8 +220,10 @@ export function useProductManagementWorkspace({
         ownerUserId,
         storeCode,
         skuParent,
+        currentZCode: skuParent,
         title: record.title || record.partnerSku || skuParent,
         partnerSku: record.partnerSku,
+        variantId: record.productVariantId,
         imageUrl: record.imageUrl
       });
     },
@@ -237,6 +241,7 @@ export function useProductManagementWorkspace({
     activeProductSiteOffer,
     applyMockProductAction,
     applyProductWorkbenchResponse,
+    currentProductIdentityKey,
     currentProductSkuParent,
     openMockProductWorkbench,
     productDraftDirty,
@@ -341,7 +346,7 @@ export function useProductManagementWorkspace({
   const productLocalDeletion = useProductLocalDeletion({
     activeOwnerId,
     closeProductDetailTab: navigation.closeProductDetailTab,
-    currentProductSkuParent,
+    currentProductIdentityKey,
     selectedInitializationStoreCode,
     setProductListDatasetState
   });

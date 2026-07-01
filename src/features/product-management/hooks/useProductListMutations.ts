@@ -2,9 +2,11 @@ import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import {
   isProductListRowOnline,
+  getProductListRowIdentityKey,
   mergeProductListItemWithSummary,
   mergeSampleProductWithSummary,
   normalizeProductSyncStatus,
+  productListSummaryAppliesToItem,
   textInputValue
 } from '../utils';
 import type {
@@ -43,14 +45,14 @@ function summaryAppliesToListStore(summary: ProductListSummaryPayload, listStore
 }
 
 function summaryAppliesToListItem(item: ProductListRowPayload, summary: ProductListSummaryPayload) {
-  return item.skuParent === summary.skuParent && storeCodeMatches(summary.storeCode, item.referenceStoreCode);
+  return productListSummaryAppliesToItem(item, summary) && storeCodeMatches(summary.storeCode, item.referenceStoreCode);
 }
 
 function summaryAppliesToSampleProduct(
   item: StoreInitializationPayload['sampleProducts'][number],
   summary: ProductListSummaryPayload
 ) {
-  return item.skuParent === summary.skuParent && storeCodeMatches(summary.storeCode, item.storeCode);
+  return productListSummaryAppliesToItem(item, summary) && storeCodeMatches(summary.storeCode, item.storeCode);
 }
 
 export function useProductListMutations({
@@ -60,15 +62,15 @@ export function useProductListMutations({
   usingMockProductList
 }: UseProductListMutationsParams) {
   const updateProductListUiState = useCallback(
-    (skuParent: string | undefined, nextState: ProductListUiState) => {
-      if (!skuParent || !usingMockProductList) {
+    (identityKey: string | undefined, nextState: ProductListUiState) => {
+      if (!identityKey || !usingMockProductList) {
         return;
       }
 
       setProductListUiStates((currentValue) => ({
         ...currentValue,
-        [skuParent]: {
-          ...currentValue[skuParent],
+        [identityKey]: {
+          ...currentValue[identityKey],
           ...nextState
         }
       }));
@@ -77,8 +79,8 @@ export function useProductListMutations({
   );
 
   const updateProductListLiveStatus = useCallback(
-    (skuParent: string | undefined, liveActive: boolean) => {
-      if (!skuParent || !usingMockProductList) {
+    (identityKey: string | undefined, liveActive: boolean) => {
+      if (!identityKey || !usingMockProductList) {
         return;
       }
 
@@ -89,7 +91,7 @@ export function useProductListMutations({
 
         let changed = false;
         const nextItems = currentValue.data.items.map((item) => {
-          if (item.skuParent !== skuParent) {
+          if (getProductListRowIdentityKey(item) !== identityKey) {
             return item;
           }
           changed = true;
@@ -122,7 +124,7 @@ export function useProductListMutations({
 
         let productItemChanged = false;
         const nextProductItems = currentValue.data.productItems.map((item) => {
-          if (item.skuParent !== skuParent) {
+          if (getProductListRowIdentityKey(item) !== identityKey) {
             return item;
           }
           productItemChanged = true;
@@ -136,7 +138,7 @@ export function useProductListMutations({
 
         let sampleProductChanged = false;
         const nextSampleProducts = currentValue.data.sampleProducts.map((item) => {
-          if (item.skuParent !== skuParent) {
+          if (getProductListRowIdentityKey(item) !== identityKey) {
             return item;
           }
           sampleProductChanged = true;
@@ -165,7 +167,7 @@ export function useProductListMutations({
 
   const applyProductListSummary = useCallback(
     (summary?: ProductListSummaryPayload) => {
-      if (!summary?.skuParent || usingMockProductList) {
+      if (!(summary?.partnerSku || summary?.currentZCode || summary?.skuParent) || usingMockProductList) {
         return;
       }
 
@@ -190,7 +192,11 @@ export function useProductListMutations({
           nextItems.unshift(
             mergeProductListItemWithSummary(
               {
-                skuParent: summary.skuParent || '',
+                skuParent: summary.currentZCode || summary.skuParent || '',
+                currentZCode: summary.currentZCode || summary.skuParent,
+                productMasterId: summary.productMasterId,
+                productVariantId: summary.productVariantId,
+                productSiteOfferId: summary.productSiteOfferId,
                 partnerSku: summary.partnerSku,
                 pskuCode: summary.pskuCode,
                 offerCode: summary.offerCode,

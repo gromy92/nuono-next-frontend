@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { MOCK_PRODUCT_LIST_UI_STATES } from '../mockData';
 import type { ProductListFilters, ProductListRowPayload, ProductListUiState, ProductSyncStatus } from '../types';
+import { getProductListRowIdentityKey } from './productIdentity';
 import { isProductListRowOnline, productListIssueTags } from './status';
 
 type FilterAndSortProductListItemsParams = {
@@ -19,7 +20,7 @@ export function resolveProductListRowSyncStatus(
   usingMockProductList: boolean
 ) {
   const rowUiState = usingMockProductList
-    ? uiStates[item.skuParent] ?? MOCK_PRODUCT_LIST_UI_STATES[item.skuParent]
+    ? uiStates[getProductListRowIdentityKey(item)] ?? uiStates[item.skuParent] ?? MOCK_PRODUCT_LIST_UI_STATES[item.skuParent]
     : undefined;
 
   return rowUiState?.syncStatus ?? item.syncStatus ?? MOCK_PRODUCT_LIST_UI_STATES[item.skuParent]?.syncStatus ?? 'synced';

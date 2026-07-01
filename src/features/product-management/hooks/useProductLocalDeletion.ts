@@ -2,11 +2,12 @@ import { useCallback, useState } from 'react';
 import { message } from 'antd';
 import { deleteLocalProduct } from '../api';
 import type { ProductListDatasetState, ProductListRowPayload } from '../types';
+import { getProductCurrentZCode, getProductListRowIdentityKey } from '../utils';
 
 type UseProductLocalDeletionParams = {
   activeOwnerId?: number;
   closeProductDetailTab: () => void;
-  currentProductSkuParent?: string;
+  currentProductIdentityKey?: string;
   selectedInitializationStoreCode?: string;
   setProductListDatasetState: (state: ProductListDatasetState | ((current: ProductListDatasetState) => ProductListDatasetState)) => void;
 };
@@ -14,7 +15,7 @@ type UseProductLocalDeletionParams = {
 export function useProductLocalDeletion({
   activeOwnerId,
   closeProductDetailTab,
-  currentProductSkuParent,
+  currentProductIdentityKey,
   selectedInitializationStoreCode,
   setProductListDatasetState
 }: UseProductLocalDeletionParams) {
@@ -23,22 +24,24 @@ export function useProductLocalDeletion({
   const requestDeleteLocalProduct = useCallback(
     async (record: ProductListRowPayload) => {
       const storeCode = record.referenceStoreCode || selectedInitializationStoreCode;
-      if (!activeOwnerId || !storeCode || !record.skuParent) {
+      const currentZCode = getProductCurrentZCode(record);
+      if (!activeOwnerId || !storeCode || !(record.partnerSku || currentZCode)) {
         message.warning('缺少老板、店铺或商品上下文，暂时不能删除。');
         return;
       }
 
-      setDeletingProductSkuParent(record.skuParent);
+      setDeletingProductSkuParent(getProductListRowIdentityKey(record));
       try {
         const payload = await deleteLocalProduct({
           ownerUserId: activeOwnerId,
           storeCode,
-          skuParent: record.skuParent,
+          skuParent: currentZCode,
+          currentZCode,
           partnerSku: record.partnerSku,
           pskuCode: record.pskuCode
         });
         setProductListDatasetState({ status: 'success', data: payload });
-        if (currentProductSkuParent === record.skuParent) {
+        if (currentProductIdentityKey === getProductListRowIdentityKey(record)) {
           closeProductDetailTab();
         }
         message.success('商品已从本地商品目录删除。');
@@ -51,7 +54,7 @@ export function useProductLocalDeletion({
     [
       activeOwnerId,
       closeProductDetailTab,
-      currentProductSkuParent,
+      currentProductIdentityKey,
       selectedInitializationStoreCode,
       setProductListDatasetState
     ]

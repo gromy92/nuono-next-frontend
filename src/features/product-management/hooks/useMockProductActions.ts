@@ -5,6 +5,7 @@ import {
   areSnapshotPartsEqual,
   buildLocalProductRecentAction,
   cloneSnapshotPayload,
+  getProductStableIdentityKey,
   nowSyncTime,
   prependRecentAction,
   siteOfferCode
@@ -34,6 +35,12 @@ export function useMockProductActions({
       const draftView = productWorkbenchState.draft;
       const currentSkuParent =
         typeof draftView.identity.skuParent === 'string' ? draftView.identity.skuParent : undefined;
+      const currentProductIdentityKey = getProductStableIdentityKey({
+        storeCode: typeof draftView.storeContext.storeCode === 'string' ? draftView.storeContext.storeCode : undefined,
+        partnerSku: typeof draftView.identity.partnerSku === 'string' ? draftView.identity.partnerSku : undefined,
+        currentZCode: typeof draftView.identity.currentZCode === 'string' ? draftView.identity.currentZCode : undefined,
+        skuParent: currentSkuParent
+      });
       const currentSiteOffer =
         draftView.siteOffers.find((item) => siteOfferCode(item) === activeSiteOfferCode) ?? draftView.siteOffers[0];
       const fetchedAt = nowSyncTime();
@@ -66,7 +73,7 @@ export function useMockProductActions({
             }
           };
         });
-        updateProductListUiState(currentSkuParent, {
+        updateProductListUiState(currentProductIdentityKey, {
           syncStatus: nextState.syncStatus,
           lastSyncedAt: nextState.lastSyncedAt,
           note: nextState.note
@@ -109,7 +116,7 @@ export function useMockProductActions({
             }
           };
         });
-        updateProductListUiState(currentSkuParent, {
+        updateProductListUiState(currentProductIdentityKey, {
           syncStatus: nextState.syncStatus,
           lastSyncedAt: nextState.lastSyncedAt,
           note: nextState.note
@@ -143,7 +150,7 @@ export function useMockProductActions({
             }
           };
         });
-        updateProductListUiState(currentSkuParent, {
+        updateProductListUiState(currentProductIdentityKey, {
           syncStatus: nextState.syncStatus,
           lastSyncedAt: nextState.lastSyncedAt,
           note: nextState.note
@@ -183,7 +190,7 @@ export function useMockProductActions({
             }
           };
         });
-        updateProductListUiState(currentSkuParent, {
+        updateProductListUiState(currentProductIdentityKey, {
           syncStatus: nextState.syncStatus,
           lastSyncedAt: nextState.lastSyncedAt,
           note: nextState.note
@@ -212,7 +219,7 @@ export function useMockProductActions({
           }
         };
       });
-      updateProductListUiState(currentSkuParent, {
+      updateProductListUiState(currentProductIdentityKey, {
         syncStatus: nextState.syncStatus,
         lastSyncedAt: nextState.lastSyncedAt,
         note: nextState.note

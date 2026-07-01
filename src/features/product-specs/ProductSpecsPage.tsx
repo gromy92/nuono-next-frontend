@@ -16,6 +16,7 @@ import type {
   ProductVariantSpecSourceType
 } from '../product-management/types';
 import { formatSnapshotValue, normalizeNoonImageUrl } from '../product-management/utils/common';
+import { getProductCurrentZCode, getProductStableIdentityKey } from '../product-management/utils';
 
 const { Paragraph, Text } = Typography;
 
@@ -253,7 +254,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
   const handleSaveSource = useCallback(
     async (row: ProductVariantSpecPayload, sourceType: EditableSourceType) => {
       const normalizedStoreCode = storeCode.trim();
-      if (!normalizedStoreCode || !row.variantId) {
+      if (!normalizedStoreCode || !(row.partnerSku || row.variantId)) {
         message.warning('缺少店铺或 SKU 上下文，暂不能保存规格');
         return;
       }
@@ -264,6 +265,9 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
           ownerUserId,
           storeCode: normalizedStoreCode,
           variantId: row.variantId,
+          partnerSku: row.partnerSku,
+          currentZCode: getProductCurrentZCode(row),
+          skuParent: getProductCurrentZCode(row),
           sourceType,
           ...editingDraft
         });
@@ -284,7 +288,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
     async (row: ProductVariantSpecPayload, sourceType: EditableSourceType) => {
       const normalizedStoreCode = storeCode.trim();
       const source = findSource(row.sources, sourceType);
-      if (!normalizedStoreCode || !row.variantId || !source?.sourceId) {
+      if (!normalizedStoreCode || !(row.partnerSku || row.variantId) || !source?.sourceId) {
         message.warning('请先维护该来源规格，再设为生效');
         return;
       }
@@ -295,6 +299,9 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
           ownerUserId,
           storeCode: normalizedStoreCode,
           variantId: row.variantId,
+          partnerSku: row.partnerSku,
+          currentZCode: getProductCurrentZCode(row),
+          skuParent: getProductCurrentZCode(row),
           sourceId: source.sourceId
         });
         message.success(`${sourceLabels[sourceType]}规格已设为生效`);
@@ -314,7 +321,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
       patch: Partial<ProductLogisticsProfilePayload>
     ) => {
       const normalizedStoreCode = storeCode.trim();
-      if (!normalizedStoreCode || !row.variantId) {
+      if (!normalizedStoreCode || !(row.partnerSku || row.variantId)) {
         message.warning('缺少店铺或 SKU 上下文，暂不能保存物流属性');
         return;
       }
@@ -324,10 +331,10 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         ...patch
       };
       const normalizedNextProfile = withLogisticsConfirmationStatus(nextProfile);
-      const key = String(row.variantId);
+      const key = productSpecRowKey(row);
       setRows((currentRows) =>
         currentRows.map((currentRow) =>
-          currentRow.variantId === row.variantId ? { ...currentRow, logisticsProfile: normalizedNextProfile } : currentRow
+          productSpecRowKey(currentRow) === key ? { ...currentRow, logisticsProfile: normalizedNextProfile } : currentRow
         )
       );
       setLogisticsSavingKey(key);
@@ -336,10 +343,13 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
           ...normalizedNextProfile,
           ownerUserId,
           storeCode: normalizedStoreCode,
-          variantId: row.variantId
+          variantId: row.variantId,
+          partnerSku: row.partnerSku,
+          currentZCode: getProductCurrentZCode(row),
+          skuParent: getProductCurrentZCode(row)
         });
         setRows((currentRows) => currentRows.map((currentRow) => (
-          currentRow.variantId === row.variantId
+          productSpecRowKey(currentRow) === key
             ? { ...currentRow, logisticsProfile: saved }
             : currentRow
         )));
@@ -414,7 +424,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
         render: (_, row) => (
           <LogisticsInlineEditor
             row={row}
-            saving={logisticsSavingKey === String(row.variantId)}
+            saving={logisticsSavingKey === productSpecRowKey(row)}
             savingBlocked={Boolean(logisticsSavingKey)}
             onChange={handleChangeLogisticsProfile}
           />
@@ -516,7 +526,7 @@ export function ProductSpecsPage({ session, activeOwnerId }: ProductSpecsPagePro
       </div>
 
       <Table<ProductVariantSpecPayload>
-        rowKey={(row) => String(row.variantId || `${row.skuParent}-${row.partnerSku}-${row.childSku}`)}
+        rowKey={productSpecRowKey}
         size="middle"
         loading={loading}
         columns={columns}
@@ -1071,6 +1081,7 @@ function defaultLogisticsProfile(row: ProductVariantSpecPayload, storeCode?: str
   return {
     storeCode: row.storeCode || storeCode,
     skuParent: row.skuParent,
+    currentZCode: getProductCurrentZCode(row),
     title: row.title,
     imageUrl: row.imageUrl,
     variantId: row.variantId,
@@ -1236,7 +1247,14 @@ function normalizeDraftNumber(value: number | string | null) {
 }
 
 function buildEditKey(row: ProductVariantSpecPayload, sourceType: EditableSourceType) {
-  return `${row.variantId || row.partnerSku || row.childSku || row.skuParent}:${sourceType}`;
+  return `${productSpecRowKey(row)}:${sourceType}`;
+}
+
+function productSpecRowKey(row: ProductVariantSpecPayload) {
+  return [
+    getProductStableIdentityKey(row),
+    row.childSku || row.sizeEn || row.sizeAr || row.variantId
+  ].map((value) => String(value ?? '').trim()).filter(Boolean).join(':');
 }
 
 function formatCompactNumber(value: number) {

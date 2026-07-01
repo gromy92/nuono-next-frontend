@@ -9,7 +9,8 @@ export type ProductListUiState = {
 export type ProductDetailTabMode = 'mock' | 'real';
 
 export type ProductDetailTabRequest = {
-  skuParent: string;
+  skuParent?: string;
+  currentZCode?: string;
   partnerSku?: string;
   pskuCode?: string;
   storeCode?: string;

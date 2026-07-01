@@ -4,6 +4,7 @@ import { shouldEnableProductMockFallback, storeInitializationStatusMeta } from '
 import {
   buildProductSummarySurfaceFromListItem,
   buildProductSummarySurfaceFromSample,
+  getProductIdentityLookupKeys,
   isProductInitializationFailureStatus,
   isProductListDatasetReady,
   resolveProductInitializationStatus
@@ -41,12 +42,7 @@ export function useProductListSource({
     () => {
       const itemsByKey = new Map<string, (typeof productListSourceItems)[number]>();
       productListSourceItems.forEach((item) => {
-        if (item.partnerSku) {
-          itemsByKey.set(item.partnerSku, item);
-        }
-        if (item.skuParent) {
-          itemsByKey.set(item.skuParent, item);
-        }
+        getProductIdentityLookupKeys(item).forEach((key) => itemsByKey.set(key, item));
       });
       return itemsByKey;
     },

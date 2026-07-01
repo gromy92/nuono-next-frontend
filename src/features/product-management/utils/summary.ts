@@ -1,6 +1,7 @@
 import type { ProductListSummaryPayload, ProductSummarySurface, ProductWorkbenchState, StoreInitializationPayload } from '../types';
 import { barcodeFromKeyAttributes } from './barcode';
 import { mergeGalleryImageUrls, normalizeProductSyncStatus, textInputValue } from './common';
+import { getProductCurrentZCode, isSameStableProductIdentity } from './productIdentity';
 
 function hasOwnField<T extends object>(value: T, field: PropertyKey) {
   return Object.prototype.hasOwnProperty.call(value, field);
@@ -24,7 +25,11 @@ export function mergeProductListItemWithSummary(
   return {
     ...current,
     referenceStoreCode: summary.storeCode ?? current.referenceStoreCode,
-    skuParent: summary.skuParent ?? current.skuParent,
+    skuParent: summary.currentZCode ?? summary.skuParent ?? current.skuParent,
+    currentZCode: summary.currentZCode ?? summary.skuParent ?? current.currentZCode,
+    productMasterId: summary.productMasterId ?? current.productMasterId,
+    productVariantId: summary.productVariantId ?? current.productVariantId,
+    productSiteOfferId: summary.productSiteOfferId ?? current.productSiteOfferId,
     productSourceType: summary.productSourceType ?? current.productSourceType,
     partnerSku: summary.partnerSku ?? current.partnerSku,
     pskuCode: summary.pskuCode ?? current.pskuCode,
@@ -86,7 +91,8 @@ export function mergeSampleProductWithSummary(
 ): StoreInitializationPayload['sampleProducts'][number] {
   return {
     ...current,
-    skuParent: summary.skuParent ?? current.skuParent,
+    skuParent: summary.currentZCode ?? summary.skuParent ?? current.skuParent,
+    currentZCode: summary.currentZCode ?? summary.skuParent ?? current.currentZCode,
     productSourceType: summary.productSourceType ?? current.productSourceType,
     partnerSku: summary.partnerSku ?? current.partnerSku,
     pskuCode: summary.pskuCode ?? current.pskuCode,
@@ -110,6 +116,10 @@ export function buildProductSummarySurfaceFromListItem(
 ): ProductSummarySurface {
   return {
     skuParent: item.skuParent,
+    currentZCode: item.currentZCode ?? item.skuParent,
+    productMasterId: item.productMasterId,
+    productVariantId: item.productVariantId,
+    productSiteOfferId: item.productSiteOfferId,
     productSourceType: item.productSourceType,
     partnerSku: item.partnerSku,
     pskuCode: item.pskuCode,
@@ -161,7 +171,11 @@ export function buildProductSummarySurfaceFromListSummary(
   const fallbackSurface = fallback ? buildProductSummarySurfaceFromListItem(fallback) : null;
 
   return {
-    skuParent: summary.skuParent ?? fallbackSurface?.skuParent ?? '-',
+    skuParent: summary.currentZCode ?? summary.skuParent ?? fallbackSurface?.skuParent ?? '-',
+    currentZCode: summary.currentZCode ?? summary.skuParent ?? fallbackSurface?.currentZCode,
+    productMasterId: summary.productMasterId ?? fallbackSurface?.productMasterId,
+    productVariantId: summary.productVariantId ?? fallbackSurface?.productVariantId,
+    productSiteOfferId: summary.productSiteOfferId ?? fallbackSurface?.productSiteOfferId,
     productSourceType: summary.productSourceType ?? fallbackSurface?.productSourceType,
     partnerSku: summary.partnerSku ?? fallbackSurface?.partnerSku,
     pskuCode: summary.pskuCode ?? fallbackSurface?.pskuCode,
@@ -266,6 +280,11 @@ export function buildProductSummarySurfaceFromWorkbench(
     return {
       ...listSurface,
       productSourceType: listSurface.productSourceType ?? textInputValue(workbenchState.draft.identity.productSourceType),
+      currentZCode:
+        listSurface.currentZCode ||
+        textInputValue(workbenchState.draft.identity.currentZCode) ||
+        textInputValue(workbenchState.draft.identity.skuParent) ||
+        undefined,
       title: listSurface.title ?? textInputValue(workbenchState.draft.content.titleEn),
       titleCn: listSurface.titleCn ?? textInputValue(workbenchState.draft.content.titleCn),
       titleAr: textInputValue(workbenchState.draft.content.titleAr),
@@ -301,7 +320,8 @@ export function buildProductSummarySurfaceFromWorkbench(
     siteOffers[0];
 
   return {
-    skuParent: textInputValue(draft.identity.skuParent),
+    skuParent: textInputValue(draft.identity.currentZCode) || textInputValue(draft.identity.skuParent),
+    currentZCode: textInputValue(draft.identity.currentZCode) || textInputValue(draft.identity.skuParent) || undefined,
     productSourceType: textInputValue(draft.identity.productSourceType) || undefined,
     partnerSku: textInputValue(draft.identity.partnerSku) || undefined,
     pskuCode: textInputValue(draft.identity.pskuCode) || undefined,
@@ -348,9 +368,23 @@ export function productSummaryPriceLine(summary: ProductSummarySurface) {
 }
 
 export function productSummaryTitle(summary: ProductSummarySurface) {
-  return summary.title || summary.skuParent;
+  return summary.title || summary.partnerSku || getProductCurrentZCode(summary);
 }
 
 export function productSummaryIdentityLine(summary: ProductSummarySurface) {
-  return `${summary.skuParent} · ${summary.partnerSku || '-'} · ${productSummaryPrimarySite(summary)}`;
+  return `${summary.partnerSku || '-'} · ${getProductCurrentZCode(summary) || '-'} · ${productSummaryPrimarySite(summary)}`;
+}
+
+export function productListSummaryAppliesToItem(
+  item: StoreInitializationPayload['productItems'][number] | StoreInitializationPayload['sampleProducts'][number],
+  summary: ProductListSummaryPayload
+) {
+  return isSameStableProductIdentity(
+    {
+      ...item,
+      storeCode: 'storeCode' in item ? item.storeCode : undefined,
+      referenceStoreCode: 'referenceStoreCode' in item ? item.referenceStoreCode : undefined
+    },
+    summary
+  );
 }

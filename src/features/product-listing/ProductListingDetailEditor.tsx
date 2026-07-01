@@ -49,7 +49,7 @@ export function ProductListingDetailEditor({ draft, onDraftChange }: ProductList
         patchDraft({ barcode: text(value) })
       } else if (field === 'barcodes' && Array.isArray(value)) {
         patchDraft({ barcode: text(value[0]) })
-      } else if (field === 'partnerSku' || field === 'pskuCode' || field === 'skuParent') {
+      } else if (field === 'partnerSku') {
         patchDraft({ psku: text(value) })
       }
       return
