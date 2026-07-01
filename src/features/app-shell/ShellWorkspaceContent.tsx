@@ -25,10 +25,12 @@ import {
   NoonDataCompletenessPage,
   NoonDataGapPatrolPage,
   OfficialWarehouseWorkbenchPage,
+  OperationsSkinManagementPage,
   OperationConfigSuiteVersionPage,
   OrderFinancePage,
   ProcurementRequirementConfirmationPage,
   ProductGroupManagementPage,
+  ProductImageProfilePage,
   ProductListingPage,
   ProductManagementWorkspacePage,
   ProductSpecsPage,
@@ -137,6 +139,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <ProductSpecsPage session={shellSession} activeOwnerId={activeOwnerId} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'product-image-profile') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ProductImageProfilePage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }
@@ -318,6 +328,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <CompetitorAnalysisPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'operations-skin-management') {
+    return (
+      <LazyWorkspaceBoundary>
+        <OperationsSkinManagementPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

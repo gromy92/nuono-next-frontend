@@ -3,6 +3,7 @@ import { currentAppPathname } from '../../runtimePaths'
 import {
   normalizeSessionRoleView,
   PRODUCT_GROUPS_PATH,
+  PRODUCT_IMAGE_PROFILE_PATH,
   PRODUCT_IMAGE_MATCH_PATH,
   PRODUCT_SPECS_PATH,
   PRODUCT_WORKSPACE_PATH,
@@ -13,6 +14,7 @@ import {
   DATA_SALES_ANALYTICS_PATH,
   DATA_SALES_FORECAST_PATH,
   OPERATIONS_COMPETITOR_ANALYSIS_PATH,
+  OPERATIONS_SKIN_MANAGEMENT_PATH,
   NOON_CALL_STORE_DATA_PATH,
   SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH,
   SYSTEM_REPORT_NOON_DATA_GAPS_PATH,
@@ -126,7 +128,9 @@ function readDevSessionOverride(): AuthSession | null {
     pathname.startsWith(PRODUCT_WORKSPACE_PATH) ||
     pathname.startsWith(PRODUCT_GROUPS_PATH) ||
     pathname.startsWith(PRODUCT_SPECS_PATH) ||
+    pathname.startsWith(PRODUCT_IMAGE_PROFILE_PATH) ||
     pathname.startsWith(PRODUCT_IMAGE_MATCH_PATH) ||
+    search.get('grantProductImages') === '1' ||
     search.get('grantImageMatch') === '1'
   const includeProductManualSelectionDevMenu =
     pathname.startsWith(PRODUCT_MANUAL_SELECTION_PATH) ||
@@ -164,6 +168,9 @@ function readDevSessionOverride(): AuthSession | null {
   const includeOperationsCompetitorDevMenu =
     pathname.startsWith(OPERATIONS_COMPETITOR_ANALYSIS_PATH) ||
     search.get('grantCompetitorAnalysis') === '1'
+  const includeOperationsSkinDevMenu =
+    pathname.startsWith(OPERATIONS_SKIN_MANAGEMENT_PATH) ||
+    search.get('grantOperationsSkin') === '1'
   const includeOperationsConfigDevMenu =
     pathname.startsWith(OPERATIONS_CONFIG_VERSIONS_PATH) ||
     pathname.startsWith(DATA_ACTIVITY_CONFIG_PATH) ||
@@ -299,6 +306,7 @@ function readDevSessionOverride(): AuthSession | null {
     grantedMenus.push({ menuId: 9100, menuName: '商品管理', urlPath: '/api/sku/manage' })
     grantedMenus.push({ menuId: 9103, menuName: '商品分组', urlPath: PRODUCT_GROUPS_PATH })
     grantedMenus.push({ menuId: 9104, menuName: '商品规格', urlPath: PRODUCT_SPECS_PATH })
+    grantedMenus.push({ menuId: 9106, menuName: '商品图', urlPath: PRODUCT_IMAGE_PROFILE_PATH })
     grantedMenus.push({ menuId: 9105, menuName: '图片匹配', urlPath: PRODUCT_IMAGE_MATCH_PATH })
   }
   if (includeProductManualSelectionDevMenu) {
@@ -351,6 +359,9 @@ function readDevSessionOverride(): AuthSession | null {
   }
   if (includeOperationsCompetitorDevMenu) {
     grantedMenus.push({ menuId: 9801, menuName: '竞品分析', urlPath: OPERATIONS_COMPETITOR_ANALYSIS_PATH })
+  }
+  if (includeOperationsSkinDevMenu) {
+    grantedMenus.push({ menuId: 9802, menuName: '皮肤管理', urlPath: OPERATIONS_SKIN_MANAGEMENT_PATH })
   }
   if (includeOperationsConfigDevMenu) {
     grantedMenus.push({ menuId: 9503, menuName: '运营配置版本', urlPath: OPERATIONS_CONFIG_VERSIONS_PATH })
