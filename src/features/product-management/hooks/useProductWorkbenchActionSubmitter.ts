@@ -183,7 +183,7 @@ export function useProductWorkbenchActionSubmitter({
             }
           };
         });
-        updateProductListUiState(currentProductIdentityKey || currentProductSkuParent, {
+        updateProductListUiState(currentProductIdentityKey, {
           syncStatus: 'failed',
           lastSyncedAt: productWorkbenchState.lastSyncedAt,
           note: errorMessage

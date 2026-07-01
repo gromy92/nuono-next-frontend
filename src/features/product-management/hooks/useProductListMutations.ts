@@ -91,7 +91,7 @@ export function useProductListMutations({
 
         let changed = false;
         const nextItems = currentValue.data.items.map((item) => {
-          if (getProductListRowIdentityKey(item) !== identityKey && item.skuParent !== identityKey) {
+          if (getProductListRowIdentityKey(item) !== identityKey) {
             return item;
           }
           changed = true;
@@ -124,7 +124,7 @@ export function useProductListMutations({
 
         let productItemChanged = false;
         const nextProductItems = currentValue.data.productItems.map((item) => {
-          if (getProductListRowIdentityKey(item) !== identityKey && item.skuParent !== identityKey) {
+          if (getProductListRowIdentityKey(item) !== identityKey) {
             return item;
           }
           productItemChanged = true;
@@ -138,7 +138,7 @@ export function useProductListMutations({
 
         let sampleProductChanged = false;
         const nextSampleProducts = currentValue.data.sampleProducts.map((item) => {
-          if (getProductListRowIdentityKey(item) !== identityKey && item.skuParent !== identityKey) {
+          if (getProductListRowIdentityKey(item) !== identityKey) {
             return item;
           }
           sampleProductChanged = true;

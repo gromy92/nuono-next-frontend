@@ -36,7 +36,9 @@ const historyModalActions = source('./hooks/useProductHistoryModalActions.ts');
 const listMutations = source('./hooks/useProductListMutations.ts');
 const localDeletion = source('./hooks/useProductLocalDeletion.ts');
 const mediaAndHistoryActions = source('./hooks/useProductMediaAndHistoryActions.ts');
+const mockProductActions = source('./hooks/useMockProductActions.ts');
 const productIdentity = source('./utils/productIdentity.ts');
+const workbenchActionSubmitter = source('./hooks/useProductWorkbenchActionSubmitter.ts');
 const siteCompareModalActions = source('./hooks/useProductSiteCompareModalActions.ts');
 const workspaceAccess = source('./workspaceAccess.ts');
 const productSpecsPage = featureSource('product-specs/ProductSpecsPage.tsx');
@@ -72,6 +74,24 @@ assert.doesNotMatch(
   listMutations,
   /item\.skuParent === summary\.skuParent/,
   'list summary merge/apply must not match only by current Z code'
+);
+
+assert.doesNotMatch(
+  listMutations,
+  /item\.skuParent [!=]== identityKey/,
+  'list live-status mutations must not use current Z code as the identity key fallback'
+);
+
+assert.doesNotMatch(
+  mockProductActions,
+  /updateProductListUiState\(currentSkuParent,/,
+  'mock product actions must update list UI state by stable product identity'
+);
+
+assert.doesNotMatch(
+  workbenchActionSubmitter,
+  /updateProductListUiState\(currentProductIdentityKey \|\| currentProductSkuParent,/,
+  'real product action error state must not fall back to current Z code identity'
 );
 
 assert.doesNotMatch(
