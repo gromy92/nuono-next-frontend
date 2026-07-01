@@ -50,23 +50,21 @@ export function getProductIdentityLookupKeys(value: ProductIdentityLike | undefi
   const keys = new Set<string>();
   const storeCode = getProductIdentityStoreCode(value);
   const partnerSku = normalizeProductIdentityValue(value?.partnerSku);
-  const currentZCode = getProductCurrentZCode(value);
 
   if (partnerSku) {
     keys.add([storeCode, `psku:${partnerSku}`].filter(Boolean).join('|'));
     keys.add(`psku:${partnerSku}`);
     keys.add(partnerSku);
   }
-  if (currentZCode) {
-    keys.add([storeCode, `z:${currentZCode}`].filter(Boolean).join('|'));
-    keys.add(`z:${currentZCode}`);
-    keys.add(currentZCode);
+
+  const compatibilityRef = normalizeProductIdentityValue(
+    value?.productVariantId || value?.variantId || value?.productSiteOfferId || value?.siteOfferId
+  );
+  if (!partnerSku && compatibilityRef) {
+    keys.add([storeCode, `row:${compatibilityRef}`].filter(Boolean).join('|'));
+    keys.add(`row:${compatibilityRef}`);
   }
 
-  const stableKey = getProductStableIdentityKey(value);
-  if (stableKey) {
-    keys.add(stableKey);
-  }
   return Array.from(keys).filter(Boolean);
 }
 
@@ -104,7 +102,5 @@ export function isSameStableProductIdentity(
     return currentPartnerSku === nextPartnerSku;
   }
 
-  const currentZCode = getProductCurrentZCode(currentValue);
-  const nextZCode = getProductCurrentZCode(nextValue);
-  return Boolean(currentZCode && nextZCode && currentZCode === nextZCode);
+  return false;
 }

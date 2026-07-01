@@ -36,7 +36,9 @@ const historyModalActions = source('./hooks/useProductHistoryModalActions.ts');
 const listMutations = source('./hooks/useProductListMutations.ts');
 const localDeletion = source('./hooks/useProductLocalDeletion.ts');
 const mediaAndHistoryActions = source('./hooks/useProductMediaAndHistoryActions.ts');
+const productIdentity = source('./utils/productIdentity.ts');
 const siteCompareModalActions = source('./hooks/useProductSiteCompareModalActions.ts');
+const workspaceAccess = source('./workspaceAccess.ts');
 const productSpecsPage = featureSource('product-specs/ProductSpecsPage.tsx');
 const specTable = source('./components/ProductVariantSpecTable.tsx');
 const specModal = source('./components/ProductVariantSpecModal.tsx');
@@ -70,6 +72,30 @@ assert.doesNotMatch(
   listMutations,
   /item\.skuParent === summary\.skuParent/,
   'list summary merge/apply must not match only by current Z code'
+);
+
+assert.doesNotMatch(
+  productIdentity,
+  /keys\.add\(\[storeCode,\s*`z:\$\{currentZCode\}`\]/,
+  'product identity lookup keys must not index rows by current Z code'
+);
+
+assert.doesNotMatch(
+  productIdentity,
+  /keys\.add\(`z:\$\{currentZCode\}`\)|keys\.add\(currentZCode\)/,
+  'product identity lookup keys must not expose raw current Z code aliases'
+);
+
+assert.doesNotMatch(
+  productIdentity,
+  /currentZCode && nextZCode && currentZCode === nextZCode/,
+  'stable identity comparison must not fall back to current Z code equality'
+);
+
+assert.doesNotMatch(
+  workspaceAccess,
+  /getProductCurrentZCode\(currentValue\) === getProductCurrentZCode\(nextValue\)/,
+  'product detail request reuse must not fall back to current Z code equality'
 );
 
 assert.match(

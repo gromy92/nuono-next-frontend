@@ -1,6 +1,5 @@
 import type { ProductDetailTabRequest, StoreInitializationPayload } from './types';
 import type { StoreSyncOverviewPayload } from './workspaceContracts';
-import { getProductCurrentZCode } from './utils/productIdentity';
 
 type StoreSyncOverviewStore = StoreSyncOverviewPayload['stores'][number];
 
@@ -97,9 +96,5 @@ export function isSameProductDetailRequest(
     return sameScope && currentPartnerSku === nextPartnerSku;
   }
 
-  return (
-    sameScope &&
-    getProductCurrentZCode(currentValue) === getProductCurrentZCode(nextValue) &&
-    currentPartnerSku === nextPartnerSku
-  );
+  return false;
 }
