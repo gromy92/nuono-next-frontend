@@ -31,19 +31,14 @@ export function getProductStableIdentityKey(value: ProductIdentityLike | undefin
     return [storeCode, `psku:${partnerSku}`].filter(Boolean).join('|');
   }
 
-  const currentZCode = getProductCurrentZCode(value);
-  if (currentZCode) {
-    return [storeCode, `z:${currentZCode}`].filter(Boolean).join('|');
-  }
-
   const compatibilityRef = normalizeProductIdentityValue(
     value?.productVariantId || value?.variantId || value?.productSiteOfferId || value?.siteOfferId
   );
-  return compatibilityRef ? [storeCode, `row:${compatibilityRef}`].filter(Boolean).join('|') : storeCode;
+  return compatibilityRef ? [storeCode, `row:${compatibilityRef}`].filter(Boolean).join('|') : '';
 }
 
 export function getProductListRowIdentityKey(value: ProductIdentityLike) {
-  return getProductStableIdentityKey(value) || getProductCurrentZCode(value);
+  return getProductStableIdentityKey(value);
 }
 
 export function getProductIdentityLookupKeys(value: ProductIdentityLike | undefined) {

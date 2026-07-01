@@ -102,6 +102,12 @@ assert.doesNotMatch(
 
 assert.doesNotMatch(
   productIdentity,
+  /return \[storeCode,\s*`z:\$\{currentZCode\}`\]/,
+  'stable product keys must not use current Z code'
+);
+
+assert.doesNotMatch(
+  productIdentity,
   /keys\.add\(`z:\$\{currentZCode\}`\)|keys\.add\(currentZCode\)/,
   'product identity lookup keys must not expose raw current Z code aliases'
 );
@@ -164,6 +170,30 @@ assert.match(
   api,
   /\/api\/product-specs\/by-psku/,
   'product specs detail/source/effective-source requests must prefer the by-psku API'
+);
+
+assert.match(
+  api,
+  /fetchProductVariantSpecs[\s\S]*fetchProductSpecDetail\(normalizedRequest\)/,
+  'embedded product spec table fetch must use the by-psku detail API when partnerSku is present'
+);
+
+assert.match(
+  api,
+  /saveProductVariantSpec[\s\S]*saveProductSpecSource\([\s\S]*sourceType: 'warehouse'[\s\S]*selectProductSpecEffectiveSource/,
+  'embedded product spec table save must use by-psku source save and effective-source selection when partnerSku is present'
+);
+
+assert.match(
+  api,
+  /\/api\/product-specs\/by-psku\/sources\/\$\{sourceType\}\$\{byPskuQuery\}/,
+  'by-psku source save requests must carry storeCode and partnerSku query params'
+);
+
+assert.match(
+  api,
+  /\/api\/product-specs\/by-psku\/effective-source\$\{byPskuQuery\}/,
+  'by-psku effective-source requests must carry storeCode and partnerSku query params'
 );
 
 assert.match(

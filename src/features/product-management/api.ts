@@ -160,6 +160,25 @@ function normalizeProductIdentityRequest<T extends ProductWorkbenchOpenRequest |
   };
 }
 
+function productSpecDetailToVariantSpecPayload(detail: ProductVariantSpecDetailPayload): ProductVariantSpecPayload {
+  const effectiveSpec = detail.effectiveSpec ?? {};
+  const currentZCode = detail.currentZCode || detail.skuParent || effectiveSpec.currentZCode || effectiveSpec.skuParent;
+  return {
+    ...effectiveSpec,
+    storeCode: detail.storeCode || effectiveSpec.storeCode,
+    skuParent: currentZCode,
+    currentZCode,
+    title: detail.title || effectiveSpec.title,
+    imageUrl: detail.imageUrl || effectiveSpec.imageUrl,
+    variantId: detail.variantId || effectiveSpec.variantId,
+    partnerSku: detail.partnerSku || effectiveSpec.partnerSku,
+    childSku: detail.childSku || effectiveSpec.childSku,
+    effectiveSourceId: detail.effectiveSourceId || effectiveSpec.effectiveSourceId,
+    effectiveSourceType: detail.effectiveSourceType || effectiveSpec.effectiveSourceType,
+    sources: detail.sources ?? effectiveSpec.sources
+  };
+}
+
 export async function fetchProductListDataset(request: ProductListDatasetRequest) {
   return postJson<ProductListDatasetPayload>('/api/product-master/list', request, '商品接口当前不可用');
 }
@@ -200,10 +219,23 @@ export async function openProductWorkbenchSnapshot(request: ProductWorkbenchOpen
 
 export async function fetchProductVariantSpecs(request: ProductHistoryRequest) {
   const normalizedRequest = normalizeProductIdentityRequest(request);
+  if (normalizedRequest.partnerSku) {
+    const detail = await fetchProductSpecDetail(normalizedRequest);
+    return {
+      ready: detail.ready,
+      source: 'by-psku',
+      ownerUserId: normalizedRequest.ownerUserId,
+      storeCode: detail.storeCode || normalizedRequest.storeCode,
+      skuParent: detail.skuParent || normalizedRequest.currentZCode,
+      currentZCode: detail.currentZCode || detail.skuParent || normalizedRequest.currentZCode,
+      partnerSku: detail.partnerSku || normalizedRequest.partnerSku,
+      warnings: detail.warnings ?? [],
+      items: [productSpecDetailToVariantSpecPayload(detail)]
+    } as ProductVariantSpecListPayload;
+  }
   const query = new URLSearchParams({
     ownerUserId: String(normalizedRequest.ownerUserId),
     storeCode: normalizedRequest.storeCode,
-    ...(normalizedRequest.partnerSku ? { partnerSku: normalizedRequest.partnerSku } : {}),
     ...(normalizedRequest.currentZCode ? { currentZCode: normalizedRequest.currentZCode } : {}),
     ...(normalizedRequest.skuParent ? { skuParent: normalizedRequest.skuParent } : {})
   });
@@ -217,6 +249,28 @@ export async function fetchProductVariantSpecs(request: ProductHistoryRequest) {
 }
 
 export async function saveProductVariantSpec(request: ProductVariantSpecSaveRequest) {
+  if (request.partnerSku) {
+    const currentZCode = request.currentZCode || request.skuParent;
+    const source = await saveProductSpecSource({
+      ...request,
+      currentZCode,
+      skuParent: currentZCode,
+      sourceType: 'warehouse'
+    });
+    if (!source.sourceId) {
+      throw new Error('规格来源保存后缺少来源编号');
+    }
+    const detail = await selectProductSpecEffectiveSource({
+      ownerUserId: request.ownerUserId,
+      storeCode: request.storeCode,
+      variantId: request.variantId,
+      partnerSku: request.partnerSku,
+      currentZCode,
+      skuParent: currentZCode,
+      sourceId: source.sourceId
+    });
+    return productSpecDetailToVariantSpecPayload(detail);
+  }
   return postJson<ProductVariantSpecPayload>('/api/product-variant-specs', request, '保存商品规格失败');
 }
 
@@ -338,8 +392,11 @@ export async function fetchProductSpecDetail(request: ProductSpecDetailRequest) 
 export async function saveProductSpecSource(request: ProductVariantSpecSourceSaveRequest) {
   const { variantId, sourceType, partnerSku, currentZCode, skuParent, ...body } = request;
   const zCode = currentZCode || skuParent;
+  const byPskuQuery = partnerSku
+    ? `?${new URLSearchParams({ storeCode: request.storeCode, partnerSku }).toString()}`
+    : '';
   const url = partnerSku
-    ? `/api/product-specs/by-psku/sources/${sourceType}`
+    ? `/api/product-specs/by-psku/sources/${sourceType}${byPskuQuery}`
     : variantId
       ? `/api/product-specs/${variantId}/sources/${sourceType}`
       : null;
@@ -370,8 +427,11 @@ export async function saveProductSpecSource(request: ProductVariantSpecSourceSav
 export async function selectProductSpecEffectiveSource(request: ProductVariantSpecEffectiveSourceRequest) {
   const { variantId, partnerSku, currentZCode, skuParent, ...body } = request;
   const zCode = currentZCode || skuParent;
+  const byPskuQuery = partnerSku
+    ? `?${new URLSearchParams({ storeCode: request.storeCode, partnerSku }).toString()}`
+    : '';
   const url = partnerSku
-    ? '/api/product-specs/by-psku/effective-source'
+    ? `/api/product-specs/by-psku/effective-source${byPskuQuery}`
     : variantId
       ? `/api/product-specs/${variantId}/effective-source`
       : null;

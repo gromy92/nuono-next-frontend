@@ -1,7 +1,12 @@
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { isSameProductDetailRequest } from './workspaceAccess';
-import { getProductIdentityLookupKeys, isSameStableProductIdentity } from './utils/productIdentity';
+import {
+  getProductIdentityLookupKeys,
+  getProductListRowIdentityKey,
+  getProductStableIdentityKey,
+  isSameStableProductIdentity
+} from './utils/productIdentity';
 
 assert.equal(
   isSameProductDetailRequest(
@@ -131,6 +136,44 @@ assert.deepEqual(
   }),
   ['STR69486-NSA|row:123', 'row:123'],
   'legacy row refs may remain as compatibility lookup keys only when partnerSku is missing'
+);
+
+assert.equal(
+  getProductStableIdentityKey({
+    storeCode: 'STR69486-NSA',
+    currentZCode: 'ZOLD',
+    partnerSku: 'SGGRB113'
+  }),
+  'STR69486-NSA|psku:SGGRB113',
+  'stable product key must use store + partnerSku'
+);
+
+assert.equal(
+  getProductStableIdentityKey({
+    storeCode: 'STR69486-NSA',
+    currentZCode: 'ZSAME'
+  }),
+  '',
+  'stable product key must not fall back to current Z code when partnerSku and row refs are missing'
+);
+
+assert.equal(
+  getProductStableIdentityKey({
+    storeCode: 'STR69486-NSA',
+    currentZCode: 'ZSAME',
+    productVariantId: 123
+  }),
+  'STR69486-NSA|row:123',
+  'legacy row refs are the only stable-key fallback when partnerSku is missing'
+);
+
+assert.equal(
+  getProductListRowIdentityKey({
+    storeCode: 'STR69486-NSA',
+    currentZCode: 'ZSAME'
+  }),
+  '',
+  'list row identity keys must not fall back to current Z code'
 );
 
 const baselineDisplaySource = readFileSync(
