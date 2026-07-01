@@ -7,7 +7,6 @@ import { getProductCurrentZCode, getProductListRowIdentityKey } from '../utils';
 type UseProductLocalDeletionParams = {
   activeOwnerId?: number;
   closeProductDetailTab: () => void;
-  currentProductSkuParent?: string;
   currentProductIdentityKey?: string;
   selectedInitializationStoreCode?: string;
   setProductListDatasetState: (state: ProductListDatasetState | ((current: ProductListDatasetState) => ProductListDatasetState)) => void;
@@ -16,7 +15,6 @@ type UseProductLocalDeletionParams = {
 export function useProductLocalDeletion({
   activeOwnerId,
   closeProductDetailTab,
-  currentProductSkuParent,
   currentProductIdentityKey,
   selectedInitializationStoreCode,
   setProductListDatasetState
@@ -43,7 +41,7 @@ export function useProductLocalDeletion({
           pskuCode: record.pskuCode
         });
         setProductListDatasetState({ status: 'success', data: payload });
-        if (currentProductIdentityKey === getProductListRowIdentityKey(record) || currentProductSkuParent === record.skuParent) {
+        if (currentProductIdentityKey === getProductListRowIdentityKey(record)) {
           closeProductDetailTab();
         }
         message.success('商品已从本地商品目录删除。');
@@ -57,7 +55,6 @@ export function useProductLocalDeletion({
       activeOwnerId,
       closeProductDetailTab,
       currentProductIdentityKey,
-      currentProductSkuParent,
       selectedInitializationStoreCode,
       setProductListDatasetState
     ]

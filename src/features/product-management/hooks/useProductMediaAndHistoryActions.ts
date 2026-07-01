@@ -62,7 +62,7 @@ export function useProductMediaAndHistoryActions({
   const historyActions = useProductHistoryModalActions({
     activeOwnerId,
     applyProductListSummary,
-    currentProductSkuParent,
+    currentProductIdentityKey,
     currentProductSummarySurface,
     productListUiStates,
     productWorkbenchState,

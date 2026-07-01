@@ -32,7 +32,11 @@ const productManagementSources = readProductManagementSources();
 const allProductManagementSource = productManagementSources.map((item) => item.source).join('\n');
 const catalogTablePanel = source('./components/ProductCatalogTablePanel.tsx');
 const api = source('./api.ts');
+const historyModalActions = source('./hooks/useProductHistoryModalActions.ts');
 const listMutations = source('./hooks/useProductListMutations.ts');
+const localDeletion = source('./hooks/useProductLocalDeletion.ts');
+const mediaAndHistoryActions = source('./hooks/useProductMediaAndHistoryActions.ts');
+const siteCompareModalActions = source('./hooks/useProductSiteCompareModalActions.ts');
 const productSpecsPage = featureSource('product-specs/ProductSpecsPage.tsx');
 const specTable = source('./components/ProductVariantSpecTable.tsx');
 const specModal = source('./components/ProductVariantSpecModal.tsx');
@@ -66,6 +70,42 @@ assert.doesNotMatch(
   listMutations,
   /item\.skuParent === summary\.skuParent/,
   'list summary merge/apply must not match only by current Z code'
+);
+
+assert.match(
+  mediaAndHistoryActions,
+  /currentProductIdentityKey/,
+  'history modal actions must receive the current stable product identity from the workspace'
+);
+
+assert.match(
+  historyModalActions,
+  /currentProductIdentityKey === getProductListRowIdentityKey\(record\)/,
+  'history modal current-workbench reuse must match by stable product identity'
+);
+
+assert.doesNotMatch(
+  historyModalActions,
+  /currentProductSkuParent === record\.skuParent/,
+  'history modal current-workbench reuse must not match by current Z code'
+);
+
+assert.match(
+  localDeletion,
+  /currentProductIdentityKey === getProductListRowIdentityKey\(record\)/,
+  'local deletion must close the detail tab only when the stable product identity matches'
+);
+
+assert.doesNotMatch(
+  localDeletion,
+  /currentProductSkuParent === record\.skuParent/,
+  'local deletion must not close the detail tab by current Z code'
+);
+
+assert.match(
+  siteCompareModalActions,
+  /partnerSku: record\.partnerSku/,
+  'site compare modal must request workbench snapshots with system PSKU'
 );
 
 assert.doesNotMatch(

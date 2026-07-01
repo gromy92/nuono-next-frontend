@@ -346,7 +346,6 @@ export function useProductManagementWorkspace({
   const productLocalDeletion = useProductLocalDeletion({
     activeOwnerId,
     closeProductDetailTab: navigation.closeProductDetailTab,
-    currentProductSkuParent,
     currentProductIdentityKey,
     selectedInitializationStoreCode,
     setProductListDatasetState

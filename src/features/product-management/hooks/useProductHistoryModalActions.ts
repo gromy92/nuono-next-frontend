@@ -24,7 +24,6 @@ type UseProductHistoryModalActionsParams = {
   activeOwnerId?: number;
   applyProductListSummary: (summary?: ProductListSummaryPayload) => void;
   currentProductIdentityKey?: string;
-  currentProductSkuParent?: string;
   currentProductSummarySurface: ProductSummarySurface | null;
   productListUiStates: Record<string, ProductListUiState>;
   productWorkbenchState: ProductWorkbenchState | null;
@@ -51,7 +50,6 @@ export function useProductHistoryModalActions({
   activeOwnerId,
   applyProductListSummary,
   currentProductIdentityKey,
-  currentProductSkuParent,
   currentProductSummarySurface,
   productListUiStates,
   productWorkbenchState,
@@ -80,8 +78,7 @@ export function useProductHistoryModalActions({
         : undefined;
       const currentZCode = getProductCurrentZCode(record);
       const useCurrentWorkbench =
-        (currentProductIdentityKey === getProductListRowIdentityKey(record) || currentProductSkuParent === record.skuParent) &&
-        productWorkbenchState;
+        currentProductIdentityKey === getProductListRowIdentityKey(record) && productWorkbenchState;
       const useMockFallback = usingMockProductList && !useCurrentWorkbench;
       const historySummary =
         useCurrentWorkbench && currentProductSummarySurface
@@ -188,7 +185,6 @@ export function useProductHistoryModalActions({
       activeOwnerId,
       applyProductListSummary,
       currentProductIdentityKey,
-      currentProductSkuParent,
       currentProductSummarySurface,
       productListUiStates,
       productWorkbenchState,
