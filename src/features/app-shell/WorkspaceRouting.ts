@@ -15,6 +15,7 @@ export type { AppMenuKey } from './WorkspaceMenuRegistry'
 export const PRODUCT_WORKSPACE_PATH = workspaceMenuPath('product-manage')
 export const PRODUCT_GROUPS_PATH = workspaceMenuPath('product-groups')
 export const PRODUCT_SPECS_PATH = workspaceMenuPath('product-specs')
+export const PRODUCT_IMAGE_PROFILE_PATH = workspaceMenuPath('product-image-profile')
 export const PRODUCT_IMAGE_MATCH_PATH = workspaceMenuPath('product-image-match')
 export const PRODUCT_MANUAL_SELECTION_PATH = workspaceMenuPath('product-manual-selection')
 export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688-collection')
@@ -30,6 +31,7 @@ export const WAREHOUSE_LOGISTICS_BILL_PATH = workspaceMenuPath('warehouse-logist
 export const WAREHOUSE_DISPATCH_PATH = workspaceMenuPath('warehouse-dispatch')
 export const OFFICIAL_WAREHOUSE_PATH = workspaceMenuPath('official-warehouse')
 export const OPERATIONS_COMPETITOR_ANALYSIS_PATH = workspaceMenuPath('operations-competitor-analysis')
+export const OPERATIONS_SKIN_MANAGEMENT_PATH = workspaceMenuPath('operations-skin-management')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
 export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
@@ -90,7 +92,9 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantWarehouse',
   'grantAli1688HistoricalOrders',
   'grantManualSelection',
+  'grantProductImages',
   'grantCompetitorAnalysis',
+  'grantOperationsSkin',
   'grantImageMatch',
   'grantPurchase',
   'grantSalesAnalytics',
@@ -288,6 +292,7 @@ export function resolveSessionLandingMenuKey(
         'warehouse-dispatch',
         'official-warehouse',
         'operations-competitor-analysis',
+        'operations-skin-management',
         'data-sales-analysis',
         'data-sales-forecast',
         'noon-call-store-data',
@@ -298,6 +303,7 @@ export function resolveSessionLandingMenuKey(
         'operations-lifecycle-rules',
         'product-manual-selection',
         'product-specs',
+        'product-image-profile',
         'product-manage'
       ] as AppMenuKey[])
     : isBossManagementSession(session)
@@ -318,6 +324,7 @@ export function resolveSessionLandingMenuKey(
           'warehouse-dispatch',
           'official-warehouse',
           'operations-competitor-analysis',
+          'operations-skin-management',
           'data-sales-analysis',
           'data-sales-forecast',
           'noon-call-store-data',
@@ -326,6 +333,7 @@ export function resolveSessionLandingMenuKey(
           'operations-config-versions',
           'data-activity-config',
           'operations-lifecycle-rules',
+          'product-image-profile',
           'product-manual-selection'
         ] as AppMenuKey[])
       : ([
@@ -345,6 +353,7 @@ export function resolveSessionLandingMenuKey(
           'warehouse-dispatch',
           'official-warehouse',
           'operations-competitor-analysis',
+          'operations-skin-management',
           'data-sales-analysis',
           'data-sales-forecast',
           'noon-call-store-data',
@@ -353,6 +362,7 @@ export function resolveSessionLandingMenuKey(
           'operations-config-versions',
           'data-activity-config',
           'operations-lifecycle-rules',
+          'product-image-profile',
           'product-manual-selection'
         ] as AppMenuKey[])
 

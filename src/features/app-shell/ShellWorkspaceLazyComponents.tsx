@@ -86,6 +86,11 @@ export const ProductSpecsPage = lazyWorkspace(() =>
     default: module.ProductSpecsPage
   }))
 );
+export const ProductImageProfilePage = lazyWorkspace(() =>
+  import('../product-image-profile/ProductImageProfilePage').then((module) => ({
+    default: module.ProductImageProfilePage
+  }))
+);
 export const ImageMatchPage = lazyWorkspace(() =>
   import('../image-match/ImageMatchPage').then((module) => ({
     default: module.ImageMatchPage
@@ -148,6 +153,11 @@ export const SalesForecastPage = lazyWorkspace(() =>
 export const CompetitorAnalysisPage = lazyWorkspace(() =>
   import('../competitor-analysis/CompetitorAnalysisPage').then((module) => ({
     default: module.CompetitorAnalysisPage
+  }))
+);
+export const OperationsSkinManagementPage = lazyWorkspace(() =>
+  import('../operations-skin-management/OperationsSkinManagementPage').then((module) => ({
+    default: module.OperationsSkinManagementPage
   }))
 );
 export const OperationConfigSuiteVersionPage = lazyWorkspace(() =>

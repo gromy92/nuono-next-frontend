@@ -2,6 +2,7 @@ export type AppMenuKey =
   | 'product-manage'
   | 'product-groups'
   | 'product-specs'
+  | 'product-image-profile'
   | 'product-image-match'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
@@ -17,6 +18,7 @@ export type AppMenuKey =
   | 'warehouse-dispatch'
   | 'official-warehouse'
   | 'operations-competitor-analysis'
+  | 'operations-skin-management'
   | 'data-sales-analysis'
   | 'data-order-analysis'
   | 'data-sales-forecast'
@@ -69,6 +71,7 @@ export type WorkspaceContentKind =
   | 'product-management'
   | 'product-groups'
   | 'product-specs'
+  | 'product-image-profile'
   | 'product-image-match'
   | 'product-manual-selection'
   | 'purchase-ali1688-collection'
@@ -84,6 +87,7 @@ export type WorkspaceContentKind =
   | 'warehouse-dispatch'
   | 'official-warehouse'
   | 'operations-competitor-analysis'
+  | 'operations-skin-management'
   | 'sales-analytics'
   | 'order-finance'
   | 'sales-forecast'
@@ -164,6 +168,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '商品 / 商品规格',
     tabLabel: '商品规格',
     contentKind: 'product-specs',
+    closable: true
+  },
+  'product-image-profile': {
+    key: 'product-image-profile',
+    label: '商品图',
+    path: '/product/images',
+    sectionKey: 'product',
+    pathLabel: '商品 / 商品图',
+    tabLabel: '商品图',
+    contentKind: 'product-image-profile',
     closable: true
   },
   'product-image-match': {
@@ -315,6 +329,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '运营 / 竞品分析',
     tabLabel: '竞品分析',
     contentKind: 'operations-competitor-analysis',
+    closable: true
+  },
+  'operations-skin-management': {
+    key: 'operations-skin-management',
+    label: '皮肤管理',
+    path: '/operations/skin-management',
+    sectionKey: 'operations',
+    pathLabel: '运营 / 皮肤管理',
+    tabLabel: '皮肤管理',
+    contentKind: 'operations-skin-management',
     closable: true
   },
   'data-sales-analysis': {
@@ -493,6 +517,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
       { type: 'workspace', key: 'product-manage' },
       { type: 'workspace', key: 'product-groups' },
       { type: 'workspace', key: 'product-specs' },
+      { type: 'workspace', key: 'product-image-profile' },
       { type: 'workspace', key: 'product-image-match' },
       { type: 'placeholder', key: 'product-category-collect', label: '类目采集', disabled: true },
       { type: 'workspace', key: 'product-manual-selection' }
@@ -539,7 +564,10 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     key: 'operations',
     label: '运营',
     iconKey: 'operations',
-    entries: [{ type: 'workspace', key: 'operations-competitor-analysis' }]
+    entries: [
+      { type: 'workspace', key: 'operations-competitor-analysis' },
+      { type: 'workspace', key: 'operations-skin-management' }
+    ]
   },
   {
     key: 'operation-config',
@@ -643,6 +671,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['商品规格']
   },
   {
+    keys: ['product-image-profile'],
+    urlPaths: ['/product/images', '/api/product-images'],
+    urlPathPrefixes: ['/api/product-images/'],
+    menuNames: ['商品图', '商品图片']
+  },
+  {
     keys: ['product-image-match'],
     urlPaths: ['/product/image-match', '/api/image-match/compare'],
     urlPathPrefixes: ['/api/image-match/'],
@@ -727,6 +761,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['竞品分析', '运营竞品分析']
   },
   {
+    keys: ['operations-skin-management'],
+    urlPaths: ['/operations/skin-management', '/api/operations/skin-management'],
+    urlPathPrefixes: ['/api/operations/skin-management/'],
+    menuNames: ['皮肤管理', '商品图片皮肤管理']
+  },
+  {
     keys: ['data-sales-analysis', 'data-order-analysis', 'data-sales-forecast'],
     urlPaths: [
       '/data/sales-analysis',
@@ -780,6 +820,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'product-manage',
   'product-groups',
   'product-specs',
+  'product-image-profile',
   'product-image-match',
   'product-manual-selection',
   'purchase-ali1688-historical-orders',
@@ -795,6 +836,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'warehouse-dispatch',
   'official-warehouse',
   'operations-competitor-analysis',
+  'operations-skin-management',
   'data-sales-analysis',
   'data-order-analysis',
   'data-sales-forecast',
