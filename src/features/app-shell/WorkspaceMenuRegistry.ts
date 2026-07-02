@@ -19,6 +19,7 @@ export type AppMenuKey =
   | 'official-warehouse'
   | 'operations-competitor-analysis'
   | 'operations-skin-management'
+  | 'operations-noon-ads'
   | 'data-sales-analysis'
   | 'data-order-analysis'
   | 'data-sales-forecast'
@@ -88,6 +89,7 @@ export type WorkspaceContentKind =
   | 'official-warehouse'
   | 'operations-competitor-analysis'
   | 'operations-skin-management'
+  | 'noon-ads'
   | 'sales-analytics'
   | 'order-finance'
   | 'sales-forecast'
@@ -341,6 +343,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'operations-skin-management',
     closable: true
   },
+  'operations-noon-ads': {
+    key: 'operations-noon-ads',
+    label: '广告投放经营台',
+    path: '/operations/noon-ads',
+    sectionKey: 'operations',
+    pathLabel: '运营 / 广告投放经营台',
+    tabLabel: '广告投放',
+    contentKind: 'noon-ads',
+    closable: true
+  },
   'data-sales-analysis': {
     key: 'data-sales-analysis',
     label: '销量分析',
@@ -566,7 +578,8 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     iconKey: 'operations',
     entries: [
       { type: 'workspace', key: 'operations-competitor-analysis' },
-      { type: 'workspace', key: 'operations-skin-management' }
+      { type: 'workspace', key: 'operations-skin-management' },
+      { type: 'workspace', key: 'operations-noon-ads' }
     ]
   },
   {
@@ -767,6 +780,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['皮肤管理', '商品图片皮肤管理']
   },
   {
+    keys: ['operations-noon-ads'],
+    urlPaths: ['/operations/noon-ads', '/api/noon-ads/dashboard', '/api/noon-ads/reports/import'],
+    urlPathPrefixes: ['/api/noon-ads/'],
+    menuNames: ['广告投放经营台', 'Noon Ads', '广告投放']
+  },
+  {
     keys: ['data-sales-analysis', 'data-order-analysis', 'data-sales-forecast'],
     urlPaths: [
       '/data/sales-analysis',
@@ -837,6 +856,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'official-warehouse',
   'operations-competitor-analysis',
   'operations-skin-management',
+  'operations-noon-ads',
   'data-sales-analysis',
   'data-order-analysis',
   'data-sales-forecast',

@@ -22,6 +22,7 @@ import {
   ManualSelectionPage,
   MasterDataBoard,
   NoonCallStoreDataPage,
+  NoonAdvertisingPage,
   NoonDataCompletenessPage,
   NoonDataGapPatrolPage,
   OfficialWarehouseWorkbenchPage,
@@ -336,6 +337,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <OperationsSkinManagementPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'noon-ads') {
+    return (
+      <LazyWorkspaceBoundary>
+        <NoonAdvertisingPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }
