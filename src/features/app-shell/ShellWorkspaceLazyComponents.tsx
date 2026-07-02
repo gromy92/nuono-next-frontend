@@ -160,6 +160,11 @@ export const OperationsSkinManagementPage = lazyWorkspace(() =>
     default: module.OperationsSkinManagementPage
   }))
 );
+export const NoonAdvertisingPage = lazyWorkspace(() =>
+  import('../noon-ads/NoonAdvertisingPage').then((module) => ({
+    default: module.NoonAdvertisingPage
+  }))
+);
 export const OperationConfigSuiteVersionPage = lazyWorkspace(() =>
   import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
     default: module.OperationConfigSuiteVersionPage

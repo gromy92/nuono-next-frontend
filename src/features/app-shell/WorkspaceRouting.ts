@@ -32,6 +32,7 @@ export const WAREHOUSE_DISPATCH_PATH = workspaceMenuPath('warehouse-dispatch')
 export const OFFICIAL_WAREHOUSE_PATH = workspaceMenuPath('official-warehouse')
 export const OPERATIONS_COMPETITOR_ANALYSIS_PATH = workspaceMenuPath('operations-competitor-analysis')
 export const OPERATIONS_SKIN_MANAGEMENT_PATH = workspaceMenuPath('operations-skin-management')
+export const OPERATIONS_NOON_ADS_PATH = workspaceMenuPath('operations-noon-ads')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
 export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
@@ -293,6 +294,7 @@ export function resolveSessionLandingMenuKey(
         'official-warehouse',
         'operations-competitor-analysis',
         'operations-skin-management',
+        'operations-noon-ads',
         'data-sales-analysis',
         'data-sales-forecast',
         'noon-call-store-data',
@@ -325,6 +327,7 @@ export function resolveSessionLandingMenuKey(
           'official-warehouse',
           'operations-competitor-analysis',
           'operations-skin-management',
+          'operations-noon-ads',
           'data-sales-analysis',
           'data-sales-forecast',
           'noon-call-store-data',
@@ -354,6 +357,7 @@ export function resolveSessionLandingMenuKey(
           'official-warehouse',
           'operations-competitor-analysis',
           'operations-skin-management',
+          'operations-noon-ads',
           'data-sales-analysis',
           'data-sales-forecast',
           'noon-call-store-data',

@@ -15,6 +15,7 @@ import {
   DATA_SALES_FORECAST_PATH,
   OPERATIONS_COMPETITOR_ANALYSIS_PATH,
   OPERATIONS_SKIN_MANAGEMENT_PATH,
+  OPERATIONS_NOON_ADS_PATH,
   NOON_CALL_STORE_DATA_PATH,
   SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH,
   SYSTEM_REPORT_NOON_DATA_GAPS_PATH,
@@ -171,6 +172,10 @@ function readDevSessionOverride(): AuthSession | null {
   const includeOperationsSkinDevMenu =
     pathname.startsWith(OPERATIONS_SKIN_MANAGEMENT_PATH) ||
     search.get('grantOperationsSkin') === '1'
+  const includeOperationsNoonAdsDevMenu =
+    pathname.startsWith(OPERATIONS_NOON_ADS_PATH) ||
+    search.get('grantNoonAds') === '1' ||
+    search.get('grantOperationsNoonAds') === '1'
   const includeOperationsConfigDevMenu =
     pathname.startsWith(OPERATIONS_CONFIG_VERSIONS_PATH) ||
     pathname.startsWith(DATA_ACTIVITY_CONFIG_PATH) ||
@@ -363,6 +368,9 @@ function readDevSessionOverride(): AuthSession | null {
   if (includeOperationsSkinDevMenu) {
     grantedMenus.push({ menuId: 9802, menuName: '皮肤管理', urlPath: OPERATIONS_SKIN_MANAGEMENT_PATH })
   }
+  if (includeOperationsNoonAdsDevMenu) {
+    grantedMenus.push({ menuId: 9803, menuName: '广告投放经营台', urlPath: OPERATIONS_NOON_ADS_PATH })
+  }
   if (includeOperationsConfigDevMenu) {
     grantedMenus.push({ menuId: 9503, menuName: '运营配置版本', urlPath: OPERATIONS_CONFIG_VERSIONS_PATH })
     grantedMenus.push({ menuId: 9501, menuName: '业务日历', urlPath: DATA_ACTIVITY_CONFIG_PATH })
@@ -433,8 +441,8 @@ function readDevSessionOverride(): AuthSession | null {
               };
   const currentStore = resolveDevCurrentStore(devStores, {
     restoreStored: search.get('preserveDevStore') === '1',
-    storeCode: search.get('devStore'),
-    siteCode: search.get('devSite')
+    storeCode: search.get('devStore') || search.get('storeCode'),
+    siteCode: search.get('devSite') || search.get('siteCode') || search.get('site')
   })
 
   return {
