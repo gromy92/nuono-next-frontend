@@ -34,7 +34,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import type { EChartsCoreOption } from 'echarts/core'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
-import { ProductBaselineIdentity, ProductImageThumb } from '../product-baseline'
+import { ProductBaselineIdentity, normalizeProductImageUrl } from '../product-baseline'
 import { EChartPanel } from '../../shared/charts'
 import {
   addCompetitorKeyword,
@@ -2257,12 +2257,7 @@ function ReportProductHeader({
   const fallbackTitle = chineseTitle || englishTitle ? '' : titleLines.primary
   return (
     <div className="competitor-analysis-report-header">
-      <ProductImageThumb
-        src={product.imageUrl}
-        alt={titleLines.alt}
-        imageCount={product.imageUrl ? 1 : 0}
-        width={72}
-      />
+      <ReportProductThumb src={product.imageUrl} alt={titleLines.alt} />
       <div className="competitor-analysis-report-header-body">
         <Space size={6} wrap>
           <Text strong className="competitor-analysis-report-heading">商品分析</Text>
@@ -2297,6 +2292,25 @@ function ReportProductHeader({
         />
       </div>
     </div>
+  )
+}
+
+function ReportProductThumb({ src, alt }: { src?: string; alt: string }) {
+  const [failedSrc, setFailedSrc] = useState('')
+  const normalizedSrc = normalizeProductImageUrl(src)
+  const visibleSrc = normalizedSrc && failedSrc !== normalizedSrc ? normalizedSrc : ''
+
+  return (
+    <span className="competitor-analysis-report-product-thumb">
+      {visibleSrc ? (
+        <>
+          <img src={visibleSrc} alt={alt} onError={() => setFailedSrc(visibleSrc)} />
+          <span className="competitor-analysis-report-product-thumb-count">1</span>
+        </>
+      ) : (
+        <span className="competitor-analysis-report-product-thumb-empty">无图</span>
+      )}
+    </span>
   )
 }
 
