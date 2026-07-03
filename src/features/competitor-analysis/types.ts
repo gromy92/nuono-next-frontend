@@ -15,6 +15,16 @@ export type SearchRunStatus =
   | 'parse_failed'
   | 'provider_unavailable'
 
+export type CompetitorKeywordRankChange = {
+  previousRankStatus?: RankStatus
+  previousRankNo?: number
+  previousDate?: string
+  rankStatus?: RankStatus
+  rankNo?: number
+  currentDate?: string
+  rankDelta?: number
+}
+
 export type CompetitorKeyword = {
   id: string
   keyword: string
@@ -25,6 +35,7 @@ export type CompetitorKeyword = {
   lastSucceededAt?: string
   lastErrorCode?: string
   monitoredCount?: number
+  selfRankChange?: CompetitorKeywordRankChange
 }
 
 export type CompetitorCandidate = {
@@ -117,6 +128,111 @@ export type RankSummary = {
   sponsoredCount: number
   notInScanDepthCount: number
   label: string
+}
+
+export type CompetitorDashboardIssueType =
+  | 'PENDING_CANDIDATE'
+  | 'MONITORING_SHORTAGE'
+  | 'RANK_ANOMALY'
+  | 'COMPETITOR_CHANGE'
+
+export type CompetitorDashboardChangeType = 'PRICE' | 'RATING' | 'REVIEW_COUNT' | 'IMAGE' | 'TITLE' | 'BRAND'
+
+export type CompetitorDashboardDrill = {
+  issueType?: CompetitorDashboardIssueType
+  productSiteOfferId?: string
+  partnerSku?: string
+  watchProductId?: string
+  competitorOfferId?: string
+  date?: string
+  changeType?: CompetitorDashboardChangeType
+}
+
+export type CompetitorDashboardSummaryItem = CompetitorDashboardDrill & {
+  label: string
+  value: number
+}
+
+export type CompetitorDashboardTrendItem = CompetitorDashboardDrill & {
+  date: string
+  label: string
+  value: number
+}
+
+export type CompetitorDashboardProductItem = CompetitorDashboardDrill & {
+  label: string
+  partnerSku: string
+  title: string
+  value: number
+  targetValue?: number
+}
+
+export type CompetitorDashboardRankChangeItem = {
+  watchProductId?: string
+  productSiteOfferId?: string
+  partnerSku: string
+  title: string
+  imageUrl?: string
+  keywordId?: string
+  keyword: string
+  trackedProductType: 'self' | 'competitor'
+  noonProductCode: string
+  previousRankStatus: RankStatus
+  previousRankNo?: number
+  previousDate?: string
+  rankStatus: RankStatus
+  rankNo?: number
+  currentDate?: string
+  rankDelta: number
+  priceChangeSummary?: string
+  titleChangeSummary?: string
+  adChangeSummary?: string
+}
+
+export type CompetitorDashboardAttributeChangeItem = {
+  watchProductId?: string
+  productSiteOfferId?: string
+  partnerSku: string
+  title: string
+  productImageUrl?: string
+  selfPreviousValue?: string
+  selfCurrentValue?: string
+  selfCurrentDate?: string
+  selfSnapshotCount: number
+  selfLatestValue?: string
+  selfLatestDate?: string
+  noonProductCode: string
+  competitorTitle: string
+  competitorImageUrl?: string
+  changeType: CompetitorDashboardChangeType
+  label: string
+  previousValue: string
+  currentValue: string
+  currentDate?: string
+  latestRankKeyword?: string
+  changeDateRankNo?: number
+  latestRankNo?: number
+  selfLatestRankKeyword?: string
+  selfLatestRankStatus?: RankStatus
+  selfLatestRankNo?: number
+  selfLatestScanDepth?: number
+}
+
+export type CompetitorDashboard = {
+  storeCode: string
+  siteCode: string
+  days: 1 | 7 | 14 | 30
+  competitorAttributeChangeDate?: string
+  competitorAttributeSnapshotCount: number
+  issueSummary: CompetitorDashboardSummaryItem[]
+  issueTrend: CompetitorDashboardTrendItem[]
+  coverageTopProducts: CompetitorDashboardProductItem[]
+  rankIssueTopProducts: CompetitorDashboardProductItem[]
+  changeTypeDistribution: CompetitorDashboardSummaryItem[]
+  changedProductTop: CompetitorDashboardProductItem[]
+  selfRankChanges: CompetitorDashboardRankChangeItem[]
+  competitorRankChanges: CompetitorDashboardRankChangeItem[]
+  competitorAttributeChanges: CompetitorDashboardAttributeChangeItem[]
 }
 
 export type CompetitorProductChangeField = {

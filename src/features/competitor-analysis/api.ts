@@ -1,7 +1,16 @@
 import { apiFetch, parseApiResponse } from '../../shared/api'
+import { normalizeNoonImageUrl } from '../product-management/utils/common'
 import type {
   CompetitorCandidate,
   CompetitorCandidateSource,
+  CompetitorDashboard,
+  CompetitorDashboardAttributeChangeItem,
+  CompetitorDashboardChangeType,
+  CompetitorDashboardIssueType,
+  CompetitorDashboardProductItem,
+  CompetitorDashboardRankChangeItem,
+  CompetitorDashboardSummaryItem,
+  CompetitorDashboardTrendItem,
   CompetitorKeyword,
   CompetitorProductChangeBaselineSummary,
   CompetitorProductChangeField,
@@ -66,6 +75,13 @@ type BackendWatchProductListItem = BackendWatchProduct & {
 type BackendKeywordCount = {
   keyword?: string
   monitoredCount?: number
+  previousRankStatus?: string
+  previousRankNo?: number | string
+  previousDate?: string
+  rankStatus?: string
+  rankNo?: number | string
+  currentDate?: string
+  rankDelta?: number | string
 }
 
 type BackendProductOption = {
@@ -191,6 +207,96 @@ type BackendProductChangeResponse = BackendProductChangeGroup[] | {
   baselineSummary?: BackendProductChangeBaselineSummary
 }
 
+type BackendDashboardSummaryItem = {
+  issueType?: string
+  label?: string
+  value?: number
+  changeType?: string
+  productSiteOfferId?: number | string
+  partnerSku?: string
+  watchProductId?: number | string
+  competitorOfferId?: number | string
+  date?: string
+}
+
+type BackendDashboardTrendItem = BackendDashboardSummaryItem & {
+  date?: string
+}
+
+type BackendDashboardProductItem = BackendDashboardSummaryItem & {
+  partnerSku?: string
+  title?: string
+  targetValue?: number
+}
+
+type BackendDashboardRankChangeItem = {
+  watchProductId?: number | string
+  productSiteOfferId?: number | string
+  partnerSku?: string
+  title?: string
+  imageUrl?: string
+  keywordId?: number | string
+  keyword?: string
+  trackedProductType?: string
+  noonProductCode?: string
+  previousRankStatus?: string
+  previousRankNo?: number
+  previousDate?: string
+  rankStatus?: string
+  rankNo?: number
+  currentDate?: string
+  rankDelta?: number
+  priceChangeSummary?: string
+  titleChangeSummary?: string
+  adChangeSummary?: string
+}
+
+type BackendDashboardAttributeChangeItem = {
+  watchProductId?: number | string
+  productSiteOfferId?: number | string
+  partnerSku?: string
+  title?: string
+  productImageUrl?: string
+  selfPreviousValue?: string
+  selfCurrentValue?: string
+  selfCurrentDate?: string
+  selfSnapshotCount?: number
+  selfLatestValue?: string
+  selfLatestDate?: string
+  noonProductCode?: string
+  competitorTitle?: string
+  competitorImageUrl?: string
+  changeType?: string
+  label?: string
+  previousValue?: string
+  currentValue?: string
+  currentDate?: string
+  latestRankKeyword?: string
+  changeDateRankNo?: number
+  latestRankNo?: number
+  selfLatestRankKeyword?: string
+  selfLatestRankStatus?: string
+  selfLatestRankNo?: number
+  selfLatestScanDepth?: number
+}
+
+type BackendCompetitorDashboard = {
+  storeCode?: string
+  siteCode?: string
+  days?: number
+  competitorAttributeChangeDate?: string
+  competitorAttributeSnapshotCount?: number
+  issueSummary?: BackendDashboardSummaryItem[]
+  issueTrend?: BackendDashboardTrendItem[]
+  coverageTopProducts?: BackendDashboardProductItem[]
+  rankIssueTopProducts?: BackendDashboardProductItem[]
+  changeTypeDistribution?: BackendDashboardSummaryItem[]
+  changedProductTop?: BackendDashboardProductItem[]
+  selfRankChanges?: BackendDashboardRankChangeItem[]
+  competitorRankChanges?: BackendDashboardRankChangeItem[]
+  competitorAttributeChanges?: BackendDashboardAttributeChangeItem[]
+}
+
 export type CompetitorWatchProductQuery = {
   storeCode?: string
   siteCode?: string
@@ -216,6 +322,13 @@ export type CompetitorProductOptionQuery = {
   siteCode: string
   keyword?: string
   limit?: number
+}
+
+export type CompetitorDashboardQuery = {
+  storeCode: string
+  siteCode: string
+  days?: 1 | 7 | 14 | 30
+  rankDirection?: 'UP' | 'DOWN'
 }
 
 export type CompetitorWatchProductCreateInput = {
@@ -256,6 +369,14 @@ export type CompetitorTask = {
 
 const EMPTY_IMAGE =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='
+
+function imageUrlValue(value: unknown) {
+  return normalizeNoonImageUrl(value) || EMPTY_IMAGE
+}
+
+function optionalImageUrlValue(value: unknown) {
+  return normalizeNoonImageUrl(value) || undefined
+}
 
 export async function fetchCompetitorWatchProducts(query: CompetitorWatchProductQuery = {}, signal?: AbortSignal) {
   const params = new URLSearchParams()
@@ -306,6 +427,17 @@ export async function fetchCompetitorProductBaselines(query: CompetitorWatchProd
     items: (payload.items || []).map(mapListItem),
     pagination: payload.pagination
   }
+}
+
+export async function fetchCompetitorDashboard(query: CompetitorDashboardQuery, signal?: AbortSignal) {
+  const params = new URLSearchParams({
+    storeCode: query.storeCode,
+    siteCode: query.siteCode,
+    days: String(query.days || 7)
+  })
+  appendSearchParam(params, 'rankDirection', query.rankDirection)
+  const response = await apiFetch(`/api/competitor-analysis/dashboard?${params}`, { signal })
+  return mapDashboard(await parseApiResponse<BackendCompetitorDashboard>(response, '读取竞品看板失败'))
 }
 
 export async function fetchCompetitorWatchProductDetail(watchProductId: string, signal?: AbortSignal) {
@@ -496,23 +628,25 @@ function mapListItem(row: BackendWatchProductListItem): CompetitorWatchProduct {
 }
 
 function mapListKeywords(
-  product: Pick<CompetitorWatchProduct, 'id' | 'storeCode' | 'partnerSku' | 'siteCode'>,
+  product: Pick<CompetitorWatchProduct, 'id' | 'productSiteOfferId' | 'storeCode' | 'partnerSku' | 'siteCode'>,
   activeKeywordStats?: BackendKeywordCount[],
   activeKeywords?: string[]
 ): CompetitorKeyword[] {
-  const store = product.storeCode?.trim() || ''
-  const site = product.siteCode?.trim() || ''
-  const partnerSku = product.partnerSku?.trim() || ''
-  const businessKey = store && site && partnerSku ? `${store}::${site}::psku:${partnerSku}` : ''
-  const baseId = businessKey || product.id || 'missing-psku-product'
+  const stableProductIdentity = [product.storeCode, product.siteCode, product.partnerSku]
+    .map((value) => stringValue(value).toUpperCase())
+    .filter(Boolean)
+    .join(':')
+  const baseId = product.id || stableProductIdentity || product.productSiteOfferId || 'product'
   const keywordRows = activeKeywordStats?.length
     ? activeKeywordStats.map((item) => ({
         keyword: stringValue(item.keyword),
-        monitoredCount: numberValue(item.monitoredCount)
+        monitoredCount: numberValue(item.monitoredCount),
+        selfRankChange: mapKeywordSelfRankChange(item)
       }))
     : (activeKeywords || []).map((keyword) => ({
         keyword: stringValue(keyword),
-        monitoredCount: 0
+        monitoredCount: undefined,
+        selfRankChange: undefined
       }))
   return keywordRows
     .filter((item) => item.keyword)
@@ -523,8 +657,33 @@ function mapListKeywords(
       status: 'active',
       displayOrder: index,
       lastRunStatus: 'failed',
-      monitoredCount: item.monitoredCount
+      monitoredCount: item.monitoredCount,
+      selfRankChange: item.selfRankChange
     }))
+}
+
+function mapKeywordSelfRankChange(row: BackendKeywordCount): CompetitorKeyword['selfRankChange'] | undefined {
+  const previousRankStatus = stringValue(row.previousRankStatus)
+  const rankStatus = stringValue(row.rankStatus)
+  const previousRankNo = optionalNumberValue(row.previousRankNo)
+  const rankNo = optionalNumberValue(row.rankNo)
+  const rankDelta = optionalNumberValue(row.rankDelta)
+  const previousDate = formatFactDate(row.previousDate)
+  const currentDate = formatFactDate(row.currentDate)
+
+  if (!previousRankStatus && !rankStatus && previousRankNo === undefined && rankNo === undefined) {
+    return undefined
+  }
+
+  return {
+    previousRankStatus: previousRankStatus ? normalizeRankStatus(previousRankStatus) : undefined,
+    previousRankNo,
+    previousDate: previousDate || undefined,
+    rankStatus: rankStatus ? normalizeRankStatus(rankStatus) : undefined,
+    rankNo,
+    currentDate: currentDate || undefined,
+    rankDelta
+  }
 }
 
 function mapProductOption(row: BackendProductOption): CompetitorProductOption {
@@ -542,7 +701,7 @@ function mapProductOption(row: BackendProductOption): CompetitorProductOption {
     codeType: normalizeCodeType(row.codeType, noonProductCode),
     title: stringValue(row.title) || '未命名商品',
     brand: stringValue(row.brand),
-    imageUrl: stringValue(row.imageUrl) || EMPTY_IMAGE,
+    imageUrl: imageUrlValue(row.imageUrl),
     productFulltype: stringValue(row.productFulltype)
   }
 }
@@ -556,7 +715,7 @@ function mapWatchProductBase(row: BackendWatchProduct) {
     title: stringValue(row.title) || '未命名商品',
     titleCn: firstText(row.titleCn, row.titleZh, row.chineseTitle) || undefined,
     brand: stringValue(row.brand),
-    imageUrl: stringValue(row.imageUrl) || EMPTY_IMAGE,
+    imageUrl: imageUrlValue(row.imageUrl),
     storeCode: stringValue(row.storeCode),
     siteCode: stringValue(row.siteCode),
     partnerSku: stringValue(row.partnerSku),
@@ -627,7 +786,7 @@ function mapCandidate(
     canonicalUrl: stringValue(row.canonicalUrl) || buildNoonProductUrl(noonProductCode),
     title: stringValue(row.titleSnapshot) || `竞品 ${noonProductCode}`,
     brand: stringValue(row.brandSnapshot) || '待补充',
-    imageUrl: stringValue(row.imageUrlSnapshot) || EMPTY_IMAGE,
+    imageUrl: imageUrlValue(row.imageUrlSnapshot),
     priceAmount: row.priceAmountSnapshot,
     currencyCode: stringValue(row.currencyCodeSnapshot) || undefined,
     rating: row.ratingSnapshot,
@@ -732,6 +891,122 @@ function mapTask(payload: CompetitorTask): CompetitorTask {
   }
 }
 
+export function mapDashboard(payload: BackendCompetitorDashboard): CompetitorDashboard {
+  return {
+    storeCode: stringValue(payload.storeCode),
+    siteCode: stringValue(payload.siteCode),
+    days: normalizeDashboardDays(payload.days),
+    competitorAttributeChangeDate: formatFactDate(payload.competitorAttributeChangeDate) || undefined,
+    competitorAttributeSnapshotCount: numberValue(payload.competitorAttributeSnapshotCount),
+    issueSummary: (payload.issueSummary || []).map(mapDashboardSummaryItem),
+    issueTrend: (payload.issueTrend || []).map(mapDashboardTrendItem),
+    coverageTopProducts: (payload.coverageTopProducts || []).map(mapDashboardProductItem),
+    rankIssueTopProducts: (payload.rankIssueTopProducts || []).map(mapDashboardProductItem),
+    changeTypeDistribution: (payload.changeTypeDistribution || []).map(mapDashboardSummaryItem),
+    changedProductTop: (payload.changedProductTop || []).map(mapDashboardProductItem),
+    selfRankChanges: (payload.selfRankChanges || []).map(mapDashboardRankChangeItem),
+    competitorRankChanges: (payload.competitorRankChanges || []).map(mapDashboardRankChangeItem),
+    competitorAttributeChanges: (payload.competitorAttributeChanges || []).map(mapDashboardAttributeChangeItem)
+  }
+}
+
+function mapDashboardSummaryItem(row: BackendDashboardSummaryItem): CompetitorDashboardSummaryItem {
+  return {
+    ...mapDashboardDrill(row),
+    label: stringValue(row.label) || dashboardIssueLabel(row.issueType),
+    value: numberValue(row.value)
+  }
+}
+
+function mapDashboardTrendItem(row: BackendDashboardTrendItem): CompetitorDashboardTrendItem {
+  return {
+    ...mapDashboardDrill(row),
+    date: formatFactDate(row.date),
+    label: stringValue(row.label) || dashboardIssueLabel(row.issueType),
+    value: numberValue(row.value)
+  }
+}
+
+function mapDashboardProductItem(row: BackendDashboardProductItem): CompetitorDashboardProductItem {
+  const partnerSku = stringValue(row.partnerSku)
+  const title = stringValue(row.title)
+  return {
+    ...mapDashboardDrill(row),
+    label: partnerSku || title || optionalId(row.watchProductId) || '未命名商品',
+    partnerSku,
+    title,
+    value: numberValue(row.value),
+    targetValue: row.targetValue === undefined || row.targetValue === null ? undefined : numberValue(row.targetValue)
+  }
+}
+
+function mapDashboardRankChangeItem(row: BackendDashboardRankChangeItem): CompetitorDashboardRankChangeItem {
+  return {
+    watchProductId: optionalId(row.watchProductId),
+    productSiteOfferId: optionalId(row.productSiteOfferId),
+    partnerSku: stringValue(row.partnerSku),
+    title: stringValue(row.title),
+    imageUrl: optionalImageUrlValue(row.imageUrl),
+    keywordId: optionalId(row.keywordId),
+    keyword: stringValue(row.keyword),
+    trackedProductType: String(row.trackedProductType || '').toUpperCase() === 'COMPETITOR' ? 'competitor' : 'self',
+    noonProductCode: stringValue(row.noonProductCode),
+    previousRankStatus: normalizeRankStatus(row.previousRankStatus),
+    previousRankNo: row.previousRankNo,
+    previousDate: formatFactDate(row.previousDate) || undefined,
+    rankStatus: normalizeRankStatus(row.rankStatus),
+    rankNo: row.rankNo,
+    currentDate: formatFactDate(row.currentDate) || undefined,
+    rankDelta: numberValue(row.rankDelta),
+    priceChangeSummary: stringValue(row.priceChangeSummary) || undefined,
+    titleChangeSummary: stringValue(row.titleChangeSummary) || undefined,
+    adChangeSummary: stringValue(row.adChangeSummary) || undefined
+  }
+}
+
+function mapDashboardAttributeChangeItem(row: BackendDashboardAttributeChangeItem): CompetitorDashboardAttributeChangeItem {
+  return {
+    watchProductId: optionalId(row.watchProductId),
+    productSiteOfferId: optionalId(row.productSiteOfferId),
+    partnerSku: stringValue(row.partnerSku),
+    title: stringValue(row.title),
+    productImageUrl: optionalImageUrlValue(row.productImageUrl),
+    selfPreviousValue: stringValue(row.selfPreviousValue) || undefined,
+    selfCurrentValue: stringValue(row.selfCurrentValue) || undefined,
+    selfCurrentDate: formatFactDate(row.selfCurrentDate) || undefined,
+    selfSnapshotCount: numberValue(row.selfSnapshotCount),
+    selfLatestValue: stringValue(row.selfLatestValue) || undefined,
+    selfLatestDate: formatFactDate(row.selfLatestDate) || undefined,
+    noonProductCode: stringValue(row.noonProductCode),
+    competitorTitle: stringValue(row.competitorTitle),
+    competitorImageUrl: optionalImageUrlValue(row.competitorImageUrl),
+    changeType: normalizeDashboardChangeType(row.changeType) || 'PRICE',
+    label: stringValue(row.label) || dashboardChangeLabel(row.changeType),
+    previousValue: stringValue(row.previousValue),
+    currentValue: stringValue(row.currentValue),
+    currentDate: formatFactDate(row.currentDate) || undefined,
+    latestRankKeyword: stringValue(row.latestRankKeyword) || undefined,
+    changeDateRankNo: numberValue(row.changeDateRankNo),
+    latestRankNo: row.latestRankNo,
+    selfLatestRankKeyword: stringValue(row.selfLatestRankKeyword) || undefined,
+    selfLatestRankStatus: normalizeRankStatus(row.selfLatestRankStatus),
+    selfLatestRankNo: row.selfLatestRankNo,
+    selfLatestScanDepth: numberValue(row.selfLatestScanDepth)
+  }
+}
+
+function mapDashboardDrill(row: BackendDashboardSummaryItem) {
+  return {
+    issueType: normalizeDashboardIssueType(row.issueType),
+    productSiteOfferId: optionalId(row.productSiteOfferId),
+    partnerSku: stringValue(row.partnerSku),
+    watchProductId: optionalId(row.watchProductId),
+    competitorOfferId: optionalId(row.competitorOfferId),
+    date: formatFactDate(row.date) || undefined,
+    changeType: normalizeDashboardChangeType(row.changeType)
+  }
+}
+
 function appendSearchParam(params: URLSearchParams, key: string, value?: string) {
   const normalized = value?.trim()
   if (normalized) {
@@ -797,6 +1072,68 @@ function normalizeRankChannel(value: unknown, sponsoredFallback?: unknown): 'org
   return sponsoredFallback ? 'sponsored' : 'organic'
 }
 
+function normalizeDashboardIssueType(value: unknown): CompetitorDashboardIssueType | undefined {
+  const normalized = String(value || '').toUpperCase()
+  if (
+    normalized === 'PENDING_CANDIDATE' ||
+    normalized === 'MONITORING_SHORTAGE' ||
+    normalized === 'RANK_ANOMALY' ||
+    normalized === 'COMPETITOR_CHANGE'
+  ) {
+    return normalized
+  }
+  return undefined
+}
+
+function normalizeDashboardChangeType(value: unknown): CompetitorDashboardChangeType | undefined {
+  const normalized = String(value || '').toUpperCase()
+  if (
+    normalized === 'PRICE' ||
+    normalized === 'RATING' ||
+    normalized === 'REVIEW_COUNT' ||
+    normalized === 'IMAGE' ||
+    normalized === 'TITLE' ||
+    normalized === 'BRAND'
+  ) {
+    return normalized
+  }
+  return undefined
+}
+
+function normalizeDashboardDays(value: unknown): 1 | 7 | 14 | 30 {
+  const days = typeof value === 'number' && Number.isFinite(value) ? value : 7
+  if (days === 1) {
+    return 1
+  }
+  if (days <= 7) {
+    return 7
+  }
+  if (days <= 14) {
+    return 14
+  }
+  return 30
+}
+
+function dashboardIssueLabel(value: unknown) {
+  const issueType = normalizeDashboardIssueType(value)
+  if (issueType === 'PENDING_CANDIDATE') return '待确认候选'
+  if (issueType === 'MONITORING_SHORTAGE') return '监控不足'
+  if (issueType === 'RANK_ANOMALY') return '排名异常'
+  if (issueType === 'COMPETITOR_CHANGE') return '竞品详情变化'
+  return '待处理'
+}
+
+function dashboardChangeLabel(value: unknown) {
+  const changeType = normalizeDashboardChangeType(value)
+  if (changeType === 'PRICE') return '价格变化'
+  if (changeType === 'RATING') return '评分变化'
+  if (changeType === 'REVIEW_COUNT') return '评论数变化'
+  if (changeType === 'IMAGE') return '图片变化'
+  if (changeType === 'TITLE') return '标题变化'
+  if (changeType === 'BRAND') return '品牌变化'
+  return '竞品改动'
+}
+
 function normalizeReviewStatus(value: unknown): CompetitorReviewStatus {
   const normalized = String(value || 'PENDING').toUpperCase()
   if (normalized === 'CONFIRMED') {
@@ -850,6 +1187,17 @@ function optionalId(value: unknown) {
 
 function numberValue(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
+function optionalNumberValue(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : undefined
+  }
+  return undefined
 }
 
 function formatDateTime(value: unknown) {
