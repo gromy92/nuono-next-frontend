@@ -26,6 +26,7 @@ import {
   PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH,
   PURCHASE_IN_TRANSIT_GOODS_PATH,
   PURCHASE_LOGISTICS_QUOTE_PATH,
+  PURCHASE_PRODUCT_LOGISTICS_COSTS_PATH,
   WAREHOUSE_LOGISTICS_BILL_PATH,
   WAREHOUSE_SHIPPING_ORDER_PATH,
   WAREHOUSE_DISPATCH_PATH,
@@ -151,6 +152,9 @@ function readDevSessionOverride(): AuthSession | null {
   const includeLogisticsQuoteDevMenu =
     pathname.startsWith(PURCHASE_LOGISTICS_QUOTE_PATH) ||
     search.get('grantLogisticsQuote') === '1'
+  const includeProductLogisticsCostsDevMenu =
+    pathname.startsWith(PURCHASE_PRODUCT_LOGISTICS_COSTS_PATH) ||
+    search.get('grantProductLogisticsCosts') === '1'
   const includeWarehouseDevMenu =
     pathname.startsWith(WAREHOUSE_SHIPPING_ORDER_PATH) ||
     pathname.startsWith(WAREHOUSE_DISPATCH_PATH) ||
@@ -346,6 +350,9 @@ function readDevSessionOverride(): AuthSession | null {
   }
   if (includeLogisticsQuoteDevMenu) {
     grantedMenus.push({ menuId: 9201, menuName: '货代管理', urlPath: PURCHASE_LOGISTICS_QUOTE_PATH })
+  }
+  if (includeProductLogisticsCostsDevMenu) {
+    grantedMenus.push({ menuId: 9304, menuName: '商品物流价格', urlPath: PURCHASE_PRODUCT_LOGISTICS_COSTS_PATH })
   }
   if (includeWarehouseDevMenu) {
     grantedMenus.push({ menuId: 9250, menuName: '仓库发货单', urlPath: WAREHOUSE_SHIPPING_ORDER_PATH })

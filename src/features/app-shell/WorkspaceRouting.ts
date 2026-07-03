@@ -25,6 +25,7 @@ export const PURCHASE_LISTING_PATH = workspaceMenuPath('purchase-listing')
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
+export const PURCHASE_PRODUCT_LOGISTICS_COSTS_PATH = workspaceMenuPath('purchase-product-logistics-costs')
 export const PURCHASE_IN_TRANSIT_GOODS_PATH = workspaceMenuPath('purchase-in-transit-goods')
 export const WAREHOUSE_SHIPPING_ORDER_PATH = workspaceMenuPath('warehouse-shipping-order')
 export const WAREHOUSE_LOGISTICS_BILL_PATH = workspaceMenuPath('warehouse-logistics-bill')
@@ -89,6 +90,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantFileManagement',
   'grantProfit',
   'grantLogisticsQuote',
+  'grantProductLogisticsCosts',
   'grantInTransitGoods',
   'grantWarehouse',
   'grantAli1688HistoricalOrders',

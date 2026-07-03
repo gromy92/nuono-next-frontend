@@ -12,6 +12,7 @@ export type AppMenuKey =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'purchase-product-logistics-costs'
   | 'purchase-in-transit-goods'
   | 'warehouse-shipping-order'
   | 'warehouse-logistics-bill'
@@ -82,6 +83,7 @@ export type WorkspaceContentKind =
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
+  | 'purchase-product-logistics-costs'
   | 'purchase-in-transit-goods'
   | 'warehouse-shipping-order'
   | 'warehouse-logistics-bill'
@@ -270,6 +272,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '物流 / 货代管理',
     tabLabel: '货代管理',
     contentKind: 'purchase-logistics-quote',
+    closable: true
+  },
+  'purchase-product-logistics-costs': {
+    key: 'purchase-product-logistics-costs',
+    label: '商品物流价格',
+    path: '/purchase/product-logistics-costs',
+    sectionKey: 'logistics',
+    pathLabel: '物流 / 商品物流价格',
+    tabLabel: '商品物流价格',
+    contentKind: 'purchase-product-logistics-costs',
     closable: true
   },
   'purchase-in-transit-goods': {
@@ -553,7 +565,10 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     key: 'logistics',
     label: '物流',
     iconKey: 'logistics',
-    entries: [{ type: 'workspace', key: 'purchase-logistics-quote' }]
+    entries: [
+      { type: 'workspace', key: 'purchase-logistics-quote' },
+      { type: 'workspace', key: 'purchase-product-logistics-costs' }
+    ]
   },
   {
     key: 'warehouse',
@@ -737,10 +752,10 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
-    keys: ['purchase-in-transit-goods'],
-    urlPaths: ['/purchase/in-transit-goods'],
-    urlPathPrefixes: ['/api/in-transit-goods'],
-    menuNames: ['在途商品', '在途物流', '在途物流信息']
+    keys: ['purchase-in-transit-goods', 'purchase-product-logistics-costs'],
+    urlPaths: ['/purchase/in-transit-goods', '/purchase/product-logistics-costs'],
+    urlPathPrefixes: ['/api/in-transit-goods', '/api/product-logistics-costs'],
+    menuNames: ['在途商品', '在途物流', '在途物流信息', '商品物流价格', '商品物流成本']
   },
   {
     keys: ['warehouse-shipping-order', 'warehouse-logistics-bill', 'warehouse-dispatch', 'official-warehouse', 'product-specs'],
@@ -848,6 +863,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-listing',
   'purchase-order',
   'purchase-in-transit-goods',
+  'purchase-product-logistics-costs',
   'purchase-profit',
   'purchase-logistics-quote',
   'warehouse-shipping-order',
