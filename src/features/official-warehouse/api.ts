@@ -84,6 +84,10 @@ export type OfficialWarehouseShippingBatchCandidate = {
   storeSiteQuantity?: number
   linkedQuantity?: number
   remainingQuantity?: number
+  scheduledAppointmentQuantity?: number
+  alreadyAppointed?: boolean
+  batchUsedByAsn?: boolean
+  batchUsageLabel?: string
   skuCount?: number
   purchaseOrderCount?: number
   updatedAt?: string
