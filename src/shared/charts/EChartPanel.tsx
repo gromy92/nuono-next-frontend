@@ -24,6 +24,7 @@ export type EChartPanelProps = {
   ariaLabel: string
   className?: string
   style?: CSSProperties
+  onChartClick?: (params: { dataIndex?: number; name?: string; seriesName?: string }) => void
 }
 
 const CHART_FONT_FAMILY =
@@ -39,36 +40,62 @@ export function EChartPanel({
   testId,
   ariaLabel,
   className,
-  style
+  style,
+  onChartClick
 }: EChartPanelProps) {
   const chartRef = useRef<HTMLDivElement | null>(null)
+  const chartInstanceRef = useRef<ECharts | null>(null)
+  const onChartClickRef = useRef(onChartClick)
   const state: EChartPanelState = requestedState === 'ready' && !option ? 'empty' : requestedState
   const resolvedAriaLabel = ariaLabel
 
   useEffect(() => {
-    if (state !== 'ready' || !option || !chartRef.current) return undefined
+    onChartClickRef.current = onChartClick
+  }, [onChartClick])
 
+  useEffect(() => {
+    if (state !== 'ready' || !chartRef.current) return undefined
     const chart: ECharts = echarts.init(chartRef.current)
-    chart.setOption({
+    chartInstanceRef.current = chart
+
+    const handleChartClick = (params: unknown) => {
+      const clickHandler = onChartClickRef.current
+      if (!clickHandler || typeof params !== 'object' || !params) return
+      const event = params as { dataIndex?: number; name?: string; seriesName?: string }
+      clickHandler({
+        dataIndex: event.dataIndex,
+        name: event.name,
+        seriesName: event.seriesName
+      })
+    }
+    const handleResize = () => chart.resize()
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(handleResize)
+    observer?.observe(chartRef.current)
+    window.addEventListener('resize', handleResize)
+    chart.on('click', handleChartClick)
+    const initialResize = window.requestAnimationFrame(handleResize)
+
+    return () => {
+      window.cancelAnimationFrame(initialResize)
+      chart.off('click', handleChartClick)
+      observer?.disconnect()
+      window.removeEventListener('resize', handleResize)
+      chart.dispose()
+      if (chartInstanceRef.current === chart) {
+        chartInstanceRef.current = null
+      }
+    }
+  }, [state])
+
+  useEffect(() => {
+    if (state !== 'ready' || !option || !chartInstanceRef.current) return
+    chartInstanceRef.current.setOption({
       backgroundColor: 'transparent',
       textStyle: {
         fontFamily: CHART_FONT_FAMILY
       },
       ...option
-    })
-
-    const handleResize = () => chart.resize()
-    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(handleResize)
-    observer?.observe(chartRef.current)
-    window.addEventListener('resize', handleResize)
-    const initialResize = window.requestAnimationFrame(handleResize)
-
-    return () => {
-      window.cancelAnimationFrame(initialResize)
-      observer?.disconnect()
-      window.removeEventListener('resize', handleResize)
-      chart.dispose()
-    }
+    }, true)
   }, [option, state])
 
   return (

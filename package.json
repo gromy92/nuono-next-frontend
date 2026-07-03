@@ -25,6 +25,7 @@
     "master-data:page-acceptance": "node scripts/master_data_page_acceptance.mjs",
     "shared-charts:contract-check": "node scripts/shared_charts_contract_check.mjs",
     "competitor-analysis:real-smoke": "node scripts/competitor_analysis_real_data_smoke.mjs",
+    "competitor-analysis:rank-summary-contract": "node scripts/competitor_rank_report_summary_contract.mjs",
     "official-warehouse:pdf-contract": "tsx src/features/official-warehouse/printFbnTransferPdf.contract.test.ts",
     "e2e": "playwright test",
     "e2e:headed": "playwright test --headed",
