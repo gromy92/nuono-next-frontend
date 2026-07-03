@@ -39,6 +39,11 @@ export const AiFileParseBoard = lazyWorkspace(() =>
 export const LogisticsQuoteBoard = lazyWorkspace(() =>
   import('../logistics-quote/LogisticsQuoteBoard').then((module) => ({ default: module.LogisticsQuoteBoard }))
 );
+export const ProductLogisticsCostsPage = lazyWorkspace(() =>
+  import('../product-logistics-costs/ProductLogisticsCostsPage').then((module) => ({
+    default: module.ProductLogisticsCostsPage
+  }))
+);
 export const InTransitGoodsPage = lazyWorkspace(() =>
   import('../in-transit-goods/InTransitGoodsPage').then((module) => ({ default: module.InTransitGoodsPage }))
 );

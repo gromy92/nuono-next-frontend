@@ -170,13 +170,23 @@ function shippingBatchStatusText(status?: string) {
 
 function shippingBatchOptionText(row: OfficialWarehouseShippingBatchCandidate) {
   const quantity = Number(row.remainingQuantity ?? row.storeSiteQuantity ?? 0).toLocaleString()
+  const linkedQuantity = Number(row.linkedQuantity || 0)
+  const scheduledAppointmentQuantity = Number(row.scheduledAppointmentQuantity || 0)
+  const appointedQuantity = row.alreadyAppointed ? Math.max(scheduledAppointmentQuantity, 0) : 0
+  const asnOnlyQuantity = row.batchUsedByAsn ? Math.max(linkedQuantity - appointedQuantity, 0) : 0
   const skuCount = Number(row.skuCount || 0).toLocaleString()
   const poCount = Number(row.purchaseOrderCount || 0).toLocaleString()
   const batchNo = row.batchNo || row.trackingNo || row.externalShipmentNo || row.id
   const forwarder = row.forwarderName ? ` · ${row.forwarderName}` : ''
   const transport = row.transportMode ? ` · ${row.transportMode === 'AIR' ? '空运' : row.transportMode === 'SEA' ? '海运' : row.transportMode}` : ''
   const purchaseText = poCount === '0' ? '' : ` · ${poCount} PO`
-  return `${batchNo}${forwarder}${transport} · ${shippingBatchStatusText(row.latestNodeStatus || row.status)} · 待约仓 ${quantity}件 · ${skuCount} SKU${purchaseText}`
+  const usageParts = [
+    row.alreadyAppointed ? `已约仓 ${Number(appointedQuantity || linkedQuantity || 0).toLocaleString()}件` : '',
+    row.batchUsedByAsn && asnOnlyQuantity > 0 ? `已建ASN ${asnOnlyQuantity.toLocaleString()}件` : ''
+  ].filter(Boolean)
+  const fallbackUsageText = row.batchUsageLabel && row.batchUsageLabel !== '可约仓' ? ` · ${row.batchUsageLabel}` : ''
+  const appointmentText = usageParts.length ? ` · ${usageParts.join(' · ')}` : fallbackUsageText
+  return `${batchNo}${forwarder}${transport} · ${shippingBatchStatusText(row.latestNodeStatus || row.status)}${appointmentText} · 待约仓 ${quantity}件 · ${skuCount} SKU${purchaseText}`
 }
 
 function lineStatusTag(status?: string) {
@@ -498,6 +508,18 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     () => shippingBatches.map((batch) => ({ label: shippingBatchOptionText(batch), value: batch.id })),
     [shippingBatches]
   )
+  const selectedShippingBatches = useMemo(
+    () => shippingBatches.filter((batch) => selectedShippingBatchIds.includes(batch.id)),
+    [shippingBatches, selectedShippingBatchIds]
+  )
+  const selectedShippingBatchesNoRemaining = selectedShippingBatchIds.length > 0 &&
+    selectedShippingBatches.length > 0 &&
+    selectedShippingBatches.every((batch) => Number(batch.remainingQuantity ?? batch.storeSiteQuantity ?? 0) <= 0)
+  const candidateEmptyDescription = selectedShippingBatchIds.length
+    ? selectedShippingBatchesNoRemaining
+      ? '所选物流批次已无剩余待约仓商品'
+      : '所选物流批次没有匹配当前站点商品'
+    : '暂无可创建 ASN 的商品'
 
   const appointmentWarehouseFromOptions = useMemo(() => {
     const options = new Map<string, string>()
@@ -1653,7 +1675,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             <div className="official-warehouse-shipping-picker-header">
               <div className="official-warehouse-stack">
                 <Text strong>物流批次号</Text>
-                <Text type="secondary">可多选；仅显示真实在途或已到海外仓且仍有待约仓数量的物流批次号，采购单关系存在确认记录时展示。</Text>
+                <Text type="secondary">可多选；显示可约仓批次、已建ASN批次和已约仓批次；已使用批次排在下方并标注。</Text>
               </div>
               <Space>
                 <Input
@@ -1728,7 +1750,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             locale={{
               emptyText: (
                 <Empty
-                  description={selectedShippingBatchIds.length ? '所选物流批次没有匹配当前站点商品' : '暂无可创建 ASN 的商品'}
+                  description={candidateEmptyDescription}
                 />
               )
             }}

@@ -33,6 +33,7 @@ import {
   ProductGroupManagementPage,
   ProductImageProfilePage,
   ProductListingPage,
+  ProductLogisticsCostsPage,
   ProductManagementWorkspacePage,
   ProductSpecsPage,
   PurchaseOrderPage,
@@ -223,6 +224,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <LogisticsQuoteBoard />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'purchase-product-logistics-costs') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ProductLogisticsCostsPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }
