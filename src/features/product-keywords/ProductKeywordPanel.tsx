@@ -17,24 +17,6 @@ function values(items?: string[] | null) {
   return (items || []).map((item) => String(item).trim().toUpperCase()).filter(Boolean)
 }
 
-function keywordStatusLabel(status: string) {
-  const normalized = status.toUpperCase()
-  if (normalized === 'ACTIVE') return '已纳入词库'
-  if (normalized === 'OBSERVED') return '待确认候选'
-  if (normalized === 'PAUSED') return '已暂停'
-  if (normalized === 'ARCHIVED') return '已归档'
-  return '其他状态'
-}
-
-function keywordStatusColor(status: string) {
-  const normalized = status.toUpperCase()
-  if (normalized === 'ACTIVE') return 'green'
-  if (normalized === 'OBSERVED') return 'blue'
-  if (normalized === 'PAUSED') return 'orange'
-  if (normalized === 'ARCHIVED') return 'default'
-  return 'default'
-}
-
 function titleTypeLabel(type: string) {
   const normalized = type.toUpperCase()
   if (normalized === 'CORE') return '核心词'
@@ -101,7 +83,6 @@ function keywordLine(keyword: ProductKeywordItem) {
     <div key={keyword.id} className="product-keyword-panel-line">
       <div>
         <Text strong>{keyword.keyword}</Text>
-        <Text type="secondary"> {keywordStatusLabel(keyword.status)}</Text>
       </div>
       <Space size={[4, 4]} wrap>
         {titleTypes.map((type) => <Tag key={type} color={titleTypeColor(type)}>{titleTypeLabel(type)}</Tag>)}
@@ -109,7 +90,7 @@ function keywordLine(keyword: ProductKeywordItem) {
         {keyword.competitorEvidence ? <Tag color="geekblue">有竞品证据</Tag> : null}
         {keyword.negativeCandidate ? <Tag color="red">否词候选</Tag> : keyword.adsEvidence ? <Tag color="purple">有广告证据</Tag> : null}
         {!titleTypes.length && !titleUsageStates.length && !keyword.competitorEvidence && !keyword.adsEvidence && !keyword.negativeCandidate
-          ? <Tag color={keywordStatusColor(keyword.status)}>{keywordStatusLabel(keyword.status)}</Tag>
+          ? <Tag>未设置维度</Tag>
           : null}
       </Space>
     </div>

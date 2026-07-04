@@ -4,7 +4,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
 import { fetchProductKeywords } from './api'
-import type { ProductKeywordItem, ProductKeywordStatus } from './types'
+import type { ProductKeywordItem } from './types'
 import './ProductKeywordDataPage.css'
 
 const { Text } = Typography
@@ -12,16 +12,6 @@ const { Text } = Typography
 type ProductKeywordDataPageProps = {
   session: AuthSession
 }
-
-type StatusFilter = 'ALL' | ProductKeywordStatus
-
-const statusOptions: Array<{ label: string; value: StatusFilter }> = [
-  { label: '全部状态', value: 'ALL' },
-  { label: '已纳入词库', value: 'ACTIVE' },
-  { label: '待确认候选', value: 'OBSERVED' },
-  { label: '已暂停', value: 'PAUSED' },
-  { label: '已归档', value: 'ARCHIVED' }
-]
 
 function siteCodeFromStoreCode(storeCode?: string) {
   const normalized = (storeCode || '').toUpperCase()
@@ -54,24 +44,6 @@ function storeLabel(store: AuthSessionStore) {
   const siteCode = store.site || siteCodeFromStoreCode(store.storeCode)
   const name = store.projectName || store.projectCode || store.orgName || store.storeCode
   return `${name} / ${store.storeCode}${siteCode ? ` / ${siteCode}` : ''}`
-}
-
-function statusColor(status?: string) {
-  const normalized = (status || '').toUpperCase()
-  if (normalized === 'ACTIVE') return 'green'
-  if (normalized === 'OBSERVED') return 'blue'
-  if (normalized === 'PAUSED') return 'orange'
-  if (normalized === 'ARCHIVED') return 'default'
-  return 'default'
-}
-
-function statusLabel(status?: string) {
-  const normalized = (status || '').toUpperCase()
-  if (normalized === 'ACTIVE') return '已纳入词库'
-  if (normalized === 'OBSERVED') return '待确认候选'
-  if (normalized === 'PAUSED') return '已暂停'
-  if (normalized === 'ARCHIVED') return '已归档'
-  return '未知状态'
 }
 
 function values(items?: string[] | null) {
@@ -145,7 +117,7 @@ function suggestedAction(row: ProductKeywordItem) {
   if (titleStates.includes('TITLE_MISSING')) return '补充标题覆盖'
   if (titleStates.includes('TITLE_COVERED')) return '持续观察标题覆盖'
   if (row.competitorEvidence && titleTypes.length === 0) return '人工判断是否加入标题'
-  if (row.adsEvidence && row.status === 'OBSERVED') return '人工复核广告价值'
+  if (row.adsEvidence) return '人工复核广告价值'
   return '人工复核'
 }
 
@@ -155,7 +127,6 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
   const [selectedStoreKey, setSelectedStoreKey] = useState(() => storeKey(session.currentStore) || storeKey(stores[0]) || '')
   const [partnerSku, setPartnerSku] = useState('')
   const [keywordSearch, setKeywordSearch] = useState('')
-  const [status, setStatus] = useState<StatusFilter>('ALL')
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState<ProductKeywordItem[]>([])
 
@@ -184,7 +155,6 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
         siteCode: selectedSiteCode,
         partnerSku: partnerSku.trim() || undefined,
         keywordNorm: keywordSearch.trim() || undefined,
-        status: status === 'ALL' ? undefined : status,
         limit: 300
       })
       setRows(payload.items || [])
@@ -193,19 +163,13 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
     } finally {
       setLoading(false)
     }
-  }, [keywordSearch, message, partnerSku, selectedSiteCode, selectedStore?.storeCode, status])
+  }, [keywordSearch, message, partnerSku, selectedSiteCode, selectedStore?.storeCode])
 
   useEffect(() => {
     void loadKeywords()
   }, [loadKeywords])
 
-  const summary = useMemo(() => {
-    return {
-      total: rows.length,
-      active: rows.filter((row) => row.status === 'ACTIVE').length,
-      observed: rows.filter((row) => row.status === 'OBSERVED').length
-    }
-  }, [rows])
+  const summary = useMemo(() => ({ total: rows.length }), [rows])
 
   const columns = useMemo<ColumnsType<ProductKeywordItem>>(() => [
     {
@@ -226,10 +190,7 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
       render: (_, row) => (
         <div className="product-keyword-cell-stack">
           <Text strong>{row.keyword}</Text>
-          <Space size={[4, 4]} wrap>
-            <Tag color={statusColor(row.status)}>{statusLabel(row.status)}</Tag>
-            <Text type="secondary">{row.keywordNorm}</Text>
-          </Space>
+          <Text type="secondary">{row.keywordNorm}</Text>
         </div>
       )
     },
@@ -284,8 +245,6 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
           <Text type="secondary">标题、竞品、广告证据统一查看</Text>
         </div>
         <Space size={8}>
-          <Tag color="green">已纳入词库 {summary.active}</Tag>
-          <Tag color="blue">待确认候选 {summary.observed}</Tag>
           <Tag>全部 {summary.total}</Tag>
           <Button
             aria-label="刷新关键词数据"
@@ -320,13 +279,6 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
           prefix={<SearchOutlined />}
           placeholder="关键词"
           allowClear
-        />
-        <Select
-          data-testid="product-keyword-status-filter"
-          className="product-keyword-status-select"
-          value={status}
-          onChange={setStatus}
-          options={statusOptions}
         />
       </div>
 
