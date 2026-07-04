@@ -8,20 +8,10 @@ import {
   createStoreSyncStore,
   testStoreSyncConnection
 } from '../store-sync/api';
-import type { StoreSyncOverviewState, StoreSyncStore } from '../store-sync/types';
+import type { StoreBindingProjectOption, StoreSyncOverviewState, StoreSyncStore } from '../store-sync/types';
 import type { LoadStoreSyncOptions } from '../app-shell/useStoreSyncController';
 
 const { Text } = Typography;
-
-const NOON_PARTNER_LOGIN_PLACEHOLDER = '例如：miya@p244978.idp.noon.partners';
-const NOON_PARTNER_LOGIN_PATTERN = /^[^\s@]+@p[A-Za-z0-9_-]+\.idp\.noon\.partners$/i;
-const NOON_PARTNER_LOGIN_RULES = [
-  { required: true, message: '请输入 Noon 登录账号' },
-  {
-    pattern: NOON_PARTNER_LOGIN_PATTERN,
-    message: 'Noon 登录账号格式应为 名称@p店铺ID.idp.noon.partners'
-  }
-];
 
 type StoreConnectionTestFeedback = {
   storeCode: string;
@@ -32,16 +22,12 @@ type StoreConnectionTestFeedback = {
 
 type StoreCreateFormValues = {
   projectName?: string;
-  noonUser?: string;
-  noonProjectUser?: string;
-  noonPassword?: string;
+  projectCode?: string;
+  storeCode?: string;
+  site?: string;
 };
 
-type StoreBindFormValues = {
-  noonUser: string;
-  noonProjectUser?: string;
-  noonPassword?: string;
-};
+type StoreBindFormValues = Record<string, never>;
 
 type Props = {
   state: StoreSyncOverviewState;
@@ -141,6 +127,7 @@ export function StoreManagementBoard({
   const [bindingForm] = Form.useForm<StoreBindFormValues>();
   const [createStoreModalOpen, setCreateStoreModalOpen] = useState(false);
   const [createStoreSubmitting, setCreateStoreSubmitting] = useState(false);
+  const [pendingCreateStoreProjects, setPendingCreateStoreProjects] = useState<StoreBindingProjectOption[]>([]);
   const [createStoreForm] = Form.useForm<StoreCreateFormValues>();
 
   const refresh = async (nextOwnerId?: number, options?: LoadStoreSyncOptions) => {
@@ -170,15 +157,12 @@ export function StoreManagementBoard({
     }
 
     try {
-      const values = await bindingForm.validateFields();
+      await bindingForm.validateFields();
       setBindingSubmitting(true);
 
       const payload = await bindStoreSyncStore({
         ownerUserId: ownerId,
-        storeCode: bindingStore.storeCode,
-        noonUser: values.noonUser,
-        noonProjectUser: values.noonProjectUser || values.noonUser,
-        noonPassword: values.noonPassword
+        storeCode: bindingStore.storeCode
       });
 
       messageApi.success(payload.message ?? (bindingMode === 'bind' ? '绑定成功' : '账号已更新'));
@@ -208,17 +192,29 @@ export function StoreManagementBoard({
     try {
       const values = submittedValues ?? await createStoreForm.validateFields();
       setCreateStoreSubmitting(true);
+      const selectedProject = pendingCreateStoreProjects.find(
+        (project) => project.projectCode === values.projectCode
+      );
 
       const payload = await createStoreSyncStore({
         ownerUserId: ownerId,
         projectName: values.projectName,
-        noonUser: values.noonUser,
-        noonProjectUser: values.noonProjectUser || values.noonUser,
-        noonPassword: values.noonPassword
+        projectCode: selectedProject?.projectCode ?? values.projectCode,
+        storeCode: values.storeCode,
+        site: values.site,
+        orgCode: selectedProject?.orgCode,
+        orgName: selectedProject?.orgName
       });
+
+      if (payload.projectList?.length) {
+        setPendingCreateStoreProjects(payload.projectList);
+        messageApi.info(payload.message ?? '请选择要绑定的 Noon Project');
+        return;
+      }
 
       messageApi.success(payload.message ?? '店铺已绑定到当前账号视图');
       setCreateStoreModalOpen(false);
+      setPendingCreateStoreProjects([]);
       createStoreForm.resetFields();
       await refresh(ownerId);
       onDataChanged?.();
@@ -287,7 +283,7 @@ export function StoreManagementBoard({
         render: (managers: StoreSyncStore['managers']) => renderStoreManagers(managers, 'purchase')
       },
       {
-        title: 'Noon用户名',
+        title: 'Noon后台邮箱',
         dataIndex: 'noonUser',
         key: 'noonUser',
         width: 300,
@@ -338,10 +334,7 @@ export function StoreManagementBoard({
                 bindingForm.resetFields();
                 setBindingMode(record.isAuthorized ? 'rebind' : 'bind');
                 setBindingStore(record);
-                bindingForm.setFieldsValue({
-                  noonUser: record.noonUser ?? '',
-                  noonPassword: ''
-                });
+                bindingForm.setFieldsValue({});
                 setBindingModalOpen(true);
               }}
             >
@@ -474,6 +467,7 @@ export function StoreManagementBoard({
                     type="primary"
                     onClick={() => {
                       createStoreForm.resetFields();
+                      setPendingCreateStoreProjects([]);
                       setCreateStoreModalOpen(true);
                     }}
                   >
@@ -542,7 +536,7 @@ export function StoreManagementBoard({
       </Space>
 
       <Modal
-        title={bindingMode === 'bind' ? '绑定 Noon 账号' : '修改 Noon 账号'}
+        title={bindingMode === 'bind' ? '绑定 Noon 商家后台' : '修改 Noon 商家后台登录'}
         open={bindingModalOpen}
         onCancel={() => {
           if (bindingSubmitting) {
@@ -566,26 +560,11 @@ export function StoreManagementBoard({
               type="info"
               showIcon
               message={bindingStore.projectName || bindingStore.storeCode}
-              description="系统会按当前店铺记录和 Noon 登录账号自动匹配店铺 ID、站点和 Partner ID。"
+              description="系统会使用统一配置的 Noon 商家后台邮箱连接该店铺，并按 Noon 返回的 Project 自动匹配店铺 ID、站点和 Partner ID。"
             />
           ) : null}
 
-          <Form data-testid="store-bind-form" form={bindingForm} layout="vertical" preserve={false}>
-            <Form.Item
-              label="Noon 登录账号"
-              name="noonUser"
-              rules={NOON_PARTNER_LOGIN_RULES}
-            >
-              <Input data-testid="store-bind-noon-user-input" placeholder={NOON_PARTNER_LOGIN_PLACEHOLDER} maxLength={100} />
-            </Form.Item>
-            <Form.Item
-              label={bindingMode === 'bind' ? 'Noon 密码' : 'Noon 密码（留空不修改）'}
-              name="noonPassword"
-              rules={bindingMode === 'bind' ? [{ required: true, message: '请输入 Noon 密码' }] : []}
-            >
-              <Input.Password data-testid="store-bind-noon-password-input" placeholder="请输入 Noon 密码" maxLength={100} />
-            </Form.Item>
-          </Form>
+          <Form data-testid="store-bind-form" form={bindingForm} layout="vertical" preserve={false} />
         </Space>
       </Modal>
 
@@ -598,6 +577,7 @@ export function StoreManagementBoard({
             return;
           }
           setCreateStoreModalOpen(false);
+          setPendingCreateStoreProjects([]);
           createStoreForm.resetFields();
         }}
         onOk={() => createStoreForm.submit()}
@@ -613,7 +593,7 @@ export function StoreManagementBoard({
             type="info"
             showIcon
             message="绑定 Noon 商家后台账号后，店铺信息将自动获取"
-            description="只需要填写店铺名称、Noon 登录账号和密码；店铺Code、店铺ID、站点和 Noon Partner ID 会在绑定时自动读取。"
+            description="填写店铺名称、站点店铺Code和站点；系统会使用统一配置的 Noon 商家后台邮箱连接并校验 Project。"
           />
 
           <Form
@@ -635,19 +615,42 @@ export function StoreManagementBoard({
               <Input data-testid="store-create-name-input" placeholder="例如：星耀迪拜店" maxLength={100} />
             </Form.Item>
             <Form.Item
-              label="Noon 登录账号"
-              name="noonUser"
-              rules={NOON_PARTNER_LOGIN_RULES}
+              label="站点店铺Code"
+              name="storeCode"
+              rules={[{ required: true, message: '请输入站点店铺Code' }]}
             >
-              <Input data-testid="store-create-noon-user-input" placeholder={NOON_PARTNER_LOGIN_PLACEHOLDER} maxLength={100} />
+              <Input data-testid="store-create-store-code-input" placeholder="例如：STR245027-NAE" maxLength={64} />
             </Form.Item>
             <Form.Item
-              label="Noon 密码"
-              name="noonPassword"
-              rules={[{ required: true, message: '请输入 Noon 密码' }]}
+              label="站点"
+              name="site"
+              rules={[{ required: true, message: '请选择站点' }]}
             >
-              <Input.Password data-testid="store-create-noon-password-input" placeholder="请输入 Noon 密码" maxLength={100} />
+              <Select
+                data-testid="store-create-site-select"
+                placeholder="选择站点"
+                options={[
+                  { label: 'AE', value: 'AE' },
+                  { label: 'SA', value: 'SA' }
+                ]}
+              />
             </Form.Item>
+            {pendingCreateStoreProjects.length ? (
+              <Form.Item
+                label="选择 Noon Project"
+                name="projectCode"
+                rules={[{ required: true, message: '请选择要绑定的 Noon Project' }]}
+              >
+                <Select
+                  data-testid="store-create-project-select"
+                  placeholder="选择要绑定的 Noon Project"
+                  options={pendingCreateStoreProjects.map((project) => ({
+                    label: `${project.projectName || project.projectCode} · ${project.projectCode}`,
+                    value: project.projectCode
+                  }))}
+                />
+              </Form.Item>
+            ) : null}
           </Form>
         </Space>
       </Modal>

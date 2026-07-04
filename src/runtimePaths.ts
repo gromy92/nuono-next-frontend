@@ -116,11 +116,7 @@ function shouldNotifySessionExpired(response: Response) {
       return false;
     }
     const appPath = stripPublicBasePath(url.pathname);
-    return appPath.startsWith('/api/')
-      && appPath !== '/api/auth/login'
-      && appPath !== '/api/auth/email-code/request'
-      && appPath !== '/api/auth/email-code/login'
-      && appPath !== '/api/auth/logout';
+    return appPath.startsWith('/api/') && appPath !== '/api/auth/login' && appPath !== '/api/auth/logout';
   } catch {
     return false;
   }
