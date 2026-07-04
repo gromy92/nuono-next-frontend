@@ -1,9 +1,10 @@
-import { ReloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { HistoryOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { App, Button, Empty, Input, Select, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
 import { fetchProductKeywords } from './api'
+import { ProductKeywordHistoryDrawer } from './ProductKeywordHistoryDrawer'
 import type { ProductKeywordItem } from './types'
 import './ProductKeywordDataPage.css'
 
@@ -139,6 +140,7 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
   const [keywordSearch, setKeywordSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState<ProductKeywordItem[]>([])
+  const [selectedHistoryKeyword, setSelectedHistoryKeyword] = useState<ProductKeywordItem | null>(null)
 
   const selectedStore = useMemo(
     () => stores.find((store) => storeKey(store) === selectedStoreKey) || stores[0] || null,
@@ -243,7 +245,21 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
     {
       title: '建议动作',
       width: 170,
-      render: (_, row) => <Text>{suggestedAction(row)}</Text>
+      render: (_, row) => (
+        <Space direction="vertical" size={4} align="start">
+          <Text>{suggestedAction(row)}</Text>
+          <Button
+            type="link"
+            size="small"
+            icon={<HistoryOutlined />}
+            onClick={(event) => {
+              event.stopPropagation()
+              setSelectedHistoryKeyword(row)
+            }}
+            style={{ height: 22, padding: 0 }}
+          >历史</Button>
+        </Space>
+      )
     }
   ], [])
 
@@ -303,6 +319,16 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
         pagination={{ pageSize: 50, showSizeChanger: false }}
         locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无关键词数据" /> }}
         scroll={{ x: 1400 }}
+      />
+
+      <ProductKeywordHistoryDrawer
+        open={Boolean(selectedHistoryKeyword)}
+        onClose={() => setSelectedHistoryKeyword(null)}
+        storeCode={selectedHistoryKeyword?.storeCode}
+        siteCode={selectedHistoryKeyword?.siteCode}
+        partnerSku={selectedHistoryKeyword?.partnerSku}
+        keywordNorm={selectedHistoryKeyword?.keywordNorm}
+        title={selectedHistoryKeyword ? `关键词历史：${selectedHistoryKeyword.keyword}` : '关键词历史'}
       />
     </section>
   )

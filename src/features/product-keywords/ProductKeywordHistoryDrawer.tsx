@@ -7,6 +7,8 @@ type ProductKeywordHistoryDrawerProps = {
   storeCode?: string
   siteCode?: string
   partnerSku?: string
+  keywordNorm?: string
+  title?: string
 }
 
 export function ProductKeywordHistoryDrawer({
@@ -14,11 +16,13 @@ export function ProductKeywordHistoryDrawer({
   onClose,
   storeCode,
   siteCode,
-  partnerSku
+  partnerSku,
+  keywordNorm,
+  title
 }: ProductKeywordHistoryDrawerProps) {
   return (
     <Drawer
-      title="关键词历史"
+      title={title || '关键词历史'}
       open={open}
       onClose={onClose}
       width={720}
@@ -28,6 +32,7 @@ export function ProductKeywordHistoryDrawer({
         storeCode={storeCode}
         siteCode={siteCode}
         partnerSku={partnerSku}
+        keywordNorm={keywordNorm}
       />
     </Drawer>
   )

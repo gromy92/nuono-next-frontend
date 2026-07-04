@@ -11,6 +11,7 @@ type ProductKeywordHistorySectionProps = {
   storeCode?: string
   siteCode?: string
   partnerSku?: string
+  keywordNorm?: string
   maxEvents?: number
 }
 
@@ -32,6 +33,10 @@ function sourceColor(sourceType?: string | null) {
 
 function formatEventTime(value?: string | null) {
   return value ? value.replace('T', ' ') : ''
+}
+
+function normalizeHistoryKeyword(value?: string | null) {
+  return (value || '').trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
 function sourceCount(events: ProductKeywordEventItem[], sourceType: string) {
@@ -58,6 +63,7 @@ export function ProductKeywordHistorySection({
   storeCode,
   siteCode,
   partnerSku,
+  keywordNorm,
   maxEvents
 }: ProductKeywordHistorySectionProps) {
   const [panel, setPanel] = useState<ProductKeywordPanelView | null>(null)
@@ -88,9 +94,16 @@ export function ProductKeywordHistorySection({
   }, [loadHistory])
 
   const events = panel?.events || []
+  const normalizedTargetKeyword = useMemo(() => normalizeHistoryKeyword(keywordNorm), [keywordNorm])
+  const scopedEvents = useMemo(
+    () => normalizedTargetKeyword
+      ? events.filter((event) => normalizeHistoryKeyword(event.keywordNorm || event.keyword) === normalizedTargetKeyword)
+      : events,
+    [events, normalizedTargetKeyword]
+  )
   const visibleEvents = useMemo(
-    () => events.slice(0, maxEvents || events.length),
-    [events, maxEvents]
+    () => scopedEvents.slice(0, maxEvents || scopedEvents.length),
+    [scopedEvents, maxEvents]
   )
 
   return (
@@ -123,10 +136,10 @@ export function ProductKeywordHistorySection({
       ) : (
         <Space direction="vertical" size={10} style={{ width: '100%' }}>
           <Space size={[6, 6]} wrap>
-            <Tag style={{ marginInlineEnd: 0 }}>全部 {events.length}</Tag>
-            <Tag color="green" style={{ marginInlineEnd: 0 }}>标题 {sourceCount(events, 'TITLE_HISTORY')}</Tag>
-            <Tag color="geekblue" style={{ marginInlineEnd: 0 }}>竞品 {sourceCount(events, 'COMPETITOR_KEYWORD')}</Tag>
-            <Tag color="purple" style={{ marginInlineEnd: 0 }}>广告 {sourceCount(events, 'ADS_QUERY')}</Tag>
+            <Tag style={{ marginInlineEnd: 0 }}>全部 {scopedEvents.length}</Tag>
+            <Tag color="green" style={{ marginInlineEnd: 0 }}>标题 {sourceCount(scopedEvents, 'TITLE_HISTORY')}</Tag>
+            <Tag color="geekblue" style={{ marginInlineEnd: 0 }}>竞品 {sourceCount(scopedEvents, 'COMPETITOR_KEYWORD')}</Tag>
+            <Tag color="purple" style={{ marginInlineEnd: 0 }}>广告 {sourceCount(scopedEvents, 'ADS_QUERY')}</Tag>
           </Space>
           {visibleEvents.length ? (
             <Timeline
@@ -137,7 +150,10 @@ export function ProductKeywordHistorySection({
               }))}
             />
           ) : (
-            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无关键词使用历史" />
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={normalizedTargetKeyword ? '当前关键词暂无使用历史' : '暂无关键词使用历史'}
+            />
           )}
         </Space>
       )}
