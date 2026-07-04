@@ -10,6 +10,7 @@ export type AppMenuKey =
   | 'purchase-ali1688-sku-purchase-history'
   | 'purchase-listing'
   | 'purchase-order'
+  | 'purchase-pre-order-profit'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'purchase-product-logistics-costs'
@@ -81,6 +82,7 @@ export type WorkspaceContentKind =
   | 'purchase-ali1688-sku-purchase-history'
   | 'product-listing'
   | 'purchase-order'
+  | 'purchase-pre-order-profit'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'purchase-product-logistics-costs'
@@ -252,6 +254,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '采购 / 采购单',
     tabLabel: '采购单',
     contentKind: 'purchase-order',
+    closable: true
+  },
+  'purchase-pre-order-profit': {
+    key: 'purchase-pre-order-profit',
+    label: '选品池',
+    path: '/purchase/pre-order-profit',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / 选品池',
+    tabLabel: '选品池',
+    contentKind: 'purchase-pre-order-profit',
     closable: true
   },
   'purchase-profit': {
@@ -553,6 +565,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     iconKey: 'purchase',
     entries: [
       { type: 'workspace', key: 'purchase-listing' },
+      { type: 'workspace', key: 'purchase-pre-order-profit' },
       { type: 'workspace', key: 'purchase-profit' },
       { type: 'workspace', key: 'purchase-ali1688-historical-orders' },
       { type: 'workspace', key: 'purchase-ali1688-sku-purchase-history' },
@@ -742,6 +755,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['商品上架']
   },
   {
+    keys: ['purchase-pre-order-profit'],
+    urlPaths: ['/purchase/pre-order-profit', '/api/pre-order-profit'],
+    urlPathPrefixes: ['/api/pre-order-profit/'],
+    menuNames: ['选品池', '选品利润预估', '出单前利润计算']
+  },
+  {
     keys: ['purchase-profit'],
     urlPaths: ['/purchase/profit', '/api/sku/cost'],
     menuNames: ['利润计算', '利润计算与上架']
@@ -864,6 +883,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-order',
   'purchase-in-transit-goods',
   'purchase-product-logistics-costs',
+  'purchase-pre-order-profit',
   'purchase-profit',
   'purchase-logistics-quote',
   'warehouse-shipping-order',

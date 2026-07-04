@@ -3,9 +3,22 @@ import type { ProductListingEditorDraft } from './productDetailAdapter'
 
 const PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY = 'nuono:product-listing:source-prefill'
 
+type PreOrderProfitListingPrefillCandidate = {
+  id: string
+  storeCode?: string
+  title: string
+  skuHint: string
+  purchaseUrl: string
+  purchasePriceRmb: number
+  salePrice: number
+  categoryLabel?: string
+  logisticsCarrierLabel?: string
+}
+
 export type ProductListingSourcePrefill = {
-  source: 'manual-selection'
-  sourceCollectionId: string
+  source: 'manual-selection' | 'pre-order-profit'
+  sourceCollectionId?: string
+  sourceCandidateId?: string
   collectionNo?: string
   sourcePlatform?: string
   sourceTitleCn?: string
@@ -18,17 +31,29 @@ export function saveManualSelectionListingPrefill(record: ProductSelectionSource
   window.sessionStorage.setItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY, JSON.stringify(prefill))
 }
 
+export function savePreOrderProfitListingPrefill(
+  candidate: PreOrderProfitListingPrefillCandidate,
+  storeCode?: string
+) {
+  const prefill = buildPreOrderProfitListingPrefill(candidate, storeCode)
+  window.sessionStorage.setItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY, JSON.stringify(prefill))
+}
+
 export function readProductListingSourcePrefill() {
   if (typeof window === 'undefined') {
     return undefined
   }
 
   const search = new URLSearchParams(window.location.search)
-  if (search.get('listingSource') !== 'manual-selection') {
+  const listingSource = search.get('listingSource')
+  if (listingSource !== 'manual-selection' && listingSource !== 'pre-order-profit') {
     return undefined
   }
-  const sourceCollectionId = search.get('sourceCollectionId') || ''
-  if (!sourceCollectionId) {
+  const sourceId =
+    listingSource === 'manual-selection'
+      ? search.get('sourceCollectionId') || ''
+      : search.get('sourceCandidateId') || ''
+  if (!sourceId) {
     return undefined
   }
 
@@ -39,7 +64,11 @@ export function readProductListingSourcePrefill() {
 
   try {
     const parsed = JSON.parse(rawValue) as ProductListingSourcePrefill
-    if (parsed.source !== 'manual-selection' || parsed.sourceCollectionId !== sourceCollectionId) {
+    if (parsed.source !== listingSource) {
+      return undefined
+    }
+    const parsedSourceId = parsed.source === 'manual-selection' ? parsed.sourceCollectionId : parsed.sourceCandidateId
+    if (parsedSourceId !== sourceId) {
       return undefined
     }
     return parsed
@@ -80,6 +109,33 @@ function buildManualSelectionListingPrefill(
   }
 }
 
+function buildPreOrderProfitListingPrefill(
+  candidate: PreOrderProfitListingPrefillCandidate,
+  storeCode?: string
+): ProductListingSourcePrefill {
+  const sourceRefId = numericSourceRefId(candidate.id)
+  return {
+    source: 'pre-order-profit',
+    sourceCandidateId: candidate.id,
+    sourcePlatform: '选品池',
+    sourceTitleCn: candidate.title,
+    sourceUrl: candidate.purchaseUrl,
+    draft: {
+      storeCode: candidate.storeCode || storeCode || '',
+      psku: text(candidate.skuHint),
+      productTitleCn: text(candidate.title),
+      price: finitePositiveNumber(candidate.salePrice),
+      salePrice: finitePositiveNumber(candidate.salePrice),
+      purchasePrice: finitePositiveNumber(candidate.purchasePriceRmb),
+      supplyEvidenceType: 'OTHER',
+      supplyEvidenceRefId: sourceRefId,
+      sourceType: 'pre_order_profit',
+      sourceRefId,
+      offerNote: buildPreOrderProfitOfferNote(candidate)
+    }
+  }
+}
+
 function uniqueTexts(values: Array<string | undefined>) {
   return values.map(text).filter((value, index, list) => value && list.indexOf(value) === index)
 }
@@ -105,4 +161,17 @@ function numericSourceRefId(value?: string) {
   }
   const numeric = Number(normalized)
   return Number.isSafeInteger(numeric) && numeric > 0 ? numeric : undefined
+}
+
+function finitePositiveNumber(value?: number) {
+  return Number.isFinite(value) && Number(value) > 0 ? Number(value) : undefined
+}
+
+function buildPreOrderProfitOfferNote(candidate: PreOrderProfitListingPrefillCandidate) {
+  const parts = [
+    `选品池: ${text(candidate.skuHint) || text(candidate.id)}`,
+    candidate.categoryLabel ? `类目 ${candidate.categoryLabel}` : undefined,
+    candidate.logisticsCarrierLabel ? `物流 ${candidate.logisticsCarrierLabel}` : undefined
+  ].filter(Boolean)
+  return parts.join(' / ')
 }

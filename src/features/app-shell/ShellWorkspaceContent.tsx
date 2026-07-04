@@ -36,6 +36,7 @@ import {
   ProductLogisticsCostsPage,
   ProductManagementWorkspacePage,
   ProductSpecsPage,
+  PreOrderProfitPage,
   PurchaseOrderPage,
   RoleManagementWorkspace,
   SalesAnalyticsPage,
@@ -216,6 +217,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <ProductListingPage storeCode={shellSession.currentStore?.storeCode} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'purchase-pre-order-profit') {
+    return (
+      <LazyWorkspaceBoundary>
+        <PreOrderProfitPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }
