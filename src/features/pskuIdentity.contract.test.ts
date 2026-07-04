@@ -14,6 +14,10 @@ const officialWarehouseStatisticsDomain = readFileSync(
   join(featuresDir, 'official-warehouse/statisticsDomain.ts'),
   'utf8'
 )
+const officialWarehouseStatisticsApi = readFileSync(
+  join(featuresDir, 'official-warehouse/statisticsApi.ts'),
+  'utf8'
+)
 const warehouseDispatch = readFileSync(join(featuresDir, 'warehouse-dispatch/WarehouseDispatchWorkbenchPage.tsx'), 'utf8')
 const ali1688SkuPurchaseHistory = readFileSync(
   join(featuresDir, 'ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage.tsx'),
@@ -44,6 +48,24 @@ assert.doesNotMatch(
   officialWarehouseStatisticsDomain,
   /row\.partnerSku \|\| '',\n\s*row\.pskuCode/,
   'official warehouse inbound dedupe key must not include external pskuCode as product identity'
+)
+
+assert.doesNotMatch(
+  officialWarehouseStatistics,
+  /!row\.productSiteOfferId/,
+  'official warehouse product history must not require legacy productSiteOfferId when partnerSku is available'
+)
+
+assert.match(
+  officialWarehouseStatistics,
+  /partnerSku:\s*row\.partnerSku/,
+  'official warehouse product history request must carry stable partnerSku'
+)
+
+assert.match(
+  officialWarehouseStatisticsApi,
+  /filters\.partnerSku/,
+  'official warehouse product history API must accept partnerSku as stable product identity'
 )
 
 assert.doesNotMatch(
