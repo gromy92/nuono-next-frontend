@@ -173,6 +173,11 @@ export const NoonAdvertisingPage = lazyWorkspace(() =>
     default: module.NoonAdvertisingPage
   }))
 );
+export const ProductKeywordDataPage = lazyWorkspace(() =>
+  import('../product-keywords/ProductKeywordDataPage').then((module) => ({
+    default: module.ProductKeywordDataPage
+  }))
+);
 export const OperationConfigSuiteVersionPage = lazyWorkspace(() =>
   import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
     default: module.OperationConfigSuiteVersionPage

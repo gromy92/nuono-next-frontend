@@ -32,6 +32,7 @@ import {
   ProcurementRequirementConfirmationPage,
   ProductGroupManagementPage,
   ProductImageProfilePage,
+  ProductKeywordDataPage,
   ProductListingPage,
   ProductLogisticsCostsPage,
   ProductManagementWorkspacePage,
@@ -363,6 +364,14 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <NoonAdvertisingPage session={shellSession} />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'product-keywords') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ProductKeywordDataPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

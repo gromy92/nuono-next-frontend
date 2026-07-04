@@ -35,6 +35,7 @@ export const OFFICIAL_WAREHOUSE_PATH = workspaceMenuPath('official-warehouse')
 export const OPERATIONS_COMPETITOR_ANALYSIS_PATH = workspaceMenuPath('operations-competitor-analysis')
 export const OPERATIONS_SKIN_MANAGEMENT_PATH = workspaceMenuPath('operations-skin-management')
 export const OPERATIONS_NOON_ADS_PATH = workspaceMenuPath('operations-noon-ads')
+export const OPERATIONS_PRODUCT_KEYWORDS_PATH = workspaceMenuPath('operations-product-keywords')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
 export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
@@ -99,6 +100,7 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantProductImages',
   'grantCompetitorAnalysis',
   'grantOperationsSkin',
+  'grantProductKeywords',
   'grantImageMatch',
   'grantPurchase',
   'grantSalesAnalytics',

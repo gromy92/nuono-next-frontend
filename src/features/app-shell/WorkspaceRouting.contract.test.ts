@@ -7,10 +7,13 @@ import {
   workspaceMenuContentKind,
   workspaceMenuPath
 } from './WorkspaceMenuRegistry'
-import { withCurrentWorkspaceDevQuery } from './WorkspaceRouting'
+import { OPERATIONS_PRODUCT_KEYWORDS_PATH, withCurrentWorkspaceDevQuery } from './WorkspaceRouting'
 
 assert.equal(workspaceMenuPath('official-warehouse'), '/warehouse/official-warehouse')
 assert.equal(workspaceMenuContentKind('official-warehouse'), 'official-warehouse')
+assert.equal(OPERATIONS_PRODUCT_KEYWORDS_PATH, '/operations/product-keywords')
+assert.equal(workspaceMenuPath('operations-product-keywords'), OPERATIONS_PRODUCT_KEYWORDS_PATH)
+assert.equal(workspaceMenuContentKind('operations-product-keywords'), 'product-keywords')
 assert.deepEqual(WORKSPACE_MENU_DEFINITIONS['official-warehouse'].routeAliases, [
   '/warehouse/fbn',
   '/storage/warehouse',

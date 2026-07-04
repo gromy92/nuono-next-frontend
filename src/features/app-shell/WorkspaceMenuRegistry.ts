@@ -22,6 +22,7 @@ export type AppMenuKey =
   | 'operations-competitor-analysis'
   | 'operations-skin-management'
   | 'operations-noon-ads'
+  | 'operations-product-keywords'
   | 'data-sales-analysis'
   | 'data-order-analysis'
   | 'data-sales-forecast'
@@ -94,6 +95,7 @@ export type WorkspaceContentKind =
   | 'operations-competitor-analysis'
   | 'operations-skin-management'
   | 'noon-ads'
+  | 'product-keywords'
   | 'sales-analytics'
   | 'order-finance'
   | 'sales-forecast'
@@ -377,6 +379,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'noon-ads',
     closable: true
   },
+  'operations-product-keywords': {
+    key: 'operations-product-keywords',
+    label: '关键词数据',
+    path: '/operations/product-keywords',
+    sectionKey: 'operations',
+    pathLabel: '运营 / 关键词数据',
+    tabLabel: '关键词数据',
+    contentKind: 'product-keywords',
+    closable: true
+  },
   'data-sales-analysis': {
     key: 'data-sales-analysis',
     label: '销量分析',
@@ -607,7 +619,8 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     entries: [
       { type: 'workspace', key: 'operations-competitor-analysis' },
       { type: 'workspace', key: 'operations-skin-management' },
-      { type: 'workspace', key: 'operations-noon-ads' }
+      { type: 'workspace', key: 'operations-noon-ads' },
+      { type: 'workspace', key: 'operations-product-keywords' }
     ]
   },
   {
@@ -820,6 +833,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['广告投放经营台', 'Noon Ads', '广告投放']
   },
   {
+    keys: ['operations-product-keywords'],
+    urlPaths: ['/operations/product-keywords', '/api/product-keywords'],
+    urlPathPrefixes: ['/api/product-keywords/'],
+    menuNames: ['关键词数据', '关键词管理']
+  },
+  {
     keys: ['data-sales-analysis', 'data-order-analysis', 'data-sales-forecast'],
     urlPaths: [
       '/data/sales-analysis',
@@ -893,6 +912,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'operations-competitor-analysis',
   'operations-skin-management',
   'operations-noon-ads',
+  'operations-product-keywords',
   'data-sales-analysis',
   'data-order-analysis',
   'data-sales-forecast',
