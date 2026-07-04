@@ -19,8 +19,8 @@ function values(items?: string[] | null) {
 
 function keywordStatusLabel(status: string) {
   const normalized = status.toUpperCase()
-  if (normalized === 'ACTIVE') return '已启用'
-  if (normalized === 'OBSERVED') return '候选词'
+  if (normalized === 'ACTIVE') return '已纳入词库'
+  if (normalized === 'OBSERVED') return '待确认候选'
   if (normalized === 'PAUSED') return '已暂停'
   if (normalized === 'ARCHIVED') return '已归档'
   return '其他状态'

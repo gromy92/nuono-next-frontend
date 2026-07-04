@@ -17,8 +17,8 @@ type StatusFilter = 'ALL' | ProductKeywordStatus
 
 const statusOptions: Array<{ label: string; value: StatusFilter }> = [
   { label: '全部状态', value: 'ALL' },
-  { label: '已启用', value: 'ACTIVE' },
-  { label: '候选词', value: 'OBSERVED' },
+  { label: '已纳入词库', value: 'ACTIVE' },
+  { label: '待确认候选', value: 'OBSERVED' },
   { label: '已暂停', value: 'PAUSED' },
   { label: '已归档', value: 'ARCHIVED' }
 ]
@@ -67,8 +67,8 @@ function statusColor(status?: string) {
 
 function statusLabel(status?: string) {
   const normalized = (status || '').toUpperCase()
-  if (normalized === 'ACTIVE') return '已启用'
-  if (normalized === 'OBSERVED') return '候选词'
+  if (normalized === 'ACTIVE') return '已纳入词库'
+  if (normalized === 'OBSERVED') return '待确认候选'
   if (normalized === 'PAUSED') return '已暂停'
   if (normalized === 'ARCHIVED') return '已归档'
   return '未知状态'
@@ -284,8 +284,8 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
           <Text type="secondary">标题、竞品、广告证据统一查看</Text>
         </div>
         <Space size={8}>
-          <Tag color="green">已启用 {summary.active}</Tag>
-          <Tag color="blue">候选词 {summary.observed}</Tag>
+          <Tag color="green">已纳入词库 {summary.active}</Tag>
+          <Tag color="blue">待确认候选 {summary.observed}</Tag>
           <Tag>全部 {summary.total}</Tag>
           <Button
             aria-label="刷新关键词数据"
