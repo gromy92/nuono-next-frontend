@@ -1,6 +1,7 @@
 import { parseApiResponse } from '../../shared/api';
 import type {
   StoreBindPayload,
+  StoreBindingResult,
   StoreConnectionTestResult,
   StoreCreatePayload,
   StoreSyncOverviewPayload
@@ -12,7 +13,7 @@ export async function fetchStoreSyncOverview(ownerUserId?: number) {
 }
 
 export async function bindStoreSyncStore(payload: StoreBindPayload) {
-  return parseApiResponse<{ message?: string }>(
+  return parseApiResponse<StoreBindingResult>(
     await fetch('/api/store-sync/bind', {
       method: 'POST',
       headers: {
@@ -24,7 +25,7 @@ export async function bindStoreSyncStore(payload: StoreBindPayload) {
 }
 
 export async function createStoreSyncStore(payload: StoreCreatePayload) {
-  return parseApiResponse<{ message?: string }>(
+  return parseApiResponse<StoreBindingResult>(
     await fetch('/api/store-sync/create-store', {
       method: 'POST',
       headers: {

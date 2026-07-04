@@ -69,8 +69,6 @@ type ShellFrameProps = {
   isInTransitBoxDetailTab: boolean;
   isProductDetailTab: boolean;
   loadStoreSync: (ownerUserId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
-  loginCodeCooldownSeconds: number;
-  loginCodeRequesting: boolean;
   loginError: string | null;
   loginForm: FormInstance;
   loginSubmitting: boolean;
@@ -84,7 +82,6 @@ type ShellFrameProps = {
   productWorkspace: ProductManagementWorkspace;
   profitBoard: ReactNode;
   roleManagementRefreshSignal: number;
-  requestLoginCode: () => void;
   setChangePasswordOpen: (open: boolean) => void;
   setLoginError: (message: string | null) => void;
   setLogoutConfirmOpen: (open: boolean) => void;
@@ -130,8 +127,6 @@ export function ShellFrame({
   isInTransitBoxDetailTab,
   isProductDetailTab,
   loadStoreSync,
-  loginCodeCooldownSeconds,
-  loginCodeRequesting,
   loginError,
   loginForm,
   loginSubmitting,
@@ -145,7 +140,6 @@ export function ShellFrame({
   productWorkspace,
   profitBoard,
   roleManagementRefreshSignal,
-  requestLoginCode,
   setChangePasswordOpen,
   setLoginError,
   setLogoutConfirmOpen,
@@ -183,13 +177,10 @@ export function ShellFrame({
           <Layout style={{ minHeight: '100vh', background: '#eef4ec' }}>
             <Content>
               <ReplicaLoginPage
-                codeCooldownSeconds={loginCodeCooldownSeconds}
-                codeRequesting={loginCodeRequesting}
                 errorMessage={loginError}
                 form={loginForm}
                 submitting={loginSubmitting}
                 onInputChange={() => setLoginError(null)}
-                onRequestCode={() => void requestLoginCode()}
                 onSubmit={() => void submitLogin()}
               />
             </Content>
