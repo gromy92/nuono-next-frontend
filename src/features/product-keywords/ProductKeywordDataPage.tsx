@@ -18,9 +18,9 @@ type StatusFilter = 'ALL' | ProductKeywordStatus
 const statusOptions: Array<{ label: string; value: StatusFilter }> = [
   { label: '全部状态', value: 'ALL' },
   { label: '已启用', value: 'ACTIVE' },
-  { label: '候选', value: 'OBSERVED' },
-  { label: '暂停', value: 'PAUSED' },
-  { label: '归档', value: 'ARCHIVED' }
+  { label: '候选词', value: 'OBSERVED' },
+  { label: '已暂停', value: 'PAUSED' },
+  { label: '已归档', value: 'ARCHIVED' }
 ]
 
 function siteCodeFromStoreCode(storeCode?: string) {
@@ -79,6 +79,15 @@ function statusColor(status?: string) {
   return 'default'
 }
 
+function statusLabel(status?: string) {
+  const normalized = (status || '').toUpperCase()
+  if (normalized === 'ACTIVE') return '已启用'
+  if (normalized === 'OBSERVED') return '候选词'
+  if (normalized === 'PAUSED') return '已暂停'
+  if (normalized === 'ARCHIVED') return '已归档'
+  return '未知状态'
+}
+
 function tagColor(tag: string) {
   const normalized = tag.toUpperCase()
   if (normalized === 'CORE' || normalized === 'TITLE_TARGET') return 'green'
@@ -86,6 +95,16 @@ function tagColor(tag: string) {
   if (normalized === 'ADS_QUERY') return 'purple'
   if (normalized === 'NEGATIVE_CANDIDATE') return 'red'
   return 'default'
+}
+
+function intentTagLabel(tag: string) {
+  const normalized = tag.toUpperCase()
+  if (normalized === 'CORE') return '核心词'
+  if (normalized === 'TITLE_TARGET') return '标题目标词'
+  if (normalized === 'COMPETITOR_TRACK') return '竞品跟踪词'
+  if (normalized === 'ADS_QUERY') return '广告搜索词'
+  if (normalized === 'NEGATIVE_CANDIDATE') return '否词候选'
+  return '其他标签'
 }
 
 function titleCoverage(tags: string[]) {
@@ -208,8 +227,8 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
         const tags = parseTags(row.intentTagsJson)
         return (
           <Space size={[4, 4]} wrap>
-            <Tag color={statusColor(row.status)}>{row.status}</Tag>
-            {tags.map((tag) => <Tag key={tag} color={tagColor(tag)}>{tag}</Tag>)}
+            <Tag color={statusColor(row.status)}>{statusLabel(row.status)}</Tag>
+            {tags.map((tag) => <Tag key={tag} color={tagColor(tag)}>{intentTagLabel(tag)}</Tag>)}
           </Space>
         )
       }
@@ -259,8 +278,8 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
           <Text type="secondary">标题、竞品、广告证据统一查看</Text>
         </div>
         <Space size={8}>
-          <Tag color="green">ACTIVE {summary.active}</Tag>
-          <Tag color="blue">OBSERVED {summary.observed}</Tag>
+          <Tag color="green">已启用 {summary.active}</Tag>
+          <Tag color="blue">候选词 {summary.observed}</Tag>
           <Tag>全部 {summary.total}</Tag>
           <Button
             aria-label="刷新关键词数据"
