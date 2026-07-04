@@ -136,6 +136,13 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
   )
   const selectedSiteCode = selectedStore?.site || siteCodeFromStoreCode(selectedStore?.storeCode)
 
+  useEffect(() => {
+    if (!stores.length) return
+    if (!selectedStoreKey || !stores.some((store) => storeKey(store) === selectedStoreKey)) {
+      setSelectedStoreKey(storeKey(stores[0]))
+    }
+  }, [selectedStoreKey, stores])
+
   const loadKeywords = useCallback(async () => {
     if (!selectedStore?.storeCode || !selectedSiteCode) {
       setRows([])
@@ -255,7 +262,13 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
           <Tag color="green">ACTIVE {summary.active}</Tag>
           <Tag color="blue">OBSERVED {summary.observed}</Tag>
           <Tag>全部 {summary.total}</Tag>
-          <Button icon={<ReloadOutlined />} onClick={() => void loadKeywords()} loading={loading} />
+          <Button
+            aria-label="刷新关键词数据"
+            title="刷新关键词数据"
+            icon={<ReloadOutlined />}
+            onClick={() => void loadKeywords()}
+            loading={loading}
+          />
         </Space>
       </div>
 
