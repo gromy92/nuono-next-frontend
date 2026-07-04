@@ -1,6 +1,6 @@
 import { TagsOutlined } from '@ant-design/icons'
 import { Button, Empty, Popover, Space, Spin, Tag, Typography } from 'antd'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchProductKeywordProduct } from './api'
 import type { ProductKeywordEventItem, ProductKeywordItem, ProductKeywordPanelView } from './types'
 import './ProductKeywordListHoverPopover.css'
@@ -95,11 +95,6 @@ function ProductKeywordHoverContent({
 }) {
   const keywords = panel?.keywords || []
   const events = panel?.events || []
-  const counts = useMemo(() => ({
-    title: events.filter((event) => event.sourceType === 'TITLE_HISTORY').length,
-    competitor: events.filter((event) => event.sourceType === 'COMPETITOR_KEYWORD').length,
-    ads: events.filter((event) => event.sourceType === 'ADS_QUERY').length
-  }), [events])
 
   if (loading && !panel) {
     return <div className="product-keyword-hover-loading"><Spin size="small" /> <Text type="secondary">加载关键词...</Text></div>
@@ -118,11 +113,6 @@ function ProductKeywordHoverContent({
           {keywords.slice(0, 6).map(keywordChip)}
         </div>
       </div>
-      <Space size={[6, 6]} wrap>
-        <Tag color={counts.title ? 'green' : 'default'}>标题使用 {counts.title}</Tag>
-        <Tag color={counts.competitor ? 'geekblue' : 'default'}>竞品证据 {counts.competitor}</Tag>
-        <Tag color={counts.ads ? 'purple' : 'default'}>广告搜索 {counts.ads}</Tag>
-      </Space>
       {events.length ? (
         <div className="product-keyword-hover-section">
           <Text strong>最近使用记录</Text>
