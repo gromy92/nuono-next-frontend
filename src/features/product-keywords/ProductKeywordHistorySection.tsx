@@ -31,6 +31,17 @@ function sourceColor(sourceType?: string | null) {
   return 'default'
 }
 
+function eventStatusLabel(status?: string | null) {
+  const normalized = (status || '').toUpperCase()
+  if (normalized === 'OBSERVED') return '已发现'
+  if (normalized === 'ADDED') return '已加入'
+  if (normalized === 'REMOVED') return '已移除'
+  if (normalized === 'MATCHED') return '已匹配'
+  if (normalized === 'PERFORMED') return '有表现'
+  if (normalized === 'SUGGESTED') return '建议候选'
+  return '其他状态'
+}
+
 function formatEventTime(value?: string | null) {
   return value ? value.replace('T', ' ') : ''
 }
@@ -52,7 +63,7 @@ function historyEventLine(event: ProductKeywordEventItem) {
           {sourceLabel(event.sourceType)}
         </Tag>
         <Text strong>{event.keyword}</Text>
-        {event.eventStatus ? <Tag style={{ marginInlineEnd: 0 }}>{event.eventStatus}</Tag> : null}
+        {event.eventStatus ? <Tag style={{ marginInlineEnd: 0 }}>{eventStatusLabel(event.eventStatus)}</Tag> : null}
       </Space>
       {time ? <Text type="secondary">{time}</Text> : null}
     </div>
