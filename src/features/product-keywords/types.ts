@@ -15,6 +15,21 @@ export type ProductKeywordEventStatus =
   | 'PERFORMED'
   | 'SUGGESTED'
 
+export type ProductKeywordTitleType =
+  | 'CORE'
+  | 'ATTRIBUTE'
+  | 'SCENE'
+  | 'AUDIENCE'
+  | 'SPEC'
+  | 'TRENDING'
+
+export type ProductKeywordTitleUsageState =
+  | 'TITLE_TARGET'
+  | 'TITLE_COVERED'
+  | 'TITLE_MISSING'
+  | 'TITLE_REMOVED'
+  | 'TITLE_NOT_FIT'
+
 export type ProductKeywordListRequest = {
   storeCode?: string
   siteCode?: string
@@ -52,6 +67,11 @@ export type ProductKeywordItem = {
   status: ProductKeywordStatus | string
   intentTagsJson?: string | null
   sourceSummaryJson?: string | null
+  titleTypes?: Array<ProductKeywordTitleType | string>
+  titleUsageStates?: Array<ProductKeywordTitleUsageState | string>
+  competitorEvidence?: boolean
+  adsEvidence?: boolean
+  negativeCandidate?: boolean
   firstSeenAt?: string | null
   lastSeenAt?: string | null
 }

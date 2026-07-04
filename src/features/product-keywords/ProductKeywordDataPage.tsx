@@ -56,20 +56,6 @@ function storeLabel(store: AuthSessionStore) {
   return `${name} / ${store.storeCode}${siteCode ? ` / ${siteCode}` : ''}`
 }
 
-function parseTags(tagsJson?: string | null) {
-  if (!tagsJson) return [] as string[]
-  try {
-    const parsed = JSON.parse(tagsJson)
-    return Array.isArray(parsed) ? parsed.map((item) => String(item).trim()).filter(Boolean) : []
-  } catch {
-    return tagsJson
-      .replace(/[[\]"']/g, '')
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean)
-  }
-}
-
 function statusColor(status?: string) {
   const normalized = (status || '').toUpperCase()
   if (normalized === 'ACTIVE') return 'green'
@@ -88,54 +74,78 @@ function statusLabel(status?: string) {
   return '未知状态'
 }
 
-function tagColor(tag: string) {
-  const normalized = tag.toUpperCase()
-  if (normalized === 'CORE' || normalized === 'TITLE_TARGET') return 'green'
-  if (normalized === 'COMPETITOR_TRACK') return 'geekblue'
-  if (normalized === 'ADS_QUERY') return 'purple'
-  if (normalized === 'NEGATIVE_CANDIDATE') return 'red'
+function values(items?: string[] | null) {
+  return (items || []).map((item) => String(item).trim().toUpperCase()).filter(Boolean)
+}
+
+function titleTypeLabel(type: string) {
+  const normalized = type.toUpperCase()
+  if (normalized === 'CORE') return '核心词'
+  if (normalized === 'ATTRIBUTE') return '属性词'
+  if (normalized === 'SCENE') return '场景词'
+  if (normalized === 'AUDIENCE') return '人群词'
+  if (normalized === 'SPEC') return '规格词'
+  if (normalized === 'TRENDING') return '流行词'
+  return '标题词'
+}
+
+function titleTypeColor(type: string) {
+  const normalized = type.toUpperCase()
+  if (normalized === 'CORE') return 'green'
+  if (normalized === 'TRENDING') return 'orange'
+  if (normalized === 'ATTRIBUTE') return 'blue'
+  if (normalized === 'SCENE') return 'magenta'
+  if (normalized === 'AUDIENCE') return 'purple'
+  if (normalized === 'SPEC') return 'geekblue'
   return 'default'
 }
 
-function intentTagLabel(tag: string) {
-  const normalized = tag.toUpperCase()
-  if (normalized === 'CORE') return '核心词'
-  if (normalized === 'TITLE_TARGET') return '标题目标词'
-  if (normalized === 'COMPETITOR_TRACK') return '竞品跟踪词'
-  if (normalized === 'ADS_QUERY') return '广告搜索词'
-  if (normalized === 'NEGATIVE_CANDIDATE') return '否词候选'
-  return '其他标签'
+function titleUsageStateLabel(state: string) {
+  const normalized = state.toUpperCase()
+  if (normalized === 'TITLE_TARGET') return '标题目标'
+  if (normalized === 'TITLE_COVERED') return '当前已覆盖'
+  if (normalized === 'TITLE_MISSING') return '当前未覆盖'
+  if (normalized === 'TITLE_REMOVED') return '已从标题移除'
+  if (normalized === 'TITLE_NOT_FIT') return '不适合标题'
+  return '标题状态'
 }
 
-function titleCoverage(tags: string[]) {
-  if (tags.includes('CORE') || tags.includes('TITLE_TARGET')) {
-    return { state: 'titleTarget', label: '标题目标', color: 'green' }
-  }
-  return { state: 'notTitleTarget', label: '未纳入标题', color: 'default' }
+function titleUsageStateColor(state: string) {
+  const normalized = state.toUpperCase()
+  if (normalized === 'TITLE_TARGET' || normalized === 'TITLE_COVERED') return 'green'
+  if (normalized === 'TITLE_MISSING') return 'orange'
+  if (normalized === 'TITLE_REMOVED' || normalized === 'TITLE_NOT_FIT') return 'red'
+  return 'default'
 }
 
-function competitorState(tags: string[]) {
-  if (tags.includes('COMPETITOR_TRACK')) {
-    return { state: 'competitorEvidence', label: '竞品证据', color: 'geekblue' }
-  }
-  return { state: 'noCompetitorEvidence', label: '无竞品证据', color: 'default' }
+function competitorEvidenceState(row: ProductKeywordItem) {
+  return row.competitorEvidence
+    ? { label: '有竞品证据', color: 'geekblue' }
+    : { label: '无竞品证据', color: 'default' }
 }
 
-function adsState(tags: string[]) {
-  if (tags.includes('NEGATIVE_CANDIDATE')) {
-    return { state: 'adsEvidence', label: '高花费无单', color: 'red' }
-  }
-  if (tags.includes('ADS_QUERY')) {
-    return { state: 'adsEvidence', label: '广告证据', color: 'purple' }
-  }
-  return { state: 'noAdsEvidence', label: '无广告证据', color: 'default' }
+function adsEvidenceState(row: ProductKeywordItem) {
+  if (row.negativeCandidate) return { label: '否词候选', color: 'red' }
+  return row.adsEvidence
+    ? { label: '有广告证据', color: 'purple' }
+    : { label: '无广告证据', color: 'default' }
 }
 
-function suggestedAction(row: ProductKeywordItem, tags: string[]) {
-  if (row.status === 'OBSERVED' && tags.includes('NEGATIVE_CANDIDATE')) return '评估否词或暂停'
-  if (row.status === 'OBSERVED' && tags.includes('ADS_QUERY')) return '评估转核心词'
-  if (row.status === 'OBSERVED' && tags.includes('COMPETITOR_TRACK')) return '评估加入标题'
-  if (row.status === 'ACTIVE' && (tags.includes('CORE') || tags.includes('TITLE_TARGET'))) return '持续观察标题覆盖'
+function titleDimensionItems(row: ProductKeywordItem) {
+  return {
+    types: values(row.titleTypes),
+    states: values(row.titleUsageStates)
+  }
+}
+
+function suggestedAction(row: ProductKeywordItem) {
+  const titleStates = values(row.titleUsageStates)
+  const titleTypes = values(row.titleTypes)
+  if (row.negativeCandidate) return '评估否词或暂停'
+  if (titleStates.includes('TITLE_MISSING')) return '补充标题覆盖'
+  if (titleStates.includes('TITLE_COVERED')) return '持续观察标题覆盖'
+  if (row.competitorEvidence && titleTypes.length === 0) return '人工判断是否加入标题'
+  if (row.adsEvidence && row.status === 'OBSERVED') return '人工复核广告价值'
   return '人工复核'
 }
 
@@ -216,36 +226,32 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
       render: (_, row) => (
         <div className="product-keyword-cell-stack">
           <Text strong>{row.keyword}</Text>
-          <Text type="secondary">{row.keywordNorm}</Text>
+          <Space size={[4, 4]} wrap>
+            <Tag color={statusColor(row.status)}>{statusLabel(row.status)}</Tag>
+            <Text type="secondary">{row.keywordNorm}</Text>
+          </Space>
         </div>
       )
     },
     {
-      title: '状态 / 标签',
-      width: 240,
+      title: '标题',
+      width: 260,
       render: (_, row) => {
-        const tags = parseTags(row.intentTagsJson)
+        const { types, states } = titleDimensionItems(row)
         return (
           <Space size={[4, 4]} wrap>
-            <Tag color={statusColor(row.status)}>{statusLabel(row.status)}</Tag>
-            {tags.map((tag) => <Tag key={tag} color={tagColor(tag)}>{intentTagLabel(tag)}</Tag>)}
+            {types.map((type) => <Tag key={type} color={titleTypeColor(type)}>{titleTypeLabel(type)}</Tag>)}
+            {states.map((state) => <Tag key={state} color={titleUsageStateColor(state)}>{titleUsageStateLabel(state)}</Tag>)}
+            {!types.length && !states.length ? <Tag>未设置标题类型</Tag> : null}
           </Space>
         )
-      }
-    },
-    {
-      title: '标题覆盖',
-      width: 130,
-      render: (_, row) => {
-        const state = titleCoverage(parseTags(row.intentTagsJson))
-        return <Tag color={state.color}>{state.label}</Tag>
       }
     },
     {
       title: '竞品',
       width: 130,
       render: (_, row) => {
-        const state = competitorState(parseTags(row.intentTagsJson))
+        const state = competitorEvidenceState(row)
         return <Tag color={state.color}>{state.label}</Tag>
       }
     },
@@ -253,7 +259,7 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
       title: '广告',
       width: 130,
       render: (_, row) => {
-        const state = adsState(parseTags(row.intentTagsJson))
+        const state = adsEvidenceState(row)
         return <Tag color={state.color}>{state.label}</Tag>
       }
     },
@@ -266,7 +272,7 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
     {
       title: '建议动作',
       width: 170,
-      render: (_, row) => <Text>{suggestedAction(row, parseTags(row.intentTagsJson))}</Text>
+      render: (_, row) => <Text>{suggestedAction(row)}</Text>
     }
   ], [])
 
