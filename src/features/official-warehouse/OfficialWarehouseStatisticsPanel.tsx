@@ -184,8 +184,8 @@ export function OfficialWarehouseStatisticsPanel({ storeCode, siteCode, mode = '
   }
 
   async function openProductHistory(row: OfficialWarehouseStockStatisticsRow) {
-    if (!storeCode || !siteCode || !row.productSiteOfferId) {
-      message.warning('当前商品缺少站点 Offer，无法查看入仓历史')
+    if (!storeCode || !siteCode || !(row.partnerSku || row.productSiteOfferId)) {
+      message.warning('当前商品缺少 PSKU，无法查看入仓历史')
       return
     }
     setSelectedStockRow(row)
@@ -195,6 +195,7 @@ export function OfficialWarehouseStatisticsPanel({ storeCode, siteCode, mode = '
       const history = await loadOfficialWarehouseProductInboundHistory({
         storeCode,
         siteCode,
+        partnerSku: row.partnerSku,
         productSiteOfferId: row.productSiteOfferId
       })
       setProductHistory(history)
@@ -699,7 +700,7 @@ function ProductStockSourcePreview({
     let cancelled = false
     setChain(fallbackChain)
     setFailed(false)
-    if (!storeCode || !siteCode || !row.productSiteOfferId) {
+    if (!storeCode || !siteCode || !(row.partnerSku || row.productSiteOfferId)) {
       return () => {
         cancelled = true
       }
@@ -708,6 +709,7 @@ function ProductStockSourcePreview({
     void loadOfficialWarehouseProductInboundHistory({
       storeCode,
       siteCode,
+      partnerSku: row.partnerSku,
       productSiteOfferId: row.productSiteOfferId
     })
       .then((history) => {
@@ -729,7 +731,7 @@ function ProductStockSourcePreview({
     return () => {
       cancelled = true
     }
-  }, [fallbackChain, row.currentStock, row.productSiteOfferId, siteCode, storeCode])
+  }, [fallbackChain, row.currentStock, row.partnerSku, row.productSiteOfferId, siteCode, storeCode])
 
   if (!chain.totalQuantity) {
     return <Text type="secondary">暂无库存</Text>

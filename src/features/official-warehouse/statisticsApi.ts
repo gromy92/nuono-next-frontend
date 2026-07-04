@@ -45,13 +45,15 @@ export async function loadOfficialWarehouseInboundStatistics(filters: OfficialWa
 export async function loadOfficialWarehouseProductInboundHistory(filters: {
   storeCode: string
   siteCode: string
-  productSiteOfferId: string
+  partnerSku?: string
+  productSiteOfferId?: string
 }) {
   const params = new URLSearchParams()
   appendParam(params, 'storeCode', filters.storeCode)
   appendParam(params, 'siteCode', filters.siteCode)
+  const productRef = filters.partnerSku?.trim() || filters.productSiteOfferId?.trim() || ''
   const response = await apiFetch(
-    `/api/warehouse/official-warehouse/products/${encodeURIComponent(filters.productSiteOfferId)}/inbound-history?${params.toString()}`
+    `/api/warehouse/official-warehouse/products/${encodeURIComponent(productRef)}/inbound-history?${params.toString()}`
   )
   return parseApiResponse<OfficialWarehouseProductInboundHistoryView>(response, '读取商品入仓历史失败')
 }
