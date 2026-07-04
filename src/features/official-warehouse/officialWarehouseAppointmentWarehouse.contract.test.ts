@@ -15,6 +15,14 @@ const openAppointmentSource = pageSource.slice(
   pageSource.indexOf('function openAppointment'),
   pageSource.indexOf('async function loadWarehouseFromCandidates')
 )
+const loadWarehouseFromCandidatesSource = pageSource.slice(
+  pageSource.indexOf('async function loadWarehouseFromCandidates'),
+  pageSource.indexOf('async function submitAppointment')
+)
+const submitAppointmentSource = pageSource.slice(
+  pageSource.indexOf('async function submitAppointment'),
+  pageSource.indexOf('async function runAppointmentNow')
+)
 
 assert.match(
   appointmentWarehouseOptionsSource,
@@ -45,4 +53,29 @@ assert.doesNotMatch(
   openAppointmentSource,
   /warehouseToCode:\s*row\.selectedWarehouseCode\s*\|\|\s*appointment\?\.warehouseToCode/s,
   'appointment form should not treat the ASN creation route code as stronger than the existing appointment target'
+)
+assert.match(
+  loadWarehouseFromCandidatesSource,
+  /mode:\s*AppointmentSubmitMode/,
+  'loading warehouse-from candidates should know whether the modal is auto or manual appointment mode'
+)
+assert.match(
+  loadWarehouseFromCandidatesSource,
+  /defaultWarehouseFrom[\s\S]*warehouses\.find/,
+  'warehouse-from loading should resolve a first non-empty default candidate'
+)
+assert.match(
+  loadWarehouseFromCandidatesSource,
+  /mode\s*===\s*'auto'[\s\S]*warehouseFrom:\s*defaultWarehouseFrom/,
+  'auto appointment should prefill the first available warehouse-from candidate instead of leaving submit blocked'
+)
+assert.match(
+  pageSource,
+  /const appointmentWarehouseFromMissingMessage/,
+  'the appointment modal should have an inline missing-warehouse-from message'
+)
+assert.match(
+  submitAppointmentSource,
+  /setAppointmentSubmitFeedback\(\{\s*type:\s*'warning',\s*message:\s*appointmentWarehouseFromMissingMessage\s*\}\)/,
+  'submitting without warehouse-from should show the blocking reason inside the modal'
 )
