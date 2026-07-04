@@ -50,6 +50,16 @@ function values(items?: string[] | null) {
   return (items || []).map((item) => String(item).trim().toUpperCase()).filter(Boolean)
 }
 
+function normalizeKeywordDisplay(value?: string | null) {
+  return (value || '').trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+function shouldShowKeywordNorm(row: ProductKeywordItem) {
+  const normalizedKeyword = normalizeKeywordDisplay(row.keyword)
+  const normalizedKeywordNorm = normalizeKeywordDisplay(row.keywordNorm)
+  return Boolean(normalizedKeywordNorm && normalizedKeyword !== normalizedKeywordNorm)
+}
+
 function titleTypeLabel(type: string) {
   const normalized = type.toUpperCase()
   if (normalized === 'CORE') return '核心词'
@@ -190,7 +200,7 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
       render: (_, row) => (
         <div className="product-keyword-cell-stack">
           <Text strong>{row.keyword}</Text>
-          <Text type="secondary">{row.keywordNorm}</Text>
+          {shouldShowKeywordNorm(row) ? <Text type="secondary">{row.keywordNorm}</Text> : null}
         </div>
       )
     },
