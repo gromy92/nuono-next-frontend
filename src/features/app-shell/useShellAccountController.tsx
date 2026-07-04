@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Form, message } from 'antd';
 import type { MenuProps } from 'antd';
-import { LockOutlined, LogoutOutlined } from '@ant-design/icons';
+import { LogoutOutlined } from '@ant-design/icons';
+import type { EmailCodeLoginFormValues } from '../auth/ReplicaLoginPage';
 import type { AuthRoleView, AuthSession } from '../auth/session';
 import type { ProductWorkspaceTabKey } from '../product-management/types';
 import { currentAppPathname } from '../../runtimePaths';
@@ -44,12 +45,69 @@ export function useShellAccountController({
   syncWorkspacePathForMenuKey
 }: UseShellAccountControllerParams) {
   const [loginSubmitting, setLoginSubmitting] = useState(false);
+  const [loginCodeRequesting, setLoginCodeRequesting] = useState(false);
+  const [loginCodeCooldownSeconds, setLoginCodeCooldownSeconds] = useState(0);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [loginForm] = Form.useForm();
+  const [loginForm] = Form.useForm<EmailCodeLoginFormValues>();
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [changePasswordSubmitting, setChangePasswordSubmitting] = useState(false);
   const [changePasswordForm] = Form.useForm<ChangePasswordFormValues>();
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
+
+  useEffect(() => {
+    if (loginCodeCooldownSeconds <= 0 || typeof window === 'undefined') {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setLoginCodeCooldownSeconds((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [loginCodeCooldownSeconds]);
+
+  const requestLoginCode = useCallback(async () => {
+    if (loginCodeRequesting || loginCodeCooldownSeconds > 0) {
+      return;
+    }
+
+    try {
+      setLoginError(null);
+      const values = await loginForm.validateFields(['email']);
+      setLoginCodeRequesting(true);
+
+      const response = await fetch('/api/auth/email-code/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: values.email
+        })
+      });
+
+      if (!response.ok) {
+        let backendMessage = `后端返回 ${response.status}`;
+        try {
+          const errorPayload = (await response.json()) as { message?: string; error?: string };
+          backendMessage = errorPayload.message || errorPayload.error || backendMessage;
+        } catch {
+          // ignore json parse failure
+        }
+        throw new Error(backendMessage);
+      }
+
+      setLoginCodeCooldownSeconds(60);
+      message.success('验证码已发送');
+    } catch (error) {
+      if (error && typeof error === 'object' && 'errorFields' in error) {
+        return;
+      }
+      const errorMessage = error instanceof Error ? error.message : '验证码发送失败';
+      setLoginError(errorMessage);
+      message.error(errorMessage);
+    } finally {
+      setLoginCodeRequesting(false);
+    }
+  }, [loginCodeCooldownSeconds, loginCodeRequesting, loginForm]);
 
   const submitLogin = useCallback(async () => {
     try {
@@ -57,14 +115,14 @@ export function useShellAccountController({
       const values = await loginForm.validateFields();
       setLoginSubmitting(true);
 
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/auth/email-code/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          accountNo: values.accountNo,
-          password: values.password
+          email: values.email,
+          code: values.code
         })
       });
 
@@ -227,18 +285,6 @@ export function useShellAccountController({
 
   const userDropdownItems = useMemo<MenuProps['items']>(
     () => [
-      session
-        ? {
-            key: 'password',
-            label: (
-              <span data-testid="change-password-button" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <LockOutlined />
-                修改密码
-              </span>
-            )
-          }
-        : null,
-      session ? { type: 'divider' } : null,
       {
         key: 'logout',
         label: (
@@ -254,10 +300,6 @@ export function useShellAccountController({
 
   const handleUserDropdownClick = useCallback(
     ({ key }: { key: string }) => {
-      if (key === 'password') {
-        setChangePasswordOpen(true);
-        return;
-      }
       if (key === 'logout') {
         requestLogout();
       }
@@ -273,6 +315,8 @@ export function useShellAccountController({
     handleSessionStoreChange,
     handleUserDropdownClick,
     loginError,
+    loginCodeCooldownSeconds,
+    loginCodeRequesting,
     loginForm,
     loginSubmitting,
     logout,
@@ -280,6 +324,7 @@ export function useShellAccountController({
     setChangePasswordOpen,
     setLoginError,
     setLogoutConfirmOpen,
+    requestLoginCode,
     submitChangePassword,
     submitLogin,
     userDropdownItems

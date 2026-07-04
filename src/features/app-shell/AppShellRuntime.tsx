@@ -81,11 +81,14 @@ export function AppShellRuntime() {
     handleRoleViewChange,
     handleSessionStoreChange,
     handleUserDropdownClick,
+    loginCodeCooldownSeconds,
+    loginCodeRequesting,
     loginError,
     loginForm,
     loginSubmitting,
     logout,
     logoutConfirmOpen,
+    requestLoginCode,
     setChangePasswordOpen,
     setLoginError,
     setLogoutConfirmOpen,
@@ -209,6 +212,8 @@ export function AppShellRuntime() {
       isInTransitBoxDetailTab={isInTransitBoxDetailTab}
       isProductDetailTab={isProductDetailTab}
       loadStoreSync={loadStoreSync}
+      loginCodeCooldownSeconds={loginCodeCooldownSeconds}
+      loginCodeRequesting={loginCodeRequesting}
       loginError={loginError}
       loginForm={loginForm}
       loginSubmitting={loginSubmitting}
@@ -222,6 +227,7 @@ export function AppShellRuntime() {
       productWorkspace={productWorkspace}
       profitBoard={profitBoard}
       roleManagementRefreshSignal={roleManagementRefreshSignal}
+      requestLoginCode={requestLoginCode}
       setActiveMenuKey={setActiveMenuKey}
       setChangePasswordOpen={setChangePasswordOpen}
       setLoginError={setLoginError}
