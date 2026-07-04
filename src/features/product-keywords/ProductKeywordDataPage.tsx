@@ -198,12 +198,6 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
       }
     },
     {
-      title: '最近出现',
-      dataIndex: 'lastSeenAt',
-      width: 180,
-      render: (value?: string | null) => value ? <Text>{value.replace('T', ' ')}</Text> : <Text type="secondary">-</Text>
-    },
-    {
       title: '建议动作',
       width: 170,
       render: (_, row) => (
