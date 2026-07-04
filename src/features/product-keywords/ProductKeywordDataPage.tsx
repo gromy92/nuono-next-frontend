@@ -1,8 +1,8 @@
-import { HistoryOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
-import { App, Button, Empty, Input, Select, Space, Table, Tag, Typography } from 'antd'
+import { HistoryOutlined, SearchOutlined } from '@ant-design/icons'
+import { App, Button, Empty, Input, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { AuthSession, AuthSessionStore } from '../auth/session'
+import type { AuthSession } from '../auth/session'
 import { fetchProductKeywords } from './api'
 import { ProductKeywordHistoryDrawer } from './ProductKeywordHistoryDrawer'
 import type { ProductKeywordItem } from './types'
@@ -20,31 +20,6 @@ function siteCodeFromStoreCode(storeCode?: string) {
   if (normalized.endsWith('-NAE') || normalized.endsWith('-UAE') || normalized.endsWith('-AE')) return 'AE'
   if (normalized.endsWith('-NEG') || normalized.endsWith('-EG')) return 'EG'
   return ''
-}
-
-function storeKey(store?: AuthSessionStore | null) {
-  if (!store?.storeCode) return ''
-  return `${store.storeCode}|${store.site || siteCodeFromStoreCode(store.storeCode)}`
-}
-
-function uniqueStores(stores?: AuthSessionStore[], currentStore?: AuthSessionStore | null) {
-  const result: AuthSessionStore[] = []
-  const seen = new Set<string>()
-  const addStore = (store?: AuthSessionStore | null) => {
-    const key = storeKey(store)
-    if (!store?.storeCode || !key || seen.has(key)) return
-    seen.add(key)
-    result.push(store)
-  }
-  addStore(currentStore)
-  ;(stores || []).forEach(addStore)
-  return result
-}
-
-function storeLabel(store: AuthSessionStore) {
-  const siteCode = store.site || siteCodeFromStoreCode(store.storeCode)
-  const name = store.projectName || store.projectCode || store.orgName || store.storeCode
-  return `${name} / ${store.storeCode}${siteCode ? ` / ${siteCode}` : ''}`
 }
 
 function values(items?: string[] | null) {
@@ -134,26 +109,14 @@ function suggestedAction(row: ProductKeywordItem) {
 
 export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps) {
   const { message } = App.useApp()
-  const stores = useMemo(() => uniqueStores(session.userStores, session.currentStore), [session.currentStore, session.userStores])
-  const [selectedStoreKey, setSelectedStoreKey] = useState(() => storeKey(session.currentStore) || storeKey(stores[0]) || '')
   const [partnerSku, setPartnerSku] = useState('')
   const [keywordSearch, setKeywordSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState<ProductKeywordItem[]>([])
   const [selectedHistoryKeyword, setSelectedHistoryKeyword] = useState<ProductKeywordItem | null>(null)
 
-  const selectedStore = useMemo(
-    () => stores.find((store) => storeKey(store) === selectedStoreKey) || stores[0] || null,
-    [selectedStoreKey, stores]
-  )
+  const selectedStore = session.currentStore
   const selectedSiteCode = selectedStore?.site || siteCodeFromStoreCode(selectedStore?.storeCode)
-
-  useEffect(() => {
-    if (!stores.length) return
-    if (!selectedStoreKey || !stores.some((store) => storeKey(store) === selectedStoreKey)) {
-      setSelectedStoreKey(storeKey(stores[0]))
-    }
-  }, [selectedStoreKey, stores])
 
   const loadKeywords = useCallback(async () => {
     if (!selectedStore?.storeCode || !selectedSiteCode) {
@@ -180,8 +143,6 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
   useEffect(() => {
     void loadKeywords()
   }, [loadKeywords])
-
-  const summary = useMemo(() => ({ total: rows.length }), [rows])
 
   const columns = useMemo<ColumnsType<ProductKeywordItem>>(() => [
     {
@@ -265,32 +226,7 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
 
   return (
     <section className="product-keyword-page" data-testid="product-keyword-data-page">
-      <div className="product-keyword-header">
-        <div>
-          <Typography.Title level={4}>关键词数据</Typography.Title>
-          <Text type="secondary">标题、竞品、广告证据统一查看</Text>
-        </div>
-        <Space size={8}>
-          <Tag>全部 {summary.total}</Tag>
-          <Button
-            aria-label="刷新关键词数据"
-            title="刷新关键词数据"
-            icon={<ReloadOutlined />}
-            onClick={() => void loadKeywords()}
-            loading={loading}
-          />
-        </Space>
-      </div>
-
       <div className="product-keyword-filter-bar">
-        <Select
-          data-testid="product-keyword-store-filter"
-          className="product-keyword-store-select"
-          value={selectedStoreKey}
-          onChange={setSelectedStoreKey}
-          options={stores.map((store) => ({ label: storeLabel(store), value: storeKey(store) }))}
-          placeholder="选择店铺"
-        />
         <Input
           className="product-keyword-filter-input"
           value={partnerSku}
