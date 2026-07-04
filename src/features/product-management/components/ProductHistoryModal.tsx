@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Alert, Empty, Modal, Segmented, Space, Spin, Tag, Typography } from 'antd';
+import { ProductKeywordHistorySection } from '../../product-keywords/ProductKeywordHistorySection';
 import { useProductManagementWorkspace } from '../useProductManagementWorkspace';
+import type { ProductSummarySurface } from '../types';
 import {
   ProductHistoryAuditList,
   ProductHistoryHeaderSummary
@@ -19,6 +21,18 @@ type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspac
 type ProductHistoryModalProps = {
   workspace: ProductManagementWorkspace;
 };
+
+function siteCodeFromStoreCode(storeCode?: string) {
+  const normalized = (storeCode || '').toUpperCase();
+  if (normalized.endsWith('-NSA') || normalized.endsWith('-SAU') || normalized.endsWith('-SA')) return 'SA';
+  if (normalized.endsWith('-NAE') || normalized.endsWith('-UAE') || normalized.endsWith('-AE')) return 'AE';
+  if (normalized.endsWith('-NEG') || normalized.endsWith('-EG')) return 'EG';
+  return '';
+}
+
+function productHistoryKeywordSiteCode(summary?: ProductSummarySurface | null) {
+  return summary?.siteLabels?.find((site) => /^[A-Z]{2,3}$/.test(site)) || siteCodeFromStoreCode(summary?.storeCode);
+}
 
 export function ProductHistoryModal({ workspace }: ProductHistoryModalProps) {
   const {
@@ -59,6 +73,7 @@ export function ProductHistoryModal({ workspace }: ProductHistoryModalProps) {
     () => filterProductHistoryItems(productHistoryModalItems, activeFilterValue),
     [activeFilterValue, productHistoryModalItems]
   );
+  const keywordSiteCode = productHistoryKeywordSiteCode(productHistoryModalSummary);
 
   const closeModal = () => {
     setProductHistoryModalOpen(false);
@@ -81,7 +96,7 @@ export function ProductHistoryModal({ workspace }: ProductHistoryModalProps) {
       title={
         <Space direction="vertical" size={2} style={{ width: '100%', minWidth: 0 }}>
           <Text strong style={{ fontSize: 18 }}>
-            商品修改历史
+            商品历史
           </Text>
           {!productHistoryModalSummary && productHistoryModalTitle ? (
             <Text
@@ -110,6 +125,15 @@ export function ProductHistoryModal({ workspace }: ProductHistoryModalProps) {
       <Space direction="vertical" size={14} style={{ width: '100%' }}>
         {productHistoryModalSummary ? (
           <ProductHistoryHeaderSummary summary={productHistoryModalSummary} />
+        ) : null}
+
+        {productHistoryModalSummary ? (
+          <ProductKeywordHistorySection
+            storeCode={productHistoryModalSummary.storeCode}
+            siteCode={keywordSiteCode}
+            partnerSku={productHistoryModalSummary.partnerSku}
+            maxEvents={80}
+          />
         ) : null}
 
         <Space wrap size={[8, 8]}>

@@ -2,7 +2,7 @@ import { TagsOutlined } from '@ant-design/icons'
 import { Button, Empty, Popover, Space, Spin, Tag, Typography } from 'antd'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchProductKeywordProduct } from './api'
-import type { ProductKeywordEventItem, ProductKeywordItem, ProductKeywordPanelView } from './types'
+import type { ProductKeywordItem, ProductKeywordPanelView } from './types'
 import './ProductKeywordListHoverPopover.css'
 
 const { Text } = Typography
@@ -57,14 +57,6 @@ function titleUsageStateColor(state: string) {
   return 'default'
 }
 
-function sourceLabel(event: ProductKeywordEventItem) {
-  if (event.sourceType === 'TITLE_HISTORY') return '标题使用'
-  if (event.sourceType === 'COMPETITOR_KEYWORD') return '竞品出现'
-  if (event.sourceType === 'ADS_QUERY') return '广告搜索'
-  if (event.sourceType === 'MANUAL') return '手动维护'
-  return '其他来源'
-}
-
 function keywordChip(keyword: ProductKeywordItem) {
   const titleTypes = values(keyword.titleTypes)
   const titleUsageStates = values(keyword.titleUsageStates)
@@ -110,21 +102,15 @@ function ProductKeywordHoverContent({
       <div className="product-keyword-hover-section">
         <Text strong>当前关键词资产</Text>
         <div className="product-keyword-hover-keywords">
-          {keywords.slice(0, 6).map(keywordChip)}
+          {keywords.length ? keywords.slice(0, 6).map(keywordChip) : <Text type="secondary">暂无当前关键词资产</Text>}
         </div>
       </div>
       {events.length ? (
         <div className="product-keyword-hover-section">
-          <Text strong>最近使用记录</Text>
-          <div className="product-keyword-hover-events">
-            {events.slice(0, 5).map((event) => (
-              <div key={event.id} className="product-keyword-hover-event">
-                <Tag>{sourceLabel(event)}</Tag>
-                <Text>{event.keyword}</Text>
-                <Text type="secondary">{event.occurredAt?.replace('T', ' ')}</Text>
-              </div>
-            ))}
-          </div>
+          <Space size={[6, 4]} wrap>
+            <Tag style={{ marginInlineEnd: 0 }}>历史 {events.length} 条</Tag>
+            <Text type="secondary">完整使用记录请点击商品行“历史”。</Text>
+          </Space>
         </div>
       ) : null}
     </div>

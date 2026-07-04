@@ -20,16 +20,14 @@
   gap: 8px;
 }
 
-.product-keyword-hover-keywords,
-.product-keyword-hover-events {
+.product-keyword-hover-keywords {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 6px;
 }
 
-.product-keyword-hover-chip,
-.product-keyword-hover-event {
+.product-keyword-hover-chip {
   display: flex;
   min-width: 0;
   align-items: center;
@@ -40,8 +38,4 @@
 .product-keyword-hover-chip {
   align-items: flex-start;
   flex-direction: column;
-}
-
-.product-keyword-hover-event .ant-typography {
-  min-width: 0;
 }
