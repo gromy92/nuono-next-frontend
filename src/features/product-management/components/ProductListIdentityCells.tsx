@@ -1,6 +1,7 @@
 import { BranchesOutlined, DeleteOutlined, HistoryOutlined, ProfileOutlined, ReloadOutlined } from '@ant-design/icons';
 import { Button, Modal, Popconfirm, Space, Tag, Tooltip, Typography } from 'antd';
 import { useState } from 'react';
+import { ProductKeywordListHoverPopover } from '../../product-keywords/ProductKeywordListHoverPopover';
 import type { ProductListRowPayload } from '../types';
 import {
   buildNoonProductUrl,
@@ -138,6 +139,30 @@ function productVariantSpecTooltip(record: ProductListRowPayload) {
     return `商品规格缺失：${readyCount}/${totalCount} 个 SKU 完整，已维护 ${maintainedCount} 个`;
   }
   return '商品规格缺失';
+}
+
+function siteCodeFromStoreCode(storeCode?: string) {
+  const normalized = (storeCode || '').toUpperCase();
+  if (normalized.endsWith('-NSA') || normalized.endsWith('-SAU') || normalized.endsWith('-SA')) return 'SA';
+  if (normalized.endsWith('-NAE') || normalized.endsWith('-UAE') || normalized.endsWith('-AE')) return 'AE';
+  if (normalized.endsWith('-NEG') || normalized.endsWith('-EG')) return 'EG';
+  return '';
+}
+
+function productKeywordSiteCode(record: ProductListRowPayload) {
+  return record.siteLabels?.find((site) => /^[A-Z]{2,3}$/.test(site)) || siteCodeFromStoreCode(record.referenceStoreCode);
+}
+
+function siteCodeFromStoreCode(storeCode?: string) {
+  const normalized = (storeCode || '').toUpperCase();
+  if (normalized.endsWith('-NSA') || normalized.endsWith('-SAU') || normalized.endsWith('-SA')) return 'SA';
+  if (normalized.endsWith('-NAE') || normalized.endsWith('-UAE') || normalized.endsWith('-AE')) return 'AE';
+  if (normalized.endsWith('-NEG') || normalized.endsWith('-EG')) return 'EG';
+  return '';
+}
+
+function productKeywordSiteCode(record: ProductListRowPayload) {
+  return record.siteLabels?.find((site) => /^[A-Z]{2,3}$/.test(site)) || siteCodeFromStoreCode(record.referenceStoreCode);
 }
 
 export function ProductDetailsCell(props: {
@@ -298,6 +323,11 @@ export function ProductDetailsCell(props: {
           >
             <Text>{rebuildBlockedReason}</Text>
           </Modal>
+          <ProductKeywordListHoverPopover
+            storeCode={record.referenceStoreCode}
+            siteCode={productKeywordSiteCode(record)}
+            partnerSku={record.partnerSku}
+          />
           <Popconfirm
             title="确认删除商品？"
             description={<ProductDeleteConfirmDescription record={record} />}

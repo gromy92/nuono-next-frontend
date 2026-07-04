@@ -1,0 +1,47 @@
+.product-keyword-hover-content {
+  display: flex;
+  width: 360px;
+  max-width: calc(100vw - 64px);
+  flex-direction: column;
+  gap: 10px;
+}
+
+.product-keyword-hover-loading {
+  display: flex;
+  min-width: 220px;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-keyword-hover-section {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-keyword-hover-keywords,
+.product-keyword-hover-events {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.product-keyword-hover-chip,
+.product-keyword-hover-event {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+
+.product-keyword-hover-chip {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.product-keyword-hover-event .ant-typography {
+  min-width: 0;
+}
