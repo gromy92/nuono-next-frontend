@@ -755,10 +755,15 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['商品上架']
   },
   {
-    keys: ['purchase-pre-order-profit', 'purchase-profit'],
-    urlPaths: ['/purchase/pre-order-profit', '/api/pre-order-profit', '/purchase/profit', '/api/sku/cost'],
+    keys: ['purchase-pre-order-profit'],
+    urlPaths: ['/purchase/pre-order-profit', '/api/pre-order-profit'],
     urlPathPrefixes: ['/api/pre-order-profit/'],
-    menuNames: ['利润计算', '利润计算与上架', '选品池', '选品利润预估', '出单前利润计算']
+    menuNames: ['选品池', '选品利润预估', '出单前利润计算']
+  },
+  {
+    keys: ['purchase-profit'],
+    urlPaths: ['/purchase/profit', '/api/sku/cost'],
+    menuNames: ['利润计算', '利润计算与上架']
   },
   {
     keys: ['purchase-logistics-quote'],
