@@ -36,12 +36,39 @@ function tagColor(tag: string) {
   return 'default'
 }
 
+function keywordStatusLabel(status: string) {
+  const normalized = status.toUpperCase()
+  if (normalized === 'ACTIVE') return '已启用'
+  if (normalized === 'OBSERVED') return '观察中'
+  if (normalized === 'CANDIDATE') return '候选词'
+  if (normalized === 'INACTIVE') return '已停用'
+  if (normalized === 'ARCHIVED') return '已归档'
+  return '其他状态'
+}
+
+function keywordIntentLabel(tag: string) {
+  const normalized = tag.toUpperCase()
+  if (normalized === 'CORE') return '核心词'
+  if (normalized === 'TITLE_TARGET') return '标题目标词'
+  if (normalized === 'COMPETITOR_TRACK') return '竞品跟踪词'
+  if (normalized === 'ADS_QUERY') return '广告搜索词'
+  if (normalized === 'NEGATIVE_CANDIDATE') return '否词候选'
+  return '其他用途'
+}
+
+function keywordStatusColor(status: string) {
+  const normalized = status.toUpperCase()
+  if (normalized === 'ACTIVE') return 'green'
+  if (normalized === 'INACTIVE' || normalized === 'ARCHIVED') return 'default'
+  return 'blue'
+}
+
 function sourceLabel(event: ProductKeywordEventItem) {
-  if (event.sourceType === 'TITLE_HISTORY') return '标题'
-  if (event.sourceType === 'COMPETITOR_KEYWORD') return '竞品'
-  if (event.sourceType === 'ADS_QUERY') return '广告'
-  if (event.sourceType === 'MANUAL') return '手动'
-  return event.sourceType
+  if (event.sourceType === 'TITLE_HISTORY') return '标题使用'
+  if (event.sourceType === 'COMPETITOR_KEYWORD') return '竞品出现'
+  if (event.sourceType === 'ADS_QUERY') return '广告搜索'
+  if (event.sourceType === 'MANUAL') return '手动维护'
+  return '其他来源'
 }
 
 function keywordChip(keyword: ProductKeywordItem) {
@@ -50,8 +77,8 @@ function keywordChip(keyword: ProductKeywordItem) {
     <div key={keyword.id} className="product-keyword-hover-chip">
       <Text strong>{keyword.keyword}</Text>
       <Space size={[4, 4]} wrap>
-        <Tag color={keyword.status === 'ACTIVE' ? 'green' : 'blue'}>{keyword.status}</Tag>
-        {tags.slice(0, 3).map((tag) => <Tag key={tag} color={tagColor(tag)}>{tag}</Tag>)}
+        <Tag color={keywordStatusColor(keyword.status)}>{keywordStatusLabel(keyword.status)}</Tag>
+        {tags.slice(0, 3).map((tag) => <Tag key={tag} color={tagColor(tag)}>{keywordIntentLabel(tag)}</Tag>)}
       </Space>
     </div>
   )
@@ -86,19 +113,19 @@ function ProductKeywordHoverContent({
   return (
     <div className="product-keyword-hover-content">
       <div className="product-keyword-hover-section">
-        <Text strong>关键词资产</Text>
+        <Text strong>当前关键词资产</Text>
         <div className="product-keyword-hover-keywords">
           {keywords.slice(0, 6).map(keywordChip)}
         </div>
       </div>
       <Space size={[6, 6]} wrap>
-        <Tag color={counts.title ? 'green' : 'default'}>标题 {counts.title}</Tag>
-        <Tag color={counts.competitor ? 'geekblue' : 'default'}>竞品 {counts.competitor}</Tag>
-        <Tag color={counts.ads ? 'purple' : 'default'}>广告 {counts.ads}</Tag>
+        <Tag color={counts.title ? 'green' : 'default'}>标题使用 {counts.title}</Tag>
+        <Tag color={counts.competitor ? 'geekblue' : 'default'}>竞品证据 {counts.competitor}</Tag>
+        <Tag color={counts.ads ? 'purple' : 'default'}>广告搜索 {counts.ads}</Tag>
       </Space>
       {events.length ? (
         <div className="product-keyword-hover-section">
-          <Text strong>最近历史</Text>
+          <Text strong>最近使用记录</Text>
           <div className="product-keyword-hover-events">
             {events.slice(0, 5).map((event) => (
               <div key={event.id} className="product-keyword-hover-event">
@@ -164,7 +191,7 @@ export function ProductKeywordListHoverPopover({ storeCode, siteCode, partnerSku
     }
   }
 
-  const label = panel?.keywords.length ? `关键词 ${panel.keywords.length}` : '关键词'
+  const label = '关键词'
 
   return (
     <Popover
