@@ -43,6 +43,21 @@ export function productPublishTaskStatusLabel(task?: ProductPublishTaskPayload) 
   if (!task?.status) {
     return '';
   }
+  if (task.taskType === 'product-rebuild') {
+    if (task.status === 'failed') {
+      return '重建失败';
+    }
+    if (task.status === 'pending_manual_check') {
+      return '重建待核对';
+    }
+    if (task.status === 'cancelled') {
+      return '已取消';
+    }
+    if (task.status === 'synced' || isProductPublishTaskActive(task)) {
+      return '重建中';
+    }
+    return String(task.status);
+  }
   if (task.taskType === 'product-delete') {
     if (task.status === 'synced') {
       return '删除成功';

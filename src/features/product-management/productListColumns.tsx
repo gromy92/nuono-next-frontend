@@ -13,6 +13,7 @@ import { getProductListRowIdentityKey } from './utils';
 
 type ProductListColumnsParams = {
   deletingProductKey?: string;
+  rebuildingProductKey?: string;
   productSnapshotSubmitting: boolean;
   usingMockProductList: boolean;
   productListUiStates: Record<string, ProductListUiState>;
@@ -22,11 +23,13 @@ type ProductListColumnsParams = {
   openProductVariantSpecModal: (record: ProductListRowPayload) => void;
   openProductSiteCompareModal: (record: ProductListRowPayload) => void | Promise<void>;
   requestDeleteLocalProduct: (record: ProductListRowPayload) => void;
+  requestRebuildLocalProduct: (record: ProductListRowPayload) => void | Promise<void>;
   updateProductListLiveStatus: (skuParent: string | undefined, liveActive: boolean) => void;
 };
 
 export function createProductListColumns({
   deletingProductKey,
+  rebuildingProductKey,
   productSnapshotSubmitting,
   usingMockProductList,
   productListUiStates,
@@ -36,6 +39,7 @@ export function createProductListColumns({
   openProductVariantSpecModal,
   openProductSiteCompareModal,
   requestDeleteLocalProduct,
+  requestRebuildLocalProduct,
   updateProductListLiveStatus
 }: ProductListColumnsParams): ColumnsType<ProductListRowPayload> {
   return [
@@ -48,12 +52,14 @@ export function createProductListColumns({
           record={record}
           productSnapshotSubmitting={productSnapshotSubmitting}
           deleting={deletingProductKey === getProductListRowIdentityKey(record)}
+          rebuilding={rebuildingProductKey === getProductListRowIdentityKey(record)}
           openProductListGallery={openProductListGallery}
           openProductWorkbenchInPageTab={openProductWorkbenchInPageTab}
           openProductHistoryModal={openProductHistoryModal}
           openProductVariantSpecModal={openProductVariantSpecModal}
           openProductSiteCompareModal={openProductSiteCompareModal}
           requestDeleteLocalProduct={requestDeleteLocalProduct}
+          requestRebuildLocalProduct={requestRebuildLocalProduct}
         />
       )
     },

@@ -138,7 +138,7 @@ export function SellerStatusCell(props: {
 }
 
 function publishStatusColor(statusLabel?: string) {
-  if (statusLabel === '发布成功' || statusLabel === '删除成功') {
+  if (statusLabel === '发布成功' || statusLabel === '删除成功' || statusLabel === '重建成功') {
     return {
       tag: 'success' as const,
       border: '#bbf7d0',
@@ -146,7 +146,7 @@ function publishStatusColor(statusLabel?: string) {
       text: '#166534'
     };
   }
-  if (statusLabel === '发布失败' || statusLabel === '删除失败') {
+  if (statusLabel === '发布失败' || statusLabel === '删除失败' || statusLabel === '重建失败') {
     return {
       tag: 'error' as const,
       border: '#fecaca',
@@ -154,7 +154,7 @@ function publishStatusColor(statusLabel?: string) {
       text: '#991b1b'
     };
   }
-  if (statusLabel === '待人工核对' || statusLabel === '删除待核对') {
+  if (statusLabel === '待人工核对' || statusLabel === '删除待核对' || statusLabel === '重建待核对') {
     return {
       tag: 'warning' as const,
       border: '#fde68a',
@@ -176,6 +176,7 @@ function publishText(value: unknown) {
 
 function ProductPublishPopoverContent({ task }: { task: NonNullable<ProductListRowPayload['lastPublishTask']> }) {
   const isDeleteTask = task.taskType === 'product-delete';
+  const isRebuildTask = task.taskType === 'product-rebuild';
   const changes = Array.isArray(task.changes)
     ? task.changes.filter((change): change is Record<string, unknown> => Boolean(change) && typeof change === 'object')
     : [];
@@ -210,7 +211,11 @@ function ProductPublishPopoverContent({ task }: { task: NonNullable<ProductListR
           </Space>
         ) : (
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {isDeleteTask ? '本次删除任务不记录字段变更。' : '本次发布内容明细暂未记录。'}
+            {isRebuildTask
+              ? '本次重建任务不记录字段变更。'
+              : isDeleteTask
+                ? '本次删除任务不记录字段变更。'
+                : '本次发布内容明细暂未记录。'}
           </Text>
         )}
       </div>
@@ -230,7 +235,8 @@ export function PublishStatusCell({ record }: { record: ProductListRowPayload })
   }
   const colors = publishStatusColor(task.statusLabel);
   const timeParts = formatDateTimeParts(task.finishedAt ?? task.submittedAt);
-  const popoverTitle = task.taskType === 'product-delete' ? '删除任务' : '上次发布';
+  const popoverTitle =
+    task.taskType === 'product-rebuild' ? '重建任务' : task.taskType === 'product-delete' ? '删除任务' : '上次发布';
 
   return (
     <Popover trigger={['click']} title={popoverTitle} content={<ProductPublishPopoverContent task={task} />}>

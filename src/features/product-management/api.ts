@@ -191,6 +191,14 @@ export async function deleteLocalProduct(request: ProductWorkbenchOpenRequest) {
   );
 }
 
+export async function rebuildLocalProduct(request: ProductWorkbenchOpenRequest) {
+  return postJson<ProductListDatasetPayload>(
+    '/api/product-master/rebuild',
+    normalizeProductIdentityRequest(request),
+    '重建商品失败'
+  );
+}
+
 export async function fetchStoreInitializationStatus({
   ownerUserId,
   storeCode
