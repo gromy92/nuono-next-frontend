@@ -55,8 +55,13 @@ export function formatDateTimeParts(value?: string) {
   };
 }
 
-export function productListingStartedSourceLabel(source?: string) {
+export function productListingStartedSourceLabel(source?: string): string {
   const normalized = String(source ?? '').trim().toLowerCase();
+  if (normalized.startsWith('product_rebuild_inherited')) {
+    const inheritedSource = normalized.includes(':') ? normalized.split(':').slice(1).join(':') : '';
+    const inheritedLabel: string = productListingStartedSourceLabel(inheritedSource);
+    return inheritedLabel ? `重建继承 · ${inheritedLabel}` : '重建继承';
+  }
   if (normalized === 'not_listed') {
     return '未上架';
   }

@@ -353,6 +353,7 @@ export function useProductManagementWorkspace({
 
   const productListColumns = createProductListColumns({
     deletingProductKey: productLocalDeletion.deletingProductKey,
+    rebuildingProductKey: productLocalDeletion.rebuildingProductKey,
     productSnapshotSubmitting,
     usingMockProductList,
     productListUiStates,
@@ -362,6 +363,7 @@ export function useProductManagementWorkspace({
     openProductVariantSpecModal,
     openProductSiteCompareModal,
     requestDeleteLocalProduct: productLocalDeletion.requestDeleteLocalProduct,
+    requestRebuildLocalProduct: productLocalDeletion.requestRebuildLocalProduct,
     updateProductListLiveStatus
   });
 

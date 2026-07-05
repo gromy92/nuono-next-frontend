@@ -40,7 +40,7 @@ export type ProductPublishTaskStatus =
 
 export type ProductPublishTaskPayload = {
   taskId?: number;
-  taskType?: 'publish-current' | 'product-delete' | string;
+  taskType?: 'publish-current' | 'product-delete' | 'product-rebuild' | string;
   status?: ProductPublishTaskStatus | string;
   message?: string;
   changedDomains?: string[];

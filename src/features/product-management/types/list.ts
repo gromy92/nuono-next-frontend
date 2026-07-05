@@ -2,9 +2,22 @@ import type { ProductSyncStatus } from './common';
 
 export type ProductLastPublishTaskPayload = {
   taskId?: number;
-  taskType?: 'publish-current' | 'product-delete' | string;
+  taskType?: 'publish-current' | 'product-delete' | 'product-rebuild' | string;
   status?: string;
-  statusLabel?: '发布中' | '发布成功' | '发布失败' | '待人工核对' | '删除中' | '删除成功' | '删除失败' | '删除待核对' | string;
+  statusLabel?:
+    | '发布中'
+    | '发布成功'
+    | '发布失败'
+    | '待人工核对'
+    | '删除中'
+    | '删除成功'
+    | '删除失败'
+    | '删除待核对'
+    | '重建中'
+    | '重建成功'
+    | '重建失败'
+    | '重建待核对'
+    | string;
   resultText?: string;
   submittedAt?: string;
   finishedAt?: string;
