@@ -1,100 +1,99 @@
-import { Typography } from 'antd'
+import { Space, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import type {
-  ProductSelectionSourceCollection,
-  SourceCollectionStatus
-} from '../../source-collection/types'
+import type { ProductSelectionSourceCollection } from '../../source-collection/types'
+import type { ManualSelectionAnalysisProjectInfo } from '../types'
 import { formatManualSelectionCollectedAt } from '../utils'
 import { ActionCell } from './ManualSelectionTable.actions'
 import {
   Ali1688StatusCell,
   CompletenessCell,
-  SkuCountCell,
-  SourceImageCell,
+  SourceChannelCell,
+  SourceNameCell,
   SourceStatusCell,
-  SourceTitleCell
 } from './ManualSelectionTable.cells'
 
 const { Text } = Typography
 
 type ManualSelectionTableColumnOptions = {
+  analysisCollectionIds: string[]
+  analysisProjectByCollectionId: Record<string, ManualSelectionAnalysisProjectInfo>
   recollecting: boolean
+  onAddToAnalysis: (record: ProductSelectionSourceCollection) => void
   onOpenDetail: (record: ProductSelectionSourceCollection) => void
-  onOpenListing: (record: ProductSelectionSourceCollection) => void
   onRecollect: (record: ProductSelectionSourceCollection) => void
 }
 
 export function buildManualSelectionTableColumns(
   options: ManualSelectionTableColumnOptions
 ): ColumnsType<ProductSelectionSourceCollection> {
+  const analysisIdSet = new Set(options.analysisCollectionIds)
+
   return [
     {
-      title: '主图',
-      dataIndex: 'sourceImageUrl',
-      key: 'sourceImageUrl',
-      width: 130,
-      render: (value: string, record) => <SourceImageCell value={value} record={record} />
+      title: '主图/三方渠道',
+      key: 'source',
+      width: 118,
+      render: (_value, record) => <SourceChannelCell record={record} />
     },
     {
-      title: '三方渠道',
-      dataIndex: 'sourcePlatform',
-      key: 'sourcePlatform',
-      width: 130,
-      render: (value: string) => <Text>{value || '-'}</Text>
-    },
-    {
-      title: '英文名',
-      dataIndex: 'sourceTitle',
-      key: 'sourceTitle',
-      width: 330,
-      render: (value: string, record) => <SourceTitleCell value={value} record={record} />
-    },
-    {
-      title: '中文名',
-      dataIndex: 'sourceTitleCn',
-      key: 'sourceTitleCn',
-      width: 170,
-      render: (value: string, record) => value || record.selectedText || '-'
+      title: '商品名称',
+      key: 'sourceName',
+      width: 292,
+      render: (_value, record) => <SourceNameCell record={record} />
     },
     {
       title: '采集完整度',
       key: 'collectedCompleteness',
-      width: 150,
+      width: 124,
       render: (_value, record) => <CompletenessCell record={record} />
     },
     {
-      title: '采集时间',
-      dataIndex: 'collectedAt',
-      key: 'collectedAt',
-      width: 170,
-      render: (value: string) => formatManualSelectionCollectedAt(value)
+      title: '采集状态',
+      key: 'collectStatus',
+      width: 168,
+      render: (_value, record) => (
+        <Space direction="vertical" size={3}>
+          <SourceStatusCell value={record.status} record={record} />
+          <Text type="secondary">{formatManualSelectionCollectedAt(record.collectedAt)}</Text>
+        </Space>
+      )
     },
     {
-      title: '源头采集',
-      dataIndex: 'status',
-      key: 'status',
-      width: 150,
-      render: (value: SourceCollectionStatus, record) => <SourceStatusCell value={value} record={record} />
+      title: '组',
+      key: 'analysisProject',
+      width: 126,
+      render: (_value, record) => {
+        const project = options.analysisProjectByCollectionId[record.id]
+        if (!project) {
+          return <Text type="secondary">未入组</Text>
+        }
+        return (
+          <Space className="manual-selection-linked-project" direction="vertical" size={2}>
+            <Text strong title={project.projectName}>{project.projectName}</Text>
+            <Text type="secondary">{project.projectMaterialCount || 1} 个素材</Text>
+          </Space>
+        )
+      }
     },
     {
       title: '1688查询',
       key: 'ali1688Query',
-      width: 240,
+      width: 196,
       render: (_value, record) => <Ali1688StatusCell record={record} />
-    },
-    {
-      title: 'sku数量',
-      key: 'skuNum',
-      width: 110,
-      align: 'center',
-      render: (_value, record) => <SkuCountCell record={record} />
     },
     {
       title: '操作',
       key: 'action',
-      width: 170,
+      width: 112,
       fixed: 'right',
-      render: (_value, record) => <ActionCell record={record} {...options} />
+      render: (_value, record) => (
+        <ActionCell
+          isInAnalysis={analysisIdSet.has(record.id)}
+          analysisProject={options.analysisProjectByCollectionId[record.id]}
+          record={record}
+          {...options}
+        />
+      )
     }
   ]
 }

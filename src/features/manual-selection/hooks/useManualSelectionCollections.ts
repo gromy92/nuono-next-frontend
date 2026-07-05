@@ -32,6 +32,7 @@ export function useManualSelectionCollections(props: ManualSelectionPageProps) {
   return {
     collections,
     filteredCollections,
+    filters,
     loading,
     submitting,
     createNewCollection,

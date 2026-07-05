@@ -1,7 +1,7 @@
 import { Image, Modal, Progress, Typography } from 'antd'
 import type { ProductSelectionSourceCollection } from '../../source-collection/types'
 import { MANUAL_SELECTION_IMAGE_FALLBACK } from '../constants'
-import { manualSelectionCollectionUrl } from '../utils'
+import { containsArabicText, manualSelectionCollectionUrl } from '../utils'
 import {
   DetailMetric,
   DetailPanel,
@@ -34,12 +34,14 @@ export function ManualSelectionDetailModal({ record, onCancel }: ManualSelection
   const sourceTitleCn = record ? record.sourceTitleCn || (isLikelyChineseTitle(record.selectedText) ? record.selectedText || '' : '') : ''
   const selectedTextSummary = record?.selectedText && record.selectedText !== sourceTitleCn ? record.selectedText : ''
   const sourceDescriptionEn = record?.sourceDescriptionEn || selectedTextSummary
-  const sourceDescriptionAr = record?.sourceDescriptionAr || record?.selectedTextAr
+  const sourceTitleAr = containsArabicText(record?.sourceTitleAr) ? record?.sourceTitleAr : ''
+  const sourceDescriptionArCandidate = record?.sourceDescriptionAr || record?.selectedTextAr
+  const sourceDescriptionAr = containsArabicText(sourceDescriptionArCandidate) ? sourceDescriptionArCandidate : ''
   const sourceSellingPointsEn = record?.sourceSellingPointsEn?.length
     ? record.sourceSellingPointsEn
     : legacySellingPointsFromSpecHints(record?.specHints)
-  const sourceSellingPointsAr = record?.sourceSellingPointsAr?.length
-    ? record.sourceSellingPointsAr
+  const sourceSellingPointsAr = record?.sourceSellingPointsAr?.some(containsArabicText)
+    ? record.sourceSellingPointsAr.filter(containsArabicText)
     : legacySellingPointsFromText(record?.selectedTextAr)
   const completeness = record ? detailCompleteness(record) : null
 
@@ -93,7 +95,7 @@ export function ManualSelectionDetailModal({ record, onCancel }: ManualSelection
               <div className="manual-selection-detail-title-grid">
                 <TitleBlock label="中文名" value={sourceTitleCn} />
                 <TitleBlock label="英文标题" value={record.sourceTitle} href={sourceUrl} />
-                <TitleBlock label="阿语标题" value={record.sourceTitleAr} rtl />
+                <TitleBlock label="阿语标题" value={sourceTitleAr} rtl />
               </div>
             </div>
           </div>

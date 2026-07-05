@@ -8,6 +8,7 @@ type SourceCollectionPayload = {
   storeName: string
   storeCode?: string
   sourceType: 'marketplace-url' | 'image-search-source'
+  collectionSource?: 'browser' | 'plugin' | string
   sourcePlatform: string
   sourceUrl?: string
   pageUrl?: string
@@ -68,6 +69,12 @@ export function loadAli1688Collections(
     .then((views) => views.map(sourceCollectionFromAli1688View))
 }
 
+export function loadPurchaseOrderItemAli1688(itemId: string): Promise<ProductSelectionSourceCollection> {
+  return getJson<Ali1688CollectionView>(
+    `/api/procurement/purchase-orders/items/${encodeURIComponent(itemId)}/ali1688`
+  ).then(sourceCollectionFromAli1688View)
+}
+
 export function createSourceCollection(
   values: SourceCollectionFormValue,
   storeName: string,
@@ -81,6 +88,7 @@ export function createSourceCollection(
     storeName,
     storeCode,
     sourceType: values.sourceType || 'marketplace-url',
+    collectionSource: values.collectionSource || 'browser',
     sourcePlatform: values.sourcePlatform,
     sourceUrl: values.sourceUrl,
     pageUrl: values.pageUrl,
@@ -163,14 +171,16 @@ function splitLines(value?: string) {
     .filter(Boolean)
 }
 
-function sourceCollectionFromAli1688View(view: Ali1688CollectionView): ProductSelectionSourceCollection {
+export function sourceCollectionFromAli1688View(view: Ali1688CollectionView): ProductSelectionSourceCollection {
   return {
     id: view.sourceCollectionId || view.taskId || view.id || '',
     collectionNo: view.sourceCollectionNo || '',
     storeId: view.storeId,
     storeName: view.storeName,
     storeCode: view.storeCode,
+    siteCode: view.siteCode,
     sourceType: 'marketplace-url',
+    collectionSource: view.collectionSource || 'browser',
     sourcePlatform: view.sourcePlatform || '未知平台',
     sourceUrl: view.sourceUrl,
     pageUrl: view.pageUrl,

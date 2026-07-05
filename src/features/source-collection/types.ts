@@ -19,6 +19,11 @@ export type Ali1688CandidateScoreBreakdown = {
   deliveryScore?: number
 }
 
+export type Ali1688SpecValue = {
+  name: string
+  value: string
+}
+
 export type Ali1688CandidatePreview = {
   id: string
   rankNo: number
@@ -37,6 +42,7 @@ export type Ali1688CandidatePreview = {
   scoreStatus?: 'pending' | 'partial' | 'final' | string
   scoreBreakdown?: Ali1688CandidateScoreBreakdown
   aiAssessmentStatus?: 'pending' | 'running' | 'success' | 'failed' | string
+  matchedSpecs?: Ali1688SpecValue[]
   reasons?: string[]
   warnings?: string[]
   procurementInquiryStatus?: string
@@ -50,7 +56,9 @@ export type Ali1688CollectionView = {
   storeId?: string
   storeName?: string
   storeCode?: string
+  siteCode?: string
   sourcePlatform?: string
+  collectionSource?: 'browser' | 'plugin' | string
   sourceTitle?: string
   sourceTitleCn?: string
   sourceUrl?: string
@@ -69,6 +77,7 @@ export type Ali1688CollectionView = {
   finishedAt?: string
   message?: string
   canGenerateProcurementOrder?: boolean
+  sourceSpecs?: Ali1688SpecValue[]
   candidates?: Ali1688CandidatePreview[]
 }
 
@@ -78,7 +87,9 @@ export type ProductSelectionSourceCollection = {
   storeId?: string
   storeName?: string
   storeCode?: string
+  siteCode?: string
   sourceType: string
+  collectionSource?: 'browser' | 'plugin' | string
   sourcePlatform: string
   sourceUrl?: string
   pageUrl?: string
@@ -116,6 +127,7 @@ export type ProductSelectionSourceCollection = {
 
 export type SourceCollectionFormValue = {
   sourceType: 'marketplace-url' | 'image-search-source'
+  collectionSource?: 'browser' | 'plugin' | string
   sourcePlatform: string
   sourceUrl?: string
   pageUrl?: string

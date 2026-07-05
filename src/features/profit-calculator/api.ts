@@ -1,11 +1,25 @@
 import type {
   ActualCommissionSnapshot,
   ActualOutboundFeeSnapshot,
+  ProfitCalculationPayload,
+  ProfitFormValues,
   OfficialCommissionCalculationResult,
   OfficialOutboundFeeCalculationResult
 } from './domain';
 import { apiFetch, parseApiResponse } from '../../shared/api';
 import type { OrderFinanceOrderGroup } from '../order-finance/types';
+
+export async function calculateProfitEstimate(request: Partial<ProfitFormValues>) {
+  const response = await apiFetch('/api/profit/calculate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(request)
+  });
+
+  return parseApiResponse<ProfitCalculationPayload>(response);
+}
 
 export type CalculateOfficialOutboundFeeByEffectiveSpecRequest = {
   ownerUserId: number;

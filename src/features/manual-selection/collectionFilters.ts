@@ -17,12 +17,16 @@ export function filterManualSelectionCollections(
   filters: ManualSelectionSearchValues
 ) {
   const channel = filters.channel
+  const collectionSource = filters.collectionSource
   const titleEn = normalizeManualSelectionKeyword(filters.productTitleEn)
   const titleCn = normalizeManualSelectionKeyword(filters.productTitleCn)
   const collectStatus = filters.collectStatus
 
   return collections.filter((item) => {
     if (channel && item.sourcePlatform !== channel) {
+      return false
+    }
+    if (collectionSource && item.collectionSource !== collectionSource) {
       return false
     }
     if (collectStatus && item.status !== collectStatus) {

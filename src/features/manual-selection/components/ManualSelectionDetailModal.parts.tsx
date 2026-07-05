@@ -2,12 +2,11 @@ import { Image, Typography } from 'antd'
 import type { ReactNode } from 'react'
 import type { ProductSelectionSourceCollection } from '../../source-collection/types'
 import { MANUAL_SELECTION_IMAGE_FALLBACK } from '../constants'
+import { formatManualSelectionPriceSummary } from '../utils'
 
 const { Paragraph, Text } = Typography
 
 export const EMPTY_DETAIL_TEXT = '未采集到'
-
-const KNOWN_CURRENCY_PATTERN = /\b(AED|SAR|USD|EGP|CNY|RMB|EUR|GBP|KWD|QAR|BHD|OMR)\b|[$€£¥]|د\.إ|ر\.س/i
 
 export function displayDetailText(value?: string) {
   return value && value.trim() ? value : EMPTY_DETAIL_TEXT
@@ -64,12 +63,7 @@ export function detailCompleteness(record: ProductSelectionSourceCollection) {
 }
 
 export function formatPriceSummary(record: ProductSelectionSourceCollection) {
-  const price = record.priceSummary?.trim()
-  if (!price || KNOWN_CURRENCY_PATTERN.test(price)) {
-    return price
-  }
-  const currency = inferPriceCurrency(record)
-  return currency ? `${currency} ${price}` : price
+  return formatManualSelectionPriceSummary(record)
 }
 
 export function renderDetailText(value?: string, rtl = false, maxHeight?: number) {
@@ -217,34 +211,4 @@ export function TitleBlock(props: { label: string; value?: string; href?: string
       </Paragraph>
     </div>
   )
-}
-
-function inferPriceCurrency(record: ProductSelectionSourceCollection) {
-  const sourceUrl = `${record.pageUrl || ''} ${record.sourceUrl || ''}`.toLowerCase()
-  if (sourceUrl.includes('amazon.ae') || sourceUrl.includes('/uae-')) {
-    return 'AED'
-  }
-  if (sourceUrl.includes('amazon.sa') || sourceUrl.includes('/saudi-')) {
-    return 'SAR'
-  }
-  if (sourceUrl.includes('amazon.eg') || sourceUrl.includes('/egypt-')) {
-    return 'EGP'
-  }
-  if (sourceUrl.includes('amazon.com')) {
-    return 'USD'
-  }
-  const storeCode = (record.storeCode || '').toLowerCase()
-  if (storeCode.includes('-nae') || storeCode.endsWith('-ae')) {
-    return 'AED'
-  }
-  if (storeCode.includes('-ksa') || storeCode.endsWith('-sa')) {
-    return 'SAR'
-  }
-  if (storeCode.endsWith('-eg')) {
-    return 'EGP'
-  }
-  if (record.sourcePlatform === 'Noon') {
-    return 'AED'
-  }
-  return ''
 }

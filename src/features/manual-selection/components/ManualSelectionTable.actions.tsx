@@ -1,44 +1,50 @@
-import { RocketOutlined } from '@ant-design/icons'
+import { BarChartOutlined, FileSearchOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Space } from 'antd'
 import type { ProductSelectionSourceCollection } from '../../source-collection/types'
+import type { ManualSelectionAnalysisProjectInfo } from '../types'
 import { manualSelectionCollectionUrl } from '../utils'
 
 type ActionCellProps = {
+  analysisProject?: ManualSelectionAnalysisProjectInfo
+  isInAnalysis: boolean
   record: ProductSelectionSourceCollection
   recollecting: boolean
+  onAddToAnalysis: (record: ProductSelectionSourceCollection) => void
   onOpenDetail: (record: ProductSelectionSourceCollection) => void
-  onOpenListing: (record: ProductSelectionSourceCollection) => void
   onRecollect: (record: ProductSelectionSourceCollection) => void
 }
 
-export function ActionCell({ record, recollecting, onOpenDetail, onOpenListing, onRecollect }: ActionCellProps) {
-  const canOpenListing = record.status === 'success'
+export function ActionCell({ analysisProject, isInAnalysis, record, recollecting, onAddToAnalysis, onOpenDetail, onRecollect }: ActionCellProps) {
+  const canAddToAnalysis = record.status === 'success' && !isInAnalysis
 
   return (
-    <Space direction="vertical" size={6}>
+    <Space className="manual-selection-row-actions" direction="vertical" size={4}>
       <Button
         size="small"
-        type="link"
+        type="text"
+        icon={<FileSearchOutlined />}
+        block
         data-testid="manual-selection-detail-button"
         onClick={() => onOpenDetail(record)}
       >
-        查看详情
+        详情
       </Button>
       <Button
         size="small"
-        type="primary"
-        icon={<RocketOutlined />}
-        data-testid="manual-selection-listing-button"
-        disabled={!canOpenListing}
-        title={canOpenListing ? '用这条采集记录创建商品上架草稿' : '采集成功后才能上架'}
-        onClick={() => onOpenListing(record)}
+        type={canAddToAnalysis ? 'primary' : 'default'}
+        icon={<BarChartOutlined />}
+        block
+        data-testid="manual-selection-analysis-button"
+        disabled={!canAddToAnalysis}
+        title={isInAnalysis ? `已入组：${analysisProject?.projectName || '未命名组'}` : canAddToAnalysis ? '加入组' : '采集成功后才能加入组'}
+        onClick={() => onAddToAnalysis(record)}
       >
-        上架
+        {isInAnalysis ? '已入组' : '加入组'}
       </Button>
       <Button
         size="small"
-        type="primary"
-        ghost
+        icon={<ReloadOutlined />}
+        block
         data-testid="manual-selection-recollect-button"
         loading={recollecting}
         disabled={!manualSelectionCollectionUrl(record)}
