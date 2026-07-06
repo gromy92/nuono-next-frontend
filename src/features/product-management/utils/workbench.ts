@@ -136,6 +136,15 @@ export function buildProductWorkbenchState(payload: ProductWorkbenchPayload): Pr
   };
 }
 
+export function isPublicDetailReadonlyWorkbench(workbench?: ProductWorkbenchState | null) {
+  if (!workbench) {
+    return false;
+  }
+  return [workbench.baseline?.mode, workbench.draft?.mode].some(
+    (mode) => String(mode ?? '').trim().toLowerCase() === 'public-detail-readonly'
+  );
+}
+
 export function buildProductWorkbenchContext(params: {
   mode?: 'mock' | 'real';
   source?: ProductWorkbenchContext['source'];

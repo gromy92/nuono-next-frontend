@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, Modal, Space, Typography } from 'antd';
 import {
+  isPublicDetailReadonlyWorkbench,
   isProductPublishTaskActive,
   isProductPublishTaskNeedsAttention
 } from '../utils';
@@ -39,7 +40,11 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
   const publishTaskId = typeof publishTask?.taskId === 'number' ? publishTask.taskId : undefined;
   const publishTaskActive = isProductPublishTaskActive(publishTask);
   const publishTaskNeedsAttention = isProductPublishTaskNeedsAttention(publishTask);
+  const publicDetailReadonly = isPublicDetailReadonlyWorkbench(productWorkbenchState);
   const requestPullFromNoon = () => {
+    if (publicDetailReadonly) {
+      return;
+    }
     if (!productDraftDirty) {
       void previewProductAction('pull', { syncMergePolicy: 'use_noon' });
       return;
@@ -118,7 +123,7 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
             <Button
               size="small"
               loading={productActionSubmitting}
-              disabled={!workbenchReady || publishTaskActive}
+              disabled={!workbenchReady || publicDetailReadonly || publishTaskActive}
               onClick={() => void previewProductAction('save')}
             >
               保存草稿
@@ -126,7 +131,7 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
             <Button
               size="small"
               danger
-              disabled={!workbenchReady || !productDraftDirty || productActionSubmitting || publishTaskActive}
+              disabled={!workbenchReady || publicDetailReadonly || !productDraftDirty || productActionSubmitting || publishTaskActive}
               onClick={() => setRollbackConfirmOpen(true)}
             >
               回滚草稿
@@ -135,14 +140,14 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
               size="small"
               type="primary"
               loading={productActionSubmitting || productPublishTaskActionSubmitting}
-              disabled={!workbenchReady || publishTaskActive || productPublishTaskActionSubmitting}
+              disabled={!workbenchReady || publicDetailReadonly || publishTaskActive || productPublishTaskActionSubmitting}
               onClick={submitPublish}
             >
               {publishTaskNeedsAttention ? '重试发布' : '发布当前修改'}
             </Button>
             <Button
               size="small"
-              disabled={!workbenchReady || productActionSubmitting || publishTaskActive}
+              disabled={!workbenchReady || publicDetailReadonly || productActionSubmitting || publishTaskActive}
               onClick={requestPullFromNoon}
             >
               从 Noon 同步
