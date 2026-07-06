@@ -153,18 +153,6 @@ function productKeywordSiteCode(record: ProductListRowPayload) {
   return record.siteLabels?.find((site) => /^[A-Z]{2,3}$/.test(site)) || siteCodeFromStoreCode(record.referenceStoreCode);
 }
 
-function siteCodeFromStoreCode(storeCode?: string) {
-  const normalized = (storeCode || '').toUpperCase();
-  if (normalized.endsWith('-NSA') || normalized.endsWith('-SAU') || normalized.endsWith('-SA')) return 'SA';
-  if (normalized.endsWith('-NAE') || normalized.endsWith('-UAE') || normalized.endsWith('-AE')) return 'AE';
-  if (normalized.endsWith('-NEG') || normalized.endsWith('-EG')) return 'EG';
-  return '';
-}
-
-function productKeywordSiteCode(record: ProductListRowPayload) {
-  return record.siteLabels?.find((site) => /^[A-Z]{2,3}$/.test(site)) || siteCodeFromStoreCode(record.referenceStoreCode);
-}
-
 export function ProductDetailsCell(props: {
   record: ProductListRowPayload;
   productSnapshotSubmitting: boolean;
