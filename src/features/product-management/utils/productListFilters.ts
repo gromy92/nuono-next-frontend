@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import { MOCK_PRODUCT_LIST_UI_STATES } from '../mockData';
 import type { ProductListFilters, ProductListRowPayload, ProductListUiState, ProductSyncStatus } from '../types';
 import { getProductListRowIdentityKey } from './productIdentity';
+import { normalizeProductOperationStageCode } from './operationStage';
 import { isProductListRowOnline, productListIssueTags } from './status';
 
 type FilterAndSortProductListItemsParams = {
@@ -64,8 +65,23 @@ export function filterAndSortProductListItems({
       (filters.stockFilter === 'fbn' && Number(item.totalFbnStock ?? 0) > 0) ||
       (filters.stockFilter === 'supermall' && Number(item.totalSupermallStock ?? 0) > 0) ||
       (filters.stockFilter === 'fbp' && Number(item.totalFbpStock ?? 0) > 0);
+    const operationStageCode = normalizeProductOperationStageCode(item.operationStageCode);
+    const matchesOperationStage =
+      !filters.operationStageFilter ||
+      filters.operationStageFilter === 'all' ||
+      (filters.operationStageFilter === 'unset' && !operationStageCode) ||
+      operationStageCode === filters.operationStageFilter;
 
-    return matchesSku && matchesTitle && matchesBrand && matchesIssue && matchesLive && matchesSync && matchesStock;
+    return (
+      matchesSku &&
+      matchesTitle &&
+      matchesBrand &&
+      matchesIssue &&
+      matchesLive &&
+      matchesSync &&
+      matchesStock &&
+      matchesOperationStage
+    );
   });
 
   return [...filteredItems].sort((left, right) => {

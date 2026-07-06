@@ -9,6 +9,7 @@ import { useProductListFilters } from './hooks/useProductListFilters';
 import { useProductListMutations } from './hooks/useProductListMutations';
 import { useProductMediaAndHistoryActions } from './hooks/useProductMediaAndHistoryActions';
 import { useProductLocalDeletion } from './hooks/useProductLocalDeletion';
+import { useProductOperationStage } from './hooks/useProductOperationStage';
 import { useProductListSource } from './hooks/useProductListSource';
 import { useProductPublishTaskActions } from './hooks/useProductPublishTaskActions';
 import { useProductStoreInitialization } from './hooks/useProductStoreInitialization';
@@ -351,9 +352,16 @@ export function useProductManagementWorkspace({
     setProductListDatasetState
   });
 
+  const productOperationStage = useProductOperationStage({
+    activeOwnerId,
+    selectedInitializationStoreCode,
+    setProductListDatasetState
+  });
+
   const productListColumns = createProductListColumns({
     deletingProductKey: productLocalDeletion.deletingProductKey,
     rebuildingProductKey: productLocalDeletion.rebuildingProductKey,
+    updatingOperationStageKey: productOperationStage.updatingOperationStageKey,
     productSnapshotSubmitting,
     usingMockProductList,
     productListUiStates,
@@ -364,6 +372,7 @@ export function useProductManagementWorkspace({
     openProductSiteCompareModal,
     requestDeleteLocalProduct: productLocalDeletion.requestDeleteLocalProduct,
     requestRebuildLocalProduct: productLocalDeletion.requestRebuildLocalProduct,
+    requestUpdateProductOperationStage: productOperationStage.requestUpdateProductOperationStage,
     updateProductListLiveStatus
   });
 
@@ -379,6 +388,7 @@ export function useProductManagementWorkspace({
     ...mockActions,
     ...mediaAndHistoryActions,
     ...productLocalDeletion,
+    ...productOperationStage,
     ...draftMutations,
     ...workbenchApiActions,
     ...publishTaskActions,

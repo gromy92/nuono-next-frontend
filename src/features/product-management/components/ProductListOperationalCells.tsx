@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { InfoCircleOutlined } from '@ant-design/icons';
-import { Button, message, Popconfirm, Popover, Space, Switch, Tag, Tooltip, Typography } from 'antd';
+import { Button, Dropdown, message, Popconfirm, Popover, Space, Switch, Tag, Tooltip, Typography } from 'antd';
 import { MOCK_PRODUCT_LIST_UI_STATES } from '../mockData';
-import type { ProductListRowPayload, ProductListUiState } from '../types';
+import type { ProductListRowPayload, ProductListUiState, ProductOperationStageCode } from '../types';
 import {
   buildProductSummarySurfaceFromListItem,
   formatDateTimeParts,
@@ -16,6 +16,11 @@ import {
   productSummaryPrimaryLiveStatus,
   productSyncStatusMeta
 } from '../utils';
+import {
+  PRODUCT_OPERATION_STAGE_SELECT_OPTIONS,
+  normalizeProductOperationStageCode,
+  productOperationStageMeta
+} from '../utils/operationStage';
 
 const { Text } = Typography;
 
@@ -134,6 +139,59 @@ export function SellerStatusCell(props: {
         </Text>
       ) : null}
     </Space>
+  );
+}
+
+export function OperationStageCell(props: {
+  record: ProductListRowPayload;
+  updating?: boolean;
+  requestUpdateProductOperationStage: (
+    record: ProductListRowPayload,
+    nextStageCode?: ProductOperationStageCode | string
+  ) => void | Promise<void>;
+}) {
+  const { record, updating, requestUpdateProductOperationStage } = props;
+  const operationStageCode = normalizeProductOperationStageCode(record.operationStageCode);
+  const meta = productOperationStageMeta(operationStageCode);
+  const updatedAtParts = formatDateTimeParts(record.operationStageUpdatedAt);
+  const disabledTip = !record.partnerSku ? '缺少商品 PSKU，暂时不能修改运营阶段。' : undefined;
+  const menuItems = PRODUCT_OPERATION_STAGE_SELECT_OPTIONS.map((option) => ({
+    key: option.value || '__unset',
+    label: option.label
+  }));
+  const title = disabledTip || (updatedAtParts ? `更新于 ${updatedAtParts.date} ${updatedAtParts.time}` : '点击修改运营阶段');
+
+  return (
+    <Dropdown
+      trigger={['click']}
+      disabled={Boolean(disabledTip) || updating}
+      menu={{
+        items: menuItems,
+        selectedKeys: [operationStageCode || '__unset'],
+        onClick: ({ key, domEvent }) => {
+          domEvent.stopPropagation();
+          const nextStageCode = key === '__unset' ? '' : key;
+          void requestUpdateProductOperationStage(record, nextStageCode);
+        }
+      }}
+    >
+      <Tag
+        color={meta.color}
+        title={title}
+        onClick={(event) => {
+          event.stopPropagation();
+        }}
+        style={{
+          marginInlineEnd: 0,
+          fontSize: 11,
+          lineHeight: '16px',
+          cursor: disabledTip ? 'not-allowed' : 'pointer',
+          opacity: updating ? 0.68 : 1
+        }}
+      >
+        {meta.label}
+      </Tag>
+    </Dropdown>
   );
 }
 
