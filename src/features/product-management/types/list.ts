@@ -1,5 +1,7 @@
 import type { ProductSyncStatus } from './common';
 
+export type ProductOperationStageCode = 'TESTING' | 'STABLE' | 'WATCH' | 'CLEARANCE';
+
 export type ProductLastPublishTaskPayload = {
   taskId?: number;
   taskType?: 'publish-current' | 'product-delete' | 'product-rebuild' | string;
@@ -35,6 +37,7 @@ export type ProductListFilters = {
   liveFilter: string;
   syncFilter: string;
   stockFilter: string;
+  operationStageFilter: string;
 };
 
 export type StoreInitializationPayload = {
@@ -87,6 +90,9 @@ export type StoreInitializationPayload = {
     productFulltype?: string;
     variantCount?: number;
     liveStatus?: string;
+    operationStageCode?: ProductOperationStageCode | string;
+    operationStageUpdatedAt?: string;
+    operationStageUpdatedBy?: number;
   }>;
   productItems: Array<{
     skuParent: string;
@@ -118,6 +124,9 @@ export type StoreInitializationPayload = {
     isActive?: boolean;
     listingStartedAt?: string;
     listingStartedSource?: string;
+    operationStageCode?: ProductOperationStageCode | string;
+    operationStageUpdatedAt?: string;
+    operationStageUpdatedBy?: number;
     syncStatus?: ProductSyncStatus;
     lastSyncedAt?: string;
     lastDraftSavedAt?: string;
@@ -220,6 +229,9 @@ export type ProductListSummaryPayload = {
   statusCode?: string;
   listingStartedAt?: string;
   listingStartedSource?: string;
+  operationStageCode?: ProductOperationStageCode | string;
+  operationStageUpdatedAt?: string;
+  operationStageUpdatedBy?: number;
   syncStatus?: ProductSyncStatus;
   lastSyncedAt?: string;
   lastDraftSavedAt?: string;
@@ -279,6 +291,9 @@ export type ProductSummarySurface = {
   isActive?: boolean;
   listingStartedAt?: string;
   listingStartedSource?: string;
+  operationStageCode?: ProductOperationStageCode | string;
+  operationStageUpdatedAt?: string;
+  operationStageUpdatedBy?: number;
   syncStatus?: ProductSyncStatus;
   lastSyncedAt?: string;
   lastDraftSavedAt?: string;

@@ -2,7 +2,7 @@ import { BranchesOutlined, DeleteOutlined, HistoryOutlined, ProfileOutlined, Rel
 import { Button, Modal, Popconfirm, Space, Tag, Tooltip, Typography } from 'antd';
 import { useState } from 'react';
 import { ProductKeywordListHoverPopover } from '../../product-keywords/ProductKeywordListHoverPopover';
-import type { ProductListRowPayload } from '../types';
+import type { ProductListRowPayload, ProductOperationStageCode } from '../types';
 import {
   buildNoonProductUrl,
   buildProductSummarySurfaceFromListItem,
@@ -11,6 +11,7 @@ import {
 import { productKeywordSiteCodeFromScope } from '../utils/productKeywordSiteScope';
 import { productRebuildActionState } from '../utils/productRebuildActionState';
 import { ProductBaselineListCell } from './ProductBaselineDisplay';
+import { OperationStageCell } from './ProductListOperationalCells';
 
 const { Text } = Typography;
 
@@ -154,6 +155,7 @@ export function ProductDetailsCell(props: {
   productSnapshotSubmitting: boolean;
   deleting?: boolean;
   rebuilding?: boolean;
+  updatingOperationStage?: boolean;
   openProductListGallery: ProductListRowAction;
   openProductWorkbenchInPageTab: ProductListRowAction;
   openProductHistoryModal: ProductListRowAction;
@@ -161,19 +163,25 @@ export function ProductDetailsCell(props: {
   openProductSiteCompareModal: ProductListRowAction;
   requestDeleteLocalProduct: ProductListRowAction;
   requestRebuildLocalProduct: ProductListRowAction;
+  requestUpdateProductOperationStage: (
+    record: ProductListRowPayload,
+    nextStageCode?: ProductOperationStageCode | string
+  ) => void | Promise<void>;
 }) {
   const {
     record,
     productSnapshotSubmitting,
     deleting,
     rebuilding,
+    updatingOperationStage,
     openProductListGallery,
     openProductWorkbenchInPageTab,
     openProductHistoryModal,
     openProductVariantSpecModal,
     openProductSiteCompareModal,
     requestDeleteLocalProduct,
-    requestRebuildLocalProduct
+    requestRebuildLocalProduct,
+    requestUpdateProductOperationStage
   } = props;
   const [rebuildConfirmOpen, setRebuildConfirmOpen] = useState(false);
   const [rebuildBlockedReason, setRebuildBlockedReason] = useState<string>();
@@ -196,6 +204,13 @@ export function ProductDetailsCell(props: {
       imageDisabled={!galleryImages.length}
       titleHref={noonProductUrl}
       onImageClick={() => openProductListGallery(record)}
+      metaActions={
+        <OperationStageCell
+          record={record}
+          updating={updatingOperationStage}
+          requestUpdateProductOperationStage={requestUpdateProductOperationStage}
+        />
+      }
       actions={
         <Space wrap size={[8, 4]}>
           <Button

@@ -54,6 +54,11 @@ export function mergeProductListItemWithSummary(
     isActive: summary.isActive ?? current.isActive,
     listingStartedAt: summary.listingStartedAt ?? current.listingStartedAt,
     listingStartedSource: summary.listingStartedSource ?? current.listingStartedSource,
+    operationStageCode: hasOwnField(summary, 'operationStageCode')
+      ? summary.operationStageCode
+      : current.operationStageCode,
+    operationStageUpdatedAt: summary.operationStageUpdatedAt ?? current.operationStageUpdatedAt,
+    operationStageUpdatedBy: summary.operationStageUpdatedBy ?? current.operationStageUpdatedBy,
     syncStatus: normalizeProductSyncStatus(summary.syncStatus) ?? current.syncStatus,
     lastSyncedAt: summary.lastSyncedAt ?? current.lastSyncedAt,
     lastDraftSavedAt: summary.lastDraftSavedAt ?? current.lastDraftSavedAt,
@@ -107,7 +112,12 @@ export function mergeSampleProductWithSummary(
     price: summary.referencePrice ?? current.price,
     productFulltype: summary.productFulltype ?? current.productFulltype,
     variantCount: summary.variantCount ?? current.variantCount,
-    liveStatus: summary.liveStatus ?? summary.liveStatuses[0] ?? current.liveStatus
+    liveStatus: summary.liveStatus ?? summary.liveStatuses[0] ?? current.liveStatus,
+    operationStageCode: hasOwnField(summary, 'operationStageCode')
+      ? summary.operationStageCode
+      : current.operationStageCode,
+    operationStageUpdatedAt: summary.operationStageUpdatedAt ?? current.operationStageUpdatedAt,
+    operationStageUpdatedBy: summary.operationStageUpdatedBy ?? current.operationStageUpdatedBy
   };
 }
 
@@ -144,6 +154,9 @@ export function buildProductSummarySurfaceFromListItem(
     isActive: item.isActive,
     listingStartedAt: item.listingStartedAt,
     listingStartedSource: item.listingStartedSource,
+    operationStageCode: item.operationStageCode,
+    operationStageUpdatedAt: item.operationStageUpdatedAt,
+    operationStageUpdatedBy: item.operationStageUpdatedBy,
     syncStatus: item.syncStatus,
     lastSyncedAt: item.lastSyncedAt,
     lastDraftSavedAt: item.lastDraftSavedAt,
@@ -202,6 +215,11 @@ export function buildProductSummarySurfaceFromListSummary(
     isActive: summary.isActive ?? fallbackSurface?.isActive,
     listingStartedAt: summary.listingStartedAt ?? fallbackSurface?.listingStartedAt,
     listingStartedSource: summary.listingStartedSource ?? fallbackSurface?.listingStartedSource,
+    operationStageCode: hasOwnField(summary, 'operationStageCode')
+      ? summary.operationStageCode
+      : fallbackSurface?.operationStageCode,
+    operationStageUpdatedAt: summary.operationStageUpdatedAt ?? fallbackSurface?.operationStageUpdatedAt,
+    operationStageUpdatedBy: summary.operationStageUpdatedBy ?? fallbackSurface?.operationStageUpdatedBy,
     syncStatus: summary.syncStatus ?? fallbackSurface?.syncStatus,
     lastSyncedAt: summary.lastSyncedAt ?? fallbackSurface?.lastSyncedAt,
     lastDraftSavedAt: summary.lastDraftSavedAt ?? fallbackSurface?.lastDraftSavedAt,
@@ -242,6 +260,11 @@ export function buildProductSummarySurfaceFromSample(
       imageUrl: matchedListItem.imageUrl ?? item.imageUrl ?? listSurface.imageUrl,
       galleryImages: mergeGalleryImageUrls(matchedListItem.galleryImages, item.galleryImages, matchedListItem.imageUrl, item.imageUrl),
       barcode: matchedListItem.barcode ?? item.barcode ?? listSurface.barcode,
+      operationStageCode: matchedListItem.operationStageCode ?? item.operationStageCode ?? listSurface.operationStageCode,
+      operationStageUpdatedAt:
+        matchedListItem.operationStageUpdatedAt ?? item.operationStageUpdatedAt ?? listSurface.operationStageUpdatedAt,
+      operationStageUpdatedBy:
+        matchedListItem.operationStageUpdatedBy ?? item.operationStageUpdatedBy ?? listSurface.operationStageUpdatedBy,
       siteLabels: listSurface.siteLabels.length ? listSurface.siteLabels : [item.site || item.storeCode || '-']
     };
   }
@@ -263,6 +286,9 @@ export function buildProductSummarySurfaceFromSample(
     productFulltype: item.productFulltype,
     variantCount: item.variantCount,
     liveStatus: item.liveStatus,
+    operationStageCode: item.operationStageCode,
+    operationStageUpdatedAt: item.operationStageUpdatedAt,
+    operationStageUpdatedBy: item.operationStageUpdatedBy,
     siteLabels: item.site ? [item.site] : item.storeCode ? [item.storeCode] : [],
     liveStatuses: item.liveStatus ? [item.liveStatus] : []
   };

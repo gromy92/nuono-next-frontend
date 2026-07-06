@@ -8,12 +8,13 @@ import {
   PublishStatusCell,
   SellerStatusCell
 } from './components/ProductListColumnCells';
-import type { ProductListRowPayload, ProductListUiState } from './types';
+import type { ProductListRowPayload, ProductListUiState, ProductOperationStageCode } from './types';
 import { getProductListRowIdentityKey } from './utils';
 
 type ProductListColumnsParams = {
   deletingProductKey?: string;
   rebuildingProductKey?: string;
+  updatingOperationStageKey?: string;
   productSnapshotSubmitting: boolean;
   usingMockProductList: boolean;
   productListUiStates: Record<string, ProductListUiState>;
@@ -24,12 +25,17 @@ type ProductListColumnsParams = {
   openProductSiteCompareModal: (record: ProductListRowPayload) => void | Promise<void>;
   requestDeleteLocalProduct: (record: ProductListRowPayload) => void;
   requestRebuildLocalProduct: (record: ProductListRowPayload) => void | Promise<void>;
+  requestUpdateProductOperationStage: (
+    record: ProductListRowPayload,
+    nextStageCode?: ProductOperationStageCode | string
+  ) => void | Promise<void>;
   updateProductListLiveStatus: (skuParent: string | undefined, liveActive: boolean) => void;
 };
 
 export function createProductListColumns({
   deletingProductKey,
   rebuildingProductKey,
+  updatingOperationStageKey,
   productSnapshotSubmitting,
   usingMockProductList,
   productListUiStates,
@@ -40,6 +46,7 @@ export function createProductListColumns({
   openProductSiteCompareModal,
   requestDeleteLocalProduct,
   requestRebuildLocalProduct,
+  requestUpdateProductOperationStage,
   updateProductListLiveStatus
 }: ProductListColumnsParams): ColumnsType<ProductListRowPayload> {
   return [
@@ -53,6 +60,7 @@ export function createProductListColumns({
           productSnapshotSubmitting={productSnapshotSubmitting}
           deleting={deletingProductKey === getProductListRowIdentityKey(record)}
           rebuilding={rebuildingProductKey === getProductListRowIdentityKey(record)}
+          updatingOperationStage={updatingOperationStageKey === getProductListRowIdentityKey(record)}
           openProductListGallery={openProductListGallery}
           openProductWorkbenchInPageTab={openProductWorkbenchInPageTab}
           openProductHistoryModal={openProductHistoryModal}
@@ -60,6 +68,7 @@ export function createProductListColumns({
           openProductSiteCompareModal={openProductSiteCompareModal}
           requestDeleteLocalProduct={requestDeleteLocalProduct}
           requestRebuildLocalProduct={requestRebuildLocalProduct}
+          requestUpdateProductOperationStage={requestUpdateProductOperationStage}
         />
       )
     },

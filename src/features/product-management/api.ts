@@ -3,6 +3,7 @@ import type {
   ProductLogisticsProfileListPayload,
   ProductLogisticsProfilePayload,
   ProductLogisticsProfileSaveRequest,
+  ProductOperationStageCode,
   ProductListDatasetPayload,
   ProductMasterSnapshotPayload,
   ProductPublishTaskPayload,
@@ -37,6 +38,10 @@ export type ProductWorkbenchOpenRequest = {
   currentZCode?: string;
   partnerSku?: string;
   pskuCode?: string;
+};
+
+export type ProductOperationStageUpdateRequest = ProductWorkbenchOpenRequest & {
+  operationStageCode?: ProductOperationStageCode | string;
 };
 
 export type ProductWorkbenchActionRequest = ProductWorkbenchOpenRequest & {
@@ -196,6 +201,14 @@ export async function rebuildLocalProduct(request: ProductWorkbenchOpenRequest) 
     '/api/product-master/rebuild',
     normalizeProductIdentityRequest(request),
     '重建商品失败'
+  );
+}
+
+export async function updateProductOperationStage(request: ProductOperationStageUpdateRequest) {
+  return postJson<ProductListDatasetPayload>(
+    '/api/product-master/operation-stage',
+    normalizeProductIdentityRequest(request),
+    '修改商品运营阶段失败'
   );
 }
 

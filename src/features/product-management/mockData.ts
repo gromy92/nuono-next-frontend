@@ -23,6 +23,8 @@ export const MOCK_PRODUCT_ITEMS: StoreInitializationPayload['productItems'] = [
     groupRef: 'XINGYAO',
     listingStartedAt: '2026-03-12 00:00:00',
     listingStartedSource: 'pv',
+    operationStageCode: 'STABLE',
+    operationStageUpdatedAt: '2026-07-06 10:00:00',
     variantCount: 2,
     siteOfferCount: 1,
     siteLabels: ['AE'],
@@ -54,6 +56,8 @@ export const MOCK_PRODUCT_ITEMS: StoreInitializationPayload['productItems'] = [
     groupRef: 'XINGYAO',
     listingStartedAt: '2026-03-20 09:40:00',
     listingStartedSource: 'inventory',
+    operationStageCode: 'WATCH',
+    operationStageUpdatedAt: '2026-07-06 10:10:00',
     variantCount: 1,
     siteOfferCount: 1,
     siteLabels: ['AE'],
@@ -84,6 +88,8 @@ export const MOCK_PRODUCT_ITEMS: StoreInitializationPayload['productItems'] = [
     groupRef: 'DESERT-RITUAL',
     listingStartedAt: '2026-04-02 00:00:00',
     listingStartedSource: 'sales',
+    operationStageCode: 'CLEARANCE',
+    operationStageUpdatedAt: '2026-07-06 10:20:00',
     variantCount: 3,
     siteOfferCount: 1,
     siteLabels: ['AE'],
@@ -131,7 +137,10 @@ export function mockSampleProducts(): StoreInitializationPayload['sampleProducts
     price: item.referencePrice,
     productFulltype: item.productFulltype,
     variantCount: item.variantCount,
-    liveStatus: item.liveStatuses[0]
+    liveStatus: item.liveStatuses[0],
+    operationStageCode: item.operationStageCode,
+    operationStageUpdatedAt: item.operationStageUpdatedAt,
+    operationStageUpdatedBy: item.operationStageUpdatedBy
   }));
 }
 
