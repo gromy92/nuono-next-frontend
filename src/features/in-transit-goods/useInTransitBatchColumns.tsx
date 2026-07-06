@@ -5,6 +5,7 @@ import type { ColumnsType } from 'antd/es/table'
 import type { InTransitBatch, InTransitBatchFilters } from './types'
 import type { BoxDetailTabKey } from './InTransitGoodsPage.models'
 import { MISSING_FIELD_LABELS } from './InTransitGoodsPage.constants'
+import { estimatedArrivalSourceColor, estimatedArrivalSourceLabel } from './InTransitEstimatedArrivalModal'
 import {
   formatInTransitDuration,
   formatNodeDate,
@@ -25,6 +26,7 @@ type BatchColumnsProps = {
   onOpenForwarderAlias: (row: InTransitBatch) => void
   onOpenBoxDetail: (row: InTransitBatch, initialTab: BoxDetailTabKey) => void
   onOpenEdit: (row: InTransitBatch) => void
+  onOpenEstimatedArrival: (row: InTransitBatch) => void
 }
 
 export function useInTransitBatchColumns({
@@ -35,7 +37,8 @@ export function useInTransitBatchColumns({
   batchSortOrder,
   onOpenForwarderAlias,
   onOpenBoxDetail,
-  onOpenEdit
+  onOpenEdit,
+  onOpenEstimatedArrival
 }: BatchColumnsProps): ColumnsType<InTransitBatch> {
   return useMemo(() => [
     {
@@ -91,7 +94,7 @@ export function useInTransitBatchColumns({
       width: 280,
       sorter: true,
       sortOrder: batchSortOrder('etaDate'),
-      render: (_value, row) => renderTimeNodes(row, nodeStatusLabel)
+      render: (_value, row) => renderTimeNodes(row, nodeStatusLabel, onOpenEstimatedArrival)
     },
     {
       title: '时间统计',
@@ -135,23 +138,44 @@ export function useInTransitBatchColumns({
       title: '操作',
       key: 'actions',
       fixed: 'right',
-      width: 90,
+      width: 82,
       render: (_value, row) => (
         <Button size="small" icon={<EditOutlined />} onClick={() => onOpenEdit(row)}>
           编辑
         </Button>
       )
     }
-  ], [batchSortOrder, formatDestination, nodeStatusLabel, onOpenBoxDetail, onOpenEdit, onOpenForwarderAlias, statusLabel, transportLabel])
+  ], [batchSortOrder, formatDestination, nodeStatusLabel, onOpenBoxDetail, onOpenEdit, onOpenEstimatedArrival, onOpenForwarderAlias, statusLabel, transportLabel])
 }
 
-function renderTimeNodes(row: InTransitBatch, nodeStatusLabel: Map<string, string>) {
+function renderTimeNodes(
+  row: InTransitBatch,
+  nodeStatusLabel: Map<string, string>,
+  onOpenEstimatedArrival: (row: InTransitBatch) => void
+) {
   const label = logisticsNodeDisplayLabel(nodeStatusLabel, row.latestNodeStatus, row.latestNodeDescription)
+  const hasEstimatedArrival = Boolean(row.estimatedArrivalAt || row.etaDate)
+  const estimatedArrivalText = row.estimatedArrivalAt ? formatNodeDate(row.estimatedArrivalAt) : row.etaDate || '未维护'
   return (
     <Space direction="vertical" size={2}>
       <Text type="secondary">国内收货 {formatNodeDateTime(row.domesticReceivedAt)}</Text>
       <Text type="secondary">出发时间 {row.departureDate || '-'}</Text>
-      <Text type="secondary">官方预计到仓 {row.etaDate || '-'}</Text>
+      <Space size={6} wrap align="center">
+        <Button
+          type="link"
+          size="small"
+          danger={!hasEstimatedArrival}
+          className={`in-transit-eta-edit${hasEstimatedArrival ? '' : ' in-transit-eta-edit--missing'}`}
+          onClick={() => onOpenEstimatedArrival(row)}
+        >
+          预计到达 {estimatedArrivalText}
+        </Button>
+        {row.estimatedArrivalSource ? (
+          <Tag color={estimatedArrivalSourceColor(row.estimatedArrivalSource)} style={{ marginInlineEnd: 0 }}>
+            {estimatedArrivalSourceLabel(row.estimatedArrivalSource)}
+          </Tag>
+        ) : null}
+      </Space>
       <Space size={6} wrap>
         <Text type="secondary">最新</Text>
         {row.latestNodeStatus ? (

@@ -86,6 +86,15 @@ export function InTransitBatchToolbar({
         value={filters.batchStatus}
         onChange={(value) => onFilterChange({ batchStatus: value })}
       />
+      <Select
+        allowClear
+        placeholder="待办"
+        options={[
+          { label: '缺失到达时间', value: 'missingEstimatedArrival' }
+        ]}
+        value={filters.todo}
+        onChange={(value) => onFilterChange({ todo: value })}
+      />
       <RangePicker
         placeholder={['预计到仓开始', '预计到仓结束']}
         onChange={(dates) => onFilterChange({
