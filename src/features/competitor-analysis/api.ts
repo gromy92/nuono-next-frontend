@@ -334,7 +334,8 @@ export type CompetitorDashboardQuery = {
 export type CompetitorWatchProductCreateInput = {
   storeCode: string
   siteCode: string
-  productSiteOfferId: string
+  productSiteOfferId?: string
+  partnerSku?: string
   selfNoonProductCode?: string
 }
 
@@ -456,7 +457,7 @@ export async function fetchCompetitorProductOptions(query: CompetitorProductOpti
   }
   const response = await apiFetch(`/api/competitor-analysis/product-options?${params}`, { signal })
   const payload = await parseApiResponse<BackendProductOption[]>(response, '读取可监控商品失败')
-  return payload.map(mapProductOption).filter((item): item is CompetitorProductOption => Boolean(item.productSiteOfferId))
+  return payload.map(mapProductOption).filter((item): item is CompetitorProductOption => Boolean(item.productSiteOfferId || item.partnerSku))
 }
 
 export async function createCompetitorWatchProduct(input: CompetitorWatchProductCreateInput) {

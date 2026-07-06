@@ -8,6 +8,7 @@ import {
   buildProductSummarySurfaceFromListItem,
   mergeGalleryImageUrls
 } from '../utils';
+import { productKeywordSiteCodeFromScope } from '../utils/productKeywordSiteScope';
 import { productRebuildActionState } from '../utils/productRebuildActionState';
 import { ProductBaselineListCell } from './ProductBaselineDisplay';
 
@@ -141,16 +142,11 @@ function productVariantSpecTooltip(record: ProductListRowPayload) {
   return '商品规格缺失';
 }
 
-function siteCodeFromStoreCode(storeCode?: string) {
-  const normalized = (storeCode || '').toUpperCase();
-  if (normalized.endsWith('-NSA') || normalized.endsWith('-SAU') || normalized.endsWith('-SA')) return 'SA';
-  if (normalized.endsWith('-NAE') || normalized.endsWith('-UAE') || normalized.endsWith('-AE')) return 'AE';
-  if (normalized.endsWith('-NEG') || normalized.endsWith('-EG')) return 'EG';
-  return '';
-}
-
 function productKeywordSiteCode(record: ProductListRowPayload) {
-  return record.siteLabels?.find((site) => /^[A-Z]{2,3}$/.test(site)) || siteCodeFromStoreCode(record.referenceStoreCode);
+  return productKeywordSiteCodeFromScope({
+    storeCode: record.referenceStoreCode,
+    siteLabels: record.siteLabels
+  });
 }
 
 export function ProductDetailsCell(props: {
