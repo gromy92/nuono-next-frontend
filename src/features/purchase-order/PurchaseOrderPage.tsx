@@ -1800,7 +1800,9 @@ function PurchaseAli1688HistoryPopover({ entry }: { entry: PurchaseOrderAli1688H
   const record = entry.record
   const batches = record?.purchaseBatches || []
   const latestBatch = latestAli1688Batch(record)
-  const sourceRows = latestBatch?.sources?.length ? latestBatch.sources : record?.history || []
+  const batchSourceRows = latestBatch?.sources || []
+  const historyRows = sortedAli1688History(record?.history || [])
+  const hasHistory = historyRows.length > 0
   return (
     <div className="purchase-ali1688-history-popover">
       <div className="purchase-ali1688-history-popover-summary">
@@ -1818,26 +1820,27 @@ function PurchaseAli1688HistoryPopover({ entry }: { entry: PurchaseOrderAli1688H
           <Text type="secondary">
             数量 {displayShortText(latestBatch.countedQuantity)} · 成本 {formatPurchaseAmount(latestBatch.countedCost)}
           </Text>
-          {sourceRows.map((source, index) => (
+          {batchSourceRows.map((source, index) => (
             <div className="purchase-ali1688-history-source" key={ali1688HistorySourceKey(source, index)}>
               <Text>{displayShortText(source.orderNo, '无订单号')}</Text>
               <Text type="secondary">{ali1688HistorySourceSummary(source, false)}</Text>
             </div>
           ))}
         </div>
-      ) : sourceRows.length ? (
+      ) : null}
+      {hasHistory ? (
         <div className="purchase-ali1688-history-popover-batch">
           <Text strong>历史订单</Text>
-          {sourceRows.slice(0, 5).map((source, index) => (
+          {historyRows.slice(0, 5).map((source, index) => (
             <div className="purchase-ali1688-history-source" key={ali1688HistorySourceKey(source, index)}>
               <Text>{displayShortText(source.orderNo, '无订单号')}</Text>
               <Text type="secondary">{ali1688HistorySourceSummary(source, true)}</Text>
             </div>
           ))}
         </div>
-      ) : (
+      ) : !latestBatch ? (
         <Text type="secondary">暂无已维护批次来源</Text>
-      )}
+      ) : null}
     </div>
   )
 }
@@ -2560,9 +2563,10 @@ function latestAli1688BatchSourceTime(batch?: PurchaseOrderAli1688HistoryBatch) 
 
 function recentAli1688UnitPrice(record?: PurchaseOrderAli1688HistoryRecord) {
   const latestBatch = latestAli1688Batch(record)
-  return latestBatch?.unitPrice
+  return record?.recentUnitPrice
+    ?? latestAli1688Source(record)?.unitPrice
+    ?? latestBatch?.unitPrice
     ?? calculateAli1688BatchUnitPrice(latestBatch)
-    ?? record?.recentUnitPrice
     ?? record?.averageUnitPrice
 }
 
@@ -2580,13 +2584,24 @@ function recentAli1688OrderNo(record?: PurchaseOrderAli1688HistoryRecord) {
 }
 
 function latestAli1688Source(record?: PurchaseOrderAli1688HistoryRecord): PurchaseOrderAli1688HistorySource | undefined {
-  const batchSource = latestAli1688Batch(record)?.sources?.find((source) => source.orderNo?.trim())
-  if (batchSource) {
-    return batchSource
+  const batchSource = latestAli1688BatchSource(latestAli1688Batch(record))
+  const historySource = sortedAli1688History(record?.history || [])[0]
+  if (historySource && compareNullableText(historySource.orderTime, batchSource?.orderTime) >= 0) {
+    return historySource
   }
-  return (record?.history || [])
+  return batchSource || historySource
+}
+
+function latestAli1688BatchSource(batch?: PurchaseOrderAli1688HistoryBatch) {
+  return (batch?.sources || [])
     .slice()
     .sort((left, right) => compareNullableText(right.orderTime, left.orderTime))[0]
+}
+
+function sortedAli1688History(history: PurchaseOrderAli1688HistorySource[]) {
+  return history
+    .slice()
+    .sort((left, right) => compareNullableText(right.orderTime, left.orderTime))
 }
 
 function formatPurchaseAmount(value?: string | number | null) {
