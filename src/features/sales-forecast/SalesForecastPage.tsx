@@ -1,15 +1,19 @@
 import { Alert, Button, Card, Descriptions, Drawer, Empty, Input, Segmented, Select, Space, Spin, Table, Tag, Typography } from 'antd'
 import { AppstoreOutlined, EyeOutlined, ReloadOutlined, StarFilled, StarOutlined, TableOutlined } from '@ant-design/icons'
+import type { EChartsCoreOption } from 'echarts/core'
 import { useCallback, useEffect, useMemo, useState, type HTMLAttributes } from 'react'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
 import { ProductBaselineIdentity } from '../product-baseline'
+import { EChartPanel } from '../../shared/charts'
 import {
   exportSalesForecastCsv,
+  fetchSalesForecastDetail,
   fetchSalesForecastOverview,
   recalculateSalesForecast,
   setSalesForecastFollowUp
 } from './api'
-import type { SalesForecastOverview, SalesForecastQuery, SalesForecastRow } from './types'
+import type { SalesForecastDetail, SalesForecastOverview, SalesForecastQuery, SalesForecastRow } from './types'
+import type { SalesForecastDailyForecast } from './types'
 
 const { Text, Title } = Typography
 
@@ -64,6 +68,9 @@ export function SalesForecastPage({ session }: SalesForecastPageProps) {
   const [confidenceFilter, setConfidenceFilter] = useState('all')
   const [updatingFollowUpKey, setUpdatingFollowUpKey] = useState('')
   const [detailRow, setDetailRow] = useState<SalesForecastRow | null>(null)
+  const [detailCache, setDetailCache] = useState<Record<string, SalesForecastDetail>>({})
+  const [detailLoadingKey, setDetailLoadingKey] = useState('')
+  const [detailErrorMessage, setDetailErrorMessage] = useState('')
 
   const allowedStores = useMemo(() => uniqueStores(session.userStores, currentStore), [session.userStores, currentStore])
 
@@ -98,6 +105,8 @@ export function SalesForecastPage({ session }: SalesForecastPageProps) {
     setErrorMessage('')
     try {
       setOverview(await fetchSalesForecastOverview(query))
+      setDetailCache({})
+      setDetailErrorMessage('')
     } catch (error) {
       setOverview(null)
       setErrorMessage(error instanceof Error ? error.message : '销量预测数据加载失败')
@@ -110,6 +119,40 @@ export function SalesForecastPage({ session }: SalesForecastPageProps) {
     void loadOverview()
   }, [loadOverview])
 
+  useEffect(() => {
+    setDetailRow(null)
+    setDetailCache({})
+    setDetailLoadingKey('')
+    setDetailErrorMessage('')
+  }, [query?.storeCode, query?.siteCode])
+
+  useEffect(() => {
+    if (!query || !detailRow?.partnerSku) return
+    const key = rowKey(detailRow)
+    if (detailCache[key]) {
+      setDetailErrorMessage('')
+      return
+    }
+    let cancelled = false
+    setDetailLoadingKey(key)
+    setDetailErrorMessage('')
+    fetchSalesForecastDetail(query, detailRow.partnerSku)
+      .then((detail) => {
+        if (cancelled) return
+        setDetailCache((previous) => ({ ...previous, [key]: detail }))
+      })
+      .catch((error) => {
+        if (cancelled) return
+        setDetailErrorMessage(error instanceof Error ? error.message : '销量预测详情加载失败')
+      })
+      .finally(() => {
+        if (!cancelled) setDetailLoadingKey('')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [detailCache, detailRow, query])
+
   const emptyState = overview?.emptyState
   const rows = overview?.rows || []
   const filteredRows = useMemo(
@@ -121,6 +164,7 @@ export function SalesForecastPage({ session }: SalesForecastPageProps) {
     }),
     [rows, searchKeyword, lifecycleFilter, riskFilter, confidenceFilter]
   )
+  const selectedDetail = detailRow ? (detailCache[rowKey(detailRow)] || detailRow.detail || null) : null
   const summary = useMemo(() => summarizeForecastRows(filteredRows, forecastWindow), [filteredRows, forecastWindow])
 
   const toggleFollowUp = useCallback(
@@ -450,7 +494,7 @@ export function SalesForecastPage({ session }: SalesForecastPageProps) {
                 <Space direction="vertical" size={4}>
                   <Text strong>{emptyState?.title || '暂无销量预测结果'}</Text>
                   <Text type="secondary">
-                    {emptyState?.description || '当前店铺还没有预测运行结果。后续可在完成预测计算后查看 30/60/90 天预测。'}
+                    {emptyState?.description || '当前店铺还没有预测运行结果。后续可在完成预测计算后查看 120 天逐日预测和 30/60/90 天统计。'}
                   </Text>
                 </Space>
               }
@@ -492,7 +536,14 @@ export function SalesForecastPage({ session }: SalesForecastPageProps) {
         onClose={() => setDetailRow(null)}
         destroyOnClose
       >
-        {detailRow ? <SalesForecastDetailDrawer row={detailRow} /> : null}
+        {detailRow ? (
+          <SalesForecastDetailDrawer
+            row={detailRow}
+            detail={selectedDetail}
+            loading={detailLoadingKey === rowKey(detailRow)}
+            errorMessage={detailErrorMessage}
+          />
+        ) : null}
       </Drawer>
     </div>
   )
@@ -590,10 +641,21 @@ function ForecastCardGrid({
   )
 }
 
-function SalesForecastDetailDrawer({ row }: { row: SalesForecastRow }) {
-  const detail = row.detail
+function SalesForecastDetailDrawer({
+  row,
+  detail,
+  loading,
+  errorMessage
+}: {
+  row: SalesForecastRow
+  detail?: SalesForecastDetail | null
+  loading?: boolean
+  errorMessage?: string
+}) {
   const featureValues = detail?.featureValues
   const factorBreakdown = detail?.factorBreakdown
+  const dailyForecasts = factorBreakdown?.dailyForecasts || []
+  const dailyForecastChartOption = useMemo(() => buildDailyForecastChartOption(dailyForecasts), [dailyForecasts])
 
   return (
     <div data-testid="sales-forecast-detail-drawer">
@@ -640,9 +702,13 @@ function SalesForecastDetailDrawer({ row }: { row: SalesForecastRow }) {
           <Descriptions.Item label="近期趋势率">{formatFactor(factorBreakdown?.recentDailyTrendRate)}</Descriptions.Item>
           <Descriptions.Item label="趋势因子">{formatFactor(factorBreakdown?.trendFactor)}</Descriptions.Item>
           <Descriptions.Item label="生命周期因子">{formatFactor(factorBreakdown?.lifecycleFactor)}</Descriptions.Item>
-          <Descriptions.Item label="未来因子">{formatFactor(factorBreakdown?.futureFactor)}</Descriptions.Item>
+          <Descriptions.Item label="30/60/90因子统计">
+            {factorBreakdown
+              ? `${formatFactor(factorBreakdown.futureFactor30 ?? factorBreakdown.futureFactor)} / ${formatFactor(factorBreakdown.futureFactor60)} / ${formatFactor(factorBreakdown.futureFactor90)}`
+              : '-'}
+          </Descriptions.Item>
           <Descriptions.Item label="活动影响">{row.activityExplanation || row.activityWindowSummary || '-'}</Descriptions.Item>
-          <Descriptions.Item label="30/60/90预测">
+          <Descriptions.Item label="30/60/90统计">
             {factorBreakdown
               ? `${factorBreakdown.forecastUnits30} / ${factorBreakdown.forecastUnits60} / ${factorBreakdown.forecastUnits90}`
               : `${row.forecastUnits30} / ${row.forecastUnits60} / ${row.forecastUnits90}`}
@@ -652,6 +718,17 @@ function SalesForecastDetailDrawer({ row }: { row: SalesForecastRow }) {
             {detail?.calculationVersion || row.calculationVersion || '-'} / {detail?.configVersion || row.configVersion || '-'}
           </Descriptions.Item>
         </Descriptions>
+
+        <EChartPanel
+          option={dailyForecastChartOption}
+          state={errorMessage ? 'error' : loading ? 'loading' : dailyForecasts.length ? 'ready' : 'empty'}
+          emptyText="暂无逐日预测数据"
+          errorText={errorMessage || '逐日预测加载失败'}
+          height={220}
+          testId="sales-forecast-daily-chart"
+          ariaLabel="未来120天逐日预测销量"
+          title="未来120天逐日预测"
+        />
       </Space>
     </div>
   )
@@ -667,6 +744,148 @@ function forecastUnits(row: SalesForecastRow, forecastWindow: ForecastWindow) {
   if (forecastWindow === 60) return row.forecastUnits60
   if (forecastWindow === 90) return row.forecastUnits90
   return row.forecastUnits30
+}
+
+function buildDailyForecastChartOption(points: SalesForecastDailyForecast[]): EChartsCoreOption | null {
+  const chartPoints = points.slice(0, 120)
+  if (!chartPoints.length) return null
+  const values = chartPoints.map((point) => numericForecastValue(point.forecastUnits))
+  return {
+    grid: {
+      bottom: 24,
+      containLabel: true,
+      left: 8,
+      right: 14,
+      top: 28
+    },
+    tooltip: {
+      axisPointer: {
+        lineStyle: {
+          color: '#94a3b8',
+          type: 'dashed'
+        },
+        type: 'line'
+      },
+      backgroundColor: 'rgba(255, 255, 255, 0.96)',
+      borderColor: 'rgba(15, 23, 42, 0.08)',
+      borderRadius: 8,
+      borderWidth: 1,
+      extraCssText: 'box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);',
+      formatter: (params: unknown) => {
+        const item = Array.isArray(params) ? params[0] : params
+        const dataIndex = typeof item === 'object' && item && 'dataIndex' in item ? Number((item as { dataIndex: number }).dataIndex) : 0
+        const point = chartPoints[dataIndex]
+        const value = values[dataIndex]
+        const factor = formatFactor(point?.calendarFactor)
+        return `
+          <div style="font-weight:600;color:#111827;margin-bottom:6px;">${point?.forecastDate || `第${point?.dayIndex || dataIndex + 1}天`}</div>
+          <div style="display:flex;align-items:center;gap:8px;color:#475569;">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#1677ff;"></span>
+            <span>预测销量</span>
+            <span style="font-weight:700;color:#111827;">${formatChartUnits(value)}</span>
+            <span>件</span>
+          </div>
+          <div style="margin-top:4px;color:#64748b;">日历因子 ${factor}</div>
+        `
+      },
+      padding: [10, 12],
+      trigger: 'axis'
+    },
+    xAxis: {
+      axisLabel: {
+        color: '#64748b',
+        hideOverlap: true
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#cbd5e1'
+        }
+      },
+      axisTick: {
+        show: false
+      },
+      boundaryGap: false,
+      data: chartPoints.map((point) => dailyForecastAxisLabel(point)),
+      type: 'category'
+    },
+    yAxis: {
+      axisLabel: {
+        color: '#64748b'
+      },
+      axisTick: {
+        show: false
+      },
+      name: '预测销量',
+      nameLocation: 'end',
+      nameTextStyle: {
+        color: '#64748b',
+        fontWeight: 600,
+        padding: [0, 0, 0, 44]
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#e5e7eb',
+          type: 'dashed'
+        }
+      },
+      type: 'value'
+    },
+    series: [
+      {
+        areaStyle: {
+          color: {
+            colorStops: [
+              {
+                color: 'rgba(22, 119, 255, 0.20)',
+                offset: 0
+              },
+              {
+                color: 'rgba(20, 184, 166, 0.03)',
+                offset: 1
+              }
+            ],
+            type: 'linear',
+            x: 0,
+            x2: 0,
+            y: 0,
+            y2: 1
+          }
+        },
+        data: values,
+        emphasis: {
+          focus: 'series'
+        },
+        itemStyle: {
+          color: '#1677ff'
+        },
+        lineStyle: {
+          color: '#1677ff',
+          width: 2
+        },
+        name: '预测销量',
+        showSymbol: false,
+        smooth: true,
+        type: 'line'
+      }
+    ]
+  }
+}
+
+function numericForecastValue(value?: number | string | null) {
+  if (value === null || value === undefined || value === '') return 0
+  const numericValue = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(numericValue) ? numericValue : 0
+}
+
+function dailyForecastAxisLabel(point: SalesForecastDailyForecast) {
+  if (point.forecastDate) return point.forecastDate.slice(5)
+  return `D${point.dayIndex}`
+}
+
+function formatChartUnits(value: number) {
+  if (!Number.isFinite(value)) return '0'
+  if (Math.abs(value) >= 10) return value.toFixed(1)
+  return value.toFixed(2)
 }
 
 function rowKey(row: SalesForecastRow) {

@@ -1,6 +1,7 @@
 import type {
   SalesForecastFollowUpInput,
   SalesForecastFollowUpResult,
+  SalesForecastDetail,
   SalesForecastExportOptions,
   SalesForecastOverview,
   SalesForecastQuery,
@@ -23,6 +24,15 @@ export function fetchSalesForecastOverview(query: SalesForecastQuery) {
     siteCode: query.siteCode
   })
   return getJson<SalesForecastOverview>(`/api/sales-forecast/overview?${params.toString()}`)
+}
+
+export function fetchSalesForecastDetail(query: SalesForecastQuery, partnerSku: string) {
+  const params = new URLSearchParams({
+    storeCode: query.storeCode,
+    siteCode: query.siteCode,
+    partnerSku
+  })
+  return getJson<SalesForecastDetail>(`/api/sales-forecast/detail?${params.toString()}`)
 }
 
 export function setSalesForecastFollowUp(input: SalesForecastFollowUpInput) {
