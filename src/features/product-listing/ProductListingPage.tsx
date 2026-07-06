@@ -15,11 +15,14 @@ import {
   Typography,
   message
 } from 'antd'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { normalizeError } from '../../shared/api'
+import { loadManualSelectionGroup, loadManualSelectionGroupProfitEstimate } from '../manual-selection/api'
 import { ProductListingDetailEditor } from './ProductListingDetailEditor'
 import {
   confirmProductListingRealRun,
+  fetchProductListingTask,
+  fetchRecentProductListingTasks,
   saveProductListingDraft,
   submitProductListingDryRun
 } from './api'
@@ -31,7 +34,18 @@ import {
   type ProductListingEditorDraft,
   type ProductListingMetadataFormValues
 } from './productDetailAdapter'
-import { readProductListingSourcePrefill, type ProductListingSourcePrefill } from './sourcePrefill'
+import {
+  buildManualSelectionGroupListingPrefillFromGroup,
+  readProductListingSourcePrefill,
+  type ProductListingSourcePrefill
+} from './sourcePrefill'
+import { recoverProductListingTasksFromRecent } from './taskRecovery'
+import {
+  isProductListingRealWriteAttempt,
+  isProductListingTaskPending,
+  isProductListingTaskTerminal
+} from './taskStatus'
+import type { ManualSelectionGroupProfitEstimateSnapshot } from '../manual-selection/types'
 import type { ProductListingDraftView, ProductListingTaskView } from './types'
 
 const { Text } = Typography
@@ -52,7 +66,24 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [draftView, setDraftView] = useState<ProductListingDraftView>()
   const [taskView, setTaskView] = useState<ProductListingTaskView>()
   const [realRunTaskView, setRealRunTaskView] = useState<ProductListingTaskView>()
+  const [recentTasks, setRecentTasks] = useState<ProductListingTaskView[]>([])
+  const [loadingRecentTasks, setLoadingRecentTasks] = useState(false)
   const [sourcePrefill, setSourcePrefill] = useState<ProductListingSourcePrefill>()
+  const listingDraftRef = useRef(listingDraft)
+  const taskViewRef = useRef<ProductListingTaskView | undefined>(undefined)
+  const realRunTaskViewRef = useRef<ProductListingTaskView | undefined>(undefined)
+
+  useEffect(() => {
+    listingDraftRef.current = listingDraft
+  }, [listingDraft])
+
+  useEffect(() => {
+    taskViewRef.current = taskView
+  }, [taskView])
+
+  useEffect(() => {
+    realRunTaskViewRef.current = realRunTaskView
+  }, [realRunTaskView])
 
   useEffect(() => {
     if (storeCode && !listingDraft.storeCode) {
@@ -67,17 +98,44 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     if (!prefill) {
       return
     }
-    setSourcePrefill(prefill)
-    const nextDraft = normalizeProductListingEditorDraft(
-      {
-        ...listingDraft,
-        ...prefill.draft,
-        storeCode: prefill.draft.storeCode || listingDraft.storeCode || storeCode
-      },
-      storeCode
-    )
-    setListingDraft(nextDraft)
-    form.setFieldsValue(productListingEditorDraftToMetadataValues(nextDraft))
+    let cancelled = false
+    const applyPrefill = (nextPrefill: ProductListingSourcePrefill) => {
+      if (cancelled) {
+        return
+      }
+      setSourcePrefill(nextPrefill)
+      const currentDraft = listingDraftRef.current
+      const nextDraft = normalizeProductListingEditorDraft(
+        {
+          ...currentDraft,
+          ...nextPrefill.draft,
+          storeCode: nextPrefill.draft.storeCode || currentDraft.storeCode || storeCode
+        },
+        storeCode
+      )
+      listingDraftRef.current = nextDraft
+      setListingDraft(nextDraft)
+      form.setFieldsValue(productListingEditorDraftToMetadataValues(nextDraft))
+    }
+
+    if (prefill.pendingServerHydration && prefill.sourceGroupId) {
+      setSourcePrefill(prefill)
+      void loadManualSelectionGroupListingPrefill(prefill.sourceGroupId, storeCode)
+        .then(applyPrefill)
+        .catch((error) => {
+          if (!cancelled) {
+            message.warning(normalizeError(error, '读取选品组资料失败，请重新从人工选品进入上架'))
+          }
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+
+    applyPrefill(prefill)
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form, storeCode])
 
@@ -88,6 +146,74 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     return draftView?.validationIssues ?? []
   }, [draftView?.validationIssues, taskView?.validationIssues])
   const realWriteAttemptLocked = hasRealWriteAttempt(realRunTaskView)
+  const recentTasksStoreCode = listingDraft.storeCode || storeCode || ''
+
+  useEffect(() => {
+    if (!recentTasksStoreCode) {
+      return
+    }
+    let cancelled = false
+    setLoadingRecentTasks(true)
+    void fetchRecentProductListingTasks(recentTasksStoreCode, 10)
+      .then((tasks) => {
+        if (cancelled) {
+          return
+        }
+        setRecentTasks(tasks)
+        const recovered = recoverProductListingTasksFromRecent(tasks)
+        if (!taskViewRef.current && recovered.dryRunTask) {
+          setTaskView(recovered.dryRunTask)
+        }
+        if (!realRunTaskViewRef.current && recovered.realRunTask) {
+          setRealRunTaskView(recovered.realRunTask)
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          message.warning(normalizeError(error, '读取最近上架任务失败'))
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingRecentTasks(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [recentTasksStoreCode])
+
+  useEffect(() => {
+    if (!realRunTaskView?.taskId || !isProductListingTaskPending(realRunTaskView.status)) {
+      return
+    }
+    let cancelled = false
+    let failureNotified = false
+    const pollTask = async () => {
+      try {
+        const nextTask = await fetchProductListingTask(realRunTaskView.taskId)
+        if (cancelled) {
+          return
+        }
+        setRealRunTaskView(nextTask)
+        setRecentTasks((current) => mergeRecentTask(current, nextTask))
+        if (isProductListingTaskTerminal(nextTask.status)) {
+          notifyRealRunTaskCompletion(nextTask)
+        }
+      } catch (error) {
+        if (!cancelled && !failureNotified) {
+          failureNotified = true
+          message.warning(normalizeError(error, '刷新真实上架任务状态失败'))
+        }
+      }
+    }
+    void pollTask()
+    const intervalId = window.setInterval(() => void pollTask(), 3000)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+    }
+  }, [realRunTaskView?.taskId, realRunTaskView?.status])
 
   const saveDraftFromForm = async (options?: { silent?: boolean }) => {
     setSaving(true)
@@ -140,6 +266,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
       })
       setTaskView(submitted)
       setRealRunTaskView(undefined)
+      setRecentTasks((current) => mergeRecentTask(current, submitted))
       message.success(submitted.status === 'validated' ? 'dry-run 已通过' : 'dry-run 已生成校验结果')
     } catch (error) {
       message.error(normalizeError(error, '提交上架 dry-run 失败'))
@@ -166,6 +293,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         confirmationNote: 'confirmed from product listing page'
       })
       setRealRunTaskView(realRun)
+      setRecentTasks((current) => mergeRecentTask(current, realRun))
       setRealRunConfirmOpen(false)
       if (realRun.status === 'succeeded') {
         message.success('真实上架任务已完成')
@@ -196,9 +324,8 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
           message={`来源：${sourcePrefill.source === 'pre-order-profit' ? '选品池' : '人工采集'}`}
           description={
             <Space wrap size={[8, 4]}>
-              <Text>
-                {sourcePrefill.collectionNo || sourcePrefill.sourceCollectionId || sourcePrefill.sourceCandidateId}
-              </Text>
+              <Text>{sourcePrefillReference(sourcePrefill)}</Text>
+              {sourcePrefill.pendingServerHydration ? <Text type="secondary">正在读取选品组资料...</Text> : null}
               {sourcePrefill.sourcePlatform ? <Tag>{sourcePrefill.sourcePlatform}</Tag> : null}
               {sourcePrefill.sourceTitleCn ? <Text type="secondary">{sourcePrefill.sourceTitleCn}</Text> : null}
               {sourcePrefill.sourceUrl ? (
@@ -267,16 +394,33 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
               <Alert type="warning" showIcon message="该 dry-run 已提交过真实上架尝试，请重新 dry-run 后再操作。" />
             ) : null}
             {realRunTaskView ? (
-              <Descriptions size="small" column={{ xs: 1, md: 2 }}>
-                <Descriptions.Item label="任务号">{realRunTaskView.taskNo || realRunTaskView.taskId}</Descriptions.Item>
-                <Descriptions.Item label="状态">
-                  <Tag color={statusColor(realRunTaskView.status)}>{realRunTaskView.status}</Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="来源任务">{realRunTaskView.sourceTaskId || '-'}</Descriptions.Item>
-                <Descriptions.Item label="失败分类">{realRunTaskView.failureCategory || '-'}</Descriptions.Item>
-                <Descriptions.Item label="失败代码">{realRunTaskView.failureCode || '-'}</Descriptions.Item>
-                <Descriptions.Item label="失败信息">{realRunTaskView.failureMessage || '-'}</Descriptions.Item>
-              </Descriptions>
+              <>
+                <Descriptions size="small" column={{ xs: 1, md: 2 }}>
+                  <Descriptions.Item label="任务号">{realRunTaskView.taskNo || realRunTaskView.taskId}</Descriptions.Item>
+                  <Descriptions.Item label="状态">
+                    <Tag color={statusColor(realRunTaskView.status)}>{realRunTaskView.status}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="PSKU">{realRunTaskView.partnerSku || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="来源任务">{realRunTaskView.sourceTaskId || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="Noon 结果">{noonResultStatus(realRunTaskView)}</Descriptions.Item>
+                  <Descriptions.Item label="失败分类">{realRunTaskView.failureCategory || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="失败代码">{realRunTaskView.failureCode || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="失败信息">{realRunTaskView.failureMessage || '-'}</Descriptions.Item>
+                </Descriptions>
+                {realRunTaskView.noonResult?.steps?.length ? (
+                  <Space direction="vertical" size={4}>
+                    {realRunTaskView.noonResult.steps.map((step, index) => (
+                      <Space key={`${step.stepKey || 'step'}-${index}`} wrap size={[8, 4]}>
+                        <Tag color={statusColor(step.status || '')}>{step.status || '-'}</Tag>
+                        <Text>{step.stepKey || `step-${index + 1}`}</Text>
+                        {step.externalReference ? <Text type="secondary">{step.externalReference}</Text> : null}
+                        {step.failureCode ? <Text type="danger">{step.failureCode}</Text> : null}
+                        {step.failureMessage ? <Text type="danger">{step.failureMessage}</Text> : null}
+                      </Space>
+                    ))}
+                  </Space>
+                ) : null}
+              </>
             ) : (
               <Text type="secondary">尚未提交真实上架确认</Text>
             )}
@@ -326,21 +470,47 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
           </Card>
         </Col>
         <Col xs={24} xl={10}>
-          <Card title="最近一次 dry-run" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
-            {taskView ? (
-              <Descriptions size="small" column={1}>
-                <Descriptions.Item label="任务号">{taskView.taskNo || taskView.taskId}</Descriptions.Item>
-                <Descriptions.Item label="模式">{taskView.mode}</Descriptions.Item>
-                <Descriptions.Item label="状态">
-                  <Tag color={statusColor(taskView.status)}>{taskView.status}</Tag>
-                </Descriptions.Item>
-                <Descriptions.Item label="失败代码">{taskView.failureCode || '-'}</Descriptions.Item>
-                <Descriptions.Item label="失败信息">{taskView.failureMessage || '-'}</Descriptions.Item>
-              </Descriptions>
-            ) : (
-              <Text type="secondary">暂无 dry-run 结果</Text>
-            )}
-          </Card>
+          <Space direction="vertical" size={16} style={{ width: '100%' }}>
+            <Card title="最近一次 dry-run" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
+              {taskView ? (
+                <Descriptions size="small" column={1}>
+                  <Descriptions.Item label="任务号">{taskView.taskNo || taskView.taskId}</Descriptions.Item>
+                  <Descriptions.Item label="模式">{taskView.mode}</Descriptions.Item>
+                  <Descriptions.Item label="状态">
+                    <Tag color={statusColor(taskView.status)}>{taskView.status}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="失败代码">{taskView.failureCode || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="失败信息">{taskView.failureMessage || '-'}</Descriptions.Item>
+                </Descriptions>
+              ) : (
+                <Text type="secondary">暂无 dry-run 结果</Text>
+              )}
+            </Card>
+            <Card title="最近上架任务" bordered={false} style={{ border: '1px solid #e5e7eb' }}>
+              <Table
+                size="small"
+                pagination={false}
+                loading={loadingRecentTasks}
+                dataSource={recentTasks.slice(0, 5)}
+                rowKey={(record) => String(record.taskId)}
+                columns={[
+                  {
+                    title: '任务',
+                    dataIndex: 'taskNo',
+                    render: (value: string | undefined, record: ProductListingTaskView) => value || record.taskId
+                  },
+                  { title: '模式', dataIndex: 'mode', width: 92 },
+                  {
+                    title: '状态',
+                    dataIndex: 'status',
+                    width: 130,
+                    render: (value: string) => <Tag color={statusColor(value)}>{value}</Tag>
+                  }
+                ]}
+                locale={{ emptyText: '暂无上架任务' }}
+              />
+            </Card>
+          </Space>
         </Col>
       </Row>
     </Space>
@@ -351,7 +521,7 @@ function statusColor(status: string) {
   if (status === 'validated' || status === 'ready_for_dry_run' || status === 'succeeded') {
     return 'green'
   }
-  if (status === 'validation_failed' || status === 'failed') {
+  if (status === 'validation_failed' || status === 'failed' || status === 'written_verify_failed') {
     return 'red'
   }
   if (status === 'draft' || status === 'submitted' || status === 'running') {
@@ -363,13 +533,61 @@ function statusColor(status: string) {
   return 'default'
 }
 
-function hasRealWriteAttempt(task?: ProductListingTaskView) {
-  if (!task) {
-    return false
+function noonResultStatus(task: ProductListingTaskView) {
+  if (!task.noonResult) {
+    return '-'
   }
+  if (task.noonResult.success) {
+    return <Tag color="green">success</Tag>
+  }
+  return <Tag color="red">{task.noonResult.failureCode || 'failed'}</Tag>
+}
+
+function notifyRealRunTaskCompletion(task: ProductListingTaskView) {
+  if (task.status === 'succeeded') {
+    message.success('真实上架任务已完成')
+  } else if (task.status === 'failed' || task.status === 'written_verify_failed') {
+    message.error(task.failureMessage || task.noonResult?.failureMessage || '真实上架失败')
+  } else if (task.status === 'rejected') {
+    message.warning(task.failureMessage || '真实上架已被后端门禁拦截')
+  }
+}
+
+async function loadManualSelectionGroupListingPrefill(sourceGroupId: string, storeCode?: string) {
+  const group = await loadManualSelectionGroup(sourceGroupId)
+  let profitEstimate: ManualSelectionGroupProfitEstimateSnapshot | null = null
+  try {
+    profitEstimate = await loadManualSelectionGroupProfitEstimate(sourceGroupId)
+  } catch {
+    profitEstimate = null
+  }
+  return buildManualSelectionGroupListingPrefillFromGroup(group, storeCode, profitEstimate)
+}
+
+function sourcePrefillReference(sourcePrefill: ProductListingSourcePrefill) {
   return (
-    ['running', 'submitted', 'succeeded', 'failed'].includes(task.status) ||
-    task.failureCode === 'real_run_already_active' ||
-    task.failureCode === 'real_run_already_attempted'
+    sourcePrefill.collectionNo
+    || sourcePrefill.sourceGroupNo
+    || sourcePrefill.sourceGroupId
+    || sourcePrefill.sourceCollectionId
+    || sourcePrefill.sourceCandidateId
+    || '-'
   )
+}
+
+function mergeRecentTask(tasks: ProductListingTaskView[], task: ProductListingTaskView) {
+  return [task, ...tasks.filter((item) => item.taskId !== task.taskId)]
+    .sort((left, right) => {
+      const leftTime = Date.parse(left.submittedAt || '')
+      const rightTime = Date.parse(right.submittedAt || '')
+      if (Number.isFinite(leftTime) && Number.isFinite(rightTime) && leftTime !== rightTime) {
+        return rightTime - leftTime
+      }
+      return right.taskId - left.taskId
+    })
+    .slice(0, 10)
+}
+
+function hasRealWriteAttempt(task?: ProductListingTaskView) {
+  return isProductListingRealWriteAttempt(task)
 }

@@ -11,6 +11,9 @@ export type ProductListingEditorDraft = Omit<
   ProductListingDraftPayload,
   | 'idProductFullType'
   | 'price'
+  | 'priceMin'
+  | 'priceMax'
+  | 'salePrice'
   | 'purchasePrice'
   | 'supplyEvidenceRefId'
   | 'optionalPurchaseOrderId'
@@ -103,10 +106,23 @@ export function productListingEditorDraftToPayload(
     productSubType: optionalText(draft.productSubType),
     productBrand: optionalText(draft.productBrand),
     productBrandCode: optionalText(draft.productBrandCode),
+    productTitleCn: optionalText(draft.productTitleCn),
     productTitleEn: optionalText(draft.productTitleEn),
     productTitleAr: optionalText(draft.productTitleAr),
+    productDescriptionCn: optionalText(draft.productDescriptionCn),
+    productDescriptionEn: optionalText(draft.productDescriptionEn),
+    productDescriptionAr: optionalText(draft.productDescriptionAr),
+    productHighlightsCn: normalizeStringList(draft.productHighlightsCn),
+    productHighlightsEn: normalizeStringList(draft.productHighlightsEn),
+    productHighlightsAr: normalizeStringList(draft.productHighlightsAr),
+    keyAttributes: normalizeRecordList(draft.keyAttributes),
     imageUrls: normalizeStringList(draft.imageUrls),
     price: optionalNumber(draft.price),
+    priceMin: optionalNumber(draft.priceMin),
+    priceMax: optionalNumber(draft.priceMax),
+    salePrice: optionalNumber(draft.salePrice),
+    saleStart: optionalText(draft.saleStart),
+    saleEnd: optionalText(draft.saleEnd),
     purchasePrice: optionalNumber(draft.purchasePrice),
     supplyEvidenceType: optionalText(draft.supplyEvidenceType),
     supplyEvidenceRefId: optionalInteger(draft.supplyEvidenceRefId),
@@ -116,6 +132,8 @@ export function productListingEditorDraftToPayload(
     warehouseCode: optionalText(draft.warehouseCode),
     quantity: optionalInteger(draft.quantity),
     idWarranty: optionalInteger(draft.idWarranty),
+    isActive: draft.isActive ?? true,
+    offerNote: optionalText(draft.offerNote),
     barcode: optionalText(draft.barcode)
   }
 }
@@ -341,6 +359,15 @@ export function productListingContentProgress(draft: ProductListingEditorDraft) 
 function normalizeStringList(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value.map((item) => text(item)).filter(Boolean)
+  }
+  return []
+}
+
+function normalizeRecordList(value: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(value)) {
+    return value.filter(
+      (item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object' && !Array.isArray(item)
+    )
   }
   return []
 }

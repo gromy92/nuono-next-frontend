@@ -2,6 +2,7 @@ import type { ProductSelectionSourceCollection } from '../source-collection/type
 import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
 import type {
   ManualSelectionAnalysisProjectView,
+  ManualSelectionGroupView,
   ManualSelectionGroupProfitEstimateSnapshot
 } from '../manual-selection/types'
 import type { ProductListingEditorDraft } from './productDetailAdapter'
@@ -210,6 +211,28 @@ export function buildManualSelectionGroupListingPrefill(
       sourceRefId
     }
   }
+}
+
+export function buildManualSelectionGroupListingPrefillFromGroup(
+  group: ManualSelectionGroupView,
+  storeCode?: string,
+  profitEstimate?: ManualSelectionGroupProfitEstimateSnapshot | null
+): ProductListingSourcePrefill {
+  const records = (group.materials || [])
+    .map((material) => material.sourceCollection)
+    .filter((record): record is ProductSelectionSourceCollection => Boolean(record))
+  const project: ManualSelectionAnalysisProjectView = {
+    projectId: group.groupId,
+    groupId: group.groupId,
+    groupNo: group.groupNo,
+    projectName: group.groupName,
+    projectMaterialCount: group.materialCount ?? records.length,
+    procurement: group.procurement,
+    competitors: group.competitors || [],
+    items: [],
+    records
+  }
+  return buildManualSelectionGroupListingPrefill(project, storeCode, group.competitors || [], profitEstimate)
 }
 
 export function productFullTypeFromManualSelectionProfitEstimate(
