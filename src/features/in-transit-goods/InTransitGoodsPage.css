@@ -114,6 +114,20 @@
   line-height: 1.2;
 }
 
+.in-transit-eta-edit {
+  height: auto;
+  padding: 0;
+  line-height: 1.2;
+  text-align: left;
+  white-space: normal;
+}
+
+.in-transit-eta-edit--missing,
+.in-transit-eta-edit--missing:hover,
+.in-transit-eta-edit--missing:focus-visible {
+  color: #dc2626;
+}
+
 .in-transit-box-code-cell {
   min-width: 0;
 }
@@ -122,6 +136,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.in-transit-eta-modal {
+  width: 100%;
 }
 
 .in-transit-product-cell {

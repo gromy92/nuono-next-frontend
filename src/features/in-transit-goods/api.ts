@@ -17,7 +17,9 @@ import type {
   InTransitSkuFreightCostHistory,
   SaveInTransitGoodsLineRequest,
   SaveInTransitForwarderAliasRequest,
+  SaveInTransitActualArrivalRequest,
   SaveInTransitLogisticsNodeRequest,
+  SaveInTransitEstimatedArrivalRequest,
   SaveInTransitBatchRequest
 } from './types'
 import { apiFetch, readApiErrorMessage } from '../../shared/api'
@@ -68,6 +70,30 @@ export async function fetchInTransitBatches(filters: InTransitBatchFilters = {})
 
 export async function saveInTransitBatch(request: SaveInTransitBatchRequest): Promise<InTransitBatch> {
   const response = await apiFetch('/api/in-transit-goods/batches', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request)
+  })
+  return readJson<InTransitBatch>(response)
+}
+
+export async function saveInTransitEstimatedArrival(
+  batchId: number,
+  request: SaveInTransitEstimatedArrivalRequest
+): Promise<InTransitBatch> {
+  const response = await apiFetch(`/api/in-transit-goods/batches/${batchId}/estimated-arrival`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request)
+  })
+  return readJson<InTransitBatch>(response)
+}
+
+export async function saveInTransitActualArrival(
+  batchId: number,
+  request: SaveInTransitActualArrivalRequest
+): Promise<InTransitBatch> {
+  const response = await apiFetch(`/api/in-transit-goods/batches/${batchId}/actual-arrival`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request)

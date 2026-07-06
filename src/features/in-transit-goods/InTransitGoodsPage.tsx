@@ -4,11 +4,13 @@ import { InTransitBoxDetailView } from './InTransitBoxDetailView'
 import { InTransitAliasDrawer } from './InTransitAliasDrawer'
 import { InTransitImportDrawer } from './InTransitImportDrawer'
 import { InTransitBatchEditorDrawer } from './InTransitBatchEditorDrawer'
+import { InTransitEstimatedArrivalModal } from './InTransitEstimatedArrivalModal'
 import { InTransitSkuFreightDrawer } from './InTransitSkuFreightDrawer'
 import type { InTransitGoodsPageProps } from './InTransitGoodsPage.models'
 import { stripedRowClassName } from './InTransitGoodsPage.utils'
 import { useInTransitBatchColumns } from './useInTransitBatchColumns'
 import { useInTransitBatchEditor } from './useInTransitBatchEditor'
+import { useInTransitEstimatedArrival } from './useInTransitEstimatedArrival'
 import { useInTransitBatchList } from './useInTransitBatchList'
 import { useInTransitBoxDetail } from './useInTransitBoxDetail'
 import { useInTransitForwarderAlias } from './useInTransitForwarderAlias'
@@ -24,6 +26,7 @@ export function InTransitGoodsPage({
 }: InTransitGoodsPageProps = {}) {
   const batchList = useInTransitBatchList(isBoxDetailTab)
   const batchEditor = useInTransitBatchEditor(batchList.filters, batchList.load)
+  const estimatedArrival = useInTransitEstimatedArrival(batchList.filters, batchList.load)
   const alias = useInTransitForwarderAlias(batchList.filters, batchList.load)
   const importer = useInTransitImport(batchList.filters, batchList.load)
   const boxDetail = useInTransitBoxDetail({
@@ -41,7 +44,8 @@ export function InTransitGoodsPage({
     batchSortOrder: batchList.batchSortOrder,
     onOpenForwarderAlias: alias.openForwarderAliasDrawer,
     onOpenBoxDetail: boxDetail.openBoxDetail,
-    onOpenEdit: batchEditor.openEdit
+    onOpenEdit: batchEditor.openEdit,
+    onOpenEstimatedArrival: estimatedArrival.openEstimatedArrival
   })
 
   const boxDetailBatch = isBoxDetailTab ? boxDetailRequest?.batch ?? null : null
@@ -130,6 +134,14 @@ export function InTransitGoodsPage({
         destinationOptions={batchList.destinationOptions}
         nodeOptions={batchList.nodeOptions}
         nodeStatusLabel={batchList.nodeStatusLabel}
+      />
+      <InTransitEstimatedArrivalModal
+        open={estimatedArrival.modalOpen}
+        submitting={estimatedArrival.submitting}
+        targetBatch={estimatedArrival.targetBatch}
+        form={estimatedArrival.form}
+        onCancel={estimatedArrival.closeEstimatedArrival}
+        onSubmit={() => void estimatedArrival.submitEstimatedArrival()}
       />
     </div>
   )
