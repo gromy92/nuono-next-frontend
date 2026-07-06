@@ -31,7 +31,7 @@ export function buildProductKeywordListParams(params: ProductKeywordListRequest)
   appendParam(search, 'storeCode', params.storeCode)
   appendParam(search, 'siteCode', params.siteCode)
   appendParam(search, 'partnerSku', params.partnerSku)
-  appendParam(search, 'keywordNorm', params.keywordNorm)
+  appendParam(search, 'keyword', params.keywordNorm)
   appendParam(search, 'status', params.status)
   appendParam(search, 'limit', params.limit)
   return search

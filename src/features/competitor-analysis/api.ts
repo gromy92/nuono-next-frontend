@@ -653,6 +653,7 @@ function mapListKeywords(
     .map((item, index) => ({
       id: `${baseId}-keyword-${index}-${item.keyword}`,
       keyword: item.keyword,
+      keywordNorm: normalizeKeywordNorm(item.keyword),
       locale: product.siteCode ? `en-${product.siteCode}` : '',
       status: 'active',
       displayOrder: index,
@@ -742,6 +743,7 @@ function mapKeyword(row: BackendKeyword): CompetitorKeyword {
   return {
     id: idValue(row.id),
     keyword: stringValue(row.keyword),
+    keywordNorm: stringValue(row.keywordNorm) || normalizeKeywordNorm(row.keyword),
     locale: stringValue(row.locale),
     status: normalizeActiveStatus(row.status),
     displayOrder: numberValue(row.displayOrder),
@@ -1170,6 +1172,10 @@ function normalizeCodeType(value: unknown, noonProductCode: string): NoonProduct
 
 function stringValue(value: unknown) {
   return value === undefined || value === null ? '' : String(value).trim()
+}
+
+function normalizeKeywordNorm(value: unknown) {
+  return stringValue(value).toLowerCase().replace(/\s+/g, ' ')
 }
 
 function firstText(...values: unknown[]) {

@@ -15,15 +15,20 @@ type ProductKeywordHistorySectionProps = {
   maxEvents?: number
 }
 
-function sourceLabel(sourceType?: string | null) {
-  if (sourceType === 'TITLE_HISTORY') return '标题使用'
-  if (sourceType === 'COMPETITOR_KEYWORD') return '竞品出现'
+function sourceLabel(event: ProductKeywordEventItem) {
+  const sourceType = event.sourceType
+  const eventStatus = String(event.eventStatus || '').toUpperCase()
+  if (sourceType === 'TITLE_HISTORY') return eventStatus === 'REMOVED' ? '标题移除' : '标题使用'
+  if (sourceType === 'COMPETITOR_KEYWORD') return eventStatus === 'REMOVED' ? '竞品移除' : '竞品出现'
   if (sourceType === 'ADS_QUERY') return '广告搜索'
   if (sourceType === 'MANUAL') return '手动维护'
   return '其他来源'
 }
 
-function sourceColor(sourceType?: string | null) {
+function sourceColor(event: ProductKeywordEventItem) {
+  const sourceType = event.sourceType
+  const eventStatus = String(event.eventStatus || '').toUpperCase()
+  if (eventStatus === 'REMOVED') return 'red'
   if (sourceType === 'TITLE_HISTORY') return 'green'
   if (sourceType === 'COMPETITOR_KEYWORD') return 'geekblue'
   if (sourceType === 'ADS_QUERY') return 'purple'
@@ -48,8 +53,8 @@ function historyEventLine(event: ProductKeywordEventItem) {
   return (
     <div className="product-keyword-history-event">
       <Space size={[6, 4]} wrap>
-        <Tag color={sourceColor(event.sourceType)} style={{ marginInlineEnd: 0 }}>
-          {sourceLabel(event.sourceType)}
+        <Tag color={sourceColor(event)} style={{ marginInlineEnd: 0 }}>
+          {sourceLabel(event)}
         </Tag>
         <Text strong>{event.keyword}</Text>
       </Space>
@@ -144,7 +149,7 @@ export function ProductKeywordHistorySection({
             <Timeline
               className="product-keyword-history-timeline"
               items={visibleEvents.map((event) => ({
-                color: sourceColor(event.sourceType),
+                color: sourceColor(event),
                 children: historyEventLine(event)
               }))}
             />

@@ -25,6 +25,7 @@ import {
   EditOutlined,
   ExportOutlined,
   EyeOutlined,
+  InfoCircleOutlined,
   LineChartOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -35,6 +36,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { EChartsCoreOption } from 'echarts/core'
 import type { AuthSession, AuthSessionStore } from '../auth/session'
 import { ProductBaselineIdentity, normalizeProductImageUrl } from '../product-baseline'
+import { ProductKeywordDetailDrawer, type ProductKeywordDetailKeyword } from '../product-keywords/ProductKeywordDetailDrawer'
 import { EChartPanel } from '../../shared/charts'
 import {
   addCompetitorKeyword,
@@ -251,6 +253,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
   const [selectedProductDetail, setSelectedProductDetail] = useState<CompetitorWatchProduct>()
   const [keywordProduct, setKeywordProduct] = useState<CompetitorWatchProduct>()
   const [reportProduct, setReportProduct] = useState<CompetitorWatchProduct>()
+  const [selectedKeywordDetail, setSelectedKeywordDetail] = useState<ProductKeywordDetailKeyword | null>(null)
   const [changeRows, setChangeRows] = useState<CompetitorProductChangeGroup[]>([])
   const [changeBaselineSummary, setChangeBaselineSummary] = useState<CompetitorProductChangeBaselineSummary>()
   const [detailOpen, setDetailOpen] = useState(false)
@@ -597,12 +600,23 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       const detail = await deleteCompetitorKeyword(keyword.id)
       mergeProduct(detail)
       setKeywordProduct(detail)
-      message.success('关键词已删除')
+      message.success('关键词已从竞品监控移除')
     } catch (error) {
-      message.error(normalizeError(error, '删除关键词失败'))
+      message.error(normalizeError(error, '移除关键词失败'))
     } finally {
       setActionLoading(null)
     }
+  }
+
+  const openProductKeywordDetail = (product: CompetitorWatchProduct, keyword: CompetitorKeyword) => {
+    setSelectedKeywordDetail({
+      storeCode: product.storeCode,
+      siteCode: product.siteCode,
+      partnerSku: product.partnerSku,
+      keyword: keyword.keyword,
+      keywordNorm: keyword.keywordNorm || normalizeProductKeywordNorm(keyword.keyword),
+      competitorEvidence: true
+    })
   }
 
   const handleManualAdd = async () => {
@@ -1237,10 +1251,16 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
               onAddKeyword={() => void handleAddKeyword()}
               onKeywordStatusChange={(keyword, status) => void handleKeywordStatusChange(keyword, status)}
               onKeywordDelete={(keyword) => void handleKeywordDelete(keyword)}
+              onKeywordDetailOpen={(keyword) => openProductKeywordDetail(keywordPanelProduct, keyword)}
             />
           </Spin>
         </Modal>
       ) : null}
+      <ProductKeywordDetailDrawer
+        open={Boolean(selectedKeywordDetail)}
+        onClose={() => setSelectedKeywordDetail(null)}
+        keyword={selectedKeywordDetail}
+      />
       {reportProduct ? (
         <Modal
           className="competitor-analysis-report-dialog"
@@ -1268,6 +1288,10 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
 
 function normalizeSearchText(value: string) {
   return value.trim().toLowerCase()
+}
+
+function normalizeProductKeywordNorm(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
 function isAbortError(error: unknown) {
@@ -3142,7 +3166,8 @@ function KeywordMaintenancePanel({
   onKeywordInputChange,
   onAddKeyword,
   onKeywordStatusChange,
-  onKeywordDelete
+  onKeywordDelete,
+  onKeywordDetailOpen
 }: {
   product: CompetitorWatchProduct
   keywordInput: string
@@ -3151,6 +3176,7 @@ function KeywordMaintenancePanel({
   onAddKeyword: () => void
   onKeywordStatusChange: (keyword: CompetitorKeyword, status: 'active' | 'paused') => void
   onKeywordDelete: (keyword: CompetitorKeyword) => void
+  onKeywordDetailOpen: (keyword: CompetitorKeyword) => void
 }) {
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={12} data-testid="competitor-keyword-panel">
@@ -3175,6 +3201,13 @@ function KeywordMaintenancePanel({
             <Space size={6}>
               <Button
                 size="small"
+                icon={<InfoCircleOutlined />}
+                onClick={() => onKeywordDetailOpen(keyword)}
+              >
+                关键词详情
+              </Button>
+              <Button
+                size="small"
                 loading={actionLoading === `keyword-status-${keyword.id}`}
                 onClick={() => onKeywordStatusChange(keyword, keyword.status === 'active' ? 'paused' : 'active')}
               >
@@ -3186,7 +3219,7 @@ function KeywordMaintenancePanel({
                 loading={actionLoading === `keyword-delete-${keyword.id}`}
                 onClick={() => onKeywordDelete(keyword)}
               >
-                删除
+                移除
               </Button>
             </Space>
           </div>

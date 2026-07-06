@@ -1,9 +1,10 @@
-import { HistoryOutlined, SearchOutlined } from '@ant-design/icons'
+import { HistoryOutlined, InfoCircleOutlined, SearchOutlined } from '@ant-design/icons'
 import { App, Button, Empty, Input, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AuthSession } from '../auth/session'
 import { fetchProductKeywords } from './api'
+import { ProductKeywordDetailDrawer } from './ProductKeywordDetailDrawer'
 import { ProductKeywordHistoryDrawer } from './ProductKeywordHistoryDrawer'
 import type { ProductKeywordItem } from './types'
 import './ProductKeywordDataPage.css'
@@ -96,23 +97,13 @@ function titleDimensionItems(row: ProductKeywordItem) {
   }
 }
 
-function suggestedAction(row: ProductKeywordItem) {
-  const titleStates = values(row.titleUsageStates)
-  const titleTypes = values(row.titleTypes)
-  if (row.negativeCandidate) return '评估否词或暂停'
-  if (titleStates.includes('TITLE_MISSING')) return '补充标题覆盖'
-  if (titleStates.includes('TITLE_COVERED')) return '持续观察标题覆盖'
-  if (row.competitorEvidence && titleTypes.length === 0) return '人工判断是否加入标题'
-  if (row.adsEvidence) return '人工复核广告价值'
-  return '人工复核'
-}
-
 export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps) {
   const { message } = App.useApp()
   const [partnerSku, setPartnerSku] = useState('')
   const [keywordSearch, setKeywordSearch] = useState('')
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState<ProductKeywordItem[]>([])
+  const [selectedDetailKeyword, setSelectedDetailKeyword] = useState<ProductKeywordItem | null>(null)
   const [selectedHistoryKeyword, setSelectedHistoryKeyword] = useState<ProductKeywordItem | null>(null)
 
   const selectedStore = session.currentStore
@@ -130,7 +121,7 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
         siteCode: selectedSiteCode,
         partnerSku: partnerSku.trim() || undefined,
         keywordNorm: keywordSearch.trim() || undefined,
-        limit: 300
+        limit: 5000
       })
       setRows(payload.items || [])
     } catch (error) {
@@ -198,11 +189,20 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
       }
     },
     {
-      title: '建议动作',
-      width: 170,
+      title: '操作',
+      width: 130,
       render: (_, row) => (
-        <Space direction="vertical" size={4} align="start">
-          <Text>{suggestedAction(row)}</Text>
+        <Space size={10}>
+          <Button
+            type="link"
+            size="small"
+            icon={<InfoCircleOutlined />}
+            onClick={(event) => {
+              event.stopPropagation()
+              setSelectedDetailKeyword(row)
+            }}
+            style={{ height: 22, padding: 0 }}
+          >详情</Button>
           <Button
             type="link"
             size="small"
@@ -249,6 +249,12 @@ export function ProductKeywordDataPage({ session }: ProductKeywordDataPageProps)
         pagination={{ pageSize: 50, showSizeChanger: false }}
         locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无关键词数据" /> }}
         scroll={{ x: 1400 }}
+      />
+
+      <ProductKeywordDetailDrawer
+        open={Boolean(selectedDetailKeyword)}
+        onClose={() => setSelectedDetailKeyword(null)}
+        keyword={selectedDetailKeyword}
       />
 
       <ProductKeywordHistoryDrawer

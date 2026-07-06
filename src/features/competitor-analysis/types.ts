@@ -28,6 +28,7 @@ export type CompetitorKeywordRankChange = {
 export type CompetitorKeyword = {
   id: string
   keyword: string
+  keywordNorm?: string
   locale: string
   status: 'active' | 'paused'
   displayOrder: number
