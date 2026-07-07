@@ -7,6 +7,7 @@ import type {
   SalesForecastQuery,
   SalesForecastRunStatus
 } from './types'
+import { apiFetch } from '../../shared/api'
 
 export class SalesForecastApiError extends Error {
   status: number
@@ -71,7 +72,7 @@ export async function exportSalesForecastCsv(query: SalesForecastQuery, options:
 }
 
 async function getJson<TResponse>(url: string): Promise<TResponse> {
-  const response = await fetch(url)
+  const response = await apiFetch(url)
   const payload = await response.json().catch(() => null)
   if (!response.ok) {
     const message =
@@ -84,7 +85,7 @@ async function getJson<TResponse>(url: string): Promise<TResponse> {
 }
 
 async function postJson<TResponse>(url: string, body: unknown): Promise<TResponse> {
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)

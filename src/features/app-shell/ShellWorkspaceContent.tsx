@@ -41,7 +41,6 @@ import {
   PurchaseOrderPage,
   RoleManagementWorkspace,
   SalesAnalyticsPage,
-  SalesForecastPage,
   WarehouseDispatchWorkbenchPage,
   WarehouseLogisticsBillPage,
   WarehouseShippingOrderPage
@@ -332,14 +331,6 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <OrderFinancePage session={shellSession} />
-      </LazyWorkspaceBoundary>
-    );
-  }
-
-  if (activeContentKind === 'sales-forecast') {
-    return (
-      <LazyWorkspaceBoundary>
-        <SalesForecastPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

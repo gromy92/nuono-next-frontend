@@ -37,7 +37,6 @@ export const OPERATIONS_SKIN_MANAGEMENT_PATH = workspaceMenuPath('operations-ski
 export const OPERATIONS_NOON_ADS_PATH = workspaceMenuPath('operations-noon-ads')
 export const OPERATIONS_PRODUCT_KEYWORDS_PATH = workspaceMenuPath('operations-product-keywords')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
-export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
 export const SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH = workspaceMenuPath('system-report-noon-data-completeness')
 export const SYSTEM_REPORT_NOON_DATA_GAPS_PATH = workspaceMenuPath('system-report-noon-data-gaps')
@@ -301,7 +300,6 @@ export function resolveSessionLandingMenuKey(
         'operations-skin-management',
         'operations-noon-ads',
         'data-sales-analysis',
-        'data-sales-forecast',
         'noon-call-store-data',
         'system-report-noon-data-completeness',
         'system-report-noon-data-gaps',
@@ -334,7 +332,6 @@ export function resolveSessionLandingMenuKey(
           'operations-skin-management',
           'operations-noon-ads',
           'data-sales-analysis',
-          'data-sales-forecast',
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
@@ -364,7 +361,6 @@ export function resolveSessionLandingMenuKey(
           'operations-skin-management',
           'operations-noon-ads',
           'data-sales-analysis',
-          'data-sales-forecast',
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',

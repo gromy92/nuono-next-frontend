@@ -1,13 +1,22 @@
 import { CalendarOutlined, DownloadOutlined, ExclamationCircleOutlined, InfoCircleOutlined, PlusOutlined, ReloadOutlined, ShoppingOutlined } from '@ant-design/icons'
-import { Alert, App, Button, DatePicker, Form, Input, InputNumber, Modal, Popover, Segmented, Select, Space, Statistic, Switch, Table, Tabs, Tag, Tooltip, Typography } from 'antd'
+import { Alert, App, Button, DatePicker, Form, Input, InputNumber, Modal, Popover, Segmented, Select, Space, Spin, Statistic, Switch, Table, Tabs, Tag, Tooltip, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs, { type Dayjs } from 'dayjs'
+import type { EChartsCoreOption } from 'echarts/core'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Key, ReactNode } from 'react'
 import { EChartPanel, buildNetUnitsLineOption, buildSalesPriceTrendOption } from '../../shared/charts'
 import type { AuthSession } from '../auth/session'
 import { ProductBaselineIdentity } from '../product-baseline'
 import { fetchProductClassificationOptions, type ProductClassificationOptionPayload } from '../product-management/api'
+import { fetchSalesForecastDetail, fetchSalesForecastOverview, recalculateSalesForecast } from '../sales-forecast/api'
+import type {
+  SalesForecastDailyForecast,
+  SalesForecastDetail,
+  SalesForecastOverview,
+  SalesForecastQuery,
+  SalesForecastRow
+} from '../sales-forecast/types'
 import {
   exportSalesAnalyticsCsv,
   fetchActiveSalesActivityWindows,
@@ -151,6 +160,13 @@ export function SalesAnalyticsPage({ session, mode = 'analytics' }: SalesAnalyti
       lifecycleCode
     }
   }, [brand, categoryKeyword, currentStore, dataQualityCode, dateRange, lifecycleCode, partnerSkuText, productFulltype, search])
+  const forecastQuery = useMemo<SalesForecastQuery | null>(() => {
+    if (!query) return null
+    return {
+      storeCode: query.storeCode,
+      siteCode: query.siteCode
+    }
+  }, [query])
 
   const loadData = useCallback(async () => {
     if (!query) return
@@ -630,6 +646,7 @@ export function SalesAnalyticsPage({ session, mode = 'analytics' }: SalesAnalyti
         granularity={granularity}
         detailRangePreset={detailRangePreset}
         detailDateRange={detailDateRange}
+        forecastQuery={forecastQuery}
         onClose={() => setDetailOpen(false)}
         onDetailRangePresetChange={changeDetailRangePreset}
         onDetailDateRangeChange={changeDetailDateRange}
@@ -841,6 +858,7 @@ function ProductDetailDialog({
   granularity,
   detailRangePreset,
   detailDateRange,
+  forecastQuery,
   onClose,
   onDetailRangePresetChange,
   onDetailDateRangeChange,
@@ -854,6 +872,7 @@ function ProductDetailDialog({
   granularity: string
   detailRangePreset: DetailRangePreset
   detailDateRange: DateRangeValue
+  forecastQuery: SalesForecastQuery | null
   onClose: () => void
   onDetailRangePresetChange: (preset: DetailRangePreset) => void
   onDetailDateRangeChange: (range: DateRangeValue) => void
@@ -979,26 +998,174 @@ function ProductDetailDialog({
               key: 'forecast',
               label: '销量预测',
               children: (
-                <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
-                    <SummaryTile title="30天预测" value="—" />
-                    <SummaryTile title="60天预测" value="—" />
-                    <SummaryTile title="90天预测" value="—" />
-                    <SummaryTile title="当前库存" value={typeof currentStock === 'number' ? `${formatNumber(currentStock)} 件` : '—'} />
-                    <SummaryTile title="库存覆盖天数" value={formatStockCoverDays(stockCoverDays)} />
-                    <SummaryTile title="置信度" value="—" />
-                  </div>
-                  <div style={{ border: '1px solid #e5e7eb', borderRadius: 6, padding: 12 }}>
-                    <Text strong>预测依据</Text>
-                    <div><Text type="secondary">当前保留预测解释入口；没有可信商品级预测结果时不展示伪造曲线。</Text></div>
-                  </div>
-                </Space>
+                <ProductForecastPanel
+                  open={open}
+                  query={forecastQuery}
+                  row={row}
+                  currentStock={currentStock}
+                  stockCoverDays={stockCoverDays}
+                />
               )
             }
           ]}
         />
       </Space>
     </Modal>
+  )
+}
+
+function ProductForecastPanel({
+  open,
+  query,
+  row,
+  currentStock,
+  stockCoverDays
+}: {
+  open: boolean
+  query: SalesForecastQuery | null
+  row: SalesProductRow | null
+  currentStock?: number | null
+  stockCoverDays?: number | null
+}) {
+  const { message } = App.useApp()
+  const [overview, setOverview] = useState<SalesForecastOverview | null>(null)
+  const [forecastRow, setForecastRow] = useState<SalesForecastRow | null>(null)
+  const [forecastDetail, setForecastDetail] = useState<SalesForecastDetail | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [recalculating, setRecalculating] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  const partnerSku = row?.partnerSku || ''
+  const loadForecast = useCallback(async () => {
+    if (!open || !query || !partnerSku) return
+    setLoading(true)
+    setErrorMessage('')
+    try {
+      const nextOverview = await fetchSalesForecastOverview(query)
+      const requestedProductKey = normalizeProductKey(partnerSku)
+      const matchedRow = (nextOverview.rows || []).find((item) => normalizeProductKey(item.partnerSku) === requestedProductKey) || null
+      setOverview(nextOverview)
+      setForecastRow(matchedRow)
+      setForecastDetail(matchedRow ? await fetchSalesForecastDetail(query, matchedRow.partnerSku) : null)
+    } catch (error) {
+      setOverview(null)
+      setForecastRow(null)
+      setForecastDetail(null)
+      setErrorMessage(error instanceof Error ? error.message : '销量预测加载失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [open, partnerSku, query])
+
+  useEffect(() => {
+    if (!open) return
+    void loadForecast()
+  }, [loadForecast, open])
+
+  const recalculate = async () => {
+    if (!query || !partnerSku) return
+    setRecalculating(true)
+    setErrorMessage('')
+    try {
+      await recalculateSalesForecast(query)
+      await loadForecast()
+      message.success('预测已重新计算')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '销量预测重算失败')
+    } finally {
+      setRecalculating(false)
+    }
+  }
+
+  const factorBreakdown = forecastDetail?.factorBreakdown || forecastRow?.detail?.factorBreakdown
+  const dailyForecasts = factorBreakdown?.dailyForecasts || []
+  const chartOption = useMemo(() => buildDailyForecastChartOption(dailyForecasts), [dailyForecasts])
+  const confidenceLabel = forecastRow?.confidenceLabel || '—'
+  const emptyTitle = overview?.emptyState?.title || (overview?.state === 'ready' ? '该商品暂无预测结果' : '暂无销量预测结果')
+  const emptyDescription =
+    overview?.emptyState?.description ||
+    (overview?.state === 'ready'
+      ? '当前预测结果集中没有匹配到该 PSKU。'
+      : '当前店铺还没有预测运行结果。')
+
+  return (
+    <Spin spinning={loading || recalculating}>
+      <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <Space wrap>
+            <Text strong>销量预测</Text>
+            {overview?.sourceDataDate ? <Tag>数据日 {overview.sourceDataDate}</Tag> : null}
+            {overview?.calculationVersion ? <Tag>{overview.calculationVersion}</Tag> : null}
+          </Space>
+          <Space>
+            <Button size="small" icon={<ReloadOutlined />} onClick={() => void loadForecast()} disabled={!query || !partnerSku}>
+              刷新预测
+            </Button>
+            <Button size="small" type="primary" onClick={() => void recalculate()} loading={recalculating} disabled={!query || !partnerSku}>
+              重新计算预测
+            </Button>
+          </Space>
+        </div>
+
+        {errorMessage ? <Alert type="error" showIcon message="销量预测加载失败" description={errorMessage} /> : null}
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+          <SummaryTile title="30天预测" value={formatForecastUnits(forecastRow?.forecastUnits30)} />
+          <SummaryTile title="60天预测" value={formatForecastUnits(forecastRow?.forecastUnits60)} />
+          <SummaryTile title="90天预测" value={formatForecastUnits(forecastRow?.forecastUnits90)} />
+          <SummaryTile title="当前库存" value={typeof currentStock === 'number' ? `${formatNumber(currentStock)} 件` : '—'} />
+          <SummaryTile title="库存覆盖天数" value={formatStockCoverDays(stockCoverDays)} />
+          <SummaryTile title="置信度" value={confidenceLabel} />
+        </div>
+
+        {!forecastRow && !loading ? (
+          <Alert
+            type={overview?.state === 'ready' ? 'warning' : 'info'}
+            showIcon
+            message={emptyTitle}
+            description={emptyDescription}
+          />
+        ) : null}
+
+        {forecastRow ? (
+          <Space direction="vertical" size={12} style={{ width: '100%' }}>
+            <Space size={4} wrap>
+              {(forecastRow.riskLabels || []).length
+                ? (forecastRow.riskLabels || []).map((risk) => (
+                    <Tag key={risk.code} color={forecastRiskColor(risk.severity)}>
+                      {risk.label}
+                    </Tag>
+                  ))
+                : <Tag>无风险标签</Tag>}
+            </Space>
+
+            <EChartPanel
+              option={chartOption}
+              state={dailyForecasts.length ? 'ready' : 'empty'}
+              emptyText="暂无逐日预测数据"
+              height={240}
+              testId="sales-analytics-forecast-daily-chart"
+              ariaLabel="未来120天逐日预测销量"
+              title="未来120天逐日预测"
+            />
+
+            <div style={{ border: '1px solid #e5e7eb', borderRadius: 6, padding: 12 }}>
+              <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                <Text strong>预测依据</Text>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+                  <Text type="secondary">历史 7/30/60/90：{forecastRow.historyUnits7} / {forecastRow.historyUnits30} / {forecastRow.historyUnits60} / {forecastRow.historyUnits90}</Text>
+                  <Text type="secondary">基础日均：{formatForecastFactor(factorBreakdown?.baseDailySales)}</Text>
+                  <Text type="secondary">趋势因子：{formatForecastFactor(factorBreakdown?.trendFactor)}</Text>
+                  <Text type="secondary">30/60/90因子：{formatForecastFactor(factorBreakdown?.futureFactor30 ?? factorBreakdown?.futureFactor)} / {formatForecastFactor(factorBreakdown?.futureFactor60)} / {formatForecastFactor(factorBreakdown?.futureFactor90)}</Text>
+                </div>
+                <Text>{forecastRow.shortReason || '-'}</Text>
+                {forecastRow.confidenceExplanation ? <Text type="secondary">{forecastRow.confidenceExplanation}</Text> : null}
+              </Space>
+            </div>
+          </Space>
+        ) : null}
+      </Space>
+    </Spin>
   )
 }
 
@@ -1083,6 +1250,130 @@ function SummaryTile({ title, value }: { title: string; value: string }) {
       <div style={{ marginTop: 4, fontSize: 18, fontWeight: 600 }}>{value}</div>
     </div>
   )
+}
+
+function buildDailyForecastChartOption(points: SalesForecastDailyForecast[]): EChartsCoreOption | null {
+  const chartPoints = points.slice(0, 120)
+  if (!chartPoints.length) return null
+  const values = chartPoints.map((point) => numericForecastValue(point.forecastUnits))
+  return {
+    grid: {
+      bottom: 24,
+      containLabel: true,
+      left: 8,
+      right: 14,
+      top: 28
+    },
+    tooltip: {
+      axisPointer: {
+        lineStyle: {
+          color: '#94a3b8',
+          type: 'dashed'
+        },
+        type: 'line'
+      },
+      backgroundColor: 'rgba(255, 255, 255, 0.96)',
+      borderColor: 'rgba(15, 23, 42, 0.08)',
+      borderRadius: 8,
+      borderWidth: 1,
+      extraCssText: 'box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);',
+      formatter: (params: unknown) => {
+        const item = Array.isArray(params) ? params[0] : params
+        const dataIndex = typeof item === 'object' && item && 'dataIndex' in item ? Number((item as { dataIndex: number }).dataIndex) : 0
+        const point = chartPoints[dataIndex]
+        const value = values[dataIndex]
+        return `
+          <div style="font-weight:600;color:#111827;margin-bottom:6px;">${point?.forecastDate || `第${point?.dayIndex || dataIndex + 1}天`}</div>
+          <div style="display:flex;align-items:center;gap:8px;color:#475569;">
+            <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#1677ff;"></span>
+            <span>预测销量</span>
+            <span style="font-weight:700;color:#111827;">${formatChartUnits(value)}</span>
+            <span>件</span>
+          </div>
+          <div style="margin-top:4px;color:#64748b;">日历因子 ${formatForecastFactor(point?.calendarFactor)}</div>
+        `
+      },
+      padding: [10, 12],
+      trigger: 'axis'
+    },
+    xAxis: {
+      axisLabel: {
+        color: '#64748b',
+        hideOverlap: true
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#cbd5e1'
+        }
+      },
+      axisTick: {
+        show: false
+      },
+      boundaryGap: false,
+      data: chartPoints.map((point) => point.forecastDate ? point.forecastDate.slice(5) : `D${point.dayIndex}`),
+      type: 'category'
+    },
+    yAxis: {
+      axisLabel: {
+        color: '#64748b'
+      },
+      axisTick: {
+        show: false
+      },
+      name: '预测销量',
+      nameLocation: 'end',
+      nameTextStyle: {
+        color: '#64748b',
+        fontWeight: 600,
+        padding: [0, 0, 0, 44]
+      },
+      splitLine: {
+        lineStyle: {
+          color: '#e5e7eb',
+          type: 'dashed'
+        }
+      },
+      type: 'value'
+    },
+    series: [
+      {
+        areaStyle: {
+          color: {
+            colorStops: [
+              {
+                color: 'rgba(22, 119, 255, 0.20)',
+                offset: 0
+              },
+              {
+                color: 'rgba(20, 184, 166, 0.03)',
+                offset: 1
+              }
+            ],
+            type: 'linear',
+            x: 0,
+            x2: 0,
+            y: 0,
+            y2: 1
+          }
+        },
+        data: values,
+        emphasis: {
+          focus: 'series'
+        },
+        itemStyle: {
+          color: '#1677ff'
+        },
+        lineStyle: {
+          color: '#1677ff',
+          width: 2
+        },
+        name: '预测销量',
+        showSymbol: false,
+        smooth: true,
+        type: 'line'
+      }
+    ]
+  }
 }
 
 function TrendLineChart({
@@ -1543,6 +1834,39 @@ function TrafficMetric({
 
 function formatNumber(value?: number | null) {
   return typeof value === 'number' ? value.toLocaleString('zh-CN') : '-'
+}
+
+function formatForecastUnits(value?: number | null) {
+  return typeof value === 'number' ? `${value.toLocaleString('zh-CN')} 件` : '—'
+}
+
+function formatForecastFactor(value?: number | string | null) {
+  if (value === null || value === undefined || value === '') return '—'
+  const numericValue = typeof value === 'number' ? value : Number(value)
+  if (Number.isFinite(numericValue)) return numericValue.toFixed(4)
+  return String(value)
+}
+
+function numericForecastValue(value?: number | string | null) {
+  if (value === null || value === undefined || value === '') return 0
+  const numericValue = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(numericValue) ? numericValue : 0
+}
+
+function formatChartUnits(value: number) {
+  if (!Number.isFinite(value)) return '0'
+  if (Math.abs(value) >= 10) return value.toFixed(1)
+  return value.toFixed(2)
+}
+
+function normalizeProductKey(value?: string | null) {
+  return (value || '').trim().toUpperCase()
+}
+
+function forecastRiskColor(severity?: string | null) {
+  if (severity === 'danger') return 'red'
+  if (severity === 'warning') return 'gold'
+  return 'blue'
 }
 
 function numericOrNull(value?: number | null) {
