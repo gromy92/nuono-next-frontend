@@ -1,11 +1,13 @@
 import type {
   SalesForecastFollowUpInput,
   SalesForecastFollowUpResult,
+  SalesForecastDetail,
   SalesForecastExportOptions,
   SalesForecastOverview,
   SalesForecastQuery,
   SalesForecastRunStatus
 } from './types'
+import { apiFetch } from '../../shared/api'
 
 export class SalesForecastApiError extends Error {
   status: number
@@ -23,6 +25,15 @@ export function fetchSalesForecastOverview(query: SalesForecastQuery) {
     siteCode: query.siteCode
   })
   return getJson<SalesForecastOverview>(`/api/sales-forecast/overview?${params.toString()}`)
+}
+
+export function fetchSalesForecastDetail(query: SalesForecastQuery, partnerSku: string) {
+  const params = new URLSearchParams({
+    storeCode: query.storeCode,
+    siteCode: query.siteCode,
+    partnerSku
+  })
+  return getJson<SalesForecastDetail>(`/api/sales-forecast/detail?${params.toString()}`)
 }
 
 export function setSalesForecastFollowUp(input: SalesForecastFollowUpInput) {
@@ -61,7 +72,7 @@ export async function exportSalesForecastCsv(query: SalesForecastQuery, options:
 }
 
 async function getJson<TResponse>(url: string): Promise<TResponse> {
-  const response = await fetch(url)
+  const response = await apiFetch(url)
   const payload = await response.json().catch(() => null)
   if (!response.ok) {
     const message =
@@ -74,7 +85,7 @@ async function getJson<TResponse>(url: string): Promise<TResponse> {
 }
 
 async function postJson<TResponse>(url: string, body: unknown): Promise<TResponse> {
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)

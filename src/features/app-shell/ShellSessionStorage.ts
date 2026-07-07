@@ -13,7 +13,6 @@ import {
   PURCHASE_LISTING_PATH,
   PURCHASE_PRE_ORDER_PROFIT_PATH,
   DATA_SALES_ANALYTICS_PATH,
-  DATA_SALES_FORECAST_PATH,
   OPERATIONS_COMPETITOR_ANALYSIS_PATH,
   OPERATIONS_SKIN_MANAGEMENT_PATH,
   OPERATIONS_NOON_ADS_PATH,
@@ -170,7 +169,6 @@ function readDevSessionOverride(): AuthSession | null {
     search.get('grantSystemReports') === '1'
   const includeSalesAnalyticsDevMenu =
     pathname.startsWith(DATA_SALES_ANALYTICS_PATH) ||
-    pathname.startsWith(DATA_SALES_FORECAST_PATH) ||
     search.get('grantSalesAnalytics') === '1' ||
     search.get('grantSalesForecast') === '1'
   const includeOperationsCompetitorDevMenu =
@@ -374,7 +372,6 @@ function readDevSessionOverride(): AuthSession | null {
   }
   if (includeSalesAnalyticsDevMenu) {
     grantedMenus.push({ menuId: 9401, menuName: '销量分析', urlPath: DATA_SALES_ANALYTICS_PATH })
-    grantedMenus.push({ menuId: 9402, menuName: '销量预测', urlPath: DATA_SALES_FORECAST_PATH })
   }
   if (includeOperationsCompetitorDevMenu) {
     grantedMenus.push({ menuId: 9801, menuName: '竞品分析', urlPath: OPERATIONS_COMPETITOR_ANALYSIS_PATH })

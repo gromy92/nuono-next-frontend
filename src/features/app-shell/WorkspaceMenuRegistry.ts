@@ -25,7 +25,6 @@ export type AppMenuKey =
   | 'operations-product-keywords'
   | 'data-sales-analysis'
   | 'data-order-analysis'
-  | 'data-sales-forecast'
   | 'noon-call-store-data'
   | 'system-report-noon-data-completeness'
   | 'system-report-noon-data-gaps'
@@ -98,7 +97,6 @@ export type WorkspaceContentKind =
   | 'product-keywords'
   | 'sales-analytics'
   | 'order-finance'
-  | 'sales-forecast'
   | 'noon-call-store-data'
   | 'system-report-noon-data-completeness'
   | 'system-report-noon-data-gaps'
@@ -409,16 +407,6 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'order-finance',
     closable: true
   },
-  'data-sales-forecast': {
-    key: 'data-sales-forecast',
-    label: '销量预测',
-    path: '/data/sales-forecast',
-    sectionKey: 'data',
-    pathLabel: '数据 / 销量预测',
-    tabLabel: '销量预测',
-    contentKind: 'sales-forecast',
-    closable: true
-  },
   'noon-call-store-data': {
     key: 'noon-call-store-data',
     label: '店铺数据',
@@ -646,7 +634,6 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     entries: [
       { type: 'workspace', key: 'data-sales-analysis' },
       { type: 'workspace', key: 'data-order-analysis' },
-      { type: 'workspace', key: 'data-sales-forecast' },
       { type: 'placeholder', key: 'data-board', label: '约仓看板', disabled: true }
     ]
   },
@@ -839,18 +826,17 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['关键词数据', '关键词管理']
   },
   {
-    keys: ['data-sales-analysis', 'data-order-analysis', 'data-sales-forecast'],
+    keys: ['data-sales-analysis', 'data-order-analysis'],
     urlPaths: [
       '/data/sales-analysis',
       '/data/order-analysis',
-      '/data/sales-forecast',
       '/api/sales-data/analytics',
       '/api/sales-data/activity-windows',
       '/api/order-finance',
       '/api/sales-forecast/overview'
     ],
     urlPathPrefixes: ['/api/sales-data/analytics/', '/api/sales-data/activity-windows/', '/api/order-finance/', '/api/sales-forecast/'],
-    menuNames: ['销量分析', '订单分析', '销量预测', '销售分析', '销量数据']
+    menuNames: ['销量分析', '订单分析', '销售分析', '销量数据']
   },
   {
     keys: ['noon-call-store-data', 'system-report-noon-data-completeness', 'system-report-noon-data-gaps'],
@@ -915,7 +901,6 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'operations-product-keywords',
   'data-sales-analysis',
   'data-order-analysis',
-  'data-sales-forecast',
   'noon-call-store-data',
   'system-report-noon-data-completeness',
   'system-report-noon-data-gaps',

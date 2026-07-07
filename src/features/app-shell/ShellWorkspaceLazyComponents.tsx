@@ -155,9 +155,6 @@ export const SalesAnalyticsPage = lazyWorkspace(() =>
 export const OrderFinancePage = lazyWorkspace(() =>
   import('../order-finance/OrderFinancePage').then((module) => ({ default: module.OrderFinancePage }))
 );
-export const SalesForecastPage = lazyWorkspace(() =>
-  import('../sales-forecast/SalesForecastPage').then((module) => ({ default: module.SalesForecastPage }))
-);
 export const CompetitorAnalysisPage = lazyWorkspace(() =>
   import('../competitor-analysis/CompetitorAnalysisPage').then((module) => ({
     default: module.CompetitorAnalysisPage

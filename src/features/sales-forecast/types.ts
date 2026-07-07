@@ -114,7 +114,18 @@ export type SalesForecastFactorBreakdown = {
   trendFactor?: number | string | null
   lifecycleFactor?: number | string | null
   futureFactor?: number | string | null
+  futureFactor30?: number | string | null
+  futureFactor60?: number | string | null
+  futureFactor90?: number | string | null
   forecastUnits30: number
   forecastUnits60: number
   forecastUnits90: number
+  dailyForecasts?: SalesForecastDailyForecast[]
+}
+
+export type SalesForecastDailyForecast = {
+  dayIndex: number
+  forecastDate?: string | null
+  calendarFactor?: number | string | null
+  forecastUnits?: number | string | null
 }
