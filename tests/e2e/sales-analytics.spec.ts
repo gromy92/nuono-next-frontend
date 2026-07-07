@@ -318,6 +318,7 @@ test('sales analytics opens as a product-list-first workbench with comparison de
     });
   });
   await page.route('**/api/sales-forecast/detail?**', async (route) => {
+    const forecastStart = new Date('2026-05-21T00:00:00Z');
     await route.fulfill({
       json: {
         featureValues: {
@@ -340,12 +341,16 @@ test('sales analytics opens as a product-list-first workbench with comparison de
           forecastUnits30: 30,
           forecastUnits60: 61,
           forecastUnits90: 93,
-          dailyForecasts: Array.from({ length: 120 }, (_, index) => ({
-            dayIndex: index + 1,
-            forecastDate: `2026-${index < 10 ? '06' : '07'}-${String((index % 28) + 1).padStart(2, '0')}`,
-            calendarFactor: '1.0000',
-            forecastUnits: '1.00000000'
-          }))
+          dailyForecasts: Array.from({ length: 120 }, (_, index) => {
+            const forecastDate = new Date(forecastStart);
+            forecastDate.setUTCDate(forecastDate.getUTCDate() + index);
+            return {
+              dayIndex: index + 1,
+              forecastDate: formatDate(forecastDate),
+              calendarFactor: '1.0000',
+              forecastUnits: '1.00000000'
+            };
+          })
         },
         calculationVersion: 'SALES_FORECAST_V1_4',
         configVersion: 'CALENDAR_FACTOR_CURRENT'
@@ -471,8 +476,9 @@ test('sales analytics opens as a product-list-first workbench with comparison de
   await expect(productTable).toContainText('经营正常');
   await expect(productTable).toContainText('—');
   await expect(productTable.getByRole('button', { name: '详情' }).first()).toBeVisible();
-  await expect(productTable.getByRole('button', { name: '调价' }).first()).toBeVisible();
-  await expect(productTable.getByRole('button', { name: '补货' }).first()).toBeVisible();
+  await expect(productTable.getByRole('button', { name: '调价' })).toHaveCount(0);
+  await expect(productTable.getByRole('button', { name: '补货' })).toHaveCount(0);
+  await expect(workbench.getByRole('button', { name: '生成补货建议' })).toHaveCount(0);
 
   const compareButton = workbench.getByRole('button', { name: '对比分析' });
   await expect(compareButton).toBeDisabled();
@@ -545,6 +551,8 @@ test('sales analytics opens as a product-list-first workbench with comparison de
   }).toBeLessThanOrEqual(7);
   await detailDialog.getByRole('tab', { name: '销量预测' }).click();
   await expect(detailDialog).toContainText('30天预测');
+  await expect(detailDialog).toContainText('筛选范围预测');
+  await expect(detailDialog).toContainText('筛选范围实际');
   await expect(detailDialog).toContainText('当前库存');
   await expect(detailDialog).toContainText('21 件');
   await expect(detailDialog).toContainText('60天预测');

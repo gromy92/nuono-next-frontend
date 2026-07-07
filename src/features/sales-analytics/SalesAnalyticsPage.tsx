@@ -520,7 +520,6 @@ export function SalesAnalyticsPage({ session, mode = 'analytics' }: SalesAnalyti
             <Button icon={<DownloadOutlined />} onClick={() => void requestExport()}>
               批量导出
             </Button>
-            <Button onClick={() => message.info('补货建议将在后续补货工作流中生成')}>生成补货建议</Button>
             <Button icon={<ReloadOutlined />} onClick={refreshAll} loading={loading}>
               刷新
             </Button>
@@ -620,9 +619,7 @@ export function SalesAnalyticsPage({ session, mode = 'analytics' }: SalesAnalyti
           rowSelection={rowSelection}
           size="middle"
           columns={productColumns(
-            openDetail,
-            () => message.info('调价动作将在后续价格工作流中处理'),
-            () => message.info('补货动作将在后续补货工作流中处理')
+            openDetail
           )}
           dataSource={products}
           locale={{ emptyText: '暂无商品销量数据' }}
@@ -915,7 +912,6 @@ function ProductDetailDialog({
             extra={
               <Space wrap size={[4, 4]} align="center">
                 {healthTags(row || undefined)}
-                <Tag color="blue" style={{ marginInlineEnd: 0 }}>30天预测 —</Tag>
                 <Tag style={{ marginInlineEnd: 0 }}>可售 {formatNumber(currentStock)}</Tag>
                 <Tag style={{ marginInlineEnd: 0 }}>覆盖 {formatStockCoverDays(stockCoverDays)}</Tag>
               </Space>
@@ -1004,6 +1000,8 @@ function ProductDetailDialog({
                   row={row}
                   currentStock={currentStock}
                   stockCoverDays={stockCoverDays}
+                  detailDateRange={detailDateRange}
+                  actualFacts={detail?.facts || []}
                 />
               )
             }
@@ -1019,13 +1017,17 @@ function ProductForecastPanel({
   query,
   row,
   currentStock,
-  stockCoverDays
+  stockCoverDays,
+  detailDateRange,
+  actualFacts
 }: {
   open: boolean
   query: SalesForecastQuery | null
   row: SalesProductRow | null
   currentStock?: number | null
   stockCoverDays?: number | null
+  detailDateRange: DateRangeValue
+  actualFacts: DailySalesFact[]
 }) {
   const { message } = App.useApp()
   const [overview, setOverview] = useState<SalesForecastOverview | null>(null)
@@ -1079,7 +1081,18 @@ function ProductForecastPanel({
 
   const factorBreakdown = forecastDetail?.factorBreakdown || forecastRow?.detail?.factorBreakdown
   const dailyForecasts = factorBreakdown?.dailyForecasts || []
-  const chartOption = useMemo(() => buildDailyForecastChartOption(dailyForecasts), [dailyForecasts])
+  const rangeForecastUnits = useMemo(
+    () => forecastUnitsForRange(dailyForecasts, detailDateRange),
+    [dailyForecasts, detailDateRange]
+  )
+  const rangeActualUnits = useMemo(
+    () => actualUnitsForRange(actualFacts, detailDateRange),
+    [actualFacts, detailDateRange]
+  )
+  const chartOption = useMemo(
+    () => buildActualAndForecastChartOption(actualFacts, dailyForecasts, detailDateRange),
+    [actualFacts, dailyForecasts, detailDateRange]
+  )
   const confidenceLabel = forecastRow?.confidenceLabel || '—'
   const emptyTitle = overview?.emptyState?.title || (overview?.state === 'ready' ? '该商品暂无预测结果' : '暂无销量预测结果')
   const emptyDescription =
@@ -1096,6 +1109,7 @@ function ProductForecastPanel({
             <Text strong>销量预测</Text>
             {overview?.sourceDataDate ? <Tag>数据日 {overview.sourceDataDate}</Tag> : null}
             {overview?.calculationVersion ? <Tag>{overview.calculationVersion}</Tag> : null}
+            <Tag>{formatDateRange(detailDateRange)}</Tag>
           </Space>
           <Space>
             <Button size="small" icon={<ReloadOutlined />} onClick={() => void loadForecast()} disabled={!query || !partnerSku}>
@@ -1110,6 +1124,8 @@ function ProductForecastPanel({
         {errorMessage ? <Alert type="error" showIcon message="销量预测加载失败" description={errorMessage} /> : null}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+          <SummaryTile title="筛选范围预测" value={formatForecastUnits(rangeForecastUnits)} />
+          <SummaryTile title="筛选范围实际" value={formatForecastUnits(rangeActualUnits)} />
           <SummaryTile title="30天预测" value={formatForecastUnits(forecastRow?.forecastUnits30)} />
           <SummaryTile title="60天预测" value={formatForecastUnits(forecastRow?.forecastUnits60)} />
           <SummaryTile title="90天预测" value={formatForecastUnits(forecastRow?.forecastUnits90)} />
@@ -1141,12 +1157,12 @@ function ProductForecastPanel({
 
             <EChartPanel
               option={chartOption}
-              state={dailyForecasts.length ? 'ready' : 'empty'}
-              emptyText="暂无逐日预测数据"
+              state={chartOption ? 'ready' : 'empty'}
+              emptyText="当前筛选范围暂无实际销量或逐日预测数据"
               height={240}
               testId="sales-analytics-forecast-daily-chart"
-              ariaLabel="未来120天逐日预测销量"
-              title="未来120天逐日预测"
+              ariaLabel="实际销量与未来120天逐日预测销量"
+              title="实际销量与未来120天逐日预测"
             />
 
             <div style={{ border: '1px solid #e5e7eb', borderRadius: 6, padding: 12 }}>
@@ -1252,13 +1268,35 @@ function SummaryTile({ title, value }: { title: string; value: string }) {
   )
 }
 
-function buildDailyForecastChartOption(points: SalesForecastDailyForecast[]): EChartsCoreOption | null {
-  const chartPoints = points.slice(0, 120)
-  if (!chartPoints.length) return null
-  const values = chartPoints.map((point) => numericForecastValue(point.forecastUnits))
+function buildActualAndForecastChartOption(
+  actualFacts: DailySalesFact[],
+  forecastPoints: SalesForecastDailyForecast[],
+  range: DateRangeValue
+): EChartsCoreOption | null {
+  const axisDates = datesBetween(range)
+  if (!axisDates.length) return null
+  const actualByDate = new Map(
+    actualFacts
+      .filter((fact) => fact.factDate)
+      .map((fact) => [fact.factDate, typeof fact.netUnits === 'number' ? fact.netUnits : 0])
+  )
+  const forecastByDate = new Map(
+    forecastPoints
+      .filter((point) => point.forecastDate)
+      .map((point) => [String(point.forecastDate), numericForecastValue(point.forecastUnits)])
+  )
+  const actualValues = axisDates.map((date) => actualByDate.has(date) ? actualByDate.get(date) ?? 0 : null)
+  const forecastValues = axisDates.map((date) => forecastByDate.has(date) ? forecastByDate.get(date) ?? 0 : null)
+  const hasData = actualValues.some((value) => value !== null) || forecastValues.some((value) => value !== null)
+  if (!hasData) return null
   return {
+    legend: {
+      bottom: 0,
+      data: ['实际销量', '预测销量'],
+      icon: 'roundRect'
+    },
     grid: {
-      bottom: 24,
+      bottom: 42,
       containLabel: true,
       left: 8,
       right: 14,
@@ -1278,19 +1316,31 @@ function buildDailyForecastChartOption(points: SalesForecastDailyForecast[]): EC
       borderWidth: 1,
       extraCssText: 'box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);',
       formatter: (params: unknown) => {
-        const item = Array.isArray(params) ? params[0] : params
-        const dataIndex = typeof item === 'object' && item && 'dataIndex' in item ? Number((item as { dataIndex: number }).dataIndex) : 0
-        const point = chartPoints[dataIndex]
-        const value = values[dataIndex]
+        const items = Array.isArray(params) ? params : [params]
+        const first = items[0]
+        const dataIndex = typeof first === 'object' && first && 'dataIndex' in first ? Number((first as { dataIndex: number }).dataIndex) : 0
+        const date = axisDates[dataIndex]
+        const rows = items
+          .map((item) => {
+            if (!item || typeof item !== 'object') return ''
+            const seriesName = 'seriesName' in item ? String((item as { seriesName: string }).seriesName) : ''
+            const value = 'value' in item ? (item as { value?: number | null }).value : null
+            if (value === null || value === undefined || !Number.isFinite(Number(value))) return ''
+            const color = seriesName === '实际销量' ? '#14b8a6' : '#1677ff'
+            return `
+              <div style="display:flex;align-items:center;gap:8px;color:#475569;">
+                <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:${color};"></span>
+                <span>${seriesName}</span>
+                <span style="font-weight:700;color:#111827;">${formatChartUnits(Number(value))}</span>
+                <span>件</span>
+              </div>
+            `
+          })
+          .filter(Boolean)
+          .join('')
         return `
-          <div style="font-weight:600;color:#111827;margin-bottom:6px;">${point?.forecastDate || `第${point?.dayIndex || dataIndex + 1}天`}</div>
-          <div style="display:flex;align-items:center;gap:8px;color:#475569;">
-            <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#1677ff;"></span>
-            <span>预测销量</span>
-            <span style="font-weight:700;color:#111827;">${formatChartUnits(value)}</span>
-            <span>件</span>
-          </div>
-          <div style="margin-top:4px;color:#64748b;">日历因子 ${formatForecastFactor(point?.calendarFactor)}</div>
+          <div style="font-weight:600;color:#111827;margin-bottom:6px;">${date}</div>
+          ${rows}
         `
       },
       padding: [10, 12],
@@ -1310,7 +1360,7 @@ function buildDailyForecastChartOption(points: SalesForecastDailyForecast[]): EC
         show: false
       },
       boundaryGap: false,
-      data: chartPoints.map((point) => point.forecastDate ? point.forecastDate.slice(5) : `D${point.dayIndex}`),
+      data: axisDates.map((date) => date.slice(5)),
       type: 'category'
     },
     yAxis: {
@@ -1337,6 +1387,23 @@ function buildDailyForecastChartOption(points: SalesForecastDailyForecast[]): EC
     },
     series: [
       {
+        data: actualValues,
+        emphasis: {
+          focus: 'series'
+        },
+        itemStyle: {
+          color: '#14b8a6'
+        },
+        lineStyle: {
+          color: '#14b8a6',
+          width: 2
+        },
+        name: '实际销量',
+        showSymbol: false,
+        smooth: true,
+        type: 'line'
+      },
+      {
         areaStyle: {
           color: {
             colorStops: [
@@ -1356,7 +1423,7 @@ function buildDailyForecastChartOption(points: SalesForecastDailyForecast[]): EC
             y2: 1
           }
         },
-        data: values,
+        data: forecastValues,
         emphasis: {
           focus: 'series'
         },
@@ -1365,6 +1432,7 @@ function buildDailyForecastChartOption(points: SalesForecastDailyForecast[]): EC
         },
         lineStyle: {
           color: '#1677ff',
+          type: 'dashed',
           width: 2
         },
         name: '预测销量',
@@ -1491,9 +1559,7 @@ function columnTitle(title: string, help: (typeof productColumnHelp)[keyof typeo
 }
 
 function productColumns(
-  onOpenDetail: (row: SalesProductRow) => void,
-  onPriceAction: () => void,
-  onReplenishmentAction: () => void
+  onOpenDetail: (row: SalesProductRow) => void
 ): ColumnsType<SalesProductRow> {
   return [
     {
@@ -1608,11 +1674,7 @@ function productColumns(
       width: 72,
       fixed: 'right',
       render: (_, row) => (
-        <Space direction="vertical" size={4}>
-          <Button size="small" aria-label="详情" onClick={() => onOpenDetail(row)} style={{ width: 48 }}>详情</Button>
-          <Button size="small" aria-label="调价" onClick={onPriceAction} style={{ width: 48 }}>调价</Button>
-          <Button size="small" aria-label="补货" onClick={onReplenishmentAction} style={{ width: 48 }}>补货</Button>
-        </Space>
+        <Button size="small" aria-label="详情" onClick={() => onOpenDetail(row)} style={{ width: 48 }}>详情</Button>
       )
     }
   ]
@@ -1838,6 +1900,51 @@ function formatNumber(value?: number | null) {
 
 function formatForecastUnits(value?: number | null) {
   return typeof value === 'number' ? `${value.toLocaleString('zh-CN')} 件` : '—'
+}
+
+function forecastUnitsForRange(points: SalesForecastDailyForecast[], range: DateRangeValue) {
+  let total = 0
+  let matched = false
+  const start = range[0].startOf('day')
+  const end = range[1].startOf('day')
+  for (const point of points) {
+    if (!point.forecastDate) continue
+    const date = dayjs(point.forecastDate)
+    if (!date.isValid() || date.isBefore(start, 'day') || date.isAfter(end, 'day')) continue
+    total += numericForecastValue(point.forecastUnits)
+    matched = true
+  }
+  return matched ? Math.ceil(total) : null
+}
+
+function actualUnitsForRange(facts: DailySalesFact[], range: DateRangeValue) {
+  let total = 0
+  let matched = false
+  const start = range[0].startOf('day')
+  const end = range[1].startOf('day')
+  for (const fact of facts) {
+    if (!fact.factDate) continue
+    const date = dayjs(fact.factDate)
+    if (!date.isValid() || date.isBefore(start, 'day') || date.isAfter(end, 'day')) continue
+    if (typeof fact.netUnits === 'number') {
+      total += fact.netUnits
+      matched = true
+    }
+  }
+  return matched ? total : null
+}
+
+function datesBetween(range: DateRangeValue) {
+  const start = range[0].startOf('day')
+  const end = range[1].startOf('day')
+  if (!start.isValid() || !end.isValid() || end.isBefore(start, 'day')) {
+    return []
+  }
+  const dates: string[] = []
+  for (let cursor = start, index = 0; !cursor.isAfter(end, 'day') && index < 180; cursor = cursor.add(1, 'day'), index++) {
+    dates.push(cursor.format('YYYY-MM-DD'))
+  }
+  return dates
 }
 
 function formatForecastFactor(value?: number | string | null) {
