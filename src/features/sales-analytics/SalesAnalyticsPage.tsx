@@ -887,6 +887,14 @@ function ProductDetailDialog({
   const categoryLabel = lastCategoryLabel(row?.productFulltype)
   const lifecycleLabel = row?.lifecycleLabel || '生命周期 —'
   const trendDataRange = formatTrendDataRange(detail?.facts || [], detail?.priceTrend || []) || formatDateRange(detailDateRange)
+  const [activeDetailTab, setActiveDetailTab] = useState<'sales' | 'forecast'>('sales')
+
+  useEffect(() => {
+    if (open) {
+      setActiveDetailTab('sales')
+    }
+  }, [open, partnerSku])
+
   return (
     <Modal title={<Space size={6}><ShoppingOutlined />商品详情</Space>} open={open} width={1180} footer={null} onCancel={onClose}>
       <Space direction="vertical" size={14} style={{ width: '100%' }}>
@@ -930,14 +938,15 @@ function ProductDetailDialog({
               onChange={onDetailRangePresetChange}
             />
             {detailRangePreset === 'custom' ? (
-              <RangePicker
-                data-testid="sales-detail-custom-range"
-                allowClear={false}
-                value={detailDateRange}
-                onChange={(value) => {
-                  if (value?.[0] && value?.[1]) onDetailDateRangeChange([value[0], value[1]])
-                }}
-              />
+              <span data-testid="sales-detail-custom-range">
+                <RangePicker
+                  allowClear={false}
+                  value={detailDateRange}
+                  onChange={(value) => {
+                    if (value?.[0] && value?.[1]) onDetailDateRangeChange([value[0], value[1]])
+                  }}
+                />
+              </span>
             ) : (
               <Text type="secondary">
                 {formatDateRange(detailDateRange)}
@@ -947,14 +956,17 @@ function ProductDetailDialog({
           {loading ? <Text type="secondary">加载中</Text> : null}
         </div>
 
-        <HistoryCoverageStatus
-          coverage={detail?.historyCoverage}
-          loading={historyBackfillLoading}
-          onBackfill={onHistoryBackfill}
-        />
+        {activeDetailTab === 'sales' ? (
+          <HistoryCoverageStatus
+            coverage={detail?.historyCoverage}
+            loading={historyBackfillLoading}
+            onBackfill={onHistoryBackfill}
+          />
+        ) : null}
 
         <Tabs
-          defaultActiveKey="sales"
+          activeKey={activeDetailTab}
+          onChange={(key) => setActiveDetailTab(key === 'forecast' ? 'forecast' : 'sales')}
           items={[
             {
               key: 'sales',
@@ -1124,8 +1136,8 @@ function ProductForecastPanel({
         {errorMessage ? <Alert type="error" showIcon message="销量预测加载失败" description={errorMessage} /> : null}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
-          <SummaryTile title="筛选范围预测" value={formatForecastUnits(rangeForecastUnits)} />
-          <SummaryTile title="筛选范围实际" value={formatForecastUnits(rangeActualUnits)} />
+          <SummaryTile testId="sales-analytics-forecast-range-units" title="筛选范围预测" value={formatForecastUnits(rangeForecastUnits)} />
+          <SummaryTile testId="sales-analytics-forecast-range-actual-units" title="筛选范围实际" value={formatForecastUnits(rangeActualUnits)} />
           <SummaryTile title="30天预测" value={formatForecastUnits(forecastRow?.forecastUnits30)} />
           <SummaryTile title="60天预测" value={formatForecastUnits(forecastRow?.forecastUnits60)} />
           <SummaryTile title="90天预测" value={formatForecastUnits(forecastRow?.forecastUnits90)} />
@@ -1259,9 +1271,9 @@ function SummaryStrip({ items }: { items: Array<{ title: string; value: string }
   )
 }
 
-function SummaryTile({ title, value }: { title: string; value: string }) {
+function SummaryTile({ title, value, testId }: { title: string; value: string; testId?: string }) {
   return (
-    <div style={{ border: '1px solid #e5e7eb', borderRadius: 6, padding: '10px 12px' }}>
+    <div data-testid={testId} style={{ border: '1px solid #e5e7eb', borderRadius: 6, padding: '10px 12px' }}>
       <Text type="secondary" style={{ fontSize: 12 }}>{title}</Text>
       <div style={{ marginTop: 4, fontSize: 18, fontWeight: 600 }}>{value}</div>
     </div>

@@ -537,6 +537,10 @@ test('sales analytics opens as a product-list-first workbench with comparison de
   await expect(detailDialog.getByTestId('sales-history-coverage-status')).toContainText('销量 2026-05-01 至 2026-05-19');
   await expect(detailDialog.getByTestId('sales-trend-data-range')).toContainText('2026-03-25 至 2026-05-23');
   await expect(detailDialog.getByTestId('sales-trend-data-range')).not.toContainText(formatDate(halfYearPresetStart()));
+  await detailDialog.getByRole('tab', { name: '销量预测' }).click();
+  await expect(detailDialog.getByTestId('sales-history-coverage-status')).toHaveCount(0);
+  await detailDialog.getByRole('tab', { name: '销量分析' }).click();
+  await expect(detailDialog.getByTestId('sales-history-coverage-status')).toContainText('需要历史补全');
   await detailDialog.getByRole('button', { name: '触发历史补全' }).click();
   await expect.poll(() => historyBackfillPayload?.dateFrom).toBe(halfYearRequestRange.dateFrom);
   await expect.poll(() => historyBackfillPayload?.dateTo).toBe(halfYearRequestRange.dateTo);
@@ -549,10 +553,18 @@ test('sales analytics opens as a product-list-first workbench with comparison de
     const to = new Date(`${latest.dateTo}T00:00:00Z`).getTime();
     return Math.round((to - from) / 86400000) + 1;
   }).toBeLessThanOrEqual(7);
+  await detailDialog.getByTestId('sales-detail-range-preset').getByText('自定义').click();
+  await detailDialog.getByTestId('sales-detail-custom-range').locator('input').first().fill('2026-05-19');
+  await detailDialog.getByTestId('sales-detail-custom-range').locator('input').nth(1).fill('2026-05-25');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => detailRequestRanges.at(-1)?.dateFrom).toBe('2026-05-19');
+  await expect.poll(() => detailRequestRanges.at(-1)?.dateTo).toBe('2026-05-25');
   await detailDialog.getByRole('tab', { name: '销量预测' }).click();
   await expect(detailDialog).toContainText('30天预测');
   await expect(detailDialog).toContainText('筛选范围预测');
   await expect(detailDialog).toContainText('筛选范围实际');
+  await expect(detailDialog.getByTestId('sales-analytics-forecast-range-units')).toContainText('5 件');
+  await expect(detailDialog.getByTestId('sales-analytics-forecast-range-actual-units')).toContainText('5 件');
   await expect(detailDialog).toContainText('当前库存');
   await expect(detailDialog).toContainText('21 件');
   await expect(detailDialog).toContainText('60天预测');
@@ -561,6 +573,7 @@ test('sales analytics opens as a product-list-first workbench with comparison de
   await expect(detailDialog).toContainText('置信度');
   await expect(detailDialog).toContainText('样本窗口不完整');
   await expect(detailDialog.getByTestId('sales-analytics-forecast-daily-chart')).toBeVisible();
+  await expect(detailDialog.getByTestId('sales-history-coverage-status')).toHaveCount(0);
   await expect(detailDialog).toContainText('SALES_FORECAST_V1_4');
   await expect(detailDialog).toContainText('预测依据');
   await expect(detailDialog).toContainText('未来120天逐日预测');
