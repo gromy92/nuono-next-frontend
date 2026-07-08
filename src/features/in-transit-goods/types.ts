@@ -76,6 +76,9 @@ export type InTransitBatch = {
   latestNodeStatus?: string | null
   latestNodeHappenedAt?: string | null
   latestNodeDescription?: string | null
+  actualArrivalAt?: string | null
+  effectiveArrivalAt?: string | null
+  effectiveArrivalSource?: string | null
 }
 
 export type InTransitBoxDetailTabRequest = {

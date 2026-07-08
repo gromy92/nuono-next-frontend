@@ -154,8 +154,11 @@ function renderTimeNodes(
   onOpenEstimatedArrival: (row: InTransitBatch) => void
 ) {
   const label = logisticsNodeDisplayLabel(nodeStatusLabel, row.latestNodeStatus, row.latestNodeDescription)
-  const hasEstimatedArrival = Boolean(row.estimatedArrivalAt || row.etaDate)
-  const estimatedArrivalText = row.estimatedArrivalAt ? formatNodeDate(row.estimatedArrivalAt) : row.etaDate || '未维护'
+  const actualArrivalText = row.actualArrivalAt ? formatNodeDateTime(row.actualArrivalAt) : undefined
+  const estimatedArrivalText = row.estimatedArrivalAt ? formatNodeDate(row.estimatedArrivalAt) : row.etaDate || undefined
+  const arrivalText = actualArrivalText || estimatedArrivalText || '未维护'
+  const hasEffectiveArrival = Boolean(row.effectiveArrivalAt || row.actualArrivalAt || row.estimatedArrivalAt || row.etaDate)
+  const effectiveArrivalSource = row.effectiveArrivalSource || row.estimatedArrivalSource
   return (
     <Space direction="vertical" size={2}>
       <Text type="secondary">国内收货 {formatNodeDateTime(row.domesticReceivedAt)}</Text>
@@ -164,18 +167,19 @@ function renderTimeNodes(
         <Button
           type="link"
           size="small"
-          danger={!hasEstimatedArrival}
-          className={`in-transit-eta-edit${hasEstimatedArrival ? '' : ' in-transit-eta-edit--missing'}`}
+          danger={!hasEffectiveArrival}
+          className={`in-transit-eta-edit${hasEffectiveArrival ? '' : ' in-transit-eta-edit--missing'}`}
           onClick={() => onOpenEstimatedArrival(row)}
         >
-          预计到达 {estimatedArrivalText}
+          到达时间 {arrivalText}
         </Button>
-        {row.estimatedArrivalSource ? (
-          <Tag color={estimatedArrivalSourceColor(row.estimatedArrivalSource)} style={{ marginInlineEnd: 0 }}>
-            {estimatedArrivalSourceLabel(row.estimatedArrivalSource)}
+        {effectiveArrivalSource ? (
+          <Tag color={estimatedArrivalSourceColor(effectiveArrivalSource)} style={{ marginInlineEnd: 0 }}>
+            {estimatedArrivalSourceLabel(effectiveArrivalSource)}
           </Tag>
         ) : null}
       </Space>
+      {actualArrivalText && estimatedArrivalText ? <Text type="secondary">预计到达 {estimatedArrivalText}</Text> : null}
       <Space size={6} wrap>
         <Text type="secondary">最新</Text>
         {row.latestNodeStatus ? (
