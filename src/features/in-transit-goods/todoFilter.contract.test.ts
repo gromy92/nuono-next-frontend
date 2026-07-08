@@ -16,6 +16,24 @@ assert.match(
 )
 
 assert.match(
+  typesSource,
+  /actualArrivalAt\?: string \| null/,
+  'batch rows must expose actual arrival separately from ETA'
+)
+
+assert.match(
+  typesSource,
+  /effectiveArrivalAt\?: string \| null/,
+  'batch rows must expose the unified effective arrival time'
+)
+
+assert.match(
+  typesSource,
+  /effectiveArrivalSource\?: string \| null/,
+  'batch rows must expose whether effective arrival came from actual or estimated data'
+)
+
+assert.match(
   toolbarSource,
   /placeholder="待办"/,
   'batch toolbar must render a todo filter'

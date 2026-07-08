@@ -23,6 +23,7 @@ type InTransitEstimatedArrivalModalProps = {
 }
 
 const SOURCE_LABELS: Record<string, string> = {
+  ACTUAL: '实际到达',
   MANUAL: '人工维护',
   OFFICIAL: '官方 ETA',
   AIR_HISTORY_ESTIMATE: '历史推算',
@@ -31,6 +32,7 @@ const SOURCE_LABELS: Record<string, string> = {
 }
 
 const SOURCE_COLORS: Record<string, string> = {
+  ACTUAL: 'green',
   MANUAL: 'green',
   OFFICIAL: 'blue',
   AIR_HISTORY_ESTIMATE: 'orange',
