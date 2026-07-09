@@ -243,8 +243,22 @@ function asnIsExpired(row: Pick<OfficialWarehouseAsn, 'noonAsnStatus'>) {
   return normalizeAsnStatus(row.noonAsnStatus) === 'EXPIRED'
 }
 
-function asnWarehouseLabel(row: Pick<OfficialWarehouseAsn, 'selectedWarehousePartnerCode' | 'selectedWarehouseName'>) {
-  return row.selectedWarehousePartnerCode || row.selectedWarehouseName || '-'
+function appointmentAwareWarehouseLabel(
+  row: Pick<OfficialWarehouseAsn, 'selectedWarehousePartnerCode' | 'selectedWarehouseName' | 'appointment'>
+) {
+  const appointmentWarehouse = row.appointment?.warehouseToPartnerCode || row.appointment?.warehouseToCode
+  const routeWarehouse = row.selectedWarehousePartnerCode || row.selectedWarehouseName
+  if (!appointmentWarehouse) {
+    return <Text type="secondary">{routeWarehouse || '-'}</Text>
+  }
+  return (
+    <>
+      <Text type="secondary">{appointmentWarehouse}</Text>
+      {routeWarehouse && routeWarehouse !== appointmentWarehouse ? (
+        <Text type="secondary">ASN路由 {routeWarehouse}</Text>
+      ) : null}
+    </>
+  )
 }
 
 function businessErrorText(message?: string, failureType?: string) {
@@ -1154,14 +1168,14 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       }
     },
     {
-      title: '货量 / 路由仓',
+      title: '货量 / 仓库',
       width: 120,
       render: (_, row) => (
         <div className="official-warehouse-stack">
           <div className="official-warehouse-quantity">
             <span>{Number(row.totalQuantity || 0).toLocaleString()} 件</span>
           </div>
-          <Text type="secondary">{asnWarehouseLabel(row)}</Text>
+          {appointmentAwareWarehouseLabel(row)}
         </div>
       )
     },

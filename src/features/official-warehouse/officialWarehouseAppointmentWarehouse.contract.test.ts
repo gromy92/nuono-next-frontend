@@ -23,6 +23,10 @@ const submitAppointmentSource = pageSource.slice(
   pageSource.indexOf('async function submitAppointment'),
   pageSource.indexOf('async function runAppointmentNow')
 )
+const warehouseLabelSource = pageSource.slice(
+  pageSource.indexOf('function appointmentAwareWarehouseLabel'),
+  pageSource.indexOf('function businessErrorText')
+)
 
 assert.match(
   appointmentWarehouseOptionsSource,
@@ -78,4 +82,14 @@ assert.match(
   submitAppointmentSource,
   /setAppointmentSubmitFeedback\(\{\s*type:\s*'warning',\s*message:\s*appointmentWarehouseFromMissingMessage\s*\}\)/,
   'submitting without warehouse-from should show the blocking reason inside the modal'
+)
+assert.match(
+  warehouseLabelSource,
+  /row\.appointment\?\.warehouseToPartnerCode/,
+  'ASN list warehouse label should prefer the appointment Ship To warehouse selected by the user'
+)
+assert.match(
+  warehouseLabelSource,
+  /ASN路由/,
+  'ASN list warehouse label should retain the original ASN routing warehouse as secondary context'
 )
