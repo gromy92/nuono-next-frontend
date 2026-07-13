@@ -46,7 +46,32 @@ assert.equal(
   'image tags must opt into browser lazy loading'
 )
 assert.equal(
+  pageSource.includes("style={{ display: loaded ? undefined : 'none' }}"),
+  false,
+  'lazy images must not be display:none before onLoad because that can prevent the browser from starting the image request'
+)
+assert.equal(
+  pageSource.includes("style={{ visibility: loaded ? undefined : 'hidden' }}"),
+  true,
+  'lazy images should keep their layout box visible while the fallback is shown'
+)
+assert.equal(
   pageSource.includes('fetchPriority={fetchPriority}'),
   true,
   'low-priority sidebar thumbnails should not compete with detail content'
+)
+assert.equal(
+  pageSource.includes("useState<ProductImageProfileTabKey>('assets')"),
+  true,
+  'product image detail should default to the first tab on page entry'
+)
+assert.equal(
+  pageSource.includes("activeKey={activeProfileTab}"),
+  true,
+  'product image detail tabs must be controlled so inactive tab content can stay unmounted'
+)
+assert.equal(
+  pageSource.includes("children: activeProfileTab === 'suites' ?"),
+  true,
+  'AI suite thumbnails should only mount after the suite tab is opened'
 )

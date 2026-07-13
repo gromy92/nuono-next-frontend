@@ -68,6 +68,7 @@ type ProductImageProfilePageProps = {
 type ImageRole = ApiImageRole
 type SuiteStatus = ApiSuiteStatus
 type SuiteAssetRole = ApiSuiteAssetRole
+type ProductImageProfileTabKey = 'assets' | 'elements' | 'suites'
 
 type ProfileAsset = {
   id: string
@@ -828,7 +829,7 @@ function SystemImage({
         decoding="async"
         fetchPriority={fetchPriority}
         loading="lazy"
-        style={{ display: loaded ? undefined : 'none' }}
+        style={{ visibility: loaded ? undefined : 'hidden' }}
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
       />
@@ -1225,6 +1226,7 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
   const [extractingImageFacts, setExtractingImageFacts] = useState(false)
   const [assetImportOpen, setAssetImportOpen] = useState(false)
   const [aiCopyModalOpen, setAiCopyModalOpen] = useState(false)
+  const [activeProfileTab, setActiveProfileTab] = useState<ProductImageProfileTabKey>('assets')
   const [assetImportTab, setAssetImportTab] = useState<'url' | 'link' | 'upload'>('url')
   const [assetUrlText, setAssetUrlText] = useState('')
   const [sourceLinkUrl, setSourceLinkUrl] = useState('')
@@ -2226,12 +2228,14 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
           </div>
 
           <Tabs
+            activeKey={activeProfileTab}
             className="product-image-profile-tabs"
+            onChange={(key) => setActiveProfileTab(key as ProductImageProfileTabKey)}
             items={[
               {
                 key: 'assets',
                 label: '基础图',
-                children: (
+                children: activeProfileTab === 'assets' ? (
                   <div className="product-image-profile-tab-body">
                     <div className="product-image-profile-tab-actions">
                       <Button disabled={!selectedProfileReady} icon={<PlusOutlined />} onClick={() => setAssetImportOpen(true)}>
@@ -2296,12 +2300,12 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                       <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无基础图" />
                     )}
                   </div>
-                )
+                ) : null
               },
               {
                 key: 'elements',
                 label: '图片元素',
-                children: (
+                children: activeProfileTab === 'elements' ? (
                   <div className="product-image-profile-tab-body product-image-profile-elements">
                     <div className="product-image-profile-elements-grid">
                       <section className="product-image-profile-panel product-image-profile-fact-panel">
@@ -2427,12 +2431,12 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                       </section>
                     </div>
                   </div>
-                )
+                ) : null
               },
               {
                 key: 'suites',
                 label: 'AI 套图',
-                children: (
+                children: activeProfileTab === 'suites' ? (
                   <div className="product-image-profile-tab-body">
                     <div className="product-image-profile-tab-actions product-image-profile-suite-toolbar">
                       <Button
@@ -2530,7 +2534,7 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                       </div>
                     )}
                   </div>
-                )
+                ) : null
               }
             ]}
           />
