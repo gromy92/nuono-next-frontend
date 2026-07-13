@@ -244,7 +244,9 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '采购 / 商品上架',
     tabLabel: '商品上架',
     contentKind: 'product-listing',
-    closable: true
+    closable: true,
+    visibleInSidebar: false,
+    visibleInWorkspaceTabs: false
   },
   'purchase-order': {
     key: 'purchase-order',
@@ -264,7 +266,9 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '采购 / 选品池',
     tabLabel: '选品池',
     contentKind: 'purchase-pre-order-profit',
-    closable: true
+    closable: true,
+    visibleInSidebar: false,
+    visibleInWorkspaceTabs: false
   },
   'purchase-profit': {
     key: 'purchase-profit',
@@ -555,7 +559,6 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
       { type: 'workspace', key: 'product-specs' },
       { type: 'workspace', key: 'product-image-profile' },
       { type: 'workspace', key: 'product-image-match' },
-      { type: 'placeholder', key: 'product-category-collect', label: '类目采集', disabled: true },
       { type: 'workspace', key: 'product-manual-selection' }
     ]
   },
@@ -564,8 +567,6 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     label: '采购',
     iconKey: 'purchase',
     entries: [
-      { type: 'workspace', key: 'purchase-listing' },
-      { type: 'workspace', key: 'purchase-pre-order-profit' },
       { type: 'workspace', key: 'purchase-profit' },
       { type: 'workspace', key: 'purchase-ali1688-historical-orders' },
       { type: 'workspace', key: 'purchase-ali1688-sku-purchase-history' },
@@ -595,12 +596,6 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     ]
   },
   {
-    key: 'campaign',
-    label: '活动',
-    iconKey: 'campaign',
-    entries: [{ type: 'placeholder', key: 'campaign-list', label: '活动列表', disabled: true }]
-  },
-  {
     key: 'operations',
     label: '运营',
     iconKey: 'operations',
@@ -622,19 +617,12 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     ]
   },
   {
-    key: 'task',
-    label: '任务',
-    iconKey: 'task',
-    entries: [{ type: 'placeholder', key: 'task-list', label: '任务列表', disabled: true }]
-  },
-  {
     key: 'data',
     label: '数据',
     iconKey: 'data',
     entries: [
       { type: 'workspace', key: 'data-sales-analysis' },
-      { type: 'workspace', key: 'data-order-analysis' },
-      { type: 'placeholder', key: 'data-board', label: '约仓看板', disabled: true }
+      { type: 'workspace', key: 'data-order-analysis' }
     ]
   },
   {
@@ -655,12 +643,6 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
       { type: 'workspace', key: 'user-account' },
       { type: 'workspace', key: 'user-role' }
     ]
-  },
-  {
-    key: 'ai-model',
-    label: 'AI模型',
-    iconKey: 'ai-model',
-    entries: [{ type: 'placeholder', key: 'ai-model-center', label: '模型中心', disabled: true }]
   },
   {
     key: 'system',
@@ -753,12 +735,6 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     urlPaths: ['/purchase/listing', '/api/product-listing'],
     urlPathPrefixes: ['/api/product-listing/'],
     menuNames: ['商品上架']
-  },
-  {
-    keys: ['purchase-pre-order-profit'],
-    urlPaths: ['/purchase/pre-order-profit', '/api/pre-order-profit'],
-    urlPathPrefixes: ['/api/pre-order-profit/'],
-    menuNames: ['选品池', '选品利润预估', '出单前利润计算']
   },
   {
     keys: ['purchase-profit'],
@@ -888,7 +864,6 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-order',
   'purchase-in-transit-goods',
   'purchase-product-logistics-costs',
-  'purchase-pre-order-profit',
   'purchase-profit',
   'purchase-logistics-quote',
   'warehouse-shipping-order',

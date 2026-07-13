@@ -15,7 +15,7 @@ import {
   UploadOutlined
 } from '@ant-design/icons'
 import { App, Button, Checkbox, Empty, Input, Modal, Popconfirm, Select, Space, Tabs, Tag, Tooltip, Typography, Upload } from 'antd'
-import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AuthSession } from '../auth/session'
 import {
   adoptProductImageSuite,
@@ -26,7 +26,8 @@ import {
   extractProductImageFacts,
   fetchProductImageAssetMetadata,
   fetchProductImageAssetPreviewUrl,
-  fetchProductImageProfiles,
+  fetchProductImageProfileDetail,
+  fetchProductImageProfileSummaries,
   importProductImageProfileAssetUrls,
   moveProductImageSuiteAsset,
   saveProductImageProfile,
@@ -36,6 +37,7 @@ import {
   type ProductImageAssetRemoveItem,
   type ProductImageAiExtractionSuggestionView,
   type ProductImageProfileDetailView,
+  type ProductImageProfileSummaryView,
   type ProductImageRole as ApiImageRole,
   type ProductImageSectionCommand,
   type ProductImageSectionType,
@@ -52,6 +54,7 @@ import {
 } from './aiCopyText'
 import type { ProductImageAiPromptSection } from './aiCopyText'
 import { groupProductImageAssetsByRole } from './assetRoleSections'
+import { productProfileVirtualWindow } from './virtualProfileList'
 import './ProductImageProfilePage.css'
 
 const { Text } = Typography
@@ -137,6 +140,11 @@ type ProductImageProfile = {
   productFactText: string
   heroSellingPoints: string[]
   updatedAt: string
+  assetCount?: number
+  coverImageUrl?: string
+  detailLoaded?: boolean
+  hasAdoptedSuite?: boolean
+  suiteCount?: number
   assets: ProfileAsset[]
   sizeSection: SimpleImageSection
   coreFeatures: RepeatableImageSection[]
@@ -456,7 +464,7 @@ function backendRepeatableSections(profile: ProductImageProfileDetailView, secti
   }]
 }
 
-function backendProfileId(profile: ProductImageProfileDetailView) {
+function backendProfileId(profile: ProductImageProfileDetailView | ProductImageProfileSummaryView) {
   if (profile.id) {
     return `profile-${profile.id}`
   }
@@ -498,6 +506,11 @@ function mapBackendProfile(profile: ProductImageProfileDetailView): ProductImage
     productFactText: optionalText(profile.productFactText),
     heroSellingPoints: profile.heroSellingPoints?.length ? profile.heroSellingPoints.map(optionalText).slice(0, 5) : [''],
     updatedAt: optionalText(profile.updatedAt),
+    assetCount: assets.filter((asset) => asset.assetStatus === 'ACTIVE').length,
+    coverImageUrl: assets.find((asset) => asset.imageUrl)?.imageUrl,
+    detailLoaded: true,
+    hasAdoptedSuite: (profile.suites ?? []).some((suite) => suite.suiteStatus === 'ADOPTED'),
+    suiteCount: (profile.suites ?? []).filter((suite) => suite.suiteStatus !== 'DISCARDED').length,
     assets,
     sizeSection: backendSimpleSection(profile, 'SIZE'),
     coreFeatures: backendRepeatableSections(profile, 'CORE_FEATURE').slice(0, 2),
@@ -526,6 +539,51 @@ function mapBackendProfile(profile: ProductImageProfileDetailView): ProductImage
         accent: accentAt(assetIndex)
       }))
     }))
+  }
+}
+
+function mapBackendProfileSummary(profile: ProductImageProfileSummaryView): ProductImageProfile {
+  const coverImageUrl = optionalText(profile.coverImageUrl)
+  const coverAsset: ProfileAsset[] = coverImageUrl ? [{
+    id: `summary-cover-${profile.id ?? profile.pskuCode ?? coverImageUrl}`,
+    title: imageRoleLabel.MAIN,
+    imageUrl: coverImageUrl,
+    imageRole: 'MAIN',
+    sortOrder: 0,
+    assetStatus: 'ACTIVE',
+    accent: accentAt(0),
+    removable: false
+  }] : []
+
+  return {
+    id: backendProfileId(profile),
+    backendId: optionalNumber(profile.id),
+    ownerUserId: optionalNumber(profile.ownerUserId),
+    storeCode: optionalText(profile.storeCode) || undefined,
+    productIdentityKey: optionalText(profile.productIdentityKey) || undefined,
+    productMasterId: optionalNumber(profile.productMasterId),
+    productVariantId: optionalNumber(profile.productVariantId),
+    pskuCode: optionalText(profile.pskuCode),
+    productTitle: optionalText(profile.productTitle),
+    brand: optionalText(profile.brand),
+    titleAr: optionalText(profile.titleAr),
+    titleEn: optionalText(profile.titleEn),
+    specSummary: optionalText(profile.specSummary),
+    productFactText: '',
+    heroSellingPoints: [''],
+    updatedAt: optionalText(profile.updatedAt),
+    assetCount: optionalNumber(profile.assetCount) ?? coverAsset.length,
+    coverImageUrl: coverImageUrl || undefined,
+    detailLoaded: false,
+    hasAdoptedSuite: Boolean(profile.hasAdoptedSuite),
+    suiteCount: optionalNumber(profile.suiteCount) ?? 0,
+    assets: coverAsset,
+    sizeSection: emptySimpleSection(),
+    coreFeatures: [],
+    materialDetails: [],
+    usageScene: emptySimpleSection(),
+    packageList: emptySimpleSection(),
+    suites: []
   }
 }
 
@@ -737,7 +795,17 @@ function useSystemImagePreviewUrl(imageUrl?: string) {
   return previewUrl
 }
 
-function SystemImage({ src, alt, fallback }: { src?: string; alt: string; fallback?: ReactNode }) {
+function SystemImage({
+  src,
+  alt,
+  fallback,
+  fetchPriority = 'auto'
+}: {
+  alt: string
+  fallback?: ReactNode
+  fetchPriority?: 'auto' | 'high' | 'low'
+  src?: string
+}) {
   const previewUrl = useSystemImagePreviewUrl(src)
   const [failed, setFailed] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -758,12 +826,40 @@ function SystemImage({ src, alt, fallback }: { src?: string; alt: string; fallba
         src={previewUrl}
         alt={alt}
         decoding="async"
+        fetchPriority={fetchPriority}
+        loading="lazy"
         style={{ display: loaded ? undefined : 'none' }}
         onLoad={() => setLoaded(true)}
         onError={() => setFailed(true)}
       />
     </>
   )
+}
+
+function useNearViewportEnabled(rootMargin = '280px') {
+  const [node, setNode] = useState<HTMLElement | null>(null)
+  const [enabled, setEnabled] = useState(false)
+
+  useEffect(() => {
+    if (enabled || !node) {
+      return undefined
+    }
+    if (typeof IntersectionObserver === 'undefined') {
+      setEnabled(true)
+      return undefined
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting || entry.intersectionRatio > 0)) {
+        setEnabled(true)
+        observer.disconnect()
+      }
+    }, { rootMargin })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [enabled, node, rootMargin])
+
+  return { enabled, ref: setNode }
 }
 
 type AssetMetadataContext = {
@@ -969,9 +1065,14 @@ function AssetThumb({ asset, onPreview }: { asset: ProfileAsset; onPreview: (ass
 
 function ProductListThumb({ profile }: { profile: ProductImageProfile }) {
   const asset = profileCoverAsset(profile)
+  const { enabled, ref } = useNearViewportEnabled()
   return (
-    <span className="product-image-profile-product-thumb">
-      {asset?.imageUrl ? <SystemImage src={asset.imageUrl} alt={profile.pskuCode} /> : <PictureOutlined />}
+    <span className="product-image-profile-product-thumb" ref={ref}>
+      {asset?.imageUrl && enabled ? (
+        <SystemImage src={asset.imageUrl} alt={profile.pskuCode} fetchPriority="low" />
+      ) : (
+        <PictureOutlined />
+      )}
     </span>
   )
 }
@@ -1116,6 +1217,7 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
   const [selectedProfileId, setSelectedProfileId] = useState('')
   const [keyword, setKeyword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [selectedDetailLoading, setSelectedDetailLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [removingAssets, setRemovingAssets] = useState(false)
@@ -1139,6 +1241,9 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
   const [changingAssetRoleId, setChangingAssetRoleId] = useState<string>()
   const [changingSuiteAssetId, setChangingSuiteAssetId] = useState<string>()
   const [deletingSuiteId, setDeletingSuiteId] = useState<string>()
+  const [productListScrollTop, setProductListScrollTop] = useState(0)
+  const [productListViewportHeight, setProductListViewportHeight] = useState(640)
+  const productListRef = useRef<HTMLDivElement | null>(null)
   const requestOwnerId = session.defaultOwnerUserId ?? session.userId
   const storeCode = currentStoreCode(session)
   const storeName = currentStoreName(session)
@@ -1150,18 +1255,20 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
       if (!storeCode) {
         setProfiles([])
         setSelectedProfileId('')
+        setSelectedDetailLoading(false)
         setLoadError('当前店铺不能为空')
         return
       }
       setLoading(true)
+      setSelectedDetailLoading(false)
       try {
-        const response = await fetchProductImageProfiles({
+        const response = await fetchProductImageProfileSummaries({
           ownerUserId: requestOwnerId,
           storeCode
         })
         if (cancelled) return
         setLoadError(undefined)
-        const items = (response.items ?? []).map(mapBackendProfile)
+        const items = (response.items ?? []).map(mapBackendProfileSummary)
         if (items.length) {
           setProfiles(items)
           setSelectedProfileId((currentId) => items.some((item) => item.id === currentId) ? currentId : items[0].id)
@@ -1173,6 +1280,7 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
         if (cancelled) return
         setProfiles([])
         setSelectedProfileId('')
+        setSelectedDetailLoading(false)
         setLoadError(error instanceof Error ? error.message : '商品图资料读取失败')
       } finally {
         if (!cancelled) {
@@ -1209,6 +1317,30 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
     )
   }, [keyword, profiles])
 
+  const productListWindow = useMemo(
+    () => productProfileVirtualWindow(filteredProfiles.length, productListScrollTop, productListViewportHeight),
+    [filteredProfiles.length, productListScrollTop, productListViewportHeight]
+  )
+  const visibleProfileItems = useMemo(
+    () => filteredProfiles.slice(productListWindow.startIndex, productListWindow.endIndex),
+    [filteredProfiles, productListWindow.endIndex, productListWindow.startIndex]
+  )
+
+  useEffect(() => {
+    const node = productListRef.current
+    if (!node) {
+      return undefined
+    }
+    const updateViewportHeight = () => setProductListViewportHeight(node.clientHeight || 640)
+    updateViewportHeight()
+    if (typeof ResizeObserver === 'undefined') {
+      return undefined
+    }
+    const observer = new ResizeObserver(updateViewportHeight)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [filteredProfiles.length])
+
   const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) || filteredProfiles[0] || profiles[0]
   const aiCopyText = useMemo(
     () => selectedProfile ? buildProductImageAiCopyText(selectedProfile) : '',
@@ -1236,6 +1368,42 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
     })
     setSelectedProfileId(nextProfile.id)
   }
+
+  useEffect(() => {
+    if (!selectedProfile?.backendId || selectedProfile.detailLoaded) {
+      setSelectedDetailLoading(false)
+      return undefined
+    }
+
+    let cancelled = false
+    setSelectedDetailLoading(true)
+    fetchProductImageProfileDetail(selectedProfile.backendId, {
+      ownerUserId: requestOwnerId,
+      storeCode
+    })
+      .then((response) => {
+        if (cancelled) return
+        const detail = mapBackendProfile(response)
+        setProfiles((currentProfiles) =>
+          currentProfiles.map((profile) => profile.id === selectedProfile.id ? detail : profile)
+        )
+        setSelectedProfileId(detail.id)
+        setLoadError(undefined)
+      })
+      .catch((error) => {
+        if (cancelled) return
+        setLoadError(error instanceof Error ? error.message : '商品图资料详情读取失败')
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setSelectedDetailLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [requestOwnerId, selectedProfile?.backendId, selectedProfile?.detailLoaded, selectedProfile?.id, storeCode])
 
   const copyPskuCode = (pskuCode: string, sourceElement?: HTMLElement | null) => {
     try {
@@ -1559,6 +1727,10 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
 
   const saveCurrentProfile = async () => {
     if (!selectedProfile) return
+    if (selectedProfile.backendId && !selectedProfile.detailLoaded) {
+      message.warning('商品图详情加载中，请稍后再保存')
+      return
+    }
     setSaving(true)
     try {
       await persistProfile(selectedProfile)
@@ -1889,6 +2061,13 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
   const selectableAssets = selectedProfileAssets.filter(isSelectableAsset)
   const selectedAssets = selectableAssets.filter((asset) => selectedAssetIds.has(asset.id))
   const allAssetsSelected = selectableAssets.length > 0 && selectedAssets.length === selectableAssets.length
+  const selectedProfileReady = Boolean(selectedProfile.detailLoaded || !selectedProfile.backendId)
+  const selectedAssetCount = selectedProfile.detailLoaded
+    ? selectedProfileAssets.length
+    : selectedProfile.assetCount ?? selectedProfileAssets.length
+  const selectedSuiteCount = selectedProfile.detailLoaded
+    ? selectedProfile.suites.length
+    : selectedProfile.suiteCount ?? selectedProfile.suites.length
 
   const renderAssetCard = (asset: ProfileAsset) => (
     <div
@@ -1944,8 +2123,19 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
               onSearch={(value) => setKeyword(value)}
             />
           </div>
-          <div className="product-image-profile-product-list">
-            {filteredProfiles.map((profile) => {
+          <div
+            className="product-image-profile-product-list"
+            ref={productListRef}
+            onScroll={(event) => setProductListScrollTop(event.currentTarget.scrollTop)}
+          >
+            {productListWindow.topPadding ? (
+              <div
+                aria-hidden="true"
+                className="product-image-profile-product-spacer"
+                style={{ height: productListWindow.topPadding }}
+              />
+            ) : null}
+            {visibleProfileItems.map((profile) => {
               const completeness = profileCompleteness(profile)
               const displayTitle = profileDisplayTitle(profile)
               return (
@@ -2001,6 +2191,13 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                 </div>
               )
             })}
+            {productListWindow.bottomPadding ? (
+              <div
+                aria-hidden="true"
+                className="product-image-profile-product-spacer"
+                style={{ height: productListWindow.bottomPadding }}
+              />
+            ) : null}
           </div>
         </aside>
 
@@ -2011,12 +2208,18 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
             </div>
             <Space wrap>
               <Tag color={selectedCompleteness.color}>{selectedCompleteness.label}</Tag>
-              <Tag icon={<PictureOutlined />}>基础图 {activeAssets(selectedProfile).length}</Tag>
-              <Tag icon={<HistoryOutlined />}>AI 套图 {selectedProfile.suites.length}</Tag>
-              <Button icon={<CopyOutlined />} onClick={() => setAiCopyModalOpen(true)}>
+              <Tag icon={<PictureOutlined />}>基础图 {selectedAssetCount}</Tag>
+              <Tag icon={<HistoryOutlined />}>AI 套图 {selectedSuiteCount}</Tag>
+              <Button disabled={!selectedProfileReady} icon={<CopyOutlined />} onClick={() => setAiCopyModalOpen(true)}>
                 AI 指令预览
               </Button>
-              <Button icon={<SaveOutlined />} loading={saving} type="primary" onClick={() => void saveCurrentProfile()}>
+              <Button
+                disabled={!selectedProfileReady}
+                icon={<SaveOutlined />}
+                loading={saving || selectedDetailLoading}
+                type="primary"
+                onClick={() => void saveCurrentProfile()}
+              >
                 保存
               </Button>
             </Space>
@@ -2031,20 +2234,20 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                 children: (
                   <div className="product-image-profile-tab-body">
                     <div className="product-image-profile-tab-actions">
-                      <Button icon={<PlusOutlined />} onClick={() => setAssetImportOpen(true)}>
+                      <Button disabled={!selectedProfileReady} icon={<PlusOutlined />} onClick={() => setAssetImportOpen(true)}>
                         添加基础图
                       </Button>
                       <Space className="product-image-profile-batch-actions" wrap>
                         <Text type={selectedAssets.length ? undefined : 'secondary'}>已选 {selectedAssets.length} 张</Text>
                         <Button
-                          disabled={!selectableAssets.length || allAssetsSelected || removingAssets}
+                          disabled={!selectedProfileReady || !selectableAssets.length || allAssetsSelected || removingAssets}
                           size="small"
                           onClick={() => selectAssets(selectableAssets)}
                         >
                           全选
                         </Button>
                         <Button
-                          disabled={!selectedAssets.length || removingAssets}
+                          disabled={!selectedProfileReady || !selectedAssets.length || removingAssets}
                           size="small"
                           onClick={clearAssetSelection}
                         >
@@ -2059,7 +2262,7 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                         >
                           <Button
                             danger
-                            disabled={!selectedAssets.length}
+                            disabled={!selectedProfileReady || !selectedAssets.length}
                             icon={<DeleteOutlined />}
                             loading={removingAssets}
                             size="small"
@@ -2106,13 +2309,20 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                           <strong>商品资料</strong>
                           <Space className="product-image-profile-fact-actions" wrap>
                             <Button
+                              disabled={!selectedProfileReady}
                               icon={<ReloadOutlined />}
                               loading={extractingImageFacts}
                               onClick={() => void extractCurrentImageFacts()}
                             >
                               AI 提取
                             </Button>
-                            <Button icon={<SaveOutlined />} loading={saving} type="primary" onClick={() => void saveCurrentProfile()}>
+                            <Button
+                              disabled={!selectedProfileReady}
+                              icon={<SaveOutlined />}
+                              loading={saving || selectedDetailLoading}
+                              type="primary"
+                              onClick={() => void saveCurrentProfile()}
+                            >
                               保存
                             </Button>
                           </Space>

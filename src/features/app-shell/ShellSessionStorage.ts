@@ -11,7 +11,6 @@ import {
   PURCHASE_PROFIT_PATH,
   PURCHASE_1688_COLLECTION_PATH,
   PURCHASE_LISTING_PATH,
-  PURCHASE_PRE_ORDER_PROFIT_PATH,
   DATA_SALES_ANALYTICS_PATH,
   OPERATIONS_COMPETITOR_ANALYSIS_PATH,
   OPERATIONS_SKIN_MANAGEMENT_PATH,
@@ -142,7 +141,6 @@ function readDevSessionOverride(): AuthSession | null {
     pathname.startsWith('/purchase/order') ||
     pathname.startsWith(PURCHASE_1688_COLLECTION_PATH) ||
     pathname.startsWith(PURCHASE_LISTING_PATH) ||
-    pathname.startsWith(PURCHASE_PRE_ORDER_PROFIT_PATH) ||
     search.get('grantPurchase') === '1'
   const includeInTransitGoodsDevMenu =
     pathname.startsWith(PURCHASE_IN_TRANSIT_GOODS_PATH) ||
@@ -327,8 +325,6 @@ function readDevSessionOverride(): AuthSession | null {
   }
   if (includePurchaseDevMenu) {
     grantedMenus.push({ menuId: 24, menuName: '采购', urlPath: '/api/purchase/order' })
-    grantedMenus.push({ menuId: 2401, menuName: '商品上架', urlPath: PURCHASE_LISTING_PATH })
-    grantedMenus.push({ menuId: 9305, menuName: '选品池', urlPath: PURCHASE_PRE_ORDER_PROFIT_PATH })
   }
   if (includeInTransitGoodsDevMenu) {
     grantedMenus.push({ menuId: 9302, menuName: '在途商品', urlPath: PURCHASE_IN_TRANSIT_GOODS_PATH })
