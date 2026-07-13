@@ -1,5 +1,10 @@
 import { strict as assert } from 'node:assert'
+import fs from 'node:fs'
+import path from 'node:path'
+import { workspaceMenuItems } from './SidebarNavigation'
+import { workspaceContentMountKeys } from './ShellWorkspaceContent'
 import {
+  BOSS_OPERATOR_MENU_KEYS,
   WORKSPACE_MENU_DEFINITIONS,
   WORKSPACE_SECTION_DEFINITIONS,
   shouldShowWorkspaceMenuInSidebar,
@@ -14,11 +19,57 @@ assert.equal(workspaceMenuContentKind('official-warehouse'), 'official-warehouse
 assert.equal(OPERATIONS_PRODUCT_KEYWORDS_PATH, '/operations/product-keywords')
 assert.equal(workspaceMenuPath('operations-product-keywords'), OPERATIONS_PRODUCT_KEYWORDS_PATH)
 assert.equal(workspaceMenuContentKind('operations-product-keywords'), 'product-keywords')
+assert.equal(fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8').includes('<title>诺诺管家</title>'), true)
+assert.equal(
+  fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8').includes('href="%BASE_URL%favicon.png"'),
+  true
+)
+assert.equal(fs.existsSync(path.join(process.cwd(), 'public/favicon.png')), true)
+assert.equal(
+  fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellSidebar.tsx'), 'utf8').includes('/logo-title.png'),
+  false
+)
+
+const shellFrameSource = fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellFrame.tsx'), 'utf8')
+const shellWorkspaceContentSource = fs.readFileSync(
+  path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
+  'utf8'
+)
+const shellWorkspaceNavigationSource = fs.readFileSync(
+  path.join(process.cwd(), 'src/features/app-shell/useShellWorkspaceNavigation.tsx'),
+  'utf8'
+)
+
+assert.equal(
+  shellWorkspaceNavigationSource.includes('openedWorkspaceTabKeys,'),
+  true,
+  'workspace navigation must expose opened tab keys so content panes can remain mounted'
+)
+assert.equal(
+  shellFrameSource.includes('openedWorkspaceTabKeys={openedWorkspaceTabKeys}'),
+  true,
+  'shell frame must pass opened tab keys into the workspace content layer'
+)
+assert.equal(
+  shellWorkspaceContentSource.includes('nuono-shell-workspace-pane-hidden'),
+  true,
+  'workspace content must hide inactive opened panes instead of unmounting them'
+)
+assert.deepEqual(
+  workspaceContentMountKeys('user-store-noon', ['user-role']),
+  ['user-role'],
+  'workspace content should mount one pane for menu aliases that share a top tab'
+)
 assert.deepEqual(WORKSPACE_MENU_DEFINITIONS['official-warehouse'].routeAliases, [
   '/warehouse/fbn',
   '/storage/warehouse',
   '/warehouse/official-warehouse-stock'
 ])
+assert.equal(shouldShowWorkspaceMenuInSidebar('purchase-listing'), false)
+assert.equal(shouldShowWorkspaceMenuInTabs('purchase-listing'), false)
+assert.equal(shouldShowWorkspaceMenuInSidebar('purchase-pre-order-profit'), false)
+assert.equal(shouldShowWorkspaceMenuInTabs('purchase-pre-order-profit'), false)
+assert.equal(BOSS_OPERATOR_MENU_KEYS.includes('purchase-pre-order-profit'), false)
 
 const warehouseSection = WORKSPACE_SECTION_DEFINITIONS.find((section) => section.key === 'warehouse')
 const warehouseMenuKeys = warehouseSection?.entries?.flatMap((entry) => (entry.type === 'workspace' ? [entry.key] : [])) ?? []
@@ -27,6 +78,16 @@ assert.deepEqual(
   warehouseMenuKeys.filter((key) => key === 'official-warehouse'),
   ['official-warehouse']
 )
+
+const purchaseSidebarMenu = workspaceMenuItems.find((section) => section.key === 'purchase')
+const purchaseSidebarLabels = purchaseSidebarMenu?.children?.map((item) => item.label) ?? []
+assert.equal(purchaseSidebarLabels.includes('商品上架'), false)
+assert.equal(purchaseSidebarLabels.includes('选品池'), false)
+
+const deprecatedPlaceholderLabels = WORKSPACE_SECTION_DEFINITIONS.flatMap((section) =>
+  section.entries?.flatMap((entry) => (entry.type === 'placeholder' ? [entry.label] : [])) ?? []
+)
+assert.deepEqual(deprecatedPlaceholderLabels, [])
 
 const previousWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
 Object.defineProperty(globalThis, 'window', {

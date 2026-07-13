@@ -355,6 +355,7 @@ export function useShellWorkspaceNavigation({
     handleSidebarMenuClick,
     handleWorkspaceTabChange,
     handleWorkspaceTabEdit,
+    openedWorkspaceTabKeys,
     setSidebarOpenKeys,
     setUserRoleActiveTabKey,
     shouldRenderWorkspaceTabs,

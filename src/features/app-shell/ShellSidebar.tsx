@@ -1,6 +1,5 @@
 import { Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
-import { withPublicBasePath } from '../../runtimePaths';
 import { legacySectionIcon, type SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
 
@@ -34,7 +33,9 @@ export function ShellSidebar({
   return (
     <Sider width={48} theme="light" className="nuono-shell-sidebar-rail" onMouseLeave={onMouseLeave}>
       <div className="nuono-shell-sidebar-rail-inner">
-        <div className="nuono-shell-sidebar-rail-logo" aria-hidden="true" />
+        <div className="nuono-shell-sidebar-rail-logo" aria-label="诺诺管家">
+          <span className="nuono-shell-brand-mark nuono-shell-brand-mark-compact">诺</span>
+        </div>
         <div className="nuono-shell-sidebar-rail-items">
           {items.map((item) => {
             const isActive = item.key === activeSidebarRootKey || item.children?.some((child) => child.key === selectedMenuKey);
@@ -58,8 +59,9 @@ export function ShellSidebar({
         </div>
       </div>
       <div className="nuono-shell-sidebar-popover">
-        <div className="nuono-shell-sidebar-popover-logo">
-          <img src={withPublicBasePath('/logo-title.png')} alt="诺诺管家" />
+        <div className="nuono-shell-sidebar-popover-logo" aria-label="诺诺管家">
+          <span className="nuono-shell-brand-mark">诺</span>
+          <span className="nuono-shell-brand-text">诺诺管家</span>
         </div>
         <div className="nuono-shell-sidebar-popover-menu">
           <Menu

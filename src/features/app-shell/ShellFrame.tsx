@@ -16,6 +16,7 @@ import { ReplicaLoginPage } from '../auth/ReplicaLoginPage';
 import type { AuthRoleView, AuthSession } from '../auth/session';
 import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
+import type { ProductWorkspaceTabKey } from '../product-management/types';
 import type { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
 import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProfitCalculatorWorkspace';
 import type { StoreSyncOverviewState } from '../store-sync/types';
@@ -66,6 +67,7 @@ type ShellFrameProps = {
   handleWorkspaceTabChange: (key: string) => void;
   handleWorkspaceTabEdit: NonNullable<TabsProps['onEdit']>;
   inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
+  inTransitWorkspaceTabKey: 'purchase-in-transit-goods' | 'in-transit-box-detail';
   isInTransitBoxDetailTab: boolean;
   isProductDetailTab: boolean;
   loadStoreSync: (ownerUserId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
@@ -79,7 +81,9 @@ type ShellFrameProps = {
   onCloseInTransitBoxDetailTab: () => Promise<void> | void;
   onOpenInTransitBoxDetailTab: (request: InTransitBoxDetailTabRequest) => void;
   onOpenProfitCalculatorPrefilled: OpenProfitCalculatorPrefilled;
+  openedWorkspaceTabKeys: AppMenuKey[];
   productWorkspace: ProductManagementWorkspace;
+  productWorkspaceTabKey: ProductWorkspaceTabKey;
   profitBoard: ReactNode;
   roleManagementRefreshSignal: number;
   setChangePasswordOpen: (open: boolean) => void;
@@ -124,6 +128,7 @@ export function ShellFrame({
   handleWorkspaceTabChange,
   handleWorkspaceTabEdit,
   inTransitBoxDetailTabRequest,
+  inTransitWorkspaceTabKey,
   isInTransitBoxDetailTab,
   isProductDetailTab,
   loadStoreSync,
@@ -137,7 +142,9 @@ export function ShellFrame({
   onCloseInTransitBoxDetailTab,
   onOpenInTransitBoxDetailTab,
   onOpenProfitCalculatorPrefilled,
+  openedWorkspaceTabKeys,
   productWorkspace,
+  productWorkspaceTabKey,
   profitBoard,
   roleManagementRefreshSignal,
   setChangePasswordOpen,
@@ -275,6 +282,7 @@ export function ShellFrame({
                             inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}
                             isInTransitBoxDetailTab={isInTransitBoxDetailTab}
                             isProductDetailTab={isProductDetailTab}
+                            inTransitWorkspaceTabKey={inTransitWorkspaceTabKey}
                             roleManagementTabKey={userRoleActiveTabKey}
                             canShowStoreManagement={canShowStoreManagement}
                             roleManagementRefreshSignal={roleManagementRefreshSignal}
@@ -284,6 +292,8 @@ export function ShellFrame({
                             canManageStoreBinding={canManageStoreBinding}
                             onStoreOwnerChange={setStoreSyncOwnerId}
                             onStoreRefresh={loadStoreSync}
+                            openedWorkspaceTabKeys={openedWorkspaceTabKeys}
+                            productWorkspaceTabKey={productWorkspaceTabKey}
                             onRoleManagementDataChanged={notifyRoleManagementDataChanged}
                             onRoleManagementTabChange={(nextKey) => {
                               setUserRoleActiveTabKey(nextKey);

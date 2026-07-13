@@ -158,6 +158,7 @@ export function AppShellRuntime() {
     handleSidebarMenuClick,
     handleWorkspaceTabChange,
     handleWorkspaceTabEdit,
+    openedWorkspaceTabKeys,
     setSidebarOpenKeys,
     setUserRoleActiveTabKey,
     shouldRenderWorkspaceTabs,
@@ -208,6 +209,7 @@ export function AppShellRuntime() {
       inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}
       isInTransitBoxDetailTab={isInTransitBoxDetailTab}
       isProductDetailTab={isProductDetailTab}
+      inTransitWorkspaceTabKey={resolvedInTransitWorkspaceTabKey}
       loadStoreSync={loadStoreSync}
       loginError={loginError}
       loginForm={loginForm}
@@ -219,7 +221,9 @@ export function AppShellRuntime() {
       onCloseInTransitBoxDetailTab={requestCloseInTransitBoxDetailTab}
       onOpenInTransitBoxDetailTab={openInTransitBoxDetailTab}
       onOpenProfitCalculatorPrefilled={openProfitCalculatorPrefilled}
+      openedWorkspaceTabKeys={openedWorkspaceTabKeys}
       productWorkspace={productWorkspace}
+      productWorkspaceTabKey={resolvedProductWorkspaceTabKey}
       profitBoard={profitBoard}
       roleManagementRefreshSignal={roleManagementRefreshSignal}
       setActiveMenuKey={setActiveMenuKey}
