@@ -248,11 +248,11 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
   },
   'purchase-order': {
     key: 'purchase-order',
-    label: '采购单',
+    label: '补货采购',
     path: '/purchase/order',
     sectionKey: 'purchase',
-    pathLabel: '采购 / 采购单',
-    tabLabel: '采购单',
+    pathLabel: '采购 / 补货采购',
+    tabLabel: '补货采购',
     contentKind: 'purchase-order',
     closable: true
   },
