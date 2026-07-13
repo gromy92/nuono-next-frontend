@@ -10,7 +10,6 @@ import {
   PRODUCT_MANUAL_SELECTION_PATH,
   PURCHASE_PROFIT_PATH,
   PURCHASE_1688_COLLECTION_PATH,
-  PURCHASE_LISTING_PATH,
   DATA_SALES_ANALYTICS_PATH,
   OPERATIONS_COMPETITOR_ANALYSIS_PATH,
   OPERATIONS_SKIN_MANAGEMENT_PATH,
@@ -140,7 +139,6 @@ function readDevSessionOverride(): AuthSession | null {
   const includePurchaseDevMenu =
     pathname.startsWith('/purchase/order') ||
     pathname.startsWith(PURCHASE_1688_COLLECTION_PATH) ||
-    pathname.startsWith(PURCHASE_LISTING_PATH) ||
     search.get('grantPurchase') === '1'
   const includeInTransitGoodsDevMenu =
     pathname.startsWith(PURCHASE_IN_TRANSIT_GOODS_PATH) ||

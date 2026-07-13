@@ -8,9 +8,7 @@ export type AppMenuKey =
   | 'purchase-ali1688-collection'
   | 'purchase-ali1688-historical-orders'
   | 'purchase-ali1688-sku-purchase-history'
-  | 'purchase-listing'
   | 'purchase-order'
-  | 'purchase-pre-order-profit'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'purchase-product-logistics-costs'
@@ -80,9 +78,7 @@ export type WorkspaceContentKind =
   | 'purchase-ali1688-collection'
   | 'purchase-ali1688-historical-orders'
   | 'purchase-ali1688-sku-purchase-history'
-  | 'product-listing'
   | 'purchase-order'
-  | 'purchase-pre-order-profit'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'purchase-product-logistics-costs'
@@ -236,18 +232,6 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'purchase-ali1688-sku-purchase-history',
     closable: true
   },
-  'purchase-listing': {
-    key: 'purchase-listing',
-    label: '商品上架',
-    path: '/purchase/listing',
-    sectionKey: 'purchase',
-    pathLabel: '采购 / 商品上架',
-    tabLabel: '商品上架',
-    contentKind: 'product-listing',
-    closable: true,
-    visibleInSidebar: false,
-    visibleInWorkspaceTabs: false
-  },
   'purchase-order': {
     key: 'purchase-order',
     label: '补货采购',
@@ -257,18 +241,6 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     tabLabel: '补货采购',
     contentKind: 'purchase-order',
     closable: true
-  },
-  'purchase-pre-order-profit': {
-    key: 'purchase-pre-order-profit',
-    label: '选品池',
-    path: '/purchase/pre-order-profit',
-    sectionKey: 'purchase',
-    pathLabel: '采购 / 选品池',
-    tabLabel: '选品池',
-    contentKind: 'purchase-pre-order-profit',
-    closable: true,
-    visibleInSidebar: false,
-    visibleInWorkspaceTabs: false
   },
   'purchase-profit': {
     key: 'purchase-profit',
@@ -731,12 +703,6 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['1688 历史订单', 'SKU 采购历史']
   },
   {
-    keys: ['purchase-listing'],
-    urlPaths: ['/purchase/listing', '/api/product-listing'],
-    urlPathPrefixes: ['/api/product-listing/'],
-    menuNames: ['商品上架']
-  },
-  {
     keys: ['purchase-profit'],
     urlPaths: ['/purchase/profit', '/api/sku/cost'],
     menuNames: ['利润计算', '利润计算与上架']
@@ -860,7 +826,6 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-ali1688-historical-orders',
   'purchase-ali1688-sku-purchase-history',
   'purchase-ali1688-collection',
-  'purchase-listing',
   'purchase-order',
   'purchase-in-transit-goods',
   'purchase-product-logistics-costs',
