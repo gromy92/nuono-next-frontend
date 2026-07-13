@@ -9,7 +9,6 @@ import type {
   PurchaseOrderAli1688HistoryView,
   PurchaseOrderLogisticsQuoteImportResult,
   PurchaseOrderLogisticsQuoteOptions,
-  PurchaseOrderLogisticsPlan,
   PurchaseOrder,
   PurchaseOrderShippingSubmitResult,
   ShippingOrder,
@@ -76,7 +75,7 @@ export function submitPurchaseOrder(orderId: string) {
     `/api/procurement/purchase-orders/${encodeURIComponent(orderId)}/submit`,
     'POST',
     {},
-    '提交采购单失败'
+    '封存采购单失败'
   )
 }
 
@@ -113,31 +112,6 @@ export function updatePurchaseOrderItem(orderId: string, itemId: string, payload
     'PUT',
     payload,
     '保存商品失败'
-  )
-}
-
-export function collectPurchaseOrder(orderId: string) {
-  return sendJson<PurchaseOrder>(
-    `/api/procurement/purchase-orders/${encodeURIComponent(orderId)}/collect`,
-    'POST',
-    {},
-    '发起整单采集失败'
-  )
-}
-
-export function generatePurchaseOrderLogisticsPlan(orderId: string) {
-  return sendJson<PurchaseOrderLogisticsPlan>(
-    `/api/procurement/purchase-orders/${encodeURIComponent(orderId)}/logistics-plan`,
-    'POST',
-    {},
-    '生成物流计划失败'
-  )
-}
-
-export function previewPurchaseOrderLogisticsPlan(orderId: string) {
-  return getJson<PurchaseOrderLogisticsPlan>(
-    `/api/procurement/purchase-orders/${encodeURIComponent(orderId)}/logistics-plan/preview`,
-    '物流计划预检失败'
   )
 }
 

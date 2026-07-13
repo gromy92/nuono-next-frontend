@@ -1,5 +1,4 @@
 import type {
-  ReplenishmentPlanOverview,
   SalesForecastFollowUpInput,
   SalesForecastFollowUpResult,
   SalesForecastDetail,
@@ -35,14 +34,6 @@ export function fetchSalesForecastDetail(query: SalesForecastQuery, partnerSku: 
     partnerSku
   })
   return getJson<SalesForecastDetail>(`/api/sales-forecast/detail?${params.toString()}`)
-}
-
-export function fetchReplenishmentPlanOverview(query: SalesForecastQuery) {
-  const params = new URLSearchParams({
-    storeCode: query.storeCode,
-    siteCode: query.siteCode
-  })
-  return getJson<ReplenishmentPlanOverview>(`/api/replenishment-plan/overview?${params.toString()}`)
 }
 
 export function setSalesForecastFollowUp(input: SalesForecastFollowUpInput) {

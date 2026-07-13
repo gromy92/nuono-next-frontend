@@ -12,10 +12,10 @@ import {
   TruckOutlined
 } from '@ant-design/icons'
 import {
+  App as AntdApp,
   AutoComplete,
   Button,
   Checkbox,
-  Descriptions,
   Empty,
   Form,
   Input,
@@ -26,6 +26,7 @@ import {
   Alert,
   Select,
   Spin,
+  Tabs,
   Tag,
   Tooltip,
   Typography,
@@ -36,20 +37,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
 import { firstFormValidationMessage, normalizeError } from '../../shared/api'
 import type { AuthSession } from '../auth/session'
+import { ReplenishmentPlanTab } from '../replenishment-plan/ReplenishmentPlanTab'
 import {
   addPurchaseOrderItems,
-  collectPurchaseOrder,
   createPurchaseOrder,
   createShippingOrder,
   deletePurchaseOrder,
   deletePurchaseOrderItem,
-  generatePurchaseOrderLogisticsPlan,
   loadPurchaseOrderAli1688History,
   loadShippingOrder,
   loadShippingOrders,
   loadProductOptions,
   loadPurchaseOrders,
-  previewPurchaseOrderLogisticsPlan,
   submitPurchaseOrder,
   updatePurchaseOrder,
   updatePurchaseOrderItem
@@ -66,7 +65,6 @@ import type {
   PurchaseOrderAli1688HistoryRecord,
   PurchaseOrderAli1688HistorySource,
   PurchaseOrderAli1688HistoryView,
-  PurchaseOrderLogisticsPlan,
   PurchaseOrderStatus,
   PurchaseSiteCode,
   PurchaseTransportMode
@@ -131,6 +129,7 @@ type AllocationSummary = {
   siteName?: string
   transportMode?: PurchaseTransportMode
   transportModeLabel?: string
+  pskuCount: number
   quantity: number
 }
 
@@ -170,7 +169,7 @@ const ORDER_STATUS_META: Record<PurchaseOrderStatus, { label: string; color: str
   partial_done: { label: '部分完成', color: 'warning', icon: <ClockCircleOutlined /> },
   done: { label: '采集完成', color: 'success', icon: <CheckCircleOutlined /> },
   exception: { label: '有异常', color: 'error', icon: <ExclamationCircleOutlined /> },
-  submitted: { label: '已提交', color: 'green', icon: <CheckCircleOutlined /> },
+  submitted: { label: '已封存', color: 'green', icon: <CheckCircleOutlined /> },
   deleted: { label: '已删除', color: 'default', icon: <DeleteOutlined /> }
 }
 
@@ -196,6 +195,7 @@ const TRANSPORT_MODE_OPTIONS: Array<{ label: string; value: PurchaseTransportMod
 ]
 
 const DEFAULT_TRANSPORT_MODE: PurchaseTransportMode = 'AIR'
+const PURCHASE_ORDER_SEAL_WARNING = '封存后采购单将锁定，不能继续修改商品、数量或站点运输；如需调整，请联系管理员处理。'
 
 const FULFILLMENT_TYPE_OPTIONS: Array<{ label: string; value: PurchaseOrderFulfillmentType }> = [
   { label: '货到仓库', value: 'WAREHOUSE_RECEIPT' },
@@ -203,13 +203,27 @@ const FULFILLMENT_TYPE_OPTIONS: Array<{ label: string; value: PurchaseOrderFulfi
 ]
 
 const DEFAULT_FULFILLMENT_TYPE: PurchaseOrderFulfillmentType = 'WAREHOUSE_RECEIPT'
+const PURCHASE_ORDER_TAB_QUERY_KEY = 'tab'
+
+type PurchaseOrderTabKey = 'purchase-orders' | 'replenishment-plan'
+
+function initialPurchaseOrderTab(): PurchaseOrderTabKey {
+  if (typeof window === 'undefined') {
+    return 'replenishment-plan'
+  }
+  const requestedTab = new URLSearchParams(window.location.search).get(PURCHASE_ORDER_TAB_QUERY_KEY)
+  return requestedTab === 'purchase-orders' ? 'purchase-orders' : 'replenishment-plan'
+}
 
 export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
+  const { modal, message: appMessage } = AntdApp.useApp()
   const [createOrderForm] = Form.useForm<CreateOrderFormValues>()
   const [editOrderForm] = Form.useForm<UpdateOrderFormValues>()
   const [addItemsForm] = Form.useForm<AddItemsFormValues>()
   const [editItemForm] = Form.useForm<UpdateItemFormValues>()
+  const [activeTab, setActiveTab] = useState<PurchaseOrderTabKey>(() => initialPurchaseOrderTab())
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
+  const [purchaseOrdersRevision, setPurchaseOrdersRevision] = useState(0)
   const [selectedOrderId, setSelectedOrderId] = useState<string>()
   const [keyword, setKeyword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -219,8 +233,6 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   const [editItemTarget, setEditItemTarget] = useState<DeleteItemTarget | null>(null)
   const [deleteTargetOrder, setDeleteTargetOrder] = useState<PurchaseOrder | null>(null)
   const [deleteTargetItem, setDeleteTargetItem] = useState<DeleteItemTarget | null>(null)
-  const [logisticsPlanPreview, setLogisticsPlanPreview] = useState<PurchaseOrderLogisticsPlan | null>(null)
-  const [logisticsPlan, setLogisticsPlan] = useState<PurchaseOrderLogisticsPlan | null>(null)
   const [actionKey, setActionKey] = useState<string>()
   const [shippingMergeMode, setShippingMergeMode] = useState(false)
   const [selectedShippingMergeOrderIds, setSelectedShippingMergeOrderIds] = useState<string[]>([])
@@ -304,6 +316,25 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   useEffect(() => {
     void loadOrders()
   }, [loadOrders])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+    const params = new URLSearchParams(window.location.search)
+    if (activeTab === 'purchase-orders') {
+      params.set(PURCHASE_ORDER_TAB_QUERY_KEY, 'purchase-orders')
+    } else {
+      params.delete(PURCHASE_ORDER_TAB_QUERY_KEY)
+    }
+    const queryString = params.toString()
+    const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}${window.location.hash}`
+    window.history.replaceState({}, '', nextUrl)
+  }, [activeTab])
+
+  function notifyPurchaseOrdersChanged() {
+    setPurchaseOrdersRevision((current) => current + 1)
+  }
 
   useEffect(() => {
     setItemFilterKey('all')
@@ -409,11 +440,11 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       return
     }
     if (!isSubmittedOrder(order)) {
-      message.warning('采购单已提交后才可合并发货单。')
+      message.warning('采购单封存后才可合并为仓库单。')
       return
     }
     if (shippingMergeAssignedOrderIdSet.has(order.id)) {
-      message.warning('该采购单已在发货单中，不能重复合并。')
+      message.warning('该采购单已在仓库单中，不能重复合并。')
       return
     }
     setSelectedShippingMergeOrderIds((current) => current.includes(order.id)
@@ -447,7 +478,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
 
   async function openShippingMergeMode() {
     if (!submittedVisibleOrders.length) {
-      message.warning('当前列表没有已提交采购单。')
+      message.warning('当前列表没有已封存采购单。')
       return
     }
     setShippingMergeAssignmentLoading(true)
@@ -457,7 +488,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       assignedOrderIds = await loadShippingMergeAssignedOrderIds()
       setShippingMergeAssignedOrderIds([...assignedOrderIds])
     } catch (error) {
-      const errorMessage = normalizeError(error, '读取已有发货单占用失败')
+      const errorMessage = normalizeError(error, '读取已有仓库单占用失败')
       setShippingMergeErrorMessage(errorMessage)
       message.error(errorMessage)
     } finally {
@@ -473,7 +504,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       return selectedOrder && nextAvailableOrders.some((order) => order.id === selectedOrder.id) ? [selectedOrder.id] : []
     })
     if (!nextAvailableOrders.length) {
-      setShippingMergeErrorMessage('当前列表没有可合并采购单；已提交采购单可能已经在发货单中。')
+      setShippingMergeErrorMessage('当前列表没有可合并采购单；已封存采购单可能已经在仓库单中。')
     }
   }
 
@@ -493,11 +524,11 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
 
   function handleToggleShippingMergeOrder(order: PurchaseOrder, checked: boolean) {
     if (!isSubmittedOrder(order)) {
-      message.warning('采购单已提交后才可合并发货单。')
+      message.warning('采购单封存后才可合并为仓库单。')
       return
     }
     if (shippingMergeAssignedOrderIdSet.has(order.id)) {
-      message.warning('该采购单已在发货单中，不能重复合并。')
+      message.warning('该采购单已在仓库单中，不能重复合并。')
       return
     }
     setShippingMergeErrorMessage(undefined)
@@ -512,7 +543,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   async function handleCreateShippingOrderFromSelection() {
     const purchaseOrderIds = selectedShippingMergeOrders.map((order) => order.id)
     if (!purchaseOrderIds.length) {
-      message.warning('请选择已提交采购单。')
+      message.warning('请选择已封存采购单。')
       return
     }
     setActionKey('create-shipping-order-selection')
@@ -520,10 +551,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     try {
       const shippingOrder = await createShippingOrder({ purchaseOrderIds })
       closeShippingMergeMode()
-      message.success(`已创建发货单 ${shippingOrder.shippingOrderNo}。`)
+      message.success(`已创建仓库单 ${shippingOrder.shippingOrderNo}。`)
       window.location.href = '/warehouse/shipping-orders?devSession=1&grantPurchase=1&grantWarehouse=1'
     } catch (error) {
-      const errorMessage = normalizeError(error, '创建发货单失败')
+      const errorMessage = normalizeError(error, '创建仓库单失败')
       setShippingMergeErrorMessage(errorMessage)
       message.error(errorMessage)
     } finally {
@@ -560,7 +591,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
 
   function openEditOrderModal(order: PurchaseOrder) {
     if (isSubmittedOrder(order)) {
-      message.warning('采购单已提交，不能再更改。')
+      message.warning('采购单已封存，不能再更改。')
       return
     }
     editOrderForm.setFieldsValue({
@@ -583,10 +614,6 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
         return
       }
       const items = normalizePskuEntries(values.items)
-      if (!items.length) {
-        message.warning('请至少添加一行 PSKU、站点和数量。')
-        return
-      }
       const duplicateMessage = duplicatePskuSiteMessage(items)
       if (duplicateMessage) {
         setCreateErrorMessage(duplicateMessage)
@@ -599,11 +626,12 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
         storeCode: values.storeCode,
         title: values.title.trim(),
         remark: values.remark?.trim() || undefined,
-        siteCodes: siteCodesFromItems(items),
+        siteCodes: siteCodesFromPskuRows(values.items),
         items
       })
       setOrders((current) => [nextOrder, ...current.filter((order) => order.id !== nextOrder.id)])
       setSelectedOrderId(nextOrder.id)
+      notifyPurchaseOrdersChanged()
       closeCreateOrderModal()
       message.success('已创建采购单。')
     } catch (error) {
@@ -645,19 +673,34 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     }
   }
 
-  async function handleSubmitOrder(order: PurchaseOrder) {
+  function handleSubmitOrder(order: PurchaseOrder) {
     if (!order.items?.length) {
-      message.warning('当前采购单还没有商品。')
+      appMessage.warning('当前采购单还没有商品。')
       return
     }
+    const issueSummary = summarizeOrderIssues(order)
+    if (hasSealBlockingIssues(issueSummary)) {
+      appMessage.warning('请先补齐采购单的站点运输、数量和规格信息后再封存。')
+      return
+    }
+    modal.confirm({
+      title: '封存采购单',
+      content: PURCHASE_ORDER_SEAL_WARNING,
+      okText: '确认封存',
+      cancelText: '取消',
+      onOk: () => sealPurchaseOrder(order)
+    })
+  }
+
+  async function sealPurchaseOrder(order: PurchaseOrder) {
     setActionKey(`submit-order:${order.id}`)
     try {
       const nextOrder = await submitPurchaseOrder(order.id)
       replaceOrder(nextOrder)
       setSelectedOrderId(nextOrder.id)
-      message.success('已提交采购单。')
+      appMessage.success('采购单已封存。')
     } catch (error) {
-      message.error(normalizeError(error, '提交采购单失败'))
+      appMessage.error(normalizeError(error, '封存采购单失败'))
     } finally {
       setActionKey((current) => (current === `submit-order:${order.id}` ? undefined : current))
     }
@@ -665,7 +708,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
 
   function openAddItemsModal(order: PurchaseOrder) {
     if (isSubmittedOrder(order)) {
-      message.warning('采购单已提交，不能再更改。')
+      message.warning('采购单已封存，不能再更改。')
       return
     }
     const defaultSite = getOrderSiteOptions(order, session)[0]?.value || DEFAULT_SITE_CODES[0]
@@ -720,7 +763,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
 
   function openEditItemModal(order: PurchaseOrder, item: PurchaseOrderItem) {
     if (isSubmittedOrder(order)) {
-      message.warning('采购单已提交，不能再更改。')
+      message.warning('采购单已封存，不能再更改。')
       return
     }
     const defaultSite = getOrderSiteOptions(order, session)[0]?.value || DEFAULT_SITE_CODES[0]
@@ -751,6 +794,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       if (!addItemsOrder) {
         return
       }
+      if (isSubmittedOrder(addItemsOrder)) {
+        message.warning('采购单已封存，不能再更改。')
+        return
+      }
       const values = await addItemsForm.validateFields()
       const items = normalizePskuEntries(values.items)
       if (!items.length) {
@@ -768,6 +815,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       const nextOrder = await addPurchaseOrderItems(addItemsOrder.id, { items })
       replaceOrder(nextOrder)
       setSelectedOrderId(nextOrder.id)
+      notifyPurchaseOrdersChanged()
       closeAddItemsModal()
       message.success('已添加商品。')
     } catch (error) {
@@ -791,7 +839,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     }
     const { order, item } = editItemTarget
     if (isSubmittedOrder(order)) {
-      message.warning('采购单已提交，不能再更改。')
+      message.warning('采购单已封存，不能再更改。')
       return
     }
     const currentActionKey = `edit-item:${item.id}`
@@ -812,6 +860,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       })
       replaceOrder(nextOrder)
       setSelectedOrderId(nextOrder.id)
+      notifyPurchaseOrdersChanged()
       closeEditItemModal()
       message.success('已保存商品。')
     } catch (error) {
@@ -834,7 +883,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       return
     }
     if (isSubmittedOrder(deleteTargetOrder)) {
-      message.warning('采购单已提交，不能再更改。')
+      message.warning('采购单已封存，不能再更改。')
       setDeleteTargetOrder(null)
       return
     }
@@ -855,6 +904,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       if (editItemTarget?.order.id === targetId) {
         closeEditItemModal()
       }
+      notifyPurchaseOrdersChanged()
       setDeleteTargetOrder(null)
       message.success('已删除采购单。')
     } catch (error) {
@@ -870,7 +920,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     }
     const { order, item } = deleteTargetItem
     if (isSubmittedOrder(order)) {
-      message.warning('采购单已提交，不能再更改。')
+      message.warning('采购单已封存，不能再更改。')
       setDeleteTargetItem(null)
       return
     }
@@ -880,6 +930,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       const nextOrder = await deletePurchaseOrderItem(order.id, item.id)
       replaceOrder(nextOrder)
       setSelectedOrderId(nextOrder.id)
+      notifyPurchaseOrdersChanged()
       if (editItemTarget?.item.id === item.id) {
         closeEditItemModal()
       }
@@ -892,80 +943,33 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     }
   }
 
-  async function handleCollectOrder(order: PurchaseOrder) {
-    if (isSubmittedOrder(order)) {
-      message.warning('采购单已提交，不能再更改。')
-      return
-    }
-    if (!order.items?.length) {
-      message.warning('当前采购单还没有商品。')
-      return
-    }
-    setActionKey(`collect-order:${order.id}`)
-    try {
-      const nextOrder = await collectPurchaseOrder(order.id)
-      replaceOrder(nextOrder)
-      setSelectedOrderId(nextOrder.id)
-      message.success('已发起整单1688采集。')
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '发起整单采集失败')
-    } finally {
-      setActionKey(undefined)
-    }
-  }
-
-  async function handlePreviewLogisticsPlan(order: PurchaseOrder) {
-    if (isSubmittedOrder(order)) {
-      message.warning('采购单已提交，不能再更改。')
-      return
-    }
-    if (!order.items?.length) {
-      message.warning('当前采购单还没有商品。')
-      return
-    }
-    setActionKey(`logistics-plan-preview:${order.id}`)
-    try {
-      const plan = await previewPurchaseOrderLogisticsPlan(order.id)
-      setLogisticsPlanPreview(plan)
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '物流计划预检失败')
-    } finally {
-      setActionKey(undefined)
-    }
-  }
-
-  async function handleGenerateLogisticsPlan() {
-    const orderId = logisticsPlanPreview?.purchaseOrderId
-    if (!orderId) {
-      return
-    }
-    const order = orders.find((candidate) => candidate.id === orderId)
-    if (order && isSubmittedOrder(order)) {
-      message.warning('采购单已提交，不能再更改。')
-      setLogisticsPlanPreview(null)
-      return
-    }
-    setActionKey(`logistics-plan:${orderId}`)
-    try {
-      const plan = await generatePurchaseOrderLogisticsPlan(orderId)
-      setLogisticsPlanPreview(null)
-      setLogisticsPlan(plan)
-      message.success('已生成物流计划草稿。')
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '生成物流计划失败')
-    } finally {
-      setActionKey(undefined)
-    }
-  }
-
   function replaceOrder(nextOrder: PurchaseOrder) {
     setOrders((current) => current.map((order) => (order.id === nextOrder.id ? nextOrder : order)))
   }
 
   return (
     <div className="purchase-order-page" data-testid="purchase-order-page">
-      <Spin spinning={loading}>
-        <div className="purchase-order-layout">
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as PurchaseOrderTabKey)}
+        items={[
+          {
+            key: 'replenishment-plan',
+            label: '补货计划',
+            children: (
+              <ReplenishmentPlanTab
+                session={session || null}
+                purchaseOrdersRevision={purchaseOrdersRevision}
+                onPurchaseOrdersChanged={loadOrders}
+              />
+            )
+          },
+          {
+            key: 'purchase-orders',
+            label: '采购单',
+            children: (
+              <Spin spinning={loading}>
+                <div className="purchase-order-layout">
           <aside className="purchase-order-sidebar">
             <div className="purchase-order-sidebar-tools">
               <Input
@@ -1010,7 +1014,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                       || selectedShippingMergeOrders.length === availableShippingMergeOrders.length
                     }
                   >
-                    全选已提交
+                    全选已封存
                   </Button>
                   <Button
                     size="small"
@@ -1027,7 +1031,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                     loading={actionKey === 'create-shipping-order-selection'}
                     onClick={() => void handleCreateShippingOrderFromSelection()}
                   >
-                    创建发货单
+                    创建仓库单
                   </Button>
                 </div>
               </div>
@@ -1039,7 +1043,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                 loading={shippingMergeAssignmentLoading}
                 onClick={() => void openShippingMergeMode()}
               >
-                多选合并发货单
+                多选合并为仓库单
               </Button>
             )}
             {visibleOrders.length ? (
@@ -1078,7 +1082,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                             选择
                           </Checkbox>
                           <Tag color={availableForShippingMerge ? 'blue' : 'default'} className="purchase-order-merge-status">
-                            {availableForShippingMerge ? '已提交可合并' : alreadyAssigned ? '已在发货单' : '未提交不可合并'}
+                            {availableForShippingMerge ? '已封存可合并' : alreadyAssigned ? '已在仓库单' : '未封存不可合并'}
                           </Tag>
                         </div>
                       ) : null}
@@ -1141,11 +1145,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                   <div className="purchase-order-detail-main">
                     <div className="purchase-order-detail-summary">
                       <Text strong ellipsis className="purchase-order-detail-title">{selectedOrder.title}</Text>
-                      <span>{selectedOrder.createdAt?.slice(5, 10)}</span>
-                      <span>商品 {selectedOrderSummary.itemCount}</span>
-                      <span>PSKU {selectedOrderSummary.pskuCount}</span>
-                      <span>SKU {selectedOrderSummary.skuCount}</span>
-                      <span>{selectedOrderSummary.totalQuantity} 件</span>
+                      <span>{formatOrderQuantitySummary(selectedOrderSummary)}</span>
                     </div>
                     {selectedOrderAllocationSummary.length ? (
                       <div className="purchase-order-allocation-summary" aria-label="按站点和运输方式汇总">
@@ -1158,7 +1158,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                             onClick={() => setItemFilterKey(allocationFilterKey(allocation.site, allocation.transportMode))}
                           >
                             <span>{allocationDisplayLabel(allocation)}</span>
-                            <strong>{allocation.quantity}</strong>
+                            <strong>{formatAllocationQuantitySummary(allocation)}</strong>
                           </button>
                         ))}
                       </div>
@@ -1170,11 +1170,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                         size="small"
                         type="primary"
                         icon={<SendOutlined />}
-                        disabled={!selectedOrder.items?.length}
                         loading={actionKey === `submit-order:${selectedOrder.id}`}
                         onClick={() => void handleSubmitOrder(selectedOrder)}
                       >
-                        提交采购单
+                        封存采购单
                       </Button>
                     )}
                     <Button
@@ -1184,25 +1183,6 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                       onClick={() => openAddItemsModal(selectedOrder)}
                     >
                       添加商品
-                    </Button>
-                    <Button
-                      size="small"
-                      icon={<TruckOutlined />}
-                      disabled={!selectedOrder.items?.length || isSubmittedOrder(selectedOrder)}
-                      loading={actionKey === `logistics-plan-preview:${selectedOrder.id}`}
-                      onClick={() => void handlePreviewLogisticsPlan(selectedOrder)}
-                    >
-                      生成物流计划
-                    </Button>
-                    <Button
-                      size="small"
-                      type={isSubmittedOrder(selectedOrder) ? 'default' : 'primary'}
-                      icon={<CloudSyncOutlined />}
-                      disabled={!selectedOrder.items?.length || isSubmittedOrder(selectedOrder)}
-                      loading={actionKey === `collect-order:${selectedOrder.id}`}
-                      onClick={() => void handleCollectOrder(selectedOrder)}
-                    >
-                      整单采集
                     </Button>
                   </div>
                 </div>
@@ -1251,7 +1231,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                     ) : (
                       <>
                         <Tag color="success">基础信息正常</Tag>
-                        <span>箱规/重量以物流计划预检为准</span>
+                        <span>箱规/重量封存前需补齐</span>
                       </>
                     )}
                   </div>
@@ -1283,8 +1263,12 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
               )}
             </section>
           </main>
-        </div>
-      </Spin>
+                </div>
+              </Spin>
+            )
+          }
+        ]}
+      />
 
       <Modal
         title="新建采购单"
@@ -1415,53 +1399,6 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       </Modal>
 
       <Modal
-        title="物流计划预检"
-        open={Boolean(logisticsPlanPreview)}
-        footer={[
-          <Button key="cancel" onClick={() => setLogisticsPlanPreview(null)}>
-            取消
-          </Button>,
-          <Button
-            key="generate"
-            type="primary"
-            loading={actionKey === `logistics-plan:${logisticsPlanPreview?.purchaseOrderId}`}
-            onClick={() => void handleGenerateLogisticsPlan()}
-          >
-            生成草稿
-          </Button>
-        ]}
-        onCancel={() => setLogisticsPlanPreview(null)}
-        width={900}
-      >
-        {logisticsPlanPreview ? (
-          <div className="purchase-logistics-plan">
-            <Alert
-              type={logisticsPlanPreview.missingItemCount ? 'warning' : 'success'}
-              showIcon
-              message="以下为物流计划预检结果；确认后才会生成草稿，不会自动转在途批次。"
-            />
-            <LogisticsPlanContent logisticsPlan={logisticsPlanPreview} />
-          </div>
-        ) : null}
-      </Modal>
-
-      <Modal
-        title="物流计划草稿"
-        open={Boolean(logisticsPlan)}
-        footer={[
-          <Button key="close" type="primary" onClick={() => setLogisticsPlan(null)}>
-            知道了
-          </Button>
-        ]}
-        onCancel={() => setLogisticsPlan(null)}
-        width={900}
-      >
-        {logisticsPlan ? (
-          <LogisticsPlanContent logisticsPlan={logisticsPlan} />
-        ) : null}
-      </Modal>
-
-      <Modal
         title="删除采购单"
         open={Boolean(deleteTargetOrder)}
         okText="删除"
@@ -1487,144 +1424,6 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
         </Text>
       </Modal>
 
-    </div>
-  )
-}
-
-function LogisticsPlanContent({ logisticsPlan }: { logisticsPlan: PurchaseOrderLogisticsPlan }) {
-  const recommendations = logisticsPlan.recommendations || []
-  return (
-    <div className="purchase-logistics-plan">
-      <Descriptions size="small" column={3} colon={false} className="purchase-logistics-plan-summary">
-        <Descriptions.Item label="计划号">{logisticsPlan.planNo}</Descriptions.Item>
-        <Descriptions.Item label="采购单">{logisticsPlan.purchaseOrderTitle}</Descriptions.Item>
-        <Descriptions.Item label="生成时间">{logisticsPlan.generatedAt}</Descriptions.Item>
-        <Descriptions.Item label="商品">{logisticsPlan.itemCount}</Descriptions.Item>
-        <Descriptions.Item label="SKU">{logisticsPlan.skuCount}</Descriptions.Item>
-        <Descriptions.Item label="总数量">{logisticsPlan.totalQuantity}</Descriptions.Item>
-        <Descriptions.Item label="海运散货体积">{logisticsPlan.estimatedSeaVolumeCbmText || '-'}</Descriptions.Item>
-        <Descriptions.Item label="空运计费重">{logisticsPlan.estimatedAirChargeableWeightKgText || '-'}</Descriptions.Item>
-      </Descriptions>
-      <div className="purchase-logistics-sites">
-        {(logisticsPlan.siteSummaries || []).map((site) => (
-          <span className="purchase-site-chip" key={`${site.site}:${site.transportMode || 'UNSPECIFIED'}`}>
-            <span>{allocationDisplayLabel(site)}</span>
-            <strong>{site.quantity}</strong>
-          </span>
-        ))}
-      </div>
-      {(logisticsPlan.messages || []).length ? (
-        <Alert
-          type={logisticsPlan.missingItemCount ? 'warning' : 'success'}
-          showIcon
-          message={logisticsPlan.messages.join('；')}
-        />
-      ) : null}
-      {recommendations.length ? (
-        <section className="purchase-logistics-recommendations">
-          <div className="purchase-logistics-section-title">
-            <Text strong>货代推荐候选</Text>
-            {logisticsPlan.recommendationStatus ? (
-              <Tag color={logisticsPlan.recommendationStatus.includes('blocked') ? 'warning' : 'processing'}>
-                {logisticsRecommendationStatusLabel(logisticsPlan.recommendationStatus)}
-              </Tag>
-            ) : null}
-          </div>
-          <div className="purchase-logistics-recommendation-list">
-            {recommendations.map((recommendation) => (
-              <article className="purchase-logistics-recommendation" key={`${recommendation.forwarderCode || recommendation.forwarderName}:${recommendation.serviceCode}:${recommendation.rank}`}>
-                <div className="purchase-logistics-recommendation-head">
-                  <div className="purchase-logistics-recommendation-title">
-                    <Text strong>{recommendation.forwarderName || recommendation.forwarderCode || '-'}</Text>
-                    {recommendation.recommended ? <Tag color="success">首选候选</Tag> : null}
-                  </div>
-                  <Text type="secondary">#{recommendation.rank}</Text>
-                </div>
-                <div className="purchase-logistics-recommendation-meta">
-                  <span>{transportModeLabel(recommendation.transportMode)}</span>
-                  <span>{recommendation.serviceName || recommendation.serviceCode || '-'}</span>
-                  <span>{recommendation.country || '-'} {recommendation.deliveryCity || recommendation.destinationNode || ''}</span>
-                  <span>{recommendation.transitTimeText || '时效待确认'}</span>
-                  <span>{recommendation.priceSummary || '报价待确认'}</span>
-                  {recommendation.estimatedCostText ? <span>{recommendation.estimatedCostText}</span> : null}
-                  {recommendation.cargoCategorySummary ? <span>{recommendation.cargoCategorySummary}</span> : null}
-                </div>
-                {recommendation.costComponents?.length ? (
-                  <div className="purchase-logistics-cost-components">
-                    {recommendation.costComponents.map((component) => (
-                      <div
-                        className={`purchase-logistics-cost-component${component.amountStatus === 'RECURRING_DAILY' ? ' is-recurring' : ''}`}
-                        key={`${recommendation.routeCode || recommendation.serviceCode}:${component.componentType}:${component.componentName}`}
-                      >
-                        <span>{component.componentName}</span>
-                        <strong>{component.amountText || '待确认'}</strong>
-                        <small>{component.formulaText || component.sourceFeeName || ''}</small>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                {recommendation.excludedCostNotes?.length ? (
-                  <ul className="purchase-logistics-excluded-costs">
-                    {recommendation.excludedCostNotes.map((note) => (
-                      <li key={note}>{note}</li>
-                    ))}
-                  </ul>
-                ) : null}
-                <div className="purchase-logistics-recommendation-notes">
-                  {(recommendation.reasons || []).map((reason) => <Tag key={reason}>{reason}</Tag>)}
-                  {(recommendation.risks || []).map((risk) => <Tag color="warning" key={risk}>{risk}</Tag>)}
-                  {recommendation.estimateStatus ? (
-                    <Tag color={recommendation.estimateStatus.includes('blocked') ? 'warning' : 'processing'}>
-                      {logisticsEstimateStatusLabel(recommendation.estimateStatus)}
-                    </Tag>
-                  ) : null}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-      <div className="purchase-logistics-lines">
-        {(logisticsPlan.lines || []).map((line) => (
-          <article className="purchase-logistics-line" key={line.itemId}>
-            <div className="purchase-logistics-line-main">
-              {line.productImageUrl ? (
-                <img src={line.productImageUrl} alt="" className="purchase-logistics-thumb" />
-              ) : (
-                <div className="purchase-logistics-thumb" />
-              )}
-              <div className="purchase-logistics-copy">
-                <Text strong ellipsis>{line.partnerSku}</Text>
-                <Text type="secondary" ellipsis>{line.productTitle}</Text>
-              </div>
-            </div>
-            <div className="purchase-logistics-line-specs">
-              <span>商品 {line.productDimensionsText || '-'}</span>
-              <span>重量 {line.productWeightText || '-'}</span>
-              <span>箱规 {line.cartonDimensionsText || '-'}</span>
-              <span>箱重 {line.cartonWeightText || '-'}</span>
-              <span>装箱 {line.cartonQuantity || '-'}</span>
-              <span>散货 {line.looseVolumeCbmText || '-'}</span>
-              <span>海运散货 {line.seaLooseVolumeCbmText || '-'}</span>
-            </div>
-            <div className="purchase-logistics-line-sites">
-              {(line.allocations || []).map((allocation) => (
-                <span className="purchase-site-chip" key={`${line.itemId}:${allocation.site}:${allocation.transportMode || 'UNSPECIFIED'}`}>
-                  <span>{allocationDisplayLabel(allocation)}</span>
-                  <strong>{allocation.quantity}</strong>
-                </span>
-              ))}
-            </div>
-            <div className="purchase-logistics-line-missing">
-              {line.missingFields?.length ? (
-                line.missingFields.map((field) => <Tag color="warning" key={field}>{field}</Tag>)
-              ) : (
-                <Tag color="success">信息完整</Tag>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
     </div>
   )
 }
@@ -2008,7 +1807,6 @@ function PskuRowsFormList({
                 <div className="purchase-psku-entry-row" key={field.key}>
                   <Form.Item
                     name={[field.name, 'psku']}
-                    rules={[{ required: true, whitespace: true, message: '请输入 PSKU' }]}
                   >
                     <AutoComplete
                       allowClear
@@ -2087,8 +1885,14 @@ function getOrderSiteOptions(order?: PurchaseOrder, session?: AuthSession | null
   return SITE_OPTIONS.filter((option) => sites.has(option.value))
 }
 
-function siteCodesFromItems(items: PurchaseOrderItemCommand[]) {
-  return Array.from(new Set(items.map((item) => normalizeSiteCode(item.site)).filter(Boolean)))
+function siteCodesFromPskuRows(rows?: PskuEntryFormValue[]) {
+  return Array.from(
+    new Set(
+      (rows || [])
+        .map((row) => normalizeSiteCode(row?.site))
+        .filter(Boolean)
+    )
+  )
 }
 
 function buildProductAutoCompleteOptions(options: ProductOption[]) {
@@ -2234,52 +2038,6 @@ function transportModeLabel(value?: string) {
   return '空'
 }
 
-function logisticsRecommendationStatusLabel(value?: string) {
-  switch (value) {
-    case 'transport_candidate_blocked_by_specs':
-      return '部分缺规格待计价'
-    case 'transport_candidate_ready':
-      return '候选可复核'
-    case 'air_candidate_blocked_by_specs':
-      return '空运缺规格待计价'
-    case 'air_candidate_ready':
-      return '空运候选可复核'
-    case 'sea_candidate_blocked_by_specs':
-      return '缺尺寸待计价'
-    case 'sea_candidate_ready':
-      return '候选可复核'
-    case 'no_transport_quote':
-      return '暂无报价'
-    case 'no_transport_quantity':
-      return '无运输数量'
-    case 'no_air_quote':
-      return '暂无空运报价'
-    case 'no_sea_quote':
-      return '暂无海运报价'
-    case 'no_sea_quantity':
-      return '无海运数量'
-    default:
-      return value || '待确认'
-  }
-}
-
-function logisticsEstimateStatusLabel(value?: string) {
-  switch (value) {
-    case 'air_blocked_by_missing_specs':
-      return '空运缺规格'
-    case 'air_chargeable_weight_estimated':
-      return '空运计费重估算'
-    case 'blocked_by_missing_specs':
-      return '缺尺寸'
-    case 'loose_volume_estimated':
-      return '散货体积估算'
-    case 'candidate_ready':
-      return '待复核计价'
-    default:
-      return value || '待确认'
-  }
-}
-
 function allocationDisplayLabel(allocation: { site?: string; transportMode?: string; transportModeLabel?: string }) {
   const site = normalizeSiteCode(allocation.site) || '-'
   const modeLabel = allocation.transportModeLabel || transportModeLabel(allocation.transportMode)
@@ -2308,12 +2066,13 @@ function duplicatePskuSiteMessage(items: PurchaseOrderItemCommand[], order?: Pur
   const pending = new Map<string, PurchaseOrderItemCommand>()
   for (const item of items) {
     const site = normalizeSiteCode(item.site)
-    const key = pskuSiteKey(item.psku, site)
+    const transportMode = normalizeTransportMode(item.transportMode)
+    const key = pskuSiteTransportKey(item.psku, site, transportMode)
     if (!key) {
       continue
     }
     if (pending.has(key)) {
-      return `${item.psku} 在站点 ${site} 重复填写，不能重复添加相同商品相同站点。`
+      return `${item.psku} 在站点 ${site} / ${transportModeLabel(transportMode)} 重复填写，不能重复添加相同商品相同站点相同运输方式。`
     }
     pending.set(key, item)
   }
@@ -2323,18 +2082,22 @@ function duplicatePskuSiteMessage(items: PurchaseOrderItemCommand[], order?: Pur
   }
   for (const item of items) {
     const site = normalizeSiteCode(item.site)
+    const transportMode = normalizeTransportMode(item.transportMode)
     const existingItem = (order.items || []).find((orderItem) => purchaseOrderItemMatchesPsku(orderItem, item.psku))
-    if (existingItem?.allocations?.some((allocation) => normalizeSiteCode(allocation.site) === site)) {
-      return `${item.psku} 已在站点 ${site} 加入采购单，不能重复添加相同商品相同站点。`
+    if (existingItem?.allocations?.some((allocation) => (
+      normalizeSiteCode(allocation.site) === site && normalizeTransportMode(allocation.transportMode) === transportMode
+    ))) {
+      return `${item.psku} 已在站点 ${site} / ${transportModeLabel(transportMode)} 加入采购单，不能重复添加相同商品相同站点相同运输方式。`
     }
   }
   return undefined
 }
 
-function pskuSiteKey(psku?: string, site?: string) {
+function pskuSiteTransportKey(psku?: string, site?: string, transportMode?: string) {
   const normalizedPsku = psku?.trim().toUpperCase()
   const normalizedSite = normalizeSiteCode(site)
-  return normalizedPsku && normalizedSite ? `${normalizedPsku}:${normalizedSite}` : ''
+  const normalizedTransport = normalizeTransportMode(transportMode)
+  return normalizedPsku && normalizedSite && normalizedTransport ? `${normalizedPsku}:${normalizedSite}:${normalizedTransport}` : ''
 }
 
 function purchaseOrderItemMatchesPsku(item: PurchaseOrderItem, psku: string) {
@@ -2409,6 +2172,14 @@ function summarizeOrder(order: PurchaseOrder): OrderSummary {
     progress,
     status: order.status === 'deleted' || order.status === 'submitted' ? order.status : deriveStatus(items)
   }
+}
+
+function formatOrderQuantitySummary(summary: OrderSummary) {
+  return `${summary.pskuCount}个商品 ${summary.totalQuantity}件商品`
+}
+
+function formatAllocationQuantitySummary(allocation: AllocationSummary) {
+  return `${allocation.pskuCount}个商品 ${allocation.quantity}件商品`
 }
 
 function isSubmittedOrder(order?: PurchaseOrder | null) {
@@ -2671,6 +2442,15 @@ function emptyIssueSummary(): PurchaseOrderIssueSummary {
   }
 }
 
+function hasSealBlockingIssues(summary: PurchaseOrderIssueSummary) {
+  return Boolean(
+    summary.missingAllocationCount ||
+    summary.missingTransportCount ||
+    summary.quantityIssueCount ||
+    summary.missingSourcingRequirementCount
+  )
+}
+
 function itemIssues(item: PurchaseOrderItem) {
   const issues: string[] = []
   const hasImage = Boolean((item.sourceImageUrl || item.productImageUrl || '').trim())
@@ -2701,7 +2481,7 @@ function hasAnyText(...values: Array<string | undefined>) {
 }
 
 function summarizeOrderAllocations(order: PurchaseOrder): AllocationSummary[] {
-  const summaryByKey = new Map<string, AllocationSummary>()
+  const summaryByKey = new Map<string, AllocationSummary & { partnerSkuSet: Set<string> }>()
   ;(order.items || []).forEach((item) => {
     ;(item.allocations || []).forEach((allocation) => {
       const quantity = allocation.quantity || 0
@@ -2714,9 +2494,12 @@ function summarizeOrderAllocations(order: PurchaseOrder): AllocationSummary[] {
       }
       const transportMode = normalizeTransportMode(allocation.transportMode)
       const key = `${site}:${transportMode}`
+      const partnerSkuKey = item.partnerSku?.trim().toUpperCase() || item.id
       const current = summaryByKey.get(key)
       if (current) {
         current.quantity += quantity
+        current.partnerSkuSet.add(partnerSkuKey)
+        current.pskuCount = current.partnerSkuSet.size
         return
       }
       summaryByKey.set(key, {
@@ -2724,11 +2507,15 @@ function summarizeOrderAllocations(order: PurchaseOrder): AllocationSummary[] {
         siteName: allocation.siteName,
         transportMode,
         transportModeLabel: allocation.transportModeLabel,
+        pskuCount: 1,
+        partnerSkuSet: new Set([partnerSkuKey]),
         quantity
       })
     })
   })
-  return Array.from(summaryByKey.values()).sort(compareAllocationSummary)
+  return Array.from(summaryByKey.values())
+    .map(({ partnerSkuSet, ...summary }) => summary)
+    .sort(compareAllocationSummary)
 }
 
 function compareAllocationSummary(left: AllocationSummary, right: AllocationSummary) {

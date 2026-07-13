@@ -19,7 +19,7 @@ export function useInTransitBatchList(isBoxDetailTab: boolean) {
   const [state, setState] = useState<PageState>({ status: 'idle' })
   const [contract, setContract] = useState<InTransitContract>(DEFAULT_CONTRACT)
   const [forwarders, setForwarders] = useState<InTransitForwarder[]>([])
-  const [filters, setFilters] = useState<InTransitBatchFilters>(DEFAULT_FILTERS)
+  const [filters, setFilters] = useState<InTransitBatchFilters>(() => initialFiltersFromUrl())
   const [batchListMeta, setBatchListMeta] = useState<BatchListMeta>({
     totalCount: 0,
     page: 1,
@@ -192,4 +192,25 @@ export function useInTransitBatchList(isBoxDetailTab: boolean) {
     handleBatchTableChange,
     formatDestination
   }
+}
+
+function initialFiltersFromUrl(): InTransitBatchFilters {
+  const filters: InTransitBatchFilters = { ...DEFAULT_FILTERS }
+  if (typeof window === 'undefined') {
+    return filters
+  }
+  const params = new URLSearchParams(window.location.search)
+  const statusScope = params.get('statusScope')
+  if (statusScope === 'active' || statusScope === 'completed' || statusScope === 'all') {
+    filters.statusScope = statusScope
+  }
+  const todo = params.get('todo')
+  if (todo === 'missingEstimatedArrival') {
+    filters.todo = todo
+  }
+  const skuKeyword = params.get('skuKeyword')?.trim()
+  if (skuKeyword) {
+    filters.skuKeyword = skuKeyword
+  }
+  return filters
 }

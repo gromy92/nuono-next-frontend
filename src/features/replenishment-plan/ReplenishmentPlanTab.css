@@ -1,0 +1,550 @@
+.replenishment-plan-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.replenishment-plan-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.replenishment-plan-toolbar-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  min-width: 0;
+}
+
+.replenishment-plan-toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.replenishment-plan-summary-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.replenishment-plan-summary-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #f9fafb;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.replenishment-plan-summary-filter strong {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.replenishment-plan-summary-filter:hover {
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.replenishment-plan-summary-filter.is-active {
+  border-color: #60a5fa;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.replenishment-plan-summary-filter.is-active strong {
+  color: #1e3a8a;
+}
+
+.replenishment-plan-progress-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #374151;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.replenishment-plan-progress-summary .ant-typography {
+  font-size: 12px;
+}
+
+.replenishment-plan-progress-title {
+  color: #1e3a8a;
+}
+
+.replenishment-plan-progress-orders {
+  display: inline-block;
+  max-width: min(520px, 100%);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.replenishment-plan-tab .ant-table-wrapper {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.replenishment-plan-tab .ant-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.replenishment-plan-tab .ant-table-thead > tr > th {
+  white-space: nowrap;
+  padding-block: 8px;
+  color: #111827;
+  font-weight: 600;
+  background: #fafafa;
+}
+
+.replenishment-plan-tab .ant-table-thead > tr > th,
+.replenishment-plan-tab .ant-table-tbody > tr > td {
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.replenishment-plan-tab .ant-table-tbody > tr > td {
+  padding-block: 9px;
+}
+
+.replenishment-plan-tab .ant-table-cell {
+  min-width: 0;
+}
+
+.replenishment-plan-tab .ant-space,
+.replenishment-plan-tab .ant-space-item {
+  min-width: 0;
+}
+
+.replenishment-plan-history-title {
+  display: inline-flex;
+  align-items: center;
+}
+
+.replenishment-plan-title-help {
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: help;
+}
+
+.replenishment-plan-tab .ant-input-number {
+  width: 96px;
+}
+
+.replenishment-plan-purchase-duplicate-alert {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.replenishment-plan-purchase-duplicate-alert .ant-alert-message {
+  overflow-wrap: anywhere;
+}
+
+.replenishment-plan-product-cell {
+  width: 100%;
+  min-width: 0;
+}
+
+.replenishment-plan-product-cell .ant-typography {
+  max-width: 100%;
+}
+
+.replenishment-plan-product-main {
+  min-width: 0;
+}
+
+.replenishment-plan-product-main img {
+  border-radius: 4px;
+}
+
+.replenishment-plan-product-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.replenishment-plan-product-codes {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.replenishment-plan-product-codes .ant-typography {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.replenishment-plan-product-listing {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.replenishment-plan-product-listing .ant-typography {
+  font-size: 12px;
+}
+
+.replenishment-plan-product-stock {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 17px;
+  text-align: left;
+}
+
+.replenishment-plan-product-stock .ant-typography {
+  font-size: 12px;
+}
+
+.replenishment-plan-product-stock-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+  color: #111827;
+}
+
+.replenishment-plan-evidence-cell,
+.replenishment-plan-inbound-cell,
+.replenishment-plan-suggestion-cell,
+.replenishment-plan-window-lines {
+  width: 100%;
+  min-width: 0;
+}
+
+.replenishment-plan-evidence-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.replenishment-plan-evidence-card {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 172px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.replenishment-plan-evidence-card-history {
+  width: 100%;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.replenishment-plan-evidence-card-forecast {
+  width: 100%;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.replenishment-plan-evidence-card-forecast .ant-typography:not(.replenishment-plan-label) {
+  color: #374151 !important;
+}
+
+.replenishment-plan-history-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.replenishment-plan-forecast-stack {
+  width: 100%;
+  min-width: 0;
+}
+
+.replenishment-plan-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.replenishment-plan-history-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: baseline;
+  width: 100%;
+}
+
+.replenishment-plan-history-row .replenishment-plan-label-wide {
+  min-width: 0;
+}
+
+.replenishment-plan-label {
+  flex: 0 0 auto;
+  min-width: 28px;
+  color: #9ca3af !important;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.replenishment-plan-label-wide {
+  min-width: 48px;
+}
+
+.replenishment-plan-primary {
+  color: #111827;
+  font-weight: 600;
+}
+
+.replenishment-plan-muted {
+  color: #6b7280 !important;
+}
+
+.replenishment-plan-metric {
+  display: block;
+  color: #111827;
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.replenishment-plan-inline-muted {
+  min-width: 0;
+  color: #6b7280 !important;
+}
+
+.replenishment-plan-inbound-cell {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.replenishment-plan-inbound-summary {
+  display: grid;
+  grid-template-columns: minmax(118px, 1fr) 44px minmax(92px, max-content);
+  column-gap: 10px;
+  align-items: baseline;
+  width: 100%;
+}
+
+.replenishment-plan-inbound-summary .replenishment-plan-primary,
+.replenishment-plan-inbound-summary .replenishment-plan-inline-muted {
+  min-width: 0;
+}
+
+.replenishment-plan-inbound-summary .replenishment-plan-primary {
+  text-align: right;
+}
+
+.replenishment-plan-inbound-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.replenishment-plan-inbound-list {
+  width: 100%;
+}
+
+.replenishment-plan-inbound-batch {
+  display: grid;
+  grid-template-columns: minmax(118px, 1fr) 44px minmax(92px, max-content);
+  width: 100%;
+  max-width: 100%;
+  column-gap: 10px;
+  row-gap: 2px;
+  justify-content: start;
+  align-items: center;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 17px;
+  color: #111827;
+}
+
+.replenishment-plan-inbound-ref {
+  max-width: 132px;
+  color: #6b7280 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.replenishment-plan-inbound-quantity {
+  color: #6b7280 !important;
+  text-align: right;
+  font-weight: 400;
+}
+
+.replenishment-plan-inbound-eta {
+  font-weight: 600;
+}
+
+.replenishment-plan-inbound-batch-review .replenishment-plan-inbound-eta {
+  color: #ff4d4f;
+}
+
+.replenishment-plan-suggestion-cell {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.replenishment-plan-suggestion-tags {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.replenishment-plan-suggestion-cell .ant-tag {
+  margin-inline-end: 0;
+  padding-inline: 6px;
+  line-height: 20px;
+  border-radius: 4px;
+  font-weight: 600;
+  white-space: normal;
+}
+
+.replenishment-plan-suggestion-tag.is-added {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #6b7280;
+}
+
+.replenishment-plan-suggestion-status {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.replenishment-plan-suggestion-status.is-added {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.replenishment-plan-suggestion-status.is-pending {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.replenishment-plan-suggestion-status.is-none {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.replenishment-plan-draft-quantity-prefix {
+  font-size: 12px;
+  line-height: 17px;
+  white-space: nowrap;
+}
+
+.replenishment-plan-draft-transport-cell {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.replenishment-plan-window-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.replenishment-plan-window-line {
+  display: grid;
+  grid-template-columns: 32px 84px 32px max-content;
+  column-gap: 6px;
+  align-items: baseline;
+  width: 100%;
+  min-width: 0;
+}
+
+.replenishment-plan-window-line .ant-typography {
+  font-size: 12px;
+}
+
+.replenishment-plan-window-value {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.replenishment-plan-risk {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.replenishment-plan-risk-muted {
+  font-size: 12px;
+}
+
+.replenishment-plan-row-actions {
+  width: 100%;
+}
+
+.replenishment-plan-row-actions .ant-btn {
+  padding-inline: 8px;
+  height: 24px;
+}
+
+@media (max-width: 1280px) {
+  .replenishment-plan-tab .ant-table-thead > tr > th,
+  .replenishment-plan-tab .ant-table-tbody > tr > td {
+    padding-inline: 8px;
+  }
+
+  .replenishment-plan-inbound-summary,
+  .replenishment-plan-inbound-batch {
+    grid-template-columns: minmax(96px, 1fr) 38px minmax(80px, max-content);
+    column-gap: 6px;
+  }
+}
