@@ -7,12 +7,14 @@ import {
   BOSS_OPERATOR_MENU_KEYS,
   WORKSPACE_MENU_DEFINITIONS,
   WORKSPACE_SECTION_DEFINITIONS,
-  shouldShowWorkspaceMenuInSidebar,
-  shouldShowWorkspaceMenuInTabs,
   workspaceMenuContentKind,
   workspaceMenuPath
 } from './WorkspaceMenuRegistry'
-import { OPERATIONS_PRODUCT_KEYWORDS_PATH, withCurrentWorkspaceDevQuery } from './WorkspaceRouting'
+import {
+  OPERATIONS_PRODUCT_KEYWORDS_PATH,
+  resolveWorkspaceMenuKeyFromLocation,
+  withCurrentWorkspaceDevQuery
+} from './WorkspaceRouting'
 
 assert.equal(workspaceMenuPath('official-warehouse'), '/warehouse/official-warehouse')
 assert.equal(workspaceMenuContentKind('official-warehouse'), 'official-warehouse')
@@ -65,11 +67,28 @@ assert.deepEqual(WORKSPACE_MENU_DEFINITIONS['official-warehouse'].routeAliases, 
   '/storage/warehouse',
   '/warehouse/official-warehouse-stock'
 ])
-assert.equal(shouldShowWorkspaceMenuInSidebar('purchase-listing'), false)
-assert.equal(shouldShowWorkspaceMenuInTabs('purchase-listing'), false)
-assert.equal(shouldShowWorkspaceMenuInSidebar('purchase-pre-order-profit'), false)
-assert.equal(shouldShowWorkspaceMenuInTabs('purchase-pre-order-profit'), false)
-assert.equal(BOSS_OPERATOR_MENU_KEYS.includes('purchase-pre-order-profit'), false)
+
+const registeredMenuKeys = Object.keys(WORKSPACE_MENU_DEFINITIONS)
+assert.equal(registeredMenuKeys.includes('purchase-listing'), false)
+assert.equal(registeredMenuKeys.includes('purchase-pre-order-profit'), false)
+assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-listing'), false)
+assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-pre-order-profit'), false)
+assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/listing'), null)
+assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/pre-order-profit'), null)
+assert.equal(shellWorkspaceContentSource.includes('ProductListingPage'), false)
+assert.equal(shellWorkspaceContentSource.includes('PreOrderProfitPage'), false)
+assert.equal(
+  fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
+    '../pre-order-profit/'
+  ),
+  false
+)
+assert.equal(
+  fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
+    '../product-listing/'
+  ),
+  false
+)
 
 const warehouseSection = WORKSPACE_SECTION_DEFINITIONS.find((section) => section.key === 'warehouse')
 const warehouseMenuKeys = warehouseSection?.entries?.flatMap((entry) => (entry.type === 'workspace' ? [entry.key] : [])) ?? []

@@ -34,11 +34,9 @@ import {
   ProductGroupManagementPage,
   ProductImageProfilePage,
   ProductKeywordDataPage,
-  ProductListingPage,
   ProductLogisticsCostsPage,
   ProductManagementWorkspacePage,
   ProductSpecsPage,
-  PreOrderProfitPage,
   PurchaseOrderPage,
   RoleManagementWorkspace,
   SalesAnalyticsPage,
@@ -280,22 +278,6 @@ function ShellWorkspaceContentPane({
           siteCode={shellSession.currentStore?.site}
           availableStores={shellSession.userStores}
         />
-      </LazyWorkspaceBoundary>
-    );
-  }
-
-  if (activeContentKind === 'product-listing') {
-    return (
-      <LazyWorkspaceBoundary>
-        <ProductListingPage storeCode={shellSession.currentStore?.storeCode} />
-      </LazyWorkspaceBoundary>
-    );
-  }
-
-  if (activeContentKind === 'purchase-pre-order-profit') {
-    return (
-      <LazyWorkspaceBoundary>
-        <PreOrderProfitPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

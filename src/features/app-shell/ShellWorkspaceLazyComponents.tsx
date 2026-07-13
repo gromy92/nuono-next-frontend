@@ -65,14 +65,6 @@ export const Ali1688SkuPurchaseHistoryPage = lazyWorkspace(() =>
     default: module.Ali1688SkuPurchaseHistoryPage
   }))
 );
-export const ProductListingPage = lazyWorkspace(() =>
-  import('../product-listing/ProductListingPage').then((module) => ({
-    default: module.ProductListingPage
-  }))
-);
-export const PreOrderProfitPage = lazyWorkspace(() =>
-  import('../pre-order-profit/PreOrderProfitPage').then((module) => ({ default: module.PreOrderProfitPage }))
-);
 export const MasterDataBoard = lazyWorkspace(() =>
   import('../master-data/MasterDataBoard').then((module) => ({ default: module.MasterDataBoard }))
 );
