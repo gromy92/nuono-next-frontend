@@ -228,7 +228,11 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
       </Form>
 
       <Card variant="borderless" style={{ border: '1px solid #dbe4ea' }}>
-        <ProductListingDetailEditor draft={listingDraft} onDraftChange={setListingDraft} />
+        <ProductListingDetailEditor
+          competitorMaterials={sourcePrefill?.competitorMaterials}
+          draft={listingDraft}
+          onDraftChange={setListingDraft}
+        />
       </Card>
 
       <Space>

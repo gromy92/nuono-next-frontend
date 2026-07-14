@@ -1,5 +1,7 @@
 import { apiFetch, parseApiResponse } from '../../shared/api'
 import type {
+  ProductListingAiListingCommand,
+  ProductListingAiListingView,
   ProductListingDraftPayload,
   ProductListingDraftView,
   ProductListingRealRunCommand,
@@ -8,6 +10,14 @@ import type {
 
 export function saveProductListingDraft(payload: ProductListingDraftPayload) {
   return postJson<ProductListingDraftView>('/api/product-listing/drafts', payload, '保存上架草稿失败')
+}
+
+export function generateProductListingAiListing(payload: ProductListingAiListingCommand) {
+  return postJson<ProductListingAiListingView>(
+    '/api/product-listing/ai/noon-listing',
+    payload,
+    '商品上架 AI 整合失败'
+  )
 }
 
 export function submitProductListingDryRun(payload: { draftId: number; storeCode: string }) {
