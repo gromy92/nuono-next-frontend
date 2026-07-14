@@ -43,6 +43,7 @@ import {
   loadOfficialWarehouseCandidates,
   loadOfficialWarehouseShippingBatches,
   officialWarehouseError,
+  officialWarehouseProblem,
   queryOfficialWarehouseAppointmentAvailability,
   runOfficialWarehouseAppointmentOnce,
   submitManualOfficialWarehouseAppointment,
@@ -53,6 +54,7 @@ import {
   type OfficialWarehouseAsnLine,
   type OfficialWarehouseAppointment,
   type OfficialWarehouseAppointmentAvailability,
+  type OfficialWarehouseApiProblem,
   type OfficialWarehouseProductCandidate,
   type OfficialWarehouseRoutingWarehouse,
   type OfficialWarehouseShippingBatchCandidate,
@@ -406,6 +408,11 @@ type AppointmentSubmitFeedback = {
   message: string
 }
 
+type CreateAsnSubmitFeedback = {
+  message: string
+  problem?: OfficialWarehouseApiProblem
+}
+
 type AppointmentOpenRequest = {
   row: OfficialWarehouseAsn
   mode: AppointmentSubmitMode
@@ -450,6 +457,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<Key[]>([])
   const [quantityByCandidateKey, setQuantityByCandidateKey] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
+  const [createSubmitFeedback, setCreateSubmitFeedback] = useState<CreateAsnSubmitFeedback>()
   const [appointmentOpen, setAppointmentOpen] = useState(false)
   const [appointmentTarget, setAppointmentTarget] = useState<OfficialWarehouseAsn>()
   const [appointmentMode, setAppointmentMode] = useState<AppointmentSubmitMode>('auto')
@@ -595,6 +603,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
 
   useEffect(() => {
     if (createOpen) {
+      setCreateSubmitFeedback(undefined)
       setCandidateKeyword('')
       setSelectedShippingBatchIds([])
       void loadCandidates([], '')
@@ -806,6 +815,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       return
     }
     setSubmitting(true)
+    setCreateSubmitFeedback(undefined)
     try {
       await createOfficialWarehouseAsn({
         storeCode,
@@ -824,7 +834,9 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       await loadAsns()
       await loadAppointmentHistory()
     } catch (error) {
-      message.error(officialWarehouseError(error, '创建 Noon ASN 失败'))
+      const errorMessage = officialWarehouseError(error, '创建 Noon ASN 失败')
+      setCreateSubmitFeedback({ message: errorMessage, problem: officialWarehouseProblem(error) })
+      message.error(errorMessage)
       await loadAsns()
       await loadAppointmentHistory()
     } finally {
@@ -1635,13 +1647,36 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         title="选择商品创建 Noon ASN"
         open={createOpen}
         width={1040}
-        onCancel={() => setCreateOpen(false)}
+        onCancel={() => {
+          setCreateOpen(false)
+          setCreateSubmitFeedback(undefined)
+        }}
         onOk={() => void submitCreateAsn()}
         confirmLoading={submitting}
         okText="创建 ASN"
+        okButtonProps={{ disabled: Boolean(createSubmitFeedback?.problem?.partialSuccess) }}
         destroyOnClose
       >
         <div className="official-warehouse-modal-body">
+          {createSubmitFeedback ? (
+            <Alert
+              type="error"
+              showIcon
+              message={createSubmitFeedback.message}
+              description={[
+                createSubmitFeedback.problem?.reference
+                  ? `业务参考：${createSubmitFeedback.problem.reference}`
+                  : '',
+                createSubmitFeedback.problem?.partialSuccess
+                  ? 'Noon 侧已产生业务数据，系统已禁用重复创建；请关闭弹窗后在 ASN 列表确认。'
+                  : createSubmitFeedback.problem?.retryable
+                    ? '可在确认 Noon 状态后重试。'
+                    : createSubmitFeedback.problem
+                      ? '请按提示处理后再提交。'
+                      : ''
+              ].filter(Boolean).join('；') || undefined}
+            />
+          ) : null}
           <div className="official-warehouse-shipping-picker">
             <div className="official-warehouse-shipping-picker-header">
               <div className="official-warehouse-stack">
