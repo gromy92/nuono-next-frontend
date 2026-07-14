@@ -67,8 +67,9 @@ const orders = [
 const summary = summarizePurchasePlanProgress(rows, orders, 'SA')
 
 assert.equal(summary.totalReplenishmentSkuCount, 3, 'current plan total must only count rows with air or sea suggestions')
-assert.equal(summary.addedSkuCount, 3, 'already-added product count must be derived from current purchase-order facts')
-assert.equal(summary.remainingSkuCount, 0, 'remaining products must exclude PSKUs already present in current purchase orders')
+assert.equal(summary.addedSkuCount, 2, 'a product is complete only when every suggested transport reaches its suggested quantity')
+assert.equal(summary.partialSkuCount, 1, 'products with only part of their transport plan covered must remain visible')
+assert.equal(summary.remainingSkuCount, 1, 'partially covered products must remain in the outstanding count')
 assert.equal(summary.airSkuCount, 1, 'air count must only include current-site AIR allocations for the current plan')
 assert.equal(summary.airQuantity, 5)
 assert.equal(summary.seaSkuCount, 2, 'sea count must include same-logical-store orders even when the order anchor store code is another site')

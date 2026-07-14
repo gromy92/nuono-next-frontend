@@ -4,6 +4,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Key } from 'react'
 import { normalizeError } from '../../shared/api'
+import { PURCHASE_IN_TRANSIT_GOODS_PATH, withCurrentWorkspaceDevQuery } from '../app-shell/WorkspaceRouting'
 import type { AuthSession } from '../auth/session'
 import { ProductBaselineIdentity } from '../product-baseline'
 import { addPurchaseOrderItems, loadPurchaseOrders } from '../purchase-order/api'
@@ -17,6 +18,7 @@ import type {
 import { fetchReplenishmentPlanOverview } from './api'
 import { formatPurchaseDuplicateNotice } from './purchaseDuplicateNotice'
 import { summarizePurchasePlanProgress, type PurchasePlanProgressSummary } from './purchaseProgress'
+import { summarizeMissingEta } from './summary'
 import { buildPurchaseDrafts, filterBatchPurchaseDrafts, pskuSiteTransportKey } from './purchaseDrafts'
 import type { PurchaseDraftQuantity, PurchaseDraftRow } from './purchaseDrafts'
 import type {
@@ -31,6 +33,15 @@ import './ReplenishmentPlanTab.css'
 
 const { Text } = Typography
 const BATCH_PURCHASE_OPENING_KEY = '__batch__'
+const SEA_ETA_UNCERTAIN_AIR_WINDOW_WARNING = 'sea_eta_uncertain_air_window_coverage'
+const SEA_ETA_UNCERTAIN_AIR_WINDOW_TOOLTIP = '海运到货时间具有不确定性 谨慎评判'
+const BLOCKING_WARNING_LABELS: Record<string, string> = {
+  daily_forecast_missing: '缺少日级预测',
+  daily_forecast_gap: '未来 1-100 天预测不完整',
+  stock_fact_missing: '缺少库存事实',
+  fbn_stock_fact_missing: '缺少 FBN 库存',
+  forecast_fact_expired: '预测事实已过期'
+}
 
 type ReplenishmentPlanTabProps = {
   session?: AuthSession | null
@@ -134,6 +145,17 @@ export function ReplenishmentPlanTab({ session, purchaseOrdersRevision, onPurcha
     [searchMatchedRows, suggestionFilter]
   )
   const suggestionSummary = useMemo(() => summarizeSuggestions(searchMatchedRows), [searchMatchedRows])
+  const missingEtaSummary = useMemo(() => summarizeMissingEta(searchMatchedRows), [searchMatchedRows])
+  const blockedRows = useMemo(
+    () => searchMatchedRows.filter((item) => item.calculationBlocked),
+    [searchMatchedRows]
+  )
+  const pastEtaReviewCount = useMemo(
+    () => searchMatchedRows.reduce((count, item) => (
+      count + (item.inboundBatches || []).filter((batch) => batch.etaReviewRequired).length
+    ), 0),
+    [searchMatchedRows]
+  )
 
   const editableOrders = useMemo(
     () => editablePurchaseOrders(purchaseOrders),
@@ -153,8 +175,8 @@ export function ReplenishmentPlanTab({ session, purchaseOrdersRevision, onPurcha
     [editableOrders, selectedOrderId]
   )
 
-  const purchaseTransportKeys = useMemo(
-    () => purchaseOrderTransportKeys(purchasePlanningOrders),
+  const purchaseTransportQuantities = useMemo(
+    () => purchaseOrderTransportQuantities(purchasePlanningOrders),
     [purchasePlanningOrders]
   )
   const purchaseTransportSources = useMemo(
@@ -206,7 +228,15 @@ export function ReplenishmentPlanTab({ session, purchaseOrdersRevision, onPurcha
       message.warning('请先选择店铺站点。')
       return
     }
-    const allDrafts = targetRows.flatMap((item) => buildPurchaseDrafts(item, query.siteCode))
+    const calculableRows = targetRows.filter((item) => !item.calculationBlocked)
+    if (!calculableRows.length) {
+      message.warning('所选商品数据依据不足，当前不可加入采购。')
+      return
+    }
+    if (calculableRows.length !== targetRows.length) {
+      message.warning('已跳过数据依据不足的商品。')
+    }
+    const allDrafts = calculableRows.flatMap((item) => buildPurchaseDrafts(item, query.siteCode))
     const drafts = source === 'batch' ? filterBatchPurchaseDrafts(allDrafts) : allDrafts
     if (!drafts.length) {
       message.warning('当前没有可加入采购的商品。')
@@ -442,7 +472,14 @@ export function ReplenishmentPlanTab({ session, purchaseOrdersRevision, onPurcha
             {renderSuggestionTransportTag(item, 'SEA')}
           </div>
           <Space wrap size={[4, 4]} className="replenishment-plan-row-actions">
-            <Button size="small" type="primary" icon={<PlusOutlined />} onClick={() => void openPurchaseModal([item])} loading={openingPurchaseKey === purchaseOpeningKey([item])}>
+            <Button
+              size="small"
+              type="primary"
+              icon={<PlusOutlined />}
+              disabled={item.calculationBlocked}
+              onClick={() => void openPurchaseModal([item])}
+              loading={openingPurchaseKey === purchaseOpeningKey([item])}
+            >
               加入采购
             </Button>
           </Space>
@@ -491,6 +528,33 @@ export function ReplenishmentPlanTab({ session, purchaseOrdersRevision, onPurcha
       {renderPurchaseProgressSummary(purchaseProgressSummary)}
 
       {errorMessage ? <Alert type="error" showIcon message="补货计划加载失败" description={errorMessage} /> : null}
+      {blockedRows.length ? (
+        <Alert
+          className="replenishment-plan-calculation-blocked-alert"
+          type="error"
+          showIcon
+          message={`${blockedRows.length} 个商品数据依据不足，已停止生成采购建议`}
+          description={summarizeBlockingReasons(blockedRows)}
+        />
+      ) : null}
+      {missingEtaSummary.batchCount ? (
+        <Alert
+          className="replenishment-plan-missing-eta-alert"
+          type="warning"
+          showIcon
+          message={`${missingEtaSummary.itemCount} 个商品存在 ${missingEtaSummary.batchCount} 批未维护 ETA 的在途，共 ${formatQuantity(missingEtaSummary.quantity)} 件未计入覆盖`}
+          action={<Button size="small" onClick={openMissingEtaOverviewMaintenance}>维护在途 ETA</Button>}
+        />
+      ) : null}
+      {pastEtaReviewCount ? (
+        <Alert
+          className="replenishment-plan-past-eta-alert"
+          type="warning"
+          showIcon
+          message={`${pastEtaReviewCount} 批在途 ETA 已过期，未计入覆盖，请复核实际到仓状态`}
+          action={<Button size="small" onClick={openMissingEtaOverviewMaintenance}>复核在途</Button>}
+        />
+      ) : null}
 
       <Spin spinning={loading}>
         {overview?.state === 'empty' ? (
@@ -504,7 +568,11 @@ export function ReplenishmentPlanTab({ session, purchaseOrdersRevision, onPurcha
             tableLayout="fixed"
             rowSelection={{
               selectedRowKeys,
-              onChange: handleSelectedRowsChange
+              onChange: handleSelectedRowsChange,
+              getCheckboxProps: (item) => ({
+                disabled: item.calculationBlocked,
+                title: item.calculationBlocked ? '数据依据不足，当前不可加入采购' : undefined
+              })
             }}
             pagination={{ pageSize: 20, showSizeChanger: false }}
             locale={{ emptyText: '暂无符合条件的补货计划' }}
@@ -632,45 +700,61 @@ export function ReplenishmentPlanTab({ session, purchaseOrdersRevision, onPurcha
   function renderSuggestionTransportTag(item: ReplenishmentPlanItem, transportMode: 'AIR' | 'SEA') {
     const isAir = transportMode === 'AIR'
     const label = isAir ? '空运' : '海运'
+    if (item.calculationBlocked) {
+      return (
+        <Tooltip title={blockingReasonText(item)}>
+          <Tag color="red" className="replenishment-plan-suggestion-tag is-blocked">
+            {label} 不可计算
+          </Tag>
+        </Tooltip>
+      )
+    }
     const calculatedUnits = isAir ? item.airCalculatedUnits : item.seaCalculatedUnits
     const suggestedUnits = isAir ? item.airSuggestedUnits : item.seaSuggestedUnits
     const status = purchaseTransportStatus(item, transportMode)
     const source = purchaseTransportSource(item, transportMode)
+    const seaEtaRisk = isAir && hasSeaEtaRiskWarning(item)
     const statusClassName = status === '已加'
       ? 'is-added'
+      : status === '部分'
+        ? 'is-partial'
       : status === '待加'
         ? 'is-pending'
         : 'is-none'
-    const tagColor = status === '已加' ? undefined : isAir ? 'geekblue' : 'cyan'
+    const tagColor = seaEtaRisk ? 'red' : status === '已加' ? undefined : status === '部分' ? 'orange' : isAir ? 'geekblue' : 'cyan'
     const tag = (
-      <Tag color={tagColor} className={`replenishment-plan-suggestion-tag ${statusClassName}`}>
+      <Tag color={tagColor} className={`replenishment-plan-suggestion-tag ${statusClassName}${seaEtaRisk ? ' is-sea-eta-risk' : ''}`}>
         {label} 计算 {formatQuantity(calculatedUnits)} / 建议 {formatQuantity(suggestedUnits)}
         <span className={`replenishment-plan-suggestion-status ${statusClassName}`}>{status}</span>
       </Tag>
     )
-    if (!source) {
+    if (!source && !seaEtaRisk) {
       return tag
     }
+    const tooltipLines = [
+      ...(seaEtaRisk ? [SEA_ETA_UNCERTAIN_AIR_WINDOW_TOOLTIP] : []),
+      ...(source ? [formatPurchaseTransportSource(source)] : [])
+    ]
     return (
-      <Tooltip title={formatPurchaseTransportSource(source)}>
+      <Tooltip title={tooltipLines.join('\n')}>
         {tag}
       </Tooltip>
     )
   }
 
   function purchaseTransportStatus(item: ReplenishmentPlanItem, transportMode: 'AIR' | 'SEA') {
-    if (isPurchaseTransportAdded(item, transportMode)) {
+    const suggestedUnits = transportMode === 'AIR' ? item.airSuggestedUnits : item.seaSuggestedUnits
+    const suggestedQuantity = numericQuantity(suggestedUnits)
+    if (suggestedQuantity <= 0) {
+      return '无需'
+    }
+    const plannedQuantity = query?.siteCode
+      ? purchaseTransportQuantities.get(pskuSiteTransportKey(item.partnerSku, query.siteCode, transportMode)) || 0
+      : 0
+    if (plannedQuantity >= suggestedQuantity) {
       return '已加'
     }
-    const suggestedUnits = transportMode === 'AIR' ? item.airSuggestedUnits : item.seaSuggestedUnits
-    return numericQuantity(suggestedUnits) > 0 ? '待加' : '无需'
-  }
-
-  function isPurchaseTransportAdded(item: ReplenishmentPlanItem, transportMode: 'AIR' | 'SEA') {
-    if (!query?.siteCode) {
-      return false
-    }
-    return purchaseTransportKeys.has(pskuSiteTransportKey(item.partnerSku, query.siteCode, transportMode))
+    return plannedQuantity > 0 ? '部分' : '待加'
   }
 
   function purchaseTransportSource(item: ReplenishmentPlanItem, transportMode: 'AIR' | 'SEA') {
@@ -679,6 +763,41 @@ export function ReplenishmentPlanTab({ session, purchaseOrdersRevision, onPurcha
     }
     return purchaseTransportSources.get(pskuSiteTransportKey(item.partnerSku, query.siteCode, transportMode))
   }
+}
+
+function hasSeaEtaRiskWarning(item: ReplenishmentPlanItem) {
+  return item.warnings?.includes(SEA_ETA_UNCERTAIN_AIR_WINDOW_WARNING)
+}
+
+function blockingReasonText(item: ReplenishmentPlanItem) {
+  const labels = (item.warnings || [])
+    .map((warning) => BLOCKING_WARNING_LABELS[warning])
+    .filter(Boolean)
+  return labels.length ? labels.join('；') : '补货计算依据不足'
+}
+
+function summarizeBlockingReasons(rows: ReplenishmentPlanItem[]) {
+  const counts = new Map<string, number>()
+  for (const row of rows) {
+    for (const warning of row.warnings || []) {
+      const label = BLOCKING_WARNING_LABELS[warning]
+      if (label) {
+        counts.set(label, (counts.get(label) || 0) + 1)
+      }
+    }
+  }
+  return Array.from(counts.entries())
+    .map(([label, count]) => `${label} ${count} 个`)
+    .join('；')
+}
+
+function openMissingEtaOverviewMaintenance() {
+  if (typeof window === 'undefined') {
+    return
+  }
+  const targetPath = withCurrentWorkspaceDevQuery(`${PURCHASE_IN_TRANSIT_GOODS_PATH}?statusScope=active`)
+  window.history.pushState({}, '', targetPath)
+  window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
 function purchaseDraftLines(drafts: PurchaseDraftRow[]): PurchaseDraftLine[] {
@@ -725,16 +844,17 @@ function purchaseOpeningKey(targetRows: ReplenishmentPlanItem[]) {
   return targetRows[0]?.partnerSku || BATCH_PURCHASE_OPENING_KEY
 }
 
-function purchaseOrderTransportKeys(orders: PurchaseOrder[]) {
-  const keys = new Set<string>()
+function purchaseOrderTransportQuantities(orders: PurchaseOrder[]) {
+  const quantities = new Map<string, number>()
   for (const order of orders) {
     for (const item of order.items || []) {
       for (const allocation of item.allocations || []) {
-        keys.add(pskuSiteTransportKey(item.partnerSku, allocation.site, allocation.transportMode))
+        const key = pskuSiteTransportKey(item.partnerSku, allocation.site, allocation.transportMode)
+        quantities.set(key, (quantities.get(key) || 0) + numericQuantity(allocation.quantity))
       }
     }
   }
-  return keys
+  return quantities
 }
 
 function purchaseOrderTransportSources(orders: PurchaseOrder[]) {
@@ -743,9 +863,12 @@ function purchaseOrderTransportSources(orders: PurchaseOrder[]) {
     for (const item of order.items || []) {
       for (const allocation of item.allocations || []) {
         const key = pskuSiteTransportKey(item.partnerSku, allocation.site, allocation.transportMode)
-        if (!sources.has(key)) {
-          sources.set(key, purchaseTransportSourceFromAllocation(order, allocation))
-        }
+        const current = sources.get(key)
+        const next = current || purchaseTransportSourceFromAllocation(order, allocation)
+        sources.set(key, {
+          ...next,
+          quantity: numericQuantity(current?.quantity) + numericQuantity(allocation.quantity)
+        })
       }
     }
   }
@@ -809,6 +932,7 @@ function renderPurchaseProgressSummary(summary: PurchasePlanProgressSummary) {
       <Text>
         商品 {formatQuantity(summary.addedSkuCount)} / {formatQuantity(summary.totalReplenishmentSkuCount)} 个
       </Text>
+      {summary.partialSkuCount ? <Text>部分覆盖 {formatQuantity(summary.partialSkuCount)} 个</Text> : null}
       <Text>
         空运 {formatQuantity(summary.airSkuCount)} 个 / {formatQuantity(summary.airQuantity)} 件
       </Text>
@@ -821,11 +945,11 @@ function renderPurchaseProgressSummary(summary: PurchasePlanProgressSummary) {
 }
 
 function hasAirSuggestion(item: ReplenishmentPlanItem) {
-  return numericQuantity(item.airSuggestedUnits) > 0
+  return !item.calculationBlocked && numericQuantity(item.airSuggestedUnits) > 0
 }
 
 function hasSeaSuggestion(item: ReplenishmentPlanItem) {
-  return numericQuantity(item.seaSuggestedUnits) > 0
+  return !item.calculationBlocked && numericQuantity(item.seaSuggestedUnits) > 0
 }
 
 function renderInboundBatchGroup(
