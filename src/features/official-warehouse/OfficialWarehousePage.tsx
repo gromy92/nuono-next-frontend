@@ -170,14 +170,15 @@ function shippingBatchStatusText(status?: string) {
 }
 
 function shippingBatchOptionText(row: OfficialWarehouseShippingBatchCandidate) {
-  const quantity = Number(row.remainingQuantity ?? row.storeSiteQuantity ?? 0).toLocaleString()
+  const remainingQuantity = Number(row.remainingQuantity ?? row.storeSiteQuantity ?? 0).toLocaleString()
+  const reusableQuantity = Number(row.storeSiteQuantity ?? row.totalQuantity ?? 0).toLocaleString()
   const linkedQuantity = Number(row.linkedQuantity || 0)
   const scheduledAppointmentQuantity = Number(row.scheduledAppointmentQuantity || 0)
   const appointedQuantity = row.alreadyAppointed ? Math.max(scheduledAppointmentQuantity, 0) : 0
   const asnOnlyQuantity = row.batchUsedByAsn ? Math.max(linkedQuantity - appointedQuantity, 0) : 0
   const skuCount = Number(row.skuCount || 0).toLocaleString()
   const poCount = Number(row.purchaseOrderCount || 0).toLocaleString()
-  const batchNo = row.batchNo || row.trackingNo || row.externalShipmentNo || row.id
+  const batchNo = shippingBatchDisplayNo(row)
   const forwarder = row.forwarderName ? ` · ${row.forwarderName}` : ''
   const transport = row.transportMode ? ` · ${row.transportMode === 'AIR' ? '空运' : row.transportMode === 'SEA' ? '海运' : row.transportMode}` : ''
   const purchaseText = poCount === '0' ? '' : ` · ${poCount} PO`
@@ -187,7 +188,12 @@ function shippingBatchOptionText(row: OfficialWarehouseShippingBatchCandidate) {
   ].filter(Boolean)
   const fallbackUsageText = row.batchUsageLabel && row.batchUsageLabel !== '可约仓' ? ` · ${row.batchUsageLabel}` : ''
   const appointmentText = usageParts.length ? ` · ${usageParts.join(' · ')}` : fallbackUsageText
-  return `${batchNo}${forwarder}${transport} · ${shippingBatchStatusText(row.latestNodeStatus || row.status)}${appointmentText} · 待约仓 ${quantity}件 · ${skuCount} SKU${purchaseText}`
+  const availabilityText = row.alreadyAppointed ? `可再次约仓 ${reusableQuantity}件` : `待约仓 ${remainingQuantity}件`
+  return `${batchNo}${forwarder}${transport} · ${shippingBatchStatusText(row.latestNodeStatus || row.status)}${appointmentText} · ${availabilityText} · ${skuCount} SKU${purchaseText}`
+}
+
+function shippingBatchDisplayNo(row: OfficialWarehouseShippingBatchCandidate) {
+  return row.batchNo || row.trackingNo || row.externalShipmentNo || row.id
 }
 
 function lineStatusTag(status?: string) {
@@ -413,6 +419,11 @@ type CreateAsnSubmitFeedback = {
   problem?: OfficialWarehouseApiProblem
 }
 
+type ReusableBatchCreateConfirm = {
+  selectedRows: OfficialWarehouseProductCandidate[]
+  batchNos: string[]
+}
+
 type AppointmentOpenRequest = {
   row: OfficialWarehouseAsn
   mode: AppointmentSubmitMode
@@ -458,6 +469,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [quantityByCandidateKey, setQuantityByCandidateKey] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
   const [createSubmitFeedback, setCreateSubmitFeedback] = useState<CreateAsnSubmitFeedback>()
+  const [reusableBatchCreateConfirm, setReusableBatchCreateConfirm] = useState<ReusableBatchCreateConfirm>()
   const [appointmentOpen, setAppointmentOpen] = useState(false)
   const [appointmentTarget, setAppointmentTarget] = useState<OfficialWarehouseAsn>()
   const [appointmentMode, setAppointmentMode] = useState<AppointmentSubmitMode>('auto')
@@ -531,9 +543,13 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     () => shippingBatches.filter((batch) => selectedShippingBatchIds.includes(batch.id)),
     [shippingBatches, selectedShippingBatchIds]
   )
+  const selectedAlreadyAppointedBatches = useMemo(
+    () => selectedShippingBatches.filter((batch) => batch.alreadyAppointed),
+    [selectedShippingBatches]
+  )
   const selectedShippingBatchesNoRemaining = selectedShippingBatchIds.length > 0 &&
     selectedShippingBatches.length > 0 &&
-    selectedShippingBatches.every((batch) => Number(batch.remainingQuantity ?? batch.storeSiteQuantity ?? 0) <= 0)
+    selectedShippingBatches.every((batch) => !batch.alreadyAppointed && Number(batch.remainingQuantity ?? batch.storeSiteQuantity ?? 0) <= 0)
   const candidateEmptyDescription = selectedShippingBatchIds.length
     ? selectedShippingBatchesNoRemaining
       ? '所选物流批次已无剩余待约仓商品'
@@ -604,6 +620,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   useEffect(() => {
     if (createOpen) {
       setCreateSubmitFeedback(undefined)
+      setReusableBatchCreateConfirm(undefined)
       setCandidateKeyword('')
       setSelectedShippingBatchIds([])
       void loadCandidates([], '')
@@ -814,6 +831,17 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       message.warning(`${displayPsku(overLimit)} 数量超过所选物流批次可用数量`)
       return
     }
+    if (selectedAlreadyAppointedBatches.length) {
+      setReusableBatchCreateConfirm({
+        selectedRows,
+        batchNos: selectedAlreadyAppointedBatches.map(shippingBatchDisplayNo)
+      })
+      return
+    }
+    await createAsnFromSelectedRows(selectedRows)
+  }
+
+  async function createAsnFromSelectedRows(selectedRows: OfficialWarehouseProductCandidate[]) {
     setSubmitting(true)
     setCreateSubmitFeedback(undefined)
     try {
@@ -831,6 +859,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       })
       message.success('Noon ASN 已创建')
       setCreateOpen(false)
+      setReusableBatchCreateConfirm(undefined)
       await loadAsns()
       await loadAppointmentHistory()
     } catch (error) {
@@ -842,6 +871,13 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function confirmReusableBatchCreate() {
+    if (!reusableBatchCreateConfirm) return
+    const selectedRows = reusableBatchCreateConfirm.selectedRows
+    setReusableBatchCreateConfirm(undefined)
+    void createAsnFromSelectedRows(selectedRows)
   }
 
   async function openDetail(row: OfficialWarehouseAsn) {
@@ -1650,6 +1686,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         onCancel={() => {
           setCreateOpen(false)
           setCreateSubmitFeedback(undefined)
+          setReusableBatchCreateConfirm(undefined)
         }}
         onOk={() => void submitCreateAsn()}
         confirmLoading={submitting}
@@ -1675,6 +1712,14 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
                       ? '请按提示处理后再提交。'
                       : ''
               ].filter(Boolean).join('；') || undefined}
+            />
+          ) : null}
+          {selectedAlreadyAppointedBatches.length ? (
+            <Alert
+              type="warning"
+              showIcon
+              message="所选物流批次已约过仓，仍可继续使用"
+              description={`批次 ${selectedAlreadyAppointedBatches.map(shippingBatchDisplayNo).join('、')} 再次创建 ASN 前会要求确认，请核对本次商品和数量。`}
             />
           ) : null}
           <div className="official-warehouse-shipping-picker">
@@ -1762,6 +1807,20 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             }}
           />
         </div>
+      </Modal>
+
+      <Modal
+        title="确认继续使用已约仓物流批次"
+        open={Boolean(reusableBatchCreateConfirm)}
+        onCancel={() => setReusableBatchCreateConfirm(undefined)}
+        onOk={confirmReusableBatchCreate}
+        okText="继续创建 ASN"
+        cancelText="取消"
+        destroyOnClose
+      >
+        <Text>
+          物流批次 {reusableBatchCreateConfirm?.batchNos.join('、')} 已经约过仓。继续操作会使用同一物流批次再次创建 Noon ASN，请确认这是本次业务需要。
+        </Text>
       </Modal>
 
       <Modal
