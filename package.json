@@ -9,6 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "contract:test": "node scripts/run_contract_tests.mjs",
     "layout:overflow-smoke": "node scripts/layout_overflow_smoke.mjs",
     "product-baseline:display-contract": "node scripts/product_baseline_display_contract.mjs",
     "product:workspace-smoke": "node scripts/product_workspace_smoke.mjs",
