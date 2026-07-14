@@ -427,7 +427,11 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       message.warning('请先选择店铺和站点')
       return undefined
     }
-    if (!product.productSiteOfferId || !hasValidSelfNoonCode(product)) {
+    if (!(product.partnerSku || product.productSiteOfferId)) {
+      message.warning('当前商品缺少 PSKU，暂不能做竞品分析')
+      return undefined
+    }
+    if (!hasValidSelfNoonCode(product)) {
       message.warning('当前商品缺少 Noon Z/N 码，暂不能做竞品分析')
       return undefined
     }
@@ -435,7 +439,8 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       const detail = await createCompetitorWatchProduct({
         storeCode: selectedStore.storeCode,
         siteCode: selectedSiteCode,
-        productSiteOfferId: product.productSiteOfferId,
+        productSiteOfferId: product.productSiteOfferId || undefined,
+        partnerSku: product.partnerSku,
         selfNoonProductCode: product.selfNoonProductCode
       })
       mergeProduct(detail)

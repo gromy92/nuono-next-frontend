@@ -321,7 +321,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         <Alert
           type="success"
           showIcon
-          message={`来源：${sourcePrefill.source === 'pre-order-profit' ? '选品池' : '人工采集'}`}
+          message="来源：人工采集"
           description={
             <Space wrap size={[8, 4]}>
               <Text>{sourcePrefillReference(sourcePrefill)}</Text>
@@ -355,7 +355,11 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
       </Form>
 
       <Card variant="borderless" style={{ border: '1px solid #dbe4ea' }}>
-        <ProductListingDetailEditor draft={listingDraft} onDraftChange={setListingDraft} />
+        <ProductListingDetailEditor
+          competitorMaterials={sourcePrefill?.competitorMaterials}
+          draft={listingDraft}
+          onDraftChange={setListingDraft}
+        />
       </Card>
 
       <Space>

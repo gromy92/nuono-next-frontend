@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Alert, Card } from 'antd';
 import type { AuthSession } from '../auth/session';
 import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
+import type { ProductWorkspaceTabKey } from '../product-management/types';
 import type { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
 import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProfitCalculatorWorkspace';
 import type { StoreSyncOverviewState } from '../store-sync/types';
@@ -33,20 +34,21 @@ import {
   ProductGroupManagementPage,
   ProductImageProfilePage,
   ProductKeywordDataPage,
-  ProductListingPage,
   ProductLogisticsCostsPage,
   ProductManagementWorkspacePage,
   ProductSpecsPage,
-  PreOrderProfitPage,
   PurchaseOrderPage,
   RoleManagementWorkspace,
   SalesAnalyticsPage,
-  SalesForecastPage,
   WarehouseDispatchWorkbenchPage,
   WarehouseLogisticsBillPage,
   WarehouseShippingOrderPage
 } from './ShellWorkspaceLazyComponents';
-import { workspaceMenuContentKind } from './WorkspaceMenuRegistry';
+import {
+  shouldShowWorkspaceMenuInTabs,
+  workspaceMenuContentKind,
+  workspaceTabKeyForMenuKey
+} from './WorkspaceMenuRegistry';
 import type { LoadStoreSyncOptions } from './useStoreSyncController';
 
 type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
@@ -63,8 +65,11 @@ type ShellWorkspaceContentProps = {
   productWorkspace: ProductManagementWorkspace;
   activeOwnerId?: number;
   inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
+  inTransitWorkspaceTabKey: 'purchase-in-transit-goods' | 'in-transit-box-detail';
   isInTransitBoxDetailTab: boolean;
   isProductDetailTab: boolean;
+  openedWorkspaceTabKeys: AppMenuKey[];
+  productWorkspaceTabKey: ProductWorkspaceTabKey;
   roleManagementTabKey: RoleManagementWorkspaceTabKey;
   canShowStoreManagement: boolean;
   roleManagementRefreshSignal: number;
@@ -78,9 +83,85 @@ type ShellWorkspaceContentProps = {
   onRoleManagementDataChanged: (source?: 'store-management') => void;
 };
 
+export function workspaceContentMountKeys(activeMenuKey: AppMenuKey, openedWorkspaceTabKeys: AppMenuKey[]) {
+  const activeMountKey = workspaceContentMountKeyForMenuKey(activeMenuKey);
+  const keys: AppMenuKey[] = [];
+  for (const key of [...openedWorkspaceTabKeys, activeMountKey]) {
+    if (!keys.includes(key)) {
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
+function workspaceContentMountKeyForMenuKey(menuKey: AppMenuKey) {
+  const tabKey = workspaceTabKeyForMenuKey(menuKey);
+  return shouldShowWorkspaceMenuInTabs(tabKey) ? tabKey : menuKey;
+}
+
 export function ShellWorkspaceContent({
   activeMenuKey,
   noMenuPermission,
+  openedWorkspaceTabKeys,
+  productWorkspaceTabKey,
+  inTransitWorkspaceTabKey,
+  ...contentProps
+}: ShellWorkspaceContentProps) {
+  const mountedWorkspaceMenuKeys = useMemo(
+    () => workspaceContentMountKeys(activeMenuKey, openedWorkspaceTabKeys),
+    [activeMenuKey, openedWorkspaceTabKeys]
+  );
+  const activeWorkspaceMountKey = workspaceContentMountKeyForMenuKey(activeMenuKey);
+
+  if (noMenuPermission) {
+    return (
+      <Card variant="borderless" style={{ boxShadow: 'none', background: '#ffffff' }}>
+        <Alert
+          type="warning"
+          showIcon
+          message="当前账号未配置菜单权限"
+          description="请先在角色管理或菜单维护中给该账号所属角色配置菜单权限；未配置的菜单不会展示在左侧导航。"
+        />
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      {mountedWorkspaceMenuKeys.map((menuKey) => {
+        const isActivePane = menuKey === activeWorkspaceMountKey;
+        return (
+          <div
+            key={menuKey}
+            className={`nuono-shell-workspace-pane${isActivePane ? '' : ' nuono-shell-workspace-pane-hidden'}`}
+            data-workspace-menu-key={menuKey}
+            aria-hidden={!isActivePane}
+          >
+            <ShellWorkspaceContentPane
+              {...contentProps}
+              activeMenuKey={activeMenuKey}
+              menuKey={menuKey}
+              isProductDetailTab={menuKey === 'product-manage' && productWorkspaceTabKey === 'product-detail'}
+              isInTransitBoxDetailTab={
+                menuKey === 'purchase-in-transit-goods' && inTransitWorkspaceTabKey === 'in-transit-box-detail'
+              }
+            />
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+type ShellWorkspaceContentPaneProps = Omit<
+  ShellWorkspaceContentProps,
+  'noMenuPermission' | 'openedWorkspaceTabKeys' | 'productWorkspaceTabKey' | 'inTransitWorkspaceTabKey'
+> & {
+  menuKey: AppMenuKey;
+};
+
+function ShellWorkspaceContentPane({
+  menuKey,
   shouldRenderProcurementRequirementConfirmation,
   shellSession,
   onOpenProfitCalculatorPrefilled,
@@ -103,21 +184,8 @@ export function ShellWorkspaceContent({
   onStoreOwnerChange,
   onStoreRefresh,
   onRoleManagementDataChanged
-}: ShellWorkspaceContentProps) {
-  const activeContentKind = workspaceMenuContentKind(activeMenuKey);
-
-  if (noMenuPermission) {
-    return (
-      <Card variant="borderless" style={{ boxShadow: 'none', background: '#ffffff' }}>
-        <Alert
-          type="warning"
-          showIcon
-          message="当前账号未配置菜单权限"
-          description="请先在角色管理或菜单维护中给该账号所属角色配置菜单权限；未配置的菜单不会展示在左侧导航。"
-        />
-      </Card>
-    );
-  }
+}: ShellWorkspaceContentPaneProps) {
+  const activeContentKind = workspaceMenuContentKind(menuKey);
 
   if (activeContentKind === 'purchase-order') {
     return (
@@ -210,22 +278,6 @@ export function ShellWorkspaceContent({
           siteCode={shellSession.currentStore?.site}
           availableStores={shellSession.userStores}
         />
-      </LazyWorkspaceBoundary>
-    );
-  }
-
-  if (activeContentKind === 'product-listing') {
-    return (
-      <LazyWorkspaceBoundary>
-        <ProductListingPage storeCode={shellSession.currentStore?.storeCode} />
-      </LazyWorkspaceBoundary>
-    );
-  }
-
-  if (activeContentKind === 'purchase-pre-order-profit') {
-    return (
-      <LazyWorkspaceBoundary>
-        <PreOrderProfitPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }
@@ -332,14 +384,6 @@ export function ShellWorkspaceContent({
     return (
       <LazyWorkspaceBoundary>
         <OrderFinancePage session={shellSession} />
-      </LazyWorkspaceBoundary>
-    );
-  }
-
-  if (activeContentKind === 'sales-forecast') {
-    return (
-      <LazyWorkspaceBoundary>
-        <SalesForecastPage session={shellSession} />
       </LazyWorkspaceBoundary>
     );
   }

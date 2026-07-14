@@ -9,6 +9,7 @@ import { Button, Input, Select, Tooltip } from 'antd';
 import { useCallback } from 'react';
 import { FormToolbarLayout } from '../../app-shell/FormToolbarLayout';
 import type { ProductListFilters } from '../types';
+import { PRODUCT_OPERATION_STAGE_FILTER_OPTIONS } from '../utils/operationStage';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 
 type ProductCatalogFilterBarProps = {
@@ -118,6 +119,14 @@ export function ProductCatalogFilterBar({ workspace, activeOwnerId }: ProductCat
             { label: 'Supermall', value: 'supermall' },
             { label: 'FBP', value: 'fbp' }
           ]}
+        />
+        <Select
+          allowClear
+          placeholder="运营阶段"
+          value={productListDraftFilters.operationStageFilter}
+          onChange={(value) => updateProductListFilter({ operationStageFilter: value ?? 'all' })}
+          style={{ flex: '0 1 122px', minWidth: 112, maxWidth: 150 }}
+          options={PRODUCT_OPERATION_STAGE_FILTER_OPTIONS}
         />
         <Select
           value={productListSortKey}

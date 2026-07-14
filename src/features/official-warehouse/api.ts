@@ -254,7 +254,6 @@ export type OfficialWarehouseAsnListSyncResult = {
 }
 
 export type UpsertOfficialWarehouseAppointmentPayload = {
-  warehouseFrom: string
   warehouseToPartnerCode: string
   warehouseToCode?: string
   apStartDate: string
@@ -264,13 +263,6 @@ export type UpsertOfficialWarehouseAppointmentPayload = {
   appointmentDate?: string
   appointmentSlotId?: number
   appointmentTime?: string
-}
-
-export async function loadOfficialWarehouseAppointmentWarehouses(asnId: string) {
-  const response = await apiFetch(
-    `/api/warehouse/official-warehouse/asns/${encodeURIComponent(asnId)}/appointment/warehouses`
-  )
-  return parseApiResponse<string[]>(response, '读取出发仓库失败')
 }
 
 export type CorrectOfficialWarehouseAppointmentPayload = {

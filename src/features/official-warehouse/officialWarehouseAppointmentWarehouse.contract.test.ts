@@ -5,23 +5,35 @@ import { dirname, join } from 'node:path'
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
 const pageSource = readFileSync(join(currentDir, 'OfficialWarehousePage.tsx'), 'utf8')
+const apiSource = readFileSync(join(currentDir, 'api.ts'), 'utf8')
 
 const appointmentWarehouseOptionsSource = pageSource.slice(
   pageSource.indexOf('const appointmentWarehouseOptions = useMemo'),
   pageSource.indexOf('const shippingBatchOptions = useMemo')
 )
-
 const openAppointmentSource = pageSource.slice(
   pageSource.indexOf('function openAppointment'),
-  pageSource.indexOf('async function loadWarehouseFromCandidates')
-)
-const loadWarehouseFromCandidatesSource = pageSource.slice(
-  pageSource.indexOf('async function loadWarehouseFromCandidates'),
   pageSource.indexOf('async function submitAppointment')
 )
 const submitAppointmentSource = pageSource.slice(
   pageSource.indexOf('async function submitAppointment'),
   pageSource.indexOf('async function runAppointmentNow')
+)
+const buildAppointmentPayloadSource = pageSource.slice(
+  pageSource.indexOf('function buildAppointmentPayload'),
+  pageSource.indexOf('async function loadManualAvailability')
+)
+const manualAvailabilityQueryKeySource = pageSource.slice(
+  pageSource.indexOf('const manualAvailabilityQueryKey'),
+  pageSource.indexOf('useEffect(() => {')
+)
+const appointmentModalSource = pageSource.slice(
+  pageSource.indexOf('<Modal\n        title={appointmentTarget'),
+  pageSource.indexOf('<Modal\n        title={correctionTarget')
+)
+const warehouseLabelSource = pageSource.slice(
+  pageSource.indexOf('function appointmentAwareWarehouseLabel'),
+  pageSource.indexOf('function businessErrorText')
 )
 
 assert.match(
@@ -54,28 +66,43 @@ assert.doesNotMatch(
   /warehouseToCode:\s*row\.selectedWarehouseCode\s*\|\|\s*appointment\?\.warehouseToCode/s,
   'appointment form should not treat the ASN creation route code as stronger than the existing appointment target'
 )
-assert.match(
-  loadWarehouseFromCandidatesSource,
-  /mode:\s*AppointmentSubmitMode/,
-  'loading warehouse-from candidates should know whether the modal is auto or manual appointment mode'
-)
-assert.match(
-  loadWarehouseFromCandidatesSource,
-  /defaultWarehouseFrom[\s\S]*warehouses\.find/,
-  'warehouse-from loading should resolve a first non-empty default candidate'
-)
-assert.match(
-  loadWarehouseFromCandidatesSource,
-  /mode\s*===\s*'auto'[\s\S]*warehouseFrom:\s*defaultWarehouseFrom/,
-  'auto appointment should prefill the first available warehouse-from candidate instead of leaving submit blocked'
-)
-assert.match(
+assert.doesNotMatch(
   pageSource,
-  /const appointmentWarehouseFromMissingMessage/,
-  'the appointment modal should have an inline missing-warehouse-from message'
+  /loadOfficialWarehouseAppointmentWarehouses/,
+  'appointment modal should not query warehouse-from candidates from the frontend'
+)
+assert.doesNotMatch(
+  apiSource,
+  /appointment\/warehouses/,
+  'frontend API should not expose the old warehouse-from candidate request'
+)
+assert.doesNotMatch(
+  appointmentModalSource,
+  />出发仓库</,
+  'appointment modal should not render a warehouse-from field'
+)
+assert.doesNotMatch(
+  buildAppointmentPayloadSource,
+  /warehouseFrom/,
+  'appointment payload should not send warehouse-from because the backend resolves it'
+)
+assert.doesNotMatch(
+  manualAvailabilityQueryKeySource,
+  /warehouseFrom/,
+  'manual capacity query should not wait for a frontend-selected warehouse-from'
+)
+assert.doesNotMatch(
+  submitAppointmentSource,
+  /warehouseFrom|appointmentWarehouseFromMissingMessage/,
+  'submitting should not block on a frontend warehouse-from value'
 )
 assert.match(
-  submitAppointmentSource,
-  /setAppointmentSubmitFeedback\(\{\s*type:\s*'warning',\s*message:\s*appointmentWarehouseFromMissingMessage\s*\}\)/,
-  'submitting without warehouse-from should show the blocking reason inside the modal'
+  warehouseLabelSource,
+  /row\.appointment\?\.warehouseToPartnerCode/,
+  'ASN list warehouse label should prefer the appointment Ship To warehouse selected by the user'
+)
+assert.match(
+  warehouseLabelSource,
+  /ASN路由/,
+  'ASN list warehouse label should retain the original ASN routing warehouse as secondary context'
 )

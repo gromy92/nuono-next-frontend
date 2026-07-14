@@ -40,11 +40,14 @@
 }
 
 .product-image-profile-product-list {
-  display: grid;
-  gap: 6px;
+  display: block;
   max-height: calc(100vh - 166px);
   overflow: auto;
   padding: 8px;
+}
+
+.product-image-profile-product-spacer {
+  flex: 0 0 auto;
 }
 
 .product-image-profile-product-card {
@@ -53,11 +56,14 @@
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
+  box-sizing: border-box;
   color: inherit;
   cursor: pointer;
   display: flex;
   gap: 8px;
+  height: 64px;
   justify-content: space-between;
+  margin-bottom: 6px;
   min-width: 0;
   padding: 7px;
   text-align: left;

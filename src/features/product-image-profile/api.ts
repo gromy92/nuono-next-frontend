@@ -76,10 +76,36 @@ export type ProductImageProfileDetailView = {
   suites?: ProductImageSuiteView[] | null
 }
 
+export type ProductImageProfileSummaryView = {
+  id?: number | null
+  ownerUserId?: number | null
+  storeCode?: string | null
+  pskuCode?: string | null
+  productIdentityKey?: string | null
+  productMasterId?: number | null
+  productVariantId?: number | null
+  productTitle?: string | null
+  brand?: string | null
+  titleAr?: string | null
+  titleEn?: string | null
+  specSummary?: string | null
+  coverImageUrl?: string | null
+  assetCount?: number | null
+  suiteCount?: number | null
+  hasAdoptedSuite?: boolean | null
+  updatedAt?: string | null
+}
+
 export type ProductImageProfileListView = {
   ownerUserId?: number | null
   storeCode?: string | null
   items?: ProductImageProfileDetailView[] | null
+}
+
+export type ProductImageProfileSummaryListView = {
+  ownerUserId?: number | null
+  storeCode?: string | null
+  items?: ProductImageProfileSummaryView[] | null
 }
 
 export type ProductImageAssetMetadataView = {
@@ -170,6 +196,29 @@ export async function fetchProductImageProfiles(query: ProductImageProfileQuery)
 
   const response = await apiFetch(`${BASE_PATH}/profiles?${params.toString()}`)
   return parseApiResponse<ProductImageProfileListView>(response, '商品图资料读取失败')
+}
+
+export async function fetchProductImageProfileSummaries(query: ProductImageProfileQuery) {
+  const params = new URLSearchParams({
+    ownerUserId: String(query.ownerUserId),
+    storeCode: query.storeCode
+  })
+  if (query.keyword?.trim()) {
+    params.set('keyword', query.keyword.trim())
+  }
+
+  const response = await apiFetch(`${BASE_PATH}/profile-summaries?${params.toString()}`)
+  return parseApiResponse<ProductImageProfileSummaryListView>(response, '商品图资料列表读取失败')
+}
+
+export async function fetchProductImageProfileDetail(profileId: number, query: ProductImageProfileQuery) {
+  const params = new URLSearchParams({
+    ownerUserId: String(query.ownerUserId),
+    storeCode: query.storeCode
+  })
+
+  const response = await apiFetch(`${profilePath(profileId)}?${params.toString()}`)
+  return parseApiResponse<ProductImageProfileDetailView>(response, '商品图资料详情读取失败')
 }
 
 export async function saveProductImageProfile(request: ProductImageProfileSaveRequest) {

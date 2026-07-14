@@ -5,6 +5,7 @@ import { executeProductWorkbenchAction } from '../api';
 import {
   buildLocalProductRecentAction,
   cloneSnapshotPayload,
+  isPublicDetailReadonlyWorkbench,
   isProductPublishTaskActive,
   prependRecentAction,
   siteOfferCode
@@ -57,6 +58,10 @@ export function useProductWorkbenchActionSubmitter({
     async (action: ProductWorkbenchAction, options?: ProductWorkbenchActionOptions) => {
       if (!productWorkbenchState || !productSnapshotView) {
         message.info('先读取一条真实商品快照，再确认后续交互。');
+        return;
+      }
+      if (isPublicDetailReadonlyWorkbench(productWorkbenchState)) {
+        message.warning('当前详情来自 Noon 前台公开快照，只读可查看；保存、发布和同步已禁用。');
         return;
       }
       if (action === 'save' && !productDraftDirty) {

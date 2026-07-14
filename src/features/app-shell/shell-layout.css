@@ -50,6 +50,16 @@ body,
   overflow-y: visible;
 }
 
+.nuono-shell-workspace-pane {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.nuono-shell-workspace-pane-hidden {
+  display: none;
+}
+
 .nuono-shell-workspace-row,
 .nuono-shell-workspace-col,
 .nuono-shell-content .ant-row,

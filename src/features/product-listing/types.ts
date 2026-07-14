@@ -1,3 +1,5 @@
+import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+
 export type ProductListingValidationIssue = {
   fieldKey: string
   severity: string
@@ -98,4 +100,76 @@ export type ProductListingTaskView = {
 export type ProductListingRealRunCommand = {
   confirmRealNoonWrite: boolean
   confirmationNote?: string
+}
+
+export type ProductListingAiListingDraft = {
+  productTitleEn?: string
+  productTitleAr?: string
+  productHighlightsEn?: string[]
+  productHighlightsAr?: string[]
+  productDescriptionEn?: string
+  productDescriptionAr?: string
+}
+
+export type ProductListingAiListingSection = {
+  title?: string
+  bullets?: string[]
+  longDescription?: string
+}
+
+export type ProductListingAiListingData = {
+  inputCompleteness?: {
+    summary?: string
+    missingCritical?: string[]
+    missingOptional?: string[]
+  }
+  productUnderstanding?: {
+    productType?: string
+    buyerUseCases?: string[]
+    confirmedFacts?: string[]
+  }
+  styleDecision?: {
+    style?: string
+    rationale?: string
+  }
+  keywords?: {
+    english?: string[]
+    arabic?: string[]
+  }
+  attributeGuardrails?: {
+    confirmedAttributes?: string[]
+    usableSellingPoints?: string[]
+    forbiddenClaims?: string[]
+  }
+  listingStrategy?: {
+    english?: string
+    arabic?: string
+  }
+  englishListing?: ProductListingAiListingSection
+  arabicListing?: ProductListingAiListingSection
+  qualityCheck?: {
+    score?: number
+    findings?: string[]
+    uploadNotes?: string[]
+    removeMarkdownBeforeUpload?: boolean
+  }
+  warnings?: string[]
+  needsHumanConfirmation?: string[]
+  noonUploadDraft?: ProductListingAiListingDraft
+}
+
+export type ProductListingAiListingCommand = {
+  draft: ProductListingDraftPayload
+  operatorRequirement?: string
+  competitorMaterials?: ProductCompetitorContentMaterial[]
+}
+
+export type ProductListingAiListingView = {
+  ready?: boolean
+  source?: string
+  ruleVersion?: string
+  msg?: string
+  message?: string
+  warnings?: string[]
+  data?: ProductListingAiListingData
 }

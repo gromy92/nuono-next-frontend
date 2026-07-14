@@ -8,9 +8,7 @@ export type AppMenuKey =
   | 'purchase-ali1688-collection'
   | 'purchase-ali1688-historical-orders'
   | 'purchase-ali1688-sku-purchase-history'
-  | 'purchase-listing'
   | 'purchase-order'
-  | 'purchase-pre-order-profit'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'purchase-product-logistics-costs'
@@ -25,7 +23,6 @@ export type AppMenuKey =
   | 'operations-product-keywords'
   | 'data-sales-analysis'
   | 'data-order-analysis'
-  | 'data-sales-forecast'
   | 'noon-call-store-data'
   | 'system-report-noon-data-completeness'
   | 'system-report-noon-data-gaps'
@@ -81,9 +78,7 @@ export type WorkspaceContentKind =
   | 'purchase-ali1688-collection'
   | 'purchase-ali1688-historical-orders'
   | 'purchase-ali1688-sku-purchase-history'
-  | 'product-listing'
   | 'purchase-order'
-  | 'purchase-pre-order-profit'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
   | 'purchase-product-logistics-costs'
@@ -98,7 +93,6 @@ export type WorkspaceContentKind =
   | 'product-keywords'
   | 'sales-analytics'
   | 'order-finance'
-  | 'sales-forecast'
   | 'noon-call-store-data'
   | 'system-report-noon-data-completeness'
   | 'system-report-noon-data-gaps'
@@ -238,34 +232,14 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     contentKind: 'purchase-ali1688-sku-purchase-history',
     closable: true
   },
-  'purchase-listing': {
-    key: 'purchase-listing',
-    label: '商品上架',
-    path: '/purchase/listing',
-    sectionKey: 'purchase',
-    pathLabel: '采购 / 商品上架',
-    tabLabel: '商品上架',
-    contentKind: 'product-listing',
-    closable: true
-  },
   'purchase-order': {
     key: 'purchase-order',
-    label: '采购单',
+    label: '补货采购',
     path: '/purchase/order',
     sectionKey: 'purchase',
-    pathLabel: '采购 / 采购单',
-    tabLabel: '采购单',
+    pathLabel: '采购 / 补货采购',
+    tabLabel: '补货采购',
     contentKind: 'purchase-order',
-    closable: true
-  },
-  'purchase-pre-order-profit': {
-    key: 'purchase-pre-order-profit',
-    label: '选品池',
-    path: '/purchase/pre-order-profit',
-    sectionKey: 'purchase',
-    pathLabel: '采购 / 选品池',
-    tabLabel: '选品池',
-    contentKind: 'purchase-pre-order-profit',
     closable: true
   },
   'purchase-profit': {
@@ -407,16 +381,6 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '数据 / 订单分析',
     tabLabel: '订单分析',
     contentKind: 'order-finance',
-    closable: true
-  },
-  'data-sales-forecast': {
-    key: 'data-sales-forecast',
-    label: '销量预测',
-    path: '/data/sales-forecast',
-    sectionKey: 'data',
-    pathLabel: '数据 / 销量预测',
-    tabLabel: '销量预测',
-    contentKind: 'sales-forecast',
     closable: true
   },
   'noon-call-store-data': {
@@ -567,7 +531,6 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
       { type: 'workspace', key: 'product-specs' },
       { type: 'workspace', key: 'product-image-profile' },
       { type: 'workspace', key: 'product-image-match' },
-      { type: 'placeholder', key: 'product-category-collect', label: '类目采集', disabled: true },
       { type: 'workspace', key: 'product-manual-selection' }
     ]
   },
@@ -576,8 +539,6 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     label: '采购',
     iconKey: 'purchase',
     entries: [
-      { type: 'workspace', key: 'purchase-listing' },
-      { type: 'workspace', key: 'purchase-pre-order-profit' },
       { type: 'workspace', key: 'purchase-profit' },
       { type: 'workspace', key: 'purchase-ali1688-historical-orders' },
       { type: 'workspace', key: 'purchase-ali1688-sku-purchase-history' },
@@ -607,12 +568,6 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     ]
   },
   {
-    key: 'campaign',
-    label: '活动',
-    iconKey: 'campaign',
-    entries: [{ type: 'placeholder', key: 'campaign-list', label: '活动列表', disabled: true }]
-  },
-  {
     key: 'operations',
     label: '运营',
     iconKey: 'operations',
@@ -634,20 +589,12 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     ]
   },
   {
-    key: 'task',
-    label: '任务',
-    iconKey: 'task',
-    entries: [{ type: 'placeholder', key: 'task-list', label: '任务列表', disabled: true }]
-  },
-  {
     key: 'data',
     label: '数据',
     iconKey: 'data',
     entries: [
       { type: 'workspace', key: 'data-sales-analysis' },
-      { type: 'workspace', key: 'data-order-analysis' },
-      { type: 'workspace', key: 'data-sales-forecast' },
-      { type: 'placeholder', key: 'data-board', label: '约仓看板', disabled: true }
+      { type: 'workspace', key: 'data-order-analysis' }
     ]
   },
   {
@@ -668,12 +615,6 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
       { type: 'workspace', key: 'user-account' },
       { type: 'workspace', key: 'user-role' }
     ]
-  },
-  {
-    key: 'ai-model',
-    label: 'AI模型',
-    iconKey: 'ai-model',
-    entries: [{ type: 'placeholder', key: 'ai-model-center', label: '模型中心', disabled: true }]
   },
   {
     key: 'system',
@@ -762,18 +703,6 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['1688 历史订单', 'SKU 采购历史']
   },
   {
-    keys: ['purchase-listing'],
-    urlPaths: ['/purchase/listing', '/api/product-listing'],
-    urlPathPrefixes: ['/api/product-listing/'],
-    menuNames: ['商品上架']
-  },
-  {
-    keys: ['purchase-pre-order-profit'],
-    urlPaths: ['/purchase/pre-order-profit', '/api/pre-order-profit'],
-    urlPathPrefixes: ['/api/pre-order-profit/'],
-    menuNames: ['选品池', '选品利润预估', '出单前利润计算']
-  },
-  {
     keys: ['purchase-profit'],
     urlPaths: ['/purchase/profit', '/api/sku/cost'],
     menuNames: ['利润计算', '利润计算与上架']
@@ -839,18 +768,17 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['关键词数据', '关键词管理']
   },
   {
-    keys: ['data-sales-analysis', 'data-order-analysis', 'data-sales-forecast'],
+    keys: ['data-sales-analysis', 'data-order-analysis'],
     urlPaths: [
       '/data/sales-analysis',
       '/data/order-analysis',
-      '/data/sales-forecast',
       '/api/sales-data/analytics',
       '/api/sales-data/activity-windows',
       '/api/order-finance',
       '/api/sales-forecast/overview'
     ],
     urlPathPrefixes: ['/api/sales-data/analytics/', '/api/sales-data/activity-windows/', '/api/order-finance/', '/api/sales-forecast/'],
-    menuNames: ['销量分析', '订单分析', '销量预测', '销售分析', '销量数据']
+    menuNames: ['销量分析', '订单分析', '销售分析', '销量数据']
   },
   {
     keys: ['noon-call-store-data', 'system-report-noon-data-completeness', 'system-report-noon-data-gaps'],
@@ -898,11 +826,9 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-ali1688-historical-orders',
   'purchase-ali1688-sku-purchase-history',
   'purchase-ali1688-collection',
-  'purchase-listing',
   'purchase-order',
   'purchase-in-transit-goods',
   'purchase-product-logistics-costs',
-  'purchase-pre-order-profit',
   'purchase-profit',
   'purchase-logistics-quote',
   'warehouse-shipping-order',
@@ -915,7 +841,6 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'operations-product-keywords',
   'data-sales-analysis',
   'data-order-analysis',
-  'data-sales-forecast',
   'noon-call-store-data',
   'system-report-noon-data-completeness',
   'system-report-noon-data-gaps',

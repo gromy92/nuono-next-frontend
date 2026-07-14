@@ -21,9 +21,7 @@ export const PRODUCT_MANUAL_SELECTION_PATH = workspaceMenuPath('product-manual-s
 export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688-collection')
 export const PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH = workspaceMenuPath('purchase-ali1688-historical-orders')
 export const PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH = workspaceMenuPath('purchase-ali1688-sku-purchase-history')
-export const PURCHASE_LISTING_PATH = workspaceMenuPath('purchase-listing')
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
-export const PURCHASE_PRE_ORDER_PROFIT_PATH = workspaceMenuPath('purchase-pre-order-profit')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
 export const PURCHASE_PRODUCT_LOGISTICS_COSTS_PATH = workspaceMenuPath('purchase-product-logistics-costs')
@@ -37,7 +35,6 @@ export const OPERATIONS_SKIN_MANAGEMENT_PATH = workspaceMenuPath('operations-ski
 export const OPERATIONS_NOON_ADS_PATH = workspaceMenuPath('operations-noon-ads')
 export const OPERATIONS_PRODUCT_KEYWORDS_PATH = workspaceMenuPath('operations-product-keywords')
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
-export const DATA_SALES_FORECAST_PATH = workspaceMenuPath('data-sales-forecast')
 export const NOON_CALL_STORE_DATA_PATH = workspaceMenuPath('noon-call-store-data')
 export const SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH = workspaceMenuPath('system-report-noon-data-completeness')
 export const SYSTEM_REPORT_NOON_DATA_GAPS_PATH = workspaceMenuPath('system-report-noon-data-gaps')
@@ -289,7 +286,6 @@ export function resolveSessionLandingMenuKey(
         'system-file-management',
         'user-account',
         'system-menu',
-        'purchase-listing',
         'purchase-profit',
         'purchase-order',
         'purchase-in-transit-goods',
@@ -301,7 +297,6 @@ export function resolveSessionLandingMenuKey(
         'operations-skin-management',
         'operations-noon-ads',
         'data-sales-analysis',
-        'data-sales-forecast',
         'noon-call-store-data',
         'system-report-noon-data-completeness',
         'system-report-noon-data-gaps',
@@ -319,7 +314,6 @@ export function resolveSessionLandingMenuKey(
           'purchase-ali1688-historical-orders',
           'purchase-ali1688-sku-purchase-history',
           'purchase-ali1688-collection',
-          'purchase-listing',
           'purchase-order',
           'purchase-in-transit-goods',
           'product-manage',
@@ -334,7 +328,6 @@ export function resolveSessionLandingMenuKey(
           'operations-skin-management',
           'operations-noon-ads',
           'data-sales-analysis',
-          'data-sales-forecast',
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',
@@ -348,7 +341,6 @@ export function resolveSessionLandingMenuKey(
           'purchase-ali1688-historical-orders',
           'purchase-ali1688-sku-purchase-history',
           'purchase-ali1688-collection',
-          'purchase-listing',
           'purchase-order',
           'purchase-in-transit-goods',
           'product-manage',
@@ -364,7 +356,6 @@ export function resolveSessionLandingMenuKey(
           'operations-skin-management',
           'operations-noon-ads',
           'data-sales-analysis',
-          'data-sales-forecast',
           'noon-call-store-data',
           'system-report-noon-data-completeness',
           'system-report-noon-data-gaps',

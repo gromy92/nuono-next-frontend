@@ -80,6 +80,7 @@ type ProductBaselineListCellProps = {
   imageDisabled?: boolean;
   titleHref?: string;
   onImageClick?: () => void;
+  metaActions?: ReactNode;
   actions?: ReactNode;
 };
 
@@ -91,6 +92,7 @@ export function ProductBaselineListCell({
   imageDisabled,
   titleHref,
   onImageClick,
+  metaActions,
   actions
 }: ProductBaselineListCellProps) {
   const title = productSummaryTitle(summary);
@@ -148,6 +150,7 @@ export function ProductBaselineListCell({
               {sourceTypeMeta.label}
             </Tag>
           </Tooltip>
+          {metaActions}
         </Space>
         <Tooltip title={titleTooltip}>
           {titleHref ? (

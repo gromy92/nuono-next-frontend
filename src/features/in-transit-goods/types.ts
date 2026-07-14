@@ -55,6 +55,15 @@ export type InTransitBatch = {
   trackingNo?: string | null
   containerNo?: string | null
   batchReferenceNo?: string | null
+  externalShipmentNo?: string | null
+  sourceCreatedAt?: string | null
+  estimatedDepartureAt?: string | null
+  estimatedArrivalAt?: string | null
+  estimatedArrivalSource?: string | null
+  estimatedArrivalSourceDetail?: string | null
+  estimatedArrivalUpdatedAt?: string | null
+  estimatedArrivalUpdatedBy?: number | null
+  deliveryAppointmentText?: string | null
   missingFields?: string[]
   boxCount?: number | null
   skuCount?: number | null
@@ -67,6 +76,9 @@ export type InTransitBatch = {
   latestNodeStatus?: string | null
   latestNodeHappenedAt?: string | null
   latestNodeDescription?: string | null
+  actualArrivalAt?: string | null
+  effectiveArrivalAt?: string | null
+  effectiveArrivalSource?: string | null
 }
 
 export type InTransitBoxDetailTabRequest = {
@@ -95,6 +107,7 @@ export type InTransitBatchFilters = {
   targetWarehouseName?: string
   batchStatus?: string
   statusScope?: 'active' | 'completed' | 'all'
+  todo?: 'missingEstimatedArrival'
   etaFrom?: string
   etaTo?: string
   page?: number
@@ -117,6 +130,16 @@ export type SaveInTransitBatchRequest = {
   containerNo?: string
   batchReferenceNo?: string
   batchStatus?: string
+}
+
+export type SaveInTransitEstimatedArrivalRequest = {
+  estimatedArrivalAt: string
+  note?: string
+}
+
+export type SaveInTransitActualArrivalRequest = {
+  actualArrivalAt: string
+  note?: string
 }
 
 export type InTransitGoodsLine = {

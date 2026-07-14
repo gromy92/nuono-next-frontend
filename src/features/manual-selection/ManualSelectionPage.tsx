@@ -6,7 +6,6 @@ import {
   analyzeManualSelectionCollection,
   createManualSelectionGroup,
   deleteManualSelectionGroupCompetitor,
-  loadManualSelectionGroupProfitEstimate,
   loadManualSelectionGroups,
   recollectManualSelectionGroupCompetitor,
   saveManualSelectionAnalysisItemProcurement,
@@ -24,7 +23,6 @@ import { ManualSelectionToolbar } from './components/ManualSelectionToolbar'
 import { NewCollectionModal } from './components/NewCollectionModal'
 import { useManualSelectionCollections } from './hooks/useManualSelectionCollections'
 import { collectionFromLinkCompetitor } from './competitorDetailAdapter'
-import { buildManualSelectionGroupListingTarget } from './listingNavigation'
 import { normalizeManualSelectionKeyword } from './utils'
 import { createManualSelectionProfitEstimateSeed } from './profitEstimateSeed'
 import {
@@ -39,14 +37,12 @@ import {
   isGroupEndpointMissingError,
   loadManualSelectionGroupWorkspace
 } from './manualSelectionGroupRepository'
-import { saveManualSelectionGroupListingPrefill } from '../product-listing/sourcePrefill'
 import type {
   ManualSelectionAli1688ProcurementInfo,
   ManualSelectionAiAnalysisResult,
   ManualSelectionAnalysisProjectInfo,
   ManualSelectionAnalysisProjectView,
   ManualSelectionCompetitor,
-  ManualSelectionGroupProfitEstimateSnapshot,
   ManualSelectionGroupView,
   ManualSelectionPageProps,
   ManualSelectionProfitEstimateSeed,
@@ -349,27 +345,6 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
   }
 
   const representativeRecordFromProject = (project: ManualSelectionAnalysisProjectView) => project.records[0]
-
-  const handleOpenListing = async (project: ManualSelectionAnalysisProjectView) => {
-    if (!(project.groupId || project.projectId)) {
-      message.warning('选品组缺少组编号，无法进入上架')
-      return
-    }
-    const groupId = project.groupId || project.projectId
-    let profitEstimate: ManualSelectionGroupProfitEstimateSnapshot | null = null
-    try {
-      profitEstimate = await loadManualSelectionGroupProfitEstimate(groupId)
-    } catch {
-      // 上架仍可进入，缺少利润快照时由上架页展示类目缺失校验。
-    }
-    saveManualSelectionGroupListingPrefill(
-      project,
-      props.storeCode,
-      project.competitors || [],
-      profitEstimate
-    )
-    window.location.assign(buildManualSelectionGroupListingTarget(project))
-  }
 
   const handleOpenProfitEstimate = async (project: ManualSelectionAnalysisProjectView) => {
     try {
@@ -717,8 +692,7 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
             key: 'collections',
             label: (
               <span>
-                选品池
-                <span className="manual-selection-tab-alias">人工采集</span>
+                人工采集
               </span>
             ),
             children: (
@@ -766,7 +740,6 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
                   onOpenAiAnalysis={(project) => void handleOpenAiAnalysis(project)}
                   onOpenCompetitorDetail={handleOpenCompetitorDetail}
                   onOpenCompetitors={handleOpenCompetitors}
-                  onOpenListing={handleOpenListing}
                   onOpenProfitEstimate={(project) => void handleOpenProfitEstimate(project)}
                   onRecollectCompetitor={(project, competitor) => void handleRecollectCompetitor(project, competitor)}
                 />

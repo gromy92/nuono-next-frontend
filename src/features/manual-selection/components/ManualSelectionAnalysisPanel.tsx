@@ -3,8 +3,7 @@ import {
   CalculatorOutlined,
   DeleteOutlined,
   EditOutlined,
-  ReloadOutlined,
-  RocketOutlined
+  ReloadOutlined
 } from '@ant-design/icons'
 import { Button, Empty, Image, Input, InputNumber, Modal, Popconfirm, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -52,7 +51,6 @@ type ManualSelectionAnalysisPanelProps = {
   onOpenAiAnalysis: (project: ManualSelectionAnalysisProjectView) => void
   onOpenCompetitorDetail: (project: ManualSelectionAnalysisProjectView, focus: { kind: 'link' | 'collection'; id: string }) => void
   onOpenCompetitors: (project: ManualSelectionAnalysisProjectView) => void
-  onOpenListing: (project: ManualSelectionAnalysisProjectView) => void
   onOpenProfitEstimate: (project: ManualSelectionAnalysisProjectView) => void
   onRecollectCompetitor: (project: ManualSelectionAnalysisProjectView, competitor: ManualSelectionCompetitor) => void
 }
@@ -246,7 +244,6 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
     onOpenAiAnalysis,
     onOpenCompetitorDetail,
     onOpenCompetitors,
-    onOpenListing,
     onOpenProfitEstimate,
     onRecollectCompetitor
   } = props
@@ -520,15 +517,6 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
             onClick={() => onOpenProfitEstimate(project)}
           >
             利润
-          </Button>
-          <Button
-            size="small"
-            type="primary"
-            icon={<RocketOutlined />}
-            data-testid="manual-selection-analysis-listing-button"
-            onClick={() => onOpenListing(project)}
-          >
-            上架
           </Button>
         </div>
       )

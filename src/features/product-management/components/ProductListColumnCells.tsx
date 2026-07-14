@@ -3,6 +3,7 @@ export {
   EstimatedFeesCell,
   InventoryCell,
   LiveStatusCell,
+  OperationStageCell,
   PerformanceCell,
   ProductListColumnInfoTitle,
   PublishStatusCell,

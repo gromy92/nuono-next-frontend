@@ -37,7 +37,6 @@ import {
   cancelOfficialWarehouseAppointment,
   correctOfficialWarehouseAppointment,
   createOfficialWarehouseAsn,
-  loadOfficialWarehouseAppointmentWarehouses,
   loadOfficialWarehouseAsn,
   loadOfficialWarehouseAppointments,
   loadOfficialWarehouseAsns,
@@ -243,8 +242,22 @@ function asnIsExpired(row: Pick<OfficialWarehouseAsn, 'noonAsnStatus'>) {
   return normalizeAsnStatus(row.noonAsnStatus) === 'EXPIRED'
 }
 
-function asnWarehouseLabel(row: Pick<OfficialWarehouseAsn, 'selectedWarehousePartnerCode' | 'selectedWarehouseName'>) {
-  return row.selectedWarehousePartnerCode || row.selectedWarehouseName || '-'
+function appointmentAwareWarehouseLabel(
+  row: Pick<OfficialWarehouseAsn, 'selectedWarehousePartnerCode' | 'selectedWarehouseName' | 'appointment'>
+) {
+  const appointmentWarehouse = row.appointment?.warehouseToPartnerCode || row.appointment?.warehouseToCode
+  const routeWarehouse = row.selectedWarehousePartnerCode || row.selectedWarehouseName
+  if (!appointmentWarehouse) {
+    return <Text type="secondary">{routeWarehouse || '-'}</Text>
+  }
+  return (
+    <>
+      <Text type="secondary">{appointmentWarehouse}</Text>
+      {routeWarehouse && routeWarehouse !== appointmentWarehouse ? (
+        <Text type="secondary">ASN路由 {routeWarehouse}</Text>
+      ) : null}
+    </>
+  )
 }
 
 function businessErrorText(message?: string, failureType?: string) {
@@ -378,7 +391,6 @@ function shippingLinkSummaryItems(asn: OfficialWarehouseAsn) {
 }
 
 type AppointmentFormState = {
-  warehouseFrom: string
   warehouseToPartnerCode: string
   warehouseToCode?: string
   apDates: [Dayjs, Dayjs] | null
@@ -452,8 +464,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const [availabilitySlots, setAvailabilitySlots] = useState<OfficialWarehouseAppointmentAvailability[]>([])
   const [availabilityError, setAvailabilityError] = useState<string>()
-  const [warehouseFromCandidates, setWarehouseFromCandidates] = useState<string[]>([])
-  const [warehouseFromLoading, setWarehouseFromLoading] = useState(false)
   const [manualDateOffset, setManualDateOffset] = useState(0)
   const [manualSelectedDate, setManualSelectedDate] = useState<string>()
   const [appointmentStatusFilter, setAppointmentStatusFilter] = useState<string>()
@@ -522,25 +532,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       : '所选物流批次没有匹配当前站点商品'
     : '暂无可创建 ASN 的商品'
 
-  const appointmentWarehouseFromOptions = useMemo(() => {
-    const options = new Map<string, string>()
-    const addWarehouseFrom = (warehouseFrom?: string, warehouseFromCode?: string) => {
-      const value = warehouseFrom?.trim()
-      if (!value) {
-        return
-      }
-      options.set(value, warehouseFromCode ? `${value} / ${warehouseFromCode}` : value)
-    }
-    warehouseFromCandidates.forEach((warehouse) => addWarehouseFrom(warehouse))
-    addWarehouseFrom(appointmentTarget?.appointment?.warehouseFrom)
-    addWarehouseFrom(appointmentForm.warehouseFrom)
-    availabilitySlots.forEach((slot) => addWarehouseFrom(slot.warehouseFrom, slot.warehouseFromCode))
-    return Array.from(options.entries()).map(([value, label]) => ({ value, label }))
-  }, [warehouseFromCandidates, appointmentTarget, appointmentForm.warehouseFrom, availabilitySlots])
-  const appointmentWarehouseFromMissingMessage = appointmentWarehouseFromOptions.length
-    ? '请选择出发仓库后再提交约仓。'
-    : '未读取到出发仓库，请先同步 Noon ASN 列表或稍后重试。'
-
   const manualCalendarDates = useMemo(() => {
     if (!appointmentForm.apDates) {
       return []
@@ -570,14 +561,12 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       !appointmentOpen ||
       !appointmentTarget ||
       !appointmentForm.apDates ||
-      !appointmentForm.warehouseFrom.trim() ||
       !appointmentForm.warehouseToPartnerCode.trim()
     ) {
       return ''
     }
     return [
       appointmentTarget.id,
-      appointmentForm.warehouseFrom.trim(),
       appointmentForm.warehouseToPartnerCode.trim(),
       appointmentForm.warehouseToCode || '',
       selectedManualDate || '',
@@ -697,7 +686,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       return null
     }
     return {
-      warehouseFrom: appointmentForm.warehouseFrom.trim(),
       warehouseToPartnerCode: appointmentForm.warehouseToPartnerCode.trim(),
       warehouseToCode: appointmentForm.warehouseToCode,
       apStartDate: appointmentForm.apDates[0].format('YYYY-MM-DD'),
@@ -714,7 +702,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       return
     }
     const payload = buildAppointmentPayload()
-    if (!payload || !payload.warehouseFrom || !payload.warehouseToPartnerCode || !selectedManualDate) {
+    if (!payload || !payload.warehouseToPartnerCode || !selectedManualDate) {
       return
     }
     payload.apStartDate = selectedManualDate
@@ -728,10 +716,8 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       setAvailabilitySlots(rows)
       setAppointmentForm((current) => {
         const selectedStillAvailable = rows.some((slot) => availabilitySlotKey(slot) === current.selectedSlotKey)
-        const resolvedWarehouseFrom = rows.find((slot) => slot.warehouseFrom?.trim())?.warehouseFrom?.trim()
         return {
           ...current,
-          warehouseFrom: resolvedWarehouseFrom || current.warehouseFrom,
           selectedSlotKey: selectedStillAvailable ? current.selectedSlotKey : rows[0] ? availabilitySlotKey(rows[0]) : undefined
         }
       })
@@ -908,7 +894,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     setAppointmentTarget(row)
     setAppointmentMode(mode)
     setAppointmentForm({
-      warehouseFrom: appointment?.warehouseFrom || '',
       warehouseToPartnerCode:
         appointment?.warehouseToPartnerCode ||
         row.selectedWarehousePartnerCode ||
@@ -924,39 +909,16 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     })
     setAvailabilitySlots([])
     setAvailabilityError(undefined)
-    setWarehouseFromCandidates([])
     setAppointmentSubmitFeedback(undefined)
     setManualDateOffset(0)
     setManualSelectedDate(undefined)
     setAppointmentOpen(true)
-    void loadWarehouseFromCandidates(row, mode)
-  }
-
-  async function loadWarehouseFromCandidates(row: OfficialWarehouseAsn, mode: AppointmentSubmitMode) {
-    setWarehouseFromLoading(true)
-    try {
-      const warehouses = await loadOfficialWarehouseAppointmentWarehouses(row.id)
-      setWarehouseFromCandidates(warehouses)
-      const defaultWarehouseFrom = warehouses.find((warehouse) => warehouse?.trim())?.trim()
-      if (defaultWarehouseFrom && (mode === 'auto' || warehouses.length === 1)) {
-        setAppointmentForm((current) => current.warehouseFrom ? current : { ...current, warehouseFrom: defaultWarehouseFrom })
-      }
-    } catch (error) {
-      message.warning(officialWarehouseError(error, '读取出发仓库失败'))
-    } finally {
-      setWarehouseFromLoading(false)
-    }
   }
 
   async function submitAppointment() {
     if (!appointmentTarget) return
     if (!appointmentForm.apDates) {
       message.warning('请选择约仓日期范围')
-      return
-    }
-    if (!appointmentForm.warehouseFrom.trim()) {
-      setAppointmentSubmitFeedback({ type: 'warning', message: appointmentWarehouseFromMissingMessage })
-      message.warning(appointmentWarehouseFromMissingMessage)
       return
     }
     if (!appointmentForm.warehouseToPartnerCode.trim()) {
@@ -1154,14 +1116,14 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       }
     },
     {
-      title: '货量 / 路由仓',
+      title: '货量 / 仓库',
       width: 120,
       render: (_, row) => (
         <div className="official-warehouse-stack">
           <div className="official-warehouse-quantity">
             <span>{Number(row.totalQuantity || 0).toLocaleString()} 件</span>
           </div>
-          <Text type="secondary">{asnWarehouseLabel(row)}</Text>
+          {appointmentAwareWarehouseLabel(row)}
         </div>
       )
     },
@@ -1795,26 +1757,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
           <div className="official-warehouse-manual-picker">
             <div className="official-warehouse-appointment-form official-warehouse-manual-basic-form">
               <label className="official-warehouse-field">
-                <span>出发仓库</span>
-                <Select
-                  value={appointmentForm.warehouseFrom || undefined}
-                  options={appointmentWarehouseFromOptions}
-                  placeholder="查询仓位后自动带出"
-                  showSearch
-                  loading={warehouseFromLoading}
-                  disabled={warehouseFromLoading || !appointmentWarehouseFromOptions.length}
-                  onChange={(value) => {
-                    setAppointmentForm((current) => ({
-                      ...current,
-                      warehouseFrom: value,
-                      selectedSlotKey: undefined
-                    }))
-                    setAppointmentSubmitFeedback(undefined)
-                    setManualSelectedDate(undefined)
-                  }}
-                />
-              </label>
-              <label className="official-warehouse-field">
                 <span>到达仓库</span>
                 <Select
                   value={appointmentForm.warehouseToPartnerCode || undefined}
@@ -1925,21 +1867,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         ) : (
           <div className="official-warehouse-appointment-form">
             <label className="official-warehouse-field">
-              <span>出发仓库</span>
-              <Select
-                value={appointmentForm.warehouseFrom || undefined}
-                options={appointmentWarehouseFromOptions}
-                placeholder="请选择出发仓库"
-                showSearch
-                loading={warehouseFromLoading}
-                disabled={warehouseFromLoading || !appointmentWarehouseFromOptions.length}
-                onChange={(value) => {
-                  setAppointmentForm((current) => ({ ...current, warehouseFrom: value }))
-                  setAppointmentSubmitFeedback(undefined)
-                }}
-              />
-            </label>
-            <label className="official-warehouse-field">
               <span>到达仓库</span>
               <Select
                 value={appointmentForm.warehouseToPartnerCode || undefined}
@@ -1992,8 +1919,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             </Checkbox>
             {appointmentSubmitFeedback ? (
               <Alert type={appointmentSubmitFeedback.type} showIcon message={appointmentSubmitFeedback.message} />
-            ) : !warehouseFromLoading && !appointmentForm.warehouseFrom.trim() ? (
-              <Alert type="warning" showIcon message={appointmentWarehouseFromMissingMessage} />
             ) : null}
           </div>
         )}
@@ -2165,7 +2090,6 @@ function Metric({ label, value, tone }: { label: string; value: number; tone?: '
 
 function defaultAppointmentForm(): AppointmentFormState {
   return {
-    warehouseFrom: '',
     warehouseToPartnerCode: '',
     warehouseToCode: undefined,
     apDates: [dayjs().add(1, 'day'), dayjs().add(30, 'day')],

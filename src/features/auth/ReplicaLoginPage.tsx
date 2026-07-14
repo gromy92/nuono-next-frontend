@@ -355,8 +355,9 @@ export function ReplicaLoginPage({ errorMessage, form, submitting, onInputChange
             >
               <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                 <HeaderTitle authView={authView} />
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <img alt="logo" src={withPublicBasePath('/logo-title.png')} style={{ height: 32 }} />
+                <div className="nuono-shell-brand-lockup" aria-label="诺诺管家">
+                  <span className="nuono-shell-brand-mark">诺</span>
+                  <span className="nuono-shell-brand-text">诺诺管家</span>
                 </div>
               </div>
 

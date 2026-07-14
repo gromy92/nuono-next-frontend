@@ -28,7 +28,6 @@ const ali1688HistoricalOrders = readFileSync(
   'utf8'
 )
 const profitCalculator = readFileSync(join(featuresDir, 'profit-calculator/useProfitCalculatorWorkspace.tsx'), 'utf8')
-const salesForecastPage = readFileSync(join(featuresDir, 'sales-forecast/SalesForecastPage.tsx'), 'utf8')
 const salesAnalyticsPage = readFileSync(join(featuresDir, 'sales-analytics/SalesAnalyticsPage.tsx'), 'utf8')
 const salesAnalyticsApi = readFileSync(join(featuresDir, 'sales-analytics/api.ts'), 'utf8')
 
@@ -114,24 +113,6 @@ assert.doesNotMatch(
   profitCalculator,
   /record\.skuParent \|\| record\.partnerSku \|\| record\.pskuCode/,
   'profit calculator product key must not use external pskuCode as product identity fallback'
-)
-
-assert.doesNotMatch(
-  salesForecastPage,
-  /sku:\s*row\.sku/,
-  'sales forecast follow-up identity must not post external sku'
-)
-
-assert.doesNotMatch(
-  salesForecastPage,
-  /item\.partnerSku === result\.partnerSku && item\.sku === result\.sku/,
-  'sales forecast follow-up optimistic update must match by partnerSku only'
-)
-
-assert.doesNotMatch(
-  salesForecastPage,
-  /row\.partnerSku\}\|\$\{row\.sku/,
-  'sales forecast row key must not combine partnerSku with external sku'
 )
 
 assert.doesNotMatch(

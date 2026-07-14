@@ -271,6 +271,92 @@ test('sales analytics opens as a product-list-first workbench with comparison de
       }
     });
   });
+  await page.route('**/api/sales-forecast/overview?**', async (route) => {
+    await route.fulfill({
+      json: {
+        state: 'ready',
+        storeCode: 'STR108065-NSA',
+        siteCode: 'SA',
+        sourceDataDate: '2026-05-20',
+        calculatedAt: '2026-05-21T09:30:00',
+        calculationVersion: 'SALES_FORECAST_V1_4',
+        configVersion: 'CALENDAR_FACTOR_CURRENT',
+        emptyState: null,
+        rows: [
+          {
+            partnerSku: 'MILKYWAYA09',
+            sku: 'Z580978E7ED8F9491B50BZ-1',
+            productTitle: 'Galaxy Star Projector, Nebula LED Night Light for Room Decor',
+            latestFactDate: '2026-05-20',
+            historyUnits7: 7,
+            historyUnits30: 21,
+            historyUnits60: 45,
+            historyUnits90: 72,
+            forecastUnits30: 30,
+            forecastUnits60: 61,
+            forecastUnits90: 93,
+            currentStock: 21,
+            stockCoverDays: 90.0,
+            confidenceLevel: 'medium',
+            confidenceLabel: '中',
+            confidenceExplanation: '可用自身销量样本少于 60 天，60 天平滑窗口尚未完整。',
+            dataQualityWarnings: [],
+            riskLabels: [
+              {
+                code: 'partial_history_window',
+                label: '样本窗口不完整',
+                severity: 'info',
+                explanation: '可用自身销量样本少于 60 天，60 天平滑窗口尚未完整。'
+              }
+            ],
+            calculationVersion: 'SALES_FORECAST_V1_4',
+            configVersion: 'CALENDAR_FACTOR_CURRENT',
+            shortReason: '按未来120天逐日预测，30/60/90天统计约 30 / 61 / 93 件。'
+          }
+        ]
+      }
+    });
+  });
+  await page.route('**/api/sales-forecast/detail?**', async (route) => {
+    const forecastStart = new Date('2026-05-21T00:00:00Z');
+    await route.fulfill({
+      json: {
+        featureValues: {
+          latestFactDate: '2026-05-20',
+          historyUnits7: 7,
+          historyUnits30: 21,
+          historyUnits60: 45,
+          historyUnits90: 72,
+          observedDays: 45,
+          currentStock: 21,
+          stockCoverDays: 90.0
+        },
+        factorBreakdown: {
+          baseDailySales: 1.0,
+          recentDailyTrendRate: 1.0,
+          trendFactor: 1.0,
+          futureFactor30: 1.0,
+          futureFactor60: 1.02,
+          futureFactor90: 1.03,
+          forecastUnits30: 30,
+          forecastUnits60: 61,
+          forecastUnits90: 93,
+          dailyForecasts: Array.from({ length: 120 }, (_, index) => {
+            const forecastDate = new Date(forecastStart);
+            forecastDate.setUTCDate(forecastDate.getUTCDate() + index);
+            return {
+              dayIndex: index + 1,
+              forecastDate: formatDate(forecastDate),
+              calendarFactor: '1.0000',
+              forecastUnits: '1.00000000'
+            };
+          })
+        },
+        calculationVersion: 'SALES_FORECAST_V1_4',
+        configVersion: 'CALENDAR_FACTOR_CURRENT'
+      }
+    });
+  });
   await page.route('**/api/product-master/classification-options', async (route) => {
     classificationOptionsRequested = true;
     await route.fulfill({
@@ -390,8 +476,9 @@ test('sales analytics opens as a product-list-first workbench with comparison de
   await expect(productTable).toContainText('经营正常');
   await expect(productTable).toContainText('—');
   await expect(productTable.getByRole('button', { name: '详情' }).first()).toBeVisible();
-  await expect(productTable.getByRole('button', { name: '调价' }).first()).toBeVisible();
-  await expect(productTable.getByRole('button', { name: '补货' }).first()).toBeVisible();
+  await expect(productTable.getByRole('button', { name: '调价' })).toHaveCount(0);
+  await expect(productTable.getByRole('button', { name: '补货' })).toHaveCount(0);
+  await expect(workbench.getByRole('button', { name: '生成补货建议' })).toHaveCount(0);
 
   const compareButton = workbench.getByRole('button', { name: '对比分析' });
   await expect(compareButton).toBeDisabled();
@@ -450,6 +537,10 @@ test('sales analytics opens as a product-list-first workbench with comparison de
   await expect(detailDialog.getByTestId('sales-history-coverage-status')).toContainText('销量 2026-05-01 至 2026-05-19');
   await expect(detailDialog.getByTestId('sales-trend-data-range')).toContainText('2026-03-25 至 2026-05-23');
   await expect(detailDialog.getByTestId('sales-trend-data-range')).not.toContainText(formatDate(halfYearPresetStart()));
+  await detailDialog.getByRole('tab', { name: '销量预测' }).click();
+  await expect(detailDialog.getByTestId('sales-history-coverage-status')).toHaveCount(0);
+  await detailDialog.getByRole('tab', { name: '销量分析' }).click();
+  await expect(detailDialog.getByTestId('sales-history-coverage-status')).toContainText('需要历史补全');
   await detailDialog.getByRole('button', { name: '触发历史补全' }).click();
   await expect.poll(() => historyBackfillPayload?.dateFrom).toBe(halfYearRequestRange.dateFrom);
   await expect.poll(() => historyBackfillPayload?.dateTo).toBe(halfYearRequestRange.dateTo);
@@ -462,14 +553,30 @@ test('sales analytics opens as a product-list-first workbench with comparison de
     const to = new Date(`${latest.dateTo}T00:00:00Z`).getTime();
     return Math.round((to - from) / 86400000) + 1;
   }).toBeLessThanOrEqual(7);
+  await detailDialog.getByTestId('sales-detail-range-preset').getByText('自定义').click();
+  await detailDialog.getByTestId('sales-detail-custom-range').locator('input').first().fill('2026-05-19');
+  await detailDialog.getByTestId('sales-detail-custom-range').locator('input').nth(1).fill('2026-05-25');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => detailRequestRanges.at(-1)?.dateFrom).toBe('2026-05-19');
+  await expect.poll(() => detailRequestRanges.at(-1)?.dateTo).toBe('2026-05-25');
   await detailDialog.getByRole('tab', { name: '销量预测' }).click();
   await expect(detailDialog).toContainText('30天预测');
+  await expect(detailDialog).toContainText('筛选范围预测');
+  await expect(detailDialog).toContainText('筛选范围实际');
+  await expect(detailDialog.getByTestId('sales-analytics-forecast-range-units')).toContainText('5 件');
+  await expect(detailDialog.getByTestId('sales-analytics-forecast-range-actual-units')).toContainText('5 件');
   await expect(detailDialog).toContainText('当前库存');
   await expect(detailDialog).toContainText('21 件');
   await expect(detailDialog).toContainText('60天预测');
   await expect(detailDialog).toContainText('90天预测');
+  await expect(detailDialog).toContainText('93 件');
+  await expect(detailDialog).toContainText('置信度');
+  await expect(detailDialog).toContainText('样本窗口不完整');
+  await expect(detailDialog.getByTestId('sales-analytics-forecast-daily-chart')).toBeVisible();
+  await expect(detailDialog.getByTestId('sales-history-coverage-status')).toHaveCount(0);
+  await expect(detailDialog).toContainText('SALES_FORECAST_V1_4');
   await expect(detailDialog).toContainText('预测依据');
-  await expect(detailDialog).not.toContainText('120天预测');
+  await expect(detailDialog).toContainText('未来120天逐日预测');
   await expect(detailDialog).not.toContainText('置信区间');
   await page.keyboard.press('Escape');
   await expect(detailDialog).toBeHidden();
