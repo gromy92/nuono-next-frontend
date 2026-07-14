@@ -415,6 +415,11 @@ export function LiveStatusCell(props: {
 
   return (
     <Space direction="vertical" size={6} align="start">
+      {record.maintenanceEnabled !== false ? (
+        <Text style={{ color: '#166534', fontSize: 12, fontWeight: 600, lineHeight: '16px' }}>
+          诺诺维护中
+        </Text>
+      ) : null}
       <Popconfirm
         open={downConfirmOpen}
         title="确认下架当前商品？"
