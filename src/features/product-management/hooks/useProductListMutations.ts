@@ -211,6 +211,8 @@ export function useProductListMutations({
                 skuGroup: textInputValue(summary.skuGroup) || undefined,
                 groupRef: textInputValue(summary.groupRef) || undefined,
                 groupRefCanonical: textInputValue(summary.groupRefCanonical) || undefined,
+                isActive: summary.isActive,
+                maintenanceEnabled: summary.maintenanceEnabled,
                 syncStatus: summary.syncStatus,
                 listingStartedAt: summary.listingStartedAt,
                 listingStartedSource: summary.listingStartedSource,

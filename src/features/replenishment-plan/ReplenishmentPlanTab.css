@@ -97,6 +97,12 @@
   font-size: 12px;
 }
 
+.replenishment-plan-calculation-blocked-alert,
+.replenishment-plan-missing-eta-alert,
+.replenishment-plan-past-eta-alert {
+  font-size: 12px;
+}
+
 .replenishment-plan-progress-title {
   color: #1e3a8a;
 }
@@ -451,6 +457,29 @@
   background: #f9fafb;
   border-color: #d1d5db;
   color: #6b7280;
+}
+
+.replenishment-plan-suggestion-tag.is-partial {
+  border-color: #fdba74;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.replenishment-plan-suggestion-tag.is-blocked {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.replenishment-plan-suggestion-tag.is-sea-eta-risk {
+  background: #fff1f0;
+  border-color: #ff7875;
+  color: #a8071a;
+}
+
+.replenishment-plan-suggestion-tag.is-sea-eta-risk .replenishment-plan-suggestion-status {
+  background: #fff1f0;
+  color: #a8071a;
 }
 
 .replenishment-plan-suggestion-status {

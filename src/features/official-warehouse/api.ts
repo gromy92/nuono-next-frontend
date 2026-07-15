@@ -1,4 +1,6 @@
-import { apiFetch, normalizeError, parseApiResponse } from '../../shared/api'
+import { ApiError, apiFetch, normalizeError, parseApiResponse, type ApiProblem } from '../../shared/api'
+
+export type OfficialWarehouseApiProblem = ApiProblem
 
 export type OfficialWarehouseProductCandidate = {
   productVariantId: string
@@ -451,6 +453,10 @@ export async function loadOfficialWarehouseAppointmentNoonCalls(appointmentId: s
 
 export function officialWarehouseError(error: unknown, fallback: string) {
   return normalizeError(error, fallback)
+}
+
+export function officialWarehouseProblem(error: unknown) {
+  return error instanceof ApiError ? error.problem : undefined
 }
 
 function appendParam(params: URLSearchParams, key: string, value?: string) {

@@ -4,6 +4,7 @@ import type { ReplenishmentPlanItem, ReplenishmentQuantity } from './types'
 export type PurchasePlanProgressSummary = {
   totalReplenishmentSkuCount: number
   addedSkuCount: number
+  partialSkuCount: number
   remainingSkuCount: number
   airSkuCount: number
   airQuantity: number
@@ -13,8 +14,8 @@ export type PurchasePlanProgressSummary = {
 }
 
 type NeededTransport = {
-  air: boolean
-  sea: boolean
+  air: number
+  sea: number
 }
 
 export function summarizePurchasePlanProgress(
@@ -28,18 +29,22 @@ export function summarizePurchasePlanProgress(
     if (!key) {
       continue
     }
-    const air = numericQuantity(row.airSuggestedUnits) > 0
-    const sea = numericQuantity(row.seaSuggestedUnits) > 0
-    if (!air && !sea) {
+    const air = numericQuantity(row.airSuggestedUnits)
+    const sea = numericQuantity(row.seaSuggestedUnits)
+    if (air <= 0 && sea <= 0) {
       continue
     }
-    neededBySku.set(key, { air, sea })
+    const current = neededBySku.get(key) || { air: 0, sea: 0 }
+    neededBySku.set(key, {
+      air: Math.max(current.air, air),
+      sea: Math.max(current.sea, sea)
+    })
   }
 
   const normalizedSiteCode = normalizeText(siteCode)
-  const addedSkuKeys = new Set<string>()
   const airSkuKeys = new Set<string>()
   const seaSkuKeys = new Set<string>()
+  const plannedBySkuTransport = new Map<string, number>()
   const orderLabels: string[] = []
   const seenOrderLabels = new Set<string>()
   let airQuantity = 0
@@ -58,16 +63,18 @@ export function summarizePurchasePlanProgress(
           continue
         }
         const mode = normalizeTransportMode(allocation.transportMode)
-        if (mode === 'AIR' && needed.air) {
-          addedSkuKeys.add(itemKey)
+        if (mode === 'AIR' && needed.air > 0) {
           airSkuKeys.add(itemKey)
-          airQuantity += numericQuantity(allocation.quantity)
+          const quantity = numericQuantity(allocation.quantity)
+          airQuantity += quantity
+          plannedBySkuTransport.set(`${itemKey}|AIR`, (plannedBySkuTransport.get(`${itemKey}|AIR`) || 0) + quantity)
           orderMatched = true
         }
-        if (mode === 'SEA' && needed.sea) {
-          addedSkuKeys.add(itemKey)
+        if (mode === 'SEA' && needed.sea > 0) {
           seaSkuKeys.add(itemKey)
-          seaQuantity += numericQuantity(allocation.quantity)
+          const quantity = numericQuantity(allocation.quantity)
+          seaQuantity += quantity
+          plannedBySkuTransport.set(`${itemKey}|SEA`, (plannedBySkuTransport.get(`${itemKey}|SEA`) || 0) + quantity)
           orderMatched = true
         }
       }
@@ -81,10 +88,25 @@ export function summarizePurchasePlanProgress(
     }
   }
 
+  let addedSkuCount = 0
+  let partialSkuCount = 0
+  for (const [itemKey, needed] of neededBySku) {
+    const airPlanned = plannedBySkuTransport.get(`${itemKey}|AIR`) || 0
+    const seaPlanned = plannedBySkuTransport.get(`${itemKey}|SEA`) || 0
+    const airCovered = needed.air <= 0 || airPlanned >= needed.air
+    const seaCovered = needed.sea <= 0 || seaPlanned >= needed.sea
+    if (airCovered && seaCovered) {
+      addedSkuCount += 1
+    } else if (airPlanned > 0 || seaPlanned > 0) {
+      partialSkuCount += 1
+    }
+  }
+
   return {
     totalReplenishmentSkuCount: neededBySku.size,
-    addedSkuCount: addedSkuKeys.size,
-    remainingSkuCount: Math.max(0, neededBySku.size - addedSkuKeys.size),
+    addedSkuCount,
+    partialSkuCount,
+    remainingSkuCount: Math.max(0, neededBySku.size - addedSkuCount),
     airSkuCount: airSkuKeys.size,
     airQuantity,
     seaSkuCount: seaSkuKeys.size,

@@ -59,6 +59,7 @@ export type ReplenishmentPlanItem = {
   seaWindowForecastUnits: ReplenishmentQuantity
   seaCalculatedUnits: ReplenishmentQuantity
   seaSuggestedUnits: ReplenishmentQuantity
+  calculationBlocked: boolean
   dailyProjection: ReplenishmentPlanDailyProjection[]
   missingEtaBatches: ReplenishmentPlanMissingEtaBatch[]
   warnings: string[]
@@ -76,6 +77,8 @@ export type ReplenishmentPlanConfigSnapshot = {
   requireInboundEtaDate: boolean
   airEmergencyOnly: boolean
   roundingMode: string
+  forecastStaleWarningDays: number
+  forecastStaleBlockingDays: number
 }
 
 export type ReplenishmentPlanDailyProjection = {

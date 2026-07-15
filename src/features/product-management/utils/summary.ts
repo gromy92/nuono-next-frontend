@@ -52,6 +52,7 @@ export function mergeProductListItemWithSummary(
     liveStatus: summary.liveStatus ?? current.liveStatus,
     statusCode: summary.statusCode ?? current.statusCode,
     isActive: summary.isActive ?? current.isActive,
+    maintenanceEnabled: summary.maintenanceEnabled ?? current.maintenanceEnabled,
     listingStartedAt: summary.listingStartedAt ?? current.listingStartedAt,
     listingStartedSource: summary.listingStartedSource ?? current.listingStartedSource,
     operationStageCode: hasOwnField(summary, 'operationStageCode')
@@ -153,6 +154,7 @@ export function buildProductSummarySurfaceFromListItem(
     liveStatus: item.liveStatus,
     statusCode: item.statusCode,
     isActive: item.isActive,
+    maintenanceEnabled: item.maintenanceEnabled,
     listingStartedAt: item.listingStartedAt,
     listingStartedSource: item.listingStartedSource,
     operationStageCode: item.operationStageCode,
@@ -214,6 +216,7 @@ export function buildProductSummarySurfaceFromListSummary(
     liveStatus: summary.liveStatus ?? fallbackSurface?.liveStatus,
     statusCode: summary.statusCode ?? fallbackSurface?.statusCode,
     isActive: summary.isActive ?? fallbackSurface?.isActive,
+    maintenanceEnabled: summary.maintenanceEnabled ?? fallbackSurface?.maintenanceEnabled,
     listingStartedAt: summary.listingStartedAt ?? fallbackSurface?.listingStartedAt,
     listingStartedSource: summary.listingStartedSource ?? fallbackSurface?.listingStartedSource,
     operationStageCode: hasOwnField(summary, 'operationStageCode')
@@ -371,6 +374,8 @@ export function buildProductSummarySurfaceFromWorkbench(
     groupRefCanonical: textInputValue(draft.group.groupRefCanonical) || undefined,
     liveStatus: textInputValue(referenceSiteOffer?.liveStatus) || undefined,
     isActive: typeof referenceSiteOffer?.isActive === 'boolean' ? referenceSiteOffer.isActive : undefined,
+    maintenanceEnabled:
+      typeof referenceSiteOffer?.maintenanceEnabled === 'boolean' ? referenceSiteOffer.maintenanceEnabled : undefined,
     statusCode: textInputValue(referenceSiteOffer?.statusCode) || undefined,
     listingStartedAt: textInputValue(referenceSiteOffer?.listingStartedAt) || undefined,
     listingStartedSource: textInputValue(referenceSiteOffer?.listingStartedSource) || undefined,

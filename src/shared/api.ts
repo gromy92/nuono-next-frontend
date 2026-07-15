@@ -1,29 +1,68 @@
-export async function readApiErrorMessage(response: Response, fallback?: string) {
+export type ApiProblem = {
+  code: string
+  message: string
+  category?: string
+  operation?: string
+  retryable?: boolean
+  partialSuccess?: boolean
+  reference?: string
+  details?: Record<string, unknown>
+}
+
+export class ApiError extends Error {
+  readonly status: number
+  readonly problem?: ApiProblem
+
+  constructor(status: number, message: string, problem?: ApiProblem) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.problem = problem
+  }
+}
+
+export async function readApiError(response: Response, fallback?: string) {
   let message = fallback || `后端返回 ${response.status}`;
   try {
     const text = (await response.text()).trim();
     if (!text) {
-      return message;
+      return new ApiError(response.status, message);
     }
     try {
-      const payload = JSON.parse(text) as { message?: string; error?: string };
+      const payload = JSON.parse(text) as Partial<ApiProblem> & { error?: string };
       const payloadMessage = normalizeApiMessage(payload.message);
       if (payloadMessage && !isBackendDefaultEmptyMessage(payloadMessage)) {
-        return payloadMessage;
+        message = payloadMessage;
+      } else if (!payloadMessage) {
+        message = normalizeApiMessage(payload.error) || message;
       }
-      if (payloadMessage && isBackendDefaultEmptyMessage(payloadMessage)) {
-        return message;
-      }
-      return normalizeApiMessage(payload.error) || message;
+      const code = normalizeApiMessage(payload.code);
+      const problem = code
+        ? {
+            code,
+            message,
+            category: normalizeApiMessage(payload.category) || undefined,
+            operation: normalizeApiMessage(payload.operation) || undefined,
+            retryable: typeof payload.retryable === 'boolean' ? payload.retryable : undefined,
+            partialSuccess: typeof payload.partialSuccess === 'boolean' ? payload.partialSuccess : undefined,
+            reference: normalizeApiMessage(payload.reference) || undefined,
+            details: isRecord(payload.details) ? payload.details : undefined
+          }
+        : undefined;
+      return new ApiError(response.status, message, problem);
     } catch {
-      if (isBackendDefaultEmptyMessage(text)) {
-        return message;
+      if (!isBackendDefaultEmptyMessage(text)) {
+        message = text;
       }
-      return text;
+      return new ApiError(response.status, message);
     }
   } catch {
-    return message;
+    return new ApiError(response.status, message);
   }
+}
+
+export async function readApiErrorMessage(response: Response, fallback?: string) {
+  return (await readApiError(response, fallback)).message;
 }
 
 function normalizeApiMessage(value: unknown) {
@@ -32,6 +71,10 @@ function normalizeApiMessage(value: unknown) {
 
 function isBackendDefaultEmptyMessage(messageText: string) {
   return messageText === 'No message available';
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 const SESSION_STORAGE_KEY = 'nuono-next-session';
@@ -80,7 +123,7 @@ export function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
 
 export async function parseApiResponse<T>(response: Response, fallback?: string): Promise<T> {
   if (!response.ok) {
-    throw new Error(await readApiErrorMessage(response, fallback));
+    throw await readApiError(response, fallback);
   }
   return (await response.json()) as T;
 }

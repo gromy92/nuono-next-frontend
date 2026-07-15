@@ -138,6 +138,7 @@ export type StoreInitializationPayload = {
     liveStatus?: string;
     statusCode?: string;
     isActive?: boolean;
+    maintenanceEnabled?: boolean;
     listingStartedAt?: string;
     listingStartedSource?: string;
     operationStageCode?: ProductOperationStageCode | string;
@@ -242,6 +243,7 @@ export type ProductListSummaryPayload = {
   groupRef?: string | null;
   groupRefCanonical?: string | null;
   isActive?: boolean;
+  maintenanceEnabled?: boolean;
   liveStatus?: string;
   statusCode?: string;
   listingStartedAt?: string;
@@ -307,6 +309,7 @@ export type ProductSummarySurface = {
   liveStatus?: string;
   statusCode?: string;
   isActive?: boolean;
+  maintenanceEnabled?: boolean;
   listingStartedAt?: string;
   listingStartedSource?: string;
   operationStageCode?: ProductOperationStageCode | string;
