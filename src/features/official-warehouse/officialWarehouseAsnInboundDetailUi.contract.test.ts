@@ -47,6 +47,21 @@ assert.match(
 )
 assert.match(
   pageSource,
+  /mode="multiple"[\s\S]{0,300}placeholder="约仓状态"/,
+  'ASN list should expose a multi-select appointment status filter in the top toolbar'
+)
+assert.match(
+  pageSource,
+  /mode="multiple"[\s\S]{0,300}placeholder="入仓状态"/,
+  'ASN list should expose a multi-select inbound status filter in the top toolbar'
+)
+assert.match(
+  pageSource,
+  /matchesOfficialWarehouseAsnFilters\([\s\S]{0,200}asnAppointmentStatusFilters[\s\S]{0,100}asnInboundStatusFilters/,
+  'ASN list and summary should be driven by both status filters'
+)
+assert.match(
+  pageSource,
   /暂未收到 Noon 入仓回执/,
   'missing receipt facts must be shown as missing rather than fake zero quantities'
 )

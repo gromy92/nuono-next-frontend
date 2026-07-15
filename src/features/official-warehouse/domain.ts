@@ -67,6 +67,68 @@ export type NoonAsnStatusDisplayMeta = {
   color: string
 }
 
+export type OfficialWarehouseAppointmentFilterStatus =
+  | 'NOT_APPOINTED'
+  | 'APPOINTING'
+  | 'SCHEDULED'
+  | 'FAILED'
+  | 'CANCELED'
+
+export type OfficialWarehouseInboundFilterStatus = 'NOT_RECEIVED' | 'RECEIVING' | 'COMPLETED'
+
+export type OfficialWarehouseAsnFilterRow = {
+  status?: string
+  noonAsnStatus?: string
+  appointment?: {
+    status?: string
+  } | null
+}
+
+export const DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES: OfficialWarehouseAppointmentFilterStatus[] = [
+  'APPOINTING',
+  'SCHEDULED'
+]
+
+export function officialWarehouseAppointmentFilterStatus(
+  row: OfficialWarehouseAsnFilterRow
+): OfficialWarehouseAppointmentFilterStatus {
+  const appointmentStatus = normalizeNoonStatus(row.appointment?.status)
+  if (appointmentStatus === 'PENDING' || appointmentStatus === 'RUNNING') return 'APPOINTING'
+  if (appointmentStatus === 'SCHEDULED') return 'SCHEDULED'
+  if (appointmentStatus === 'FAILED') return 'FAILED'
+  if (appointmentStatus === 'CANCELED' || appointmentStatus === 'CANCELLED') return 'CANCELED'
+
+  const noonStatus = normalizeNoonStatus(row.noonAsnStatus)
+  if (noonStatus === 'PENDING' || noonStatus === 'RUNNING') return 'APPOINTING'
+  if (['SCHEDULED', 'HANDED_OVER', 'RECEIVING', 'GRN_COMPLETED', 'PUTAWAY_COMPLETED'].includes(noonStatus)) {
+    return 'SCHEDULED'
+  }
+  if (noonStatus === 'FAILED') return 'FAILED'
+  if (['CANCELED', 'CANCELLED', 'EXPIRED'].includes(noonStatus)) return 'CANCELED'
+  return 'NOT_APPOINTED'
+}
+
+export function officialWarehouseInboundFilterStatus(
+  row: OfficialWarehouseAsnFilterRow
+): OfficialWarehouseInboundFilterStatus {
+  const noonStatus = normalizeNoonStatus(row.noonAsnStatus)
+  if (noonStatus === 'RECEIVING') return 'RECEIVING'
+  if (noonStatus === 'GRN_COMPLETED' || noonStatus === 'PUTAWAY_COMPLETED') return 'COMPLETED'
+  return 'NOT_RECEIVED'
+}
+
+export function matchesOfficialWarehouseAsnFilters(
+  row: OfficialWarehouseAsnFilterRow,
+  appointmentStatuses: ReadonlyArray<OfficialWarehouseAppointmentFilterStatus>,
+  inboundStatuses: ReadonlyArray<OfficialWarehouseInboundFilterStatus>
+) {
+  const appointmentMatches = appointmentStatuses.length === 0 ||
+    appointmentStatuses.includes(officialWarehouseAppointmentFilterStatus(row))
+  const inboundMatches = inboundStatuses.length === 0 ||
+    inboundStatuses.includes(officialWarehouseInboundFilterStatus(row))
+  return appointmentMatches && inboundMatches
+}
+
 export function appointmentStatusDisplayMeta(status?: string): AppointmentStatusDisplayMeta {
   const normalized = status || ''
   if (normalized === 'PENDING' || normalized === 'RUNNING') {

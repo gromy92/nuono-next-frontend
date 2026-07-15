@@ -69,6 +69,7 @@ import {
 } from './api'
 import { parseCandidateSearch } from './createAsnFlow'
 import {
+  DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES,
   appointmentStatusDisplayMeta,
   buildAppointmentRunOnceFeedback,
   buildAppointmentHistorySummary,
@@ -76,7 +77,10 @@ import {
   buildOfficialWarehouseAsnSummary,
   noonAsnStatusDisplayMeta,
   officialWarehouseBusinessErrorText,
-  officialWarehousePublicAsnNo
+  officialWarehousePublicAsnNo,
+  matchesOfficialWarehouseAsnFilters,
+  type OfficialWarehouseAppointmentFilterStatus,
+  type OfficialWarehouseInboundFilterStatus
 } from './domain'
 import { printFbnTransferPdf } from './printFbnTransferPdf'
 import { inboundStageLabel } from './statisticsDomain'
@@ -103,6 +107,26 @@ const APPOINTMENT_STATUS_OPTIONS = [
   { label: '约仓成功', value: 'SCHEDULED' },
   { label: '约仓失败', value: 'FAILED' },
   { label: '已取消', value: 'CANCELED' }
+]
+
+const ASN_APPOINTMENT_STATUS_FILTER_OPTIONS: Array<{
+  label: string
+  value: OfficialWarehouseAppointmentFilterStatus
+}> = [
+  { label: '未约仓', value: 'NOT_APPOINTED' },
+  { label: '约仓中', value: 'APPOINTING' },
+  { label: '约仓成功', value: 'SCHEDULED' },
+  { label: '约仓失败', value: 'FAILED' },
+  { label: '已取消/过期', value: 'CANCELED' }
+]
+
+const ASN_INBOUND_STATUS_FILTER_OPTIONS: Array<{
+  label: string
+  value: OfficialWarehouseInboundFilterStatus
+}> = [
+  { label: '未入仓', value: 'NOT_RECEIVED' },
+  { label: '入仓中', value: 'RECEIVING' },
+  { label: '已入仓', value: 'COMPLETED' }
 ]
 
 const APPOINTMENT_CORRECTION_STATUS_OPTIONS = APPOINTMENT_STATUS_OPTIONS.filter((item) => item.value !== 'RUNNING')
@@ -509,6 +533,10 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [appointmentRunFeedback, setAppointmentRunFeedback] = useState<AppointmentSubmitFeedback>()
   const [appointmentRunningId, setAppointmentRunningId] = useState<string>()
   const [pdfPrintingAsnId, setPdfPrintingAsnId] = useState<string>()
+  const [asnAppointmentStatusFilters, setAsnAppointmentStatusFilters] = useState<OfficialWarehouseAppointmentFilterStatus[]>(
+    () => [...DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES]
+  )
+  const [asnInboundStatusFilters, setAsnInboundStatusFilters] = useState<OfficialWarehouseInboundFilterStatus[]>([])
   const [appointmentHistoryOpen, setAppointmentHistoryOpen] = useState(false)
   const [rescheduleConfirm, setRescheduleConfirm] = useState<AppointmentOpenRequest>()
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
@@ -526,10 +554,14 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const appointmentStatusFilterInitializedRef = useRef(false)
   const inboundDetailRequestRef = useRef(0)
 
-  const visibleAsns = useMemo(
-    () => (keyword.trim() ? asns : asns.filter((row) => !asnIsExpired(row))),
-    [asns, keyword]
-  )
+  const visibleAsns = useMemo(() => {
+    const filteredAsns = asns.filter((row) => matchesOfficialWarehouseAsnFilters(
+      row,
+      asnAppointmentStatusFilters,
+      asnInboundStatusFilters
+    ))
+    return keyword.trim() ? filteredAsns : filteredAsns.filter((row) => !asnIsExpired(row))
+  }, [asns, keyword, asnAppointmentStatusFilters, asnInboundStatusFilters])
   const summary = useMemo(() => buildOfficialWarehouseAsnSummary(visibleAsns), [visibleAsns])
   const appointmentHistorySummary = useMemo(() => buildAppointmentHistorySummary(appointments), [appointments])
 
@@ -1727,6 +1759,26 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
             onPressEnter={() => void loadAsns()}
+          />
+          <Select<OfficialWarehouseAppointmentFilterStatus[]>
+            mode="multiple"
+            allowClear
+            maxTagCount="responsive"
+            className="official-warehouse-list-status-filter"
+            placeholder="约仓状态"
+            value={asnAppointmentStatusFilters}
+            options={ASN_APPOINTMENT_STATUS_FILTER_OPTIONS}
+            onChange={setAsnAppointmentStatusFilters}
+          />
+          <Select<OfficialWarehouseInboundFilterStatus[]>
+            mode="multiple"
+            allowClear
+            maxTagCount="responsive"
+            className="official-warehouse-list-status-filter"
+            placeholder="入仓状态"
+            value={asnInboundStatusFilters}
+            options={ASN_INBOUND_STATUS_FILTER_OPTIONS}
+            onChange={setAsnInboundStatusFilters}
           />
           <Button icon={<ReloadOutlined />} onClick={() => void loadAsns()} loading={loading}>
             刷新

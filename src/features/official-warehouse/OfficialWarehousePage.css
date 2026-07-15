@@ -46,6 +46,10 @@
   width: 260px;
 }
 
+.official-warehouse-list-status-filter {
+  width: 230px;
+}
+
 .official-warehouse-metrics {
   display: flex;
   flex-wrap: nowrap;
@@ -625,6 +629,7 @@
 @media (max-width: 760px) {
   .official-warehouse-filter,
   .official-warehouse-filter-wide,
+  .official-warehouse-list-status-filter,
   .official-warehouse-search,
   .official-warehouse-status-filter {
     width: 100%;
