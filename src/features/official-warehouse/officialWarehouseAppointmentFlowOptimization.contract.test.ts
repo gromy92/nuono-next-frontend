@@ -51,6 +51,11 @@ assert.doesNotMatch(
 assert.match(pageSource, /当前选择未覆盖物流批次中的全部待约商品，可能造成漏约。/, 'partial selection warning copy should be stable')
 assert.match(pageSource, /返回补选/, 'partial selection warning should allow returning to selection')
 assert.match(pageSource, /确认继续/, 'partial selection warning should allow non-blocking continuation')
+assert.match(
+  pageSource,
+  /该 ASN 在 Noon 后台创建，商品明细未同步，请前往 Noon 后台查看详情。/,
+  'Noon backoffice ASN detail should explain why local product lines are unavailable'
+)
 
 const durationSource = pageSource.slice(
   pageSource.indexOf('function appointmentDurationText'),

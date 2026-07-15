@@ -79,6 +79,7 @@ import { printFbnTransferPdf } from './printFbnTransferPdf'
 import { loadOfficialWarehouseInboundStatistics } from './statisticsApi'
 import { inboundStageLabel } from './statisticsDomain'
 import type { OfficialWarehouseInboundStatisticsRow } from './statisticsTypes'
+import { isNoonBackofficeAsnWithoutSyncedLines } from './asnDetailDisplay'
 import './OfficialWarehousePage.css'
 
 const { Text } = Typography
@@ -2371,15 +2372,25 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
               locale={{ emptyText: <Empty description="暂无入仓详情" /> }}
               title={() => '入仓详情'}
             />
-            <Table
-              rowKey="id"
-              size="small"
-              columns={lineColumns}
-              dataSource={selectedAsn.lines || []}
-              pagination={false}
-              scroll={{ x: 860 }}
-              title={() => '商品明细'}
-            />
+            {isNoonBackofficeAsnWithoutSyncedLines(selectedAsn) ? (
+              <Alert
+                showIcon
+                type="info"
+                message="商品明细"
+                description="该 ASN 在 Noon 后台创建，商品明细未同步，请前往 Noon 后台查看详情。"
+              />
+            ) : (
+              <Table
+                rowKey="id"
+                size="small"
+                columns={lineColumns}
+                dataSource={selectedAsn.lines || []}
+                pagination={false}
+                scroll={{ x: 860 }}
+                locale={{ emptyText: <Empty description="暂无商品明细" /> }}
+                title={() => '商品明细'}
+              />
+            )}
           </div>
         ) : null}
       </Drawer>
