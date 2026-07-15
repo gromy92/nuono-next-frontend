@@ -4,6 +4,7 @@ import {
   CheckCircleOutlined,
   CopyOutlined,
   DeleteOutlined,
+  EditOutlined,
   EyeOutlined,
   FileImageOutlined,
   HistoryOutlined,
@@ -19,6 +20,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNod
 import type { AuthSession } from '../auth/session'
 import {
   adoptProductImageSuite,
+  addProductImageProfileAssetUsages,
   batchRemoveProductImageProfileAssets,
   createProductImageSuiteDraft,
   deleteProductImageSuite,
@@ -30,12 +32,16 @@ import {
   fetchProductImageProfileSummaries,
   importProductImageProfileAssetUrls,
   moveProductImageSuiteAsset,
+  removeProductImageProfileAssetUsage,
   saveProductImageProfile,
   updateProductImageProfileAssetRole,
+  updateProductImageProfileAssetUsage,
   uploadProductImageProfileAsset,
   type ProductImageAssetRoleUpdateItem,
   type ProductImageAssetRemoveItem,
   type ProductImageAiExtractionSuggestionView,
+  type ProductImageComplianceStatus,
+  type ProductImageProcessingStatus,
   type ProductImageProfileDetailView,
   type ProductImageProfileSummaryView,
   type ProductImageRole as ApiImageRole,
@@ -50,9 +56,20 @@ import type { ProductSelectionSourceCollection } from '../source-collection/type
 import {
   buildDefaultProductFactText,
   buildProductImageAiPromptSections,
-  buildProductImageAiCopyText
+  buildProductImageAiCopyText,
+  buildProductImageShortTitleAr,
+  buildProductImageShortTitleEn
 } from './aiCopyText'
 import type { ProductImageAiPromptSection } from './aiCopyText'
+import {
+  applyAllProductImageAiSuggestions,
+  applyProductImageAiSuggestionField,
+  currentProductImageAiFieldValue,
+  normalizeProductImageAiSuggestion,
+  productImageAiSuggestionFields,
+  suggestedProductImageAiFieldValue,
+  type ProductImageAiSuggestionFieldKey
+} from './aiExtractionDiff'
 import { groupProductImageAssetsByRole } from './assetRoleSections'
 import { productProfileVirtualWindow } from './virtualProfileList'
 import './ProductImageProfilePage.css'
@@ -73,17 +90,36 @@ type ProductImageProfileTabKey = 'assets' | 'elements' | 'suites'
 type ProfileAsset = {
   id: string
   backendId?: number
+  usageId?: number
   title: string
   imageUrl?: string
   contentType?: string
   sizeBytes?: number
   widthPx?: number
   heightPx?: number
+  horizontalPpi?: number
+  verticalPpi?: number
+  colorSpace?: string
   imageRole: ImageRole
   sortOrder: number
   assetStatus: 'ACTIVE' | 'REMOVED'
   accent: string
   removable?: boolean
+  processingNote: string
+  processingStatus: ProductImageProcessingStatus
+  processedAt?: string
+  noonTechnicalCompliance?: {
+    status?: ProductImageComplianceStatus | null
+    policyVersion?: string | null
+    policySource?: string | null
+    checks?: Array<{
+      key?: string | null
+      status?: ProductImageComplianceStatus | null
+      actual?: string | null
+      requirement?: string | null
+      message?: string | null
+    }> | null
+  }
 }
 
 type SimpleImageSection = {
@@ -213,10 +249,10 @@ const mockProfiles: ProductImageProfile[] = [
     heroSellingPoints: ['8 vivid colors', 'Magnetic cap', 'Smooth dry erase'],
     updatedAt: '2026-06-12 16:20',
     assets: [
-      { id: 'base-1', title: '当前主图', imageRole: 'MAIN', sortOrder: 1, assetStatus: 'ACTIVE', accent: '#f6d44b' },
-      { id: 'base-2', title: '颜色展示', imageRole: 'SIZE', sortOrder: 2, assetStatus: 'ACTIVE', accent: '#0f766e' },
-      { id: 'base-3', title: '磁吸笔帽', imageRole: 'DETAIL', sortOrder: 3, assetStatus: 'ACTIVE', accent: '#7c3aed' },
-      { id: 'base-4', title: '包装清单', imageRole: 'PACKAGE', sortOrder: 4, assetStatus: 'ACTIVE', accent: '#f97316' }
+      { id: 'base-1', title: '当前主图', imageRole: 'MAIN', sortOrder: 1, assetStatus: 'ACTIVE', accent: '#f6d44b', processingNote: '', processingStatus: 'PENDING' },
+      { id: 'base-2', title: '颜色展示', imageRole: 'SIZE', sortOrder: 2, assetStatus: 'ACTIVE', accent: '#0f766e', processingNote: '', processingStatus: 'PENDING' },
+      { id: 'base-3', title: '磁吸笔帽', imageRole: 'DETAIL', sortOrder: 3, assetStatus: 'ACTIVE', accent: '#7c3aed', processingNote: '', processingStatus: 'PENDING' },
+      { id: 'base-4', title: '包装清单', imageRole: 'PACKAGE', sortOrder: 4, assetStatus: 'ACTIVE', accent: '#f97316', processingNote: '', processingStatus: 'PENDING' }
     ],
     sizeSection: {
       titleAr: 'مقاس القلم',
@@ -304,8 +340,8 @@ const mockProfiles: ProductImageProfile[] = [
     heroSellingPoints: ['Writable NFC chip', 'Blank printable surface'],
     updatedAt: '2026-06-12 10:12',
     assets: [
-      { id: 'base-5', title: '白卡主图', imageRole: 'MAIN', sortOrder: 1, assetStatus: 'ACTIVE', accent: '#60a5fa' },
-      { id: 'base-6', title: '厚度示意', imageRole: 'SIZE', sortOrder: 2, assetStatus: 'ACTIVE', accent: '#14b8a6' }
+      { id: 'base-5', title: '白卡主图', imageRole: 'MAIN', sortOrder: 1, assetStatus: 'ACTIVE', accent: '#60a5fa', processingNote: '', processingStatus: 'PENDING' },
+      { id: 'base-6', title: '厚度示意', imageRole: 'SIZE', sortOrder: 2, assetStatus: 'ACTIVE', accent: '#14b8a6', processingNote: '', processingStatus: 'PENDING' }
     ],
     sizeSection: {
       titleAr: '',
@@ -475,19 +511,29 @@ function backendProfileId(profile: ProductImageProfileDetailView | ProductImageP
 function mapBackendProfile(profile: ProductImageProfileDetailView): ProductImageProfile {
   const assets = (profile.assets ?? [])
     .map((asset, index): ProfileAsset => ({
-      id: asset.id ? `asset-${asset.id}` : `asset-current-${index}-${optionalText(asset.imageUrl)}`,
+      id: asset.id
+        ? `asset-${asset.id}-${asset.usageId ? `usage-${asset.usageId}` : `legacy-${asset.imageRole || 'OTHER'}`}`
+        : `asset-current-${index}-${optionalText(asset.imageUrl)}`,
       backendId: optionalNumber(asset.id),
+      usageId: optionalNumber(asset.usageId),
       title: imageRoleLabel[asset.imageRole || 'OTHER'],
       imageUrl: optionalText(asset.imageUrl) || undefined,
       contentType: optionalText(asset.contentType) || undefined,
       sizeBytes: optionalNumber(asset.sizeBytes),
       widthPx: optionalNumber(asset.widthPx),
       heightPx: optionalNumber(asset.heightPx),
+      horizontalPpi: optionalNumber(asset.horizontalPpi),
+      verticalPpi: optionalNumber(asset.verticalPpi),
+      colorSpace: optionalText(asset.colorSpace) || undefined,
       imageRole: asset.imageRole || 'OTHER',
       sortOrder: asset.sortOrder ?? index + 1,
       assetStatus: asset.assetStatus || 'ACTIVE',
       accent: accentAt(index),
-      removable: Boolean(asset.removable && asset.id)
+      removable: Boolean(asset.removable && asset.id),
+      processingNote: optionalText(asset.processingNote),
+      processingStatus: asset.processingStatus || 'PENDING',
+      processedAt: optionalText(asset.processedAt) || undefined,
+      noonTechnicalCompliance: asset.noonTechnicalCompliance || undefined
     }))
 
   return {
@@ -501,8 +547,8 @@ function mapBackendProfile(profile: ProductImageProfileDetailView): ProductImage
     pskuCode: optionalText(profile.pskuCode),
     productTitle: optionalText(profile.productTitle),
     brand: optionalText(profile.brand),
-    titleAr: optionalText(profile.titleAr),
-    titleEn: optionalText(profile.titleEn),
+    titleAr: buildProductImageShortTitleAr(optionalText(profile.titleAr) || optionalText(profile.productTitle)),
+    titleEn: buildProductImageShortTitleEn(optionalText(profile.titleEn) || optionalText(profile.productTitle)),
     specSummary: optionalText(profile.specSummary),
     productFactText: optionalText(profile.productFactText),
     heroSellingPoints: profile.heroSellingPoints?.length ? profile.heroSellingPoints.map(optionalText).slice(0, 5) : [''],
@@ -553,7 +599,9 @@ function mapBackendProfileSummary(profile: ProductImageProfileSummaryView): Prod
     sortOrder: 0,
     assetStatus: 'ACTIVE',
     accent: accentAt(0),
-    removable: false
+    removable: false,
+    processingNote: '',
+    processingStatus: 'PENDING'
   }] : []
 
   return {
@@ -567,8 +615,8 @@ function mapBackendProfileSummary(profile: ProductImageProfileSummaryView): Prod
     pskuCode: optionalText(profile.pskuCode),
     productTitle: optionalText(profile.productTitle),
     brand: optionalText(profile.brand),
-    titleAr: optionalText(profile.titleAr),
-    titleEn: optionalText(profile.titleEn),
+    titleAr: buildProductImageShortTitleAr(optionalText(profile.titleAr) || optionalText(profile.productTitle)),
+    titleEn: buildProductImageShortTitleEn(optionalText(profile.titleEn) || optionalText(profile.productTitle)),
     specSummary: optionalText(profile.specSummary),
     productFactText: '',
     heroSellingPoints: [''],
@@ -673,28 +721,6 @@ function buildSectionCommands(profile: ProductImageProfile): ProductImageSection
   ].filter((section): section is ProductImageSectionCommand => Boolean(section))
 }
 
-function applyExtractionSuggestion(
-  profile: ProductImageProfile,
-  suggestion: ProductImageAiExtractionSuggestionView
-): ProductImageProfile {
-  const heroSellingPoints = (suggestion.heroSellingPoints ?? []).map(optionalText).filter(Boolean).slice(0, 5)
-  return {
-    ...profile,
-    specSummary: optionalText(suggestion.specSummary) || profile.specSummary,
-    titleEn: optionalText(suggestion.titleEn) || profile.titleEn,
-    titleAr: optionalText(suggestion.titleAr) || profile.titleAr,
-    heroSellingPoints: heroSellingPoints.length ? heroSellingPoints : profile.heroSellingPoints,
-    sizeSection: {
-      ...profile.sizeSection,
-      attributesText: optionalText(suggestion.sizeText) || profile.sizeSection.attributesText
-    },
-    packageList: {
-      ...profile.packageList,
-      attributesText: optionalText(suggestion.packageText) || profile.packageList.attributesText
-    }
-  }
-}
-
 function activeAssets(profile: ProductImageProfile) {
   return profile.assets
     .filter((asset) => asset.assetStatus === 'ACTIVE')
@@ -718,6 +744,37 @@ function assetRoleUpdateItem(asset: ProfileAsset, imageRole: ImageRole): Product
     imageUrl: asset.imageUrl,
     imageRole
   }
+}
+
+function assetIdentity(asset: ProfileAsset) {
+  return asset.backendId
+    ? `${asset.removable ? 'profile' : 'current'}:${asset.backendId}`
+    : `url:${optionalText(asset.imageUrl)}`
+}
+
+function samePhysicalAsset(left: ProfileAsset, right: ProfileAsset) {
+  const leftIdentity = assetIdentity(left)
+  return leftIdentity !== 'url:' && leftIdentity === assetIdentity(right)
+}
+
+function uniquePhysicalAssets(assets: ProfileAsset[]) {
+  return Array.from(new Map(assets.map((asset) => [assetIdentity(asset), asset])).values())
+}
+
+function assetDimensionText(asset: ProfileAsset) {
+  return asset.widthPx && asset.heightPx ? `${asset.widthPx} × ${asset.heightPx} px` : '尺寸待读取'
+}
+
+function assetComplianceMeta(asset: ProfileAsset) {
+  const status = asset.noonTechnicalCompliance?.status || 'UNKNOWN'
+  const checks = asset.noonTechnicalCompliance?.checks ?? []
+  const messages = checks
+    .filter((check) => check.status !== 'PASS')
+    .map((check) => optionalText(check.message))
+    .filter(Boolean)
+  if (status === 'PASS') return { color: 'success' as const, label: 'Noon 技术合格', detail: '可读取的技术指标均符合 Noon 要求；画面内容仍需人工确认。' }
+  if (status === 'FAIL') return { color: 'error' as const, label: 'Noon 技术不合格', detail: messages.join('；') || '至少一项技术指标不符合 Noon 要求。' }
+  return { color: 'warning' as const, label: 'Noon 技术待确认', detail: messages.join('；') || '图片元数据不足，暂时无法完成技术校验。' }
 }
 
 function profileCoverAsset(profile: ProductImageProfile) {
@@ -1189,8 +1246,16 @@ function AiPromptSectionList({
 }) {
   return (
     <div className={`product-image-profile-ai-prompt-sections${compact ? ' is-compact' : ''}`}>
-      {sections.map((section) => (
-        <section className="product-image-profile-ai-prompt-section" key={section.key}>
+      {sections.map((section) => {
+        const lines = section.text.split('\n')
+        const technicalStart = section.key === 'OVERALL'
+          ? 0
+          : lines.findIndex((line) => line.trim().startsWith('- 画面：'))
+        const copyText = technicalStart === 0
+          ? '无直接上图文案'
+          : lines.slice(0, technicalStart < 0 ? lines.length : technicalStart).join('\n')
+        const technicalText = technicalStart < 0 ? '' : lines.slice(technicalStart).join('\n')
+        return <section className="product-image-profile-ai-prompt-section" key={section.key}>
           <div className="product-image-profile-ai-prompt-section-head">
             <div>
               <strong>{section.title}</strong>
@@ -1200,14 +1265,20 @@ function AiPromptSectionList({
               复制
             </Button>
           </div>
-          <TextArea
-            className="product-image-profile-ai-prompt-section-textarea"
-            readOnly
-            autoSize={{ minRows: compact ? 3 : 4, maxRows: compact ? 8 : 10 }}
-            value={section.text}
-          />
+          <pre className="product-image-profile-ai-copy-preview">{copyText}</pre>
+          {technicalText ? (
+            <details className="product-image-profile-ai-advanced">
+              <summary>高级生成要求</summary>
+              <TextArea
+                className="product-image-profile-ai-prompt-section-textarea"
+                readOnly
+                autoSize={{ minRows: compact ? 3 : 4, maxRows: compact ? 8 : 10 }}
+                value={technicalText}
+              />
+            </details>
+          ) : null}
         </section>
-      ))}
+      })}
     </div>
   )
 }
@@ -1226,6 +1297,14 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
   const [extractingImageFacts, setExtractingImageFacts] = useState(false)
   const [assetImportOpen, setAssetImportOpen] = useState(false)
   const [aiCopyModalOpen, setAiCopyModalOpen] = useState(false)
+  const [aiExtractionSuggestion, setAiExtractionSuggestion] = useState<ProductImageAiExtractionSuggestionView | null>(null)
+  const [aiSuggestionDecisions, setAiSuggestionDecisions] = useState<Partial<Record<ProductImageAiSuggestionFieldKey, 'accepted' | 'ignored'>>>({})
+  const [reuseAsset, setReuseAsset] = useState<ProfileAsset | null>(null)
+  const [reuseRoles, setReuseRoles] = useState<ImageRole[]>([])
+  const [processingAsset, setProcessingAsset] = useState<ProfileAsset | null>(null)
+  const [processingNote, setProcessingNote] = useState('')
+  const [processingStatus, setProcessingStatus] = useState<ProductImageProcessingStatus>('PENDING')
+  const [savingAssetWorkflow, setSavingAssetWorkflow] = useState(false)
   const [activeProfileTab, setActiveProfileTab] = useState<ProductImageProfileTabKey>('assets')
   const [assetImportTab, setAssetImportTab] = useState<'url' | 'link' | 'upload'>('url')
   const [assetUrlText, setAssetUrlText] = useState('')
@@ -1305,6 +1384,10 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
     setSourceCandidates([])
     setSelectedSourceCandidates(new Set())
     setPreviewSuiteAsset(null)
+    setAiExtractionSuggestion(null)
+    setAiSuggestionDecisions({})
+    setReuseAsset(null)
+    setProcessingAsset(null)
   }, [selectedProfileId])
 
   const filteredProfiles = useMemo(() => {
@@ -1763,14 +1846,33 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
         requestOwnerId,
         storeCode
       )
-      const nextProfile = applyExtractionSuggestion(persistedProfile, suggestion)
-      replaceSelectedProfile(persistedProfile.id, nextProfile)
-      message.success('商品资料已提取，请检查后保存')
+      setAiExtractionSuggestion(normalizeProductImageAiSuggestion(suggestion))
+      setAiSuggestionDecisions({})
+      message.success('AI 建议已生成，请逐项确认')
     } catch (error) {
       message.error(error instanceof Error ? error.message : '商品资料 AI 提取失败')
     } finally {
       setExtractingImageFacts(false)
     }
+  }
+
+  const acceptAiSuggestionField = (field: ProductImageAiSuggestionFieldKey) => {
+    if (!aiExtractionSuggestion) return
+    patchSelectedProfile((profile) => applyProductImageAiSuggestionField(profile, aiExtractionSuggestion, field))
+    setAiSuggestionDecisions((current) => ({ ...current, [field]: 'accepted' }))
+  }
+
+  const ignoreAiSuggestionField = (field: ProductImageAiSuggestionFieldKey) => {
+    setAiSuggestionDecisions((current) => ({ ...current, [field]: 'ignored' }))
+  }
+
+  const acceptAllAiSuggestions = () => {
+    if (!aiExtractionSuggestion) return
+    patchSelectedProfile((profile) => applyAllProductImageAiSuggestions(profile, aiExtractionSuggestion))
+    setAiSuggestionDecisions(Object.fromEntries(
+      productImageAiSuggestionFields.map((item) => [item.key, 'accepted'])
+    ) as Record<ProductImageAiSuggestionFieldKey, 'accepted'>)
+    message.success('已接受全部 AI 建议；点击保存后才会写入后台')
   }
 
   const createSuiteDraft = async () => {
@@ -1874,15 +1976,40 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
         message.success(`已移除 ${targets.length} 张图片`)
         return
       }
-      const saved = await batchRemoveProductImageProfileAssets(
-        persistedProfile.backendId,
-        requestOwnerId,
-        storeCode,
-        targets.map(assetRemoveItem)
-      )
-      replaceSelectedProfile(persistedProfile.id, mapBackendProfile(saved))
+      const allActiveAssets = activeAssets(persistedProfile)
+      const usageTargets: ProfileAsset[] = []
+      const physicalTargets: ProfileAsset[] = []
+      for (const selectedPhysicalAsset of uniquePhysicalAssets(targets)) {
+        const selectedUsages = targets.filter((target) => samePhysicalAsset(target, selectedPhysicalAsset))
+        const allUsages = allActiveAssets.filter((candidate) => samePhysicalAsset(candidate, selectedPhysicalAsset))
+        if (selectedUsages.length >= allUsages.length || selectedUsages.some((target) => !target.usageId)) {
+          physicalTargets.push(selectedPhysicalAsset)
+        } else {
+          usageTargets.push(...selectedUsages)
+        }
+      }
+      let saved: ProductImageProfileDetailView | undefined
+      for (const target of usageTargets) {
+        saved = await removeProductImageProfileAssetUsage(
+          persistedProfile.backendId,
+          target.usageId!,
+          requestOwnerId,
+          storeCode
+        )
+      }
+      if (physicalTargets.length) {
+        saved = await batchRemoveProductImageProfileAssets(
+          persistedProfile.backendId,
+          requestOwnerId,
+          storeCode,
+          physicalTargets.map(assetRemoveItem)
+        )
+      }
+      if (saved) {
+        replaceSelectedProfile(persistedProfile.id, mapBackendProfile(saved))
+      }
       setSelectedAssetIds(new Set())
-      message.success(`已从基础图素材池移除 ${targets.length} 张图片`)
+      message.success(`已移除 ${targets.length} 个图片用途`)
     } catch (error) {
       message.error(error instanceof Error ? error.message : '基础图移除失败')
     } finally {
@@ -1934,12 +2061,24 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
       if (!persistedProfile?.backendId) {
         return
       }
-      const saved = await updateProductImageProfileAssetRole(
-        persistedProfile.backendId,
-        requestOwnerId,
-        storeCode,
-        assetRoleUpdateItem(targetAsset, imageRole)
-      )
+      const saved = targetAsset.usageId
+        ? await updateProductImageProfileAssetUsage(
+            persistedProfile.backendId,
+            targetAsset.usageId,
+            requestOwnerId,
+            storeCode,
+            {
+              imageRole,
+              processingNote: targetAsset.processingNote,
+              processingStatus: targetAsset.processingStatus
+            }
+          )
+        : await updateProductImageProfileAssetRole(
+            persistedProfile.backendId,
+            requestOwnerId,
+            storeCode,
+            assetRoleUpdateItem(targetAsset, imageRole)
+          )
       replaceSelectedProfile(persistedProfile.id, mapBackendProfile(saved))
     } catch (error) {
       patchSelectedProfile((profile) => ({
@@ -1949,6 +2088,108 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
       message.error(error instanceof Error ? error.message : '基础图分类更新失败')
     } finally {
       setChangingAssetRoleId((currentId) => currentId === assetId ? undefined : currentId)
+    }
+  }
+
+  const openReuseAsset = (asset: ProfileAsset) => {
+    setReuseAsset(asset)
+    setReuseRoles([])
+  }
+
+  const reuseAssetForRoles = async () => {
+    if (!selectedProfile || !reuseAsset || !reuseRoles.length) return
+    setSavingAssetWorkflow(true)
+    try {
+      const persistedProfile = selectedProfile.backendId
+        ? selectedProfile
+        : await persistProfile(selectedProfile, false)
+      if (!persistedProfile?.backendId) {
+        message.warning('请先保存商品图资料')
+        return
+      }
+      const saved = await addProductImageProfileAssetUsages(
+        persistedProfile.backendId,
+        requestOwnerId,
+        storeCode,
+        {
+          assetId: reuseAsset.backendId,
+          imageUrl: reuseAsset.imageUrl,
+          sourceRole: reuseAsset.imageRole,
+          imageRoles: reuseRoles
+        }
+      )
+      replaceSelectedProfile(persistedProfile.id, mapBackendProfile(saved))
+      setReuseAsset(null)
+      setReuseRoles([])
+      message.success(`已复用到 ${reuseRoles.length} 个图片用途`)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '基础图复用失败')
+    } finally {
+      setSavingAssetWorkflow(false)
+    }
+  }
+
+  const openProcessingAsset = (asset: ProfileAsset) => {
+    setProcessingAsset(asset)
+    setProcessingNote(asset.processingNote)
+    setProcessingStatus(asset.processingStatus)
+  }
+
+  const saveAssetProcessing = async () => {
+    if (!selectedProfile || !processingAsset) return
+    setSavingAssetWorkflow(true)
+    try {
+      const persistedProfile = selectedProfile.backendId
+        ? selectedProfile
+        : await persistProfile(selectedProfile, false)
+      if (!persistedProfile?.backendId) {
+        message.warning('请先保存商品图资料')
+        return
+      }
+      let targetAsset = persistedProfile.assets.find((asset) => asset.id === processingAsset.id)
+        || persistedProfile.assets.find((asset) =>
+          asset.imageRole === processingAsset.imageRole && optionalText(asset.imageUrl) === optionalText(processingAsset.imageUrl)
+        )
+      let readyProfile = persistedProfile
+      if (!targetAsset?.usageId) {
+        const withUsage = await addProductImageProfileAssetUsages(
+          persistedProfile.backendId,
+          requestOwnerId,
+          storeCode,
+          {
+            assetId: processingAsset.backendId,
+            imageUrl: processingAsset.imageUrl,
+            sourceRole: processingAsset.imageRole,
+            imageRoles: [processingAsset.imageRole]
+          }
+        )
+        readyProfile = mapBackendProfile(withUsage)
+        targetAsset = readyProfile.assets.find((asset) =>
+          asset.imageRole === processingAsset.imageRole
+          && (asset.backendId === processingAsset.backendId || optionalText(asset.imageUrl) === optionalText(processingAsset.imageUrl))
+        )
+      }
+      if (!targetAsset?.usageId) {
+        throw new Error('图片用途初始化失败，请刷新后重试')
+      }
+      const saved = await updateProductImageProfileAssetUsage(
+        readyProfile.backendId!,
+        targetAsset.usageId,
+        requestOwnerId,
+        storeCode,
+        {
+          imageRole: targetAsset.imageRole,
+          processingNote: processingNote.trim(),
+          processingStatus
+        }
+      )
+      replaceSelectedProfile(persistedProfile.id, mapBackendProfile(saved))
+      setProcessingAsset(null)
+      message.success('处理意见和状态已保存')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '图片处理信息保存失败')
+    } finally {
+      setSavingAssetWorkflow(false)
     }
   }
 
@@ -2065,48 +2306,86 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
   const allAssetsSelected = selectableAssets.length > 0 && selectedAssets.length === selectableAssets.length
   const selectedProfileReady = Boolean(selectedProfile.detailLoaded || !selectedProfile.backendId)
   const selectedAssetCount = selectedProfile.detailLoaded
-    ? selectedProfileAssets.length
+    ? uniquePhysicalAssets(selectedProfileAssets).length
     : selectedProfile.assetCount ?? selectedProfileAssets.length
+  const selectedAssetUsageCount = selectedProfile.detailLoaded ? selectedProfileAssets.length : selectedAssetCount
   const selectedSuiteCount = selectedProfile.detailLoaded
     ? selectedProfile.suites.length
     : selectedProfile.suiteCount ?? selectedProfile.suites.length
+  const reuseUsedRoles = new Set(reuseAsset
+    ? selectedProfileAssets.filter((asset) => samePhysicalAsset(asset, reuseAsset)).map((asset) => asset.imageRole)
+    : [])
+  const availableReuseRoleOptions = imageRoleOptions.filter((option) => !reuseUsedRoles.has(option.value))
 
-  const renderAssetCard = (asset: ProfileAsset) => (
-    <div
-      className={`product-image-profile-asset-card${selectedAssetIds.has(asset.id) ? ' is-selected' : ''}`}
-      key={asset.id}
-    >
-      <Checkbox
-        checked={selectedAssetIds.has(asset.id)}
-        className="product-image-profile-asset-select"
-        disabled={!isSelectableAsset(asset) || removingAssets}
-        onChange={(event) => toggleAssetSelection(asset.id, event.target.checked)}
-        onClick={(event) => event.stopPropagation()}
-      />
-      <AssetThumb asset={asset} onPreview={setPreviewAsset} />
-      <div className="product-image-profile-asset-meta">
-        <Select
-          disabled={changingAssetRoleId === asset.id}
-          loading={changingAssetRoleId === asset.id}
-          size="small"
-          options={imageRoleSelectOptions(asset.imageRole)}
-          value={asset.imageRole}
-          onChange={(value) => void changeAssetRole(asset.id, value)}
+  const renderAssetCard = (asset: ProfileAsset) => {
+    const compliance = assetComplianceMeta(asset)
+    const usedRoles = new Set(selectedProfileAssets
+      .filter((candidate) => candidate.id !== asset.id && samePhysicalAsset(candidate, asset))
+      .map((candidate) => candidate.imageRole))
+    const roleOptions = imageRoleSelectOptions(asset.imageRole).map((option) => ({
+      ...option,
+      disabled: option.disabled || usedRoles.has(option.value)
+    }))
+    const removeUsageOnly = Boolean(asset.usageId && usedRoles.size)
+    return (
+      <div
+        className={`product-image-profile-asset-card${selectedAssetIds.has(asset.id) ? ' is-selected' : ''}`}
+        key={asset.id}
+      >
+        <Checkbox
+          checked={selectedAssetIds.has(asset.id)}
+          className="product-image-profile-asset-select"
+          disabled={!isSelectableAsset(asset) || removingAssets}
+          onChange={(event) => toggleAssetSelection(asset.id, event.target.checked)}
+          onClick={(event) => event.stopPropagation()}
         />
-        <Popconfirm
-          cancelText="取消"
-          okButtonProps={{ danger: true, loading: removingAssets }}
-          okText="移除"
-          onConfirm={() => void removeAsset(asset)}
-          title="确定移除这张图片吗？"
-        >
-          <Button danger disabled={removingAssets} size="small" type="text" icon={<DeleteOutlined />}>
-            移除
+        <AssetThumb asset={asset} onPreview={setPreviewAsset} />
+        <div className="product-image-profile-asset-status-row">
+          <Text>{assetDimensionText(asset)}</Text>
+          <Tooltip title={compliance.detail}>
+            <Tag color={compliance.color}>{compliance.label}</Tag>
+          </Tooltip>
+        </div>
+        <div className="product-image-profile-asset-processing-row">
+          <Tag color={asset.processingStatus === 'PROCESSED' ? 'success' : 'default'}>
+            {asset.processingStatus === 'PROCESSED' ? '已处理' : '待处理'}
+          </Tag>
+          <Text ellipsis={{ tooltip: asset.processingNote || '暂无处理意见' }} type="secondary">
+            {asset.processingNote || '暂无处理意见'}
+          </Text>
+        </div>
+        <div className="product-image-profile-asset-meta">
+          <Select
+            disabled={changingAssetRoleId === asset.id}
+            loading={changingAssetRoleId === asset.id}
+            size="small"
+            options={roleOptions}
+            value={asset.imageRole}
+            onChange={(value) => void changeAssetRole(asset.id, value)}
+          />
+        </div>
+        <div className="product-image-profile-asset-actions">
+          <Button icon={<CopyOutlined />} size="small" type="text" onClick={() => openReuseAsset(asset)}>
+            复用
           </Button>
-        </Popconfirm>
+          <Button icon={<EditOutlined />} size="small" type="text" onClick={() => openProcessingAsset(asset)}>
+            处理意见
+          </Button>
+          <Popconfirm
+            cancelText="取消"
+            okButtonProps={{ danger: true, loading: removingAssets }}
+            okText="移除"
+            onConfirm={() => void removeAsset(asset)}
+            title={removeUsageOnly ? '确定移除当前图片用途吗？原图和其他用途会保留。' : '确定从素材池移除这张图片吗？'}
+          >
+            <Button danger disabled={removingAssets} size="small" type="text" icon={<DeleteOutlined />}>
+              移除
+            </Button>
+          </Popconfirm>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <div className="product-image-profile-page">
@@ -2210,7 +2489,9 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
             </div>
             <Space wrap>
               <Tag color={selectedCompleteness.color}>{selectedCompleteness.label}</Tag>
-              <Tag icon={<PictureOutlined />}>基础图 {selectedAssetCount}</Tag>
+              <Tag icon={<PictureOutlined />}>
+                基础图 {selectedAssetCount}{selectedAssetUsageCount > selectedAssetCount ? ` / ${selectedAssetUsageCount} 用途` : ''}
+              </Tag>
               <Tag icon={<HistoryOutlined />}>AI 套图 {selectedSuiteCount}</Tag>
               <Button disabled={!selectedProfileReady} icon={<CopyOutlined />} onClick={() => setAiCopyModalOpen(true)}>
                 AI 指令预览
@@ -2344,20 +2625,28 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                                 />
                               </label>
                               <label className="product-image-profile-fact-field product-image-profile-fact-field--wide">
-                                <span>英文标题</span>
+                                <span>英文短标题</span>
                                 <Input
                                   value={selectedProfile.titleEn}
-                                  placeholder="英文标题"
+                                  placeholder="英文短标题"
                                   onChange={(event) => patchSelectedProfile((profile) => ({ ...profile, titleEn: event.target.value }))}
+                                  onBlur={() => patchSelectedProfile((profile) => ({
+                                    ...profile,
+                                    titleEn: buildProductImageShortTitleEn(profile.titleEn || profile.productTitle)
+                                  }))}
                                 />
                               </label>
                               <label className="product-image-profile-fact-field product-image-profile-fact-field--wide">
-                                <span>阿语标题</span>
+                                <span>阿语短标题</span>
                                 <Input
                                   dir="rtl"
                                   value={selectedProfile.titleAr}
-                                  placeholder="阿语标题"
+                                  placeholder="阿语短标题"
                                   onChange={(event) => patchSelectedProfile((profile) => ({ ...profile, titleAr: event.target.value }))}
+                                  onBlur={() => patchSelectedProfile((profile) => ({
+                                    ...profile,
+                                    titleAr: buildProductImageShortTitleAr(profile.titleAr || profile.productTitle)
+                                  }))}
                                 />
                               </label>
                             </div>
@@ -2422,7 +2711,7 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
 
                       <section className="product-image-profile-panel product-image-profile-ai-prompt-panel">
                         <div className="product-image-profile-panel-head">
-                          <strong>AI 指令</strong>
+                          <strong>最终上图内容</strong>
                           <Button size="small" icon={<CopyOutlined />} onClick={copyAiCopyText}>
                             复制全部
                           </Button>
@@ -2540,6 +2829,130 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
           />
         </main>
       </div>
+      <Modal
+        open={Boolean(reuseAsset)}
+        title="复用图片"
+        okText="确认复用"
+        cancelText="取消"
+        okButtonProps={{ disabled: !reuseRoles.length || !availableReuseRoleOptions.length, loading: savingAssetWorkflow }}
+        onCancel={() => {
+          setReuseAsset(null)
+          setReuseRoles([])
+        }}
+        onOk={() => void reuseAssetForRoles()}
+      >
+        <div className="product-image-profile-workflow-modal">
+          <Text>当前用途：{reuseAsset ? imageRoleLabel[reuseAsset.imageRole] : '-'}</Text>
+          <Text type="secondary">复用只增加用途，不会复制或重新上传图片文件。</Text>
+          <label>
+            <span>新增用途</span>
+            <Select
+              mode="multiple"
+              options={availableReuseRoleOptions}
+              placeholder={availableReuseRoleOptions.length ? '可多选' : '这张图已用于全部分类'}
+              value={reuseRoles}
+              onChange={setReuseRoles}
+            />
+          </label>
+        </div>
+      </Modal>
+      <Modal
+        open={Boolean(processingAsset)}
+        title="图片处理意见"
+        okText="保存"
+        cancelText="取消"
+        okButtonProps={{ loading: savingAssetWorkflow }}
+        onCancel={() => setProcessingAsset(null)}
+        onOk={() => void saveAssetProcessing()}
+      >
+        <div className="product-image-profile-workflow-modal">
+          <Text>图片用途：{processingAsset ? imageRoleLabel[processingAsset.imageRole] : '-'}</Text>
+          <label>
+            <span>处理意见</span>
+            <TextArea
+              autoSize={{ minRows: 4, maxRows: 8 }}
+              maxLength={1000}
+              placeholder="例如：裁掉水印、补白底、调整为竖版构图"
+              value={processingNote}
+              onChange={(event) => setProcessingNote(event.target.value)}
+            />
+          </label>
+          <Checkbox
+            checked={processingStatus === 'PROCESSED'}
+            onChange={(event) => setProcessingStatus(event.target.checked ? 'PROCESSED' : 'PENDING')}
+          >
+            标记为已处理
+          </Checkbox>
+        </div>
+      </Modal>
+      <Modal
+        open={Boolean(aiExtractionSuggestion)}
+        title="AI 提取建议"
+        width="min(980px, calc(100vw - 32px))"
+        onCancel={() => {
+          setAiExtractionSuggestion(null)
+          setAiSuggestionDecisions({})
+        }}
+        footer={[
+          <Button key="close" onClick={() => {
+            setAiExtractionSuggestion(null)
+            setAiSuggestionDecisions({})
+          }}>
+            关闭
+          </Button>,
+          <Button key="accept-all" type="primary" onClick={acceptAllAiSuggestions}>
+            全部接受
+          </Button>
+        ]}
+      >
+        <div className="product-image-profile-ai-diff">
+          <Text type="secondary">AI 建议不会自动覆盖表单；接受后也要点击页面“保存”才会写入后台。</Text>
+          {aiExtractionSuggestion ? productImageAiSuggestionFields.map((item) => {
+            const currentValue = currentProductImageAiFieldValue(selectedProfile, item.key)
+            const suggestedValue = suggestedProductImageAiFieldValue(aiExtractionSuggestion, item.key)
+            const decision = aiSuggestionDecisions[item.key]
+            return (
+              <section className={`product-image-profile-ai-diff-row${decision ? ` is-${decision}` : ''}`} key={item.key}>
+                <div className="product-image-profile-ai-diff-row-head">
+                  <strong>{item.label}</strong>
+                  {decision ? (
+                    <Tag color={decision === 'accepted' ? 'success' : 'default'}>
+                      {decision === 'accepted' ? '已接受' : '已忽略'}
+                    </Tag>
+                  ) : null}
+                </div>
+                <div className="product-image-profile-ai-diff-values">
+                  <div>
+                    <Text type="secondary">当前值</Text>
+                    <pre>{currentValue || '（空）'}</pre>
+                  </div>
+                  <div>
+                    <Text type="secondary">AI 建议值</Text>
+                    <pre>{suggestedValue || '（空）'}</pre>
+                  </div>
+                </div>
+                <Space>
+                  <Button
+                    disabled={!suggestedValue || Boolean(decision)}
+                    size="small"
+                    type="primary"
+                    onClick={() => acceptAiSuggestionField(item.key)}
+                  >
+                    接受
+                  </Button>
+                  <Button
+                    disabled={Boolean(decision)}
+                    size="small"
+                    onClick={() => ignoreAiSuggestionField(item.key)}
+                  >
+                    忽略
+                  </Button>
+                </Space>
+              </section>
+            )
+          }) : null}
+        </div>
+      </Modal>
       <Modal
         className="product-image-profile-asset-import-modal"
         footer={null}

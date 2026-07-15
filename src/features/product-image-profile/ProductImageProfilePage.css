@@ -246,7 +246,7 @@
 .product-image-profile-asset-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(178px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
 }
 
 .product-image-profile-asset-card {
@@ -359,6 +359,67 @@
 .product-image-profile-asset-meta .ant-select {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.product-image-profile-asset-status-row,
+.product-image-profile-asset-processing-row {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 7px 8px 0;
+}
+
+.product-image-profile-asset-status-row .ant-typography {
+  color: #334155;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.product-image-profile-asset-status-row .ant-tag,
+.product-image-profile-asset-processing-row .ant-tag {
+  flex: 0 0 auto;
+  font-size: 11px;
+  margin-inline-end: 0;
+}
+
+.product-image-profile-asset-processing-row .ant-typography {
+  flex: 1 1 auto;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.product-image-profile-asset-actions {
+  align-items: center;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  gap: 2px;
+  justify-content: space-between;
+  padding: 4px 6px;
+}
+
+.product-image-profile-asset-actions .ant-btn {
+  padding-inline: 5px;
+}
+
+.product-image-profile-workflow-modal {
+  display: grid;
+  gap: 14px;
+}
+
+.product-image-profile-workflow-modal label {
+  display: grid;
+  gap: 6px;
+}
+
+.product-image-profile-workflow-modal label > span {
+  color: #475569;
+  font-size: 13px;
+}
+
+.product-image-profile-workflow-modal .ant-select {
+  width: 100%;
 }
 
 .product-image-profile-asset-import-modal .ant-modal-content {
@@ -683,6 +744,92 @@
   min-height: 84px;
 }
 
+.product-image-profile-ai-copy-preview {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  color: #1f2937;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+  min-height: 38px;
+  overflow: auto;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+}
+
+.product-image-profile-ai-advanced {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.product-image-profile-ai-advanced summary {
+  cursor: pointer;
+  margin-bottom: 8px;
+  user-select: none;
+}
+
+.product-image-profile-ai-diff {
+  display: grid;
+  gap: 12px;
+  max-height: min(68vh, 760px);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.product-image-profile-ai-diff-row {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.product-image-profile-ai-diff-row.is-accepted {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.product-image-profile-ai-diff-row.is-ignored {
+  background: #f8fafc;
+}
+
+.product-image-profile-ai-diff-row-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.product-image-profile-ai-diff-row-head .ant-tag {
+  margin-inline-end: 0;
+}
+
+.product-image-profile-ai-diff-values {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.product-image-profile-ai-diff-values > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.product-image-profile-ai-diff-values pre {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-family: inherit;
+  line-height: 1.5;
+  margin: 0;
+  min-height: 48px;
+  overflow: auto;
+  padding: 8px;
+  white-space: pre-wrap;
+}
+
 .product-image-profile-ai-prompt-sections.is-compact {
   max-height: min(68vh, 760px);
   overflow: auto;
@@ -884,7 +1031,8 @@
   .product-image-profile-fact-field-grid,
   .product-image-profile-elements-grid,
   .product-image-profile-asset-grid,
-  .product-image-profile-suite-assets {
+  .product-image-profile-suite-assets,
+  .product-image-profile-ai-diff-values {
     grid-template-columns: 1fr;
   }
 }
