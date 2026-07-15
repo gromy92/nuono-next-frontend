@@ -1906,14 +1906,13 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
           </div>
           <div className="official-warehouse-toolbar official-warehouse-modal-toolbar">
             <div className="official-warehouse-toolbar-left">
-              <Input
+              <Input.TextArea
                 className="official-warehouse-search"
                 allowClear
-                prefix={<SearchOutlined />}
+                autoSize={{ minRows: 1, maxRows: 3 }}
                 placeholder="搜索 SKU / 批量粘贴 PSKU / 中文标题 / 英文标题"
                 value={candidateKeyword}
                 onChange={(event) => setCandidateKeyword(event.target.value)}
-                onPressEnter={() => void loadCandidates(selectedShippingBatchIds, candidateKeyword)}
               />
               <Button
                 icon={<SearchOutlined />}

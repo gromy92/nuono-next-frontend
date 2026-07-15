@@ -19,6 +19,11 @@ assert.match(
 assert.match(pageSource, /preserveSelectedRowKeys:\s*true/, 'table selection should survive client pagination')
 assert.match(pageSource, /已选择 \{selectedCandidateKeys\.length\} 个商品/, 'modal should show the retained selection count')
 assert.match(pageSource, /清空选择/, 'modal should let the operator clear retained selections')
+assert.match(
+  pageSource,
+  /<Input\.TextArea[\s\S]*?placeholder="搜索 SKU \/ 批量粘贴 PSKU \/ 中文标题 \/ 英文标题"/,
+  'batch PSKU search must use a textarea so pasted line breaks reach the exact-search parser'
+)
 
 assert.match(pageSource, /sourceType:\s*'ali1688'/, 'missing dimensions should save to the 1688 spec source')
 assert.match(pageSource, /填写规格/, 'missing spec candidates should expose an inline maintenance action')
