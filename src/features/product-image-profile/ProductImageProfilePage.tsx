@@ -2646,15 +2646,6 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                             >
                               AI 提取
                             </Button>
-                            <Button
-                              disabled={!selectedProfileReady}
-                              icon={<SaveOutlined />}
-                              loading={saving || selectedDetailLoading}
-                              type="primary"
-                              onClick={() => void saveCurrentProfile()}
-                            >
-                              保存
-                            </Button>
                           </Space>
                         </div>
                         <div className="product-image-profile-fact-groups">
