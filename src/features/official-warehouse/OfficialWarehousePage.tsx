@@ -40,6 +40,7 @@ import {
   correctOfficialWarehouseAppointment,
   createOfficialWarehouseAsn,
   loadOfficialWarehouseAsn,
+  loadOfficialWarehouseAsnInboundDetail,
   loadOfficialWarehouseAppointments,
   loadOfficialWarehouseAsns,
   loadOfficialWarehouseCandidates,
@@ -54,7 +55,9 @@ import {
   validateOfficialWarehouseAsn,
   type CorrectOfficialWarehouseAppointmentPayload,
   type OfficialWarehouseAsn,
-  type OfficialWarehouseAsnLine,
+  type OfficialWarehouseAsnInboundDetail,
+  type OfficialWarehouseAsnInboundLine,
+  type OfficialWarehouseAsnInboundSummary,
   type OfficialWarehouseAppointment,
   type OfficialWarehouseAppointmentAvailability,
   type OfficialWarehouseApiProblem,
@@ -76,9 +79,7 @@ import {
   officialWarehousePublicAsnNo
 } from './domain'
 import { printFbnTransferPdf } from './printFbnTransferPdf'
-import { loadOfficialWarehouseInboundStatistics } from './statisticsApi'
 import { inboundStageLabel } from './statisticsDomain'
-import type { OfficialWarehouseInboundStatisticsRow } from './statisticsTypes'
 import { isNoonBackofficeAsnWithoutSyncedLines } from './asnDetailDisplay'
 import './OfficialWarehousePage.css'
 
@@ -235,6 +236,45 @@ function inboundStageTag(status?: string) {
   return <Tag>{inboundStageLabel(status)}</Tag>
 }
 
+function inboundProgress(summary?: OfficialWarehouseAsnInboundSummary) {
+  if (!summary?.reportConnected) {
+    return null
+  }
+  return (
+    <>
+      <Text className="official-warehouse-inbound-progress">
+        已入仓 {Number(summary.receivedQuantity || 0).toLocaleString()} / 预计 {Number(summary.expectedQuantity || 0).toLocaleString()}
+      </Text>
+      {summary.shortQuantity || summary.overQuantity || summary.qcFailedQuantity || summary.unidentifiedQuantity ? (
+        <Space size={4} wrap>
+          {summary.shortQuantity ? <Tag color="red">少收 {Number(summary.shortQuantity).toLocaleString()}</Tag> : null}
+          {summary.overQuantity ? <Tag color="orange">超收 {Number(summary.overQuantity).toLocaleString()}</Tag> : null}
+          {summary.qcFailedQuantity ? <Tag color="volcano">QC {Number(summary.qcFailedQuantity).toLocaleString()}</Tag> : null}
+          {summary.unidentifiedQuantity ? <Tag color="purple">未识别 {Number(summary.unidentifiedQuantity).toLocaleString()}</Tag> : null}
+        </Space>
+      ) : (
+        <Tag color="green">数量正常</Tag>
+      )}
+    </>
+  )
+}
+
+function inboundLineStatusTag(status?: string) {
+  const normalized = (status || '').trim().toUpperCase()
+  if (normalized === 'NORMAL') return <Tag color="green">已入齐</Tag>
+  if (normalized === 'SHORT_RECEIVED') return <Tag color="red">少收</Tag>
+  if (normalized === 'OVER_RECEIVED') return <Tag color="orange">超收</Tag>
+  if (normalized === 'QC_FAILED') return <Tag color="volcano">QC异常</Tag>
+  if (normalized === 'UNIDENTIFIED') return <Tag color="purple">未识别</Tag>
+  if (normalized === 'UNMATCHED') return <Tag color="gold">商品未匹配</Tag>
+  if (normalized === 'NO_RECEIPT') return <Tag>暂无回执</Tag>
+  return <Tag>{status || '-'}</Tag>
+}
+
+function inboundReceiptQuantity(value: number, row: OfficialWarehouseAsnInboundLine) {
+  return row.receiptLineCount > 0 ? Number(value || 0).toLocaleString() : '-'
+}
+
 function normalizeAsnStatus(status?: string) {
   return (status || '').trim().toUpperCase()
 }
@@ -281,40 +321,6 @@ function appointmentAwareWarehouseLabel(
 
 function businessErrorText(message?: string, failureType?: string) {
   return officialWarehouseBusinessErrorText(message, failureType)
-}
-
-function inboundDetailSearchKeyword(row: OfficialWarehouseAsn) {
-  const publicAsnNo = officialWarehousePublicAsnNo(row)
-  return publicAsnNo !== '-' ? publicAsnNo : row.localAsnNo || row.inboundNo || row.id
-}
-
-function normalizedInboundLookupKey(value?: string | number) {
-  return String(value ?? '').trim().toUpperCase()
-}
-
-function inboundLookupKeys(values: Array<string | number | undefined>) {
-  return values.map(normalizedInboundLookupKey).filter(Boolean)
-}
-
-function filterInboundDetailRows(rows: OfficialWarehouseInboundStatisticsRow[], asn: OfficialWarehouseAsn) {
-  const publicAsnNo = officialWarehousePublicAsnNo(asn)
-  const asnKeys = new Set(
-    inboundLookupKeys([
-      asn.id,
-      asn.inboundNo,
-      asn.localAsnNo,
-      asn.asnNo,
-      asn.noonAsnNr,
-      publicAsnNo !== '-' ? publicAsnNo : undefined
-    ])
-  )
-  const matchedRows = rows.filter((row) =>
-    inboundLookupKeys([row.asnId, row.localAsnNo, row.noonAsnNr]).some((key) => asnKeys.has(key))
-  )
-  if (matchedRows.length || rows.length !== 1) {
-    return matchedRows
-  }
-  return rows
 }
 
 function appointmentDurationText(appointment?: OfficialWarehouseAppointment, now: Dayjs = dayjs()) {
@@ -474,8 +480,9 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [asnSyncing, setAsnSyncing] = useState(false)
   const [asnSyncFeedback, setAsnSyncFeedback] = useState<AppointmentSubmitFeedback>()
   const [selectedAsn, setSelectedAsn] = useState<OfficialWarehouseAsn>()
-  const [selectedInboundRows, setSelectedInboundRows] = useState<OfficialWarehouseInboundStatisticsRow[]>([])
+  const [selectedInboundDetail, setSelectedInboundDetail] = useState<OfficialWarehouseAsnInboundDetail>()
   const [selectedInboundLoading, setSelectedInboundLoading] = useState(false)
+  const [selectedInboundError, setSelectedInboundError] = useState<string>()
   const [createOpen, setCreateOpen] = useState(false)
   const [candidateKeyword, setCandidateKeyword] = useState('')
   const [candidateLoading, setCandidateLoading] = useState(false)
@@ -1011,26 +1018,22 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
 
   async function openDetail(row: OfficialWarehouseAsn) {
     setSelectedAsn(row)
-    setSelectedInboundRows([])
-    if (!storeCode || !siteCode) {
-      return
-    }
+    setSelectedInboundDetail(undefined)
+    setSelectedInboundError(undefined)
     const requestId = inboundDetailRequestRef.current + 1
     inboundDetailRequestRef.current = requestId
     setSelectedInboundLoading(true)
     try {
-      const view = await loadOfficialWarehouseInboundStatistics({
-        storeCode,
-        siteCode,
-        keyword: inboundDetailSearchKeyword(row)
-      })
+      const view = await loadOfficialWarehouseAsnInboundDetail(row.id)
       if (inboundDetailRequestRef.current !== requestId) {
         return
       }
-      setSelectedInboundRows(filterInboundDetailRows(view.rows || [], row))
+      setSelectedInboundDetail(view)
     } catch (error) {
       if (inboundDetailRequestRef.current === requestId) {
-        message.error(officialWarehouseError(error, '读取 ASN 入仓详情失败'))
+        const errorMessage = officialWarehouseError(error, '读取 ASN 入仓详情失败')
+        setSelectedInboundError(errorMessage)
+        message.error(errorMessage)
       }
     } finally {
       if (inboundDetailRequestRef.current === requestId) {
@@ -1042,7 +1045,8 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   function closeDetail() {
     inboundDetailRequestRef.current += 1
     setSelectedAsn(undefined)
-    setSelectedInboundRows([])
+    setSelectedInboundDetail(undefined)
+    setSelectedInboundError(undefined)
     setSelectedInboundLoading(false)
   }
 
@@ -1308,10 +1312,12 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       title: '状态',
       width: 190,
       render: (_, row) => {
+        const progress = inboundProgress(row.inboundSummary)
         if (asnHasInboundResult(row)) {
           return (
             <div className="official-warehouse-stack">
               {inboundStageTag(asnInboundStage(row))}
+              {progress}
             </div>
           )
         }
@@ -1321,6 +1327,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             <div className="official-warehouse-stack">
               {row.noonAsnStatus ? noonAsnStatusTag(row.noonAsnStatus) : <Text type="secondary">未提交</Text>}
               {row.noonAsnStatus ? <Text type="secondary">{row.noonAsnStatus}</Text> : null}
+              {progress}
             </div>
           )
         }
@@ -1336,6 +1343,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
                 <Text type="secondary">{deliveryTimeText}</Text>
               )
             ) : null}
+            {progress}
           </div>
         )
       }
@@ -1616,10 +1624,10 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     }
   ]
 
-  const lineColumns: ColumnsType<OfficialWarehouseAsnLine> = [
+  const inboundProductColumns: ColumnsType<OfficialWarehouseAsnInboundLine> = [
     {
       title: '商品',
-      width: 300,
+      width: 280,
       render: (_, row) => (
         <div className="official-warehouse-product-cell">
           {row.imageUrl ? (
@@ -1634,58 +1642,61 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             <div className="official-warehouse-image-placeholder" />
           )}
           <div className="official-warehouse-stack">
-            <Text strong>{row.title || displayPsku(row)}</Text>
-            <Text type="secondary">PSKU：{displayPsku(row)}</Text>
+            <Text strong>{row.title || row.partnerSku || row.noonSku || '未识别商品'}</Text>
+            <Text type="secondary">PSKU：{row.partnerSku || '-'}</Text>
+            {row.reportOnly ? <Tag color="gold">来自 FBN 入仓报表</Tag> : null}
           </div>
         </div>
       )
     },
     { title: 'Noon SKU', dataIndex: 'noonSku', width: 180 },
-    { title: '数量', dataIndex: 'quantity', width: 72 },
-    { title: '单件体积', dataIndex: 'cubicFeet', width: 110, render: formatCubicFeet },
-    { title: '存储类型', dataIndex: 'storageTypeCode', width: 104, render: (value?: string) => <Tag>{value || 'standard'}</Tag> },
-    { title: '商品状态', dataIndex: 'lineStatus', width: 96, render: lineStatusTag }
-  ]
-
-  const inboundDetailColumns: ColumnsType<OfficialWarehouseInboundStatisticsRow> = [
     {
-      title: 'ASN / 入仓单',
-      width: 190,
+      title: 'ASN数量',
+      dataIndex: 'asnQuantity',
+      width: 88,
+      render: (value: number, row) => row.reportOnly && !value ? '-' : Number(value || 0).toLocaleString()
+    },
+    {
+      title: '预计入仓',
+      dataIndex: 'expectedQuantity',
+      width: 92,
+      render: inboundReceiptQuantity
+    },
+    {
+      title: '已入仓',
+      dataIndex: 'receivedQuantity',
+      width: 88,
+      render: inboundReceiptQuantity
+    },
+    {
+      title: '差异',
+      width: 100,
+      render: (_, row) => {
+        if (row.receiptLineCount <= 0) return '-'
+        if (row.shortQuantity > 0) return <Text type="danger">少收 {Number(row.shortQuantity).toLocaleString()}</Text>
+        if (row.overQuantity > 0) return <Text className="official-warehouse-over-received">超收 {Number(row.overQuantity).toLocaleString()}</Text>
+        return '-'
+      }
+    },
+    {
+      title: '异常',
+      width: 150,
       render: (_, row) => (
         <div className="official-warehouse-stack">
-          <Text strong>{row.noonAsnNr || row.localAsnNo || '-'}</Text>
-          {row.localAsnNo && row.noonAsnNr !== row.localAsnNo ? <Text type="secondary">{row.localAsnNo}</Text> : null}
+          <Space size={4} wrap>
+            {row.qcFailedQuantity > 0 ? <Tag color="volcano">QC {Number(row.qcFailedQuantity).toLocaleString()}</Tag> : null}
+            {row.unidentifiedQuantity > 0 ? <Tag color="purple">未识别 {Number(row.unidentifiedQuantity).toLocaleString()}</Tag> : null}
+            {!row.qcFailedQuantity && !row.unidentifiedQuantity ? <Text type="secondary">-</Text> : null}
+          </Space>
+          {row.qcFailedReason ? <Text type="danger">{row.qcFailedReason}</Text> : null}
         </div>
       )
     },
     {
       title: '入仓状态',
-      dataIndex: 'inboundStage',
-      width: 110,
-      render: inboundStageTag
-    },
-    {
-      title: '件数',
-      dataIndex: 'totalQuantity',
-      width: 88,
-      render: (value: number) => Number(value || 0).toLocaleString()
-    },
-    {
-      title: '预约状态',
-      dataIndex: 'appointmentStatus',
-      width: 110,
-      render: appointmentStatusTag
-    },
-    {
-      title: 'Noon状态',
-      dataIndex: 'noonAsnStatus',
-      width: 120,
-      render: (value: string | undefined, row) => noonAsnStatusTag(value, row.appointmentStatus)
-    },
-    {
-      title: 'Noon仓',
-      width: 150,
-      render: (_, row) => row.selectedWarehousePartnerCode || '-'
+      dataIndex: 'inboundStatus',
+      width: 112,
+      render: inboundLineStatusTag
     }
   ]
 
@@ -2345,36 +2356,72 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
                 </div>
               </div>
             ) : null}
-            <Table
-              rowKey={(row) => `${row.asnId || ''}-${row.noonAsnNr || ''}-${row.localAsnNo || ''}`}
-              size="small"
-              columns={inboundDetailColumns}
-              dataSource={selectedInboundRows}
-              loading={selectedInboundLoading}
-              pagination={false}
-              scroll={{ x: 760 }}
-              locale={{ emptyText: <Empty description="暂无入仓详情" /> }}
-              title={() => '入仓详情'}
-            />
-            {isNoonBackofficeAsnWithoutSyncedLines(selectedAsn) ? (
-              <Alert
-                showIcon
-                type="info"
-                message="商品明细"
-                description="该 ASN 在 Noon 后台创建，商品明细未同步，请前往 Noon 后台查看详情。"
-              />
-            ) : (
+            <div className="official-warehouse-inbound-receipt-section">
+              <div className="official-warehouse-inbound-receipt-header">
+                <Text strong>入仓回执</Text>
+                {selectedInboundDetail?.summary.latestImportedAt ? (
+                  <Text type="secondary">数据更新：{selectedInboundDetail.summary.latestImportedAt}</Text>
+                ) : null}
+              </div>
+              {selectedInboundLoading ? <Alert showIcon type="info" message="正在读取商品入仓结果…" /> : null}
+              {selectedInboundError ? <Alert showIcon type="error" message="入仓详情加载失败" description={selectedInboundError} /> : null}
+              {selectedInboundDetail?.summary.reportConnected ? (
+                <div className="official-warehouse-inbound-receipt-metrics">
+                  <InboundReceiptMetric label="ASN件数" value={selectedInboundDetail.summary.asnQuantity} />
+                  <InboundReceiptMetric label="预计入仓" value={selectedInboundDetail.summary.expectedQuantity} />
+                  <InboundReceiptMetric label="已入仓" value={selectedInboundDetail.summary.receivedQuantity} tone="green" />
+                  <InboundReceiptMetric
+                    label={selectedInboundDetail.summary.shortQuantity ? '少收' : '超收'}
+                    value={selectedInboundDetail.summary.shortQuantity || selectedInboundDetail.summary.overQuantity}
+                    tone={selectedInboundDetail.summary.shortQuantity ? 'red' : 'amber'}
+                  />
+                  <InboundReceiptMetric label="QC异常" value={selectedInboundDetail.summary.qcFailedQuantity} tone="red" />
+                  <InboundReceiptMetric label="未识别" value={selectedInboundDetail.summary.unidentifiedQuantity} tone="purple" />
+                </div>
+              ) : selectedInboundDetail ? (
+                <Alert
+                  showIcon
+                  type="info"
+                  message="暂未收到 Noon 入仓回执"
+                  description="当前只展示 ASN 商品数量；入仓报表返回后会显示预计、实收和异常数量。"
+                />
+              ) : null}
+              {selectedInboundDetail?.summary.unmatchedLineCount ? (
+                <Alert
+                  showIcon
+                  type="warning"
+                  message={`有 ${selectedInboundDetail.summary.unmatchedLineCount} 个入仓商品未匹配本地 ASN 商品行`}
+                  description="这些商品保留在下方并标注为来自 FBN 入仓报表，不会合并到其他商品。"
+                />
+              ) : null}
+              {isNoonBackofficeAsnWithoutSyncedLines(selectedAsn) && selectedInboundDetail?.summary.reportConnected ? (
+                <Alert
+                  showIcon
+                  type="info"
+                  message="Noon 后台创建的 ASN"
+                  description="本地商品明细未同步；下方商品和入仓数量来自 FBN 入仓报表。"
+                />
+              ) : null}
               <Table
-                rowKey="id"
+                rowKey={(row) => row.asnLineId || `${row.partnerSku || ''}-${row.noonSku || ''}-${row.pskuCode || ''}`}
                 size="small"
-                columns={lineColumns}
-                dataSource={selectedAsn.lines || []}
+                columns={inboundProductColumns}
+                dataSource={selectedInboundDetail?.lines || []}
+                loading={selectedInboundLoading}
                 pagination={false}
-                scroll={{ x: 860 }}
-                locale={{ emptyText: <Empty description="暂无商品明细" /> }}
-                title={() => '商品明细'}
+                scroll={{ x: 1100 }}
+                locale={{ emptyText: <Empty description="暂无商品入仓明细" /> }}
+                title={() => '商品入仓明细'}
               />
-            )}
+              {isNoonBackofficeAsnWithoutSyncedLines(selectedAsn) && !selectedInboundLoading && !selectedInboundDetail?.summary.reportConnected ? (
+                <Alert
+                  showIcon
+                  type="info"
+                  message="商品明细"
+                  description="该 ASN 在 Noon 后台创建，商品明细未同步，请前往 Noon 后台查看详情。当前也没有匹配到 FBN 入仓回执。"
+                />
+              ) : null}
+            </div>
           </div>
         ) : null}
       </Drawer>
@@ -2388,6 +2435,27 @@ function Metric({ label, value, tone }: { label: string; value: number; tone?: '
     <div className={className}>
       <span className="official-warehouse-metric-label">{label}:</span>
       <span className="official-warehouse-metric-value">{value}</span>
+    </div>
+  )
+}
+
+function InboundReceiptMetric({
+  label,
+  value,
+  tone
+}: {
+  label: string
+  value: number
+  tone?: 'green' | 'red' | 'amber' | 'purple'
+}) {
+  const className = [
+    'official-warehouse-inbound-receipt-metric',
+    tone ? `official-warehouse-inbound-receipt-metric-${tone}` : ''
+  ].filter(Boolean).join(' ')
+  return (
+    <div className={className}>
+      <Text type="secondary">{label}</Text>
+      <Text strong>{Number(value || 0).toLocaleString()}</Text>
     </div>
   )
 }

@@ -132,6 +132,59 @@ export type OfficialWarehouseRoutingWarehouse = {
   lng?: number
 }
 
+export type OfficialWarehouseAsnInboundSummary = {
+  reportConnected: boolean
+  asnQuantity: number
+  expectedQuantity: number
+  receivedQuantity: number
+  qcFailedQuantity: number
+  unidentifiedQuantity: number
+  shortQuantity: number
+  overQuantity: number
+  receiptLineCount: number
+  exceptionLineCount: number
+  unmatchedLineCount: number
+  latestImportedAt?: string
+}
+
+export type OfficialWarehouseAsnInboundLine = {
+  asnLineId?: string
+  productVariantId?: string
+  productSiteOfferId?: string
+  partnerSku?: string
+  pskuCode?: string
+  noonSku?: string
+  title?: string
+  imageUrl?: string
+  asnQuantity: number
+  expectedQuantity: number
+  receivedQuantity: number
+  qcFailedQuantity: number
+  unidentifiedQuantity: number
+  shortQuantity: number
+  overQuantity: number
+  receiptLineCount: number
+  reportOnly: boolean
+  inboundStatus?: string
+  matchStatus?: string
+  qcFailedReason?: string
+  partnerWarehouse?: string
+  noonWarehouse?: string
+  asnCompletedAt?: string
+  latestImportedAt?: string
+}
+
+export type OfficialWarehouseAsnInboundDetail = {
+  asnId: string
+  localAsnNo?: string
+  noonAsnNr?: string
+  storeCode?: string
+  siteCode?: string
+  sourceType?: string
+  summary: OfficialWarehouseAsnInboundSummary
+  lines: OfficialWarehouseAsnInboundLine[]
+}
+
 export type OfficialWarehouseAsn = {
   id: string
   inboundNo: string
@@ -164,6 +217,7 @@ export type OfficialWarehouseAsn = {
   routingWarehouses?: OfficialWarehouseRoutingWarehouse[]
   lines?: OfficialWarehouseAsnLine[]
   shippingBatchLinks?: OfficialWarehouseAsnShippingBatchLink[]
+  inboundSummary?: OfficialWarehouseAsnInboundSummary
   appointment?: OfficialWarehouseAppointment
 }
 
@@ -331,6 +385,13 @@ export async function loadOfficialWarehouseAsns(filters: AsnFilters = {}) {
 export async function loadOfficialWarehouseAsn(asnId: string) {
   const response = await apiFetch(`/api/warehouse/official-warehouse/asns/${encodeURIComponent(asnId)}`)
   return parseApiResponse<OfficialWarehouseAsn>(response, '读取 Noon 官方仓 ASN 详情失败')
+}
+
+export async function loadOfficialWarehouseAsnInboundDetail(asnId: string) {
+  const response = await apiFetch(
+    `/api/warehouse/official-warehouse/asns/${encodeURIComponent(asnId)}/inbound-detail`
+  )
+  return parseApiResponse<OfficialWarehouseAsnInboundDetail>(response, '读取 ASN 商品入仓详情失败')
 }
 
 export async function syncOfficialWarehouseNoonAsnList(filters: { storeCode: string; siteCode: string }) {

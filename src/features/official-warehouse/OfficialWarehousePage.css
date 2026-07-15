@@ -297,6 +297,77 @@
   background: #ffffff;
 }
 
+.official-warehouse-inbound-progress {
+  color: #334155;
+  font-size: 12px;
+}
+
+.official-warehouse-over-received {
+  color: #c2410c;
+}
+
+.official-warehouse-inbound-receipt-section {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.official-warehouse-inbound-receipt-header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.official-warehouse-inbound-receipt-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.official-warehouse-inbound-receipt-metric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.official-warehouse-inbound-receipt-metric-green {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.official-warehouse-inbound-receipt-metric-red {
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
+.official-warehouse-inbound-receipt-metric-amber {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.official-warehouse-inbound-receipt-metric-purple {
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+}
+
+@media (max-width: 900px) {
+  .official-warehouse-inbound-receipt-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .official-warehouse-appointment-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
