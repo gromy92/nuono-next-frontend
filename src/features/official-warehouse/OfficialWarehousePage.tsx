@@ -1,6 +1,7 @@
 import {
   CalendarOutlined,
   DownloadOutlined,
+  EditOutlined,
   EyeOutlined,
   LeftOutlined,
   PlusOutlined,
@@ -33,6 +34,7 @@ import dayjs, { type Dayjs } from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Key } from 'react'
 import type { AuthSession } from '../auth/session'
+import { saveProductSpecSource } from '../product-management/api'
 import {
   cancelOfficialWarehouseAppointment,
   correctOfficialWarehouseAppointment,
@@ -49,17 +51,20 @@ import {
   submitManualOfficialWarehouseAppointment,
   syncOfficialWarehouseNoonAsnList,
   upsertOfficialWarehouseAppointment,
+  validateOfficialWarehouseAsn,
   type CorrectOfficialWarehouseAppointmentPayload,
   type OfficialWarehouseAsn,
   type OfficialWarehouseAsnLine,
   type OfficialWarehouseAppointment,
   type OfficialWarehouseAppointmentAvailability,
   type OfficialWarehouseApiProblem,
+  type OfficialWarehouseMissingBatch,
   type OfficialWarehouseProductCandidate,
   type OfficialWarehouseRoutingWarehouse,
   type OfficialWarehouseShippingBatchCandidate,
   type UpsertOfficialWarehouseAppointmentPayload
 } from './api'
+import { parseCandidateSearch } from './createAsnFlow'
 import {
   appointmentStatusDisplayMeta,
   buildAppointmentRunOnceFeedback,
@@ -142,6 +147,11 @@ function officialWarehouseCandidateKey(row: OfficialWarehouseProductCandidate) {
     return `${store}::${site}::psku:${partnerSku}`
   }
   return `legacy-row:${row.productVariantId || row.productSiteOfferId || row.noonSku || row.pskuCode}`
+}
+
+function missingBatchesFromProblem(problem?: OfficialWarehouseApiProblem): OfficialWarehouseMissingBatch[] {
+  const value = problem?.details?.missingBatches
+  return Array.isArray(value) ? value as OfficialWarehouseMissingBatch[] : []
 }
 
 function formatCubicFeet(value?: number) {
@@ -306,7 +316,7 @@ function filterInboundDetailRows(rows: OfficialWarehouseInboundStatisticsRow[], 
   return rows
 }
 
-function appointmentDurationText(appointment?: OfficialWarehouseAppointment) {
+function appointmentDurationText(appointment?: OfficialWarehouseAppointment, now: Dayjs = dayjs()) {
   if (!appointment?.createdAt) {
     return '-'
   }
@@ -315,20 +325,16 @@ function appointmentDurationText(appointment?: OfficialWarehouseAppointment) {
     return '-'
   }
   const isActive = appointment.status === 'PENDING' || appointment.status === 'RUNNING'
-  const isCompleted = appointment.status === 'SCHEDULED'
   const endText = appointment.apSuccessTime || (!isActive ? appointment.updatedAt : undefined)
-  if (isCompleted && (!appointment.apSuccessTime || !Number(appointment.attemptCount || 0))) {
-    return '-'
-  }
   if (!isActive && !endText) {
     return '-'
   }
-  const end = isActive ? dayjs() : dayjs(endText)
+  const end = isActive ? now : dayjs(endText)
   if (!end.isValid()) {
     return '-'
   }
-  const totalMinutes = Math.max(0, end.diff(start, 'minute'))
-  const duration = formatDuration(totalMinutes)
+  const totalSeconds = Math.max(0, end.diff(start, 'second'))
+  const duration = formatDuration(totalSeconds)
   return isActive ? `已等待 ${duration}` : `总用时 ${duration}`
 }
 
@@ -352,10 +358,9 @@ function asnProductCountText(asn: OfficialWarehouseAsn) {
   return resolvedCount > 0 ? `${resolvedCount.toLocaleString()} SKU` : '-'
 }
 
-function formatDuration(totalMinutes: number) {
-  if (totalMinutes < 1) {
-    return '<1分钟'
-  }
+function formatDuration(totalSeconds: number) {
+  if (totalSeconds < 60) return `${totalSeconds}秒`
+  const totalMinutes = Math.floor(totalSeconds / 60)
   const days = Math.floor(totalMinutes / 1440)
   const hours = Math.floor((totalMinutes % 1440) / 60)
   const minutes = totalMinutes % 60
@@ -419,9 +424,22 @@ type CreateAsnSubmitFeedback = {
   problem?: OfficialWarehouseApiProblem
 }
 
-type ReusableBatchCreateConfirm = {
+type CreateAsnConfirmation = {
   selectedRows: OfficialWarehouseProductCandidate[]
   batchNos: string[]
+  missingBatches: OfficialWarehouseMissingBatch[]
+}
+
+type Ali1688SpecDraft = {
+  productLengthCm?: number
+  productWidthCm?: number
+  productHeightCm?: number
+  productWeightG?: number
+  cartonLengthCm?: number
+  cartonWidthCm?: number
+  cartonHeightCm?: number
+  cartonWeightKg?: number
+  cartonQuantity?: number
 }
 
 type AppointmentOpenRequest = {
@@ -466,10 +484,15 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [shippingBatches, setShippingBatches] = useState<OfficialWarehouseShippingBatchCandidate[]>([])
   const [selectedShippingBatchIds, setSelectedShippingBatchIds] = useState<string[]>([])
   const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<Key[]>([])
+  const [selectedCandidateByKey, setSelectedCandidateByKey] = useState<Record<string, OfficialWarehouseProductCandidate>>({})
   const [quantityByCandidateKey, setQuantityByCandidateKey] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
   const [createSubmitFeedback, setCreateSubmitFeedback] = useState<CreateAsnSubmitFeedback>()
-  const [reusableBatchCreateConfirm, setReusableBatchCreateConfirm] = useState<ReusableBatchCreateConfirm>()
+  const [createAsnConfirmation, setCreateAsnConfirmation] = useState<CreateAsnConfirmation>()
+  const [specTarget, setSpecTarget] = useState<OfficialWarehouseProductCandidate>()
+  const [specDraft, setSpecDraft] = useState<Ali1688SpecDraft>({})
+  const [specSaving, setSpecSaving] = useState(false)
+  const [durationNow, setDurationNow] = useState(() => dayjs())
   const [appointmentOpen, setAppointmentOpen] = useState(false)
   const [appointmentTarget, setAppointmentTarget] = useState<OfficialWarehouseAsn>()
   const [appointmentMode, setAppointmentMode] = useState<AppointmentSubmitMode>('auto')
@@ -620,13 +643,21 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   useEffect(() => {
     if (createOpen) {
       setCreateSubmitFeedback(undefined)
-      setReusableBatchCreateConfirm(undefined)
+      setCreateAsnConfirmation(undefined)
       setCandidateKeyword('')
       setSelectedShippingBatchIds([])
+      setSelectedCandidateKeys([])
+      setSelectedCandidateByKey({})
+      setQuantityByCandidateKey({})
       void loadCandidates([], '')
       void loadShippingBatches()
     }
   }, [createOpen])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setDurationNow(dayjs()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     if (!manualAvailabilityQueryKey) {
@@ -769,20 +800,24 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     }
     setCandidateLoading(true)
     try {
+      const search = parseCandidateSearch(keywordValue)
       const rows = await loadOfficialWarehouseCandidates({
         storeCode,
         siteCode,
-        keyword: keywordValue,
+        keyword: search.keyword,
+        partnerSkus: search.partnerSkus,
         shippingBatchIds: batchIds
       })
       setCandidates(rows)
-      setSelectedCandidateKeys([])
-      setQuantityByCandidateKey(
+      setQuantityByCandidateKey((current) =>
         rows.reduce<Record<string, number>>((next, row) => {
           const batchQuantity = Number(row.batchAvailableQuantity || 0)
-          next[officialWarehouseCandidateKey(row)] = batchIds.length && batchQuantity > 0 ? batchQuantity : 1
+          const key = officialWarehouseCandidateKey(row)
+          if (next[key] == null) {
+            next[key] = batchIds.length && batchQuantity > 0 ? batchQuantity : 1
+          }
           return next
-        }, {})
+        }, { ...current })
       )
     } catch (error) {
       message.error(officialWarehouseError(error, '读取可创建 ASN 商品失败'))
@@ -812,8 +847,76 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     }
   }
 
+  function updateCandidateSelection(keys: Key[], rows: OfficialWarehouseProductCandidate[]) {
+    const retainedKeys = new Set(keys.map(String))
+    setSelectedCandidateKeys(keys)
+    setSelectedCandidateByKey((current) => {
+      const next = { ...current }
+      Object.keys(next).forEach((key) => {
+        if (!retainedKeys.has(key)) delete next[key]
+      })
+      rows.forEach((row) => {
+        next[officialWarehouseCandidateKey(row)] = row
+      })
+      return next
+    })
+  }
+
+  function clearCandidateSelection() {
+    setSelectedCandidateKeys([])
+    setSelectedCandidateByKey({})
+  }
+
+  function openSpecEditor(row: OfficialWarehouseProductCandidate) {
+    setSpecTarget(row)
+    setSpecDraft({
+      productLengthCm: row.productLengthCm,
+      productWidthCm: row.productWidthCm,
+      productHeightCm: row.productHeightCm,
+      productWeightG: row.productWeightG,
+      cartonLengthCm: row.cartonLengthCm,
+      cartonWidthCm: row.cartonWidthCm,
+      cartonHeightCm: row.cartonHeightCm,
+      cartonWeightKg: row.cartonWeightKg,
+      cartonQuantity: row.cartonQuantity
+    })
+  }
+
+  async function saveAli1688Spec() {
+    if (!specTarget) return
+    if (!specDraft.productLengthCm || !specDraft.productWidthCm || !specDraft.productHeightCm) {
+      message.warning('请填写产品长、宽、高')
+      return
+    }
+    setSpecSaving(true)
+    try {
+      const hasCarton = Boolean(
+        specDraft.cartonLengthCm || specDraft.cartonWidthCm || specDraft.cartonHeightCm ||
+        specDraft.cartonWeightKg || specDraft.cartonQuantity
+      )
+      await saveProductSpecSource({
+        storeCode,
+        variantId: Number(specTarget.productVariantId),
+        partnerSku: specTarget.partnerSku,
+        currentZCode: specTarget.skuParent,
+        sourceType: 'ali1688',
+        cartonSourceType: hasCarton ? 'factory_carton' : 'none',
+        ...specDraft
+      })
+      message.success(`${displayPsku(specTarget)} 的 1688 规格已保存`)
+      setSpecTarget(undefined)
+      await loadCandidates(selectedShippingBatchIds, candidateKeyword)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '保存 1688 规格失败')
+    } finally {
+      setSpecSaving(false)
+    }
+  }
+
   async function submitCreateAsn() {
-    const selectedRows = candidates.filter((candidate) => selectedCandidateKeys.includes(officialWarehouseCandidateKey(candidate)))
+    const selectedRows = selectedCandidateKeys
+      .map((key) => selectedCandidateByKey[String(key)])
+      .filter((row): row is OfficialWarehouseProductCandidate => Boolean(row))
     if (!selectedRows.length) {
       message.warning('请选择至少一个商品')
       return
@@ -831,40 +934,67 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       message.warning(`${displayPsku(overLimit)} 数量超过所选物流批次可用数量`)
       return
     }
-    if (selectedAlreadyAppointedBatches.length) {
-      setReusableBatchCreateConfirm({
-        selectedRows,
-        batchNos: selectedAlreadyAppointedBatches.map(shippingBatchDisplayNo)
-      })
-      return
-    }
-    await createAsnFromSelectedRows(selectedRows)
-  }
-
-  async function createAsnFromSelectedRows(selectedRows: OfficialWarehouseProductCandidate[]) {
     setSubmitting(true)
     setCreateSubmitFeedback(undefined)
     try {
-      await createOfficialWarehouseAsn({
-        storeCode,
-        siteCode,
-        sourceType: 'MANUAL',
-        shippingBatchIds: selectedShippingBatchIds,
-        lines: selectedRows.map((row) => ({
-          productVariantId: Number(row.productVariantId),
-          productSiteOfferId: toNumber(row.productSiteOfferId),
-          partnerSku: row.partnerSku,
-          quantity: quantityByCandidateKey[officialWarehouseCandidateKey(row)] || 1
-        }))
-      })
+      const validation = await validateOfficialWarehouseAsn(createAsnPayload(selectedRows, false))
+      const batchNos = selectedAlreadyAppointedBatches.map(shippingBatchDisplayNo)
+      if (validation.missingBatches.length || batchNos.length) {
+        setCreateAsnConfirmation({ selectedRows, batchNos, missingBatches: validation.missingBatches })
+        return
+      }
+      await createAsnFromSelectedRows(selectedRows, false)
+    } catch (error) {
+      const errorMessage = officialWarehouseError(error, '校验 Noon ASN 商品失败')
+      setCreateSubmitFeedback({ message: errorMessage, problem: officialWarehouseProblem(error) })
+      message.error(errorMessage)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  function createAsnPayload(selectedRows: OfficialWarehouseProductCandidate[], partialBatchConfirmed: boolean) {
+    return {
+      storeCode,
+      siteCode,
+      sourceType: 'MANUAL',
+      shippingBatchIds: selectedShippingBatchIds,
+      partialBatchConfirmed,
+      lines: selectedRows.map((row) => ({
+        productVariantId: Number(row.productVariantId),
+        productSiteOfferId: toNumber(row.productSiteOfferId),
+        partnerSku: row.partnerSku,
+        quantity: quantityByCandidateKey[officialWarehouseCandidateKey(row)] || 1
+      }))
+    }
+  }
+
+  async function createAsnFromSelectedRows(
+    selectedRows: OfficialWarehouseProductCandidate[],
+    partialBatchConfirmed: boolean
+  ) {
+    setSubmitting(true)
+    setCreateSubmitFeedback(undefined)
+    try {
+      await createOfficialWarehouseAsn(createAsnPayload(selectedRows, partialBatchConfirmed))
       message.success('Noon ASN 已创建')
       setCreateOpen(false)
-      setReusableBatchCreateConfirm(undefined)
+      setCreateAsnConfirmation(undefined)
       await loadAsns()
       await loadAppointmentHistory()
     } catch (error) {
       const errorMessage = officialWarehouseError(error, '创建 Noon ASN 失败')
-      setCreateSubmitFeedback({ message: errorMessage, problem: officialWarehouseProblem(error) })
+      const problem = officialWarehouseProblem(error)
+      const missingBatches = missingBatchesFromProblem(problem)
+      if (problem?.code === 'OFFICIAL_WAREHOUSE_PARTIAL_BATCH_CONFIRM_REQUIRED' && missingBatches.length) {
+        setCreateAsnConfirmation({
+          selectedRows,
+          batchNos: selectedAlreadyAppointedBatches.map(shippingBatchDisplayNo),
+          missingBatches
+        })
+        return
+      }
+      setCreateSubmitFeedback({ message: errorMessage, problem })
       message.error(errorMessage)
       await loadAsns()
       await loadAppointmentHistory()
@@ -873,11 +1003,11 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     }
   }
 
-  function confirmReusableBatchCreate() {
-    if (!reusableBatchCreateConfirm) return
-    const selectedRows = reusableBatchCreateConfirm.selectedRows
-    setReusableBatchCreateConfirm(undefined)
-    void createAsnFromSelectedRows(selectedRows)
+  function confirmCreateAsn() {
+    if (!createAsnConfirmation) return
+    const selectedRows = createAsnConfirmation.selectedRows
+    setCreateAsnConfirmation(undefined)
+    void createAsnFromSelectedRows(selectedRows, true)
   }
 
   async function openDetail(row: OfficialWarehouseAsn) {
@@ -1213,12 +1343,17 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     },
     {
       title: '创建时间',
+      width: 170,
       render: (_, row) => (
         <div className="official-warehouse-stack">
           <Text>{row.createdAt || '-'}</Text>
-          <Text type="secondary">{appointmentDurationText(row.appointment)}</Text>
         </div>
       )
+    },
+    {
+      title: '约仓耗时',
+      width: 130,
+      render: (_, row) => <Text>{appointmentDurationText(row.appointment, durationNow)}</Text>
     },
     {
       title: '操作',
@@ -1362,12 +1497,12 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     {
       title: '创建时间',
       width: 170,
-      render: (_, row) => (
-        <div className="official-warehouse-stack">
-          <Text>{row.createdAt || '-'}</Text>
-          <Text type="secondary">{appointmentDurationText(row)}</Text>
-        </div>
-      )
+      render: (_, row) => <Text>{row.createdAt || '-'}</Text>
+    },
+    {
+      title: '约仓耗时',
+      width: 130,
+      render: (_, row) => <Text>{appointmentDurationText(row, durationNow)}</Text>
     },
     {
       title: '操作',
@@ -1400,9 +1535,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
           )}
           <div className="official-warehouse-stack">
             <Text strong>{row.title || displayPsku(row)}</Text>
-            <Text className="official-warehouse-code-line" type="secondary" copyable>
-              PSKU: {displayPsku(row)}
-            </Text>
           </div>
         </div>
       )
@@ -1415,6 +1547,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         return (
           <div className="official-warehouse-stack">
             <Text copyable>{row.noonSku}</Text>
+            <Text type="secondary" copyable>PSKU：{displayPsku(row)}</Text>
             {batchLimit > 0 ? <Text type="secondary">批次可用 {batchLimit}</Text> : null}
           </div>
         )
@@ -1468,11 +1601,19 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     {
       title: '数据状态',
       width: 160,
-      render: (_, row) => (
-        <Space size={4} wrap>
-          {row.missingTags?.length ? row.missingTags.map((tag) => <Tag key={tag} color="red">{tag}</Tag>) : <Tag color="green">可创建</Tag>}
-        </Space>
-      )
+      render: (_, row) => {
+        const canFillSpec = row.missingTags?.includes('缺尺寸')
+        return (
+          <Space size={4} wrap>
+            {row.missingTags?.length ? row.missingTags.map((tag) => <Tag key={tag} color="red">{tag}</Tag>) : <Tag color="green">可创建</Tag>}
+            {canFillSpec ? (
+              <Button size="small" icon={<EditOutlined />} onClick={() => openSpecEditor(row)}>
+                填写规格
+              </Button>
+            ) : null}
+          </Space>
+        )
+      }
     }
   ]
 
@@ -1686,7 +1827,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         onCancel={() => {
           setCreateOpen(false)
           setCreateSubmitFeedback(undefined)
-          setReusableBatchCreateConfirm(undefined)
+          setCreateAsnConfirmation(undefined)
         }}
         onOk={() => void submitCreateAsn()}
         confirmLoading={submitting}
@@ -1726,7 +1867,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             <div className="official-warehouse-shipping-picker-header">
               <div className="official-warehouse-stack">
                 <Text strong>物流批次号</Text>
-                <Text type="secondary">可多选；显示可约仓批次、已建ASN批次和已约仓批次；已使用批次排在下方并标注。</Text>
               </div>
               <Space>
                 <Input
@@ -1757,6 +1897,8 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
               onChange={(value) => {
                 const nextBatchIds = Array.isArray(value) ? value : []
                 setSelectedShippingBatchIds(nextBatchIds)
+                clearCandidateSelection()
+                setQuantityByCandidateKey({})
                 void loadCandidates(nextBatchIds, candidateKeyword)
               }}
               maxTagCount="responsive"
@@ -1768,7 +1910,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
                 className="official-warehouse-search"
                 allowClear
                 prefix={<SearchOutlined />}
-                placeholder="搜索 SKU / PSKU / 中文标题 / 英文标题"
+                placeholder="搜索 SKU / 批量粘贴 PSKU / 中文标题 / 英文标题"
                 value={candidateKeyword}
                 onChange={(event) => setCandidateKeyword(event.target.value)}
                 onPressEnter={() => void loadCandidates(selectedShippingBatchIds, candidateKeyword)}
@@ -1781,6 +1923,12 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
                 搜索
               </Button>
             </div>
+            <Space>
+              <Text type="secondary">已选择 {selectedCandidateKeys.length} 个商品</Text>
+              <Button size="small" disabled={!selectedCandidateKeys.length} onClick={clearCandidateSelection}>
+                清空选择
+              </Button>
+            </Space>
           </div>
           <Table
             rowKey={officialWarehouseCandidateKey}
@@ -1788,11 +1936,12 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             loading={candidateLoading}
             columns={candidateColumns}
             dataSource={candidates}
-            pagination={false}
+            pagination={{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true }}
             scroll={{ x: 1160 }}
             rowSelection={{
               selectedRowKeys: selectedCandidateKeys,
-              onChange: setSelectedCandidateKeys,
+              preserveSelectedRowKeys: true,
+              onChange: updateCandidateSelection,
               getCheckboxProps: (row) => ({
                 disabled: Boolean(row.missingTags?.length || !row.partnerSku),
                 title: row.partnerSku ? undefined : '缺少 PSKU，不能创建 ASN'
@@ -1810,17 +1959,84 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       </Modal>
 
       <Modal
-        title="确认继续使用已约仓物流批次"
-        open={Boolean(reusableBatchCreateConfirm)}
-        onCancel={() => setReusableBatchCreateConfirm(undefined)}
-        onOk={confirmReusableBatchCreate}
-        okText="继续创建 ASN"
+        title="创建前确认"
+        open={Boolean(createAsnConfirmation)}
+        onCancel={() => setCreateAsnConfirmation(undefined)}
+        onOk={confirmCreateAsn}
+        okText="确认继续"
+        cancelText="返回补选"
+        destroyOnClose
+      >
+        <Space direction="vertical" size={12}>
+          {createAsnConfirmation?.missingBatches.length ? (
+            <Alert
+              type="warning"
+              showIcon
+              message="当前选择未覆盖物流批次中的全部待约商品，可能造成漏约。"
+              description={createAsnConfirmation.missingBatches.map((batch) => (
+                <div key={batch.shippingBatchId || batch.batchNo}>
+                  批次 {batch.batchNo || batch.shippingBatchId || '-'} 缺少：
+                  {batch.items.map((item) => (
+                    `${item.title || item.partnerSku || item.noonSku || '未知商品'}` +
+                    `${item.partnerSku ? `（${item.partnerSku}）` : ''} × ${Number(item.missingQuantity || 0).toLocaleString()}`
+                  )).join('、')}。
+                </div>
+              ))}
+            />
+          ) : null}
+          {createAsnConfirmation?.batchNos.length ? (
+            <Alert
+              type="warning"
+              showIcon
+              message={`物流批次 ${createAsnConfirmation.batchNos.join('、')} 已经约过仓，将再次创建 Noon ASN。`}
+            />
+          ) : null}
+          <Text>确认继续？</Text>
+        </Space>
+      </Modal>
+
+      <Modal
+        title={specTarget ? `${displayPsku(specTarget)} · 填写 1688 规格` : '填写 1688 规格'}
+        open={Boolean(specTarget)}
+        width={820}
+        onCancel={() => setSpecTarget(undefined)}
+        onOk={() => void saveAli1688Spec()}
+        confirmLoading={specSaving}
+        okText="保存规格"
         cancelText="取消"
         destroyOnClose
       >
-        <Text>
-          物流批次 {reusableBatchCreateConfirm?.batchNos.join('、')} 已经约过仓。继续操作会使用同一物流批次再次创建 Noon ASN，请确认这是本次业务需要。
-        </Text>
+        <Alert
+          type="info"
+          showIcon
+          message="保存到 商品规格 → 1688规格；不会覆盖仓管规格或 Noon 官方规格。"
+        />
+        <div className="official-warehouse-spec-grid">
+          {([
+            ['productLengthCm', '产品长（cm）'],
+            ['productWidthCm', '产品宽（cm）'],
+            ['productHeightCm', '产品高（cm）'],
+            ['productWeightG', '产品重量（g）'],
+            ['cartonLengthCm', '外箱长（cm）'],
+            ['cartonWidthCm', '外箱宽（cm）'],
+            ['cartonHeightCm', '外箱高（cm）'],
+            ['cartonWeightKg', '外箱重量（kg）'],
+            ['cartonQuantity', '箱装数']
+          ] as Array<[keyof Ali1688SpecDraft, string]>).map(([field, label]) => (
+            <label key={field} className="official-warehouse-spec-field">
+              <Text type="secondary">{label}</Text>
+              <InputNumber
+                min={field === 'cartonQuantity' ? 1 : 0.001}
+                precision={field === 'cartonQuantity' ? 0 : 3}
+                value={specDraft[field]}
+                onChange={(value) => setSpecDraft((current) => ({
+                  ...current,
+                  [field]: value == null ? undefined : Number(value)
+                }))}
+              />
+            </label>
+          ))}
+        </div>
       </Modal>
 
       <Modal

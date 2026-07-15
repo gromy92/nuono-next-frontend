@@ -497,6 +497,28 @@
   height: 60px;
 }
 
+.official-warehouse-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.official-warehouse-spec-field {
+  display: grid;
+  gap: 6px;
+}
+
+.official-warehouse-spec-field .ant-input-number {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .official-warehouse-spec-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .official-warehouse-code-line {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 11px;

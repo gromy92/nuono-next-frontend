@@ -39,7 +39,16 @@ assert.doesNotMatch(
   /maxQuantity \? <Text type="secondary">批次可用/,
   'quantity column should not show batch available quantity'
 )
-assert.match(candidateTableSource, /pagination=\{false\}/, 'candidate table should not paginate')
+assert.match(
+  candidateTableSource,
+  /pagination=\{\{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true \}\}/,
+  'candidate table should paginate long search results'
+)
+assert.match(
+  candidateTableSource,
+  /preserveSelectedRowKeys: true/,
+  'candidate selection should survive pagination and search result changes'
+)
 assert.match(
   candidateTableSource,
   /rowKey=\{officialWarehouseCandidateKey\}/,
