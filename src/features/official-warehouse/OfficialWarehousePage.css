@@ -302,6 +302,20 @@
   font-size: 12px;
 }
 
+.official-warehouse-inbound-cell-button.ant-btn {
+  width: 100%;
+  height: auto;
+  min-height: 40px;
+  justify-content: flex-start;
+  padding: 4px 6px;
+  text-align: left;
+  white-space: normal;
+}
+
+.official-warehouse-inbound-cell-button .official-warehouse-stack {
+  align-items: flex-start;
+}
+
 .official-warehouse-over-received {
   color: #c2410c;
 }

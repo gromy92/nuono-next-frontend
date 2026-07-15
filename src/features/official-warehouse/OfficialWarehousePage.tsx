@@ -1312,12 +1312,10 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       title: '状态',
       width: 190,
       render: (_, row) => {
-        const progress = inboundProgress(row.inboundSummary)
         if (asnHasInboundResult(row)) {
           return (
             <div className="official-warehouse-stack">
               {inboundStageTag(asnInboundStage(row))}
-              {progress}
             </div>
           )
         }
@@ -1327,7 +1325,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
             <div className="official-warehouse-stack">
               {row.noonAsnStatus ? noonAsnStatusTag(row.noonAsnStatus) : <Text type="secondary">未提交</Text>}
               {row.noonAsnStatus ? <Text type="secondary">{row.noonAsnStatus}</Text> : null}
-              {progress}
             </div>
           )
         }
@@ -1343,10 +1340,28 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
                 <Text type="secondary">{deliveryTimeText}</Text>
               )
             ) : null}
-            {progress}
           </div>
         )
       }
+    },
+    {
+      title: '入仓情况',
+      width: 220,
+      render: (_, row) => (
+        <Button
+          type="text"
+          className="official-warehouse-inbound-cell-button"
+          onClick={() => void openDetail(row)}
+        >
+          <div className="official-warehouse-stack">
+            {row.inboundSummary?.reportConnected ? (
+              inboundProgress(row.inboundSummary)
+            ) : (
+              <Text type="secondary">暂无入仓回执</Text>
+            )}
+          </div>
+        </Button>
+      )
     },
     {
       title: '创建时间',
@@ -1371,7 +1386,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         return (
           <Space size={4} wrap className="official-warehouse-actions">
             <Button size="small" icon={<EyeOutlined />} onClick={() => void openDetail(row)}>
-              {inboundOnly ? '入仓详情' : '查看'}
+              查看
             </Button>
             {!inboundOnly && row.appointment?.status === 'SCHEDULED' ? (
               <Button

@@ -20,7 +20,25 @@ assert.match(
 assert.match(
   pageSource,
   /已入仓 \{Number\(summary\.receivedQuantity[\s\S]*?预计 \{Number\(summary\.expectedQuantity/,
-  'ASN list status should show received versus expected progress'
+  'ASN list should show received versus expected progress'
+)
+const statusColumnStart = pageSource.indexOf("title: '状态'")
+const inboundColumnStart = pageSource.indexOf("title: '入仓情况'")
+const createdAtColumnStart = pageSource.indexOf("title: '创建时间'", inboundColumnStart)
+assert.ok(statusColumnStart >= 0 && inboundColumnStart > statusColumnStart, 'inbound situation should be a separate column after status')
+assert.ok(createdAtColumnStart > inboundColumnStart, 'inbound situation column should end before created time')
+assert.doesNotMatch(
+  pageSource.slice(statusColumnStart, inboundColumnStart),
+  /inboundProgress/,
+  'status column should not mix inbound receipt progress'
+)
+const inboundColumnSource = pageSource.slice(inboundColumnStart, createdAtColumnStart)
+assert.match(inboundColumnSource, /inboundProgress\(row\.inboundSummary\)/, 'inbound situation column should render receipt progress')
+assert.match(inboundColumnSource, /暂无入仓回执/, 'inbound situation column should preserve the missing receipt state')
+assert.match(
+  inboundColumnSource,
+  /onClick=\{\(\) => void openDetail\(row\)\}/,
+  'clicking inbound situation should open the ASN inbound detail drawer'
 )
 assert.match(
   pageSource,
