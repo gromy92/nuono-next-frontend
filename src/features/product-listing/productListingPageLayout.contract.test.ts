@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 const pageSource = readFileSync(new URL('./ProductListingPage.tsx', import.meta.url), 'utf8')
+const taskStatusSource = readFileSync(new URL('./taskStatus.ts', import.meta.url), 'utf8')
 
 assert(
   !pageSource.includes('点击上架会先自动保存草稿并提交 dry-run'),
@@ -32,6 +33,14 @@ assert(
   'real-run external references should be wrapped, expandable, and copyable instead of rendered as raw long text'
 )
 assert(
-  pageSource.includes("barcode: 'Barcode'"),
+  taskStatusSource.includes("barcode: 'Barcode'"),
   'listing validation summary should render barcode issues with a readable field label'
+)
+assert(
+  pageSource.includes('sourcePrefillResolved && !sourcePrefill') &&
+    pageSource.includes('请先选择要上架的商品') &&
+    pageSource.includes('去人工选品') &&
+    pageSource.includes('查看上架草稿') &&
+    pageSource.includes('PRODUCT_MANUAL_SELECTION_PATH'),
+  'listing direct entry should stop before rendering an unsaveable blank draft and offer closed-loop source actions'
 )

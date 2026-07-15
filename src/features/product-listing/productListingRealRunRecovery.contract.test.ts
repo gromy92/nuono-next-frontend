@@ -52,8 +52,9 @@ assert(
     pageSource.includes('realRunNotice') &&
     pageSource.includes('message.warning(blockedReason)') &&
     pageSource.includes('当前不能确认上架') &&
-    !pageSource.includes('disabled: !canConfirmRealRun'),
-  'confirm listing should always provide visible feedback when the real-run action is blocked instead of silently doing nothing'
+    pageSource.includes('const realRunConfirmationBlocked = Boolean(') &&
+    pageSource.includes('disabled: realRunConfirmationBlocked'),
+  'confirm listing should be disabled while blocked and keep the click guard as race-condition feedback'
 )
 assert(
   pageSource.includes('realRunTaskCompletionNotice') &&

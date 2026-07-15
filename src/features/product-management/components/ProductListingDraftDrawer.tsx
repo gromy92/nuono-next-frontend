@@ -1,6 +1,6 @@
 import { EditOutlined, FileTextOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Drawer, Empty, List, Space, Tag, Tooltip, Typography, message } from 'antd'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { PURCHASE_LISTING_PATH, withCurrentWorkspaceDevQuery } from '../../app-shell/WorkspaceRouting'
 import { fetchProductListingDrafts } from '../../product-listing/api'
 import { openProductListingTargetInNewTab } from '../../product-listing/listingTabNavigation'
@@ -18,6 +18,7 @@ export function ProductListingDraftDrawer({ storeCode, activeOwnerId }: ProductL
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [drafts, setDrafts] = useState<ProductListingDraftView[]>([])
+  const autoOpenHandledRef = useRef(false)
 
   const loadDrafts = useCallback(async () => {
     if (!storeCode) {
@@ -38,6 +39,21 @@ export function ProductListingDraftDrawer({ storeCode, activeOwnerId }: ProductL
     setOpen(true)
     void loadDrafts()
   }
+
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search)
+    if (
+      search.get('listingDrafts') !== '1' ||
+      autoOpenHandledRef.current ||
+      !storeCode ||
+      !activeOwnerId
+    ) {
+      return
+    }
+    autoOpenHandledRef.current = true
+    setOpen(true)
+    void loadDrafts()
+  }, [activeOwnerId, loadDrafts, storeCode])
 
   const continueDraft = (draft: ProductListingDraftView) => {
     saveProductListingDraftRecoveryPrefill(draft)

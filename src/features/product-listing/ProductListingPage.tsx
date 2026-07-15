@@ -8,6 +8,7 @@ import {
   Form,
   Input,
   Modal,
+  Result,
   Row,
   Space,
   Table,
@@ -17,7 +18,11 @@ import {
 } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { normalizeError } from '../../shared/api'
-import { PRODUCT_WORKSPACE_PATH, withCurrentWorkspaceDevQuery } from '../app-shell/WorkspaceRouting'
+import {
+  PRODUCT_MANUAL_SELECTION_PATH,
+  PRODUCT_WORKSPACE_PATH,
+  withCurrentWorkspaceDevQuery
+} from '../app-shell/WorkspaceRouting'
 import { ProductListingDetailEditor } from './ProductListingDetailEditor'
 import {
   continueProductListingRealRunAfterCreate,
@@ -55,7 +60,10 @@ import {
   isProductListingRealWriteAttemptForDryRun,
   isProductListingTaskPending,
   isProductListingTaskTerminal,
-  productListingDryRunFailureSummary
+  productListingDryRunFailureSummary,
+  productListingTaskFailureMessage,
+  productListingValidationIssueLabel,
+  productListingValidationIssueMessage
 } from './taskStatus'
 import type {
   ProductListingDraftView,
@@ -69,25 +77,6 @@ const { Paragraph, Text } = Typography
 
 const PRODUCT_LISTING_DRAFT_SAVE_MESSAGE_KEY = 'product-listing-draft-save'
 const PRODUCT_LISTING_REAL_RUN_PSKU_REQUIRED_MESSAGE = '请先填写正式 PSKU，再点击上架。'
-const PRODUCT_LISTING_VALIDATION_FIELD_LABELS: Record<string, string> = {
-  psku: 'PSKU',
-  barcode: 'Barcode',
-  productFullType: '商品类目',
-  productBrand: '品牌',
-  productTitleEn: '英文标题',
-  productTitleAr: '阿语标题',
-  productDescriptionEn: '英文详情',
-  productDescriptionAr: '阿语详情',
-  productHighlightsEn: '英文卖点',
-  productHighlightsAr: '阿语卖点',
-  imageUrls: '商品图片',
-  salePrice: '售价',
-  priceMin: '最低价',
-  priceMax: '最高价',
-  purchasePrice: '采购成本',
-  quantity: '库存数量',
-  idWarranty: 'Warranty'
-}
 
 type ProductListingNotice = {
   type: 'success' | 'info' | 'warning' | 'error'
@@ -119,6 +108,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [recentTasks, setRecentTasks] = useState<ProductListingTaskView[]>([])
   const [loadingRecentTasks, setLoadingRecentTasks] = useState(false)
   const [sourcePrefill, setSourcePrefill] = useState<ProductListingSourcePrefill>()
+  const [sourcePrefillResolved, setSourcePrefillResolved] = useState(false)
   const listingDraftRef = useRef(listingDraft)
   const taskViewRef = useRef<ProductListingTaskView | undefined>(undefined)
   const realRunTaskViewRef = useRef<ProductListingTaskView | undefined>(undefined)
@@ -156,6 +146,8 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   useEffect(() => {
     const prefill = readProductListingSourcePrefill()
     if (!prefill) {
+      setSourcePrefill(undefined)
+      setSourcePrefillResolved(true)
       return
     }
     let cancelled = false
@@ -178,14 +170,18 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
       listingDraftRef.current = nextDraft
       setListingDraft(nextDraft)
       form.setFieldsValue(productListingEditorDraftToMetadataValues(nextDraft))
+      setSourcePrefillResolved(true)
     }
 
     if (prefill.pendingServerHydration) {
       setSourcePrefill(prefill)
+      setSourcePrefillResolved(false)
       void hydrateProductListingSourcePrefill(prefill, storeCode)
         .then(applyPrefill)
         .catch((error) => {
           if (!cancelled) {
+            setSourcePrefill(undefined)
+            setSourcePrefillResolved(true)
             message.warning(normalizeError(error, '读取上架来源资料失败，请重新从入口进入上架'))
           }
         })
@@ -220,7 +216,9 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
       isProductListingTaskTerminal(realRunTaskView.status)
   )
   const listingReviewBusy = saving || submitting || confirmingRealRun
-  const recentTasksStoreCode = listingDraft.storeCode || storeCode || ''
+  const recentTasksStoreCode = sourcePrefillResolved && sourcePrefill
+    ? listingDraft.storeCode || storeCode || ''
+    : ''
   const currentDraftId = listingDraft.draftId ?? draftView?.draftId
   const closeListingReview = () => {
     if (!listingReviewBusy) {
@@ -234,6 +232,13 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         </Button>
       ]
     : undefined
+  const realRunConfirmationBlocked = Boolean(realRunConfirmationBlockedReason({
+    realRunTaskView,
+    realWriteAttemptLocked,
+    saving,
+    submitting,
+    taskView
+  }))
 
   useEffect(() => {
     if (!recentTasksStoreCode) {
@@ -495,6 +500,43 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     }
   }
 
+  if (!sourcePrefillResolved) {
+    return (
+      <div className="product-listing-page">
+        <Card loading variant="borderless" />
+      </div>
+    )
+  }
+
+  if (sourcePrefillResolved && !sourcePrefill) {
+    return (
+      <div className="product-listing-page">
+        <Card variant="borderless">
+          <Result
+            status="info"
+            title="请先选择要上架的商品"
+            subTitle="商品上架需要采购来源、采购成本和供应凭证。请从人工选品发起，或到商品列表恢复已有上架草稿。"
+            extra={[
+              <Button
+                key="manual-selection"
+                type="primary"
+                onClick={() => window.location.assign(withCurrentWorkspaceDevQuery(PRODUCT_MANUAL_SELECTION_PATH))}
+              >
+                去人工选品
+              </Button>,
+              <Button
+                key="listing-drafts"
+                onClick={() => window.location.assign(withCurrentWorkspaceDevQuery(`${PRODUCT_WORKSPACE_PATH}?listingDrafts=1`))}
+              >
+                查看上架草稿
+              </Button>
+            ]}
+          />
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="product-listing-page">
       <div className="product-listing-page-actions">
@@ -569,7 +611,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         width={920}
         okText={realRunPending ? '上架执行中' : '确认上架'}
         cancelText="关闭"
-        okButtonProps={{ danger: !realRunPending }}
+        okButtonProps={{ danger: !realRunPending, disabled: realRunConfirmationBlocked }}
         confirmLoading={confirmingRealRun || realRunPending}
         footer={listingReviewFooter}
         maskClosable={!listingReviewBusy}
@@ -676,7 +718,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
                   </Descriptions.Item>
                   <Descriptions.Item label="PSKU">{taskView.partnerSku || '-'}</Descriptions.Item>
                   <Descriptions.Item label="失败代码">{taskView.failureCode || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="失败信息">{taskView.failureMessage || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="失败信息">{productListingTaskFailureMessage(taskView)}</Descriptions.Item>
                 </Descriptions>
                 <Table
                   size="small"
@@ -688,7 +730,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
                       title: '字段',
                       dataIndex: 'fieldKey',
                       width: 150,
-                      render: (value: string) => productListingValidationFieldLabel(value)
+                      render: (value: string) => productListingValidationIssueLabel(value)
                     },
                     {
                       title: '级别',
@@ -696,7 +738,11 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
                       width: 96,
                       render: (value: string) => <Tag color={value === 'warning' ? 'gold' : 'red'}>{value}</Tag>
                     },
-                    { title: '信息', dataIndex: 'message' }
+                    {
+                      title: '信息',
+                      dataIndex: 'message',
+                      render: (_: string, record) => productListingValidationIssueMessage(record)
+                    }
                   ]}
                   locale={{ emptyText: '暂无校验问题' }}
                 />
@@ -771,7 +817,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
                   title: '字段',
                   dataIndex: 'fieldKey',
                   width: 170,
-                  render: (value: string) => productListingValidationFieldLabel(value)
+                  render: (value: string) => productListingValidationIssueLabel(value)
                 },
                 {
                   title: '级别',
@@ -780,7 +826,11 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
                   render: (value: string) => <Tag color={value === 'warning' ? 'gold' : 'red'}>{value}</Tag>
                 },
                 { title: '代码', dataIndex: 'code', width: 160 },
-                { title: '信息', dataIndex: 'message' }
+                {
+                  title: '信息',
+                  dataIndex: 'message',
+                  render: (_: string, record) => productListingValidationIssueMessage(record)
+                }
               ]}
               locale={{ emptyText: '暂无校验问题' }}
             />
@@ -797,7 +847,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
                     <Tag color={statusColor(taskView.status)}>{taskView.status}</Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="失败代码">{taskView.failureCode || '-'}</Descriptions.Item>
-                  <Descriptions.Item label="失败信息">{taskView.failureMessage || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="失败信息">{productListingTaskFailureMessage(taskView)}</Descriptions.Item>
                 </Descriptions>
               ) : (
                 <Text type="secondary">暂无 dry-run 结果</Text>
@@ -848,10 +898,6 @@ function statusColor(status: string) {
     return 'orange'
   }
   return 'default'
-}
-
-function productListingValidationFieldLabel(fieldKey?: string) {
-  return PRODUCT_LISTING_VALIDATION_FIELD_LABELS[String(fieldKey || '')] || fieldKey || '校验项'
 }
 
 function realRunConfirmationBlockedReason(params: {

@@ -11,6 +11,7 @@ function source(path: string) {
 
 const filterBarSource = source('./components/ProductCatalogFilterBar.tsx')
 const drawerSource = source('./components/ProductListingDraftDrawer.tsx')
+const listingPageSource = source('../product-listing/ProductListingPage.tsx')
 
 assert.match(
   filterBarSource,
@@ -70,4 +71,11 @@ assert.match(
   drawerSource,
   /flexShrink:\s*0/,
   '上架草稿继续编辑按钮不能被列表内容挤压'
+)
+
+assert(
+  listingPageSource.includes('${PRODUCT_WORKSPACE_PATH}?listingDrafts=1') &&
+    drawerSource.includes("search.get('listingDrafts') !== '1'") &&
+    drawerSource.includes('void loadDrafts()'),
+  '上架来源门禁的查看草稿按钮必须落到商品列表并自动打开草稿抽屉'
 )
