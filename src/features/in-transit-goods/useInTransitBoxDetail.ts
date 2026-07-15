@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { message } from 'antd'
 import { fetchInTransitGoodsLines } from './api'
 import type { InTransitBatch, InTransitGoodsLine } from './types'
 import type { BoxDetailTabKey, InTransitGoodsPageProps } from './InTransitGoodsPage.models'
 import { buildBoxGroups, buildProductGroups } from './InTransitGoodsPage.selectors'
+import { createLatestRequestGuard } from './latestRequestGuard'
 
 export function useInTransitBoxDetail({
   isBoxDetailTab,
@@ -14,25 +15,35 @@ export function useInTransitBoxDetail({
   const [boxDetailTab, setBoxDetailTab] = useState<BoxDetailTabKey>('box')
   const [boxLines, setBoxLines] = useState<InTransitGoodsLine[]>([])
   const [loadingBoxLines, setLoadingBoxLines] = useState(false)
+  const requestGuard = useRef(createLatestRequestGuard())
 
   useEffect(() => {
     if (!isBoxDetailTab || !boxDetailRequest?.batchId) {
+      requestGuard.current.invalidate()
       return
     }
+    const requestToken = requestGuard.current.begin()
     setBoxDetailTab(boxDetailRequest.initialTab ?? 'box')
     setBoxLines([])
     setLoadingBoxLines(true)
     fetchInTransitGoodsLines(boxDetailRequest.batchId)
       .then((nextLines) => {
-        setBoxLines(nextLines.items ?? [])
+        if (requestGuard.current.isCurrent(requestToken)) {
+          setBoxLines(nextLines.items ?? [])
+        }
       })
       .catch((error) => {
-        message.error(error instanceof Error ? error.message : '箱子明细加载失败')
-        setBoxLines([])
+        if (requestGuard.current.isCurrent(requestToken)) {
+          message.error(error instanceof Error ? error.message : '箱子明细加载失败')
+          setBoxLines([])
+        }
       })
       .finally(() => {
-        setLoadingBoxLines(false)
+        if (requestGuard.current.isCurrent(requestToken)) {
+          setLoadingBoxLines(false)
+        }
       })
+    return () => requestGuard.current.invalidate()
   }, [boxDetailRequest?.batchId, boxDetailRequest?.initialTab, isBoxDetailTab])
 
   const boxGroups = useMemo(() => buildBoxGroups(boxLines), [boxLines])
