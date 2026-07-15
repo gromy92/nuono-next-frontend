@@ -63,3 +63,9 @@ const durationSource = pageSource.slice(
 )
 assert.doesNotMatch(durationSource, /attemptCount/, 'duration display must not depend on a non-zero attempt count')
 assert.match(pageSource, /title: '约仓耗时'/, 'ASN list should expose appointment duration as a visible column')
+assert.match(
+  pageSource,
+  /title: '操作',\s+width: 280,\s+fixed: 'right'/,
+  'ASN list action column should stay compact while action buttons wrap'
+)
+assert.doesNotMatch(pageSource, /title: '操作',\s+width: 400/, 'ASN list action column should not keep the old oversized width')

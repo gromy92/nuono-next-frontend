@@ -1411,7 +1411,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     },
     {
       title: '操作',
-      width: 400,
+      width: 280,
       fixed: 'right',
       render: (_, row) => {
         const inboundOnly = asnHasInboundResult(row)
