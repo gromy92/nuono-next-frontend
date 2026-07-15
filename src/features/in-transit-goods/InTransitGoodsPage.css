@@ -4,6 +4,15 @@
   gap: 14px;
 }
 
+.in-transit-auto-sync-alert ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.in-transit-auto-sync-alert li + li {
+  margin-top: 4px;
+}
+
 .in-transit-page__toolbar {
   display: flex;
   flex-wrap: wrap;

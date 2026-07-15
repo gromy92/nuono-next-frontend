@@ -30,6 +30,20 @@ export type InTransitForwarderAlias = {
   status?: string | null
 }
 
+export type InTransitLogisticsAutoSyncAccount = {
+  accountId: number
+  sourceSystem?: string | null
+  forwarderName?: string | null
+  loginAccountMasked?: string | null
+  verificationStatus?: string | null
+  lastPreviewStatus?: string | null
+  lastSyncStatus?: string | null
+  lastTaskId?: number | null
+  lastFailureCode?: string | null
+  lastFailureMessage?: string | null
+  updatedAt?: string | null
+}
+
 export type SaveInTransitForwarderAliasRequest = {
   rawForwarderName: string
   standardForwarderId: number
