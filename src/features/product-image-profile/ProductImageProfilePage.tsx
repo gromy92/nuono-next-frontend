@@ -71,6 +71,7 @@ import {
   type ProductImageAiSuggestionFieldKey
 } from './aiExtractionDiff'
 import { groupProductImageAssetsByRole } from './assetRoleSections'
+import { noonImageDimensionCompliance } from './noonImageDimensionCompliance'
 import { productProfileVirtualWindow } from './virtualProfileList'
 import './ProductImageProfilePage.css'
 
@@ -774,6 +775,13 @@ function assetComplianceMeta(asset: ProfileAsset) {
     .filter(Boolean)
   if (status === 'PASS') return { color: 'success' as const, label: 'Noon 技术合格', detail: '可读取的技术指标均符合 Noon 要求；画面内容仍需人工确认。' }
   if (status === 'FAIL') return { color: 'error' as const, label: 'Noon 技术不合格', detail: messages.join('；') || '至少一项技术指标不符合 Noon 要求。' }
+  const dimensionCompliance = noonImageDimensionCompliance(asset.widthPx, asset.heightPx)
+  if (dimensionCompliance.status === 'PASS') {
+    return { color: 'processing' as const, label: 'Noon 尺寸合格', detail: dimensionCompliance.detail }
+  }
+  if (dimensionCompliance.status === 'FAIL') {
+    return { color: 'error' as const, label: 'Noon 尺寸不合格', detail: dimensionCompliance.detail }
+  }
   return { color: 'warning' as const, label: 'Noon 技术待确认', detail: messages.join('；') || '图片元数据不足，暂时无法完成技术校验。' }
 }
 
@@ -857,11 +865,13 @@ function SystemImage({
   src,
   alt,
   fallback,
-  fetchPriority = 'auto'
+  fetchPriority = 'auto',
+  onNaturalSize
 }: {
   alt: string
   fallback?: ReactNode
   fetchPriority?: 'auto' | 'high' | 'low'
+  onNaturalSize?: (widthPx: number, heightPx: number) => void
   src?: string
 }) {
   const previewUrl = useSystemImagePreviewUrl(src)
@@ -887,7 +897,13 @@ function SystemImage({
         fetchPriority={fetchPriority}
         loading="lazy"
         style={{ visibility: loaded ? undefined : 'hidden' }}
-        onLoad={() => setLoaded(true)}
+        onLoad={(event) => {
+          setLoaded(true)
+          const { naturalHeight, naturalWidth } = event.currentTarget
+          if (naturalWidth > 0 && naturalHeight > 0) {
+            onNaturalSize?.(naturalWidth, naturalHeight)
+          }
+        }}
         onError={() => setFailed(true)}
       />
     </>
@@ -1096,7 +1112,15 @@ function AssetDetailModal({
   )
 }
 
-function AssetThumb({ asset, onPreview }: { asset: ProfileAsset; onPreview: (asset: ProfileAsset) => void }) {
+function AssetThumb({
+  asset,
+  onNaturalSize,
+  onPreview
+}: {
+  asset: ProfileAsset
+  onNaturalSize: (asset: ProfileAsset, widthPx: number, heightPx: number) => void
+  onPreview: (asset: ProfileAsset) => void
+}) {
   const fallback = (
     <>
       <PictureOutlined />
@@ -1112,7 +1136,12 @@ function AssetThumb({ asset, onPreview }: { asset: ProfileAsset; onPreview: (ass
       type="button"
     >
       {asset.imageUrl ? (
-        <SystemImage src={asset.imageUrl} alt={asset.title} fallback={fallback} />
+        <SystemImage
+          src={asset.imageUrl}
+          alt={asset.title}
+          fallback={fallback}
+          onNaturalSize={(widthPx, heightPx) => onNaturalSize(asset, widthPx, heightPx)}
+        />
       ) : (
         fallback
       )}
@@ -1452,6 +1481,22 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
       return currentProfiles.map((profile) => profile.id === currentId ? nextProfile : profile)
     })
     setSelectedProfileId(nextProfile.id)
+  }
+
+  const recordAssetNaturalSize = (asset: ProfileAsset, widthPx: number, heightPx: number) => {
+    patchSelectedProfile((profile) => {
+      if (asset.widthPx === widthPx && asset.heightPx === heightPx) {
+        return profile
+      }
+      return {
+        ...profile,
+        assets: profile.assets.map((candidate) =>
+          samePhysicalAsset(candidate, asset) || candidate.imageUrl === asset.imageUrl
+            ? { ...candidate, widthPx, heightPx }
+            : candidate
+        )
+      }
+    })
   }
 
   useEffect(() => {
@@ -2339,7 +2384,7 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
           onChange={(event) => toggleAssetSelection(asset.id, event.target.checked)}
           onClick={(event) => event.stopPropagation()}
         />
-        <AssetThumb asset={asset} onPreview={setPreviewAsset} />
+        <AssetThumb asset={asset} onNaturalSize={recordAssetNaturalSize} onPreview={setPreviewAsset} />
         <div className="product-image-profile-asset-status-row">
           <Text>{assetDimensionText(asset)}</Text>
           <Tooltip title={compliance.detail}>
