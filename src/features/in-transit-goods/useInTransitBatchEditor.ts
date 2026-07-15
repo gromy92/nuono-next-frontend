@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Form, message } from 'antd'
 import dayjs from 'dayjs'
 import {
@@ -22,11 +22,15 @@ import type {
   SaveInTransitLogisticsNodeRequest
 } from './types'
 import { formatNodeDateTime, normalizeNodeDateTime } from './InTransitGoodsPage.utils'
+import { createLatestRequestGuard } from './latestRequestGuard'
 
 export function useInTransitBatchEditor(
   filters: InTransitBatchFilters,
   load: (filters: InTransitBatchFilters) => Promise<void>
 ) {
+  const linesRequestGuard = useRef(createLatestRequestGuard())
+  const nodesRequestGuard = useRef(createLatestRequestGuard())
+  const freightRequestGuard = useRef(createLatestRequestGuard())
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingBatch, setEditingBatch] = useState<InTransitBatch | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -71,6 +75,7 @@ export function useInTransitBatchEditor(
     setEditingNode(null)
     lineForm.resetFields()
     nodeForm.resetFields()
+    setLines([])
     setNodes([])
     setBatchFreightCosts({ bills: [], components: [] })
     form.resetFields()
@@ -267,41 +272,62 @@ export function useInTransitBatchEditor(
   }
 
   const loadLines = async (batchId: number) => {
+    const requestToken = linesRequestGuard.current.begin()
     setLoadingLines(true)
     try {
       const nextLines = await fetchInTransitGoodsLines(batchId)
-      setLines(nextLines.items ?? [])
+      if (linesRequestGuard.current.isCurrent(requestToken)) {
+        setLines(nextLines.items ?? [])
+      }
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '商品明细加载失败')
-      setLines([])
+      if (linesRequestGuard.current.isCurrent(requestToken)) {
+        message.error(error instanceof Error ? error.message : '商品明细加载失败')
+        setLines([])
+      }
     } finally {
-      setLoadingLines(false)
+      if (linesRequestGuard.current.isCurrent(requestToken)) {
+        setLoadingLines(false)
+      }
     }
   }
 
   const loadNodes = async (batchId: number) => {
+    const requestToken = nodesRequestGuard.current.begin()
     setLoadingNodes(true)
     try {
       const nextNodes = await fetchInTransitLogisticsNodes(batchId)
-      setNodes(nextNodes.items ?? [])
+      if (nodesRequestGuard.current.isCurrent(requestToken)) {
+        setNodes(nextNodes.items ?? [])
+      }
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '物流节点加载失败')
-      setNodes([])
+      if (nodesRequestGuard.current.isCurrent(requestToken)) {
+        message.error(error instanceof Error ? error.message : '物流节点加载失败')
+        setNodes([])
+      }
     } finally {
-      setLoadingNodes(false)
+      if (nodesRequestGuard.current.isCurrent(requestToken)) {
+        setLoadingNodes(false)
+      }
     }
   }
 
   const loadBatchFreightCosts = async (batchId: number) => {
+    const requestToken = freightRequestGuard.current.begin()
     setLoadingBatchFreightCosts(true)
     try {
       const nextFreightCosts = await fetchInTransitBatchFreightCosts(batchId)
-      setBatchFreightCosts({ bills: nextFreightCosts.bills ?? [], components: nextFreightCosts.components ?? [] })
+      if (freightRequestGuard.current.isCurrent(requestToken)) {
+        setBatchFreightCosts({ bills: nextFreightCosts.bills ?? [], components: nextFreightCosts.components ?? [] })
+      }
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '实际运费加载失败')
-      setBatchFreightCosts({ bills: [], components: [] })
+      if (freightRequestGuard.current.isCurrent(requestToken)) {
+        message.error(error instanceof Error ? error.message : '实际运费加载失败')
+        setBatchFreightCosts({ bills: [], components: [] })
+      }
     } finally {
-      setLoadingBatchFreightCosts(false)
+      if (freightRequestGuard.current.isCurrent(requestToken)) {
+        setLoadingBatchFreightCosts(false)
+      }
     }
   }
 
