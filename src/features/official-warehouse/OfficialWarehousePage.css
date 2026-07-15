@@ -343,6 +343,18 @@
   gap: 12px;
 }
 
+.official-warehouse-inbound-table-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.official-warehouse-inbound-discrepancy-filter {
+  width: 150px;
+}
+
 .official-warehouse-inbound-receipt-metrics {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));

@@ -69,3 +69,8 @@ assert.match(
   'ASN list action column should stay compact while action buttons wrap'
 )
 assert.doesNotMatch(pageSource, /title: '操作',\s+width: 400/, 'ASN list action column should not keep the old oversized width')
+assert.doesNotMatch(
+  pageSource,
+  /<Metric label="ASN批次"/,
+  'ASN list should not render the removed summary card row above the table'
+)

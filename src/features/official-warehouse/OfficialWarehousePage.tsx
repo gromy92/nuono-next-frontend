@@ -74,7 +74,6 @@ import {
   buildAppointmentRunOnceFeedback,
   buildAppointmentHistorySummary,
   buildManualAppointmentResultMessage,
-  buildOfficialWarehouseAsnSummary,
   noonAsnStatusDisplayMeta,
   officialWarehouseBusinessErrorText,
   officialWarehousePublicAsnNo,
@@ -127,6 +126,16 @@ const ASN_INBOUND_STATUS_FILTER_OPTIONS: Array<{
   { label: '未入仓', value: 'NOT_RECEIVED' },
   { label: '入仓中', value: 'RECEIVING' },
   { label: '已入仓', value: 'COMPLETED' }
+]
+
+type InboundDiscrepancyFilter = 'SHORT' | 'OVER'
+
+const INBOUND_DISCREPANCY_FILTER_OPTIONS: Array<{
+  label: string
+  value: InboundDiscrepancyFilter
+}> = [
+  { label: '少入仓', value: 'SHORT' },
+  { label: '超入仓', value: 'OVER' }
 ]
 
 const APPOINTMENT_CORRECTION_STATUS_OPTIONS = APPOINTMENT_STATUS_OPTIONS.filter((item) => item.value !== 'RUNNING')
@@ -507,6 +516,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [selectedInboundDetail, setSelectedInboundDetail] = useState<OfficialWarehouseAsnInboundDetail>()
   const [selectedInboundLoading, setSelectedInboundLoading] = useState(false)
   const [selectedInboundError, setSelectedInboundError] = useState<string>()
+  const [inboundDiscrepancyFilter, setInboundDiscrepancyFilter] = useState<InboundDiscrepancyFilter>()
   const [createOpen, setCreateOpen] = useState(false)
   const [candidateKeyword, setCandidateKeyword] = useState('')
   const [candidateLoading, setCandidateLoading] = useState(false)
@@ -562,8 +572,17 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     ))
     return keyword.trim() ? filteredAsns : filteredAsns.filter((row) => !asnIsExpired(row))
   }, [asns, keyword, asnAppointmentStatusFilters, asnInboundStatusFilters])
-  const summary = useMemo(() => buildOfficialWarehouseAsnSummary(visibleAsns), [visibleAsns])
   const appointmentHistorySummary = useMemo(() => buildAppointmentHistorySummary(appointments), [appointments])
+  const visibleInboundLines = useMemo(() => {
+    const lines = selectedInboundDetail?.lines || []
+    if (inboundDiscrepancyFilter === 'SHORT') {
+      return lines.filter((row) => Number(row.shortQuantity || 0) > 0)
+    }
+    if (inboundDiscrepancyFilter === 'OVER') {
+      return lines.filter((row) => Number(row.overQuantity || 0) > 0)
+    }
+    return lines
+  }, [selectedInboundDetail, inboundDiscrepancyFilter])
 
   const appointmentTimeOptions = useMemo(
     () =>
@@ -1052,6 +1071,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     setSelectedAsn(row)
     setSelectedInboundDetail(undefined)
     setSelectedInboundError(undefined)
+    setInboundDiscrepancyFilter(undefined)
     const requestId = inboundDetailRequestRef.current + 1
     inboundDetailRequestRef.current = requestId
     setSelectedInboundLoading(true)
@@ -1080,6 +1100,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     setSelectedInboundDetail(undefined)
     setSelectedInboundError(undefined)
     setSelectedInboundLoading(false)
+    setInboundDiscrepancyFilter(undefined)
   }
 
   function requestOpenAppointment(row: OfficialWarehouseAsn, mode: AppointmentSubmitMode) {
@@ -1817,17 +1838,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         />
       ) : null}
 
-      <div className="official-warehouse-metrics">
-        <Metric label="ASN批次" value={summary.asnTotal} />
-        <Metric label="创建成功" value={summary.asnCreated} tone="green" />
-        <Metric label="处理中" value={summary.asnProcessing} tone="blue" />
-        <Metric label="失败" value={summary.asnFailed} tone="red" />
-        <Metric label="约仓中" value={summary.appointmentPending} tone="blue" />
-        <Metric label="约仓成功" value={summary.appointmentSuccess} tone="green" />
-        <Metric label="约仓失败" value={summary.appointmentFailed} tone="red" />
-        <Metric label="总件数" value={summary.totalQuantity} />
-      </div>
-
       <div className="official-warehouse-table-panel">
         <Table
           className="official-warehouse-asn-table"
@@ -2473,12 +2483,28 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
                 rowKey={(row) => row.asnLineId || `${row.partnerSku || ''}-${row.noonSku || ''}-${row.pskuCode || ''}`}
                 size="small"
                 columns={inboundProductColumns}
-                dataSource={selectedInboundDetail?.lines || []}
+                dataSource={visibleInboundLines}
                 loading={selectedInboundLoading}
                 pagination={false}
                 scroll={{ x: 1100 }}
-                locale={{ emptyText: <Empty description="暂无商品入仓明细" /> }}
-                title={() => '商品入仓明细'}
+                locale={{
+                  emptyText: (
+                    <Empty description={inboundDiscrepancyFilter ? '暂无符合条件的入仓商品' : '暂无商品入仓明细'} />
+                  )
+                }}
+                title={() => (
+                  <div className="official-warehouse-inbound-table-title">
+                    <Text strong>商品入仓明细</Text>
+                    <Select<InboundDiscrepancyFilter>
+                      allowClear
+                      className="official-warehouse-inbound-discrepancy-filter"
+                      placeholder="入仓差异"
+                      value={inboundDiscrepancyFilter}
+                      options={INBOUND_DISCREPANCY_FILTER_OPTIONS}
+                      onChange={setInboundDiscrepancyFilter}
+                    />
+                  </div>
+                )}
               />
               {isNoonBackofficeAsnWithoutSyncedLines(selectedAsn) && !selectedInboundLoading && !selectedInboundDetail?.summary.reportConnected ? (
                 <Alert

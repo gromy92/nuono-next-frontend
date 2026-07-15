@@ -47,6 +47,23 @@ assert.match(
 )
 assert.match(
   pageSource,
+  /placeholder="入仓差异"/,
+  'product inbound receipt details should expose a discrepancy filter'
+)
+assert.match(pageSource, /label: '少入仓', value: 'SHORT'/, 'discrepancy filter should support short receipts')
+assert.match(pageSource, /label: '超入仓', value: 'OVER'/, 'discrepancy filter should support over receipts')
+assert.match(
+  pageSource,
+  /inboundDiscrepancyFilter === 'SHORT'[\s\S]{0,200}row\.shortQuantity[\s\S]{0,250}inboundDiscrepancyFilter === 'OVER'[\s\S]{0,200}row\.overQuantity/,
+  'short and over receipt filters should use the corresponding product-level discrepancy quantities'
+)
+assert.match(
+  pageSource,
+  /dataSource=\{visibleInboundLines\}/,
+  'the product inbound receipt table should render the discrepancy-filtered rows'
+)
+assert.match(
+  pageSource,
   /mode="multiple"[\s\S]{0,300}placeholder="约仓状态"/,
   'ASN list should expose a multi-select appointment status filter in the top toolbar'
 )
