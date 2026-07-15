@@ -73,7 +73,7 @@ assert.match(
 
 assert.match(
   summaryPanel,
-  /disabled=\{!workbenchReady \|\| publicDetailReadonly \|\| publishTaskActive \|\| productPublishTaskActionSubmitting\}/,
+  /const publishButtonDisabled =[\s\S]*?publicDetailReadonly[\s\S]*?productPublishTaskActionSubmitting[\s\S]*?disabled=\{publishButtonDisabled\}/,
   'publish button must be disabled for public detail readonly fallback'
 );
 
