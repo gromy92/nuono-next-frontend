@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { message } from 'antd';
 import { fetchProductPublishTask } from './api';
+import { consumeProductListingReturnNotice } from '../product-listing/productListingReturnNotice';
 import { createProductListColumns } from './productListColumns';
 import { useMockProductActions } from './hooks/useMockProductActions';
 import { useProductDraftMutations } from './hooks/useProductDraftMutations';
@@ -80,6 +81,16 @@ export function useProductManagementWorkspace({
     setProductListDatasetState
   });
   const { loadProductListDataset } = productListDatasetLoader;
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    const notice = consumeProductListingReturnNotice();
+    if (notice) {
+      message.info(notice);
+    }
+  }, [enabled]);
 
   const storeInitialization = useProductStoreInitialization({
     activeOwnerId,

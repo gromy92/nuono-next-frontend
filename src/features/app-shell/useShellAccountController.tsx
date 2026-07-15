@@ -166,8 +166,16 @@ export function useShellAccountController({
   }, [changePasswordForm, session]);
 
   const handleSessionStoreChange = useCallback((nextSession: AuthSession) => {
-    setSession(normalizeSessionRoleView(nextSession));
-    setSelectedInitializationStoreCodeOverride(nextSession.currentStore?.storeCode);
+    const normalizedNextSession = normalizeSessionRoleView(nextSession);
+    setSession(normalizedNextSession);
+    setSelectedInitializationStoreCodeOverride(normalizedNextSession.currentStore?.storeCode);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(normalizedNextSession));
+      } catch {
+        // Ignore localStorage write failures in local preview mode.
+      }
+    }
   }, [setSelectedInitializationStoreCodeOverride, setSession]);
 
   const handleRoleViewChange = useCallback((nextRoleView: AuthRoleView) => {

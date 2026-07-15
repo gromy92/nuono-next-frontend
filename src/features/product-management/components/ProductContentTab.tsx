@@ -10,9 +10,14 @@ export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
     productContentDomain,
     productContentProgressDone,
     productContentProgressTotal,
+    productCompetitorMaterials,
+    enableCompetitorContentMerge,
     productImageUrls,
+    allowEmptyImages,
     productAttributesDomain,
     productMainDomain,
+    productImageRoleAssignments,
+    productImageAssetMetadata,
     productSnapshotView,
     updateProductSectionField,
     updateProductMultilineField,
@@ -25,6 +30,7 @@ export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
       <ProductClassificationEditor
         productMainDomain={productMainDomain}
         productSnapshotView={productSnapshotView}
+        productCompetitorMaterials={productCompetitorMaterials}
         updateProductSectionField={updateProductSectionField}
       />
 
@@ -32,6 +38,8 @@ export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
         productContentDomain={productContentDomain}
         productContentProgressDone={productContentProgressDone}
         productContentProgressTotal={productContentProgressTotal}
+        productCompetitorMaterials={productCompetitorMaterials}
+        enableCompetitorContentMerge={enableCompetitorContentMerge}
         productSnapshotView={productSnapshotView}
         updateProductSectionField={updateProductSectionField}
         updateProductMultilineField={updateProductMultilineField}
@@ -41,8 +49,19 @@ export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
         productContentDomain={productContentDomain}
         productSnapshotView={productSnapshotView}
         productImageUrls={productImageUrls}
+        productImageRoleAssignments={productImageRoleAssignments}
+        productImageAssetMetadata={productImageAssetMetadata}
+        allowEmptyImages={allowEmptyImages}
         openCurrentProductGallery={openCurrentProductGallery}
-        onImagesChange={(images) => updateProductSectionField('content', 'images', images)}
+        onImagesChange={(images, imageRoleAssignments, imageAssetMetadata) => {
+          updateProductSectionField('content', 'images', images);
+          if (imageRoleAssignments) {
+            updateProductSectionField('content', 'imageRoleAssignments', imageRoleAssignments);
+          }
+          if (imageAssetMetadata) {
+            updateProductSectionField('content', 'imageAssetMetadata', imageAssetMetadata);
+          }
+        }}
       />
 
       <ProductAttributesPanel

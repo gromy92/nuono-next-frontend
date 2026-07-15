@@ -1,4 +1,6 @@
 import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+import type { ProductImageRoleAssignment } from '../product-management/types/productImageRole'
+import type { NoonImageAssetMetadata } from '../product-management/utils/noonImageRequirements'
 
 export type ProductListingValidationIssue = {
   fieldKey: string
@@ -29,9 +31,18 @@ export type ProductListingDraftPayload = {
   productHighlightsCn?: string[]
   productHighlightsEn?: string[]
   productHighlightsAr?: string[]
+  sizeEn?: string
+  sizeAr?: string
   keyAttributes?: Array<Record<string, unknown>>
   imageUrls: string[]
+  imageRoleAssignments?: ProductImageRoleAssignment[]
+  imageAssetMetadata?: NoonImageAssetMetadata[]
   price?: number
+  priceMin?: number
+  priceMax?: number
+  salePrice?: number
+  saleStart?: string
+  saleEnd?: string
   purchasePrice?: number
   supplyEvidenceType?: string
   supplyEvidenceRefId?: number
@@ -41,7 +52,10 @@ export type ProductListingDraftPayload = {
   warehouseCode?: string
   quantity?: number
   idWarranty?: number
+  isActive?: boolean
+  offerNote?: string
   barcode?: string
+  competitorMaterials?: ProductCompetitorContentMaterial[]
 }
 
 export type ProductListingDraftView = {
@@ -54,12 +68,33 @@ export type ProductListingDraftView = {
   validationIssues: ProductListingValidationIssue[]
 }
 
+export type ProductListingFieldValidationView = {
+  issues: ProductListingValidationIssue[]
+}
+
+export type ProductListingNoonWriteStepResult = {
+  stepKey?: string
+  status?: string
+  externalReference?: string
+  failureCode?: string
+  failureMessage?: string
+}
+
+export type ProductListingNoonWriteResult = {
+  success?: boolean
+  failureCategory?: string
+  failureCode?: string
+  failureMessage?: string
+  steps?: ProductListingNoonWriteStepResult[]
+}
+
 export type ProductListingTaskView = {
   taskId: number
   taskNo?: string
   draftId: number
   ownerUserId?: number
   storeCode: string
+  partnerSku?: string
   mode: string
   status: string
   sourceTaskId?: number
@@ -67,6 +102,7 @@ export type ProductListingTaskView = {
   failureCategory?: string
   failureCode?: string
   failureMessage?: string
+  noonResult?: ProductListingNoonWriteResult
   submittedAt?: string
   startedAt?: string
   completedAt?: string

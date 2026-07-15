@@ -1,6 +1,7 @@
 import { Button, Col, Descriptions, Input, Row, Space, Typography } from 'antd';
 import type { ProductMasterSnapshotPayload } from '../types';
 import { formatSnapshotValue, siteOfferCode, textInputValue } from '../utils';
+import { collectOfferPricingValidationIssues } from '../utils/offerPricingValidation';
 
 const { Text } = Typography;
 
@@ -204,6 +205,9 @@ export function ProductOfferPricingSection(props: {
   const { productSnapshotView, activeProductSiteOffer, updateSiteOfferField } = props;
   const pricingSummary = resolvePricingSummary(productSnapshotView, activeProductSiteOffer);
   const saleWindowInputs = saleWindowInputValues(activeProductSiteOffer);
+  const pricingValidationIssues = collectOfferPricingValidationIssues(activeProductSiteOffer, '当前站点');
+  const priceValidationIssue = pricingValidationIssues.find((issue) => issue.fieldKey === 'price');
+  const salePriceValidationIssue = pricingValidationIssues.find((issue) => issue.fieldKey === 'salePrice');
 
   const updateField = (field: string, value: unknown) => {
     if (!activeProductSiteOffer) {
@@ -222,8 +226,14 @@ export function ProductOfferPricingSection(props: {
           <Text style={FIELD_LABEL_STYLE}>Base Price</Text>
           <Input
             value={textInputValue(activeProductSiteOffer?.price)}
+            status={priceValidationIssue ? 'error' : undefined}
             onChange={(event) => updateField('price', event.target.value)}
           />
+          {priceValidationIssue ? (
+            <Text type="danger" style={{ display: 'block', marginTop: 4, fontSize: 12 }}>
+              {priceValidationIssue.message}
+            </Text>
+          ) : null}
         </Col>
         <Col xs={24} md={16}>
           <Text style={FIELD_LABEL_STYLE}>Price Min / Max</Text>
@@ -255,8 +265,14 @@ export function ProductOfferPricingSection(props: {
               aria-label="Sale Price"
               placeholder="Sale Price"
               value={textInputValue(activeProductSiteOffer?.salePrice)}
+              status={salePriceValidationIssue ? 'error' : undefined}
               onChange={(event) => updateField('salePrice', event.target.value)}
             />
+            {salePriceValidationIssue ? (
+              <Text type="danger" style={{ display: 'block', marginTop: 4, fontSize: 12 }}>
+                {salePriceValidationIssue.message}
+              </Text>
+            ) : null}
           </Col>
           <Col xs={24} md={8}>
             <Input

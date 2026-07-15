@@ -69,13 +69,13 @@ assert.deepEqual(WORKSPACE_MENU_DEFINITIONS['official-warehouse'].routeAliases, 
 ])
 
 const registeredMenuKeys = Object.keys(WORKSPACE_MENU_DEFINITIONS)
-assert.equal(registeredMenuKeys.includes('purchase-listing'), false)
+assert.equal(registeredMenuKeys.includes('purchase-listing'), true)
 assert.equal(registeredMenuKeys.includes('purchase-pre-order-profit'), false)
-assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-listing'), false)
+assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-listing'), true)
 assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-pre-order-profit'), false)
-assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/listing'), null)
+assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/listing'), 'purchase-listing')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/pre-order-profit'), null)
-assert.equal(shellWorkspaceContentSource.includes('ProductListingPage'), false)
+assert.equal(shellWorkspaceContentSource.includes('ProductListingPage'), true)
 assert.equal(shellWorkspaceContentSource.includes('PreOrderProfitPage'), false)
 assert.equal(
   fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
@@ -87,7 +87,7 @@ assert.equal(
   fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
     '../product-listing/'
   ),
-  false
+  true
 )
 
 const warehouseSection = WORKSPACE_SECTION_DEFINITIONS.find((section) => section.key === 'warehouse')
@@ -100,7 +100,7 @@ assert.deepEqual(
 
 const purchaseSidebarMenu = workspaceMenuItems.find((section) => section.key === 'purchase')
 const purchaseSidebarLabels = purchaseSidebarMenu?.children?.map((item) => item.label) ?? []
-assert.equal(purchaseSidebarLabels.includes('商品上架'), false)
+assert.equal(purchaseSidebarLabels.includes('商品上架'), true)
 assert.equal(purchaseSidebarLabels.includes('选品池'), false)
 
 const deprecatedPlaceholderLabels = WORKSPACE_SECTION_DEFINITIONS.flatMap((section) =>
@@ -108,13 +108,38 @@ const deprecatedPlaceholderLabels = WORKSPACE_SECTION_DEFINITIONS.flatMap((secti
 )
 assert.deepEqual(deprecatedPlaceholderLabels, [])
 
+const purchaseSection = WORKSPACE_SECTION_DEFINITIONS.find((section) => section.key === 'purchase')
+const purchaseMenuKeys: string[] =
+  purchaseSection?.entries?.flatMap((entry) => (entry.type === 'workspace' ? [entry.key] : [])) ?? []
+assert.equal(
+  purchaseMenuKeys.includes('purchase-listing'),
+  true,
+  '商品上架 should be exposed under the purchase sidebar menu'
+)
+assert.equal(
+  purchaseMenuKeys.includes('purchase-pre-order-profit'),
+  false,
+  '选品池 should not be exposed under the purchase sidebar menu'
+)
+
 const previousWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
+let storedSession: string | null = null
+const windowLocation = {
+  pathname: '/warehouse/official-warehouse-stock',
+  search: '?devSession=1'
+}
 Object.defineProperty(globalThis, 'window', {
   configurable: true,
   value: {
-    location: {
-      pathname: '/warehouse/official-warehouse-stock',
-      search: '?devSession=1'
+    location: windowLocation,
+    localStorage: {
+      getItem: () => storedSession,
+      setItem: (_key: string, value: string) => {
+        storedSession = value
+      },
+      removeItem: () => {
+        storedSession = null
+      }
     }
   }
 })
@@ -123,6 +148,24 @@ try {
     withCurrentWorkspaceDevQuery('/warehouse/official-warehouse'),
     '/warehouse/official-warehouse?devSession=1&officialWarehouseTab=stock'
   )
+
+  storedSession = JSON.stringify({
+    currentStore: {
+      projectName: 'canman',
+      storeCode: 'STR108065-NSA',
+      site: 'SA'
+    }
+  })
+  windowLocation.pathname = '/product/manual-selection'
+  windowLocation.search = '?devSession=1&devAccount=xingyao&devStore=STR245027-NSA&devSite=SA'
+
+  const target = withCurrentWorkspaceDevQuery('/purchase/listing?listingSource=manual-selection')
+  const [, searchText] = target.split('?')
+  const params = new URLSearchParams(searchText)
+  assert.equal(params.get('listingSource'), 'manual-selection')
+  assert.equal(params.get('devAccount'), 'canman')
+  assert.equal(params.get('devStore'), 'STR108065-NSA')
+  assert.equal(params.get('devSite'), 'SA')
 } finally {
   if (previousWindowDescriptor) {
     Object.defineProperty(globalThis, 'window', previousWindowDescriptor)

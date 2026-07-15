@@ -34,6 +34,7 @@ import {
   ProductGroupManagementPage,
   ProductImageProfilePage,
   ProductKeywordDataPage,
+  ProductListingPage,
   ProductLogisticsCostsPage,
   ProductManagementWorkspacePage,
   ProductSpecsPage,
@@ -278,6 +279,14 @@ function ShellWorkspaceContentPane({
           siteCode={shellSession.currentStore?.site}
           availableStores={shellSession.userStores}
         />
+      </LazyWorkspaceBoundary>
+    );
+  }
+
+  if (activeContentKind === 'product-listing') {
+    return (
+      <LazyWorkspaceBoundary>
+        <ProductListingPage storeCode={shellSession.currentStore?.storeCode} />
       </LazyWorkspaceBoundary>
     );
   }

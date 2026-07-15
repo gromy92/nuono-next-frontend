@@ -3,7 +3,7 @@ import {
   loadSourceCollections,
   recollectSourceCollection
 } from '../source-collection/api'
-import { apiFetch } from '../../shared/api'
+import { apiFetch, readApiErrorMessage } from '../../shared/api'
 import type { ProductSelectionSourceCollection } from '../source-collection/types'
 import type { ManualSelectionSystemCategoryOption } from './profitCategoryMatching'
 import type {
@@ -237,6 +237,10 @@ export function saveManualSelectionGroupCompetitors(
           fetchedSellingPointsAr: competitor.fetchedSellingPointsAr || [],
           fetchedSourceHost: competitor.fetchedSourceHost,
           fetchedPriceSummary: competitor.fetchedPriceSummary,
+          fetchedCategoryName: competitor.fetchedCategoryName,
+          fetchedCategoryPath: competitor.fetchedCategoryPath,
+          fetchedCategoryUrl: competitor.fetchedCategoryUrl,
+          fetchedCategoryLinks: competitor.fetchedCategoryLinks || [],
           fetchedCompleteness: competitor.fetchedCompleteness,
           fetchedCollectionSource: competitor.fetchedCollectionSource,
           fetchedAt: competitor.fetchedAt,
@@ -311,13 +315,9 @@ async function parseManualSelectionResponse<TResponse>(
   responsePromise: Promise<Response>
 ): Promise<TResponse> {
   const response = await responsePromise
-  const payload = await response.json().catch(() => null)
   if (!response.ok) {
-    throw new Error(
-      payload && typeof payload.message === 'string' && payload.message
-        ? payload.message
-        : `Request failed: ${response.status}`
-    )
+    throw new Error(await readApiErrorMessage(response, `Request failed: ${response.status}`))
   }
+  const payload = await response.json().catch(() => null)
   return payload as TResponse
 }

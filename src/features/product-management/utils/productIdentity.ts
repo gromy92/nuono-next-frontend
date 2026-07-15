@@ -20,6 +20,10 @@ export function getProductCurrentZCode(value: ProductIdentityLike | undefined) {
   return normalizeProductIdentityValue(value?.currentZCode || value?.skuParent);
 }
 
+export function isLocalDraftNoonCode(value: unknown) {
+  return normalizeProductIdentityValue(value).toUpperCase().startsWith('LOCAL-');
+}
+
 export function getProductIdentityStoreCode(value: ProductIdentityLike | undefined) {
   return normalizeProductIdentityValue(value?.referenceStoreCode || value?.storeCode);
 }

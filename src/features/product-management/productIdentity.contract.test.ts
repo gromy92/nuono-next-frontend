@@ -5,6 +5,7 @@ import {
   getProductIdentityLookupKeys,
   getProductListRowIdentityKey,
   getProductStableIdentityKey,
+  isLocalDraftNoonCode,
   isSameStableProductIdentity
 } from './utils/productIdentity';
 
@@ -251,6 +252,35 @@ assert.equal(
   getProductListRowIdentityKey(productDeleteRow),
   'STR69486-NSA|psku:SGGRB113',
   'product delete pending state should key by store + partnerSku, not skuParent or external pskuCode'
+);
+
+assert.equal(
+  isLocalDraftNoonCode('LOCAL-PAPERSAYSB442-13423D84'),
+  true,
+  'LOCAL-* Noon identity must be treated as a local draft code'
+);
+
+assert.equal(
+  isLocalDraftNoonCode('Z20152FFCAE5DA47AC88EZ'),
+  false,
+  'real Noon Z code must not be treated as a local draft code'
+);
+
+const productDetailSummaryPanelSource = readFileSync(
+  new URL('./components/ProductDetailSummaryPanel.tsx', import.meta.url),
+  'utf8'
+);
+
+assert.match(
+  productDetailSummaryPanelSource,
+  /isProductNotListedSource\(productDetailSummarySurface\?\.listingStartedSource\)/,
+  'ProductDetailSummaryPanel must block publish-current for products that are not listed yet'
+);
+
+assert.match(
+  productDetailSummaryPanelSource,
+  /isLocalDraftNoonCode\(currentNoonCode\)/,
+  'ProductDetailSummaryPanel must block publish-current for LOCAL-* draft identities'
 );
 
 const productListIdentityCellsSource = readFileSync(
