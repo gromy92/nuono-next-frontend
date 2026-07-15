@@ -54,5 +54,6 @@ assert.deepEqual(events, [
 
 const invalidatedGuard = createLatestRequestGuard()
 const invalidatedToken = invalidatedGuard.begin()
+assert.equal(invalidatedGuard.isCurrent(invalidatedToken), true)
 invalidatedGuard.invalidate()
 assert.equal(invalidatedGuard.isCurrent(invalidatedToken), false)
