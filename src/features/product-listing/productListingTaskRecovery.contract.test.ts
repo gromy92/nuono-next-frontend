@@ -43,7 +43,7 @@ const recovered = recoverProductListingTasksFromRecent([
     status: 'validated',
     submittedAt: '2026-07-06T10:10:00'
   })
-])
+], 10001)
 
 assert.equal(recovered.dryRunTask?.taskId, 20004)
 assert.equal(recovered.realRunTask?.taskId, 20005)
@@ -56,7 +56,40 @@ const nextDryRunOnly = recoverProductListingTasksFromRecent([
     status: 'validated',
     submittedAt: '2026-07-06T10:40:00'
   })
-])
+], 10001)
 
 assert.equal(nextDryRunOnly.dryRunTask?.taskId, 20006)
 assert.equal(nextDryRunOnly.realRunTask, undefined)
+
+const recoverableUnknownRealRun = task({
+  taskId: 20008,
+  mode: 'REAL_RUN',
+  status: 'written_verify_failed',
+  sourceTaskId: latestDryRun.taskId,
+  failureCode: 'noon_create_outcome_unknown',
+  submittedAt: '2026-07-06T10:35:00'
+})
+const newerDryRun = task({
+  taskId: 20009,
+  mode: 'DRY_RUN',
+  status: 'validated',
+  submittedAt: '2026-07-06T10:40:00'
+})
+const recoverable = recoverProductListingTasksFromRecent([
+  newerDryRun,
+  recoverableUnknownRealRun,
+  latestDryRun
+], 10001)
+
+assert.equal(recoverable.dryRunTask?.taskId, latestDryRun.taskId)
+assert.equal(recoverable.realRunTask?.taskId, recoverableUnknownRealRun.taskId)
+
+const otherDraftTask = task({
+  taskId: 20007,
+  draftId: 10002,
+  mode: 'DRY_RUN',
+  status: 'validated',
+  submittedAt: '2026-07-06T10:50:00'
+})
+assert.equal(recoverProductListingTasksFromRecent([otherDraftTask], 10001).dryRunTask, undefined)
+assert.deepEqual(recoverProductListingTasksFromRecent([latestDryRun]), {})

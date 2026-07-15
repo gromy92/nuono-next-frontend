@@ -5,8 +5,23 @@ export type ProductListingTaskRecovery = {
   realRunTask?: ProductListingTaskView
 }
 
-export function recoverProductListingTasksFromRecent(tasks: ProductListingTaskView[] = []): ProductListingTaskRecovery {
-  const ordered = [...tasks].sort(compareTaskRecencyDesc)
+export function recoverProductListingTasksFromRecent(
+  tasks: ProductListingTaskView[] = [],
+  draftId?: number
+): ProductListingTaskRecovery {
+  if (!draftId) {
+    return {}
+  }
+  const ordered = tasks.filter((task) => task.draftId === draftId).sort(compareTaskRecencyDesc)
+  const recoverableRealRun = ordered.find(isRecoverableRealRun)
+  if (recoverableRealRun) {
+    return {
+      dryRunTask: ordered.find(
+        (task) => task.mode === 'DRY_RUN' && task.taskId === recoverableRealRun.sourceTaskId
+      ),
+      realRunTask: recoverableRealRun
+    }
+  }
   const dryRunTask = ordered.find((task) => task.mode === 'DRY_RUN')
   if (!dryRunTask) {
     return {
@@ -17,6 +32,12 @@ export function recoverProductListingTasksFromRecent(tasks: ProductListingTaskVi
     dryRunTask,
     realRunTask: ordered.find((task) => task.mode === 'REAL_RUN' && task.sourceTaskId === dryRunTask.taskId)
   }
+}
+
+function isRecoverableRealRun(task: ProductListingTaskView) {
+  return task.mode === 'REAL_RUN' && task.status === 'written_verify_failed' && (
+    task.failureCode === 'noon_create_outcome_unknown' || task.failureCode === 'real_run_interrupted'
+  )
 }
 
 function compareTaskRecencyDesc(left: ProductListingTaskView, right: ProductListingTaskView) {

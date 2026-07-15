@@ -69,6 +69,21 @@ export type ProductCompetitorKeywordCommand = {
   competitorSources?: ProductCompetitorKeywordSource[]
 }
 
+export type ProductKeywordEditorSaveRow = {
+  keywordId?: number
+  keyword: string
+  saveKeyword: boolean
+  competitorSources?: ProductCompetitorKeywordSource[]
+}
+
+export type ProductKeywordEditorSaveCommand = {
+  storeCode: string
+  siteCode: string
+  partnerSku: string
+  rows: ProductKeywordEditorSaveRow[]
+  deletedKeywordIds: number[]
+}
+
 export type ProductKeywordItem = {
   id: number
   ownerUserId: number

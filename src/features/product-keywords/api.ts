@@ -6,6 +6,7 @@ import type {
   ProductKeywordListView,
   ProductKeywordPanelView,
   ProductKeywordProductRequest,
+  ProductKeywordEditorSaveCommand,
   ProductKeywordUpdateCommand,
   ProductKeywordItem
 } from './types'
@@ -91,4 +92,16 @@ export async function updateProductKeyword(keywordId: number, body: ProductKeywo
     body: JSON.stringify(body)
   })
   return parseProductKeywordResponse<ProductKeywordItem>(response, `关键词更新失败：${response.status}`)
+}
+
+export async function saveProductKeywordEditorChanges(body: ProductKeywordEditorSaveCommand) {
+  const response = await apiFetch('/api/product-keywords/editor-save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+  return parseProductKeywordResponse<ProductKeywordPanelView>(
+    response,
+    `关键词与竞品保存失败：${response.status}`
+  )
 }

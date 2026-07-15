@@ -70,8 +70,11 @@ export function fetchProductListingTask(taskId: number) {
   return getJson<ProductListingTaskView>(`/api/product-listing/tasks/${taskId}`, '读取上架 dry-run 任务失败')
 }
 
-export function fetchRecentProductListingTasks(storeCode: string, limit = 20) {
+export function fetchRecentProductListingTasks(storeCode: string, limit = 20, draftId?: number) {
   const params = new URLSearchParams({ storeCode, limit: String(limit) })
+  if (draftId != null) {
+    params.set('draftId', String(draftId))
+  }
   return getJson<ProductListingTaskView[]>(`/api/product-listing/tasks/recent?${params.toString()}`, '读取上架任务失败')
 }
 

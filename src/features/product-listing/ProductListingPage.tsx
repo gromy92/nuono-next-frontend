@@ -221,6 +221,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   )
   const listingReviewBusy = saving || submitting || confirmingRealRun
   const recentTasksStoreCode = listingDraft.storeCode || storeCode || ''
+  const currentDraftId = listingDraft.draftId ?? draftView?.draftId
   const closeListingReview = () => {
     if (!listingReviewBusy) {
       setListingReviewOpen(false)
@@ -240,17 +241,17 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     }
     let cancelled = false
     setLoadingRecentTasks(true)
-    void fetchRecentProductListingTasks(recentTasksStoreCode, 10)
+    void fetchRecentProductListingTasks(recentTasksStoreCode, 10, currentDraftId)
       .then((tasks) => {
         if (cancelled) {
           return
         }
         setRecentTasks(tasks)
-        const recovered = recoverProductListingTasksFromRecent(tasks)
-        if (!taskViewRef.current && recovered.dryRunTask) {
+        const recovered = recoverProductListingTasksFromRecent(tasks, currentDraftId)
+        if ((!taskViewRef.current || taskViewRef.current.draftId !== currentDraftId) && recovered.dryRunTask) {
           setTaskView(recovered.dryRunTask)
         }
-        if (!realRunTaskViewRef.current && recovered.realRunTask) {
+        if ((!realRunTaskViewRef.current || realRunTaskViewRef.current.draftId !== currentDraftId) && recovered.realRunTask) {
           setRealRunTaskView(recovered.realRunTask)
         }
       })
@@ -267,7 +268,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     return () => {
       cancelled = true
     }
-  }, [recentTasksStoreCode])
+  }, [currentDraftId, recentTasksStoreCode])
 
   useEffect(() => {
     if (!realRunTaskView?.taskId || !isProductListingTaskPending(realRunTaskView.status)) {
@@ -518,6 +519,25 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         </Button>
       </div>
 
+      {canContinueAfterCreate ? (
+        <Alert
+          className="product-listing-recovery-alert"
+          type="warning"
+          showIcon
+          message={`上架任务 ${realRunTaskView?.taskNo || realRunTaskView?.taskId || ''} 需要安全恢复`}
+          description={realRunRecoveryDescription(realRunTaskView, realRunReferences)}
+          action={
+            <Button
+              danger
+              loading={continuingAfterCreate}
+              onClick={() => void handleContinueAfterCreate()}
+            >
+              查询 Noon 并继续
+            </Button>
+          }
+        />
+      ) : null}
+
       <Form
         form={form}
         initialValues={productListingEditorDraftToMetadataValues(listingDraft)}
@@ -595,7 +615,9 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
             <Alert
               type="warning"
               showIcon
-              message="Noon 商品创建已返回 pskuCode / skuParent，但后续写入未完成。"
+              message={realRunReferences.skuParent && realRunReferences.pskuCode
+                ? 'Noon 商品创建已返回 pskuCode / skuParent，但后续写入未完成。'
+                : 'Noon 创建结果需要核对；继续时会先按 PSKU 查询 Noon，确认已创建后再写后续步骤，不会重复创建。'}
               action={
                 <Button
                   danger
@@ -608,7 +630,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
               }
             />
           ) : null}
-          {realRunTaskView?.status === 'written_verify_failed' ? (
+          {realRunTaskView?.status === 'written_verify_failed' && realRunReferences.skuParent ? (
             <Alert
               type="warning"
               showIcon
@@ -908,7 +930,13 @@ function realRunTaskCompletionNotice(task: ProductListingTaskView): ProductListi
     return { type: 'success', message: '真实上架成功，Noon 回读已通过。需要再次测试请重新点击上架生成新的 dry-run。' }
   }
   if (task.status === 'written_verify_failed') {
-    return { type: 'warning', message: 'Noon 已写入，回读校验未通过，请按 pskuCode / skuParent 复核。' }
+    if (task.failureCode === 'noon_create_outcome_unknown') {
+      return { type: 'warning', message: 'Noon 创建结果未知，尚不能确认是否已写入；请使用安全恢复查询 Noon 后继续。' }
+    }
+    if (task.failureCode === 'real_run_interrupted') {
+      return { type: 'warning', message: '真实上架执行被中断，尚不能确认完整写入；请使用安全恢复查询 Noon 后继续。' }
+    }
+    return { type: 'warning', message: 'Noon 已返回写入结果，但回读校验未通过，请按 pskuCode / skuParent 复核。' }
   }
   if (task.failureCode === 'real_write_disabled') {
     return { type: 'warning', message: '后端真实写入开关未开启，本次确认已记录为 rejected 任务。' }
@@ -922,6 +950,19 @@ function realRunTaskCompletionNotice(task: ProductListingTaskView): ProductListi
   return undefined
 }
 
+function realRunRecoveryDescription(
+  task: ProductListingTaskView | undefined,
+  references: ReturnType<typeof extractNoonWriteReferences>
+) {
+  if (references.skuParent && references.pskuCode) {
+    return '已取得 Noon 商品引用，将直接继续未完成步骤，不会重复创建商品。'
+  }
+  if (task?.failureCode === 'real_run_interrupted') {
+    return '任务执行曾中断。系统会先按 PSKU 查询 Noon，确认创建结果后再继续，不会重复创建商品。'
+  }
+  return 'Noon 创建结果未知。系统会先按 PSKU 查询 Noon，确认创建结果后再继续，不会重复创建商品。'
+}
+
 function canContinueRealRunAfterCreate(
   task: ProductListingTaskView | undefined,
   references: ReturnType<typeof extractNoonWriteReferences>
@@ -929,7 +970,12 @@ function canContinueRealRunAfterCreate(
   if (!task || task.status === 'succeeded' || isProductListingTaskPending(task.status)) {
     return false
   }
-  return Boolean(references.skuParent && references.pskuCode && task.noonResult?.success === false)
+  const needsCreateReferenceRecovery = task.status === 'written_verify_failed' && (
+    task.failureCode === 'noon_create_outcome_unknown' || task.failureCode === 'real_run_interrupted'
+  )
+  return needsCreateReferenceRecovery || Boolean(
+    references.skuParent && references.pskuCode && task.noonResult?.success === false
+  )
 }
 
 function extractNoonWriteReferences(result?: ProductListingNoonWriteResult) {

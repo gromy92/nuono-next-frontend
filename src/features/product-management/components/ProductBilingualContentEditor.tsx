@@ -1,12 +1,7 @@
 import { CopyOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
 import { Alert, Button, Checkbox, Col, Empty, Input, List, Modal, Row, Space, Tag, Tooltip, Typography, message as antdMessage } from 'antd';
-import { type Dispatch, type SetStateAction, useEffect, useMemo, useState } from 'react';
-import {
-  addProductCompetitorKeywords,
-  addProductKeyword,
-  fetchProductKeywordProduct,
-  updateProductKeyword
-} from '../../product-keywords/api';
+import { type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
+import { fetchProductKeywordProduct, saveProductKeywordEditorChanges } from '../../product-keywords/api';
 import { translateProductContentText } from '../api';
 import { mergeProductCompetitorContent } from '../productCompetitorContentApi';
 import type { ProductMasterSnapshotPayload } from '../types';
@@ -320,8 +315,10 @@ function ProductContentFieldEditModal(props: {
   const [titleKeywordTranslations, setTitleKeywordTranslations] = useState<Record<string, string>>({});
   const [keywordTranslationNotice, setKeywordTranslationNotice] = useState<TranslationNotice>(null);
   const [keywordInputRows, setKeywordInputRows] = useState<ProductContentKeywordInputRow[]>([]);
+  const [deletedKeywordRows, setDeletedKeywordRows] = useState<Array<{ id: number; value: string }>>([]);
   const [keywordPanelLoading, setKeywordPanelLoading] = useState(false);
   const [keywordSaving, setKeywordSaving] = useState(false);
+  const keywordRowsDirtyRef = useRef(false);
   const [saveConfirmDetail, setSaveConfirmDetail] = useState<ProductContentKeywordSaveChangeDetails | null>(null);
   const [saveConfirmError, setSaveConfirmError] = useState<string | null>(null);
   const [keywordPanelCompetitorMaterials, setKeywordPanelCompetitorMaterials] = useState<ProductCompetitorContentMaterial[]>([]);
@@ -353,15 +350,17 @@ function ProductContentFieldEditModal(props: {
         siteCodeFromStoreCode(storeCode)
     );
     const partnerSku = textInputValue(
-      productSnapshotView?.identity.partnerSku ??
-        productSnapshotView?.identity.psku ??
-        productSnapshotView?.identity.skuParent
+      productSnapshotView?.identity.partnerSku ?? productSnapshotView?.identity.psku
     );
-    return storeCode && siteCode && partnerSku ? { storeCode, siteCode, partnerSku } : undefined;
+    const persistentPartnerSku = partnerSku.toUpperCase() === 'NEW-LISTING' ? '' : partnerSku;
+    return storeCode && siteCode && persistentPartnerSku
+      ? { storeCode, siteCode, partnerSku: persistentPartnerSku }
+      : undefined;
   }, [productSnapshotView]);
   const langLabel = LANG_LABELS[lang];
   const fieldLabel = FIELD_LABELS[fieldType];
   const supportsTitleKeywords = fieldType === 'title';
+  const keywordEditingDisabled = keywordPanelLoading || keywordSaving;
   const keywordScopeKey = keywordManagementScope
     ? `${keywordManagementScope.storeCode}|${keywordManagementScope.siteCode}|${keywordManagementScope.partnerSku}`
     : '';
@@ -381,12 +380,14 @@ function ProductContentFieldEditModal(props: {
     setTitleKeywordTranslations({});
     setKeywordTranslationNotice(null);
     setKeywordInputRows([]);
+    setDeletedKeywordRows([]);
     setKeywordPanelCompetitorMaterials([]);
     setCompetitorPickerRowId(undefined);
     setLoading({});
     setCompetitorLoading(false);
     setKeywordPanelLoading(false);
     setKeywordSaving(false);
+    keywordRowsDirtyRef.current = false;
     setSaveConfirmDetail(null);
     setSaveConfirmError(null);
   }, [open, value, fieldType, lang]);
@@ -412,15 +413,20 @@ function ProductContentFieldEditModal(props: {
         if (cancelled) {
           return;
         }
-        setKeywordInputRows(editableKeywordRowsFromPanel(panel));
+        if (!keywordRowsDirtyRef.current) {
+          setKeywordInputRows(editableKeywordRowsFromPanel(panel));
+          setDeletedKeywordRows([]);
+        }
         setKeywordPanelCompetitorMaterials(competitorMaterialsFromKeywordEvents(panel.events));
       })
       .catch((error) => {
         if (cancelled) {
           return;
         }
-        setKeywordInputRows([]);
-        setKeywordPanelCompetitorMaterials([]);
+        if (!keywordRowsDirtyRef.current) {
+          setKeywordInputRows([]);
+          setKeywordPanelCompetitorMaterials([]);
+        }
         antdMessage.warning(error instanceof Error ? error.message : '已有关键词加载失败');
       })
       .finally(() => {
@@ -470,6 +476,7 @@ function ProductContentFieldEditModal(props: {
   };
 
   const addKeywordInputRow = () => {
+    keywordRowsDirtyRef.current = true;
     setSaveConfirmDetail(null);
     setKeywordInputRows((currentValue) => [
       ...currentValue,
@@ -478,6 +485,7 @@ function ProductContentFieldEditModal(props: {
   };
 
   const updateKeywordInputRow = (rowId: string, value: string) => {
+    keywordRowsDirtyRef.current = true;
     setSaveConfirmDetail(null);
     setKeywordInputRows((currentValue) =>
       currentValue.map((row) => (row.id === rowId ? { ...row, value } : row))
@@ -485,57 +493,64 @@ function ProductContentFieldEditModal(props: {
   };
 
   const deleteKeywordInputRow = (rowId: string) => {
+    keywordRowsDirtyRef.current = true;
     setSaveConfirmDetail(null);
-    setKeywordInputRows((currentValue) => currentValue.filter((row) => row.id !== rowId));
+    setKeywordInputRows((currentValue) => {
+      const deletedRow = currentValue.find((row) => row.id === rowId);
+      if (deletedRow?.sourceKeywordId) {
+        setDeletedKeywordRows((currentDeleted) => currentDeleted.some((row) => row.id === deletedRow.sourceKeywordId)
+          ? currentDeleted
+          : [...currentDeleted, {
+              id: deletedRow.sourceKeywordId as number,
+              value: deletedRow.originalValue || deletedRow.value
+            }]);
+      }
+      return currentValue.filter((row) => row.id !== rowId);
+    });
   };
 
   const saveKeywordRowsToManagement = async () => {
     if (!keywordManagementScope) {
-      if (keywordRowsForSave(keywordInputRows).length) {
-        antdMessage.warning('缺少店铺、站点或 PSKU，无法保存关键词');
+      if (keywordRowsForSave(keywordInputRows).some((row) =>
+        keywordRowHasKeywordChange(row) || Boolean(row.competitorSourceKeys?.length)
+      ) || deletedKeywordRows.length) {
+        throw new Error('缺少店铺、站点或正式 PSKU，无法保存关键词');
       }
       return;
     }
     const rowsToSave = keywordRowsForSave(keywordInputRows);
-    if (!rowsToSave.length) {
+    const changedRows = rowsToSave.filter((row) =>
+      keywordRowHasKeywordChange(row) || Boolean(row.competitorSourceKeys?.length)
+    );
+    if (!changedRows.length && !deletedKeywordRows.length) {
       return;
     }
     setKeywordSaving(true);
     try {
-      let keywordSaveCount = 0;
-      let competitorSaveCount = 0;
-      for (const row of rowsToSave) {
-        const selectedKeywords = keywordRowKeywords(row);
-        const primaryKeyword = selectedKeywords[0];
-        if (keywordRowHasKeywordChange(row)) {
-          if (row.sourceKeywordId) {
-            await updateProductKeyword(row.sourceKeywordId, {
-              ...keywordManagementScope,
-              keyword: primaryKeyword,
-              intentTags: ['TITLE_TARGET']
-            });
-          } else {
-            await addProductKeyword({
-              ...keywordManagementScope,
-              keyword: primaryKeyword,
-              intentTags: ['TITLE_TARGET']
-            });
-          }
-          keywordSaveCount += 1;
-        }
-        const competitorSources = selectedCompetitorKeywordEvidenceItems(row);
-        if (competitorSources.length) {
-          await addProductCompetitorKeywords({
-            ...keywordManagementScope,
-            keywords: selectedKeywords,
+      const result = await saveProductKeywordEditorChanges({
+        ...keywordManagementScope,
+        deletedKeywordIds: deletedKeywordRows.map((row) => row.id),
+        rows: changedRows.flatMap((row) => {
+          const keywords = keywordRowKeywords(row);
+          const competitorSources = selectedCompetitorKeywordEvidenceItems(row);
+          return keywords.map((keyword, index) => ({
+            keywordId: index === 0 ? row.sourceKeywordId : undefined,
+            keyword,
+            saveKeyword: index === 0 && keywordRowHasKeywordChange(row),
             competitorSources
-          });
-          competitorSaveCount += competitorSources.length;
-        }
-      }
-      if (keywordSaveCount || competitorSaveCount) {
-        antdMessage.success(`已保存关键词 ${keywordSaveCount} 个，竞品证据 ${competitorSaveCount} 条`);
-      }
+          }));
+        })
+      });
+      const keywordSaveCount = changedRows.filter(keywordRowHasKeywordChange).length + deletedKeywordRows.length;
+      const competitorSaveCount = changedRows.reduce(
+        (count, row) => count + selectedCompetitorKeywordEvidenceItems(row).length,
+        0
+      );
+      setKeywordInputRows(editableKeywordRowsFromPanel(result));
+      setKeywordPanelCompetitorMaterials(competitorMaterialsFromKeywordEvents(result.events));
+      setDeletedKeywordRows([]);
+      keywordRowsDirtyRef.current = false;
+      antdMessage.success(`已保存关键词变更 ${keywordSaveCount} 个，竞品证据 ${competitorSaveCount} 条`);
     } catch (error) {
       antdMessage.error(error instanceof Error ? error.message : '竞品关键词写入失败');
       throw error;
@@ -712,6 +727,7 @@ function ProductContentFieldEditModal(props: {
       initialValue: value,
       draftValue,
       rows: supportsTitleKeywords ? keywordInputRows : [],
+      deletedKeywords: supportsTitleKeywords ? deletedKeywordRows.map((row) => row.value) : [],
       competitorLabelsByRowId
     });
     if (!detail.messages.length) {
@@ -811,12 +827,13 @@ function ProductContentFieldEditModal(props: {
                 <Space key={row.id} align="center" size={8} style={{ display: 'flex', width: '100%' }}>
                   <Input
                     data-testid="product-competitor-keyword-row-input"
+                    disabled={keywordEditingDisabled}
                     placeholder={`关键词${index + 1}`}
                     value={row.value}
                     onChange={(event) => updateKeywordInputRow(row.id, event.target.value)}
                   />
                   <Button
-                    disabled={!noonCompetitorItems.length}
+                    disabled={keywordEditingDisabled || !noonCompetitorItems.length}
                     style={{ flex: '0 0 auto' }}
                     onClick={() => openCompetitorPickerForKeywordRow(row)}
                   >
@@ -826,6 +843,7 @@ function ProductContentFieldEditModal(props: {
                     <Button
                       aria-label="删除关键词"
                       danger
+                      disabled={keywordEditingDisabled}
                       icon={<DeleteOutlined />}
                       style={{ flex: '0 0 auto' }}
                       onClick={() => deleteKeywordInputRow(row.id)}
@@ -837,7 +855,13 @@ function ProductContentFieldEditModal(props: {
           ) : (
             <Text type="secondary">暂无标题关键词，点击下方添加。</Text>
           )}
-          <Button block icon={<PlusOutlined />} loading={keywordSaving} onClick={addKeywordInputRow}>
+          <Button
+            block
+            disabled={keywordPanelLoading}
+            icon={<PlusOutlined />}
+            loading={keywordSaving}
+            onClick={addKeywordInputRow}
+          >
             添加关键词
           </Button>
         </Space>
@@ -944,9 +968,16 @@ function ProductContentFieldEditModal(props: {
       open={open}
       title={`编辑${langLabel}${fieldLabel}`}
       width={fieldType === 'title' ? 1180 : 820}
-      onCancel={onCancel}
+      closable={!keywordSaving}
+      keyboard={!keywordSaving}
+      maskClosable={!keywordSaving}
+      onCancel={() => {
+        if (!keywordSaving) {
+          onCancel();
+        }
+      }}
       footer={[
-        <Button key="cancel" onClick={onCancel}>
+        <Button key="cancel" disabled={keywordSaving} onClick={onCancel}>
           取消
         </Button>,
         <Button key="save" loading={keywordSaving} type="primary" onClick={requestProductContentSave}>
@@ -975,6 +1006,7 @@ function ProductContentFieldEditModal(props: {
         onCancel={() => setCompetitorPickerRowId(undefined)}
         onSave={(rowId, selectedKeys) => {
           setSaveConfirmDetail(null);
+          keywordRowsDirtyRef.current = true;
           setKeywordInputRows((currentValue) =>
             currentValue.map((row) => (row.id === rowId ? { ...row, competitorSourceKeys: selectedKeys } : row))
           );
@@ -1011,9 +1043,16 @@ function ProductContentSaveConfirmModal(props: {
       title="确认保存本次修改"
       width={720}
       confirmLoading={loading}
+      closable={!loading}
+      keyboard={!loading}
+      maskClosable={!loading}
       okText="确认保存"
       cancelText="返回修改"
-      onCancel={onCancel}
+      onCancel={() => {
+        if (!loading) {
+          onCancel();
+        }
+      }}
       onOk={onConfirm}
     >
       {detail ? (

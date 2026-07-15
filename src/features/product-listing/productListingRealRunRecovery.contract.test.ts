@@ -14,12 +14,29 @@ assert(
   'product listing API should expose continuation after Noon create succeeds but later steps fail'
 )
 assert(
+  apiSource.includes("params.set('draftId', String(draftId))") &&
+    pageSource.includes('fetchRecentProductListingTasks(recentTasksStoreCode, 10, currentDraftId)'),
+  'listing task recovery should query the backend by draftId instead of filtering a store-level top-N window'
+)
+assert(
   pageSource.includes('重新回读校验') && pageSource.includes('handleVerifyReadBack'),
   'listing page should expose a human-triggered readback recovery action'
 )
 assert(
   pageSource.includes('继续写后续步骤') && pageSource.includes('handleContinueAfterCreate'),
   'listing page should expose a human-triggered continue-after-create recovery action'
+)
+assert(
+  pageSource.includes('className="product-listing-recovery-alert"') &&
+    pageSource.includes('查询 Noon 并继续') &&
+    pageSource.indexOf('className="product-listing-recovery-alert"') < pageSource.indexOf('<Modal'),
+  'recovered unknown or interrupted tasks should expose a recovery action on the page without reopening the listing modal'
+)
+assert(
+  pageSource.includes("task.failureCode === 'noon_create_outcome_unknown'") &&
+    pageSource.includes("task.failureCode === 'real_run_interrupted'") &&
+    pageSource.includes('不会重复创建'),
+  'unknown or interrupted create outcomes should expose reference lookup plus continuation without replaying create'
 )
 assert(
   pageSource.includes('saveProductListingReturnNotice(PRODUCT_LISTING_REAL_RUN_SUBMITTED_NOTICE)') &&

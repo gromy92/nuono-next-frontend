@@ -71,9 +71,12 @@ assert(
 )
 assert(
   bilingualContentEditorSource.includes('saveKeywordRowsToManagement') &&
-    bilingualContentEditorSource.includes('addProductCompetitorKeywords') &&
+    bilingualContentEditorSource.includes('saveProductKeywordEditorChanges') &&
     bilingualContentEditorSource.includes('fetchProductKeywordProduct') &&
-    bilingualContentEditorSource.includes('updateProductKeyword') &&
+    bilingualContentEditorSource.includes('deletedKeywordRows') &&
+    bilingualContentEditorSource.includes('keywordRowsDirtyRef') &&
+    bilingualContentEditorSource.includes('deletedRow.originalValue || deletedRow.value') &&
+    bilingualContentEditorSource.includes('closable={!keywordSaving}') &&
     bilingualContentEditorSource.includes('openCompetitorPickerForKeywordRow') &&
     bilingualContentEditorSource.includes('requestProductContentSave') &&
     bilingualContentEditorSource.includes('saveConfirmDetail') &&

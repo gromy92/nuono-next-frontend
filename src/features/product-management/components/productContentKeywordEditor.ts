@@ -126,11 +126,14 @@ export function buildProductContentKeywordSaveChangeSummary(params: {
   initialValue: string;
   draftValue: string;
   rows: ProductContentKeywordInputRow[];
+  deletedKeywords?: string[];
 }): ProductContentKeywordSaveChangeSummary {
   const titleChanged =
     params.fieldType === 'title' &&
     text(params.initialValue) !== text(params.draftValue);
-  const keywordChanged = params.fieldType === 'title' && params.rows.some(keywordRowHasKeywordChange);
+  const keywordChanged = params.fieldType === 'title' && (
+    params.rows.some(keywordRowHasKeywordChange) || Boolean(params.deletedKeywords?.length)
+  );
   const competitorChanged = params.fieldType === 'title' && keywordRowsHaveCompetitorChange(params.rows);
   const messages: string[] = [];
   if (titleChanged) {
@@ -155,6 +158,7 @@ export function buildProductContentKeywordSaveChangeDetails(params: {
   initialValue: string;
   draftValue: string;
   rows: ProductContentKeywordInputRow[];
+  deletedKeywords?: string[];
   competitorLabelsByRowId?: Record<string, string[]>;
 }): ProductContentKeywordSaveChangeDetails {
   const summary = buildProductContentKeywordSaveChangeSummary(params);
@@ -162,6 +166,9 @@ export function buildProductContentKeywordSaveChangeDetails(params: {
   const competitorDetails: string[] = [];
 
   if (params.fieldType === 'title') {
+    (params.deletedKeywords || []).forEach((keyword) => {
+      keywordDetails.push(`删除关键词：${keyword}`);
+    });
     params.rows.forEach((row) => {
       const keywords = keywordRowKeywords(row);
       if (!keywords.length) {
