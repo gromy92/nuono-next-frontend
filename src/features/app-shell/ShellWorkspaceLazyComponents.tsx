@@ -50,6 +50,11 @@ export const InTransitGoodsPage = lazyWorkspace(() =>
 export const ManualSelectionPage = lazyWorkspace(() =>
   import('../manual-selection/ManualSelectionPage').then((module) => ({ default: module.ManualSelectionPage }))
 );
+export const ProductListingPage = lazyWorkspace(() =>
+  import('../product-listing/ProductListingPage').then((module) => ({
+    default: module.ProductListingPage
+  }))
+);
 export const Ali1688CollectionPage = lazyWorkspace(() =>
   import('../ali1688-collection/Ali1688CollectionPage').then((module) => ({
     default: module.Ali1688CollectionPage

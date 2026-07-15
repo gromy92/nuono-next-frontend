@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { DeleteOutlined } from '@ant-design/icons';
 import { Button, Col, Input, Row, Select, Space, Tag, Tooltip, Typography, message } from 'antd';
 import type { ProductMasterSnapshotPayload, ProductSummarySurface } from '../types';
 import { siteOfferCode, textInputValue } from '../utils';
@@ -76,6 +77,8 @@ export function ProductOfferMetaSection(props: {
   productSnapshotView?: ProductMasterSnapshotPayload;
   currentProductSummarySurface?: ProductSummarySurface | null;
   activeProductSiteOffer?: Record<string, unknown>;
+  barcodeValidationIssue?: { message: string };
+  onBarcodeDraftChange?: (value: string) => void;
   updateSiteOfferField: (storeCode: string, field: string, value: unknown) => void;
   updateProductSectionField: (
     section: 'identity' | 'taxonomy' | 'content' | 'group',
@@ -88,6 +91,8 @@ export function ProductOfferMetaSection(props: {
     productSnapshotView,
     currentProductSummarySurface,
     activeProductSiteOffer,
+    barcodeValidationIssue,
+    onBarcodeDraftChange,
     updateSiteOfferField,
     updateProductSectionField,
     updateProductAttributeField
@@ -100,12 +105,14 @@ export function ProductOfferMetaSection(props: {
   const barcodeAttribute = useMemo(() => findBarcodeAttribute(productSnapshotView), [productSnapshotView]);
   const barcodeAttributeCode = textInputValue(barcodeAttribute?.code);
   const canAddBarcode = Boolean(barcodeAttributeCode);
+  const canDeleteBarcode = productSnapshotView?.mode === 'listing-draft';
   const [barcodeDraft, setBarcodeDraft] = useState('');
   const warrantyValue = textInputValue(activeProductSiteOffer?.idWarranty ?? productSnapshotView?.pricing.idWarranty ?? '0') || '0';
 
   useEffect(() => {
     setBarcodeDraft('');
-  }, [primaryBarcode]);
+    onBarcodeDraftChange?.('');
+  }, [onBarcodeDraftChange, primaryBarcode]);
 
   const updateField = (field: string, value: unknown) => {
     if (!activeProductSiteOffer) {
@@ -119,8 +126,11 @@ export function ProductOfferMetaSection(props: {
     if (!nextBarcode) {
       return;
     }
+    if (barcodeValidationIssue) {
+      return;
+    }
 
-    const nextBarcodes = Array.from(new Set([...barcodes, nextBarcode]));
+    const nextBarcodes = [nextBarcode];
     if (!barcodeAttributeCode) {
       message.warning('当前官方模板没有 Barcode 写回字段，只能展示已有 Barcode。');
       return;
@@ -130,8 +140,18 @@ export function ProductOfferMetaSection(props: {
     updateProductSectionField('identity', 'barcode', nextBarcodes[0] ?? nextBarcode);
     updateProductSectionField('identity', 'barcodes', nextBarcodes);
     setBarcodeDraft('');
-    message.warning('Barcode 已加入当前草稿；当前 Barcode 暂不支持发布到 Noon。');
+    onBarcodeDraftChange?.('');
+    message.success('Barcode 已更新到当前草稿，保存后将在上架时写入 Noon。');
   };
+
+  const removeBarcode = (barcode: string) => {
+    const nextBarcodes = barcodes.filter((item) => item !== barcode);
+    updateProductSectionField('identity', 'barcodes', nextBarcodes);
+    setBarcodeDraft('');
+    onBarcodeDraftChange?.('');
+    message.success('Barcode 已从当前草稿删除，请保存草稿后生效。');
+  };
+  const showBarcodeValidationIssue = Boolean(barcodeDraft.trim() && barcodeValidationIssue);
 
   return (
     <Row gutter={[16, 16]}>
@@ -145,30 +165,59 @@ export function ProductOfferMetaSection(props: {
             <Space wrap size={[6, 6]}>
               {barcodes.map((item) => (
                 <Tag key={item} color="default" style={{ width: 'fit-content', marginInlineEnd: 0 }}>
-                  {item}
+                  <Space size={4}>
+                    <span>{item}</span>
+                    {canDeleteBarcode ? (
+                      <Tooltip title="从草稿删除 Barcode">
+                        <Button
+                          type="text"
+                          danger
+                          size="small"
+                          aria-label={`删除 Barcode ${item}`}
+                          icon={<DeleteOutlined />}
+                          style={{ width: 22, minWidth: 22, height: 22, padding: 0 }}
+                          onClick={() => removeBarcode(item)}
+                        />
+                      </Tooltip>
+                    ) : null}
+                  </Space>
                 </Tag>
               ))}
             </Space>
           ) : (
             <Text style={{ color: 'var(--pm-text-faint)', fontSize: 12 }}>暂无</Text>
           )}
-          <Text style={{ color: 'var(--pm-text-muted)' }}>新增 Barcode</Text>
+          <Text style={{ color: 'var(--pm-text-muted)' }}>{barcodes.length ? '更换 Barcode' : '新增 Barcode'}</Text>
           <Space.Compact style={{ width: '100%' }}>
             <Input
               placeholder="Enter Barcode"
               value={barcodeDraft}
+              status={barcodeValidationIssue ? 'error' : undefined}
               style={{ width: 'calc(100% - 112px)' }}
               disabled={!canAddBarcode}
-              onChange={(event) => setBarcodeDraft(event.target.value)}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                setBarcodeDraft(nextValue);
+                onBarcodeDraftChange?.(nextValue);
+              }}
             />
             <Tooltip title={canAddBarcode ? undefined : '当前官方模板没有 Barcode 写回字段，只能展示已有 Barcode'}>
               <span style={{ width: 112 }}>
-                <Button disabled={!barcodeDraft.trim() || !canAddBarcode} style={{ width: '100%' }} onClick={submitBarcode}>
+                <Button
+                  disabled={!barcodeDraft.trim() || !canAddBarcode || Boolean(barcodeValidationIssue)}
+                  style={{ width: '100%' }}
+                  onClick={submitBarcode}
+                >
                   添加 Barcode
                 </Button>
               </span>
             </Tooltip>
           </Space.Compact>
+          {showBarcodeValidationIssue ? (
+            <Text type="danger" style={{ fontSize: 12 }}>
+              {barcodeValidationIssue?.message}
+            </Text>
+          ) : null}
           {!canAddBarcode ? (
             <Text style={{ color: 'var(--pm-text-muted)', fontSize: 12 }}>
               当前商品模板未提供 Barcode 写回字段，已有值仅作展示。

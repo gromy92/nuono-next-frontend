@@ -10,6 +10,7 @@ import {
   PRODUCT_MANUAL_SELECTION_PATH,
   PURCHASE_PROFIT_PATH,
   PURCHASE_1688_COLLECTION_PATH,
+  PURCHASE_LISTING_PATH,
   DATA_SALES_ANALYTICS_PATH,
   OPERATIONS_COMPETITOR_ANALYSIS_PATH,
   OPERATIONS_SKIN_MANAGEMENT_PATH,
@@ -139,6 +140,7 @@ function readDevSessionOverride(): AuthSession | null {
   const includePurchaseDevMenu =
     pathname.startsWith('/purchase/order') ||
     pathname.startsWith(PURCHASE_1688_COLLECTION_PATH) ||
+    pathname.startsWith(PURCHASE_LISTING_PATH) ||
     search.get('grantPurchase') === '1'
   const includeInTransitGoodsDevMenu =
     pathname.startsWith(PURCHASE_IN_TRANSIT_GOODS_PATH) ||
@@ -272,6 +274,16 @@ function readDevSessionOverride(): AuthSession | null {
       authorized: true
     },
     {
+      id: 306,
+      orgCode: 'ORG-XINGYAO',
+      orgName: '毕翠红运营中心',
+      projectCode: 'PRJ245027',
+      projectName: 'xingyao',
+      storeCode: 'STR245027-NSA',
+      site: 'SA',
+      authorized: true
+    },
+    {
       id: 303,
       orgCode: 'ORG-CHENWU',
       orgName: '毕翠红运营中心',
@@ -323,6 +335,7 @@ function readDevSessionOverride(): AuthSession | null {
   }
   if (includePurchaseDevMenu) {
     grantedMenus.push({ menuId: 24, menuName: '采购', urlPath: '/api/purchase/order' })
+    grantedMenus.push({ menuId: 2401, menuName: '商品上架', urlPath: PURCHASE_LISTING_PATH })
   }
   if (includeInTransitGoodsDevMenu) {
     grantedMenus.push({ menuId: 9302, menuName: '在途商品', urlPath: PURCHASE_IN_TRANSIT_GOODS_PATH })

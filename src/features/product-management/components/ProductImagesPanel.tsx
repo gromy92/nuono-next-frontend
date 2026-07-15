@@ -1,11 +1,14 @@
 import { EditOutlined } from '@ant-design/icons';
-import { Button, Space, Typography, message } from 'antd';
+import { App as AntdApp, Button, Space, Typography } from 'antd';
 import { useState } from 'react';
-import { uploadProductImageAsset } from '../api';
+import { importProductImageAsset, uploadProductImageAsset } from '../api';
 import type { ProductFieldDomainSurface, ProductMasterSnapshotPayload } from '../types';
 import { textInputValue } from '../utils';
 import { ProductDetailSection } from './ProductDetailSection';
+import { ProductImageAssetPreview } from './ProductImageAssetPreview';
 import { ProductImageManagerDrawer } from './ProductImageManagerDrawer';
+import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../types/productImageRole';
+import type { NoonImageAssetMetadata } from '../utils/noonImageRequirements';
 
 const { Text } = Typography;
 
@@ -13,30 +16,59 @@ export function ProductImagesPanel(props: {
   productContentDomain?: ProductFieldDomainSurface;
   productSnapshotView?: ProductMasterSnapshotPayload;
   productImageUrls: string[];
+  productImageRoleAssignments?: ProductImageRoleAssignment[];
+  productImageAssetMetadata?: NoonImageAssetMetadata[];
+  allowEmptyImages?: boolean;
   openCurrentProductGallery: (index: number) => void;
-  onImagesChange: (images: string[]) => void;
+  onImagesChange: (
+    images: string[],
+    imageRoleAssignments?: ProductImageRoleAssignment[],
+    imageAssetMetadata?: NoonImageAssetMetadata[]
+  ) => void;
 }) {
-  const { productContentDomain, productSnapshotView, productImageUrls, openCurrentProductGallery, onImagesChange } = props;
+  const { message: messageApi } = AntdApp.useApp();
+  const {
+    allowEmptyImages,
+    productContentDomain,
+    productImageAssetMetadata = [],
+    productImageRoleAssignments = [],
+    productSnapshotView,
+    productImageUrls,
+    openCurrentProductGallery,
+    onImagesChange
+  } = props;
   const [managerOpen, setManagerOpen] = useState(false);
+  const imageRolesByUrl = new Map(productImageRoleAssignments.map((item) => [item.imageUrl, item.imageRole]));
 
-  const saveImages = (images: string[]) => {
-    onImagesChange(images);
+  const saveImages = (
+    images: string[],
+    imageRoleAssignments: ProductImageRoleAssignment[],
+    imageAssetMetadata: NoonImageAssetMetadata[]
+  ) => {
+    onImagesChange(images, imageRoleAssignments, imageAssetMetadata);
     setManagerOpen(false);
-    message.success('已更新商品图片，记得保存草稿');
+    messageApi.success('已更新商品图片，记得保存草稿');
   };
 
   const uploadImage = async (file: File) => {
-    const ownerUserId = Number(productSnapshotView?.storeContext.ownerUserId);
-    const response = await uploadProductImageAsset(file, {
-      ownerUserId: Number.isFinite(ownerUserId) ? ownerUserId : undefined,
-      storeCode: textInputValue(productSnapshotView?.storeContext.storeCode),
-      skuParent: textInputValue(productSnapshotView?.identity.skuParent)
-    });
+    const context = imageAssetContext(productSnapshotView);
+    const response = await uploadProductImageAsset(file, context);
     if (!response.url) {
       throw new Error('上传图片未返回地址');
     }
     if (response.warnings?.length) {
-      message.warning(response.warnings[0]);
+      messageApi.warning(response.warnings[0]);
+    }
+    return response.url;
+  };
+
+  const importRemoteImage = async (imageUrl: string) => {
+    const response = await importProductImageAsset(imageUrl, imageAssetContext(productSnapshotView));
+    if (!response.url) {
+      throw new Error('转存图片未返回地址');
+    }
+    if (response.warnings?.length) {
+      messageApi.warning(response.warnings[0]);
     }
     return response.url;
   };
@@ -89,7 +121,7 @@ export function ProductImagesPanel(props: {
                   background: 'var(--pm-subtle-bg)'
                 }}
               >
-                <img
+                <ProductImageAssetPreview
                   src={item}
                   alt={`商品图 ${index + 1}`}
                   style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }}
@@ -104,7 +136,7 @@ export function ProductImagesPanel(props: {
                     fontSize: 12
                   }}
                 >
-                  {index === 0 ? '头图' : `商品图 ${index + 1}`}
+                  {index === 0 ? '头图' : `商品图 ${index + 1}`} · {imageRoleLabel(imageRolesByUrl.get(item), index)}
                 </div>
               </div>
             </div>
@@ -121,10 +153,38 @@ export function ProductImagesPanel(props: {
       <ProductImageManagerDrawer
         open={managerOpen}
         images={productImageUrls}
+        imageRoleAssignments={productImageRoleAssignments}
+        imageAssetMetadata={productImageAssetMetadata}
+        allowEmptyImages={allowEmptyImages}
+        messageApi={messageApi}
         onClose={() => setManagerOpen(false)}
         onSave={saveImages}
         onUploadImage={uploadImage}
+        onImportRemoteImage={importRemoteImage}
       />
     </ProductDetailSection>
   );
+}
+
+function imageAssetContext(productSnapshotView?: ProductMasterSnapshotPayload) {
+  const ownerUserId = Number(productSnapshotView?.storeContext.ownerUserId);
+  return {
+    ownerUserId: Number.isFinite(ownerUserId) ? ownerUserId : undefined,
+    storeCode: textInputValue(productSnapshotView?.storeContext.storeCode),
+    skuParent: textInputValue(productSnapshotView?.identity.skuParent)
+  };
+}
+
+function imageRoleLabel(imageRole: ProductImageUsageRole | undefined, index: number) {
+  const normalized = imageRole ?? (index === 0 ? 'MAIN' : 'DETAIL');
+  if (normalized === 'MAIN') {
+    return '主图';
+  }
+  if (normalized === 'SIZE') {
+    return '尺寸图';
+  }
+  if (normalized === 'PACKAGE') {
+    return '包装图';
+  }
+  return '细节图';
 }

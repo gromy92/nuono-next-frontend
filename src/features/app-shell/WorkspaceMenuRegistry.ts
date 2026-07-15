@@ -8,6 +8,7 @@ export type AppMenuKey =
   | 'purchase-ali1688-collection'
   | 'purchase-ali1688-historical-orders'
   | 'purchase-ali1688-sku-purchase-history'
+  | 'purchase-listing'
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
@@ -78,6 +79,7 @@ export type WorkspaceContentKind =
   | 'purchase-ali1688-collection'
   | 'purchase-ali1688-historical-orders'
   | 'purchase-ali1688-sku-purchase-history'
+  | 'product-listing'
   | 'purchase-order'
   | 'purchase-profit'
   | 'purchase-logistics-quote'
@@ -230,6 +232,16 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '采购 / SKU 采购历史',
     tabLabel: 'SKU 采购历史',
     contentKind: 'purchase-ali1688-sku-purchase-history',
+    closable: true
+  },
+  'purchase-listing': {
+    key: 'purchase-listing',
+    label: '商品上架',
+    path: '/purchase/listing',
+    sectionKey: 'purchase',
+    pathLabel: '采购 / 商品上架',
+    tabLabel: '商品上架',
+    contentKind: 'product-listing',
     closable: true
   },
   'purchase-order': {
@@ -539,6 +551,7 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     label: '采购',
     iconKey: 'purchase',
     entries: [
+      { type: 'workspace', key: 'purchase-listing' },
       { type: 'workspace', key: 'purchase-profit' },
       { type: 'workspace', key: 'purchase-ali1688-historical-orders' },
       { type: 'workspace', key: 'purchase-ali1688-sku-purchase-history' },
@@ -703,6 +716,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
     menuNames: ['1688 历史订单', 'SKU 采购历史']
   },
   {
+    keys: ['purchase-listing'],
+    urlPaths: ['/purchase/listing', '/api/product-listing'],
+    urlPathPrefixes: ['/api/product-listing/'],
+    menuNames: ['商品上架']
+  },
+  {
     keys: ['purchase-profit'],
     urlPaths: ['/purchase/profit', '/api/sku/cost'],
     menuNames: ['利润计算', '利润计算与上架']
@@ -826,6 +845,7 @@ export const BOSS_OPERATOR_MENU_KEYS: AppMenuKey[] = [
   'purchase-ali1688-historical-orders',
   'purchase-ali1688-sku-purchase-history',
   'purchase-ali1688-collection',
+  'purchase-listing',
   'purchase-order',
   'purchase-in-transit-goods',
   'purchase-product-logistics-costs',

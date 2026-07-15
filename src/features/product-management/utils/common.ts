@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import type { ProductMasterSnapshotPayload, ProductSyncStatus, ProductWorkbenchPayload } from '../types';
+import { createProductMasterSnapshotPayload } from './productMasterSnapshotFactory';
 
 export function parseOptionalNumber(value: unknown) {
   if (value === null || value === undefined || value === '') {
@@ -92,24 +93,7 @@ export function isProductNotListedSource(source?: string) {
 }
 
 export function snapshotPayloadCore(payload: ProductMasterSnapshotPayload | ProductWorkbenchPayload): ProductMasterSnapshotPayload {
-  return {
-    mode: payload.mode,
-    ready: payload.ready,
-    message: payload.message,
-    warnings: Array.isArray(payload.warnings) ? [...payload.warnings] : [],
-    missingCoreTables: Array.isArray(payload.missingCoreTables) ? [...payload.missingCoreTables] : [],
-    storeContext: cloneRecord(payload.storeContext),
-    identity: cloneRecord(payload.identity),
-    taxonomy: cloneRecord(payload.taxonomy),
-    content: cloneRecord(payload.content),
-    platformSignals: cloneRecord(payload.platformSignals ?? {}),
-    keyAttributes: cloneRecordList(payload.keyAttributes),
-    group: cloneRecord(payload.group),
-    variants: cloneRecordList(payload.variants),
-    pricing: cloneRecord(payload.pricing),
-    stock: cloneRecord(payload.stock),
-    siteOffers: cloneRecordList(payload.siteOffers)
-  };
+  return createProductMasterSnapshotPayload(payload);
 }
 
 export function cloneSnapshotPayload(payload: ProductMasterSnapshotPayload | ProductWorkbenchPayload) {

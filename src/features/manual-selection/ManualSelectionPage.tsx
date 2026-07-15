@@ -6,6 +6,7 @@ import {
   analyzeManualSelectionCollection,
   createManualSelectionGroup,
   deleteManualSelectionGroupCompetitor,
+  loadManualSelectionGroupProfitEstimate,
   loadManualSelectionGroups,
   recollectManualSelectionGroupCompetitor,
   saveManualSelectionAnalysisItemProcurement,
@@ -23,6 +24,7 @@ import { ManualSelectionToolbar } from './components/ManualSelectionToolbar'
 import { NewCollectionModal } from './components/NewCollectionModal'
 import { useManualSelectionCollections } from './hooks/useManualSelectionCollections'
 import { collectionFromLinkCompetitor } from './competitorDetailAdapter'
+import { openManualSelectionGroupListingInNewTab } from './listingNavigation'
 import { normalizeManualSelectionKeyword } from './utils'
 import { createManualSelectionProfitEstimateSeed } from './profitEstimateSeed'
 import {
@@ -37,12 +39,15 @@ import {
   isGroupEndpointMissingError,
   loadManualSelectionGroupWorkspace
 } from './manualSelectionGroupRepository'
+import { normalizeManualSelectionPageErrorMessage } from './manualSelectionErrorMessage'
+import { saveManualSelectionGroupListingPrefill } from '../product-listing/sourcePrefill'
 import type {
   ManualSelectionAli1688ProcurementInfo,
   ManualSelectionAiAnalysisResult,
   ManualSelectionAnalysisProjectInfo,
   ManualSelectionAnalysisProjectView,
   ManualSelectionCompetitor,
+  ManualSelectionGroupProfitEstimateSnapshot,
   ManualSelectionGroupView,
   ManualSelectionPageProps,
   ManualSelectionProfitEstimateSeed,
@@ -179,17 +184,6 @@ function defaultAnalysisProjectName(records: ProductSelectionSourceCollection[])
   return `${firstTitle.slice(0, 48)} 等${records.length}个素材`
 }
 
-function normalizeJoinGroupErrorMessage(messageText?: string) {
-  const normalized = (messageText || '').trim()
-  if (isGroupEndpointMissingError(normalized)) {
-    return '当前后端未部署选品组接口，请重启当前分支后端或切换到包含 /api/product-selection/groups 的服务。'
-  }
-  if (/request failed: 500|internal server error|failed to fetch/i.test(normalized)) {
-    return '当前后端服务异常或未启动，请确认本地后端已启动并指向当前分支服务后再重试。'
-  }
-  return normalized
-}
-
 export function ManualSelectionPage(props: ManualSelectionPageProps) {
   const { message } = App.useApp()
   const [searchForm] = Form.useForm<ManualSelectionSearchValues>()
@@ -239,7 +233,10 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
       })
       .catch((error) => {
         if (!cancelled) {
-          const messageText = error instanceof Error ? error.message : '读取选品分析失败'
+          const messageText = normalizeManualSelectionPageErrorMessage(
+            error instanceof Error ? error.message : undefined,
+            '读取选品分析失败'
+          )
           message.error(messageText)
         }
       })
@@ -346,6 +343,29 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
 
   const representativeRecordFromProject = (project: ManualSelectionAnalysisProjectView) => project.records[0]
 
+  const handleOpenListing = async (project: ManualSelectionAnalysisProjectView) => {
+    if (!(project.groupId || project.projectId)) {
+      message.warning('选品组缺少组编号，无法进入上架')
+      return
+    }
+    const groupId = project.groupId || project.projectId
+    let profitEstimate: ManualSelectionGroupProfitEstimateSnapshot | null = null
+    try {
+      profitEstimate = await loadManualSelectionGroupProfitEstimate(groupId)
+    } catch {
+      // 上架仍可进入，缺少利润快照时由上架页展示类目缺失校验。
+    }
+    saveManualSelectionGroupListingPrefill(
+      project,
+      props.storeCode,
+      project.competitors || [],
+      profitEstimate
+    )
+    if (!openManualSelectionGroupListingInNewTab(project)) {
+      message.warning('浏览器拦截了上架新标签页，请允许弹窗后重试')
+    }
+  }
+
   const handleOpenProfitEstimate = async (project: ManualSelectionAnalysisProjectView) => {
     try {
       const groups = await loadManualSelectionGroups(props.storeName, props.storeCode)
@@ -450,7 +470,10 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
       setAnalysisProjectError('')
       handleTabChange('analysis')
     } catch (error) {
-      const messageText = normalizeJoinGroupErrorMessage(error instanceof Error ? error.message : undefined)
+      const messageText = normalizeManualSelectionPageErrorMessage(
+        error instanceof Error ? error.message : undefined,
+        '创建选品组失败'
+      )
       setAnalysisProjectError(messageText)
       message.error(messageText)
     } finally {
@@ -740,6 +763,7 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
                   onOpenAiAnalysis={(project) => void handleOpenAiAnalysis(project)}
                   onOpenCompetitorDetail={handleOpenCompetitorDetail}
                   onOpenCompetitors={handleOpenCompetitors}
+                  onOpenListing={(project) => void handleOpenListing(project)}
                   onOpenProfitEstimate={(project) => void handleOpenProfitEstimate(project)}
                   onRecollectCompetitor={(project, competitor) => void handleRecollectCompetitor(project, competitor)}
                 />

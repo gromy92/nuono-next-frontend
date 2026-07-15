@@ -29,6 +29,22 @@ export type ProductLastPublishTaskPayload = {
   changes?: Array<Record<string, unknown>>;
 };
 
+export type ProductListingPublishTaskPayload = {
+  taskId?: number;
+  taskNo?: string;
+  mode?: 'REAL_RUN' | string;
+  status?: 'submitted' | 'running' | 'succeeded' | 'failed' | 'rejected' | 'written_verify_failed' | string;
+  statusLabel?: '上架中' | '上架成功' | '上架失败' | '已写入，回读异常' | string;
+  partnerSku?: string;
+  storeCode?: string;
+  skuParent?: string;
+  pskuCode?: string;
+  failureCode?: string;
+  failureMessage?: string;
+  submittedAt?: string;
+  finishedAt?: string;
+};
+
 export type ProductListFilters = {
   skuQuery: string;
   titleQuery: string;
@@ -154,6 +170,7 @@ export type StoreInitializationPayload = {
     salesAmount?: string;
     salesCurrency?: string;
     lastPublishTask?: ProductLastPublishTaskPayload;
+    listingPublishTask?: ProductListingPublishTaskPayload;
   }>;
 };
 
@@ -258,6 +275,7 @@ export type ProductListSummaryPayload = {
   salesAmount?: string;
   salesCurrency?: string;
   lastPublishTask?: ProductLastPublishTaskPayload;
+  listingPublishTask?: ProductListingPublishTaskPayload;
 };
 
 export type ProductSummarySurface = {

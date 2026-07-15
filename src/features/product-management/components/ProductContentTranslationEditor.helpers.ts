@@ -40,13 +40,14 @@ export function resolveHighlightRows(zhValues: string[], enValues: string[], arV
 
 export async function translateProductTextWithFeedback(params: {
   text: string;
+  sourceLang?: LangCode | 'AUTO';
   targetLang: LangCode;
   loadingKey: string;
   emptyMessage: string;
   setLoading: Dispatch<SetStateAction<LoadingMap>>;
   setNotice: Dispatch<SetStateAction<TranslationNotice>>;
 }) {
-  const { emptyMessage, loadingKey, setLoading, setNotice, targetLang, text } = params;
+  const { emptyMessage, loadingKey, setLoading, setNotice, sourceLang = 'AUTO', targetLang, text } = params;
   if (!text.trim()) {
     message.warning(emptyMessage);
     setNotice({ type: 'warning', message: emptyMessage });
@@ -56,7 +57,7 @@ export async function translateProductTextWithFeedback(params: {
   setNotice(null);
   setLoadingKey(setLoading, loadingKey, true);
   try {
-    const result = await translateProductContentText({ text, targetLang });
+    const result = await translateProductContentText({ text, sourceLang, targetLang });
     const translatedText = result.data?.translation?.text;
     if (result.ready === false || !translatedText) {
       const errorMessage = result.msg || result.message || '翻译服务没有返回结果';
@@ -70,6 +71,12 @@ export async function translateProductTextWithFeedback(params: {
       setNotice({ type: 'warning', message: warningMessage });
       return '';
     }
+    if (!translatedTextMatchesTargetLang(translatedText, targetLang)) {
+      const warningMessage = targetLanguageMismatchMessage(targetLang);
+      message.warning(warningMessage);
+      setNotice({ type: 'warning', message: warningMessage });
+      return '';
+    }
     return translatedText;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '翻译服务错误';
@@ -79,4 +86,40 @@ export async function translateProductTextWithFeedback(params: {
   } finally {
     setLoadingKey(setLoading, loadingKey, false);
   }
+}
+
+export function translatedTextMatchesTargetLang(text: string, targetLang: LangCode) {
+  const value = text.trim();
+  if (!value) {
+    return false;
+  }
+  if (targetLang === 'ZH') {
+    return containsChinese(value);
+  }
+  if (targetLang === 'AR') {
+    return containsArabic(value);
+  }
+  return containsLatin(value) && !containsArabic(value) && !containsChinese(value);
+}
+
+export function targetLanguageMismatchMessage(targetLang: LangCode) {
+  if (targetLang === 'ZH') {
+    return 'AI 返回的翻译不是中文，请重试。';
+  }
+  if (targetLang === 'AR') {
+    return 'AI 返回的翻译不是阿语，请重试。';
+  }
+  return 'AI 返回的翻译不是英文，请重试。';
+}
+
+function containsChinese(value: string) {
+  return /[\u4e00-\u9fff]/u.test(value);
+}
+
+function containsArabic(value: string) {
+  return /[\u0600-\u06ff]/u.test(value);
+}
+
+function containsLatin(value: string) {
+  return /[A-Za-z]/u.test(value);
 }

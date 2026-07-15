@@ -55,6 +55,20 @@ export type ProductKeywordCommand = {
 
 export type ProductKeywordUpdateCommand = ProductKeywordCommand
 
+export type ProductCompetitorKeywordSource = {
+  label?: string
+  url?: string
+  sourceText?: string
+}
+
+export type ProductCompetitorKeywordCommand = {
+  storeCode: string
+  siteCode: string
+  partnerSku: string
+  keywords: string[]
+  competitorSources?: ProductCompetitorKeywordSource[]
+}
+
 export type ProductKeywordItem = {
   id: number
   ownerUserId: number

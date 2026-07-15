@@ -1,4 +1,6 @@
 import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+import type { ProductImageRoleAssignment } from '../product-management/types/productImageRole'
+import type { NoonImageAssetMetadata } from '../product-management/utils/noonImageRequirements'
 
 export type ProductListingValidationIssue = {
   fieldKey: string
@@ -29,8 +31,12 @@ export type ProductListingDraftPayload = {
   productHighlightsCn?: string[]
   productHighlightsEn?: string[]
   productHighlightsAr?: string[]
+  sizeEn?: string
+  sizeAr?: string
   keyAttributes?: Array<Record<string, unknown>>
   imageUrls: string[]
+  imageRoleAssignments?: ProductImageRoleAssignment[]
+  imageAssetMetadata?: NoonImageAssetMetadata[]
   price?: number
   priceMin?: number
   priceMax?: number
@@ -49,6 +55,7 @@ export type ProductListingDraftPayload = {
   isActive?: boolean
   offerNote?: string
   barcode?: string
+  competitorMaterials?: ProductCompetitorContentMaterial[]
 }
 
 export type ProductListingDraftView = {
@@ -59,6 +66,10 @@ export type ProductListingDraftView = {
   status: string
   draft?: ProductListingDraftPayload
   validationIssues: ProductListingValidationIssue[]
+}
+
+export type ProductListingFieldValidationView = {
+  issues: ProductListingValidationIssue[]
 }
 
 export type ProductListingNoonWriteStepResult = {

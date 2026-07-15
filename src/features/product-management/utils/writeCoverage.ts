@@ -45,10 +45,6 @@ function isReadonlyNoonAttributeCode(code: unknown) {
   );
 }
 
-function isLocalProductImageAssetUrl(value: unknown) {
-  return textInputValue(value).trim().startsWith('/api/product-master/image-assets/');
-}
-
 function snapshotRecordMap(records: Array<Record<string, unknown>>, keyField: string) {
   const result = new Map<string, Record<string, unknown>>();
   records.forEach((item) => {
@@ -197,13 +193,9 @@ export function collectUnsupportedContentWriteIssues(
   draft: ProductMasterSnapshotPayload,
   baseline: ProductMasterSnapshotPayload
 ) {
-  if (areSnapshotPartsEqual(draft.content?.images, baseline.content?.images)) {
-    return [];
-  }
-  const images = Array.isArray(draft.content?.images) ? draft.content.images : [];
-  return images.some(isLocalProductImageAssetUrl)
-    ? ['本地上传图片还没有 Noon 可访问 URL，暂时不能发布；请先删除本地上传图片或等待图片外链适配。']
-    : [];
+  void draft;
+  void baseline;
+  return [];
 }
 
 export function collectUnsupportedProductPublishIssues(

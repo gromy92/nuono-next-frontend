@@ -1,5 +1,6 @@
 import { apiFetch, readApiErrorMessage } from '../../shared/api'
 import type {
+  ProductCompetitorKeywordCommand,
   ProductKeywordCommand,
   ProductKeywordListRequest,
   ProductKeywordListView,
@@ -72,6 +73,15 @@ export async function addProductKeyword(body: ProductKeywordCommand) {
     body: JSON.stringify(body)
   })
   return parseProductKeywordResponse<ProductKeywordItem>(response, `关键词创建失败：${response.status}`)
+}
+
+export async function addProductCompetitorKeywords(body: ProductCompetitorKeywordCommand) {
+  const response = await apiFetch('/api/product-keywords/competitor-keywords', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+  return parseProductKeywordResponse<ProductKeywordListView>(response, `竞品关键词写入失败：${response.status}`)
 }
 
 export async function updateProductKeyword(keywordId: number, body: ProductKeywordUpdateCommand) {

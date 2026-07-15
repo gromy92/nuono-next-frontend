@@ -13,6 +13,8 @@ export function ProductOfferTab(props: ProductDetailOfficialTabsProps) {
     currentProductSummarySurface,
     productWarehouseStockRows,
     offerHeaderExtra,
+    barcodeValidationIssue,
+    onBarcodeDraftChange,
     updateSiteOfferField,
     updateProductSectionField,
     updateProductAttributeField,
@@ -51,6 +53,8 @@ export function ProductOfferTab(props: ProductDetailOfficialTabsProps) {
             productSnapshotView={productSnapshotView}
             currentProductSummarySurface={currentProductSummarySurface}
             activeProductSiteOffer={activeProductSiteOffer}
+            barcodeValidationIssue={barcodeValidationIssue}
+            onBarcodeDraftChange={onBarcodeDraftChange}
             updateSiteOfferField={updateSiteOfferField}
             updateProductSectionField={updateProductSectionField}
             updateProductAttributeField={updateProductAttributeField}

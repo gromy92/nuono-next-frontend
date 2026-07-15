@@ -105,6 +105,14 @@ export type ProductSelectionSourceCollection = {
   unitCount?: string
   colorName?: string
   specHints: string[]
+  categoryName?: string
+  categoryPath?: string
+  categoryUrl?: string
+  categoryLinks?: Array<{
+    name?: string
+    path?: string
+    url?: string
+  }>
   sourceDescriptionEn?: string
   sourceDescriptionAr?: string
   sourceSellingPointsEn?: string[]

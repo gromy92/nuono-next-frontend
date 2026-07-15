@@ -21,6 +21,11 @@ import {
   normalizeProductOperationStageCode,
   productOperationStageMeta
 } from '../utils/operationStage';
+import {
+  buildProductPublishStatusDisplay,
+  productDetailPublishStatusColor,
+  productListingPublishStatusMeta
+} from '../utils/productListingPublishStatus';
 
 const { Text } = Typography;
 
@@ -194,40 +199,6 @@ export function OperationStageCell(props: {
     </Dropdown>
   );
 }
-
-function publishStatusColor(statusLabel?: string) {
-  if (statusLabel === '发布成功' || statusLabel === '删除成功' || statusLabel === '重建成功') {
-    return {
-      tag: 'success' as const,
-      border: '#bbf7d0',
-      background: '#f0fdf4',
-      text: '#166534'
-    };
-  }
-  if (statusLabel === '发布失败' || statusLabel === '删除失败' || statusLabel === '重建失败') {
-    return {
-      tag: 'error' as const,
-      border: '#fecaca',
-      background: '#fef2f2',
-      text: '#991b1b'
-    };
-  }
-  if (statusLabel === '待人工核对' || statusLabel === '删除待核对' || statusLabel === '重建待核对') {
-    return {
-      tag: 'warning' as const,
-      border: '#fde68a',
-      background: '#fffbeb',
-      text: '#92400e'
-    };
-  }
-  return {
-    tag: 'processing' as const,
-    border: '#bfdbfe',
-    background: '#eff6ff',
-    text: '#1d4ed8'
-  };
-}
-
 function publishText(value: unknown) {
   return String(value ?? '').trim();
 }
@@ -242,7 +213,7 @@ function ProductPublishPopoverContent({ task }: { task: NonNullable<ProductListR
   return (
     <Space direction="vertical" size={10} style={{ minWidth: 320, maxWidth: 460 }}>
       <Space wrap size={[8, 6]}>
-        <Tag color={publishStatusColor(task.statusLabel).tag} style={{ marginInlineEnd: 0 }}>
+        <Tag color={productDetailPublishStatusColor(task.statusLabel).tag} style={{ marginInlineEnd: 0 }}>
           {task.statusLabel}
         </Tag>
         {task.targetSiteCode ? <Tag style={{ marginInlineEnd: 0 }}>{task.targetSiteCode}</Tag> : null}
@@ -286,18 +257,55 @@ function ProductPublishPopoverContent({ task }: { task: NonNullable<ProductListR
   );
 }
 
+function ListingPublishPopoverContent({
+  task
+}: {
+  task: NonNullable<ProductListRowPayload['listingPublishTask']>;
+}) {
+  const colors = productListingPublishStatusMeta(task.status, task.statusLabel);
+  return (
+    <Space direction="vertical" size={10} style={{ minWidth: 320, maxWidth: 460 }}>
+      <Space wrap size={[8, 6]}>
+        <Tag color={colors.tag} style={{ marginInlineEnd: 0 }}>
+          {colors.label}
+        </Tag>
+        {task.storeCode ? <Tag style={{ marginInlineEnd: 0 }}>{task.storeCode}</Tag> : null}
+      </Space>
+      <Space direction="vertical" size={4}>
+        {task.taskNo ? <Text style={{ fontSize: 12 }}>任务号：{task.taskNo}</Text> : null}
+        {task.partnerSku ? <Text style={{ fontSize: 12 }}>PSKU：{task.partnerSku}</Text> : null}
+        {task.pskuCode ? <Text style={{ fontSize: 12 }}>pskuCode：{task.pskuCode}</Text> : null}
+        {task.skuParent ? <Text style={{ fontSize: 12 }}>skuParent：{task.skuParent}</Text> : null}
+        {task.submittedAt ? <Text style={{ fontSize: 12 }}>提交时间：{task.submittedAt}</Text> : null}
+        {task.finishedAt ? <Text style={{ fontSize: 12 }}>结果时间：{task.finishedAt}</Text> : null}
+        {task.failureCode ? <Text style={{ fontSize: 12 }}>失败代码：{task.failureCode}</Text> : null}
+        {task.failureMessage ? <Text style={{ fontSize: 12 }}>失败信息：{task.failureMessage}</Text> : null}
+      </Space>
+      {task.taskId ? (
+        <Text type="secondary" style={{ fontSize: 11 }}>
+          Task ID：{task.taskId}
+        </Text>
+      ) : null}
+    </Space>
+  );
+}
+
 export function PublishStatusCell({ record }: { record: ProductListRowPayload }) {
-  const task = record.lastPublishTask;
-  if (!task?.statusLabel) {
+  const display = buildProductPublishStatusDisplay(record);
+  if (!display) {
     return <span style={{ display: 'block', minHeight: 38 }} />;
   }
-  const colors = publishStatusColor(task.statusLabel);
-  const timeParts = formatDateTimeParts(task.finishedAt ?? task.submittedAt);
-  const popoverTitle =
-    task.taskType === 'product-rebuild' ? '重建任务' : task.taskType === 'product-delete' ? '删除任务' : '上次发布';
+  const colors = display.color;
+  const timeParts = formatDateTimeParts(display.timeText);
+  const popoverContent =
+    display.kind === 'listing' && record.listingPublishTask ? (
+      <ListingPublishPopoverContent task={record.listingPublishTask} />
+    ) : record.lastPublishTask ? (
+      <ProductPublishPopoverContent task={record.lastPublishTask} />
+    ) : null;
 
-  return (
-    <Popover trigger={['click']} title={popoverTitle} content={<ProductPublishPopoverContent task={task} />}>
+  return popoverContent ? (
+    <Popover trigger={['click']} title={display.title} content={popoverContent}>
       <button
         type="button"
         style={{
@@ -313,13 +321,20 @@ export function PublishStatusCell({ record }: { record: ProductListRowPayload })
         onClick={(event) => event.stopPropagation()}
       >
         <Tag color={colors.tag} style={{ marginInlineEnd: 0, marginBottom: 5, fontSize: 12, fontWeight: 600 }}>
-          {task.statusLabel}
+          {display.label}
         </Tag>
         <Text style={{ display: 'block', color: colors.text, fontSize: 11, lineHeight: '15px' }}>
-          {timeParts ? `${timeParts.date} ${timeParts.time}` : task.resultText || ''}
+          {timeParts ? `${timeParts.date} ${timeParts.time}` : display.resultText || ''}
         </Text>
+        {display.resultText && timeParts ? (
+          <Text type="secondary" style={{ display: 'block', fontSize: 11, lineHeight: '15px' }}>
+            {display.resultText}
+          </Text>
+        ) : null}
       </button>
     </Popover>
+  ) : (
+    <span style={{ display: 'block', minHeight: 38 }} />
   );
 }
 

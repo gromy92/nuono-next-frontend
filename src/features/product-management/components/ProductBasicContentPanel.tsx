@@ -1,13 +1,15 @@
 import { Progress, Tag } from 'antd';
 import type { ProductFieldDomainSurface, ProductMasterSnapshotPayload } from '../types';
-import { ProductContentTranslationEditor } from './ProductContentTranslationEditor';
+import type { ProductCompetitorContentMaterial } from '../types/competitorContent';
+import { ProductBilingualContentEditor } from './ProductBilingualContentEditor';
 import { ProductDetailSection } from './ProductDetailSection';
-import { ProductLongDescriptionEditor } from './ProductLongDescriptionEditor';
 
 export function ProductBasicContentPanel(props: {
   productContentDomain?: ProductFieldDomainSurface;
   productContentProgressDone: number;
   productContentProgressTotal: number;
+  productCompetitorMaterials?: ProductCompetitorContentMaterial[];
+  enableCompetitorContentMerge?: boolean;
   productSnapshotView?: ProductMasterSnapshotPayload;
   updateProductSectionField: (
     section: 'identity' | 'taxonomy' | 'content' | 'group',
@@ -20,6 +22,8 @@ export function ProductBasicContentPanel(props: {
     productContentDomain,
     productContentProgressDone,
     productContentProgressTotal,
+    productCompetitorMaterials,
+    enableCompetitorContentMerge,
     productSnapshotView,
     updateProductSectionField,
     updateProductMultilineField
@@ -41,14 +45,12 @@ export function ProductBasicContentPanel(props: {
           size="small"
           style={{ marginBottom: 12 }}
         />
-        <ProductContentTranslationEditor
+        <ProductBilingualContentEditor
           productSnapshotView={productSnapshotView}
+          productCompetitorMaterials={productCompetitorMaterials}
+          enableCompetitorContentMerge={enableCompetitorContentMerge}
           updateProductSectionField={updateProductSectionField}
           updateProductMultilineField={updateProductMultilineField}
-        />
-        <ProductLongDescriptionEditor
-          productSnapshotView={productSnapshotView}
-          updateProductSectionField={updateProductSectionField}
         />
       </ProductDetailSection>
     </>

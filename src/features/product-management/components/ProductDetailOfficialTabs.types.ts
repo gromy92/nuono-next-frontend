@@ -7,6 +7,16 @@ import type {
   ProductWorkbenchActionOptions,
   ProductSummarySurface
 } from '../types';
+import type { ProductCompetitorContentMaterial } from '../types/competitorContent';
+import type { ProductImageRoleAssignment } from '../types/productImageRole';
+import type { NoonImageAssetMetadata } from '../utils/noonImageRequirements';
+
+export type ProductFieldValidationIssue = {
+  fieldKey: string;
+  severity?: string;
+  code?: string;
+  message: string;
+};
 
 export type ProductDetailOfficialTabsProps = {
   defaultActiveKey?: 'offer' | 'content' | 'sizes' | 'product-insights';
@@ -26,8 +36,12 @@ export type ProductDetailOfficialTabsProps = {
   productContentDomain?: ProductFieldDomainSurface;
   productContentProgressDone: number;
   productContentProgressTotal: number;
+  productCompetitorMaterials?: ProductCompetitorContentMaterial[];
+  enableCompetitorContentMerge?: boolean;
   productMainDomain?: ProductFieldDomainSurface;
   productImageUrls: string[];
+  productImageRoleAssignments?: ProductImageRoleAssignment[];
+  productImageAssetMetadata?: NoonImageAssetMetadata[];
   productAttributesDomain?: ProductFieldDomainSurface;
   productRequiredAttributeCount: number;
   productFilledRequiredAttributeCount: number;
@@ -37,7 +51,10 @@ export type ProductDetailOfficialTabsProps = {
   productListSourceItems: ProductListRowPayload[];
   productInsightMetrics: Array<{ label: string; value: string | number }>;
   productLeadImage?: string;
+  allowEmptyImages?: boolean;
   offerHeaderExtra?: ReactNode;
+  barcodeValidationIssue?: ProductFieldValidationIssue;
+  onBarcodeDraftChange?: (value: string) => void;
   previewProductAction: (action: 'save' | 'publish-current' | 'pull', options?: ProductWorkbenchActionOptions) => void | Promise<void>;
   updateSiteOfferField: (storeCode: string, field: string, value: unknown) => void;
   setActiveSiteOfferCode: (storeCode: string) => void;

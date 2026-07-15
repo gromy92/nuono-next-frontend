@@ -72,6 +72,7 @@ export type ProductClassificationOptionsRequest = {
 
 export type ProductContentTranslateRequest = {
   text: string;
+  sourceLang?: 'AUTO' | 'ZH' | 'EN' | 'AR';
   targetLang: 'ZH' | 'EN' | 'AR';
 };
 
@@ -94,6 +95,7 @@ export type ProductImageAssetUploadResponse = {
   contentType?: string;
   size?: number;
   assetId?: number;
+  sourceUrl?: string;
   warnings?: string[];
 };
 
@@ -621,6 +623,34 @@ export async function uploadProductImageAsset(file: File, context?: Partial<Prod
   }
 
   return (await response.json()) as ProductImageAssetUploadResponse;
+}
+
+export async function importProductImageAsset(imageUrl: string, context?: Partial<ProductGroupCandidatesRequest>) {
+  const normalizedImageUrl = normalizeImageUrlForImport(imageUrl);
+  const response = await apiFetch('/api/product-master/image-assets/import', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      imageUrl: normalizedImageUrl,
+      ...(context?.ownerUserId ? { ownerUserId: context.ownerUserId } : {}),
+      ...(context?.storeCode ? { storeCode: context.storeCode } : {}),
+      ...(context?.skuParent ? { skuParent: context.skuParent } : {})
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(await readBackendError(response, '转存图片失败'));
+  }
+
+  return (await response.json()) as ProductImageAssetUploadResponse;
+}
+
+function normalizeImageUrlForImport(imageUrl: string) {
+  return String(imageUrl ?? '')
+    .trim()
+    .replace(/[\u0000-\u001F\u007F\s\u200B\u200C\u200D\uFEFF]+/g, '');
 }
 
 export async function translateProductContentText(request: ProductContentTranslateRequest) {

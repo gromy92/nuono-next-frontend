@@ -1,15 +1,22 @@
 import { useState } from 'react';
-import { Button, Modal, Space, Typography } from 'antd';
+import { Button, message, Modal, Space, Tooltip, Typography } from 'antd';
 import {
   isPublicDetailReadonlyWorkbench,
+  getProductCurrentZCode,
+  isLocalDraftNoonCode,
+  isProductNotListedSource,
   isProductPublishTaskActive,
-  isProductPublishTaskNeedsAttention
+  isProductPublishTaskNeedsAttention,
+  textInputValue
 } from '../utils';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 import { ProductDetailSummaryBar } from './ProductDetailSummaryBar';
 import { ProductDetailSyncAlert } from './ProductDetailSyncAlert';
 
 const { Text } = Typography;
+
+const NOT_LISTED_PUBLISH_BLOCK_REASON =
+  '当前商品还没有完成真实上架，请先从上架入口提交；上架成功后再编辑发布。';
 
 type ProductDetailSummaryPanelProps = {
   workspace: ProductManagementWorkspace;
@@ -41,6 +48,24 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
   const publishTaskActive = isProductPublishTaskActive(publishTask);
   const publishTaskNeedsAttention = isProductPublishTaskNeedsAttention(publishTask);
   const publicDetailReadonly = isPublicDetailReadonlyWorkbench(productWorkbenchState);
+  const currentNoonCode =
+    getProductCurrentZCode(productDetailSummarySurface ?? undefined) ||
+    textInputValue(productSnapshotView?.identity.currentZCode || productSnapshotView?.identity.skuParent) ||
+    textInputValue(activeProductSiteOffer?.currentZCode || activeProductSiteOffer?.skuParent);
+  const productNotReadyForCurrentPublish =
+    isProductNotListedSource(productDetailSummarySurface?.listingStartedSource) ||
+    isProductNotListedSource(textInputValue(activeProductSiteOffer?.listingStartedSource)) ||
+    isLocalDraftNoonCode(currentNoonCode) ||
+    isLocalDraftNoonCode(productSnapshotView?.identity.currentZCode) ||
+    isLocalDraftNoonCode(productSnapshotView?.identity.skuParent) ||
+    isLocalDraftNoonCode(activeProductSiteOffer?.currentZCode) ||
+    isLocalDraftNoonCode(activeProductSiteOffer?.skuParent);
+  const publishButtonDisabled =
+    !workbenchReady ||
+    publicDetailReadonly ||
+    publishTaskActive ||
+    productPublishTaskActionSubmitting ||
+    productNotReadyForCurrentPublish;
   const requestPullFromNoon = () => {
     if (publicDetailReadonly) {
       return;
@@ -64,6 +89,10 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
   };
 
   const submitPublish = () => {
+    if (productNotReadyForCurrentPublish) {
+      message.warning(NOT_LISTED_PUBLISH_BLOCK_REASON);
+      return;
+    }
     if (publishTaskNeedsAttention && publishTaskId) {
       void retryProductPublishTask(publishTaskId);
       return;
@@ -136,15 +165,19 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
             >
               回滚草稿
             </Button>
-            <Button
-              size="small"
-              type="primary"
-              loading={productActionSubmitting || productPublishTaskActionSubmitting}
-              disabled={!workbenchReady || publicDetailReadonly || publishTaskActive || productPublishTaskActionSubmitting}
-              onClick={submitPublish}
-            >
-              {publishTaskNeedsAttention ? '重试发布' : '发布当前修改'}
-            </Button>
+            <Tooltip title={productNotReadyForCurrentPublish ? NOT_LISTED_PUBLISH_BLOCK_REASON : undefined}>
+              <span>
+                <Button
+                  size="small"
+                  type="primary"
+                  loading={productActionSubmitting || productPublishTaskActionSubmitting}
+                  disabled={publishButtonDisabled}
+                  onClick={submitPublish}
+                >
+                  {publishTaskNeedsAttention ? '重试发布' : '发布当前修改'}
+                </Button>
+              </span>
+            </Tooltip>
             <Button
               size="small"
               disabled={!workbenchReady || publicDetailReadonly || productActionSubmitting || publishTaskActive}
