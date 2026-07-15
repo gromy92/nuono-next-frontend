@@ -189,7 +189,6 @@ function renderTimeNodes(
                   <Tag color={item.color} style={{ marginInlineEnd: 0 }}>{item.label}</Tag>
                   <Text type="secondary">{item.happenedAtText}</Text>
                 </Space>
-                {item.description ? <Text>{item.description}</Text> : null}
               </div>
             </div>
           ))}
