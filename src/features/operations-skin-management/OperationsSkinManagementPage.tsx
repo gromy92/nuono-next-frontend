@@ -30,6 +30,7 @@ import {
   type OperationsSkinGalleryRow
 } from './skinGalleryRows'
 import { hasConfiguredSkinComponents } from './skinPreview'
+import { operationsSkinScopeKey } from './skinScope'
 import {
   HERO_MAIN_COMPONENT_SLOT_GROUP,
   HERO_MAIN_COMPONENT_SLOTS,
@@ -903,6 +904,7 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
   const [form] = Form.useForm<SkinFormValues>()
   const currentStore = session.currentStore
   const storeCode = currentStore?.storeCode
+  const storeScopeKey = operationsSkinScopeKey(currentStore)
   const watchedCoverImageUrl = Form.useWatch('coverImageUrl', form)
   const [scopedRows, setScopedRows] = useState<ScopedSkinRows>({ scope: '', rows: [] })
   const [loading, setLoading] = useState(false)
@@ -910,7 +912,7 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
   const [keyword, setKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [drawerStoreCode, setDrawerStoreCode] = useState<string>()
+  const [drawerScopeKey, setDrawerScopeKey] = useState<string>()
   const [editingSkin, setEditingSkin] = useState<OperationsSkinGalleryRow | null>(null)
   const [componentDrafts, setComponentDrafts] = useState<OperationsSkinComponentView[]>(() => mergeOperationsSkinComponentSlots())
   const [detailLoading, setDetailLoading] = useState(false)
@@ -922,13 +924,13 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
   const saveRequestIdRef = useRef(0)
   const statusActionIdRef = useRef(0)
   const deleteActionIdRef = useRef(0)
-  const latestStoreCodeRef = useRef<string | undefined>(storeCode)
+  const latestStoreScopeKeyRef = useRef(storeScopeKey)
   const latestLoadScopeRef = useRef('')
   const deleteConfirmRefs = useRef(new Set<ReturnType<typeof modal.confirm>>())
-  const loadScope = `${storeCode ?? ''}\u0000${statusFilter}\u0000${keyword}`
+  const loadScope = `${storeScopeKey}\u0000${statusFilter}\u0000${keyword}`
   const rows = scopedRows.scope === loadScope ? scopedRows.rows : []
-  const visibleDrawerOpen = drawerOpen && drawerStoreCode === storeCode
-  latestStoreCodeRef.current = storeCode
+  const visibleDrawerOpen = drawerOpen && drawerScopeKey === storeScopeKey
+  latestStoreScopeKeyRef.current = storeScopeKey
   latestLoadScopeRef.current = loadScope
 
   useEffect(() => {
@@ -942,7 +944,7 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
     setScopedRows({ scope: '', rows: [] })
     setLoading(false)
     setDrawerOpen(false)
-    setDrawerStoreCode(undefined)
+    setDrawerScopeKey(undefined)
     setEditingSkin(null)
     setComponentDrafts(mergeOperationsSkinComponentSlots())
     setDetailLoading(false)
@@ -950,16 +952,17 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
     setSaving(false)
     setStatusUpdatingId(undefined)
     setDeletingId(undefined)
-  }, [form, storeCode])
+  }, [form, storeScopeKey])
 
   const loadSkins = useCallback(async () => {
     const requestStoreCode = storeCode
-    const requestScope = `${requestStoreCode ?? ''}\u0000${statusFilter}\u0000${keyword}`
+    const requestStoreScopeKey = storeScopeKey
+    const requestScope = `${requestStoreScopeKey}\u0000${statusFilter}\u0000${keyword}`
     const requestId = loadRequestIdRef.current + 1
     loadRequestIdRef.current = requestId
     const isCurrentRequest = () =>
       loadRequestIdRef.current === requestId &&
-      latestStoreCodeRef.current === requestStoreCode &&
+      latestStoreScopeKeyRef.current === requestStoreScopeKey &&
       latestLoadScopeRef.current === requestScope
 
     if (!requestStoreCode) {
@@ -987,7 +990,7 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
         setLoading(false)
       }
     }
-  }, [keyword, message, statusFilter, storeCode])
+  }, [keyword, message, statusFilter, storeCode, storeScopeKey])
 
   useEffect(() => {
     void loadSkins()
@@ -999,7 +1002,7 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
     setEditingSkin(null)
     setComponentDrafts(mergeOperationsSkinComponentSlots())
     setDetailLoading(false)
-    setDrawerStoreCode(storeCode)
+    setDrawerScopeKey(storeScopeKey)
     form.setFieldsValue({
       skinName: '',
       status: 'ACTIVE',
@@ -1020,7 +1023,7 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
     const decodedRemark = decodeSkinRemark(row.remark)
     setEditingSkin(row)
     setComponentDrafts(mergeOperationsSkinComponentSlots(row.components))
-    setDrawerStoreCode(storeCode)
+    setDrawerScopeKey(storeScopeKey)
     form.setFieldsValue({
       skinName: row.skinName,
       status: row.status,
@@ -1038,7 +1041,7 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
     setDetailLoading(true)
     void fetchOperationsSkinDetail(row.id, requestStoreCode)
       .then((detail) => {
-        if (latestStoreCodeRef.current !== requestStoreCode || detailRequestIdRef.current !== requestId) return
+        if (latestStoreScopeKeyRef.current !== storeScopeKey || detailRequestIdRef.current !== requestId) return
         const detailRemark = decodeSkinRemark(detail.remark)
         setEditingSkin({
           ...detail,
@@ -1057,7 +1060,7 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
         })
       })
       .catch((error) => {
-        if (latestStoreCodeRef.current === requestStoreCode && detailRequestIdRef.current === requestId) {
+        if (latestStoreScopeKeyRef.current === storeScopeKey && detailRequestIdRef.current === requestId) {
           message.error(errorMessage(error, '皮肤详情读取失败'))
         }
       })
@@ -1073,16 +1076,17 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
     detailRequestIdRef.current += 1
     setDetailLoading(false)
     setDrawerOpen(false)
-    setDrawerStoreCode(undefined)
+    setDrawerScopeKey(undefined)
   }
 
   const submitDrawer = async () => {
-    if (!storeCode || drawerStoreCode !== storeCode) return
+    if (!storeCode || drawerScopeKey !== storeScopeKey) return
     if (editingSkin && isSystemPreviewSkin(editingSkin)) {
       message.info('系统预设皮肤接入后端后可保存')
       return
     }
     const actionStoreCode = storeCode
+    const actionStoreScopeKey = storeScopeKey
     const actionId = saveRequestIdRef.current + 1
     saveRequestIdRef.current = actionId
     let values: SkinFormValues
@@ -1091,29 +1095,29 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
     } catch {
       return
     }
-    if (latestStoreCodeRef.current !== actionStoreCode || saveRequestIdRef.current !== actionId) return
+    if (latestStoreScopeKeyRef.current !== actionStoreScopeKey || saveRequestIdRef.current !== actionId) return
     const request = buildSaveRequest(actionStoreCode, values)
     setSaving(true)
     try {
       let savedSkin: OperationsSkinView
       if (editingSkin) {
         savedSkin = await updateOperationsSkin(editingSkin.id, request)
-        if (latestStoreCodeRef.current !== actionStoreCode || saveRequestIdRef.current !== actionId) return
+        if (latestStoreScopeKeyRef.current !== actionStoreScopeKey || saveRequestIdRef.current !== actionId) return
       } else {
         savedSkin = await createOperationsSkin(request)
-        if (latestStoreCodeRef.current !== actionStoreCode || saveRequestIdRef.current !== actionId) return
+        if (latestStoreScopeKeyRef.current !== actionStoreScopeKey || saveRequestIdRef.current !== actionId) return
       }
       await updateOperationsSkinComponents(savedSkin.id, {
         storeCode: actionStoreCode,
         components: normalizeOperationsSkinComponentDrafts(componentDrafts)
       })
-      if (latestStoreCodeRef.current !== actionStoreCode || saveRequestIdRef.current !== actionId) return
+      if (latestStoreScopeKeyRef.current !== actionStoreScopeKey || saveRequestIdRef.current !== actionId) return
       message.success(editingSkin ? '皮肤已保存' : '皮肤已新增')
       setDrawerOpen(false)
-      setDrawerStoreCode(undefined)
+      setDrawerScopeKey(undefined)
       await loadSkins()
     } catch (error) {
-      if (latestStoreCodeRef.current === actionStoreCode && saveRequestIdRef.current === actionId) {
+      if (latestStoreScopeKeyRef.current === actionStoreScopeKey && saveRequestIdRef.current === actionId) {
         message.error(errorMessage(error, '皮肤保存失败'))
       }
     } finally {
@@ -1126,17 +1130,18 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
   const toggleStatus = async (row: OperationsSkinView) => {
     if (!storeCode) return
     const actionStoreCode = storeCode
+    const actionStoreScopeKey = storeScopeKey
     const actionId = statusActionIdRef.current + 1
     statusActionIdRef.current = actionId
     const nextStatus: OperationsSkinStatus = row.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
     setStatusUpdatingId(row.id)
     try {
       await updateOperationsSkinStatus(row.id, { storeCode: actionStoreCode, status: nextStatus })
-      if (latestStoreCodeRef.current !== actionStoreCode || statusActionIdRef.current !== actionId) return
+      if (latestStoreScopeKeyRef.current !== actionStoreScopeKey || statusActionIdRef.current !== actionId) return
       message.success(nextStatus === 'ACTIVE' ? '皮肤已启用' : '皮肤已停用')
       await loadSkins()
     } catch (error) {
-      if (latestStoreCodeRef.current === actionStoreCode && statusActionIdRef.current === actionId) {
+      if (latestStoreScopeKeyRef.current === actionStoreScopeKey && statusActionIdRef.current === actionId) {
         message.error(errorMessage(error, '皮肤状态更新失败'))
       }
     } finally {
@@ -1149,6 +1154,7 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
   const requestDelete = (row: OperationsSkinView) => {
     if (!storeCode) return
     const actionStoreCode = storeCode
+    const actionStoreScopeKey = storeScopeKey
     const confirm = modal.confirm({
       title: '删除皮肤',
       content: `确认删除“${row.skinName}”？删除后不能在列表中恢复。`,
@@ -1159,7 +1165,7 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
         deleteConfirmRefs.current.delete(confirm)
       },
       onOk: async () => {
-        if (latestStoreCodeRef.current !== actionStoreCode) {
+        if (latestStoreScopeKeyRef.current !== actionStoreScopeKey) {
           deleteConfirmRefs.current.delete(confirm)
           return
         }
@@ -1168,11 +1174,11 @@ export function OperationsSkinManagementPage({ session }: OperationsSkinManageme
         setDeletingId(row.id)
         try {
           await deleteOperationsSkin(row.id, actionStoreCode)
-          if (latestStoreCodeRef.current !== actionStoreCode || deleteActionIdRef.current !== actionId) return
+          if (latestStoreScopeKeyRef.current !== actionStoreScopeKey || deleteActionIdRef.current !== actionId) return
           message.success('皮肤已删除')
           await loadSkins()
         } catch (error) {
-          if (latestStoreCodeRef.current === actionStoreCode && deleteActionIdRef.current === actionId) {
+          if (latestStoreScopeKeyRef.current === actionStoreScopeKey && deleteActionIdRef.current === actionId) {
             message.error(errorMessage(error, '皮肤删除失败'))
           }
         } finally {

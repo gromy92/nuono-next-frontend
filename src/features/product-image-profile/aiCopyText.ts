@@ -131,11 +131,11 @@ export function buildProductImageShortTitleEn(value?: string | null) {
 }
 
 function mainImageTitleAr(profile: ProductImageAiCopyProfile) {
-  return buildProductImageShortTitleAr(profile.titleAr || profile.productTitle)
+  return optionalText(profile.titleAr) || buildProductImageShortTitleAr(profile.productTitle)
 }
 
 function mainImageTitleEn(profile: ProductImageAiCopyProfile) {
-  return buildProductImageShortTitleEn(profile.titleEn || profile.productTitle)
+  return optionalText(profile.titleEn) || buildProductImageShortTitleEn(profile.productTitle)
 }
 
 export function buildDefaultProductFactText(profile: ProductImageAiCopyProfile) {
