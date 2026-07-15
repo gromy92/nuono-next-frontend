@@ -291,6 +291,37 @@
   align-items: center;
 }
 
+.in-transit-node-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 2px 4px 2px 2px;
+}
+
+.in-transit-node-history__item {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.in-transit-node-history__marker {
+  width: 7px;
+  height: 7px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: #1677ff;
+}
+
+.in-transit-node-history__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .in-transit-node-editor {
   display: flex;
   flex-direction: column;

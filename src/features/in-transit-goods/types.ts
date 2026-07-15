@@ -79,6 +79,7 @@ export type InTransitBatch = {
   actualArrivalAt?: string | null
   effectiveArrivalAt?: string | null
   effectiveArrivalSource?: string | null
+  nodeHistory?: InTransitLogisticsNode[]
 }
 
 export type InTransitBoxDetailTabRequest = {
