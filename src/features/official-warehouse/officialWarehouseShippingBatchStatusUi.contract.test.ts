@@ -76,6 +76,16 @@ assert.doesNotMatch(
   /仅显示真实在途或已到海外仓且仍有待约仓数量的物流批次号/,
   'create ASN modal should not claim appointed batches are hidden'
 )
+assert.doesNotMatch(
+  pageSource,
+  /搜索物流批次号|shippingBatchKeyword/,
+  'create ASN modal should not render a second logistics batch search above the multi-select'
+)
+assert.match(
+  pageSource,
+  /showSearch[\s\S]*?placeholder="选择物流批次号"/,
+  'the logistics batch multi-select should retain its built-in search'
+)
 assert.match(
   pageSource,
   /所选物流批次已约过仓，仍可继续使用/,

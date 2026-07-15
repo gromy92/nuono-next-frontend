@@ -480,7 +480,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [candidateKeyword, setCandidateKeyword] = useState('')
   const [candidateLoading, setCandidateLoading] = useState(false)
   const [candidates, setCandidates] = useState<OfficialWarehouseProductCandidate[]>([])
-  const [shippingBatchKeyword, setShippingBatchKeyword] = useState('')
   const [shippingBatchLoading, setShippingBatchLoading] = useState(false)
   const [shippingBatches, setShippingBatches] = useState<OfficialWarehouseShippingBatchCandidate[]>([])
   const [selectedShippingBatchIds, setSelectedShippingBatchIds] = useState<string[]>([])
@@ -836,8 +835,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     try {
       const rows = await loadOfficialWarehouseShippingBatches({
         storeCode,
-        siteCode,
-        keyword: shippingBatchKeyword
+        siteCode
       })
       setShippingBatches(rows)
       setSelectedShippingBatchIds((current) => current.filter((id) => rows.some((row) => row.id === id)))
@@ -1869,20 +1867,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
               <div className="official-warehouse-stack">
                 <Text strong>物流批次号</Text>
               </div>
-              <Space>
-                <Input
-                  className="official-warehouse-batch-search"
-                  allowClear
-                  prefix={<SearchOutlined />}
-                  placeholder="搜索物流批次号"
-                  value={shippingBatchKeyword}
-                  onChange={(event) => setShippingBatchKeyword(event.target.value)}
-                  onPressEnter={() => void loadShippingBatches()}
-                />
-                <Button icon={<SearchOutlined />} onClick={() => void loadShippingBatches()} loading={shippingBatchLoading}>
-                  搜索物流批次号
-                </Button>
-              </Space>
             </div>
             <Select
               mode="multiple"
