@@ -61,10 +61,10 @@ assert.match(
   /可再次约仓/,
   'appointed shipping batches should advertise that they remain reusable'
 )
-assert.match(
+assert.doesNotMatch(
   pageSource,
   /显示可约仓批次、已建ASN批次和已约仓批次；已使用批次排在下方并标注。/,
-  'create ASN modal should explain used batches remain visible but are sorted below available batches'
+  'create ASN modal should omit the obsolete batch usage explanation'
 )
 assert.match(
   pageSource,
@@ -76,6 +76,16 @@ assert.doesNotMatch(
   /仅显示真实在途或已到海外仓且仍有待约仓数量的物流批次号/,
   'create ASN modal should not claim appointed batches are hidden'
 )
+assert.doesNotMatch(
+  pageSource,
+  /搜索物流批次号|shippingBatchKeyword/,
+  'create ASN modal should not render a second logistics batch search above the multi-select'
+)
+assert.match(
+  pageSource,
+  /showSearch[\s\S]*?placeholder="选择物流批次号"/,
+  'the logistics batch multi-select should retain its built-in search'
+)
 assert.match(
   pageSource,
   /所选物流批次已约过仓，仍可继续使用/,
@@ -83,22 +93,22 @@ assert.match(
 )
 assert.match(
   pageSource,
-  /确认继续使用已约仓物流批次/,
+  /title="创建前确认"/,
   'creating from an appointed shipping batch should require explicit confirmation'
 )
 assert.match(
   pageSource,
-  /继续创建 ASN/,
+  /okText="确认继续"/,
   'the confirmation should make the repeated create action explicit'
 )
 assert.match(
   submitCreateAsnSource,
-  /selectedAlreadyAppointedBatches\.length/,
+  /selectedAlreadyAppointedBatches\.map\(shippingBatchDisplayNo\)[\s\S]*?batchNos\.length/,
   'create submission should detect selected appointed batches before writing'
 )
 assert.match(
   submitCreateAsnSource,
-  /setReusableBatchCreateConfirm/,
+  /setCreateAsnConfirmation/,
   'appointed batches should open the explicit confirmation state'
 )
 assert.doesNotMatch(

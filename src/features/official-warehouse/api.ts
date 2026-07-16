@@ -132,6 +132,59 @@ export type OfficialWarehouseRoutingWarehouse = {
   lng?: number
 }
 
+export type OfficialWarehouseAsnInboundSummary = {
+  reportConnected: boolean
+  asnQuantity: number
+  expectedQuantity: number
+  receivedQuantity: number
+  qcFailedQuantity: number
+  unidentifiedQuantity: number
+  shortQuantity: number
+  overQuantity: number
+  receiptLineCount: number
+  exceptionLineCount: number
+  unmatchedLineCount: number
+  latestImportedAt?: string
+}
+
+export type OfficialWarehouseAsnInboundLine = {
+  asnLineId?: string
+  productVariantId?: string
+  productSiteOfferId?: string
+  partnerSku?: string
+  pskuCode?: string
+  noonSku?: string
+  title?: string
+  imageUrl?: string
+  asnQuantity: number
+  expectedQuantity: number
+  receivedQuantity: number
+  qcFailedQuantity: number
+  unidentifiedQuantity: number
+  shortQuantity: number
+  overQuantity: number
+  receiptLineCount: number
+  reportOnly: boolean
+  inboundStatus?: string
+  matchStatus?: string
+  qcFailedReason?: string
+  partnerWarehouse?: string
+  noonWarehouse?: string
+  asnCompletedAt?: string
+  latestImportedAt?: string
+}
+
+export type OfficialWarehouseAsnInboundDetail = {
+  asnId: string
+  localAsnNo?: string
+  noonAsnNr?: string
+  storeCode?: string
+  siteCode?: string
+  sourceType?: string
+  summary: OfficialWarehouseAsnInboundSummary
+  lines: OfficialWarehouseAsnInboundLine[]
+}
+
 export type OfficialWarehouseAsn = {
   id: string
   inboundNo: string
@@ -164,6 +217,7 @@ export type OfficialWarehouseAsn = {
   routingWarehouses?: OfficialWarehouseRoutingWarehouse[]
   lines?: OfficialWarehouseAsnLine[]
   shippingBatchLinks?: OfficialWarehouseAsnShippingBatchLink[]
+  inboundSummary?: OfficialWarehouseAsnInboundSummary
   appointment?: OfficialWarehouseAppointment
 }
 
@@ -236,12 +290,32 @@ export type CreateOfficialWarehouseAsnPayload = {
   siteCode: string
   sourceType?: string
   shippingBatchIds?: string[]
+  partialBatchConfirmed?: boolean
   lines: Array<{
     productVariantId: number
     productSiteOfferId?: number
     partnerSku?: string
     quantity: number
   }>
+}
+
+export type OfficialWarehouseMissingBatchItem = {
+  title?: string
+  partnerSku?: string
+  noonSku?: string
+  missingQuantity: number
+}
+
+export type OfficialWarehouseMissingBatch = {
+  shippingBatchId?: string
+  batchNo?: string
+  items: OfficialWarehouseMissingBatchItem[]
+}
+
+export type OfficialWarehouseAsnValidation = {
+  valid: boolean
+  completeBatchSelection: boolean
+  missingBatches: OfficialWarehouseMissingBatch[]
 }
 
 export type OfficialWarehouseAsnListSyncResult = {
@@ -295,6 +369,7 @@ type CandidateFilters = {
   siteCode: string
   keyword?: string
   shippingBatchIds?: string[]
+  partnerSkus?: string[]
 }
 
 export async function loadOfficialWarehouseAsns(filters: AsnFilters = {}) {
@@ -310,6 +385,13 @@ export async function loadOfficialWarehouseAsns(filters: AsnFilters = {}) {
 export async function loadOfficialWarehouseAsn(asnId: string) {
   const response = await apiFetch(`/api/warehouse/official-warehouse/asns/${encodeURIComponent(asnId)}`)
   return parseApiResponse<OfficialWarehouseAsn>(response, '读取 Noon 官方仓 ASN 详情失败')
+}
+
+export async function loadOfficialWarehouseAsnInboundDetail(asnId: string) {
+  const response = await apiFetch(
+    `/api/warehouse/official-warehouse/asns/${encodeURIComponent(asnId)}/inbound-detail`
+  )
+  return parseApiResponse<OfficialWarehouseAsnInboundDetail>(response, '读取 ASN 商品入仓详情失败')
 }
 
 export async function syncOfficialWarehouseNoonAsnList(filters: { storeCode: string; siteCode: string }) {
@@ -328,6 +410,7 @@ export async function loadOfficialWarehouseCandidates(filters: CandidateFilters)
   appendParam(params, 'siteCode', filters.siteCode)
   appendParam(params, 'keyword', filters.keyword)
   filters.shippingBatchIds?.forEach((id) => appendParam(params, 'shippingBatchIds', id))
+  filters.partnerSkus?.forEach((psku) => appendParam(params, 'partnerSkus', psku))
   const response = await apiFetch(`/api/warehouse/official-warehouse/product-candidates?${params.toString()}`)
   return parseApiResponse<OfficialWarehouseProductCandidate[]>(response, '读取可创建 ASN 商品失败')
 }
@@ -348,6 +431,15 @@ export async function createOfficialWarehouseAsn(payload: CreateOfficialWarehous
     body: JSON.stringify(payload)
   })
   return parseApiResponse<OfficialWarehouseAsn>(response, '创建 Noon 官方仓 ASN 失败')
+}
+
+export async function validateOfficialWarehouseAsn(payload: CreateOfficialWarehouseAsnPayload) {
+  const response = await apiFetch('/api/warehouse/official-warehouse/asns/validate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  return parseApiResponse<OfficialWarehouseAsnValidation>(response, '校验 Noon 官方仓 ASN 商品失败')
 }
 
 export async function loadOfficialWarehouseNoonCalls(asnId: string) {

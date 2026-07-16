@@ -1,4 +1,5 @@
 import {
+  DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES,
   appointmentStatusDisplayMeta,
   buildAppointmentRunOnceFeedback,
   buildAppointmentHistorySummary,
@@ -7,7 +8,10 @@ import {
   buildOfficialWarehouseSummary,
   noonAsnStatusDisplayMeta,
   officialWarehouseBusinessErrorText,
-  officialWarehousePublicAsnNo
+  officialWarehousePublicAsnNo,
+  officialWarehouseAppointmentFilterStatus,
+  officialWarehouseInboundFilterStatus,
+  matchesOfficialWarehouseAsnFilters
 } from './domain'
 import type { OfficialWarehouseInboundOrder } from './types'
 
@@ -222,6 +226,55 @@ if (noonAsnStatusDisplayMeta('canceled').label !== '已取消') {
 
 if (noonAsnStatusDisplayMeta('sealed', 'PENDING').label !== '约仓中') {
   throw new Error('expected pending local appointment to keep booking-in-progress label')
+}
+
+if (DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES.join(',') !== 'APPOINTING,SCHEDULED') {
+  throw new Error('expected ASN list to default to booking-in-progress and booking-success statuses')
+}
+
+const filterRows = [
+  { id: 'pending', noonAsnStatus: 'SEALED', appointment: { status: 'PENDING' } },
+  { id: 'scheduled', noonAsnStatus: 'SCHEDULED', appointment: { status: 'SCHEDULED' } },
+  { id: 'receiving', noonAsnStatus: 'RECEIVING' },
+  { id: 'received', noonAsnStatus: 'GRN_COMPLETED' },
+  { id: 'not-appointed', noonAsnStatus: 'CREATED' },
+  { id: 'failed', noonAsnStatus: 'SEALED', appointment: { status: 'FAILED' } }
+]
+
+if (officialWarehouseAppointmentFilterStatus(filterRows[0]) !== 'APPOINTING') {
+  throw new Error('expected pending and running appointments to share the booking-in-progress filter')
+}
+
+if (officialWarehouseAppointmentFilterStatus(filterRows[2]) !== 'SCHEDULED') {
+  throw new Error('expected receiving ASN without a local appointment row to remain under booking success')
+}
+
+if (officialWarehouseInboundFilterStatus(filterRows[2]) !== 'RECEIVING') {
+  throw new Error('expected Noon receiving status to map to inbound in progress')
+}
+
+if (officialWarehouseInboundFilterStatus(filterRows[3]) !== 'COMPLETED') {
+  throw new Error('expected Noon GRN completed status to map to inbound completed')
+}
+
+const defaultFilteredIds = filterRows
+  .filter((row) => matchesOfficialWarehouseAsnFilters(
+    row,
+    DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES,
+    []
+  ))
+  .map((row) => row.id)
+
+if (defaultFilteredIds.join(',') !== 'pending,scheduled,receiving,received') {
+  throw new Error('expected default ASN filters to keep only booking-in-progress and booking-success rows')
+}
+
+const receivedFilteredIds = filterRows
+  .filter((row) => matchesOfficialWarehouseAsnFilters(row, [], ['COMPLETED']))
+  .map((row) => row.id)
+
+if (receivedFilteredIds.join(',') !== 'received') {
+  throw new Error('expected inbound status filter to keep only completed inbound rows')
 }
 
 const expiredBusinessError = officialWarehouseBusinessErrorText(
