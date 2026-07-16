@@ -4,21 +4,46 @@ const BASE_PATH = '/api/product-images'
 
 export type ProductImageRole = 'MAIN' | 'SIZE' | 'DETAIL' | 'SCENE' | 'PACKAGE' | 'OTHER'
 export type ProductImageAssetStatus = 'ACTIVE' | 'REMOVED'
+export type ProductImageProcessingStatus = 'PENDING' | 'PROCESSED'
+export type ProductImageComplianceStatus = 'PASS' | 'FAIL' | 'UNKNOWN'
 export type ProductImageSectionType = 'SIZE' | 'CORE_FEATURE' | 'MATERIAL_DETAIL' | 'USAGE_SCENE' | 'PACKAGE_LIST'
 export type ProductImageSuiteStatus = 'DRAFT' | 'ADOPTED' | 'HISTORICAL' | 'DISCARDED'
 export type ProductImageSuiteAssetRole = 'MAIN' | 'SIZE' | 'CORE_FEATURE' | 'MATERIAL_DETAIL' | 'USAGE_SCENE' | 'PACKAGE_LIST'
 
 export type ProductImageProfileAssetView = {
   id?: number | null
+  usageId?: number | null
   imageUrl?: string | null
   contentType?: string | null
   sizeBytes?: number | null
   widthPx?: number | null
   heightPx?: number | null
+  horizontalPpi?: number | null
+  verticalPpi?: number | null
+  colorSpace?: string | null
   imageRole?: ProductImageRole | null
   sortOrder?: number | null
   assetStatus?: ProductImageAssetStatus | null
   removable?: boolean | null
+  processingNote?: string | null
+  processingStatus?: ProductImageProcessingStatus | null
+  processedAt?: string | null
+  noonTechnicalCompliance?: ProductImageTechnicalComplianceView | null
+}
+
+export type ProductImageComplianceCheckView = {
+  key?: string | null
+  status?: ProductImageComplianceStatus | null
+  actual?: string | null
+  requirement?: string | null
+  message?: string | null
+}
+
+export type ProductImageTechnicalComplianceView = {
+  status?: ProductImageComplianceStatus | null
+  policyVersion?: string | null
+  policySource?: string | null
+  checks?: ProductImageComplianceCheckView[] | null
 }
 
 export type ProductImageSectionView = {
@@ -113,6 +138,9 @@ export type ProductImageAssetMetadataView = {
   sizeBytes?: number | null
   widthPx?: number | null
   heightPx?: number | null
+  horizontalPpi?: number | null
+  verticalPpi?: number | null
+  colorSpace?: string | null
 }
 
 export type ProductImageAiExtractionSuggestionView = {
@@ -138,6 +166,17 @@ export type ProductImageAssetRemoveItem = {
 
 export type ProductImageAssetRoleUpdateItem = ProductImageAssetRemoveItem & {
   imageRole: ProductImageRole
+}
+
+export type ProductImageAssetUsageCreateRequest = ProductImageAssetRemoveItem & {
+  sourceRole?: ProductImageRole
+  imageRoles: ProductImageRole[]
+}
+
+export type ProductImageAssetUsageUpdateRequest = {
+  imageRole: ProductImageRole
+  processingNote?: string
+  processingStatus: ProductImageProcessingStatus
 }
 
 export type ProductImageSectionCommand = {
@@ -319,6 +358,63 @@ export async function updateProductImageProfileAssetRole(
     body: JSON.stringify(asset)
   })
   return parseApiResponse<ProductImageProfileDetailView>(response, '基础图分类更新失败')
+}
+
+export async function addProductImageProfileAssetUsages(
+  profileId: number,
+  ownerUserId: number,
+  storeCode: string,
+  request: ProductImageAssetUsageCreateRequest
+) {
+  const params = new URLSearchParams({
+    ownerUserId: String(ownerUserId),
+    storeCode
+  })
+  const response = await apiFetch(`${profilePath(profileId)}/assets/usages?${params.toString()}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request)
+  })
+  return parseApiResponse<ProductImageProfileDetailView>(response, '基础图复用失败')
+}
+
+export async function updateProductImageProfileAssetUsage(
+  profileId: number,
+  usageId: number,
+  ownerUserId: number,
+  storeCode: string,
+  request: ProductImageAssetUsageUpdateRequest
+) {
+  const params = new URLSearchParams({
+    ownerUserId: String(ownerUserId),
+    storeCode
+  })
+  const response = await apiFetch(
+    `${profilePath(profileId)}/asset-usages/${encodeURIComponent(String(usageId))}?${params.toString()}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request)
+    }
+  )
+  return parseApiResponse<ProductImageProfileDetailView>(response, '图片用途更新失败')
+}
+
+export async function removeProductImageProfileAssetUsage(
+  profileId: number,
+  usageId: number,
+  ownerUserId: number,
+  storeCode: string
+) {
+  const params = new URLSearchParams({
+    ownerUserId: String(ownerUserId),
+    storeCode
+  })
+  const response = await apiFetch(
+    `${profilePath(profileId)}/asset-usages/${encodeURIComponent(String(usageId))}?${params.toString()}`,
+    { method: 'DELETE' }
+  )
+  return parseApiResponse<ProductImageProfileDetailView>(response, '图片用途移除失败')
 }
 
 export async function fetchProductImageAssetMetadata(query: ProductImageAssetMetadataQuery) {

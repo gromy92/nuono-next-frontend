@@ -2,17 +2,33 @@ import type { ProductSelectionSourceCollection } from '../source-collection/type
 import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
 import type {
   ManualSelectionAnalysisProjectView,
+  ManualSelectionGroupView,
   ManualSelectionGroupProfitEstimateSnapshot
 } from '../manual-selection/types'
 import type { ProductListingEditorDraft } from './productDetailAdapter'
+import type { ProductListingDraftView } from './types'
 
 const PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY = 'nuono:product-listing:source-prefill'
 
+type PreOrderProfitListingPrefillCandidate = {
+  id: string
+  storeCode?: string
+  title: string
+  skuHint: string
+  purchaseUrl: string
+  purchasePriceRmb: number
+  salePrice: number
+  categoryLabel?: string
+  logisticsCarrierLabel?: string
+}
+
 export type ProductListingSourcePrefill = {
-  source: 'manual-selection'
+  source: 'manual-selection' | 'pre-order-profit' | 'listing-draft'
   sourceCollectionId?: string
   sourceGroupId?: string
   sourceGroupNo?: string
+  sourceCandidateId?: string
+  sourceDraftId?: string
   pendingServerHydration?: boolean
   collectionNo?: string
   sourcePlatform?: string
@@ -33,6 +49,14 @@ type ManualSelectionListingCompetitor = {
   fetchedSellingPointsEn?: string[]
   fetchedSellingPointsAr?: string[]
   fetchedSourceHost?: string
+  fetchedCategoryName?: string
+  fetchedCategoryPath?: string
+  fetchedCategoryUrl?: string
+  fetchedCategoryLinks?: Array<{
+    name?: string
+    path?: string
+    url?: string
+  }>
   fetchedAt?: string
   fetchStatus?: string
 }
@@ -56,6 +80,19 @@ export function saveManualSelectionGroupListingPrefill(
   window.sessionStorage.setItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY, JSON.stringify(prefill))
 }
 
+export function savePreOrderProfitListingPrefill(
+  candidate: PreOrderProfitListingPrefillCandidate,
+  storeCode?: string
+) {
+  const prefill = buildPreOrderProfitListingPrefill(candidate, storeCode)
+  window.sessionStorage.setItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY, JSON.stringify(prefill))
+}
+
+export function saveProductListingDraftRecoveryPrefill(draftView: ProductListingDraftView) {
+  const prefill = buildProductListingDraftRecoveryPrefill(draftView)
+  window.sessionStorage.setItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY, JSON.stringify(prefill))
+}
+
 export function readProductListingSourcePrefill() {
   if (typeof window === 'undefined') {
     return undefined
@@ -63,31 +100,63 @@ export function readProductListingSourcePrefill() {
 
   const search = new URLSearchParams(window.location.search)
   const listingSource = search.get('listingSource')
-  if (listingSource !== 'manual-selection') {
+  if (listingSource !== 'manual-selection' && listingSource !== 'pre-order-profit' && listingSource !== 'listing-draft') {
     return undefined
   }
-  const sourceId = search.get('selectionGroupId') || search.get('sourceCollectionId') || ''
+  const sourceId =
+    listingSource === 'manual-selection'
+      ? search.get('selectionGroupId') || search.get('sourceCollectionId') || ''
+      : listingSource === 'pre-order-profit'
+        ? search.get('sourceCandidateId') || ''
+        : search.get('listingDraftId') || ''
   if (!sourceId) {
     return undefined
+  }
+  if (listingSource === 'listing-draft') {
+    return listingDraftLocatorPrefill(search)
   }
 
   const rawValue = window.sessionStorage.getItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY)
   if (!rawValue) {
-    return manualSelectionGroupLocatorPrefill(search)
+    return sourceLocatorPrefill(search)
   }
 
   try {
     const parsed = JSON.parse(rawValue) as ProductListingSourcePrefill
     if (parsed.source !== listingSource) {
-      return manualSelectionGroupLocatorPrefill(search)
+      return sourceLocatorPrefill(search)
     }
-    const parsedSourceId = parsed.sourceGroupId || parsed.sourceCollectionId
+    const parsedSourceId = sourcePrefillId(parsed)
     if (parsedSourceId !== sourceId) {
-      return manualSelectionGroupLocatorPrefill(search)
+      return sourceLocatorPrefill(search)
     }
-    return parsed
+    return sanitizeProductListingSourcePrefill(parsed)
   } catch {
-    return manualSelectionGroupLocatorPrefill(search)
+    return sourceLocatorPrefill(search)
+  }
+}
+
+function sourcePrefillId(prefill: ProductListingSourcePrefill) {
+  if (prefill.source === 'manual-selection') {
+    return prefill.sourceGroupId || prefill.sourceCollectionId
+  }
+  if (prefill.source === 'pre-order-profit') {
+    return prefill.sourceCandidateId
+  }
+  return prefill.sourceDraftId
+}
+
+function sourceLocatorPrefill(search: URLSearchParams): ProductListingSourcePrefill | undefined {
+  return manualSelectionGroupLocatorPrefill(search) || listingDraftLocatorPrefill(search)
+}
+
+function sanitizeProductListingSourcePrefill(prefill: ProductListingSourcePrefill): ProductListingSourcePrefill {
+  return {
+    ...prefill,
+    draft: {
+      ...prefill.draft,
+      productFullType: officialNoonFulltypeOrEmpty(prefill.draft.productFullType)
+    }
   }
 }
 
@@ -104,6 +173,25 @@ function manualSelectionGroupLocatorPrefill(search: URLSearchParams): ProductLis
     sourceGroupId,
     pendingServerHydration: true,
     draft: {}
+  }
+}
+
+function listingDraftLocatorPrefill(search: URLSearchParams): ProductListingSourcePrefill | undefined {
+  if (search.get('listingSource') !== 'listing-draft') {
+    return undefined
+  }
+  const sourceDraftId = text(search.get('listingDraftId') || '')
+  if (!sourceDraftId) {
+    return undefined
+  }
+  const draftId = Number(sourceDraftId)
+  return {
+    source: 'listing-draft',
+    sourceDraftId,
+    pendingServerHydration: true,
+    draft: {
+      ...(Number.isFinite(draftId) && draftId > 0 ? { draftId } : {})
+    }
   }
 }
 
@@ -186,17 +274,99 @@ export function buildManualSelectionGroupListingPrefill(
   }
 }
 
+export function buildManualSelectionGroupListingPrefillFromGroup(
+  group: ManualSelectionGroupView,
+  storeCode?: string,
+  profitEstimate?: ManualSelectionGroupProfitEstimateSnapshot | null
+): ProductListingSourcePrefill {
+  const records = (group.materials || [])
+    .map((material) => material.sourceCollection)
+    .filter((record): record is ProductSelectionSourceCollection => Boolean(record))
+  const project: ManualSelectionAnalysisProjectView = {
+    projectId: group.groupId,
+    groupId: group.groupId,
+    groupNo: group.groupNo,
+    projectName: group.groupName,
+    projectMaterialCount: group.materialCount ?? records.length,
+    procurement: group.procurement,
+    competitors: group.competitors || [],
+    items: [],
+    records
+  }
+  return buildManualSelectionGroupListingPrefill(project, storeCode, group.competitors || [], profitEstimate)
+}
+
 export function productFullTypeFromManualSelectionProfitEstimate(
   profitEstimate?: ManualSelectionGroupProfitEstimateSnapshot | null
 ) {
   const snapshot = recordValue(profitEstimate?.snapshot)
   const selectedCategory = recordValue(snapshot?.selectedCategory)
   const formValues = recordValue(snapshot?.formValues)
-  return firstText([
+  return firstOfficialNoonFulltype([
     stringValue(selectedCategory?.value),
-    stringValue(selectedCategory?.label),
-    stringValue(formValues?.categoryKey)
+    stringValue(formValues?.categoryKey),
+    stringValue(selectedCategory?.label)
   ])
+}
+
+export function buildProductListingDraftRecoveryPrefill(
+  draftView: ProductListingDraftView
+): ProductListingSourcePrefill {
+  const draft: Partial<ProductListingEditorDraft> = draftView.draft || {
+    storeCode: draftView.storeCode,
+    psku: '',
+    imageUrls: []
+  }
+  const competitorMaterials = normalizeDraftCompetitorMaterials(draft.competitorMaterials)
+  const sourceTitleCn = firstText([
+    draft.productTitleCn,
+    draft.productTitleEn,
+    draft.productTitleAr,
+    draft.psku,
+    draftView.draftNo
+  ])
+  return {
+    source: 'listing-draft',
+    sourceDraftId: String(draftView.draftId),
+    collectionNo: draftView.draftNo,
+    sourcePlatform: '上架草稿',
+    sourceTitleCn,
+    competitorMaterials,
+    draft: {
+      ...draft,
+      competitorMaterials,
+      draftId: draftView.draftId,
+      storeCode: draft.storeCode || draftView.storeCode || '',
+      productFullType: officialNoonFulltypeOrEmpty(draft.productFullType)
+    }
+  }
+}
+
+function buildPreOrderProfitListingPrefill(
+  candidate: PreOrderProfitListingPrefillCandidate,
+  storeCode?: string
+): ProductListingSourcePrefill {
+  const sourceRefId = numericSourceRefId(candidate.id)
+  return {
+    source: 'pre-order-profit',
+    sourceCandidateId: candidate.id,
+    sourcePlatform: '选品池',
+    sourceTitleCn: candidate.title,
+    sourceUrl: candidate.purchaseUrl,
+    draft: {
+      storeCode: candidate.storeCode || storeCode || '',
+      psku: text(candidate.skuHint),
+      productTitleCn: text(candidate.title),
+      price: finitePositiveNumber(candidate.salePrice),
+      salePrice: finitePositiveNumber(candidate.salePrice),
+      purchasePrice: finitePositiveNumber(candidate.purchasePriceRmb),
+      supplyEvidenceType: 'OTHER',
+      supplyEvidenceRefId: sourceRefId,
+      sourceType: 'pre_order_profit',
+      sourceRefId,
+      offerNote: buildPreOrderProfitOfferNote(candidate)
+    }
+  }
 }
 
 function normalizeCompetitorMaterials(competitors: ManualSelectionListingCompetitor[]): ProductCompetitorContentMaterial[] {
@@ -208,6 +378,10 @@ function normalizeCompetitorMaterials(competitors: ManualSelectionListingCompeti
       note: text(competitor.note),
       sourceHost: text(competitor.fetchedSourceHost),
       fetchedAt: text(competitor.fetchedAt),
+      categoryName: text(competitor.fetchedCategoryName),
+      categoryPath: text(competitor.fetchedCategoryPath),
+      categoryUrl: text(competitor.fetchedCategoryUrl),
+      categoryLinks: normalizeCompetitorCategoryLinks(competitor.fetchedCategoryLinks),
       titleEn: text(competitor.fetchedTitle),
       titleAr: text(competitor.fetchedTitleAr),
       descriptionEn: text(competitor.fetchedDescriptionEn),
@@ -215,10 +389,7 @@ function normalizeCompetitorMaterials(competitors: ManualSelectionListingCompeti
       sellingPointsEn: uniqueTexts(competitor.fetchedSellingPointsEn || []),
       sellingPointsAr: uniqueTexts(competitor.fetchedSellingPointsAr || [])
     }))
-    .filter((material) => (
-      Boolean(material.titleEn || material.titleAr || material.descriptionEn || material.descriptionAr)
-        || Boolean(material.sellingPointsEn?.length || material.sellingPointsAr?.length)
-    ))
+    .filter(hasCompetitorContent)
 }
 
 function sourceRecordToCompetitorMaterial(record: ProductSelectionSourceCollection): ProductCompetitorContentMaterial {
@@ -228,6 +399,10 @@ function sourceRecordToCompetitorMaterial(record: ProductSelectionSourceCollecti
     note: text(record.sourceTitleCn || record.selectedText || record.notes),
     sourceHost: text(record.sourcePlatform),
     fetchedAt: text(record.collectedAt),
+    categoryName: text(record.categoryName),
+    categoryPath: text(record.categoryPath),
+    categoryUrl: text(record.categoryUrl),
+    categoryLinks: normalizeCompetitorCategoryLinks(record.categoryLinks),
     titleEn: text(record.sourceTitle),
     titleAr: text(record.sourceTitleAr || record.selectedTextAr),
     descriptionEn: text(record.sourceDescriptionEn),
@@ -241,7 +416,53 @@ function hasCompetitorContent(material: ProductCompetitorContentMaterial) {
   return (
     Boolean(material.titleEn || material.titleAr || material.descriptionEn || material.descriptionAr)
     || Boolean(material.sellingPointsEn?.length || material.sellingPointsAr?.length)
+    || Boolean(material.categoryName || material.categoryPath || material.categoryUrl || material.categoryLinks?.length)
   )
+}
+
+function normalizeDraftCompetitorMaterials(value: unknown): ProductCompetitorContentMaterial[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .filter(recordValue)
+    .map((material, index) => ({
+      id: text(stringValue(material.id)) || `competitor-${index + 1}`,
+      url: text(stringValue(material.url)),
+      note: text(stringValue(material.note)),
+      sourceHost: text(stringValue(material.sourceHost)),
+      externalSku: text(stringValue(material.externalSku)),
+      fetchedAt: text(stringValue(material.fetchedAt)),
+      categoryName: text(stringValue(material.categoryName)),
+      categoryPath: text(stringValue(material.categoryPath)),
+      categoryUrl: text(stringValue(material.categoryUrl)),
+      categoryLinks: normalizeCompetitorCategoryLinks(material.categoryLinks),
+      titleEn: text(stringValue(material.titleEn)),
+      titleAr: text(stringValue(material.titleAr)),
+      descriptionEn: text(stringValue(material.descriptionEn)),
+      descriptionAr: text(stringValue(material.descriptionAr)),
+      sellingPointsEn: uniqueTexts(arrayStringValues(material.sellingPointsEn)),
+      sellingPointsAr: uniqueTexts(arrayStringValues(material.sellingPointsAr))
+    }))
+    .filter(hasCompetitorContent)
+}
+
+function arrayStringValues(value: unknown) {
+  return Array.isArray(value) ? value.map((item) => stringValue(item)).filter(Boolean) : []
+}
+
+function normalizeCompetitorCategoryLinks(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .filter(recordValue)
+    .map((item) => ({
+      name: text(stringValue(item.name)),
+      path: text(stringValue(item.path)),
+      url: text(stringValue(item.url))
+    }))
+    .filter((item) => item.name || item.path || item.url)
 }
 
 function uniqueTexts(values: Array<string | undefined>) {
@@ -258,6 +479,19 @@ function text(value?: string) {
 
 function stringValue(value: unknown) {
   return typeof value === 'string' ? value : undefined
+}
+
+function firstOfficialNoonFulltype(values: Array<string | undefined>) {
+  return values.map((value) => text(value)).find(isOfficialNoonFulltypeCode) || ''
+}
+
+function officialNoonFulltypeOrEmpty(value: string | undefined) {
+  const normalized = text(value)
+  return isOfficialNoonFulltypeCode(normalized) ? normalized : ''
+}
+
+function isOfficialNoonFulltypeCode(value: string) {
+  return /^[a-z0-9_]+-[a-z0-9_]+-[a-z0-9_]+$/.test(value)
 }
 
 function recordValue(value: unknown): Record<string, unknown> | undefined {
@@ -288,4 +522,13 @@ function numericSourceRefId(value?: string) {
 
 function finitePositiveNumber(value?: number) {
   return Number.isFinite(value) && Number(value) > 0 ? Number(value) : undefined
+}
+
+function buildPreOrderProfitOfferNote(candidate: PreOrderProfitListingPrefillCandidate) {
+  const parts = [
+    `选品池: ${text(candidate.skuHint) || text(candidate.id)}`,
+    candidate.categoryLabel ? `类目 ${candidate.categoryLabel}` : undefined,
+    candidate.logisticsCarrierLabel ? `物流 ${candidate.logisticsCarrierLabel}` : undefined
+  ].filter(Boolean)
+  return parts.join(' / ')
 }

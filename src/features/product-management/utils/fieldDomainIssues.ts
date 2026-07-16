@@ -1,4 +1,5 @@
 import { parseOptionalNumber, textInputValue } from './common';
+import { collectOfferPricingValidationIssues } from './offerPricingValidation';
 import { isVisibleDetailedAttributeRecord } from '../productAttributeTemplate';
 
 export function pickAttributeValue(attribute: Record<string, unknown>) {
@@ -48,22 +49,11 @@ export function collectSiteOfferValidationIssues(offer: Record<string, unknown> 
 
   const issues: string[] = [];
   const price = parseOptionalNumber(offer.price);
-  const salePrice = parseOptionalNumber(offer.salePrice);
-  const priceMin = parseOptionalNumber(offer.priceMin);
-  const priceMax = parseOptionalNumber(offer.priceMax);
 
   if (price === null || price <= 0) {
     issues.push(`${label} 缺少有效售价。`);
   }
-  if (salePrice !== null && price !== null && salePrice > price) {
-    issues.push(`${label} 的促销价不能高于原价。`);
-  }
-  if (price !== null && priceMin !== null && price < priceMin) {
-    issues.push(`${label} 的售价低于允许范围。`);
-  }
-  if (price !== null && priceMax !== null && price > priceMax) {
-    issues.push(`${label} 的售价高于允许范围。`);
-  }
+  issues.push(...collectOfferPricingValidationIssues(offer, label).map((issue) => issue.message));
 
   return issues;
 }

@@ -66,6 +66,7 @@ export function createManualSelectionProfitEstimateSeed(
     ].filter(Boolean).join(' ')).join('\n'),
     ali1688Url: purchaseUrl,
     salePrice: mostAggressiveCompetitorPrice(project),
-    purchasePrice: finitePositiveNumber(project.procurement?.purchasePriceRmb ?? project.procurement?.purchasePrice)
+    purchasePrice: finitePositiveNumber(project.procurement?.purchasePriceRmb ?? project.procurement?.purchasePrice),
+    competitors: project.competitors || []
   }
 }

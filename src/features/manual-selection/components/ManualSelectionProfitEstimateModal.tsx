@@ -1,3 +1,4 @@
+import { LinkOutlined } from '@ant-design/icons'
 import { Alert, Button, Col, Form, Input, InputNumber, Modal, Row, Select, Space, Spin, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
@@ -23,6 +24,11 @@ import {
   systemCategorySearchTerms,
   type ManualSelectionSystemCategoryOption
 } from '../profitCategoryMatching'
+import {
+  buildCompetitorCategoryRows,
+  type CompetitorCategoryRow
+} from '../profitCompetitorCategoryLinks'
+import { normalizeLogisticsQuoteText } from '../profitEstimateLogisticsEncoding'
 import type { ManualSelectionGroupProfitEstimateSnapshot, ManualSelectionProfitEstimateSeed } from '../types'
 
 const { Text } = Typography
@@ -164,7 +170,7 @@ function itemSiteSearchText(item: LogisticsQuoteOperationPriceItemDto) {
     item.categoryLevel2,
     item.sourceFileName,
     item.remark
-  ].filter(Boolean).join(' ')
+  ].map((value) => normalizeLogisticsQuoteText(value)).filter(Boolean).join(' ')
 }
 
 function hasSiteCodeToken(text: string, tokens: string[]) {
@@ -212,23 +218,27 @@ function buildLogisticsProviderOptions(items: LogisticsQuoteOperationPriceItemDt
       const transportMode = item.transportMode?.toUpperCase() === 'SEA' ? 'SEA' : 'AIR'
       const unitPrice = Number(item.effectiveValue)
       const value = logisticsProviderValue(item)
-      const cargoCategoryName = item.cargoCategoryName || item.categoryLevel2 || item.categoryLevel1
+      const forwarderName = normalizeLogisticsQuoteText(item.forwarderName) || '未命名货代'
+      const serviceName = normalizeLogisticsQuoteText(item.serviceName || item.serviceCode) || '未命名服务线'
+      const cargoCategoryName = normalizeLogisticsQuoteText(
+        item.cargoCategoryName || item.categoryLevel2 || item.categoryLevel1
+      )
       return {
         value,
         label: [
-          item.forwarderName || '未命名货代',
-          item.serviceName || item.serviceCode || '未命名服务线',
+          forwarderName,
+          serviceName,
           cargoCategoryName,
           `${transportModeLabel(transportMode)} ¥${formatMoney(unitPrice)}/${billingUnitLabel(item.billingUnit)}`
         ].filter(Boolean).join(' / '),
-        forwarderName: item.forwarderName || '未命名货代',
-        serviceName: item.serviceName || item.serviceCode || '未命名服务线',
+        forwarderName,
+        serviceName,
         transportMode,
         cargoCategoryName,
         quoteVersionNo: item.quoteVersionNo,
         unitPrice,
         billingUnit: item.billingUnit,
-        sourceFileName: item.sourceFileName
+        sourceFileName: normalizeLogisticsQuoteText(item.sourceFileName)
       }
     })
     .filter((item) => {
@@ -479,6 +489,7 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
   const [logisticsOptions, setLogisticsOptions] = useState<LogisticsProviderOption[]>([])
   const [logisticsLoading, setLogisticsLoading] = useState(false)
   const [logisticsError, setLogisticsError] = useState<string | null>(null)
+  const [competitorCategoryOpen, setCompetitorCategoryOpen] = useState(false)
 
   useEffect(() => {
     if (!open) {
@@ -571,6 +582,9 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
   const visibleScenarios = useMemo(() => (
     calculation?.scenarios?.filter((scenario) => scenarioMatchesProvider(scenario.code, selectedProvider)) || []
   ), [calculation, selectedProvider])
+  const competitorCategoryRows = useMemo(() => (
+    buildCompetitorCategoryRows(seed?.competitors || [])
+  ), [seed?.competitors])
 
   useEffect(() => {
     if (!open || !canCalculate || !selectedProvider) {
@@ -684,7 +698,27 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
               </Form.Item>
             </Col>
             <Col span={5}>
-              <Form.Item label="商品类目" name="categoryKey" rules={[{ required: true, message: '请选择商品类目' }]}>
+              <Form.Item
+                label={(
+                  <Space size={6}>
+                    <span>商品类目</span>
+                    <Button
+                      type="link"
+                      size="small"
+                      icon={<LinkOutlined />}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        setCompetitorCategoryOpen(true)
+                      }}
+                    >
+                      查看竞品类目
+                    </Button>
+                  </Space>
+                )}
+                name="categoryKey"
+                rules={[{ required: true, message: '请选择商品类目' }]}
+              >
                 <Select
                   loading={categoryLoading}
                   optionFilterProp="searchText"
@@ -801,6 +835,74 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
             scroll={{ x: 930 }}
           />
         </Spin>
+
+        <Modal
+          title="竞品类目链接"
+          open={competitorCategoryOpen}
+          width={780}
+          footer={[
+            <Button key="close" onClick={() => setCompetitorCategoryOpen(false)}>
+              关闭
+            </Button>
+          ]}
+          onCancel={() => setCompetitorCategoryOpen(false)}
+        >
+          <Table<CompetitorCategoryRow>
+            rowKey="rowKey"
+            size="small"
+            pagination={false}
+            dataSource={competitorCategoryRows}
+            columns={[
+              {
+                title: '竞品',
+                dataIndex: 'competitorLabel',
+                width: 220,
+                render: (value: string) => (
+                  <Typography.Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 0 }}>
+                    {value}
+                  </Typography.Paragraph>
+                )
+              },
+              {
+                title: '来源',
+                dataIndex: 'sourceHost',
+                width: 130,
+                render: (value: string) => value || '-'
+              },
+              {
+                title: '类目',
+                dataIndex: 'categoryPath',
+                width: 180,
+                render: (value: string) => <Text type={value === '暂无类目链接' ? 'secondary' : undefined}>{value}</Text>
+              },
+              {
+                title: '类目链接',
+                dataIndex: 'categoryUrl',
+                width: 120,
+                render: (value: string) => value ? (
+                  <Typography.Link href={value} target="_blank" rel="noreferrer">
+                    打开
+                  </Typography.Link>
+                ) : (
+                  <Text type="secondary">暂无</Text>
+                )
+              },
+              {
+                title: '商品链接',
+                dataIndex: 'productUrl',
+                width: 120,
+                render: (value: string) => value ? (
+                  <Typography.Link href={value} target="_blank" rel="noreferrer">
+                    查看
+                  </Typography.Link>
+                ) : (
+                  <Text type="secondary">暂无</Text>
+                )
+              }
+            ]}
+            locale={{ emptyText: '当前选品组暂无竞品链接' }}
+          />
+        </Modal>
       </Space>
     </Modal>
   )

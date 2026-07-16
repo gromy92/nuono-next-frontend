@@ -74,6 +74,7 @@ const seedWithoutProcurement = createManualSelectionProfitEstimateSeed(projectFi
 assert.equal(seedWithoutProcurement.salePrice, 19.85)
 assert.equal(seedWithoutProcurement.purchasePrice, undefined)
 assert.equal(seedWithoutProcurement.title, 'iPhone 15 透明软边基础款')
+assert.deepEqual(seedWithoutProcurement.competitors?.map((item) => item.id), ['c-1', 'c-2', 'c-3'])
 
 const seedWithProcurement = createManualSelectionProfitEstimateSeed(projectFixture({
   procurement: {

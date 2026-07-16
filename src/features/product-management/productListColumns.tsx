@@ -113,7 +113,7 @@ export function createProductListColumns({
     {
       title: <ProductListColumnInfoTitle label="发布状态" />,
       key: 'publishStatus',
-      width: 142,
+      width: 160,
       align: 'center',
       render: (_: unknown, record) => <PublishStatusCell record={record} />
     }

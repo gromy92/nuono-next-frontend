@@ -87,7 +87,8 @@ export function mergeProductListItemWithSummary(
     unitsSold: summary.unitsSold ?? current.unitsSold,
     salesAmount: summary.salesAmount ?? current.salesAmount,
     salesCurrency: summary.salesCurrency ?? current.salesCurrency,
-    lastPublishTask: summary.lastPublishTask ?? current.lastPublishTask
+    lastPublishTask: summary.lastPublishTask ?? current.lastPublishTask,
+    listingPublishTask: summary.listingPublishTask ?? current.listingPublishTask
   };
 }
 

@@ -1,46 +1,122 @@
 import { RobotOutlined } from '@ant-design/icons'
 import { Alert, Button, Col, Input, Row, Space, Tag, Typography, message } from 'antd'
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ProductDetailOfficialTabs } from '../product-management/components/ProductDetailOfficialTabs'
-import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
-import { generateProductListingAiListing } from './api'
+import { generateProductListingAiListing, validateProductListingFields } from './api'
 import {
   productListingContentProgress,
   productListingEditorDraftDomains,
-  productListingEditorDraftToPayload,
   productListingEditorDraftToSiteOffer,
+  productListingEditorDraftToPayload,
   productListingEditorDraftToSnapshot,
   productListingEditorDraftToStockRows,
   productListingEditorDraftToSummary,
   normalizeProductListingEditorDraft,
+  updateProductListingKeyAttributeField,
   type ProductListingEditorDraft
 } from './productDetailAdapter'
-import type { ProductListingAiListingData, ProductListingAiListingDraft } from './types'
+import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+import type {
+  ProductListingAiListingData,
+  ProductListingAiListingDraft,
+  ProductListingValidationIssue
+} from './types'
 
 const { Text } = Typography
+const EMPTY_COMPETITOR_MATERIALS: ProductCompetitorContentMaterial[] = []
 
 type ProductListingDetailEditorProps = {
   draft: ProductListingEditorDraft
   competitorMaterials?: ProductCompetitorContentMaterial[]
+  ownerUserId?: number
   onDraftChange: (updater: (currentDraft: ProductListingEditorDraft) => ProductListingEditorDraft) => void
 }
 
-export function ProductListingDetailEditor({ competitorMaterials = [], draft, onDraftChange }: ProductListingDetailEditorProps) {
+export function ProductListingDetailEditor({
+  competitorMaterials,
+  draft,
+  ownerUserId,
+  onDraftChange
+}: ProductListingDetailEditorProps) {
+  const listingCompetitorMaterials = competitorMaterials ?? EMPTY_COMPETITOR_MATERIALS
   const [aiRequirement, setAiRequirement] = useState('')
   const [aiGenerating, setAiGenerating] = useState(false)
   const [aiResult, setAiResult] = useState<ProductListingAiListingData>()
   const [aiResponseWarnings, setAiResponseWarnings] = useState<string[]>([])
-  const snapshot = useMemo(() => productListingEditorDraftToSnapshot(draft), [draft])
+  const [barcodeDraftForValidation, setBarcodeDraftForValidation] = useState('')
+  const [fieldValidationIssues, setFieldValidationIssues] = useState<ProductListingValidationIssue[]>([])
+  const fieldValidationRequestSeq = useRef(0)
+  const snapshot = useMemo(() => productListingEditorDraftToSnapshot(draft, ownerUserId), [draft, ownerUserId])
   const activeSiteOffer = useMemo(() => productListingEditorDraftToSiteOffer(draft), [draft])
   const summary = useMemo(() => productListingEditorDraftToSummary(draft), [draft])
   const domains = useMemo(() => productListingEditorDraftDomains(draft), [draft])
   const contentProgress = useMemo(() => productListingContentProgress(draft), [draft])
   const stockRows = useMemo(() => productListingEditorDraftToStockRows(draft), [draft])
+  const competitorMaterialsKey = useMemo(
+    () => (competitorMaterials || []).map((item) => item.id || item.titleEn || item.titleAr || item.url || '').join('|'),
+    [competitorMaterials]
+  )
   const imageUrls = useMemo(
     () => (Array.isArray(snapshot.content.images) ? snapshot.content.images.map(String).filter(Boolean) : []),
     [snapshot.content.images]
   )
-  const aiInputReady = useMemo(() => hasListingAiInput(draft, competitorMaterials), [draft, competitorMaterials])
+  const aiInputReady = useMemo(
+    () => hasListingAiInput(draft, listingCompetitorMaterials),
+    [draft, listingCompetitorMaterials]
+  )
+  const barcodeForValidation = text(barcodeDraftForValidation).trim() || text(draft.barcode).trim()
+  const pskuValidationIssue = useMemo(
+    () =>
+      fieldValidationIssues.find(
+        (issue) => issue.fieldKey === 'psku' && issue.severity === 'error'
+      ),
+    [fieldValidationIssues]
+  )
+  const barcodeValidationIssue = useMemo(
+    () =>
+      fieldValidationIssues.find(
+        (issue) => issue.fieldKey === 'barcode' && issue.severity === 'error'
+      ),
+    [fieldValidationIssues]
+  )
+
+  useEffect(() => {
+    const storeCode = text(draft.storeCode).trim()
+    const psku = text(draft.psku).trim()
+    if (!storeCode || (!psku && !barcodeForValidation)) {
+      setFieldValidationIssues([])
+      return
+    }
+
+    const requestSeq = ++fieldValidationRequestSeq.current
+    const timer = window.setTimeout(async () => {
+      try {
+        const result = await validateProductListingFields(
+          productListingEditorDraftToPayload(
+            normalizeProductListingEditorDraft({
+              ...draft,
+              barcode: barcodeForValidation
+            })
+          )
+        )
+        if (fieldValidationRequestSeq.current === requestSeq) {
+          setFieldValidationIssues(result.issues ?? [])
+        }
+      } catch {
+        if (fieldValidationRequestSeq.current === requestSeq) {
+          setFieldValidationIssues([])
+        }
+      }
+    }, 350)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [barcodeForValidation, draft])
+
+  const handleBarcodeDraftChange = useCallback((value: string) => {
+    setBarcodeDraftForValidation(value)
+  }, [])
 
   const patchDraft = (patch: Partial<ProductListingEditorDraft>) => {
     onDraftChange((currentDraft) => normalizeProductListingEditorDraft({ ...currentDraft, ...patch }))
@@ -56,7 +132,7 @@ export function ProductListingDetailEditor({ competitorMaterials = [], draft, on
       const result = await generateProductListingAiListing({
         draft: productListingEditorDraftToPayload(draft),
         operatorRequirement: aiRequirement,
-        competitorMaterials
+        competitorMaterials: listingCompetitorMaterials
       })
       setAiResponseWarnings(result.warnings ?? [])
       if (!result.ready || !result.data) {
@@ -99,7 +175,7 @@ export function ProductListingDetailEditor({ competitorMaterials = [], draft, on
         patchDraft({ barcode: text(value) })
       } else if (field === 'barcodes' && Array.isArray(value)) {
         patchDraft({ barcode: text(value[0]) })
-      } else if (field === 'partnerSku') {
+      } else if (field === 'partnerSku' || field === 'pskuCode' || field === 'skuParent') {
         patchDraft({ psku: text(value) })
       }
       return
@@ -139,6 +215,10 @@ export function ProductListingDetailEditor({ competitorMaterials = [], draft, on
         patchDraft({ productHighlightsAr: stringList(value) })
       } else if (field === 'images') {
         patchDraft({ imageUrls: stringList(value) })
+      } else if (field === 'imageRoleAssignments') {
+        patchDraft({ imageRoleAssignments: imageRoleAssignmentList(value) })
+      } else if (field === 'imageAssetMetadata') {
+        patchDraft({ imageAssetMetadata: imageAssetMetadataList(value) })
       }
     }
   }
@@ -191,7 +271,12 @@ export function ProductListingDetailEditor({ competitorMaterials = [], draft, on
       patchDraft({ barcode: value })
       return
     }
-    message.info(`${field} 暂只保留在当前页面草稿，后端上架草稿暂未接入该属性。`)
+    onDraftChange((currentDraft) =>
+      normalizeProductListingEditorDraft({
+        ...currentDraft,
+        keyAttributes: updateProductListingKeyAttributeField(currentDraft.keyAttributes, code, field, value)
+      })
+    )
   }
 
   const openCurrentProductGallery = (index: number) => {
@@ -202,17 +287,34 @@ export function ProductListingDetailEditor({ competitorMaterials = [], draft, on
   }
 
   const listingPskuEditor = (
-    <Space direction="vertical" size={8} style={{ width: '100%' }}>
-      <Text strong style={{ color: 'var(--pm-text-primary)' }}>
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '96px minmax(0, 1fr)',
+        gap: 12,
+        alignItems: 'center',
+        width: '100%'
+      }}
+    >
+      <Text strong style={{ color: 'var(--pm-text-primary)', whiteSpace: 'nowrap' }}>
         新增 PSKU
       </Text>
       <Input
         aria-label="新增 PSKU"
         value={draft.psku}
         placeholder="例如 NUONO-DECOR-001"
+        status={pskuValidationIssue ? 'error' : undefined}
         onChange={(event) => patchDraft({ psku: event.target.value })}
       />
-    </Space>
+      {pskuValidationIssue ? (
+        <>
+          <span />
+          <Text type="danger" style={{ fontSize: 12 }}>
+            {pskuValidationIssue.message}
+          </Text>
+        </>
+      ) : null}
+    </div>
   )
 
   const aiPanel = (
@@ -234,9 +336,9 @@ export function ProductListingDetailEditor({ competitorMaterials = [], draft, on
             <Tag color="blue" style={{ marginInlineEnd: 0 }}>
               Noon 双语 v3.2
             </Tag>
-            {competitorMaterials.length ? (
+            {listingCompetitorMaterials.length ? (
               <Tag color="gold" style={{ marginInlineEnd: 0 }}>
-                竞品 {competitorMaterials.length}
+                竞品 {listingCompetitorMaterials.length}
               </Tag>
             ) : null}
           </Space>
@@ -272,6 +374,7 @@ export function ProductListingDetailEditor({ competitorMaterials = [], draft, on
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
       {aiPanel}
       <ProductDetailOfficialTabs
+        key={`listing-tabs-${competitorMaterialsKey}`}
         defaultActiveKey="offer"
         productSiteDomain={domains.site}
         productSharedDomainDirtyCount={0}
@@ -289,8 +392,12 @@ export function ProductListingDetailEditor({ competitorMaterials = [], draft, on
         productContentDomain={domains.content}
         productContentProgressDone={contentProgress.done}
         productContentProgressTotal={contentProgress.total}
+        productCompetitorMaterials={competitorMaterials}
+        enableCompetitorContentMerge
         productMainDomain={domains.main}
         productImageUrls={imageUrls}
+        productImageRoleAssignments={draft.imageRoleAssignments}
+        productImageAssetMetadata={draft.imageAssetMetadata}
         productAttributesDomain={domains.attributes}
         productRequiredAttributeCount={0}
         productFilledRequiredAttributeCount={0}
@@ -300,7 +407,10 @@ export function ProductListingDetailEditor({ competitorMaterials = [], draft, on
         productListSourceItems={[]}
         productInsightMetrics={[]}
         productLeadImage={imageUrls[0]}
+        allowEmptyImages
         offerHeaderExtra={listingPskuEditor}
+        barcodeValidationIssue={barcodeValidationIssue}
+        onBarcodeDraftChange={handleBarcodeDraftChange}
         previewProductAction={() => undefined}
         updateSiteOfferField={updateSiteOfferField}
         setActiveSiteOfferCode={() => undefined}
@@ -417,9 +527,7 @@ function ProductListingAiLanguagePreview(props: {
       </Text>
       <div>
         <Text type="secondary">标题</Text>
-        <Typography.Paragraph style={{ marginBottom: 0 }}>
-          {text(title) || '-'}
-        </Typography.Paragraph>
+        <Typography.Paragraph style={{ marginBottom: 0 }}>{text(title) || '-'}</Typography.Paragraph>
       </div>
       <div>
         <Text type="secondary">卖点</Text>
@@ -562,4 +670,67 @@ function multilineList(value: string) {
     .split(/\n+/)
     .map((item) => item.trim())
     .filter(Boolean)
+}
+
+function imageRoleAssignmentList(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return null
+      }
+      const record = item as Record<string, unknown>
+      const imageUrl = text(record.imageUrl).trim()
+      const imageRole = text(record.imageRole).trim()
+      const sortOrderValue = Number(record.sortOrder)
+      if (!imageUrl || !['MAIN', 'SIZE', 'DETAIL', 'PACKAGE'].includes(imageRole)) {
+        return null
+      }
+      return {
+        imageUrl,
+        imageRole: imageRole as 'MAIN' | 'SIZE' | 'DETAIL' | 'PACKAGE',
+        sortOrder: Number.isFinite(sortOrderValue) ? Math.trunc(sortOrderValue) : undefined
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+}
+
+function imageAssetMetadataList(value: unknown) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) {
+        return null
+      }
+      const record = item as Record<string, unknown>
+      const imageUrl = text(record.imageUrl).trim()
+      const width = positiveNumber(record.width)
+      const height = positiveNumber(record.height)
+      if (!imageUrl || !width || !height) {
+        return null
+      }
+      return {
+        imageUrl,
+        width,
+        height,
+        aspectRatio: positiveNumber(record.aspectRatio),
+        noonReady: Boolean(record.noonReady),
+        sourceWidth: positiveNumber(record.sourceWidth),
+        sourceHeight: positiveNumber(record.sourceHeight),
+        adapted: Boolean(record.adapted),
+        adaptationTargetWidth: positiveNumber(record.adaptationTargetWidth),
+        adaptationTargetHeight: positiveNumber(record.adaptationTargetHeight),
+        sourceTooSmall: Boolean(record.sourceTooSmall)
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+}
+
+function positiveNumber(value: unknown) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
 }

@@ -1,0 +1,40 @@
+.product-listing-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.product-listing-page-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.product-listing-draft-save-feedback {
+  max-width: min(520px, 100%);
+  padding: 4px 12px;
+}
+
+.product-listing-draft-save-feedback .ant-alert-message {
+  white-space: nowrap;
+}
+
+.product-listing-editor-card {
+  border: 1px solid #dbe4ea;
+}
+
+.product-listing-real-run-steps-table .ant-table-cell {
+  vertical-align: top;
+}
+
+.product-listing-real-run-step-reference {
+  max-width: 100%;
+  margin-bottom: 0;
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}

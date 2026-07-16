@@ -17,6 +17,7 @@ export type ProductDetailedAttributeOption = {
   value: string;
   en: string;
   ar?: string;
+  zh?: string;
 };
 
 export type ProductDetailedAttributeGroup = {
@@ -37,15 +38,15 @@ export const PRODUCT_DETAILED_ATTRIBUTE_GROUPS: ProductDetailedAttributeGroup[] 
         label: 'Base Material',
         kind: 'select',
         options: [
-          { value: 'plastic', en: 'Plastic', ar: 'بلاستيك' },
+          { value: 'plastic', en: 'Plastic', ar: 'بلاستيك', zh: '塑料' },
           { value: 'abs', en: 'ABS', ar: 'ABS' },
-          { value: 'cotton', en: 'Cotton', ar: 'قطن' },
-          { value: 'glass', en: 'Glass', ar: 'زجاج' },
-          { value: 'fabric', en: 'Fabric', ar: 'قماش' },
+          { value: 'cotton', en: 'Cotton', ar: 'قطن', zh: '棉' },
+          { value: 'glass', en: 'Glass', ar: 'زجاج', zh: '玻璃' },
+          { value: 'fabric', en: 'Fabric', ar: 'قماش', zh: '布料' },
           { value: 'pvc', en: 'PVC', ar: 'PVC' },
-          { value: 'metal', en: 'Metal', ar: 'معدن' },
-          { value: 'ceramic', en: 'Ceramic', ar: 'سيراميك' },
-          { value: 'wood', en: 'Wood', ar: 'خشب' }
+          { value: 'metal', en: 'Metal', ar: 'معدن', zh: '金属' },
+          { value: 'ceramic', en: 'Ceramic', ar: 'سيراميك', zh: '陶瓷' },
+          { value: 'wood', en: 'Wood', ar: 'خشب', zh: '木材' }
         ]
       },
       {
@@ -53,11 +54,11 @@ export const PRODUCT_DETAILED_ATTRIBUTE_GROUPS: ProductDetailedAttributeGroup[] 
         label: 'Care Instructions',
         kind: 'select',
         options: [
-          { value: 'machine_wash', en: 'Machine Wash', ar: 'غسيل في الغسالة' },
-          { value: 'hand_wash', en: 'Hand Wash', ar: 'غسيل يدوي' },
-          { value: 'spot_clean', en: 'Spot Clean', ar: 'تنظيف موضعي' },
-          { value: 'wipe_clean', en: 'Wipe Clean', ar: 'ينظف بالمسح' },
-          { value: 'dry_clean', en: 'Dry Clean', ar: 'تنظيف جاف' }
+          { value: 'machine_wash', en: 'Machine Wash', ar: 'غسيل في الغسالة', zh: '机洗' },
+          { value: 'hand_wash', en: 'Hand Wash', ar: 'غسيل يدوي', zh: '手洗' },
+          { value: 'spot_clean', en: 'Spot Clean', ar: 'تنظيف موضعي', zh: '局部清洁' },
+          { value: 'wipe_clean', en: 'Wipe Clean', ar: 'ينظف بالمسح', zh: '擦拭清洁' },
+          { value: 'dry_clean', en: 'Dry Clean', ar: 'تنظيف جاف', zh: '干洗' }
         ]
       },
       {
@@ -65,15 +66,15 @@ export const PRODUCT_DETAILED_ATTRIBUTE_GROUPS: ProductDetailedAttributeGroup[] 
         label: 'Colour',
         kind: 'select',
         options: [
-          { value: 'black', en: 'Black', ar: 'أسود' },
-          { value: 'white', en: 'White', ar: 'أبيض' },
-          { value: 'grey', en: 'Grey', ar: 'رمادي' },
-          { value: 'blue', en: 'Blue', ar: 'أزرق' },
-          { value: 'green', en: 'Green', ar: 'أخضر' },
-          { value: 'pink', en: 'Pink', ar: 'وردي' },
-          { value: 'red', en: 'Red', ar: 'أحمر' },
-          { value: 'yellow', en: 'Yellow', ar: 'أصفر' },
-          { value: 'multicolour', en: 'Multicolour', ar: 'متعدد الألوان' }
+          { value: 'black', en: 'Black', ar: 'أسود', zh: '黑色' },
+          { value: 'white', en: 'White', ar: 'أبيض', zh: '白色' },
+          { value: 'grey', en: 'Grey', ar: 'رمادي', zh: '灰色' },
+          { value: 'blue', en: 'Blue', ar: 'أزرق', zh: '蓝色' },
+          { value: 'green', en: 'Green', ar: 'أخضر', zh: '绿色' },
+          { value: 'pink', en: 'Pink', ar: 'وردي', zh: '粉色' },
+          { value: 'red', en: 'Red', ar: 'أحمر', zh: '红色' },
+          { value: 'yellow', en: 'Yellow', ar: 'أصفر', zh: '黄色' },
+          { value: 'multicolour', en: 'Multicolour', ar: 'متعدد الألوان', zh: '多色' }
         ]
       },
       { code: 'colour_name', label: 'Colour Name', kind: 'text' },
@@ -140,10 +141,10 @@ export const PRODUCT_DETAILED_ATTRIBUTE_GROUPS: ProductDetailedAttributeGroup[] 
         label: 'Finish',
         kind: 'select',
         options: [
-          { value: 'matte', en: 'Matte', ar: 'مطفي' },
-          { value: 'glossy', en: 'Glossy', ar: 'لامع' },
-          { value: 'polished', en: 'Polished', ar: 'مصقول' },
-          { value: 'painted', en: 'Painted', ar: 'مطلي' }
+          { value: 'matte', en: 'Matte', ar: 'مطفي', zh: '哑光' },
+          { value: 'glossy', en: 'Glossy', ar: 'لامع', zh: '亮面' },
+          { value: 'polished', en: 'Polished', ar: 'مصقول', zh: '抛光' },
+          { value: 'painted', en: 'Painted', ar: 'مطلي', zh: '喷漆' }
         ]
       },
       { code: 'model_name', label: 'Model Name', kind: 'text' },
@@ -183,11 +184,11 @@ export const PRODUCT_DETAILED_ATTRIBUTE_GROUPS: ProductDetailedAttributeGroup[] 
         label: 'Secondary Material',
         kind: 'select',
         options: [
-          { value: 'plastic', en: 'Plastic', ar: 'بلاستيك' },
-          { value: 'metal', en: 'Metal', ar: 'معدن' },
-          { value: 'glass', en: 'Glass', ar: 'زجاج' },
-          { value: 'wood', en: 'Wood', ar: 'خشب' },
-          { value: 'fabric', en: 'Fabric', ar: 'قماش' }
+          { value: 'plastic', en: 'Plastic', ar: 'بلاستيك', zh: '塑料' },
+          { value: 'metal', en: 'Metal', ar: 'معدن', zh: '金属' },
+          { value: 'glass', en: 'Glass', ar: 'زجاج', zh: '玻璃' },
+          { value: 'wood', en: 'Wood', ar: 'خشب', zh: '木材' },
+          { value: 'fabric', en: 'Fabric', ar: 'قماش', zh: '布料' }
         ]
       },
       { code: 'set_includes', label: 'Set Includes', kind: 'textarea' },
@@ -262,12 +263,12 @@ export const PRODUCT_DETAILED_ATTRIBUTE_GROUPS: ProductDetailedAttributeGroup[] 
   }
 ];
 
-export const PRODUCT_DETAILED_ATTRIBUTE_VALUE_LABELS: Record<string, { en: string; ar?: string }> = {
+export const PRODUCT_DETAILED_ATTRIBUTE_VALUE_LABELS: Record<string, { en: string; ar?: string; zh?: string }> = {
   bluetooth: { en: 'Bluetooth', ar: 'بلوتوث' },
-  machine_wash: { en: 'Machine Wash', ar: 'غسيل في الغسالة' },
+  machine_wash: { en: 'Machine Wash', ar: 'غسيل في الغسالة', zh: '机洗' },
   new: { en: 'New', ar: 'جديد' },
-  pink: { en: 'Pink', ar: 'وردي' },
-  plastic: { en: 'Plastic', ar: 'بلاستيك' },
+  pink: { en: 'Pink', ar: 'وردي', zh: '粉色' },
+  plastic: { en: 'Plastic', ar: 'بلاستيك', zh: '塑料' },
   sport: { en: 'Sport', ar: 'رياضة' },
   std: { en: 'Std', ar: 'Std' },
   touch: { en: 'touch', ar: 'touch' }

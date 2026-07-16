@@ -34,6 +34,7 @@ export type ManualSelectionProfitEstimateSeed = {
   ali1688Url?: string
   salePrice?: number
   purchasePrice?: number
+  competitors?: ManualSelectionCompetitor[]
 }
 
 export type ManualSelectionAli1688ProcurementInfo = {
@@ -120,10 +121,20 @@ export type ManualSelectionCompetitor = {
   fetchedSellingPointsAr?: string[]
   fetchedSourceHost?: string
   fetchedPriceSummary?: string
+  fetchedCategoryName?: string
+  fetchedCategoryPath?: string
+  fetchedCategoryUrl?: string
+  fetchedCategoryLinks?: ManualSelectionCompetitorCategoryLink[]
   fetchedCompleteness?: string
   fetchedCollectionSource?: string
   fetchedAt?: string
   fetchMessage?: string
+}
+
+export type ManualSelectionCompetitorCategoryLink = {
+  name?: string
+  path?: string
+  url?: string
 }
 
 export type ManualSelectionCompetitorFormValues = {

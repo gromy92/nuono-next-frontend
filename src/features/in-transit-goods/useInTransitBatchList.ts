@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { message } from 'antd'
 import type { FilterValue, SorterResult, TablePaginationConfig } from 'antd/es/table/interface'
 import {
@@ -14,8 +14,10 @@ import type {
 } from './types'
 import { DEFAULT_BATCH_PAGE_SIZE, DEFAULT_CONTRACT, DEFAULT_FILTERS } from './InTransitGoodsPage.constants'
 import type { BatchListMeta, PageState } from './InTransitGoodsPage.models'
+import { createLatestRequestGuard } from './latestRequestGuard'
 
 export function useInTransitBatchList(isBoxDetailTab: boolean) {
+  const requestGuard = useRef(createLatestRequestGuard())
   const [state, setState] = useState<PageState>({ status: 'idle' })
   const [contract, setContract] = useState<InTransitContract>(DEFAULT_CONTRACT)
   const [forwarders, setForwarders] = useState<InTransitForwarder[]>([])
@@ -76,6 +78,7 @@ export function useInTransitBatchList(isBoxDetailTab: boolean) {
   }, [forwarders])
 
   const load = async (nextFilters: InTransitBatchFilters = filters) => {
+    const requestToken = requestGuard.current.begin()
     setState((current) => ({ status: 'loading', data: current.data }))
     try {
       const [nextContract, nextForwarders, list] = await Promise.all([
@@ -83,6 +86,9 @@ export function useInTransitBatchList(isBoxDetailTab: boolean) {
         fetchInTransitForwarders(),
         fetchInTransitBatches(nextFilters)
       ])
+      if (!requestGuard.current.isCurrent(requestToken)) {
+        return
+      }
       const nextItems = list.items ?? []
       setContract(nextContract)
       setForwarders(nextForwarders)
@@ -93,6 +99,9 @@ export function useInTransitBatchList(isBoxDetailTab: boolean) {
       })
       setState({ status: 'success', data: nextItems })
     } catch (error) {
+      if (!requestGuard.current.isCurrent(requestToken)) {
+        return
+      }
       const errorMessage = error instanceof Error ? error.message : '在途批次加载失败'
       setState((current) => ({ status: 'error', data: current.data, message: errorMessage }))
       message.error(errorMessage)
@@ -101,6 +110,7 @@ export function useInTransitBatchList(isBoxDetailTab: boolean) {
 
   useEffect(() => {
     if (isBoxDetailTab) {
+      requestGuard.current.invalidate()
       return
     }
     const timer = window.setTimeout(() => {
@@ -109,6 +119,8 @@ export function useInTransitBatchList(isBoxDetailTab: boolean) {
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, isBoxDetailTab])
+
+  useEffect(() => () => requestGuard.current.invalidate(), [])
 
   const updateFilters = (patch: Partial<InTransitBatchFilters>) => {
     setFilters((current) => ({ ...current, ...patch, page: 1 }))

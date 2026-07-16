@@ -21,7 +21,7 @@ assert.ok(
 
 assert.ok(
   detailEditorSource.includes('competitorMaterials?: ProductCompetitorContentMaterial[]') &&
-    listingPageSource.includes('competitorMaterials={sourcePrefill?.competitorMaterials}'),
+    listingPageSource.includes('competitorMaterials={sourcePrefill?.competitorMaterials ?? listingDraft.competitorMaterials}'),
   'listing AI integration must receive competitor materials from manual-selection prefill'
 )
 

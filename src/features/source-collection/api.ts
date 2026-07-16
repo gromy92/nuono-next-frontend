@@ -3,6 +3,7 @@ import type {
   ProductSelectionSourceCollection,
   SourceCollectionFormValue
 } from './types'
+import { apiFetch, readApiErrorMessage } from '../../shared/api'
 
 type SourceCollectionPayload = {
   storeName: string
@@ -137,24 +138,21 @@ export function retryAli1688Collection(taskId: string): Promise<Ali1688Collectio
 }
 
 async function parseResponse<TResponse>(response: Response): Promise<TResponse> {
-  const payload = await response.json().catch(() => null)
   if (!response.ok) {
-    const message =
-      payload && typeof payload.message === 'string' && payload.message
-        ? payload.message
-        : `Request failed: ${response.status}`
+    const message = await readApiErrorMessage(response, `Request failed: ${response.status}`)
     throw new SourceCollectionApiError(response.status, message)
   }
+  const payload = await response.json().catch(() => null)
   return payload as TResponse
 }
 
 async function getJson<TResponse>(url: string): Promise<TResponse> {
-  return parseResponse<TResponse>(await fetch(url))
+  return parseResponse<TResponse>(await apiFetch(url))
 }
 
 async function sendJson<TResponse>(url: string, method: 'POST' | 'PUT', body: unknown): Promise<TResponse> {
   return parseResponse<TResponse>(
-    await fetch(url, {
+    await apiFetch(url, {
       method,
       headers: {
         'Content-Type': 'application/json'

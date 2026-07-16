@@ -25,9 +25,28 @@ function humanizeOption(value: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function englishChineseLabel(en: string, zh?: string) {
+  const english = en.trim();
+  const chinese = textInputValue(zh).trim();
+  return english && chinese ? `${english}（${chinese}）` : english;
+}
+
+function optionChineseLabel(value: string, explicitZh?: string) {
+  return textInputValue(explicitZh).trim() || PRODUCT_DETAILED_ATTRIBUTE_VALUE_LABELS[optionKey(value)]?.zh;
+}
+
+function optionEnglishDisplayLabel(field: ProductDetailedAttributeField, option: NonNullable<ProductDetailedAttributeField['options']>[number]) {
+  return englishChineseLabel(option.en, optionChineseLabel(option.value, option.zh));
+}
+
 function fieldOptionForValue(field: ProductDetailedAttributeField, value: string) {
   const valueKey = optionKey(value);
-  return field.options?.find((option) => optionKey(option.value) === valueKey || optionKey(option.en) === valueKey);
+  return field.options?.find(
+    (option) =>
+      optionKey(option.value) === valueKey ||
+      optionKey(option.en) === valueKey ||
+      optionKey(optionEnglishDisplayLabel(field, option)) === valueKey
+  );
 }
 
 function splitAttributeValues(value: string) {
@@ -40,11 +59,11 @@ function splitAttributeValues(value: string) {
 function dictionaryLabel(value: string, field: ProductDetailedAttributeField, lang: 'en' | 'ar') {
   const fieldOption = fieldOptionForValue(field, value);
   if (fieldOption) {
-    return lang === 'en' ? fieldOption.en : fieldOption.ar ?? '';
+    return lang === 'en' ? optionEnglishDisplayLabel(field, fieldOption) : fieldOption.ar ?? '';
   }
   const mappedValue = PRODUCT_DETAILED_ATTRIBUTE_VALUE_LABELS[optionKey(value)];
   if (mappedValue?.[lang]) {
-    return mappedValue[lang];
+    return lang === 'en' ? englishChineseLabel(mappedValue.en, mappedValue.zh) : mappedValue[lang];
   }
   return lang === 'en' ? humanizeOption(value) : '';
 }
@@ -126,7 +145,7 @@ function selectControlValue(field: ProductDetailedAttributeField, value: string)
 function selectOptions(field: ProductDetailedAttributeField, value: string) {
   const options = (field.options ?? []).map((option) => ({
     value: option.value,
-    label: option.en
+    label: optionEnglishDisplayLabel(field, option)
   }));
   const customValues = field.multiple ? splitAttributeValues(value) : value ? [value] : [];
   customValues.forEach((item) => {

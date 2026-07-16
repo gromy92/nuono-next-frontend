@@ -134,13 +134,15 @@ function optionFromValue(value: unknown): ProductDetailedAttributeOption | undef
   const optionValue = firstText(record.value, record.optionValue, record.option_value, record.code, record.optionCode, record.option_code, record.en);
   const englishLabel = firstText(record.en, record.labelEn, record.label_en, record.label, record.name, optionValue);
   const arabicLabel = firstText(record.ar, record.labelAr, record.label_ar, record.nameAr, record.name_ar);
+  const chineseLabel = firstText(record.zh, record.labelZh, record.label_zh, record.nameZh, record.name_zh);
   if (!optionValue || !englishLabel) {
     return undefined;
   }
   return {
     value: optionValue,
     en: englishLabel,
-    ...(arabicLabel ? { ar: arabicLabel } : {})
+    ...(arabicLabel ? { ar: arabicLabel } : {}),
+    ...(chineseLabel ? { zh: chineseLabel } : {})
   };
 }
 

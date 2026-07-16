@@ -43,8 +43,27 @@ function firstTextValue(...values: unknown[]) {
   return '';
 }
 
-function firstCatalogDetailCode(knownPskuCode: string, ...values: unknown[]) {
+function isLocalDraftSkuParent(value: string) {
+  return /^LOCAL-/i.test(value.trim());
+}
+
+function firstNoonSkuParent(...values: unknown[]) {
+  for (const value of values) {
+    const text = textInputValue(value).trim();
+    if (!text || isLocalDraftSkuParent(text)) {
+      continue;
+    }
+    if (/^[a-f0-9]{24,}$/i.test(text)) {
+      continue;
+    }
+    return text;
+  }
+  return '';
+}
+
+function firstCatalogDetailCode(knownPskuCode: string, knownPartnerSku: string, ...values: unknown[]) {
   const normalizedPskuCode = knownPskuCode.trim().toLowerCase();
+  const normalizedPartnerSku = knownPartnerSku.trim().toLowerCase();
   for (const value of values) {
     const text = textInputValue(value).trim();
     if (!text) {
@@ -54,7 +73,13 @@ function firstCatalogDetailCode(knownPskuCode: string, ...values: unknown[]) {
     if (normalizedPskuCode && normalized === normalizedPskuCode) {
       continue;
     }
+    if (normalizedPartnerSku && normalized === normalizedPartnerSku) {
+      continue;
+    }
     if (/^[a-f0-9]{24,}$/i.test(text)) {
+      continue;
+    }
+    if (isLocalDraftSkuParent(text)) {
       continue;
     }
     return text;
@@ -66,19 +91,25 @@ export function buildNoonCatalogProductUrl(
   productSnapshotView?: ProductMasterSnapshotPayload,
   activeProductSiteOffer?: Record<string, unknown>
 ) {
-  const skuParent = firstTextValue(
+  const skuParent = firstNoonSkuParent(
+    activeProductSiteOffer?.skuParent,
+    activeProductSiteOffer?.currentZCode,
+    activeProductSiteOffer?.offerCode,
     productSnapshotView?.identity.skuParent,
+    productSnapshotView?.identity.currentZCode,
     productSnapshotView?.identity.parentSku,
-    activeProductSiteOffer?.skuParent
+    productSnapshotView?.identity.offerCode
   );
   if (!skuParent) {
     return undefined;
   }
 
   const projectCode = firstTextValue(productSnapshotView?.storeContext.projectCode, activeProductSiteOffer?.projectCode);
-  const pskuCode = firstTextValue(productSnapshotView?.identity.pskuCode, activeProductSiteOffer?.pskuCode);
-  const catalogCode = firstCatalogDetailCode(
+  const pskuCode = firstTextValue(activeProductSiteOffer?.pskuCode, productSnapshotView?.identity.pskuCode);
+  const partnerSku = firstTextValue(activeProductSiteOffer?.partnerSku, productSnapshotView?.identity.partnerSku);
+  const fallbackCatalogCode = firstCatalogDetailCode(
     pskuCode,
+    partnerSku,
     productSnapshotView?.identity.childSku,
     activeProductSiteOffer?.childSku,
     productSnapshotView?.identity.offerCode,
@@ -90,6 +121,7 @@ export function buildNoonCatalogProductUrl(
     activeProductSiteOffer?.detailCode,
     activeProductSiteOffer?.noonCatalogCode
   );
+  const catalogCode = firstTextValue(pskuCode, fallbackCatalogCode);
   const params = new URLSearchParams();
   if (catalogCode) {
     params.set('code', catalogCode);

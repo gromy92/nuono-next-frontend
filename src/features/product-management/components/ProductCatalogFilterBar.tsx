@@ -11,6 +11,7 @@ import { FormToolbarLayout } from '../../app-shell/FormToolbarLayout';
 import type { ProductListFilters } from '../types';
 import { PRODUCT_OPERATION_STAGE_FILTER_OPTIONS } from '../utils/operationStage';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
+import { ProductListingDraftDrawer } from './ProductListingDraftDrawer';
 
 type ProductCatalogFilterBarProps = {
   workspace: ProductManagementWorkspace;
@@ -46,6 +47,10 @@ export function ProductCatalogFilterBar({ workspace, activeOwnerId }: ProductCat
         actionsStyle={{ gap: 8 }}
         actions={
           <>
+            <ProductListingDraftDrawer
+              storeCode={selectedInitializationStoreCode}
+              activeOwnerId={activeOwnerId}
+            />
             <Tooltip title="刷新">
               <Button
                 aria-label="刷新"

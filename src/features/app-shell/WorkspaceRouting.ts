@@ -21,6 +21,7 @@ export const PRODUCT_MANUAL_SELECTION_PATH = workspaceMenuPath('product-manual-s
 export const PURCHASE_1688_COLLECTION_PATH = workspaceMenuPath('purchase-ali1688-collection')
 export const PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH = workspaceMenuPath('purchase-ali1688-historical-orders')
 export const PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH = workspaceMenuPath('purchase-ali1688-sku-purchase-history')
+export const PURCHASE_LISTING_PATH = workspaceMenuPath('purchase-listing')
 export const PURCHASE_ORDER_PATH = workspaceMenuPath('purchase-order')
 export const PURCHASE_PROFIT_PATH = workspaceMenuPath('purchase-profit')
 export const PURCHASE_LOGISTICS_QUOTE_PATH = workspaceMenuPath('purchase-logistics-quote')
@@ -110,6 +111,17 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
 
 const OFFICIAL_WAREHOUSE_TAB_QUERY_KEY = 'officialWarehouseTab'
 const OFFICIAL_WAREHOUSE_STOCK_ALIAS_PATH = '/warehouse/official-warehouse-stock'
+const SESSION_STORAGE_KEY = 'nuono-next-session'
+
+type StoredWorkspaceSession = {
+  currentStore?: {
+    projectName?: string | null
+    projectCode?: string | null
+    orgName?: string | null
+    storeCode?: string | null
+    site?: string | null
+  } | null
+}
 
 function stripPathSearchAndHash(path: string) {
   const hashIndex = path.indexOf('#')
@@ -128,6 +140,46 @@ function shouldCarryOfficialWarehouseStockTab(path: string, currentSearch: URLSe
   )
 }
 
+function normalizeWorkspaceDevQueryValue(value?: string | null) {
+  const normalized = (value || '').trim()
+  return normalized || null
+}
+
+function storedCurrentWorkspaceDevQuery(currentSearch: URLSearchParams) {
+  if (typeof window === 'undefined' || currentSearch.get('devSession') !== '1') {
+    return null
+  }
+
+  try {
+    const rawValue = window.localStorage?.getItem(SESSION_STORAGE_KEY)
+    if (!rawValue) {
+      return null
+    }
+    const storedSession = JSON.parse(rawValue) as StoredWorkspaceSession
+    const currentStore = storedSession.currentStore
+    if (!currentStore?.storeCode) {
+      return null
+    }
+
+    const search = new URLSearchParams()
+    const account =
+      normalizeWorkspaceDevQueryValue(currentStore.projectName) ??
+      normalizeWorkspaceDevQueryValue(currentStore.projectCode) ??
+      normalizeWorkspaceDevQueryValue(currentStore.orgName)
+    if (account) {
+      search.set('devAccount', account)
+    }
+    search.set('devStore', currentStore.storeCode.trim())
+    const site = normalizeWorkspaceDevQueryValue(currentStore.site)
+    if (site) {
+      search.set('devSite', site)
+    }
+    return search
+  } catch {
+    return null
+  }
+}
+
 export function withCurrentWorkspaceDevQuery(path: string) {
   if (typeof window === 'undefined' || !path || path.startsWith('http://') || path.startsWith('https://')) {
     return path
@@ -139,6 +191,9 @@ export function withCurrentWorkspaceDevQuery(path: string) {
     if (WORKSPACE_DEV_QUERY_KEYS.has(key)) {
       preservedSearch.append(key, value)
     }
+  })
+  storedCurrentWorkspaceDevQuery(currentSearch)?.forEach((value, key) => {
+    preservedSearch.set(key, value)
   })
   if (shouldCarryOfficialWarehouseStockTab(path, currentSearch)) {
     preservedSearch.set(OFFICIAL_WAREHOUSE_TAB_QUERY_KEY, 'stock')
