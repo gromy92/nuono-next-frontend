@@ -46,6 +46,10 @@
   width: 260px;
 }
 
+.official-warehouse-list-status-filter {
+  width: 230px;
+}
+
 .official-warehouse-metrics {
   display: flex;
   flex-wrap: nowrap;
@@ -246,10 +250,6 @@
   gap: 12px;
 }
 
-.official-warehouse-batch-search {
-  width: 220px;
-}
-
 .official-warehouse-modal-body .ant-select,
 .official-warehouse-modal-body .ant-input {
   width: 100%;
@@ -299,6 +299,103 @@
   border: 1px solid #dbeafe;
   border-radius: 6px;
   background: #ffffff;
+}
+
+.official-warehouse-inbound-progress {
+  color: #334155;
+  font-size: 12px;
+}
+
+.official-warehouse-inbound-cell-button.ant-btn {
+  width: 100%;
+  height: auto;
+  min-height: 40px;
+  justify-content: flex-start;
+  padding: 4px 6px;
+  text-align: left;
+  white-space: normal;
+}
+
+.official-warehouse-inbound-cell-button .official-warehouse-stack {
+  align-items: flex-start;
+}
+
+.official-warehouse-over-received {
+  color: #c2410c;
+}
+
+.official-warehouse-inbound-receipt-section {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.official-warehouse-inbound-receipt-header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.official-warehouse-inbound-table-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.official-warehouse-inbound-discrepancy-filter {
+  width: 150px;
+}
+
+.official-warehouse-inbound-receipt-metrics {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.official-warehouse-inbound-receipt-metric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.official-warehouse-inbound-receipt-metric-green {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.official-warehouse-inbound-receipt-metric-red {
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
+.official-warehouse-inbound-receipt-metric-amber {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.official-warehouse-inbound-receipt-metric-purple {
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+}
+
+@media (max-width: 900px) {
+  .official-warehouse-inbound-receipt-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .official-warehouse-appointment-form {
@@ -497,6 +594,28 @@
   height: 60px;
 }
 
+.official-warehouse-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.official-warehouse-spec-field {
+  display: grid;
+  gap: 6px;
+}
+
+.official-warehouse-spec-field .ant-input-number {
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .official-warehouse-spec-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .official-warehouse-code-line {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 11px;
@@ -522,6 +641,7 @@
 @media (max-width: 760px) {
   .official-warehouse-filter,
   .official-warehouse-filter-wide,
+  .official-warehouse-list-status-filter,
   .official-warehouse-search,
   .official-warehouse-status-filter {
     width: 100%;
