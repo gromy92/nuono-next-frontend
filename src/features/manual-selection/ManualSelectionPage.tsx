@@ -6,8 +6,8 @@ import {
   analyzeManualSelectionCollection,
   createManualSelectionGroup,
   deleteManualSelectionCollection,
+  deleteManualSelectionGroup,
   deleteManualSelectionGroupCompetitor,
-  deleteManualSelectionGroupMaterial,
   loadManualSelectionGroupProfitEstimate,
   loadManualSelectionGroups,
   recollectManualSelectionGroupCompetitor,
@@ -42,7 +42,7 @@ import {
   loadManualSelectionGroupWorkspace
 } from './manualSelectionGroupRepository'
 import { normalizeManualSelectionPageErrorMessage } from './manualSelectionErrorMessage'
-import type { ManualSelectionMaterialDeleteMode } from './manualSelectionDeleteOptions'
+import type { ManualSelectionGroupDeleteMode } from './manualSelectionDeleteOptions'
 import { saveManualSelectionGroupListingPrefill } from '../product-listing/sourcePrefill'
 import type {
   ManualSelectionAli1688ProcurementInfo,
@@ -201,7 +201,7 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
   const [recollectingCompetitorIds, setRecollectingCompetitorIds] = useState<string[]>([])
   const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<string[]>([])
   const [deletingCollectionIds, setDeletingCollectionIds] = useState<string[]>([])
-  const [deletingMaterialKeys, setDeletingMaterialKeys] = useState<string[]>([])
+  const [deletingGroupIds, setDeletingGroupIds] = useState<string[]>([])
   const [activeTabKey, setActiveTabKey] = useState<ManualSelectionTabKey>(() => initialManualSelectionTabKey())
   const [analysisGroups, setAnalysisGroups] = useState<ManualSelectionGroupView[]>([])
   const [analysisGroupsLoading, setAnalysisGroupsLoading] = useState(false)
@@ -735,33 +735,20 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
     }
   }
 
-  const handleDeleteMaterial = async (
+  const handleDeleteGroup = async (
     project: ManualSelectionAnalysisProjectView,
-    record: ProductSelectionSourceCollection,
-    mode: ManualSelectionMaterialDeleteMode
+    mode: ManualSelectionGroupDeleteMode
   ) => {
     const groupId = project.groupId || project.projectId
-    const loadingKey = `${groupId}:${record.id}`
-    if (deletingMaterialKeys.includes(loadingKey)) {
+    if (deletingGroupIds.includes(groupId)) {
       return
     }
-    setDeletingMaterialKeys((current) => [...current, loadingKey])
+    setDeletingGroupIds((current) => [...current, groupId])
     try {
-      await deleteManualSelectionGroupMaterial(groupId, record.id, mode, props.storeCode)
-      setAnalysisGroups((current) => current
-        .map((group) => {
-          if (group.groupId !== groupId) {
-            return group
-          }
-          const materials = group.materials.filter((material) => material.sourceCollectionId !== record.id)
-          return normalizeManualSelectionGroup({
-            ...group,
-            materialCount: materials.length,
-            materials
-          })
-        })
-        .filter((group) => group.materials.length > 0))
-      setSelectedCollectionRowKeys((current) => current.filter((id) => id !== record.id))
+      await deleteManualSelectionGroup(groupId, mode, props.storeCode)
+      setAnalysisGroups((current) => current.filter((group) => group.groupId !== groupId))
+      const sourceCollectionIds = new Set(project.records.map((record) => record.id))
+      setSelectedCollectionRowKeys((current) => current.filter((id) => !sourceCollectionIds.has(id)))
       await loadCollections()
       try {
         const groups = await loadManualSelectionGroupWorkspace(props.storeName, props.storeCode)
@@ -769,16 +756,16 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
       } catch (refreshError) {
         message.warning(refreshError instanceof Error ? refreshError.message : '选品分析已更新，请稍后刷新页面')
       }
-      message.success(mode === 'unlink' ? '已解除选品分析关联' : '已解除关联并删除采集数据')
+      message.success(mode === 'group-only' ? '整组选品分析已删除，采集数据已保留' : '整组选品分析和对应采集数据已删除')
     } catch (error) {
       const messageText = normalizeManualSelectionPageErrorMessage(
         error instanceof Error ? error.message : undefined,
-        '删除选品分析材料失败'
+        '删除选品分析失败'
       )
       message.error(messageText)
       throw error
     } finally {
-      setDeletingMaterialKeys((current) => current.filter((key) => key !== loadingKey))
+      setDeletingGroupIds((current) => current.filter((id) => id !== groupId))
     }
   }
 
@@ -835,12 +822,12 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
                   projects={analysisProjects}
                   loading={analysisGroupsLoading}
                   deletingCompetitorIds={deletingCompetitorIds}
-                  deletingMaterialKeys={deletingMaterialKeys}
+                  deletingGroupIds={deletingGroupIds}
                   recollectingCompetitorIds={recollectingCompetitorIds}
                   onChangeGroupProcurementInfo={handleChangeAli1688ProcurementInfo}
                   onChangeGroupName={handleChangeGroupName}
                   onDeleteCompetitor={(project, competitor) => void handleDeleteCompetitor(project, competitor)}
-                  onDeleteMaterial={handleDeleteMaterial}
+                  onDeleteGroup={handleDeleteGroup}
                   onOpenAiAnalysis={(project) => void handleOpenAiAnalysis(project)}
                   onOpenCompetitorDetail={handleOpenCompetitorDetail}
                   onOpenCompetitors={handleOpenCompetitors}

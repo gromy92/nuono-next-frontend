@@ -7,8 +7,8 @@ import { apiFetch, readApiErrorMessage } from '../../shared/api'
 import type { ProductSelectionSourceCollection } from '../source-collection/types'
 import type { ManualSelectionSystemCategoryOption } from './profitCategoryMatching'
 import {
-  shouldDeleteSourceCollection,
-  type ManualSelectionMaterialDeleteMode
+  shouldDeleteSourceCollections,
+  type ManualSelectionGroupDeleteMode
 } from './manualSelectionDeleteOptions'
 import type {
   ManualSelectionAiAnalysisResult,
@@ -165,16 +165,15 @@ export async function deleteManualSelectionCollection(
   )
 }
 
-export async function deleteManualSelectionGroupMaterial(
+export async function deleteManualSelectionGroup(
   groupId: string,
-  sourceCollectionId: string,
-  mode: ManualSelectionMaterialDeleteMode,
+  mode: ManualSelectionGroupDeleteMode,
   storeCode?: string
 ): Promise<void> {
   const params = requiredDeleteStoreParams(storeCode)
-  params.set('deleteSourceCollection', String(shouldDeleteSourceCollection(mode)))
+  params.set('deleteSourceCollections', String(shouldDeleteSourceCollections(mode)))
   await parseManualSelectionEmptyResponse(
-    apiFetch(`/api/product-selection/groups/${encodeURIComponent(groupId)}/materials/${encodeURIComponent(sourceCollectionId)}?${params.toString()}`, {
+    apiFetch(`/api/product-selection/groups/${encodeURIComponent(groupId)}?${params.toString()}`, {
       method: 'DELETE'
     })
   )

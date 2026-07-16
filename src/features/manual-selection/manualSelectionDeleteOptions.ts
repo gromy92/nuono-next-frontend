@@ -1,18 +1,18 @@
-export type ManualSelectionMaterialDeleteMode = 'unlink' | 'unlink-and-delete-source'
+export type ManualSelectionGroupDeleteMode = 'group-only' | 'group-and-source-collections'
 
-export const MANUAL_SELECTION_MATERIAL_DELETE_OPTIONS = [
+export const MANUAL_SELECTION_GROUP_DELETE_OPTIONS = [
   {
-    mode: 'unlink' as const,
-    label: '仅解除关联',
-    description: '采集数据仍保留在人工采集中，之后可以再次加入选品分析。'
+    mode: 'group-only' as const,
+    label: '仅删除选品分析',
+    description: '删除整组选品分析并解除全部关联，组内采集数据仍保留在人工采集中。'
   },
   {
-    mode: 'unlink-and-delete-source' as const,
-    label: '解除关联并删除采集数据',
-    description: '同时软删除人工采集数据；删除后不会再出现在人工采集列表中。'
+    mode: 'group-and-source-collections' as const,
+    label: '删除选品分析和采集数据',
+    description: '删除整组选品分析，同时软删除组内全部人工采集数据。'
   }
 ]
 
-export function shouldDeleteSourceCollection(mode: ManualSelectionMaterialDeleteMode) {
-  return mode === 'unlink-and-delete-source'
+export function shouldDeleteSourceCollections(mode: ManualSelectionGroupDeleteMode) {
+  return mode === 'group-and-source-collections'
 }
