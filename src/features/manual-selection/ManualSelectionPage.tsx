@@ -5,7 +5,9 @@ import {
   addManualSelectionGroupMaterials,
   analyzeManualSelectionCollection,
   createManualSelectionGroup,
+  deleteManualSelectionCollection,
   deleteManualSelectionGroupCompetitor,
+  deleteManualSelectionGroupMaterial,
   loadManualSelectionGroupProfitEstimate,
   loadManualSelectionGroups,
   recollectManualSelectionGroupCompetitor,
@@ -40,6 +42,7 @@ import {
   loadManualSelectionGroupWorkspace
 } from './manualSelectionGroupRepository'
 import { normalizeManualSelectionPageErrorMessage } from './manualSelectionErrorMessage'
+import type { ManualSelectionMaterialDeleteMode } from './manualSelectionDeleteOptions'
 import { saveManualSelectionGroupListingPrefill } from '../product-listing/sourcePrefill'
 import type {
   ManualSelectionAli1688ProcurementInfo,
@@ -197,6 +200,8 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
   const [analyzingCollectionIds, setAnalyzingCollectionIds] = useState<string[]>([])
   const [recollectingCompetitorIds, setRecollectingCompetitorIds] = useState<string[]>([])
   const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<string[]>([])
+  const [deletingCollectionIds, setDeletingCollectionIds] = useState<string[]>([])
+  const [deletingMaterialKeys, setDeletingMaterialKeys] = useState<string[]>([])
   const [activeTabKey, setActiveTabKey] = useState<ManualSelectionTabKey>(() => initialManualSelectionTabKey())
   const [analysisGroups, setAnalysisGroups] = useState<ManualSelectionGroupView[]>([])
   const [analysisGroupsLoading, setAnalysisGroupsLoading] = useState(false)
@@ -705,6 +710,78 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
     }
   }
 
+  const handleDeleteCollection = async (record: ProductSelectionSourceCollection) => {
+    if (analysisCollectionIds.includes(record.id)) {
+      message.warning('该采集数据已被选品分析引用，请先在选品分析中解除关联')
+      return
+    }
+    if (deletingCollectionIds.includes(record.id)) {
+      return
+    }
+    setDeletingCollectionIds((current) => [...current, record.id])
+    try {
+      await deleteManualSelectionCollection(record.id, props.storeCode)
+      setSelectedCollectionRowKeys((current) => current.filter((id) => id !== record.id))
+      await loadCollections()
+      message.success('人工采集数据已删除')
+    } catch (error) {
+      const messageText = normalizeManualSelectionPageErrorMessage(
+        error instanceof Error ? error.message : undefined,
+        '删除人工采集数据失败'
+      )
+      message.error(messageText)
+    } finally {
+      setDeletingCollectionIds((current) => current.filter((id) => id !== record.id))
+    }
+  }
+
+  const handleDeleteMaterial = async (
+    project: ManualSelectionAnalysisProjectView,
+    record: ProductSelectionSourceCollection,
+    mode: ManualSelectionMaterialDeleteMode
+  ) => {
+    const groupId = project.groupId || project.projectId
+    const loadingKey = `${groupId}:${record.id}`
+    if (deletingMaterialKeys.includes(loadingKey)) {
+      return
+    }
+    setDeletingMaterialKeys((current) => [...current, loadingKey])
+    try {
+      await deleteManualSelectionGroupMaterial(groupId, record.id, mode, props.storeCode)
+      setAnalysisGroups((current) => current
+        .map((group) => {
+          if (group.groupId !== groupId) {
+            return group
+          }
+          const materials = group.materials.filter((material) => material.sourceCollectionId !== record.id)
+          return normalizeManualSelectionGroup({
+            ...group,
+            materialCount: materials.length,
+            materials
+          })
+        })
+        .filter((group) => group.materials.length > 0))
+      setSelectedCollectionRowKeys((current) => current.filter((id) => id !== record.id))
+      await loadCollections()
+      try {
+        const groups = await loadManualSelectionGroupWorkspace(props.storeName, props.storeCode)
+        setAnalysisGroups(groups.map(normalizeManualSelectionGroup))
+      } catch (refreshError) {
+        message.warning(refreshError instanceof Error ? refreshError.message : '选品分析已更新，请稍后刷新页面')
+      }
+      message.success(mode === 'unlink' ? '已解除选品分析关联' : '已解除关联并删除采集数据')
+    } catch (error) {
+      const messageText = normalizeManualSelectionPageErrorMessage(
+        error instanceof Error ? error.message : undefined,
+        '删除选品分析材料失败'
+      )
+      message.error(messageText)
+      throw error
+    } finally {
+      setDeletingMaterialKeys((current) => current.filter((key) => key !== loadingKey))
+    }
+  }
+
   return (
     <Space className="manual-selection-page" direction="vertical" size={16}>
       <Tabs
@@ -734,10 +811,12 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
                   analysisCollectionIds={analysisCollectionIds}
                   analysisProjectByCollectionId={analysisProjectByCollectionId}
                   dataSource={visibleCollections}
+                  deletingCollectionIds={deletingCollectionIds}
                   loading={loading}
                   recollecting={submitting}
                   selectedRowKeys={selectedCollectionRowKeys}
                   onAddToAnalysis={(record) => openAddCollectionsToAnalysis([record])}
+                  onDelete={(record) => void handleDeleteCollection(record)}
                   onOpenDetail={setSelectedCollection}
                   onRecollect={(record) => void recollect(record)}
                   onSelectedRowKeysChange={setSelectedCollectionRowKeys}
@@ -756,10 +835,12 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
                   projects={analysisProjects}
                   loading={analysisGroupsLoading}
                   deletingCompetitorIds={deletingCompetitorIds}
+                  deletingMaterialKeys={deletingMaterialKeys}
                   recollectingCompetitorIds={recollectingCompetitorIds}
                   onChangeGroupProcurementInfo={handleChangeAli1688ProcurementInfo}
                   onChangeGroupName={handleChangeGroupName}
                   onDeleteCompetitor={(project, competitor) => void handleDeleteCompetitor(project, competitor)}
+                  onDeleteMaterial={handleDeleteMaterial}
                   onOpenAiAnalysis={(project) => void handleOpenAiAnalysis(project)}
                   onOpenCompetitorDetail={handleOpenCompetitorDetail}
                   onOpenCompetitors={handleOpenCompetitors}

@@ -176,11 +176,13 @@ export type ManualSelectionTableProps = {
   analysisCollectionIds: string[]
   analysisProjectByCollectionId: Record<string, ManualSelectionAnalysisProjectInfo>
   dataSource: ProductSelectionSourceCollection[]
+  deletingCollectionIds: string[]
   loading: boolean
   recollecting: boolean
   selectedRowKeys: string[]
   onOpenDetail: (record: ProductSelectionSourceCollection) => void
   onAddToAnalysis: (record: ProductSelectionSourceCollection) => void
+  onDelete: (record: ProductSelectionSourceCollection) => void
   onRecollect: (record: ProductSelectionSourceCollection) => void
   onSelectedRowKeysChange: (keys: string[]) => void
 }

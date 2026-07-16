@@ -11,6 +11,10 @@ import type { ColumnsType } from 'antd/es/table'
 import { useState } from 'react'
 import type { ProductSelectionSourceCollection } from '../../source-collection/types'
 import { MANUAL_SELECTION_IMAGE_FALLBACK } from '../constants'
+import {
+  MANUAL_SELECTION_MATERIAL_DELETE_OPTIONS,
+  type ManualSelectionMaterialDeleteMode
+} from '../manualSelectionDeleteOptions'
 import type {
   ManualSelectionAli1688ProcurementInfo,
   ManualSelectionAnalysisProjectView,
@@ -39,16 +43,27 @@ type GroupNameEditorState = {
   draftName: string
 }
 
+type MaterialDeleteTarget = {
+  project: ManualSelectionAnalysisProjectView
+  record: ProductSelectionSourceCollection
+}
+
 type ManualSelectionAnalysisPanelProps = {
   analyzingCollectionIds: string[]
   dataSource: ProductSelectionSourceCollection[]
   projects: ManualSelectionAnalysisProjectView[]
   loading?: boolean
   deletingCompetitorIds?: string[]
+  deletingMaterialKeys?: string[]
   recollectingCompetitorIds?: string[]
   onChangeGroupProcurementInfo: (groupId: string, values: Partial<ManualSelectionAli1688ProcurementInfo>) => void
   onChangeGroupName: (groupId: string, groupName: string) => Promise<void> | void
   onDeleteCompetitor: (project: ManualSelectionAnalysisProjectView, competitor: ManualSelectionCompetitor) => void
+  onDeleteMaterial: (
+    project: ManualSelectionAnalysisProjectView,
+    record: ProductSelectionSourceCollection,
+    mode: ManualSelectionMaterialDeleteMode
+  ) => Promise<void> | void
   onOpenAiAnalysis: (project: ManualSelectionAnalysisProjectView) => void
   onOpenCompetitorDetail: (project: ManualSelectionAnalysisProjectView, focus: { kind: 'link' | 'collection'; id: string }) => void
   onOpenCompetitors: (project: ManualSelectionAnalysisProjectView) => void
@@ -239,10 +254,12 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
     projects,
     loading,
     deletingCompetitorIds = [],
+    deletingMaterialKeys = [],
     recollectingCompetitorIds = [],
     onChangeGroupProcurementInfo,
     onChangeGroupName,
     onDeleteCompetitor,
+    onDeleteMaterial,
     onOpenAiAnalysis,
     onOpenCompetitorDetail,
     onOpenCompetitors,
@@ -254,6 +271,7 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
   const [groupNameEditor, setGroupNameEditor] = useState<GroupNameEditorState | null>(null)
   const [groupNameSaving, setGroupNameSaving] = useState(false)
   const [groupNameError, setGroupNameError] = useState('')
+  const [materialDeleteTarget, setMaterialDeleteTarget] = useState<MaterialDeleteTarget | null>(null)
   const collectedCount = dataSource.filter((record) => record.status === 'success').length
   const ali1688ReadyCount = dataSource.filter((record) => ali1688CandidateCount(record) > 0).length
   const recommendedCount = dataSource.reduce((total, record) => total + recommendedCandidateCount(record), 0)
@@ -334,25 +352,46 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
             className="manual-selection-analysis-collection-overview"
             data-testid="manual-selection-analysis-collection-overview"
           >
-          {project.records.map((record) => (
-              <button
+          {project.records.map((record) => {
+            const deleting = deletingMaterialKeys.includes(`${project.groupId || project.projectId}:${record.id}`)
+            return (
+              <div
                 key={record.id}
-                type="button"
-                className="manual-selection-analysis-competitor-overview-row"
-                title={collectionOverviewText(record)}
-                onClick={() => onOpenCompetitorDetail(project, { kind: 'collection', id: record.id })}
+                className="manual-selection-analysis-competitor-overview-row has-action"
               >
-                <span className="manual-selection-analysis-competitor-platform is-collected">
-                  {record.sourcePlatform || '平台'}
+                <button
+                  type="button"
+                  className="manual-selection-analysis-competitor-overview-main has-status"
+                  title={collectionOverviewText(record)}
+                  onClick={() => onOpenCompetitorDetail(project, { kind: 'collection', id: record.id })}
+                >
+                  <span className="manual-selection-analysis-competitor-platform is-collected">
+                    {record.sourcePlatform || '平台'}
+                  </span>
+                  <span className="manual-selection-analysis-competitor-status is-success">
+                    {manualSelectionCollectionSourceLabel(record)}
+                  </span>
+                  <span className="manual-selection-analysis-competitor-summary">
+                    {collectionOverviewText(record)}
+                  </span>
+                </button>
+                <span className="manual-selection-analysis-competitor-actions">
+                  <Button
+                    danger
+                    size="small"
+                    type="text"
+                    icon={<DeleteOutlined />}
+                    loading={deleting}
+                    disabled={deleting}
+                    className="manual-selection-analysis-competitor-delete"
+                    data-testid="manual-selection-analysis-material-delete-button"
+                    aria-label={`删除采集材料：${record.sourceTitleCn || record.sourceTitle || record.id}`}
+                    onClick={() => setMaterialDeleteTarget({ project, record })}
+                  />
                 </span>
-                <span className="manual-selection-analysis-competitor-status is-success">
-                  {manualSelectionCollectionSourceLabel(record)}
-                </span>
-                <span className="manual-selection-analysis-competitor-summary">
-                  {collectionOverviewText(record)}
-                </span>
-              </button>
-            ))}
+              </div>
+            )
+          })}
             {project.competitors?.map((competitor, index) => {
               const focusId = competitor.id || competitor.url || String(index)
               const isFailed = competitor.fetchStatus === 'failed'
@@ -567,6 +606,18 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
     setAli1688Editor(null)
   }
 
+  const handleDeleteMaterial = async (mode: ManualSelectionMaterialDeleteMode) => {
+    if (!materialDeleteTarget) {
+      return
+    }
+    try {
+      await onDeleteMaterial(materialDeleteTarget.project, materialDeleteTarget.record, mode)
+      setMaterialDeleteTarget(null)
+    } catch {
+      // 页面层已展示后端业务错误，保留弹窗方便用户重新选择。
+    }
+  }
+
   return (
     <div className="manual-selection-analysis">
       <div className="manual-selection-analysis-metrics">
@@ -607,6 +658,49 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
       ) : (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无选品分析商品" />
       )}
+
+      <Modal
+        title="删除选品分析中的采集材料"
+        open={Boolean(materialDeleteTarget)}
+        width={560}
+        closable={!materialDeleteTarget || !deletingMaterialKeys.includes(`${materialDeleteTarget.project.groupId || materialDeleteTarget.project.projectId}:${materialDeleteTarget.record.id}`)}
+        maskClosable={false}
+        onCancel={() => setMaterialDeleteTarget(null)}
+        footer={materialDeleteTarget ? [
+          <Button
+            key="cancel"
+            disabled={deletingMaterialKeys.includes(`${materialDeleteTarget.project.groupId || materialDeleteTarget.project.projectId}:${materialDeleteTarget.record.id}`)}
+            onClick={() => setMaterialDeleteTarget(null)}
+          >
+            取消
+          </Button>,
+          ...MANUAL_SELECTION_MATERIAL_DELETE_OPTIONS.map((option) => (
+            <Button
+              key={option.mode}
+              danger={option.mode === 'unlink-and-delete-source'}
+              type={option.mode === 'unlink-and-delete-source' ? 'primary' : 'default'}
+              loading={deletingMaterialKeys.includes(`${materialDeleteTarget.project.groupId || materialDeleteTarget.project.projectId}:${materialDeleteTarget.record.id}`)}
+              onClick={() => void handleDeleteMaterial(option.mode)}
+            >
+              {option.label}
+            </Button>
+          ))
+        ] : null}
+        destroyOnClose
+      >
+        {materialDeleteTarget ? (
+          <Space direction="vertical" size={12}>
+            <Text strong>{materialDeleteTarget.record.sourceTitleCn || materialDeleteTarget.record.sourceTitle || '未命名采集数据'}</Text>
+            {MANUAL_SELECTION_MATERIAL_DELETE_OPTIONS.map((option) => (
+              <div key={option.mode}>
+                <Text strong>{option.label}</Text>
+                <br />
+                <Text type="secondary">{option.description}</Text>
+              </div>
+            ))}
+          </Space>
+        ) : null}
+      </Modal>
 
       <Modal
         title="编辑组名"
