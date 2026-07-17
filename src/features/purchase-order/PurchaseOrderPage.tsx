@@ -39,19 +39,32 @@ import { firstFormValidationMessage, normalizeError } from '../../shared/api'
 import type { AuthSession } from '../auth/session'
 import { ReplenishmentPlanTab } from '../replenishment-plan/ReplenishmentPlanTab'
 import {
+  fetchProductLogisticsProfiles,
+  fetchProductSpecDetail,
+  saveProductSpecSource,
+  selectProductSpecEffectiveSource,
+  saveProductLogisticsProfile
+} from '../product-management/api'
+import type {
+  ProductLogisticsProfilePayload,
+  ProductVariantSpecDetailPayload,
+  ProductVariantSpecPayload,
+  ProductVariantSpecSourcePayload
+} from '../product-management/types'
+import {
   addPurchaseOrderItems,
   createPurchaseOrder,
   createShippingOrder,
   deletePurchaseOrder,
   deletePurchaseOrderItem,
+  loadAssignedShippingPurchaseOrderIds,
   loadPurchaseOrderAli1688History,
-  loadShippingOrder,
-  loadShippingOrders,
   loadProductOptions,
   loadPurchaseOrders,
   submitPurchaseOrder,
   updatePurchaseOrder,
-  updatePurchaseOrderItem
+  updatePurchaseOrderItem,
+  updatePurchaseOrderItemSourcingRequirement
 } from './api'
 import type {
   PurchaseCollectionStatus,
@@ -98,6 +111,28 @@ type UpdateItemFormValues = {
 type UpdateOrderFormValues = {
   title: string
   remark?: string
+}
+
+type ProductDataCompletionFormValues = {
+  sourcingSpec?: string
+  sourcingSize?: string
+  sourcingColor?: string
+  productLengthCm?: number | null
+  productWidthCm?: number | null
+  productHeightCm?: number | null
+  productWeightG?: number | null
+  cartonLengthCm?: number | null
+  cartonWidthCm?: number | null
+  cartonHeightCm?: number | null
+  cartonWeightKg?: number | null
+  cartonQuantity?: number | null
+  batteryType?: string
+  electricType?: string
+  magneticType?: string
+  liquidType?: string
+  powderType?: string
+  woodenMaterialType?: string
+  bladeWeaponType?: string
 }
 
 type PskuEntryFormValue = {
@@ -147,7 +182,9 @@ type PurchaseOrderIssueSummary = {
   missingAllocationCount: number
   missingTransportCount: number
   quantityIssueCount: number
-  missingSourcingRequirementCount: number
+  missingProductSpecCount: number
+  missingCartonSpecCount: number
+  missingLogisticsAttributeCount: number
   collectionFailedCount: number
 }
 
@@ -160,6 +197,45 @@ type PurchaseOrderAli1688HistoryEntry = {
 type DeleteItemTarget = {
   order: PurchaseOrder
   item: PurchaseOrderItem
+}
+
+type ProductDataCompletionTarget = DeleteItemTarget & {
+  focusIssue?: ProductDataCompletionIssue
+}
+
+type ProductDataCompletionIssue = '产品规格缺失' | '箱规缺失' | '商品属性缺失'
+
+type ProductDataSpecField = {
+  key: keyof Pick<
+    ProductDataCompletionFormValues,
+    | 'productLengthCm'
+    | 'productWidthCm'
+    | 'productHeightCm'
+    | 'productWeightG'
+    | 'cartonLengthCm'
+    | 'cartonWidthCm'
+    | 'cartonHeightCm'
+    | 'cartonWeightKg'
+    | 'cartonQuantity'
+  >
+  label: string
+  min: number
+  precision: number
+}
+
+type ProductDataLogisticsField = {
+  key: keyof Pick<
+    ProductDataCompletionFormValues,
+    | 'batteryType'
+    | 'electricType'
+    | 'magneticType'
+    | 'liquidType'
+    | 'powderType'
+    | 'woodenMaterialType'
+    | 'bladeWeaponType'
+  >
+  label: string
+  options: Array<{ label: string; value: string }>
 }
 
 const ORDER_STATUS_META: Record<PurchaseOrderStatus, { label: string; color: string; icon: ReactNode }> = {
@@ -215,6 +291,92 @@ function initialPurchaseOrderTab(): PurchaseOrderTabKey {
   return requestedTab === 'purchase-orders' ? 'purchase-orders' : 'replenishment-plan'
 }
 
+const PRODUCT_DATA_PRODUCT_SPEC_FIELDS: ProductDataSpecField[] = [
+  { key: 'productLengthCm', label: '长/cm', min: 0.01, precision: 2 },
+  { key: 'productWidthCm', label: '宽/cm', min: 0.01, precision: 2 },
+  { key: 'productHeightCm', label: '高/cm', min: 0.01, precision: 2 },
+  { key: 'productWeightG', label: '重/g', min: 0.01, precision: 2 }
+]
+
+const PRODUCT_DATA_CARTON_SPEC_FIELDS: ProductDataSpecField[] = [
+  { key: 'cartonLengthCm', label: '箱长/cm', min: 0.01, precision: 2 },
+  { key: 'cartonWidthCm', label: '箱宽/cm', min: 0.01, precision: 2 },
+  { key: 'cartonHeightCm', label: '箱高/cm', min: 0.01, precision: 2 },
+  { key: 'cartonWeightKg', label: '箱重/kg', min: 0.001, precision: 3 },
+  { key: 'cartonQuantity', label: '装箱数', min: 1, precision: 0 }
+]
+
+const PRODUCT_DATA_SPEC_FIELDS: ProductDataSpecField[] = [
+  ...PRODUCT_DATA_PRODUCT_SPEC_FIELDS,
+  ...PRODUCT_DATA_CARTON_SPEC_FIELDS
+]
+
+const PRODUCT_DATA_LOGISTICS_FIELDS: ProductDataLogisticsField[] = [
+  {
+    key: 'batteryType',
+    label: '带电',
+    options: [
+      { label: '未选择', value: 'unknown' },
+      { label: '不带电', value: 'none' },
+      { label: '带电', value: 'battery_equipment' }
+    ]
+  },
+  {
+    key: 'electricType',
+    label: '电器',
+    options: [
+      { label: '未选择', value: 'unknown' },
+      { label: '非电器', value: 'none' },
+      { label: '电器', value: 'electric_equipment_review' }
+    ]
+  },
+  {
+    key: 'magneticType',
+    label: '磁性',
+    options: [
+      { label: '未选择', value: 'unknown' },
+      { label: '不带磁', value: 'none' },
+      { label: '带磁', value: 'magnetic' }
+    ]
+  },
+  {
+    key: 'liquidType',
+    label: '液体',
+    options: [
+      { label: '未选择', value: 'unknown' },
+      { label: '非液体', value: 'none' },
+      { label: '液体', value: 'liquid' }
+    ]
+  },
+  {
+    key: 'powderType',
+    label: '粉末',
+    options: [
+      { label: '未选择', value: 'unknown' },
+      { label: '非粉末', value: 'none' },
+      { label: '粉末', value: 'powder' }
+    ]
+  },
+  {
+    key: 'woodenMaterialType',
+    label: '木材',
+    options: [
+      { label: '未选择', value: 'unknown' },
+      { label: '非木材', value: 'none' },
+      { label: '木材', value: 'wooden_material_review' }
+    ]
+  },
+  {
+    key: 'bladeWeaponType',
+    label: '刀具',
+    options: [
+      { label: '未选择', value: 'unknown' },
+      { label: '非刀具', value: 'none' },
+      { label: '刀具', value: 'blade_tool_review' }
+    ]
+  }
+]
+
 export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   const { modal, message: appMessage } = AntdApp.useApp()
   const [createOrderForm] = Form.useForm<CreateOrderFormValues>()
@@ -222,6 +384,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   const [addItemsForm] = Form.useForm<AddItemsFormValues>()
   const [editItemForm] = Form.useForm<UpdateItemFormValues>()
   const [activeTab, setActiveTab] = useState<PurchaseOrderTabKey>(() => initialPurchaseOrderTab())
+  const [productDataCompletionForm] = Form.useForm<ProductDataCompletionFormValues>()
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
   const [purchaseOrdersRevision, setPurchaseOrdersRevision] = useState(0)
   const [selectedOrderId, setSelectedOrderId] = useState<string>()
@@ -242,6 +405,9 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   const [createErrorMessage, setCreateErrorMessage] = useState<string>()
   const [addItemsErrorMessage, setAddItemsErrorMessage] = useState<string>()
   const [editItemErrorMessage, setEditItemErrorMessage] = useState<string>()
+  const [productDataCompletionTarget, setProductDataCompletionTarget] = useState<ProductDataCompletionTarget | null>(null)
+  const [productDataCompletionLoading, setProductDataCompletionLoading] = useState(false)
+  const [productDataCompletionError, setProductDataCompletionError] = useState<string>()
   const [productSearchOptions, setProductSearchOptions] = useState<ProductOption[]>([])
   const [productSearchLoading, setProductSearchLoading] = useState(false)
   const [itemFilterKey, setItemFilterKey] = useState('all')
@@ -250,6 +416,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   const [ali1688HistoryError, setAli1688HistoryError] = useState<string>()
   const productSearchRequestIdRef = useRef(0)
   const ali1688HistoryRequestIdRef = useRef(0)
+  const productDataCompletionRequestIdRef = useRef(0)
 
   const storeCode = session?.currentStore?.storeCode
   const createStoreCode = Form.useWatch('storeCode', createOrderForm)
@@ -552,7 +719,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       const shippingOrder = await createShippingOrder({ purchaseOrderIds })
       closeShippingMergeMode()
       message.success(`已创建仓库单 ${shippingOrder.shippingOrderNo}。`)
-      window.location.href = '/warehouse/shipping-orders?devSession=1&grantPurchase=1&grantWarehouse=1'
+      window.location.href = '/warehouse/dispatch?devSession=1&grantPurchase=1&grantWarehouse=1'
     } catch (error) {
       const errorMessage = normalizeError(error, '创建仓库单失败')
       setShippingMergeErrorMessage(errorMessage)
@@ -563,11 +730,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
   }
 
   async function loadShippingMergeAssignedOrderIds() {
-    const shippingOrders = await loadShippingOrders()
-    const details = await Promise.all(shippingOrders.map((shippingOrder) => loadShippingOrder(shippingOrder.id)))
-    return new Set(details.flatMap((shippingOrder) => (
-      shippingOrder.lines || []
-    ).map((line) => line.purchaseOrderId).filter(Boolean)))
+    return new Set(await loadAssignedShippingPurchaseOrderIds())
   }
 
   function handleCreateStoreChange(nextStoreCode: string) {
@@ -680,12 +843,23 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     }
     const issueSummary = summarizeOrderIssues(order)
     if (hasSealBlockingIssues(issueSummary)) {
-      appMessage.warning('请先补齐采购单的站点运输、数量和规格信息后再封存。')
+      appMessage.warning('请先补齐采购单的站点运输和数量信息后再封存。')
       return
     }
+    const incompleteItems = order.items.filter((item) => (
+      item.productSpecComplete === false || item.logisticsAttributeComplete === false
+    ))
+    if (incompleteItems.length) {
+      const firstItem = incompleteItems[0]
+      appMessage.warning(`还有 ${incompleteItems.length} 个商品缺少产品规格或商品属性，请先补齐后再封存。示例：${firstItem.partnerSku || firstItem.skuParent}`)
+      return
+    }
+    const sealWarning = issueSummary.missingCartonSpecCount
+      ? `${PURCHASE_ORDER_SEAL_WARNING} 当前有 ${issueSummary.missingCartonSpecCount} 个商品箱规缺失；箱规缺失仅提示，不阻塞本次封存。`
+      : PURCHASE_ORDER_SEAL_WARNING
     modal.confirm({
       title: '封存采购单',
-      content: PURCHASE_ORDER_SEAL_WARNING,
+      content: sealWarning,
       okText: '确认封存',
       cancelText: '取消',
       onOk: () => sealPurchaseOrder(order)
@@ -703,6 +877,189 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       appMessage.error(normalizeError(error, '封存采购单失败'))
     } finally {
       setActionKey((current) => (current === `submit-order:${order.id}` ? undefined : current))
+    }
+  }
+
+  function openFirstProductDataIssue(issue: ProductDataCompletionIssue) {
+    if (!selectedOrder) {
+      return
+    }
+    const firstItem = (selectedOrder.items || []).find((item) => itemIssues(item).includes(issue))
+    if (!firstItem) {
+      return
+    }
+    openProductDataCompletionModal(selectedOrder, firstItem, issue)
+  }
+
+  function openProductDataCompletionModal(
+    order: PurchaseOrder,
+    item: PurchaseOrderItem,
+    issue?: string
+  ) {
+    if (!isProductDataCompletionIssue(issue)) {
+      return
+    }
+    if (isSubmittedOrder(order)) {
+      message.warning('采购单已封存，不能再更改商品资料。')
+      return
+    }
+    const target: ProductDataCompletionTarget = { order, item, focusIssue: issue }
+    setProductDataCompletionTarget(target)
+    setProductDataCompletionError(undefined)
+    productDataCompletionForm.setFieldsValue({
+      ...createDefaultProductDataCompletionValues(),
+      ...productDataSourcingValuesFromItem(item)
+    })
+    void loadProductDataCompletionSnapshot(target)
+  }
+
+  function closeProductDataCompletionModal() {
+    productDataCompletionRequestIdRef.current += 1
+    setProductDataCompletionTarget(null)
+    setProductDataCompletionLoading(false)
+    setProductDataCompletionError(undefined)
+    productDataCompletionForm.resetFields()
+  }
+
+  async function loadProductDataCompletionSnapshot(target: ProductDataCompletionTarget) {
+    const requestId = productDataCompletionRequestIdRef.current + 1
+    productDataCompletionRequestIdRef.current = requestId
+    const context = buildProductDataCompletionContext(target.order, target.item, session)
+    if (!context.storeCode || !context.partnerSku) {
+      setProductDataCompletionError('缺少店铺或 PSKU，暂不能读取当前商品资料。')
+      return
+    }
+    setProductDataCompletionLoading(true)
+    const errors: string[] = []
+    try {
+      const [specResult, logisticsResult] = await Promise.allSettled([
+        fetchProductSpecDetail(context),
+        context.ownerUserId
+          ? fetchProductLogisticsProfiles({
+            ownerUserId: context.ownerUserId,
+            storeCode: context.storeCode,
+            partnerSku: context.partnerSku,
+            currentZCode: context.currentZCode,
+            skuParent: context.currentZCode
+          })
+          : Promise.resolve(undefined)
+      ])
+      if (productDataCompletionRequestIdRef.current !== requestId) {
+        return
+      }
+      const nextValues: ProductDataCompletionFormValues = {}
+      if (specResult.status === 'fulfilled') {
+        Object.assign(nextValues, productDataSpecValuesFromDetail(specResult.value))
+      } else {
+        errors.push(normalizeError(specResult.reason, '产品规格读取失败'))
+      }
+      if (logisticsResult.status === 'fulfilled') {
+        Object.assign(nextValues, productDataLogisticsValuesFromProfile(logisticsResult.value?.items?.[0]))
+      } else {
+        errors.push(normalizeError(logisticsResult.reason, '商品属性读取失败'))
+      }
+      productDataCompletionForm.setFieldsValue({
+        ...createDefaultProductDataCompletionValues(),
+        ...productDataSourcingValuesFromItem(target.item),
+        ...nextValues
+      })
+      setProductDataCompletionError(errors.length ? errors.join('；') : undefined)
+    } finally {
+      if (productDataCompletionRequestIdRef.current === requestId) {
+        setProductDataCompletionLoading(false)
+      }
+    }
+  }
+
+  async function handleSaveProductDataCompletion() {
+    if (!productDataCompletionTarget) {
+      return
+    }
+    const target = productDataCompletionTarget
+    const action = `product-data-completion:${target.item.id}`
+    const context = buildProductDataCompletionContext(target.order, target.item, session)
+    if (!context.storeCode || !context.partnerSku) {
+      message.warning('缺少店铺或 PSKU，不能保存商品资料。')
+      return
+    }
+    setActionKey(action)
+    try {
+      const values = await productDataCompletionForm.validateFields()
+      if (productDataHasAnyProductSpecValue(values) && !productDataHasCompleteProductSpecValues(values)) {
+        message.warning('产品规格需要完整填写商品长宽高重。')
+        return
+      }
+      if (productDataHasAnyConfirmedLogisticsValue(values) && !productDataHasCompleteLogisticsValues(values)) {
+        message.warning('商品属性需要七项全部选择明确值。')
+        return
+      }
+      const saveSpec = shouldSaveProductDataSpec(values)
+      const saveLogistics = shouldSaveProductDataLogistics(target.item, values)
+      const saveSourcing = shouldSaveProductDataSourcing(target.item, values)
+      if (!saveSourcing && !saveSpec && !saveLogistics) {
+        message.warning('没有需要保存的商品资料。')
+        return
+      }
+      if (saveSourcing) {
+        const nextOrder = await updatePurchaseOrderItemSourcingRequirement(target.order.id, target.item.id, {
+          sourcingSpec: normalizeOptionalText(values.sourcingSpec),
+          sourcingSize: normalizeOptionalText(values.sourcingSize),
+          sourcingColor: normalizeOptionalText(values.sourcingColor)
+        })
+        replaceOrder(nextOrder)
+      }
+      if (saveSpec) {
+        const source = await saveProductSpecSource({
+          ownerUserId: context.ownerUserId,
+          storeCode: context.storeCode,
+          variantId: context.variantId,
+          partnerSku: context.partnerSku,
+          currentZCode: context.currentZCode,
+          skuParent: context.currentZCode,
+          sourceType: 'ali1688',
+          productLengthCm: normalizeProductDataNumber(values.productLengthCm),
+          productWidthCm: normalizeProductDataNumber(values.productWidthCm),
+          productHeightCm: normalizeProductDataNumber(values.productHeightCm),
+          productWeightG: normalizeProductDataNumber(values.productWeightG),
+          cartonLengthCm: normalizeProductDataNumber(values.cartonLengthCm),
+          cartonWidthCm: normalizeProductDataNumber(values.cartonWidthCm),
+          cartonHeightCm: normalizeProductDataNumber(values.cartonHeightCm),
+          cartonWeightKg: normalizeProductDataNumber(values.cartonWeightKg),
+          cartonQuantity: normalizeProductDataNumber(values.cartonQuantity),
+          cartonSourceType: 'factory_carton'
+        })
+        if (!source.sourceId) {
+          throw new Error('商品规格保存后缺少来源编号。')
+        }
+        await selectProductSpecEffectiveSource({
+          ownerUserId: context.ownerUserId,
+          storeCode: context.storeCode,
+          variantId: context.variantId,
+          partnerSku: context.partnerSku,
+          currentZCode: context.currentZCode,
+          skuParent: context.currentZCode,
+          sourceId: source.sourceId
+        })
+      }
+      if (saveLogistics) {
+        await saveProductLogisticsProfile({
+          ...createProductDataLogisticsProfilePayload(target.order, target.item, values),
+          ownerUserId: context.ownerUserId,
+          storeCode: context.storeCode,
+          variantId: context.variantId,
+          partnerSku: context.partnerSku,
+          currentZCode: context.currentZCode
+        })
+      }
+      await loadOrders()
+      setSelectedOrderId(target.order.id)
+      closeProductDataCompletionModal()
+      message.success('商品资料已保存。')
+    } catch (error) {
+      const validationMessage = firstFormValidationMessage(error)
+      message.error(validationMessage || normalizeError(error, '保存商品资料失败'))
+    } finally {
+      setActionKey((current) => (current === action ? undefined : current))
     }
   }
 
@@ -1221,8 +1578,32 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                         {selectedOrderIssueSummary.quantityIssueCount ? (
                           <span>数量异常 {selectedOrderIssueSummary.quantityIssueCount}</span>
                         ) : null}
-                        {selectedOrderIssueSummary.missingSourcingRequirementCount ? (
-                          <span>规格缺失 {selectedOrderIssueSummary.missingSourcingRequirementCount}</span>
+                        {selectedOrderIssueSummary.missingProductSpecCount ? (
+                          <button
+                            type="button"
+                            className="purchase-order-issue-action is-blocking"
+                            onClick={() => openFirstProductDataIssue('产品规格缺失')}
+                          >
+                            产品规格缺失 {selectedOrderIssueSummary.missingProductSpecCount}
+                          </button>
+                        ) : null}
+                        {selectedOrderIssueSummary.missingCartonSpecCount ? (
+                          <button
+                            type="button"
+                            className="purchase-order-issue-action"
+                            onClick={() => openFirstProductDataIssue('箱规缺失')}
+                          >
+                            箱规缺失 {selectedOrderIssueSummary.missingCartonSpecCount}
+                          </button>
+                        ) : null}
+                        {selectedOrderIssueSummary.missingLogisticsAttributeCount ? (
+                          <button
+                            type="button"
+                            className="purchase-order-issue-action is-blocking"
+                            onClick={() => openFirstProductDataIssue('商品属性缺失')}
+                          >
+                            商品属性缺失 {selectedOrderIssueSummary.missingLogisticsAttributeCount}
+                          </button>
                         ) : null}
                         {selectedOrderIssueSummary.collectionFailedCount ? (
                           <span>采集失败 {selectedOrderIssueSummary.collectionFailedCount}</span>
@@ -1231,7 +1612,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                     ) : (
                       <>
                         <Tag color="success">基础信息正常</Tag>
-                        <span>箱规/重量封存前需补齐</span>
+                        <span>产品规格和商品属性完整，箱规可按需维护</span>
                       </>
                     )}
                   </div>
@@ -1253,6 +1634,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
                       onEdit={() => openEditItemModal(selectedOrder, item)}
                       onDelete={() => setDeleteTargetItem({ order: selectedOrder, item })}
                       onOpenTop5={() => openTop5(item, selectedOrder)}
+                      onIssueClick={(issue) => openProductDataCompletionModal(selectedOrder, item, issue)}
                     />
                   )) : (
                     <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前筛选没有商品。" />
@@ -1375,6 +1757,164 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       </Modal>
 
       <Modal
+        title="补齐商品资料"
+        open={Boolean(productDataCompletionTarget)}
+        okText="保存商品资料"
+        cancelText="取消"
+        okButtonProps={{
+          loading: Boolean(productDataCompletionTarget && actionKey === `product-data-completion:${productDataCompletionTarget.item.id}`)
+        }}
+        onOk={() => void handleSaveProductDataCompletion()}
+        onCancel={closeProductDataCompletionModal}
+        width={880}
+      >
+        {productDataCompletionTarget ? (
+          <Spin spinning={productDataCompletionLoading}>
+            <Form
+              form={productDataCompletionForm}
+              layout="vertical"
+              requiredMark={false}
+              className="purchase-product-data-form"
+            >
+              {productDataCompletionError ? (
+                <Alert type="warning" showIcon message={productDataCompletionError} />
+              ) : null}
+              <div className="purchase-product-data-summary">
+                <ProductThumbnail
+                  imageUrl={productDataCompletionTarget.item.productImageUrl || productDataCompletionTarget.item.sourceImageUrl}
+                />
+                <div className="purchase-product-data-summary-copy">
+                  <Text strong>{productDataCompletionTarget.item.partnerSku || productDataCompletionTarget.item.skuParent}</Text>
+                  <Text type="secondary" ellipsis>
+                    {productDataCompletionTarget.item.productTitle || productDataCompletionTarget.item.sourceTitle}
+                  </Text>
+                  <div className="purchase-product-data-summary-tags">
+                    <Tag>{productDataCompletionTarget.order.storeName || productDataCompletionTarget.order.storeCode}</Tag>
+                    {productDataCompletionTarget.focusIssue ? (
+                      <Tag color={productDataCompletionTarget.focusIssue === '箱规缺失' ? 'gold' : 'red'}>
+                        {productDataCompletionTarget.focusIssue}
+                      </Tag>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+              <section className="purchase-product-data-section">
+                <div className="purchase-product-data-section-title">
+                  <Text strong>采购备注</Text>
+                  <Tag>选填</Tag>
+                </div>
+                <div className="purchase-product-data-sourcing-grid">
+                  <Form.Item label="款式/型号" name="sourcingSpec">
+                    <Input placeholder="例如 A5 横线" maxLength={80} />
+                  </Form.Item>
+                  <Form.Item label="尺寸描述" name="sourcingSize">
+                    <Input placeholder="例如 21x14cm" maxLength={80} />
+                  </Form.Item>
+                  <Form.Item label="颜色描述" name="sourcingColor">
+                    <Input placeholder="例如 灰色" maxLength={80} />
+                  </Form.Item>
+                </div>
+              </section>
+              <section
+                className={`purchase-product-data-section${productDataCompletionTarget.focusIssue === '产品规格缺失' ? ' is-focused' : ''}`}
+              >
+                <div className="purchase-product-data-section-title">
+                  <Text strong>1688 产品规格</Text>
+                  {productDataCompletionTarget.item.productSpecComplete === false ? <Tag color="red">必填</Tag> : <Tag>已可选维护</Tag>}
+                </div>
+                <div className="purchase-product-data-spec-grid">
+                  {PRODUCT_DATA_PRODUCT_SPEC_FIELDS.map((field) => (
+                    <Form.Item
+                      key={field.key}
+                      label={field.label}
+                      name={field.key}
+                      rules={[
+                        {
+                          validator: (_, value) => validateProductDataNumberField(
+                            field.label,
+                            value,
+                            field.min,
+                            productDataCompletionTarget.item.productSpecComplete === false
+                          )
+                        }
+                      ]}
+                    >
+                      <InputNumber
+                        min={field.min}
+                        precision={field.precision}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  ))}
+                </div>
+              </section>
+              <section
+                className={`purchase-product-data-section${productDataCompletionTarget.focusIssue === '箱规缺失' ? ' is-focused' : ''}`}
+              >
+                <div className="purchase-product-data-section-title">
+                  <Text strong>箱规</Text>
+                  {productDataCompletionTarget.item.cartonSpecComplete === false ? <Tag color="gold">缺失仅提示</Tag> : <Tag>已可选维护</Tag>}
+                </div>
+                <div className="purchase-product-data-spec-grid">
+                  {PRODUCT_DATA_CARTON_SPEC_FIELDS.map((field) => (
+                    <Form.Item
+                      key={field.key}
+                      label={field.label}
+                      name={field.key}
+                      rules={[
+                        {
+                          validator: (_, value) => validateProductDataNumberField(
+                            field.label,
+                            value,
+                            field.min,
+                            false
+                          )
+                        }
+                      ]}
+                    >
+                      <InputNumber
+                        min={field.min}
+                        precision={field.precision}
+                        style={{ width: '100%' }}
+                      />
+                    </Form.Item>
+                  ))}
+                </div>
+              </section>
+              <section
+                className={`purchase-product-data-section${productDataCompletionTarget.focusIssue === '商品属性缺失' ? ' is-focused' : ''}`}
+              >
+                <div className="purchase-product-data-section-title">
+                  <Text strong>商品属性</Text>
+                  {productDataCompletionTarget.item.logisticsAttributeComplete === false ? <Tag color="red">必填</Tag> : <Tag>已可选维护</Tag>}
+                </div>
+                <div className="purchase-product-data-logistics-grid">
+                  {PRODUCT_DATA_LOGISTICS_FIELDS.map((field) => (
+                    <Form.Item
+                      key={field.key}
+                      label={field.label}
+                      name={field.key}
+                      rules={[
+                        {
+                          validator: (_, value) => validateProductDataAttributeField(
+                            field.label,
+                            value,
+                            productDataCompletionTarget.item.logisticsAttributeComplete === false
+                          )
+                        }
+                      ]}
+                    >
+                      <Select options={field.options} />
+                    </Form.Item>
+                  ))}
+                </div>
+              </section>
+            </Form>
+          </Spin>
+        ) : null}
+      </Modal>
+
+      <Modal
         title="编辑采购单"
         open={Boolean(editOrderTarget)}
         okText="保存"
@@ -1439,7 +1979,8 @@ function PurchaseItemCard({
   locked,
   onEdit,
   onDelete,
-  onOpenTop5
+  onOpenTop5,
+  onIssueClick
 }: {
   item: PurchaseOrderItem
   issues: string[]
@@ -1452,6 +1993,7 @@ function PurchaseItemCard({
   onEdit: () => void
   onDelete: () => void
   onOpenTop5: () => void
+  onIssueClick: (issue: string) => void
 }) {
   const meta = ITEM_STATUS_META[item.collectionStatus] || ITEM_STATUS_META.not_started
   const imageUrl = item.sourceImageUrl || item.productImageUrl
@@ -1484,9 +2026,21 @@ function PurchaseItemCard({
           ) : null}
           {issues.length ? (
             <div className="purchase-item-issue-list">
-              {issues.slice(0, 3).map((issue) => (
-                <Tag color="warning" key={issue}>{issue}</Tag>
-              ))}
+              {issues.slice(0, 3).map((issue) => {
+                if (isProductDataCompletionIssue(issue) && !locked) {
+                  return (
+                    <button
+                      type="button"
+                      className="purchase-item-issue-button"
+                      key={issue}
+                      onClick={() => onIssueClick(issue)}
+                    >
+                      <Tag color={issueTagColor(issue)}>{issue}</Tag>
+                    </button>
+                  )
+                }
+                return <Tag color={issueTagColor(issue)} key={issue}>{issue}</Tag>
+              })}
             </div>
           ) : null}
         </div>
@@ -2420,8 +2974,14 @@ function summarizeOrderIssues(order: PurchaseOrder): PurchaseOrderIssueSummary {
     if (issues.includes('数量异常')) {
       summary.quantityIssueCount += 1
     }
-    if (issues.includes('规格缺失')) {
-      summary.missingSourcingRequirementCount += 1
+    if (issues.includes('产品规格缺失')) {
+      summary.missingProductSpecCount += 1
+    }
+    if (issues.includes('箱规缺失')) {
+      summary.missingCartonSpecCount += 1
+    }
+    if (issues.includes('商品属性缺失')) {
+      summary.missingLogisticsAttributeCount += 1
     }
     if (issues.includes('采集失败')) {
       summary.collectionFailedCount += 1
@@ -2437,7 +2997,9 @@ function emptyIssueSummary(): PurchaseOrderIssueSummary {
     missingAllocationCount: 0,
     missingTransportCount: 0,
     quantityIssueCount: 0,
-    missingSourcingRequirementCount: 0,
+    missingProductSpecCount: 0,
+    missingCartonSpecCount: 0,
+    missingLogisticsAttributeCount: 0,
     collectionFailedCount: 0
   }
 }
@@ -2446,8 +3008,7 @@ function hasSealBlockingIssues(summary: PurchaseOrderIssueSummary) {
   return Boolean(
     summary.missingAllocationCount ||
     summary.missingTransportCount ||
-    summary.quantityIssueCount ||
-    summary.missingSourcingRequirementCount
+    summary.quantityIssueCount
   )
 }
 
@@ -2467,13 +3028,210 @@ function itemIssues(item: PurchaseOrderItem) {
   if ((item.totalQuantity || 0) <= 0 || allocations.some((allocation) => (allocation.quantity || 0) <= 0)) {
     issues.push('数量异常')
   }
-  if (!hasAnyText(item.sourcingSpec, item.sourcingColor)) {
-    issues.push('规格缺失')
+  if (item.productSpecComplete === false) {
+    issues.push('产品规格缺失')
+  }
+  if (item.cartonSpecComplete === false) {
+    issues.push('箱规缺失')
+  }
+  if (item.logisticsAttributeComplete === false) {
+    issues.push('商品属性缺失')
   }
   if (item.collectionStatus === 'failed' || Boolean(item.failureMessage?.trim())) {
     issues.push('采集失败')
   }
   return issues
+}
+
+function issueTagColor(issue: string) {
+  return issue === '产品规格缺失' || issue === '商品属性缺失' ? 'error' : 'warning'
+}
+
+function isProductDataCompletionIssue(issue?: string): issue is ProductDataCompletionIssue {
+  return issue === '产品规格缺失' || issue === '箱规缺失' || issue === '商品属性缺失'
+}
+
+function createDefaultProductDataCompletionValues(): ProductDataCompletionFormValues {
+  return {
+    batteryType: 'unknown',
+    electricType: 'unknown',
+    magneticType: 'unknown',
+    liquidType: 'unknown',
+    powderType: 'unknown',
+    woodenMaterialType: 'unknown',
+    bladeWeaponType: 'unknown'
+  }
+}
+
+function productDataSourcingValuesFromItem(item: PurchaseOrderItem): Partial<ProductDataCompletionFormValues> {
+  return {
+    sourcingSpec: item.sourcingSpec,
+    sourcingSize: item.sourcingSize,
+    sourcingColor: item.sourcingColor
+  }
+}
+
+function buildProductDataCompletionContext(
+  order: PurchaseOrder,
+  item: PurchaseOrderItem,
+  session?: AuthSession | null
+) {
+  const currentZCode = item.skuParent || undefined
+  return {
+    ownerUserId: session?.defaultOwnerUserId,
+    storeCode: order.storeCode || session?.currentStore?.storeCode || '',
+    variantId: parseOptionalNumber(item.variantId),
+    partnerSku: item.partnerSku,
+    currentZCode,
+    skuParent: currentZCode
+  }
+}
+
+function productDataSpecValuesFromDetail(detail: ProductVariantSpecDetailPayload): Partial<ProductDataCompletionFormValues> {
+  const source = findProductDataSpecSource(detail.sources, 'ali1688')
+  return productDataSpecValuesFromSource(source)
+}
+
+function productDataSpecValuesFromSource(
+  source?: ProductVariantSpecSourcePayload | ProductVariantSpecPayload
+): Partial<ProductDataCompletionFormValues> {
+  if (!source) {
+    return {}
+  }
+  return {
+    productLengthCm: source.productLengthCm,
+    productWidthCm: source.productWidthCm,
+    productHeightCm: source.productHeightCm,
+    productWeightG: source.productWeightG,
+    cartonLengthCm: source.cartonLengthCm,
+    cartonWidthCm: source.cartonWidthCm,
+    cartonHeightCm: source.cartonHeightCm,
+    cartonWeightKg: source.cartonWeightKg,
+    cartonQuantity: source.cartonQuantity
+  }
+}
+
+function findProductDataSpecSource(
+  sources: ProductVariantSpecSourcePayload[] | undefined,
+  sourceType: string
+) {
+  return (sources || []).find((source) => source.sourceType === sourceType)
+}
+
+function productDataLogisticsValuesFromProfile(profile?: ProductLogisticsProfilePayload): Partial<ProductDataCompletionFormValues> {
+  if (!profile) {
+    return {}
+  }
+  return PRODUCT_DATA_LOGISTICS_FIELDS.reduce<Partial<ProductDataCompletionFormValues>>((values, field) => {
+    values[field.key] = String(profile[field.key] || 'unknown')
+    return values
+  }, {})
+}
+
+function createProductDataLogisticsProfilePayload(
+  order: PurchaseOrder,
+  item: PurchaseOrderItem,
+  values: ProductDataCompletionFormValues
+): ProductLogisticsProfilePayload {
+  const profileConfirmed = productDataHasCompleteLogisticsValues(values)
+  return {
+    storeCode: order.storeCode,
+    skuParent: item.skuParent,
+    currentZCode: item.skuParent,
+    title: item.productTitle || item.sourceTitle,
+    imageUrl: item.productImageUrl || item.sourceImageUrl,
+    variantId: parseOptionalNumber(item.variantId),
+    partnerSku: item.partnerSku,
+    profileStatus: profileConfirmed ? 'confirmed' : 'needs_review',
+    manualConfirmRequired: !profileConfirmed,
+    batteryType: values.batteryType || 'unknown',
+    electricType: values.electricType || 'unknown',
+    magneticType: values.magneticType || 'unknown',
+    liquidType: values.liquidType || 'unknown',
+    powderType: values.powderType || 'unknown',
+    woodenMaterialType: values.woodenMaterialType || 'unknown',
+    bladeWeaponType: values.bladeWeaponType || 'unknown'
+  }
+}
+
+function validateProductDataNumberField(label: string, value: unknown, min: number, required: boolean) {
+  if (value === undefined || value === null || value === '') {
+    return required ? Promise.reject(new Error(`请填写${label}`)) : Promise.resolve()
+  }
+  const numberValue = Number(value)
+  if (!Number.isFinite(numberValue) || numberValue < min) {
+    return Promise.reject(new Error(`${label}必须大于 0`))
+  }
+  return Promise.resolve()
+}
+
+function validateProductDataAttributeField(label: string, value: unknown, required: boolean) {
+  if (!required) {
+    return Promise.resolve()
+  }
+  return isConfirmedProductDataAttribute(value)
+    ? Promise.resolve()
+    : Promise.reject(new Error(`请选择${label}`))
+}
+
+function shouldSaveProductDataSourcing(item: PurchaseOrderItem, values: ProductDataCompletionFormValues) {
+  return (
+    normalizeOptionalText(values.sourcingSpec) !== normalizeOptionalText(item.sourcingSpec) ||
+    normalizeOptionalText(values.sourcingSize) !== normalizeOptionalText(item.sourcingSize) ||
+    normalizeOptionalText(values.sourcingColor) !== normalizeOptionalText(item.sourcingColor)
+  )
+}
+
+function shouldSaveProductDataSpec(values: ProductDataCompletionFormValues) {
+  return productDataHasAnySpecValue(values)
+}
+
+function shouldSaveProductDataLogistics(item: PurchaseOrderItem, values: ProductDataCompletionFormValues) {
+  return item.logisticsAttributeComplete === false || productDataHasCompleteLogisticsValues(values)
+}
+
+function productDataHasAnySpecValue(values: ProductDataCompletionFormValues) {
+  return PRODUCT_DATA_SPEC_FIELDS.some((field) => values[field.key] !== undefined && values[field.key] !== null)
+}
+
+function productDataHasAnyProductSpecValue(values: ProductDataCompletionFormValues) {
+  return PRODUCT_DATA_PRODUCT_SPEC_FIELDS.some((field) => values[field.key] !== undefined && values[field.key] !== null)
+}
+
+function productDataHasCompleteProductSpecValues(values: ProductDataCompletionFormValues) {
+  return PRODUCT_DATA_PRODUCT_SPEC_FIELDS.every((field) => isPositiveProductDataNumber(values[field.key]))
+}
+
+function productDataHasAnyConfirmedLogisticsValue(values: ProductDataCompletionFormValues) {
+  return PRODUCT_DATA_LOGISTICS_FIELDS.some((field) => isConfirmedProductDataAttribute(values[field.key]))
+}
+
+function productDataHasCompleteLogisticsValues(values: ProductDataCompletionFormValues) {
+  return PRODUCT_DATA_LOGISTICS_FIELDS.every((field) => isConfirmedProductDataAttribute(values[field.key]))
+}
+
+function isConfirmedProductDataAttribute(value: unknown) {
+  return Boolean(value && String(value) !== 'unknown')
+}
+
+function normalizeProductDataNumber(value: unknown) {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) ? numberValue : undefined
+}
+
+function normalizeOptionalText(value: unknown) {
+  const text = typeof value === 'string' ? value.trim() : ''
+  return text || undefined
+}
+
+function isPositiveProductDataNumber(value: unknown) {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) && numberValue > 0
+}
+
+function parseOptionalNumber(value: unknown) {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : undefined
 }
 
 function hasAnyText(...values: Array<string | undefined>) {

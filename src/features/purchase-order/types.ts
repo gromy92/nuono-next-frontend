@@ -45,8 +45,23 @@ export type PurchaseOrderLogisticsQuoteChannelOption = {
   destinationNode?: string
   transitTimeText?: string
   priceSummary?: string
+  totalLineCount?: number
   pendingLineCount: number
+  confirmedLineCount?: number
   newProductLineCount: number
+  lineQuotes?: PurchaseOrderLogisticsQuoteChannelLine[]
+}
+
+export type PurchaseOrderLogisticsQuoteChannelLine = {
+  shippingOrderLineId?: string
+  purchaseOrderItemSiteId?: string
+  partnerSku?: string
+  barcode?: string
+  quoteStatus?: 'PENDING_QUOTE' | 'CONFIRMED' | string
+  unitPrice?: string | number | null
+  currency?: string
+  billingUnit?: string
+  yiteMaterial?: string
 }
 
 export type PurchaseOrderLogisticsQuoteForwarderOption = {
@@ -110,7 +125,7 @@ export type ShippingOrderLine = {
   yiteMaterial?: string
   plannedTransportMode?: PurchaseTransportMode
   quoteStatus?: 'PENDING_QUOTE' | 'CONFIRMED' | string
-  shippingSubmitStatus?: 'NOT_SUBMITTED' | 'PARTIAL_SUBMITTED' | 'SUBMITTED' | string
+  shippingSubmitStatus?: 'NOT_SUBMITTED' | 'SUBMITTED' | string
   fulfillmentType?: PurchaseOrderFulfillmentType
   unitPrice?: string | number | null
   currency?: string
@@ -130,7 +145,7 @@ export type ShippingOrderSegment = {
   serviceCode?: string
   serviceName?: string
   quoteStatus?: 'PENDING_QUOTE' | 'CONFIRMED' | string
-  shippingSubmitStatus?: 'NOT_SUBMITTED' | 'PARTIAL_SUBMITTED' | 'SUBMITTED' | string
+  shippingSubmitStatus?: 'NOT_SUBMITTED' | 'SUBMITTED' | string
   lineCount?: number
   skuCount?: number
   totalQuantity?: number
@@ -176,6 +191,20 @@ export type UpdateShippingOrderPayload = {
 
 export type UpdateShippingOrderLineYiteMaterialPayload = {
   yiteMaterial?: string
+}
+
+export type UpdateShippingOrderLineQuotePayload = {
+  forwarderCode: string
+  routeCode: string
+  unitPrice: number
+  currency: string
+  billingUnit: string
+  yiteMaterial?: string
+  remark?: string
+}
+
+export type UpdateShippingOrderLineQuotesPayload = UpdateShippingOrderLineQuotePayload & {
+  lineIds: string[]
 }
 
 export type ShippingOrderSubmitResult = {
@@ -254,6 +283,10 @@ export type PurchaseOrderItem = {
   skuParent: string
   partnerSku: string
   productFulltype?: string
+  productSpecComplete?: boolean
+  cartonSpecComplete?: boolean
+  logisticsAttributeComplete?: boolean
+  logisticsProfileStatus?: string
   productTitle: string
   productImageUrl?: string
   sourcingSpec?: string

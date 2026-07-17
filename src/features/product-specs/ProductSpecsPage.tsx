@@ -48,7 +48,7 @@ type SpecNumberField =
   | 'cartonWeightKg'
   | 'cartonQuantity';
 
-type EditableSourceType = Extract<ProductVariantSpecSourceType, 'ali1688' | 'warehouse'>;
+type EditableSourceType = Extract<ProductVariantSpecSourceType, 'ali1688'>;
 type SpecCompletenessFilter =
   | 'all'
   | 'ali1688_missing'
@@ -583,9 +583,10 @@ function DomesticSpecMatrix(props: {
   return (
     <div style={{ display: 'grid', gap: 6, width: 550, maxWidth: '100%' }}>
       <SpecGridHeader includeCarton includeSource includeEffective />
-      {(['ali1688', 'warehouse'] as EditableSourceType[]).map((sourceType) => {
+      {(['ali1688', 'warehouse'] as ProductVariantSpecSourceType[]).map((sourceType) => {
         const source = findSource(sources, sourceType);
-        const rowEditKey = buildEditKey(row, sourceType);
+        const editableSourceType: EditableSourceType | undefined = sourceType === 'ali1688' ? sourceType : undefined;
+        const rowEditKey = editableSourceType ? buildEditKey(row, editableSourceType) : undefined;
         const effective = source?.sourceId
           ? source.sourceId === effectiveSourceId
           : effectiveSourceType === sourceType;
@@ -595,23 +596,25 @@ function DomesticSpecMatrix(props: {
             label={sourceLabels[sourceType]}
             color={sourceColors[sourceType]}
             row={row}
-            sourceType={sourceType}
+            sourceType={editableSourceType}
+            cellTestSourceType={sourceType}
             sourceTestId={row.variantId ? `product-specs-source-${sourceType}-${row.variantId}` : undefined}
             source={source}
             fallback={effectiveSourceType === sourceType ? row : undefined}
             includeCarton
-            editable
+            editable={Boolean(editableSourceType)}
+            reserveEffectiveColumn={!editableSourceType}
             effective={effective}
-            editing={editingKey === rowEditKey}
+            editing={Boolean(rowEditKey && editingKey === rowEditKey)}
             draft={editingDraft}
             saving={savingKey === rowEditKey}
             selectingEffective={selectingEffectiveKey === rowEditKey}
             selectingEffectiveBlocked={Boolean(selectingEffectiveKey)}
-            onStartEdit={onStartEdit}
+            onStartEdit={editableSourceType ? onStartEdit : undefined}
             onDraftNumberChange={onDraftNumberChange}
             onCancelEdit={onCancelEdit}
-            onSaveSource={onSaveSource}
-            onSelectEffectiveSource={onSelectEffectiveSource}
+            onSaveSource={editableSourceType ? onSaveSource : undefined}
+            onSelectEffectiveSource={editableSourceType ? onSelectEffectiveSource : undefined}
           />
         );
       })}
@@ -846,7 +849,21 @@ function SpecGridRow(props: {
           />
         </Tooltip>
       ) : reserveEffectiveColumn ? (
-        <span aria-hidden="true" />
+        <Tooltip title={effective ? '当前经营生效来源' : '仓管规格由 APP 维护'}>
+          <span
+            aria-label={effective ? `当前生效${label}规格` : undefined}
+            style={{
+              display: 'inline-flex',
+              width: 20,
+              height: 20,
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: effective ? '#16a34a' : '#cbd5e1'
+            }}
+          >
+            {effective ? <CheckOutlined /> : null}
+          </span>
+        </Tooltip>
       ) : null}
       {showSource ? (
         <Space size={4} wrap style={{ minWidth: 0 }}>

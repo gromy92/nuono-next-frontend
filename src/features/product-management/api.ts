@@ -278,7 +278,7 @@ export async function saveProductVariantSpec(request: ProductVariantSpecSaveRequ
       ...request,
       currentZCode,
       skuParent: currentZCode,
-      sourceType: 'warehouse'
+      sourceType: 'ali1688'
     });
     if (!source.sourceId) {
       throw new Error('规格来源保存后缺少来源编号');
@@ -300,7 +300,7 @@ export async function saveProductVariantSpec(request: ProductVariantSpecSaveRequ
       ...request,
       currentZCode,
       skuParent: currentZCode,
-      sourceType: 'warehouse'
+      sourceType: 'ali1688'
     });
     if (!source.sourceId) {
       throw new Error('规格来源保存后缺少来源编号');
