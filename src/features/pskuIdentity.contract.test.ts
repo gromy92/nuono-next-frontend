@@ -19,6 +19,7 @@ const officialWarehouseStatisticsApi = readFileSync(
   'utf8'
 )
 const warehouseDispatch = readFileSync(join(featuresDir, 'warehouse-dispatch/WarehouseDispatchWorkbenchPage.tsx'), 'utf8')
+const warehouseDispatchApi = readFileSync(join(featuresDir, 'warehouse-dispatch/api.ts'), 'utf8')
 const ali1688SkuPurchaseHistory = readFileSync(
   join(featuresDir, 'ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage.tsx'),
   'utf8'
@@ -77,6 +78,48 @@ assert.doesNotMatch(
   warehouseDispatch,
   /\[item\.pskuCode,\s*item\.partnerSku,\s*item\.skuParent\]/,
   'warehouse dispatch product baseline lookup must not index by external pskuCode'
+)
+
+assert.doesNotMatch(
+  warehouseDispatchApi,
+  /psku:\s*line\.partnerSku \|\| line\.skuParent/,
+  'warehouse dispatch plan line PSKU display must not fall back to external skuParent'
+)
+
+assert.doesNotMatch(
+  warehouseDispatchApi,
+  /const psku = item\.partnerSku \|\| item\.skuParent/,
+  'warehouse dispatch ready item PSKU display must not fall back to external skuParent'
+)
+
+assert.match(
+  warehouseDispatch,
+  /function readyShipmentBusinessScopeKey\(item: ReadyShipmentRow\)/,
+  'warehouse dispatch ready-row key must be scoped by shipping business dimensions'
+)
+
+assert.doesNotMatch(
+  warehouseDispatch,
+  /const key = normalizeProductKey\(item\.psku\) \|\| item\.id/,
+  'warehouse dispatch ready rows must not merge only by PSKU'
+)
+
+assert.match(
+  warehouseDispatch,
+  /sourceStoreScope[\s\S]*productScope[\s\S]*item\.siteCode[\s\S]*fulfillmentScope[\s\S]*item\.specStatus/,
+  'warehouse dispatch ready-row key must keep source store, PSKU, site, fulfillment, and spec status'
+)
+
+assert.match(
+  warehouseDispatch,
+  /function receiptProductBusinessScopeKey\(item: PurchaseReceiptItem\)/,
+  'warehouse dispatch receipt-row key must be scoped by business dimensions'
+)
+
+assert.doesNotMatch(
+  warehouseDispatch,
+  /const rowId = key/,
+  'warehouse dispatch receipt rows must not use PSKU-only row IDs'
 )
 
 assert.doesNotMatch(

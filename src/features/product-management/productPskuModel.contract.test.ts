@@ -199,8 +199,14 @@ assert.match(
 
 assert.match(
   api,
-  /saveProductVariantSpec[\s\S]*saveProductSpecSource\([\s\S]*sourceType: 'warehouse'[\s\S]*selectProductSpecEffectiveSource/,
-  'embedded product spec table save must use by-psku source save and effective-source selection when partnerSku is present'
+  /saveProductVariantSpec[\s\S]*saveProductSpecSource\([\s\S]*sourceType: 'ali1688'[\s\S]*selectProductSpecEffectiveSource/,
+  'embedded Web product spec save must write the 1688 source and select it as effective when partnerSku is present'
+);
+
+assert.match(
+  productSpecsPage,
+  /sourceType === 'ali1688'[\s\S]*editable=\{Boolean\(editableSourceType\)\}/,
+  'Web product specs page must only expose editing for the 1688 source'
 );
 
 assert.match(

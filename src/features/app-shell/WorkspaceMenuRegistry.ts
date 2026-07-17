@@ -302,7 +302,8 @@ export const WORKSPACE_MENU_DEFINITIONS: Record<AppMenuKey, WorkspaceMenuDefinit
     pathLabel: '仓储 / 发货单',
     tabLabel: '发货单',
     contentKind: 'warehouse-shipping-order',
-    closable: true
+    closable: true,
+    visibleInSidebar: false
   },
   'warehouse-logistics-bill': {
     key: 'warehouse-logistics-bill',
@@ -574,7 +575,6 @@ export const WORKSPACE_SECTION_DEFINITIONS: WorkspaceSectionDefinition[] = [
     label: '仓储',
     iconKey: 'warehouse',
     entries: [
-      { type: 'workspace', key: 'warehouse-shipping-order' },
       { type: 'workspace', key: 'warehouse-logistics-bill' },
       { type: 'workspace', key: 'warehouse-dispatch' },
       { type: 'workspace', key: 'official-warehouse' }
@@ -747,7 +747,12 @@ export const WORKSPACE_GRANTED_MENU_RULES: Array<{
       '/warehouse/official-warehouse-stock',
       '/storage/warehouse'
     ],
-    urlPathPrefixes: ['/api/warehouse/dispatch', '/api/warehouse/official-warehouse'],
+    urlPathPrefixes: [
+      '/api/warehouse/dispatch',
+      '/api/warehouse/official-warehouse',
+      '/api/procurement/purchase-orders/shipping-orders',
+      '/api/procurement/purchase-orders/logistics-bills'
+    ],
     menuNames: [
       '发货单',
       '仓库发货单',

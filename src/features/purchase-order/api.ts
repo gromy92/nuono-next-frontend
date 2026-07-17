@@ -13,6 +13,8 @@ import type {
   PurchaseOrderShippingSubmitResult,
   ShippingOrder,
   ShippingOrderSubmitResult,
+  UpdateShippingOrderLineQuotePayload,
+  UpdateShippingOrderLineQuotesPayload,
   UpdateShippingOrderLineYiteMaterialPayload,
   UpdatePurchaseOrderItemPayload,
   UpdateShippingOrderPayload,
@@ -169,13 +171,20 @@ export function loadShippingOrders(keyword?: string) {
     params.set('keyword', keyword.trim())
   }
   const suffix = params.toString() ? `?${params.toString()}` : ''
-  return getJson<ShippingOrder[]>(`/api/procurement/purchase-orders/shipping-orders${suffix}`, '读取发货单失败')
+  return getJson<ShippingOrder[]>(`/api/procurement/purchase-orders/shipping-orders${suffix}`, '读取仓库单失败')
+}
+
+export function loadAssignedShippingPurchaseOrderIds() {
+  return getJson<string[]>(
+    '/api/procurement/purchase-orders/shipping-orders/assigned-purchase-order-ids',
+    '读取仓库单占用失败'
+  )
 }
 
 export function loadShippingOrder(shippingOrderId: string) {
   return getJson<ShippingOrder>(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}`,
-    '读取发货单失败'
+    '读取仓库单失败'
   )
 }
 
@@ -184,7 +193,7 @@ export function createShippingOrder(payload: CreateShippingOrderPayload) {
     '/api/procurement/purchase-orders/shipping-orders',
     'POST',
     payload,
-    '创建发货单失败'
+    '创建仓库单失败'
   )
 }
 
@@ -193,7 +202,7 @@ export function updateShippingOrder(shippingOrderId: string, payload: UpdateShip
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}`,
     'PUT',
     payload,
-    '保存发货单失败'
+    '保存仓库单失败'
   )
 }
 
@@ -207,6 +216,31 @@ export function updateShippingOrderLineYiteMaterial(
     'PUT',
     payload,
     '保存义特材质失败'
+  )
+}
+
+export function updateShippingOrderLineQuote(
+  shippingOrderId: string,
+  lineId: string,
+  payload: UpdateShippingOrderLineQuotePayload
+) {
+  return sendJson<ShippingOrder>(
+    `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/lines/${encodeURIComponent(lineId)}/quote`,
+    'PUT',
+    payload,
+    '保存商品报价失败'
+  )
+}
+
+export function updateShippingOrderLineQuotes(
+  shippingOrderId: string,
+  payload: UpdateShippingOrderLineQuotesPayload
+) {
+  return sendJson<ShippingOrder>(
+    `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/lines/quotes`,
+    'PUT',
+    payload,
+    '批量保存商品报价失败'
   )
 }
 
@@ -228,7 +262,7 @@ export function loadShippingOrderLogisticsQuoteOptionsForScope(shippingOrderId: 
 
 export async function exportShippingOrderLogisticsQuoteReport(
   shippingOrderId: string,
-  selection: PurchaseOrderLogisticsQuoteExportSelection & { segmentIds?: string[] }
+  selection: PurchaseOrderLogisticsQuoteExportSelection & { segmentIds?: string[]; missingOnly?: boolean }
 ) {
   const params = new URLSearchParams({
     forwarderCode: selection.forwarderCode,
@@ -236,6 +270,9 @@ export async function exportShippingOrderLogisticsQuoteReport(
   })
   for (const segmentId of selection.segmentIds || []) {
     params.append('segmentIds', segmentId)
+  }
+  if (selection.missingOnly) {
+    params.set('missingOnly', 'true')
   }
   const response = await apiFetch(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/logistics-quote-report?${params.toString()}`
@@ -264,21 +301,12 @@ export async function importShippingOrderLogisticsQuoteReport(shippingOrderId: s
   )
 }
 
-export function submitShippingOrder(shippingOrderId: string, segmentIds?: string[]) {
+export function submitShippingOrder(shippingOrderId: string) {
   return sendJson<ShippingOrderSubmitResult>(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/submit-shipping`,
     'POST',
-    { segmentIds: segmentIds || [] },
+    {},
     '提交发货失败'
-  )
-}
-
-export function generateShippingOrderExpectedBill(shippingOrderId: string, segmentIds?: string[]) {
-  return sendJson<LogisticsBill>(
-    `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/expected-bill`,
-    'POST',
-    { segmentIds: segmentIds || [] },
-    '生成预估账单失败'
   )
 }
 

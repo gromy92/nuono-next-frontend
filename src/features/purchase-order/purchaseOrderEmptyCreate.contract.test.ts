@@ -87,7 +87,7 @@ assert.doesNotMatch(
 
 assert.match(
   pageSource,
-  /function handleSubmitOrder\(order: PurchaseOrder\)[\s\S]*const issueSummary = summarizeOrderIssues\(order\)[\s\S]*hasSealBlockingIssues\(issueSummary\)[\s\S]*appMessage\.warning\('请先补齐采购单的站点运输、数量和规格信息后再封存。'\)[\s\S]*modal\.confirm/,
+  /function handleSubmitOrder\(order: PurchaseOrder\)[\s\S]*const issueSummary = summarizeOrderIssues\(order\)[\s\S]*hasSealBlockingIssues\(issueSummary\)[\s\S]*appMessage\.warning\('请先补齐采购单的站点运输和数量信息后再封存。'\)[\s\S]*modal\.confirm/,
   'sealing must pre-check known blocking item issues before opening the irreversible confirmation'
 )
 
