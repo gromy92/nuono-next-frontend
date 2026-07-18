@@ -7,7 +7,18 @@ export type ProductImageAssetStatus = 'ACTIVE' | 'REMOVED'
 export type ProductImageProcessingStatus = 'PENDING' | 'PROCESSED'
 export type ProductImageComplianceStatus = 'PASS' | 'FAIL' | 'UNKNOWN'
 export type ProductImageSectionType = 'SIZE' | 'CORE_FEATURE' | 'MATERIAL_DETAIL' | 'USAGE_SCENE' | 'PACKAGE_LIST'
-export type ProductImageSuiteStatus = 'DRAFT' | 'ADOPTED' | 'HISTORICAL' | 'DISCARDED'
+export type ProductImageSuiteStatus =
+  | 'DRAFT'
+  | 'ADOPTED'
+  | 'HISTORICAL'
+  | 'DISCARDED'
+  | 'PENDING_GENERATION'
+  | 'GENERATING'
+  | 'PENDING_REVIEW'
+  | 'REGENERATING'
+  | 'PUBLISHING'
+  | 'ONLINE'
+  | 'FAILED'
 export type ProductImageSuiteAssetRole = 'MAIN' | 'SIZE' | 'CORE_FEATURE' | 'MATERIAL_DETAIL' | 'USAGE_SCENE' | 'PACKAGE_LIST'
 
 export type ProductImageProfileAssetView = {
@@ -62,12 +73,15 @@ export type ProductImageSectionView = {
 export type ProductImageSuiteAssetView = {
   id?: number | null
   imageRole?: ProductImageSuiteAssetRole | null
+  roleOrdinal?: number | null
   imageUrl?: string | null
   sortOrder?: number | null
 }
 
 export type ProductImageSuiteView = {
   id: number
+  parentSuiteId?: number | null
+  revisionNo?: number | null
   suiteName?: string | null
   skinId?: number | null
   skinName?: string | null
@@ -75,6 +89,11 @@ export type ProductImageSuiteView = {
   draftPackageJson?: string | null
   draftPromptText?: string | null
   suiteStatus: ProductImageSuiteStatus
+  reviewComment?: string | null
+  failureStage?: string | null
+  failureReason?: string | null
+  reviewedAt?: string | null
+  publishedAt?: string | null
   adoptedAt?: string | null
   updatedAt?: string | null
   assets?: ProductImageSuiteAssetView[] | null
@@ -447,16 +466,61 @@ export async function adoptProductImageSuite(
 export async function createProductImageSuiteDraft(
   profileId: number,
   ownerUserId: number,
-  storeCode: string
+  storeCode: string,
+  skinId: number
 ) {
   const params = new URLSearchParams({
     ownerUserId: String(ownerUserId),
     storeCode
   })
   const response = await apiFetch(`${profilePath(profileId)}/suites/ai-draft?${params.toString()}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ skinId })
+  })
+  return parseApiResponse<ProductImageProfileDetailView>(response, '申请做图失败')
+}
+
+export async function approveProductImageSuite(
+  profileId: number,
+  suiteId: number,
+  ownerUserId: number,
+  storeCode: string
+) {
+  const params = new URLSearchParams({ ownerUserId: String(ownerUserId), storeCode })
+  const response = await apiFetch(`${profilePath(profileId)}/suites/${suiteId}/approve?${params.toString()}`, {
     method: 'POST'
   })
-  return parseApiResponse<ProductImageProfileDetailView>(response, 'AI 套图草稿生成失败')
+  return parseApiResponse<ProductImageProfileDetailView>(response, '审核通过失败')
+}
+
+export async function rejectProductImageSuite(
+  profileId: number,
+  suiteId: number,
+  ownerUserId: number,
+  storeCode: string,
+  request: { assetIds: number[]; comment: string; wholeSuite: boolean }
+) {
+  const params = new URLSearchParams({ ownerUserId: String(ownerUserId), storeCode })
+  const response = await apiFetch(`${profilePath(profileId)}/suites/${suiteId}/reject?${params.toString()}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request)
+  })
+  return parseApiResponse<ProductImageProfileDetailView>(response, '审核不通过提交失败')
+}
+
+export async function retryProductImageSuite(
+  profileId: number,
+  suiteId: number,
+  ownerUserId: number,
+  storeCode: string
+) {
+  const params = new URLSearchParams({ ownerUserId: String(ownerUserId), storeCode })
+  const response = await apiFetch(`${profilePath(profileId)}/suites/${suiteId}/retry?${params.toString()}`, {
+    method: 'POST'
+  })
+  return parseApiResponse<ProductImageProfileDetailView>(response, '重试失败')
 }
 
 export async function extractProductImageFacts(
