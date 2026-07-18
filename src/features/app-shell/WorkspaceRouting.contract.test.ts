@@ -157,12 +157,13 @@ try {
     }
   })
   windowLocation.pathname = '/product/manual-selection'
-  windowLocation.search = '?devSession=1&devAccount=xingyao&devStore=STR245027-NSA&devSite=SA'
+  windowLocation.search = '?devSession=1&devOwner=307&devAccount=xingyao&devStore=STR245027-NSA&devSite=SA'
 
   const target = withCurrentWorkspaceDevQuery('/purchase/listing?listingSource=manual-selection')
   const [, searchText] = target.split('?')
   const params = new URLSearchParams(searchText)
   assert.equal(params.get('listingSource'), 'manual-selection')
+  assert.equal(params.get('devOwner'), '307')
   assert.equal(params.get('devAccount'), 'canman')
   assert.equal(params.get('devStore'), 'STR108065-NSA')
   assert.equal(params.get('devSite'), 'SA')

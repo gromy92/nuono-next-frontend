@@ -37,7 +37,6 @@ const noonCallStoreDataPage = read('src/features/system-reports/NoonCallStoreDat
 const noonDataCompletenessPage = read('src/features/system-reports/NoonDataCompletenessPage.tsx')
 const noonDataGapPatrolPage = read('src/features/system-reports/NoonDataGapPatrolPage.tsx')
 const storeReportApi = read('src/features/system-reports/api.ts')
-const workspaceRouting = read('src/features/app-shell/WorkspaceRouting.ts')
 const competitorPage = read('src/features/competitor-analysis/CompetitorAnalysisPage.tsx')
 const competitorDashboard = read('src/features/competitor-analysis/CompetitorDashboardTab.tsx')
 const competitorPriceChangeTab = read('src/features/competitor-analysis/CompetitorPriceChangeTab.tsx')
@@ -106,9 +105,6 @@ assertNotIncludes(noonDataGapPatrolPage, 'echarts.use', 'NoonDataGapPatrolPage')
 assertIncludes(storeReportApi, "import { apiFetch } from '../../shared/api'", 'system reports api')
 assertIncludes(storeReportApi, 'apiFetch(url)', 'system reports api')
 assertIncludes(storeReportApi, "apiFetch(url, { method: 'POST' })", 'system reports api')
-
-assertIncludes(workspaceRouting, "'devOwner'", 'WorkspaceRouting dev query preservation')
-assertIncludes(workspaceRouting, "'devAccount'", 'WorkspaceRouting dev query preservation')
 
 assertIncludes(competitorDashboard, 'RankChangePanel', 'CompetitorDashboardTab rank change panel composition')
 assertIncludes(competitorPriceChangeTab, 'CompetitorAttributeChangePanel', 'CompetitorPriceChangeTab attribute change panel composition')
