@@ -19,7 +19,7 @@ import { App, Button, Checkbox, Empty, Input, Modal, Popconfirm, Select, Space, 
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AuthSession } from '../auth/session'
 import {
-  adoptProductImageSuite,
+  approveProductImageSuite,
   addProductImageProfileAssetUsages,
   batchRemoveProductImageProfileAssets,
   createProductImageSuiteDraft,
@@ -32,7 +32,9 @@ import {
   fetchProductImageProfileSummaries,
   importProductImageProfileAssetUrls,
   moveProductImageSuiteAsset,
+  rejectProductImageSuite,
   removeProductImageProfileAssetUsage,
+  retryProductImageSuite,
   saveProductImageProfile,
   updateProductImageProfileAssetRole,
   updateProductImageProfileAssetUsage,
@@ -50,6 +52,8 @@ import {
   type ProductImageSuiteAssetRole as ApiSuiteAssetRole,
   type ProductImageSuiteStatus as ApiSuiteStatus
 } from './api'
+import { fetchOperationsSkins } from '../operations-skin-management/api'
+import type { OperationsSkinView } from '../operations-skin-management/types'
 import { normalizeNoonImageUrl } from '../product-management/utils'
 import { createSourceCollection, loadSourceCollections } from '../source-collection/api'
 import type { ProductSelectionSourceCollection } from '../source-collection/types'
@@ -140,6 +144,7 @@ type ProductImageSuiteAsset = {
   id: string
   backendId?: number
   imageRole: SuiteAssetRole
+  roleOrdinal: number
   title: string
   imageUrl?: string
   sortOrder: number
@@ -156,6 +161,9 @@ type ProductImageSuite = {
   draftPackageJson?: string
   draftPromptText?: string
   suiteStatus: SuiteStatus
+  reviewComment?: string
+  failureReason?: string
+  publishedAt?: string
   createdAt: string
   adoptedAt?: string
   assets: ProductImageSuiteAsset[]
@@ -221,7 +229,14 @@ const suiteStatusMeta: Record<SuiteStatus, { label: string; color: string }> = {
   DRAFT: { label: '候选', color: 'blue' },
   ADOPTED: { label: '当前采用', color: 'green' },
   HISTORICAL: { label: '历史采用', color: 'default' },
-  DISCARDED: { label: '废弃', color: 'red' }
+  DISCARDED: { label: '废弃', color: 'red' },
+  PENDING_GENERATION: { label: '待做图', color: 'default' },
+  GENERATING: { label: '做图中', color: 'processing' },
+  PENDING_REVIEW: { label: '待审核', color: 'warning' },
+  REGENERATING: { label: '重新做图中', color: 'processing' },
+  PUBLISHING: { label: '发布中', color: 'processing' },
+  ONLINE: { label: '已上线', color: 'success' },
+  FAILED: { label: '失败', color: 'error' }
 }
 
 const suiteAssetRoleLabel: Record<SuiteAssetRole, string> = {
@@ -392,6 +407,7 @@ function buildSuiteAssets(colors: string[]): ProductImageSuiteAsset[] {
   return roles.map((role, index) => ({
     id: `${role}-${index}`,
     imageRole: role,
+    roleOrdinal: 1,
     title: suiteAssetRoleLabel[role],
     sortOrder: index + 1,
     accent: colors[index] || '#94a3b8'
@@ -575,13 +591,17 @@ function mapBackendProfile(profile: ProductImageProfileDetailView): ProductImage
       draftPackageJson: optionalText(suite.draftPackageJson) || undefined,
       draftPromptText: optionalText(suite.draftPromptText) || undefined,
       suiteStatus: suite.suiteStatus,
+      reviewComment: optionalText(suite.reviewComment) || undefined,
+      failureReason: optionalText(suite.failureReason) || undefined,
+      publishedAt: optionalText(suite.publishedAt) || undefined,
       createdAt: optionalText(suite.updatedAt),
       adoptedAt: optionalText(suite.adoptedAt) || undefined,
       assets: (suite.assets ?? []).map((asset, assetIndex) => ({
         id: asset.id ? `suite-asset-${asset.id}` : `suite-asset-${suite.id}-${assetIndex}`,
         backendId: optionalNumber(asset.id),
         imageRole: asset.imageRole || 'MAIN',
-        title: suiteAssetRoleLabel[asset.imageRole || 'MAIN'],
+        roleOrdinal: asset.roleOrdinal ?? 1,
+        title: `${suiteAssetRoleLabel[asset.imageRole || 'MAIN']}${asset.roleOrdinal ?? 1}`,
         imageUrl: optionalText(asset.imageUrl) || undefined,
         sortOrder: asset.sortOrder ?? assetIndex + 1,
         accent: accentAt(assetIndex)
@@ -797,6 +817,16 @@ function profileCompleteness(profile: ProductImageProfile) {
   if (hasHero && hasAssets && hasFactText) return { label: '资料完整', color: 'success' as const }
   if (hasAssets || hasHero) return { label: '待补充', color: 'warning' as const }
   return { label: '未维护', color: 'default' as const }
+}
+
+function missingGenerationProfileFields(profile: ProductImageProfile) {
+  const missing: string[] = []
+  if (!profile.brand.trim()) missing.push('品牌')
+  if (!profile.titleAr.trim() && !profile.titleEn.trim()) missing.push('英文或阿语标题')
+  if (!profile.specSummary.trim()) missing.push('规格摘要')
+  if (!profile.productFactText.trim() && !buildDefaultProductFactText(profile).trim()) missing.push('商品事实资料')
+  if (!activeAssets(profile).length) missing.push('基础图片')
+  return missing
 }
 
 function profileDisplayTitle(profile: ProductImageProfile) {
@@ -1313,7 +1343,7 @@ function AiPromptSectionList({
 }
 
 export function ProductImageProfilePage({ session }: ProductImageProfilePageProps) {
-  const { message } = App.useApp()
+  const { message, modal } = App.useApp()
   const [profiles, setProfiles] = useState<ProductImageProfile[]>([])
   const [selectedProfileId, setSelectedProfileId] = useState('')
   const [keyword, setKeyword] = useState('')
@@ -1323,6 +1353,13 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
   const [uploading, setUploading] = useState(false)
   const [removingAssets, setRemovingAssets] = useState(false)
   const [creatingSuiteDraft, setCreatingSuiteDraft] = useState(false)
+  const [availableSkins, setAvailableSkins] = useState<OperationsSkinView[]>([])
+  const [selectedSkinId, setSelectedSkinId] = useState<number>()
+  const [reviewingSuite, setReviewingSuite] = useState<ProductImageSuite | null>(null)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewWholeSuite, setReviewWholeSuite] = useState(false)
+  const [reviewAssetIds, setReviewAssetIds] = useState<Set<number>>(() => new Set())
+  const [submittingSuiteAction, setSubmittingSuiteAction] = useState(false)
   const [extractingImageFacts, setExtractingImageFacts] = useState(false)
   const [assetImportOpen, setAssetImportOpen] = useState(false)
   const [aiCopyModalOpen, setAiCopyModalOpen] = useState(false)
@@ -1359,6 +1396,34 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
   const storeName = currentStoreName(session)
   const operatorName = currentOperatorName(session)
 
+  const validActiveSkins = useMemo(() => availableSkins.filter((skin) => {
+    const required = skin.heroComponentRequiredCount ?? 4
+    return skin.status === 'ACTIVE' && (skin.heroComponentCount ?? 0) >= required
+  }), [availableSkins])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!storeCode) {
+      setAvailableSkins([])
+      setSelectedSkinId(undefined)
+      return () => { cancelled = true }
+    }
+    void fetchOperationsSkins({ storeCode, status: 'ACTIVE' })
+      .then((skins) => {
+        if (cancelled) return
+        setAvailableSkins(skins)
+        const valid = skins.filter((skin) => (skin.heroComponentCount ?? 0) >= (skin.heroComponentRequiredCount ?? 4))
+        setSelectedSkinId((current) => valid.some((skin) => skin.id === current) ? current : valid[0]?.id)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAvailableSkins([])
+          setSelectedSkinId(undefined)
+        }
+      })
+    return () => { cancelled = true }
+  }, [storeCode])
+
   useEffect(() => {
     let cancelled = false
     async function loadProfiles() {
@@ -1383,8 +1448,8 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
           setProfiles(items)
           setSelectedProfileId((currentId) => items.some((item) => item.id === currentId) ? currentId : items[0].id)
         } else {
-          setProfiles(mockProfiles)
-          setSelectedProfileId(mockProfiles[0]?.id || '')
+          setProfiles([])
+          setSelectedProfileId('')
         }
       } catch (error) {
         if (cancelled) return
@@ -1534,6 +1599,24 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
       cancelled = true
     }
   }, [requestOwnerId, selectedProfile?.backendId, selectedProfile?.detailLoaded, selectedProfile?.id, storeCode])
+
+  useEffect(() => {
+    const runningStatuses: SuiteStatus[] = ['PENDING_GENERATION', 'GENERATING', 'REGENERATING', 'PUBLISHING']
+    const hasRunningSuite = selectedProfile?.suites.some((suite) => runningStatuses.includes(suite.suiteStatus))
+    if (!selectedProfile?.backendId || !hasRunningSuite) return undefined
+    let cancelled = false
+    const timer = window.setInterval(() => {
+      void fetchProductImageProfileDetail(selectedProfile.backendId!, { ownerUserId: requestOwnerId, storeCode })
+        .then((response) => {
+          if (!cancelled) replaceSelectedProfile(selectedProfile.id, mapBackendProfile(response))
+        })
+        .catch(() => undefined)
+    }, 5000)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [requestOwnerId, selectedProfile?.backendId, selectedProfile?.id, selectedProfile?.suites, storeCode])
 
   const copyPskuCode = (pskuCode: string, sourceElement?: HTMLElement | null) => {
     try {
@@ -1926,6 +2009,21 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
       message.warning('当前店铺不能为空')
       return
     }
+    const missing = missingGenerationProfileFields(selectedProfile)
+    if (missing.length) {
+      modal.confirm({
+        title: '请先完成商品基础资料',
+        content: `还缺少：${missing.join('、')}。补充完整后再申请做图。`,
+        okText: '去完善资料',
+        cancelText: '取消',
+        onOk: () => setActiveProfileTab(missing.includes('基础图片') ? 'assets' : 'elements')
+      })
+      return
+    }
+    if (!selectedSkinId) {
+      message.warning(validActiveSkins.length ? '请选择一个皮肤' : '当前店铺没有可用的完整皮肤')
+      return
+    }
     setCreatingSuiteDraft(true)
     try {
       const persistedProfile = await persistProfile(selectedProfile, false)
@@ -1933,11 +2031,16 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
         message.error('请先保存商品图资料')
         return
       }
-      const saved = await createProductImageSuiteDraft(persistedProfile.backendId, requestOwnerId, storeCode)
+      const saved = await createProductImageSuiteDraft(
+        persistedProfile.backendId,
+        requestOwnerId,
+        storeCode,
+        selectedSkinId
+      )
       replaceSelectedProfile(persistedProfile.id, mapBackendProfile(saved))
-      message.success('AI 套图草稿已生成')
+      message.success('已提交做图')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : 'AI 套图草稿生成失败')
+      message.error(error instanceof Error ? error.message : '申请做图失败')
     } finally {
       setCreatingSuiteDraft(false)
     }
@@ -2238,31 +2341,72 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
     }
   }
 
-  const adoptSuite = async (suite: ProductImageSuite) => {
-    if (selectedProfile?.backendId && suite.backendId) {
-      try {
-        const saved = await adoptProductImageSuite(selectedProfile.backendId, suite.backendId, requestOwnerId, storeCode)
-        replaceSelectedProfile(selectedProfile.id, mapBackendProfile(saved))
-        message.success('已标记为当前采用套图')
-        return
-      } catch (error) {
-        message.error(error instanceof Error ? error.message : 'AI 套图采用失败')
-        return
-      }
+  const approveSuite = async (suite: ProductImageSuite) => {
+    if (!selectedProfile?.backendId || !suite.backendId) return
+    setSubmittingSuiteAction(true)
+    try {
+      const saved = await approveProductImageSuite(
+        selectedProfile.backendId, suite.backendId, requestOwnerId, storeCode
+      )
+      replaceSelectedProfile(selectedProfile.id, mapBackendProfile(saved))
+      message.success('审核已通过，正在自动发布到 Noon')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '审核通过失败')
+    } finally {
+      setSubmittingSuiteAction(false)
     }
-    patchSelectedProfile((profile) => ({
-      ...profile,
-      suites: profile.suites.map((candidate) => {
-        if (candidate.id === suite.id) {
-          return { ...candidate, suiteStatus: 'ADOPTED', adoptedAt: '刚刚' }
-        }
-        if (candidate.suiteStatus === 'ADOPTED') {
-          return { ...candidate, suiteStatus: 'HISTORICAL' }
-        }
-        return candidate
-      })
-    }))
-    message.success('已标记为当前采用套图')
+  }
+
+  const openRejectSuite = (suite: ProductImageSuite) => {
+    setReviewingSuite(suite)
+    setReviewComment('')
+    setReviewWholeSuite(false)
+    setReviewAssetIds(new Set())
+  }
+
+  const submitRejectSuite = async () => {
+    if (!selectedProfile?.backendId || !reviewingSuite?.backendId) return
+    if (!reviewComment.trim()) {
+      message.warning('请填写整套审核意见')
+      return
+    }
+    if (!reviewWholeSuite && !reviewAssetIds.size) {
+      message.warning('请选择需要重做的图片，或选择整套重做')
+      return
+    }
+    setSubmittingSuiteAction(true)
+    try {
+      const saved = await rejectProductImageSuite(
+        selectedProfile.backendId,
+        reviewingSuite.backendId,
+        requestOwnerId,
+        storeCode,
+        { assetIds: Array.from(reviewAssetIds), comment: reviewComment.trim(), wholeSuite: reviewWholeSuite }
+      )
+      replaceSelectedProfile(selectedProfile.id, mapBackendProfile(saved))
+      setReviewingSuite(null)
+      message.success('审核意见已提交，正在重新做图')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '审核不通过提交失败')
+    } finally {
+      setSubmittingSuiteAction(false)
+    }
+  }
+
+  const retrySuite = async (suite: ProductImageSuite) => {
+    if (!selectedProfile?.backendId || !suite.backendId) return
+    setSubmittingSuiteAction(true)
+    try {
+      const saved = await retryProductImageSuite(
+        selectedProfile.backendId, suite.backendId, requestOwnerId, storeCode
+      )
+      replaceSelectedProfile(selectedProfile.id, mapBackendProfile(saved))
+      message.success('已重新提交任务')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '重试失败')
+    } finally {
+      setSubmittingSuiteAction(false)
+    }
   }
 
   const removeSuite = async (suite: ProductImageSuite) => {
@@ -2764,19 +2908,25 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                 children: activeProfileTab === 'suites' ? (
                   <div className="product-image-profile-tab-body">
                     <div className="product-image-profile-tab-actions product-image-profile-suite-toolbar">
+                      <Select
+                        placeholder="选择皮肤"
+                        style={{ minWidth: 220 }}
+                        value={selectedSkinId}
+                        options={validActiveSkins.map((skin) => ({ label: skin.skinName, value: skin.id }))}
+                        onChange={setSelectedSkinId}
+                      />
                       <Button
                         icon={<FileImageOutlined />}
                         loading={creatingSuiteDraft}
                         onClick={() => void createSuiteDraft()}
                       >
-                        生成 AI 套图草稿
+                        申请做图
                       </Button>
                     </div>
                     {selectedProfile.suites.length ? (
                       <div className="product-image-profile-suite-list">
                         {selectedProfile.suites.map((suite) => {
                           const status = suiteStatusMeta[suite.suiteStatus]
-                          const canAdoptSuite = suite.suiteStatus === 'DRAFT' && suite.assets.length > 0
                           const otherSuites = selectedProfile.suites.filter((candidate) => candidate.id !== suite.id && candidate.backendId)
                           return (
                             <div className="product-image-profile-suite-card" key={suite.id}>
@@ -2816,26 +2966,38 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                               ) : (
                                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无套图图片" />
                               )}
+                              {suite.reviewComment ? <Text type="secondary">审核意见：{suite.reviewComment}</Text> : null}
+                              {suite.failureReason ? <Text type="danger">失败原因：{suite.failureReason}</Text> : null}
                               <div className="product-image-profile-suite-actions">
                                 {suite.draftPromptText ? (
                                   <Button icon={<CopyOutlined />} onClick={() => copySuiteDraftText(suite)}>
                                     复制草稿
                                   </Button>
                                 ) : null}
-                                {suite.suiteStatus === 'DRAFT' ? (
+                                {suite.suiteStatus === 'PENDING_REVIEW' ? (
                                   <>
                                     <Button
-                                      disabled={!canAdoptSuite}
                                       icon={<CheckCircleOutlined />}
+                                      loading={submittingSuiteAction}
                                       type="primary"
-                                      onClick={() => void adoptSuite(suite)}
+                                      onClick={() => void approveSuite(suite)}
                                     >
-                                      采用
+                                      审核通过并发布
+                                    </Button>
+                                    <Button
+                                      loading={submittingSuiteAction}
+                                      onClick={() => openRejectSuite(suite)}
+                                    >
+                                      不通过
                                     </Button>
                                   </>
-                                ) : (
-                                  <Text type="secondary">{suite.adoptedAt ? `采用时间：${suite.adoptedAt}` : '无采用记录'}</Text>
-                                )}
+                                ) : null}
+                                {suite.suiteStatus === 'FAILED' ? (
+                                  <Button loading={submittingSuiteAction} onClick={() => void retrySuite(suite)}>重试</Button>
+                                ) : null}
+                                {suite.suiteStatus === 'ONLINE' ? (
+                                  <Text type="secondary">{suite.publishedAt ? `上线时间：${suite.publishedAt}` : 'Noon 已回读确认'}</Text>
+                                ) : null}
                                 <Popconfirm
                                   cancelText="取消"
                                   okText="删除"
@@ -3116,6 +3278,60 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
             }
           ]}
         />
+      </Modal>
+      <Modal
+        open={Boolean(reviewingSuite)}
+        title="审核不通过"
+        okText="提交并重新做图"
+        cancelText="取消"
+        confirmLoading={submittingSuiteAction}
+        onCancel={() => setReviewingSuite(null)}
+        onOk={() => void submitRejectSuite()}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <TextArea
+            maxLength={2000}
+            placeholder="填写整套图的审核意见（必填）"
+            rows={4}
+            showCount
+            value={reviewComment}
+            onChange={(event) => setReviewComment(event.target.value)}
+          />
+          <Checkbox
+            checked={reviewWholeSuite}
+            onChange={(event) => {
+              setReviewWholeSuite(event.target.checked)
+              if (event.target.checked) setReviewAssetIds(new Set())
+            }}
+          >
+            整套重做
+          </Checkbox>
+          {!reviewWholeSuite ? (
+            <div>
+              <Text type="secondary">选择需要重做的图片：</Text>
+              <Space direction="vertical" style={{ display: 'flex', marginTop: 8 }}>
+                {(reviewingSuite?.assets ?? []).map((asset) => (
+                  <Checkbox
+                    checked={Boolean(asset.backendId && reviewAssetIds.has(asset.backendId))}
+                    disabled={!asset.backendId}
+                    key={asset.id}
+                    onChange={(event) => {
+                      if (!asset.backendId) return
+                      setReviewAssetIds((current) => {
+                        const next = new Set(current)
+                        if (event.target.checked) next.add(asset.backendId!)
+                        else next.delete(asset.backendId!)
+                        return next
+                      })
+                    }}
+                  >
+                    {suiteAssetRoleLabel[asset.imageRole]}{asset.roleOrdinal}
+                  </Checkbox>
+                ))}
+              </Space>
+            </div>
+          ) : null}
+        </Space>
       </Modal>
       <Modal
         onCancel={() => setAiCopyModalOpen(false)}
