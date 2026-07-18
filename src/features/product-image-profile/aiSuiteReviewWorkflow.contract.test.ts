@@ -5,6 +5,9 @@ import path from 'node:path'
 const apiSource = fs.readFileSync(path.join(process.cwd(), 'src/features/product-image-profile/api.ts'), 'utf8')
 const pageSource = fs.readFileSync(path.join(process.cwd(), 'src/features/product-image-profile/ProductImageProfilePage.tsx'), 'utf8')
 
+assert.equal(apiSource.includes('productVariantId'), false, '商品图 API 不应再传递 variant_id')
+assert.equal(pageSource.includes('productVariantId'), false, '商品图页面不应再依赖 variant_id')
+
 assert.equal(pageSource.includes('missingGenerationProfileFields'), true, '申请做图前必须检查基础资料')
 assert.equal(pageSource.includes('请先完成商品基础资料'), true, '基础资料缺失时必须提示用户先完善')
 assert.equal(pageSource.includes('fetchOperationsSkins'), true, '申请做图必须从有效皮肤中选择')

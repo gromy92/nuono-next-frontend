@@ -106,7 +106,6 @@ export type ProductImageProfileDetailView = {
   pskuCode?: string | null
   productIdentityKey?: string | null
   productMasterId?: number | null
-  productVariantId?: number | null
   productTitle?: string | null
   brand?: string | null
   titleAr?: string | null
@@ -127,7 +126,6 @@ export type ProductImageProfileSummaryView = {
   pskuCode?: string | null
   productIdentityKey?: string | null
   productMasterId?: number | null
-  productVariantId?: number | null
   productTitle?: string | null
   brand?: string | null
   titleAr?: string | null
@@ -217,7 +215,6 @@ export type ProductImageProfileSaveRequest = {
   pskuCode: string
   productIdentityKey?: string
   productMasterId?: number
-  productVariantId?: number
   productTitle?: string
   brand?: string
   titleAr?: string

@@ -176,7 +176,6 @@ type ProductImageProfile = {
   storeCode?: string
   productIdentityKey?: string
   productMasterId?: number
-  productVariantId?: number
   pskuCode: string
   productTitle: string
   brand: string
@@ -522,7 +521,7 @@ function backendProfileId(profile: ProductImageProfileDetailView | ProductImageP
   if (profile.id) {
     return `profile-${profile.id}`
   }
-  return `candidate-${optionalText(profile.pskuCode)}-${optionalText(profile.productIdentityKey) || optionalText(profile.productVariantId?.toString())}`
+  return `candidate-${optionalText(profile.pskuCode)}-${optionalText(profile.productIdentityKey)}`
 }
 
 function mapBackendProfile(profile: ProductImageProfileDetailView): ProductImageProfile {
@@ -560,7 +559,6 @@ function mapBackendProfile(profile: ProductImageProfileDetailView): ProductImage
     storeCode: optionalText(profile.storeCode) || undefined,
     productIdentityKey: optionalText(profile.productIdentityKey) || undefined,
     productMasterId: optionalNumber(profile.productMasterId),
-    productVariantId: optionalNumber(profile.productVariantId),
     pskuCode: optionalText(profile.pskuCode),
     productTitle: optionalText(profile.productTitle),
     brand: optionalText(profile.brand),
@@ -632,7 +630,6 @@ function mapBackendProfileSummary(profile: ProductImageProfileSummaryView): Prod
     storeCode: optionalText(profile.storeCode) || undefined,
     productIdentityKey: optionalText(profile.productIdentityKey) || undefined,
     productMasterId: optionalNumber(profile.productMasterId),
-    productVariantId: optionalNumber(profile.productVariantId),
     pskuCode: optionalText(profile.pskuCode),
     productTitle: optionalText(profile.productTitle),
     brand: optionalText(profile.brand),
@@ -665,7 +662,6 @@ function buildSaveRequest(profile: ProductImageProfile, ownerUserId: number, sto
     pskuCode: profile.pskuCode,
     productIdentityKey: profile.productIdentityKey,
     productMasterId: profile.productMasterId,
-    productVariantId: profile.productVariantId,
     productTitle: profile.productTitle,
     brand: profile.brand,
     titleAr: profile.titleAr,
