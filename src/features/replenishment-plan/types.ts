@@ -96,6 +96,7 @@ export type ReplenishmentPlanInboundBatch = {
   batchStatus: string | null
   etaDate: string | null
   remainingQuantity: ReplenishmentQuantity
+  destinationCode: string | null
   coverageIncluded: boolean
   etaReviewRequired: boolean
 }
@@ -106,4 +107,5 @@ export type ReplenishmentPlanMissingEtaBatch = {
   transportMode: string | null
   batchStatus: string | null
   remainingQuantity: ReplenishmentQuantity
+  destinationCode: string | null
 }
