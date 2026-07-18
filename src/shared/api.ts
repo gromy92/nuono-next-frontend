@@ -121,6 +121,32 @@ export function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
   return fetch(input, { ...init, headers });
 }
 
+export type ApiErrorFallback = string | ((status: number) => string)
+
+function resolveApiErrorFallback(status: number, fallback?: ApiErrorFallback) {
+  return typeof fallback === 'function' ? fallback(status) : fallback
+}
+
+export async function apiRequestJson<T>(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  fallback?: ApiErrorFallback
+): Promise<T> {
+  const response = await apiFetch(input, init)
+  return parseApiResponse<T>(response, resolveApiErrorFallback(response.status, fallback))
+}
+
+export async function apiRequestNoContent(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+  fallback?: ApiErrorFallback
+): Promise<void> {
+  const response = await apiFetch(input, init)
+  if (!response.ok) {
+    throw await readApiError(response, resolveApiErrorFallback(response.status, fallback))
+  }
+}
+
 export async function parseApiResponse<T>(response: Response, fallback?: string): Promise<T> {
   if (!response.ok) {
     throw await readApiError(response, fallback);

@@ -64,7 +64,6 @@
     {"path":"src/features/official-warehouse/statisticsDomain.contract.test.ts","ceiling":504},
     {"path":"src/features/official-warehouse/statisticsDomain.ts","ceiling":772},
     {"path":"src/features/official-warehouse/statisticsTypes.ts","ceiling":318},
-    {"path":"src/features/operations-config/api.ts","ceiling":507},
     {"path":"src/features/operations-config/OperationConfigVersionLibraryPage.tsx","ceiling":1155},
     {"path":"src/features/operations-config/OperationsConfigPage.css","ceiling":661},
     {"path":"src/features/operations-skin-management/OperationsSkinManagementPage.css","ceiling":545},
