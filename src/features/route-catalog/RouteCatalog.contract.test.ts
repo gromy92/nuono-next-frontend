@@ -11,7 +11,8 @@ import {
   WORKSPACE_SECTION_DEFINITIONS,
   assertRouteCatalogIntegrity,
   routeCatalogIntegrityIssues,
-  workspaceMenuDefinition
+  workspaceMenuDefinition,
+  workspaceMenuMount
 } from './RouteCatalog'
 import {
   matchGrantedMenuToWorkspaceMenuKeys,
@@ -128,6 +129,27 @@ assert.deepEqual(ALL_WORKSPACE_MENU_KEYS, EXPECTED_MENU_KEYS)
 assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 37)
 assert.equal(WORKSPACE_SECTION_DEFINITIONS.length, 11)
 assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 26)
+const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
+  (definition) => typeof definition.workspaceMount === 'function'
+)
+assert.deepEqual(mountedDefinitions.map((definition) => definition.key), ['system-file-management'])
+for (const definition of Object.values(WORKSPACE_MENU_DEFINITIONS)) {
+  assert.notEqual(
+    typeof definition.contentKind === 'string',
+    typeof definition.workspaceMount === 'function',
+    `${definition.key} must declare exactly one workspace mount strategy`
+  )
+}
+const systemFileManagementDefinition = workspaceMenuDefinition('system-file-management')
+assert.equal('contentKind' in systemFileManagementDefinition, false)
+assert.equal(typeof systemFileManagementDefinition.workspaceMount, 'function')
+assert.equal(Object.isFrozen(systemFileManagementDefinition.workspaceMount), true)
+assert.strictEqual(
+  workspaceMenuMount('system-file-management'),
+  workspaceMenuMount('system-file-management'),
+  'Catalog must return a stable module-level mount Adapter'
+)
+assert.equal(workspaceMenuMount('purchase-order'), null)
 assert.deepEqual(routeCatalogIntegrityIssues(), [])
 assert.doesNotThrow(assertRouteCatalogIntegrity)
 assertDeepFrozen(ALL_WORKSPACE_MENU_KEYS, 'ALL_WORKSPACE_MENU_KEYS')
@@ -211,3 +233,19 @@ for (const adapter of [registryAdapter, routingAdapter]) {
   assert.doesNotMatch(adapter, /\/purchase\/order|WORKSPACE_MENU_DEFINITIONS\s*=|WORKSPACE_GRANTED_MENU_RULES\s*=/)
   assert.ok(adapter.split('\n').length <= 300)
 }
+
+const administrationRoutesSource = readFileSync(
+  join(process.cwd(), 'src/features/route-catalog/administrationRoutes.ts'),
+  'utf8'
+)
+const shellLazySource = readFileSync(
+  join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'),
+  'utf8'
+)
+const shellContentSource = readFileSync(
+  join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
+  'utf8'
+)
+assert.match(administrationRoutesSource, /import\('\.\.\/ai-file-parse\/AiFileParseBoard'\)/)
+assert.doesNotMatch(shellLazySource, /AiFileParseBoard|system-file-management/)
+assert.doesNotMatch(shellContentSource, /AiFileParseBoard|system-file-management/)

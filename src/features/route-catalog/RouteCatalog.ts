@@ -20,6 +20,7 @@ import type {
   WorkspaceGrantedMenuRule,
   WorkspaceSectionDefinition
 } from './routeDefinitions'
+import type { WorkspaceMountAdapter } from './workspaceMount'
 
 export type {
   AppMenuKey,
@@ -145,6 +146,10 @@ export function workspaceMenuTabLabel(menuKey: AppMenuKey) {
 
 export function workspaceMenuContentKind(menuKey: AppMenuKey) {
   return workspaceMenuDefinition(menuKey).contentKind
+}
+
+export function workspaceMenuMount(menuKey: AppMenuKey): WorkspaceMountAdapter | null {
+  return workspaceMenuDefinition(menuKey).workspaceMount ?? null
 }
 
 export function isProductWorkspaceMenu(menuKey: AppMenuKey) {

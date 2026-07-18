@@ -1,3 +1,5 @@
+import type { WorkspaceMountAdapter } from './workspaceMount'
+
 export type WorkspaceSectionKey =
   | 'home'
   | 'product'
@@ -48,20 +50,18 @@ export type WorkspaceContentKind =
   | 'operations-config-versions'
   | 'operations-business-calendar'
   | 'operations-lifecycle-rules'
-  | 'system-file-management'
   | 'user-account'
   | 'user-role'
   | 'system-menu'
   | 'system-role'
 
-export type WorkspaceMenuDefinitionBase<MenuKey extends string = string> = {
+type WorkspaceMenuDefinitionCommon<MenuKey extends string> = {
   readonly key: MenuKey
   readonly label: string
   readonly path: string
   readonly sectionKey: WorkspaceSectionKey
   readonly pathLabel: string
   readonly tabLabel: string
-  readonly contentKind: WorkspaceContentKind
   readonly closable: boolean
   readonly sidebarOrder?: number
   readonly routeAliases?: readonly string[]
@@ -69,6 +69,19 @@ export type WorkspaceMenuDefinitionBase<MenuKey extends string = string> = {
   readonly visibleInSidebar?: boolean
   readonly visibleInWorkspaceTabs?: boolean
 }
+
+export type WorkspaceMountStrategy =
+  | {
+      readonly contentKind: WorkspaceContentKind
+      readonly workspaceMount?: never
+    }
+  | {
+      readonly workspaceMount: WorkspaceMountAdapter
+      readonly contentKind?: never
+    }
+
+export type WorkspaceMenuDefinitionBase<MenuKey extends string = string> =
+  WorkspaceMenuDefinitionCommon<MenuKey> & WorkspaceMountStrategy
 
 export type WorkspaceSidebarEntryBase<MenuKey extends string> =
   | { readonly type: 'workspace'; readonly key: MenuKey }
