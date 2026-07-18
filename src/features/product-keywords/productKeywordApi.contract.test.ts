@@ -13,8 +13,6 @@ function source(path: string) {
 
 const apiSource = source('src/features/product-keywords/api.ts')
 const typesSource = source('src/features/product-keywords/types.ts')
-const lazySource = source('src/features/app-shell/ShellWorkspaceLazyComponents.tsx')
-const contentSource = source('src/features/app-shell/ShellWorkspaceContent.tsx')
 const sessionSource = source('src/features/app-shell/ShellSessionStorage.ts')
 
 assert.match(apiSource, /\/api\/product-keywords/)
@@ -48,8 +46,6 @@ assert.deepEqual(
   matchGrantedMenuToWorkspaceMenuKeys({ menuId: 9804, menuName: '关键词数据', urlPath: '/api/product-keywords' }),
   ['operations-product-keywords']
 )
-assert.match(lazySource, /ProductKeywordDataPage/)
-assert.match(contentSource, /ProductKeywordDataPage/)
 assert.match(sessionSource, /OPERATIONS_PRODUCT_KEYWORDS_PATH/)
 assert.match(sessionSource, /search\.get\('grantProductKeywords'\)/)
 assert.match(sessionSource, /menuId:\s*9804/)

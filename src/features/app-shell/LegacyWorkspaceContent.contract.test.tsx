@@ -1,6 +1,9 @@
 import { strict as assert } from 'node:assert'
+import { isValidElement, type ReactElement } from 'react'
 import { WORKSPACE_MENU_DEFINITIONS } from '../route-catalog/RouteCatalog'
+import { LazyWorkspaceBoundary } from '../route-catalog/workspaceMount'
 import { renderLegacyWorkspaceContent } from './LegacyWorkspaceContent'
+import { ProductKeywordDataPage } from './ShellWorkspaceLazyComponents'
 import type { ShellWorkspaceRenderContext } from './ShellWorkspaceContent.types'
 
 const context = {
@@ -40,6 +43,13 @@ for (const definition of legacyDefinitions) {
     `${definition.key} must keep its compatibility renderer`
   )
 }
+
+const keywordContent = renderLegacyWorkspaceContent('operations-product-keywords', context)
+assert.equal(isValidElement(keywordContent), true)
+const keywordBoundary = keywordContent as ReactElement<{ children: ReactElement }>
+assert.strictEqual(keywordBoundary.type, LazyWorkspaceBoundary)
+assert.strictEqual(keywordBoundary.props.children.type, ProductKeywordDataPage)
+
 assert.throws(
   () => renderLegacyWorkspaceContent('system-file-management', context),
   /does not declare a legacy content kind/
