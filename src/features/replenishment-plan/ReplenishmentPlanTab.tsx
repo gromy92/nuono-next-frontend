@@ -40,7 +40,8 @@ const BLOCKING_WARNING_LABELS: Record<string, string> = {
   daily_forecast_gap: '未来 1-100 天预测不完整',
   stock_fact_missing: '缺少库存事实',
   fbn_stock_fact_missing: '缺少 FBN 库存',
-  forecast_fact_expired: '预测事实已过期'
+  forecast_fact_expired: '预测事实已过期',
+  inbound_site_unresolved: '在途目的站点无法确认'
 }
 
 type ReplenishmentPlanTabProps = {
@@ -456,8 +457,8 @@ export function ReplenishmentPlanTab({ session, purchaseOrdersRevision, onPurcha
             <Text className="replenishment-plan-primary">{formatQuantity(item.knownInboundUnits)}</Text>
             <Text type="secondary" className="replenishment-plan-inline-muted">最近 {formatMonthDay(item.nearestInboundEtaDate) || '-'}</Text>
           </div>
-          {renderInboundBatchGroup(item.inboundBatches, 'known', planDate)}
-          {renderInboundBatchGroup(item.missingEtaBatches, 'missing', planDate)}
+          {renderInboundBatchGroup(item.inboundBatches, 'known', planDate, overview?.siteCode || query?.siteCode || '')}
+          {renderInboundBatchGroup(item.missingEtaBatches, 'missing', planDate, overview?.siteCode || query?.siteCode || '')}
         </Space>
       )
     },
@@ -955,7 +956,8 @@ function hasSeaSuggestion(item: ReplenishmentPlanItem) {
 function renderInboundBatchGroup(
   batches: Array<ReplenishmentPlanInboundBatch | ReplenishmentPlanMissingEtaBatch> | undefined,
   kind: 'known' | 'missing',
-  planDate: string
+  planDate: string,
+  siteCode: string
 ) {
   if (!batches?.length) {
     return null
@@ -968,12 +970,18 @@ function renderInboundBatchGroup(
           const etaDate = 'etaDate' in batch ? batch.etaDate : null
           const etaDistanceText = etaDate ? formatEtaDistanceDays(etaDate, planDate) : ''
           const etaDisplay = etaDate ? `${formatMonthDay(etaDate)}${etaDistanceText ? ` ${etaDistanceText}` : ''}` : 'ETA 未维护'
+          const destinationDisplay = batch.destinationCode
+            ? `${batch.destinationCode} / ${siteCode || '-'}`
+            : siteCode || '-'
           return (
             <div
               className={`replenishment-plan-inbound-batch${etaReviewRequired ? ' replenishment-plan-inbound-batch-review' : ''}`}
               key={inboundBatchKey(batch, index)}
             >
-              <Text type="secondary" className="replenishment-plan-inbound-ref">{batch.batchReferenceNo || `#${batch.batchId || '-'}`}</Text>
+              <span className="replenishment-plan-inbound-identity">
+                <Text type="secondary" className="replenishment-plan-inbound-ref">{batch.batchReferenceNo || `#${batch.batchId || '-'}`}</Text>
+                <Text type="secondary" className="replenishment-plan-inbound-destination">{destinationDisplay}</Text>
+              </span>
               <Text type="secondary" className="replenishment-plan-inbound-quantity">{formatQuantity(batch.remainingQuantity)}</Text>
               <Text
                 type={etaReviewRequired || kind === 'missing' ? 'danger' : undefined}

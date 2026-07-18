@@ -166,6 +166,7 @@ assertTypeHasFields('ReplenishmentPlanInboundBatch', [
   'batchStatus',
   'etaDate',
   'remainingQuantity',
+  'destinationCode',
   'coverageIncluded',
   'etaReviewRequired'
 ])
@@ -174,7 +175,8 @@ assertTypeHasFields('ReplenishmentPlanMissingEtaBatch', [
   'batchReferenceNo',
   'transportMode',
   'batchStatus',
-  'remainingQuantity'
+  'remainingQuantity',
+  'destinationCode'
 ])
 
 assert.match(tabSource, /loadPurchaseOrders/, 'ReplenishmentPlanTab must load existing purchase orders')
@@ -349,8 +351,11 @@ assert.match(tabSource, /待判断/, 'ReplenishmentPlanTab must label recent pas
 assert.match(tabSource, /item\.inboundBatches/, 'ReplenishmentPlanTab must render known ETA inbound batch list from API data')
 assert.match(tabSource, /item\.missingEtaBatches/, 'ReplenishmentPlanTab must render missing ETA batch list from API data')
 assert.match(tabSource, /replenishment-plan-inbound-summary/, 'inbound summary row must use the same aligned column system')
-assert.match(tabSource, /renderInboundBatchGroup\(item\.inboundBatches,\s*['"]known['"],\s*planDate\)/, 'known inbound rows must use the page plan date for ETA distance')
+assert.match(tabSource, /renderInboundBatchGroup\(item\.inboundBatches,\s*['"]known['"],\s*planDate,\s*overview\?\.siteCode \|\| query\?\.siteCode \|\| ['"]['"]\)/, 'known inbound rows must use the page plan date and exact page site')
 assert.match(tabSource, /formatEtaDistanceDays\(etaDate,\s*planDate\)/, 'inbound ETA rows must show distance from today after the date')
+assert.match(tabSource, /batch\.destinationCode[\s\S]*batch\.destinationCode\} \/ \$\{siteCode/, 'inbound rows must display destination and site together')
+assert.match(tabSource, /replenishment-plan-inbound-destination/, 'inbound destination must have a dedicated non-truncated display line')
+assert.match(tabSource, /inbound_site_unresolved:\s*['"]在途目的站点无法确认['"]/, 'unresolved inbound destination must have a blocking user-facing label')
 assert.match(tabSource, /replenishment-plan-inbound-eta/, 'inbound ETA date should have a dedicated emphasis class')
 assert.match(tabSource, /replenishment-plan-inbound-quantity/, 'inbound quantity should have a weak display class')
 const inboundBatchCssBlock = cssSource.match(/\.replenishment-plan-inbound-batch \{[\s\S]*?\}/)?.[0] || ''
