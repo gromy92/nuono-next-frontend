@@ -1,5 +1,6 @@
 import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from './types'
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
+import { createLazyWorkspaceMount } from './workspaceMount'
 
 export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'system-file-management': {
@@ -9,7 +10,9 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'system',
     pathLabel: '系统管理 / 文件管理',
     tabLabel: '文件管理',
-    contentKind: 'system-file-management',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../ai-file-parse/AiFileParseBoard').then((module) => ({ default: module.AiFileParseBoard }))
+    ),
     closable: true,
     sidebarOrder: 1,
     routeAliases: ['/system/ai-file-parse']

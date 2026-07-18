@@ -37,6 +37,10 @@ const shellWorkspaceContentSource = fs.readFileSync(
   path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
   'utf8'
 )
+const legacyCommerceWorkspaceSource = fs.readFileSync(
+  path.join(process.cwd(), 'src/features/app-shell/LegacyCommerceWorkspaceContent.tsx'),
+  'utf8'
+)
 const shellWorkspaceNavigationSource = fs.readFileSync(
   path.join(process.cwd(), 'src/features/app-shell/useShellWorkspaceNavigation.tsx'),
   'utf8'
@@ -62,6 +66,12 @@ assert.deepEqual(
   ['user-role'],
   'workspace content should mount one pane for menu aliases that share a top tab'
 )
+assert.deepEqual(workspaceContentMountKeys('system-file-management', []), ['system-file-management'])
+assert.deepEqual(
+  workspaceContentMountKeys('product-manage', ['system-file-management']),
+  ['system-file-management', 'product-manage'],
+  'an opened file-management pane must stay mounted while another tab is active'
+)
 assert.deepEqual(WORKSPACE_MENU_DEFINITIONS['official-warehouse'].routeAliases, [
   '/warehouse/fbn',
   '/storage/warehouse',
@@ -75,8 +85,8 @@ assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-listing'), t
 assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-pre-order-profit'), false)
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/listing'), 'purchase-listing')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/pre-order-profit'), null)
-assert.equal(shellWorkspaceContentSource.includes('ProductListingPage'), true)
-assert.equal(shellWorkspaceContentSource.includes('PreOrderProfitPage'), false)
+assert.equal(legacyCommerceWorkspaceSource.includes('ProductListingPage'), true)
+assert.equal(legacyCommerceWorkspaceSource.includes('PreOrderProfitPage'), false)
 assert.equal(
   fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
     '../pre-order-profit/'

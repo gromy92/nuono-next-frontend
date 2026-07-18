@@ -5,14 +5,29 @@ import {
   WORKSPACE_MENU_DEFINITIONS,
   type AppMenuKey
 } from './routeDefinitions'
+import type { WorkspaceMountStrategy } from './types'
 
 const knownMenuKey: AppMenuKey = 'purchase-order'
 assert.equal(knownMenuKey, 'purchase-order')
+
+const legacyStrategy: WorkspaceMountStrategy = { contentKind: 'purchase-order' }
+const mountedStrategy: WorkspaceMountStrategy = { workspaceMount: () => null }
+assert.equal(legacyStrategy.contentKind, 'purchase-order')
+assert.equal(typeof mountedStrategy.workspaceMount, 'function')
 
 if (false) {
   // @ts-expect-error AppMenuKey is the exact union derived from route definition record keys.
   const unknownMenuKey: AppMenuKey = 'not-a-route'
   assert.ok(unknownMenuKey)
+  // @ts-expect-error A route definition must declare one mount strategy.
+  const missingStrategy: WorkspaceMountStrategy = {}
+  assert.ok(missingStrategy)
+  // @ts-expect-error A route definition cannot declare both mount strategies.
+  const conflictingStrategy: WorkspaceMountStrategy = {
+    contentKind: 'purchase-order',
+    workspaceMount: () => null
+  }
+  assert.ok(conflictingStrategy)
 }
 
 const knownKeys = new Set(Object.keys(WORKSPACE_MENU_DEFINITIONS))

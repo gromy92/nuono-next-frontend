@@ -1,6 +1,8 @@
 export type RouteDefinitionReference = {
   readonly key: string
   readonly tabKey?: string
+  readonly contentKind?: string
+  readonly workspaceMount?: unknown
 }
 
 export type GrantRuleReference = {
@@ -20,6 +22,17 @@ export function routeReferenceIntegrityIssues(
     }
     if (definition.tabKey && !knownKeys.has(definition.tabKey)) {
       issues.push(`unknown tab key for ${recordKey}: ${definition.tabKey}`)
+    }
+    const hasContentKind = typeof definition.contentKind === 'string'
+    const declaresWorkspaceMount = Object.prototype.hasOwnProperty.call(definition, 'workspaceMount')
+    const hasWorkspaceMount = typeof definition.workspaceMount === 'function'
+    if (declaresWorkspaceMount && !hasWorkspaceMount) {
+      issues.push(`invalid workspace mount for ${recordKey}`)
+    }
+    if (!hasContentKind && !declaresWorkspaceMount) {
+      issues.push(`missing workspace mount strategy for ${recordKey}`)
+    } else if (hasContentKind && declaresWorkspaceMount) {
+      issues.push(`conflicting workspace mount strategies for ${recordKey}`)
     }
   }
 
