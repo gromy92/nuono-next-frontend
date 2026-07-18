@@ -12,7 +12,8 @@ function missingBatch(
     batchReferenceNo,
     transportMode: 'SEA',
     batchStatus: 'in_transit',
-    remainingQuantity
+    remainingQuantity,
+    destinationCode: null
   }
 }
 
