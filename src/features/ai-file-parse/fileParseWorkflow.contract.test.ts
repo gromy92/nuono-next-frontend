@@ -93,10 +93,15 @@ assert.deepEqual(rows.map((row) => [row.naturalKey, row.changeType]), [
 const featureDir = dirname(fileURLToPath(import.meta.url));
 const boardSource = readFileSync(join(featureDir, 'AiFileParseBoard.tsx'), 'utf8');
 const sourceWorkflow = readFileSync(join(featureDir, 'useFileParseSourceWorkflow.ts'), 'utf8');
+const reviewWorkflow = readFileSync(join(featureDir, 'useFileParseReviewWorkflow.ts'), 'utf8');
+const snapshotWorkflow = readFileSync(join(featureDir, 'useFileParseSnapshot.ts'), 'utf8');
 const apiSource = readFileSync(join(featureDir, 'api.ts'), 'utf8');
 assert.ok(boardSource.split(/\r?\n/).length <= 300);
 assert.doesNotMatch(boardSource, /AiFileParseBoardView/);
 assert.match(sourceWorkflow, /void showRunResult\(String\(created\.id\), 'file-parse-create-run'\)/);
+assert.match(reviewWorkflow, /\[detailLoadRevision, selectedTask\?\.id\]/);
+assert.match(snapshotWorkflow, /setDetailLoadRevision\(\(current\) => current \+ 1\)/);
+assert.match(snapshotWorkflow, /Promise\.all\(\[\s*fetchFileParseProcessingItems\(taskId\),\s*fetchFileParseOverviewItems\(taskId\),\s*fetchFileParseVersions\(detailTask\.targetPlanId\)/);
 assert.match(apiSource, /from '\.\.\/\.\.\/shared\/api'/);
 assert.doesNotMatch(apiSource, /\/workflow|\/source-rows|\/ai-chunks|\/validation-issues/);
 for (const deletedFile of [

@@ -45,6 +45,7 @@ export function useFileParseSnapshot(input: SnapshotInput) {
   const [snapshots, setSnapshots] = useState<AiParseVersionSnapshotItem[]>([]);
   const [resultFields, setResultFields] = useState<AiParseStandardField[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [detailLoadRevision, setDetailLoadRevision] = useState(0);
   const [detailTab, setDetailTab] = useState('processing');
   const [compareBaseVersionId, setCompareBaseVersionId] = useState('');
   const [compareTargetVersionId, setCompareTargetVersionId] = useState('');
@@ -101,6 +102,7 @@ export function useFileParseSnapshot(input: SnapshotInput) {
   );
 
   const loadDetailData = async (taskId: string) => {
+    setDetailLoadRevision((current) => current + 1);
     setDetailLoading(true);
     try {
       const detail = await fetchFileParseTaskDetail(taskId);
@@ -109,28 +111,35 @@ export function useFileParseSnapshot(input: SnapshotInput) {
         ? current.map((task) => task.id === detailTask.id ? { ...task, ...detailTask, stats: task.stats } : task)
         : [detailTask, ...current]);
       const hasResults = !['reading', 'parsing', 'retry_waiting', 'failed'].includes(detailTask.status);
-      const versionView = await fetchFileParseVersions(detailTask.targetPlanId).catch(() => null);
-      const nextVersions = versionView?.items.map((version) => mapVersion(
-        version,
-        targetPlans.find((plan) => plan.id === String(version.targetPlanId))
-      )) ?? [];
-      setVersions(nextVersions);
       if (!hasResults) {
+        const versionView = await fetchFileParseVersions(detailTask.targetPlanId).catch(() => null);
+        setVersions(versionView?.items.map((version) => mapVersion(
+          version,
+          targetPlans.find((plan) => plan.id === String(version.targetPlanId))
+        )) ?? []);
         setItems([]);
         setOverviewItems([]);
         setResultFields([]);
         setSnapshots([]);
         return;
       }
-      const [processingView, overviewView, snapshotViews] = await Promise.all([
+      const [processingView, overviewView, versionView] = await Promise.all([
         fetchFileParseProcessingItems(taskId),
         fetchFileParseOverviewItems(taskId),
-        Promise.all(nextVersions.map((version) => fetchFileParseVersionItems(version.id).catch(() => null)))
+        fetchFileParseVersions(detailTask.targetPlanId)
       ]);
+      const nextVersions = versionView.items.map((version) => mapVersion(
+        version,
+        targetPlans.find((plan) => plan.id === String(version.targetPlanId))
+      ));
+      const snapshotViews = await Promise.all(
+        nextVersions.map((version) => fetchFileParseVersionItems(version.id).catch(() => null))
+      );
       const nextItems = processingView.items.map(mapProcessingItem);
       setItems(nextItems);
       setOverviewItems(overviewView.items.map(mapOverviewItem));
       setResultFields(mapColumnsToFields(processingView.columns.length ? processingView.columns : overviewView.columns));
+      setVersions(nextVersions);
       setSnapshots(snapshotViews.flatMap((view) => view?.items ?? []).map(mapVersionSnapshotItem));
       setTasks((current) => current.map((task) => task.id === detailTask.id ? {
         ...task,
@@ -175,6 +184,7 @@ export function useFileParseSnapshot(input: SnapshotInput) {
     blockingItems,
     overviewItems,
     detailLoading,
+    detailLoadRevision,
     detailTab,
     setDetailTab,
     allResultFields,

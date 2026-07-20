@@ -127,6 +127,18 @@ try {
     fileParseApi.fetchFileParseTasks(),
     (error) => error instanceof Error && error.message === '后端拒绝'
   );
+
+  globalThis.fetch = async () => Response.json({ code: 'FILE_PARSE_CONFLICT' }, { status: 409 });
+  await assert.rejects(
+    fileParseApi.fetchFileParseTasks(),
+    (error) => error instanceof Error && error.message === '{"code":"FILE_PARSE_CONFLICT"}'
+  );
+
+  globalThis.fetch = async () => Response.json({ message: 'No message available' }, { status: 500 });
+  await assert.rejects(
+    fileParseApi.fetchFileParseTasks(),
+    (error) => error instanceof Error && error.message === 'No message available'
+  );
 } finally {
   globalThis.fetch = previousFetch;
   if (previousWindow) Object.defineProperty(globalThis, 'window', previousWindow);

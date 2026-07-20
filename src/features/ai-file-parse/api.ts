@@ -1,9 +1,4 @@
-import {
-  apiFetch,
-  apiRequestJson,
-  apiRequestNoContent,
-  readApiError
-} from '../../shared/api';
+import { apiFetch } from '../../shared/api';
 import type {
   FileParseBatchReviewPayload,
   FileParseLogisticsActivationPayload,
@@ -67,12 +62,37 @@ function withQuery(path: string, params: Record<string, string | number | undefi
   return query.size ? `${path}?${query.toString()}` : path;
 }
 
+async function responseError(response: Response) {
+  let message = `后端返回 ${response.status}`;
+  try {
+    const text = (await response.text()).trim();
+    if (text) {
+      try {
+        const payload = JSON.parse(text) as { message?: string; error?: string };
+        message = payload.message || payload.error || text;
+      } catch {
+        message = text;
+      }
+    }
+  } catch {
+    // Keep the status fallback when the response body cannot be read.
+  }
+  return new Error(message);
+}
+
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await apiFetch(path, init);
+  if (!response.ok) throw await responseError(response);
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
+}
+
 function jsonRequest<T>(path: string, body: unknown, idempotencyKey?: string) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (idempotencyKey) {
     headers['Idempotency-Key'] = idempotencyKey;
   }
-  return apiRequestJson<T>(path, {
+  return requestJson<T>(path, {
     method: 'POST',
     headers,
     body: JSON.stringify(body)
@@ -87,7 +107,7 @@ export function createFileParseIdempotencyKey(prefix: string) {
 }
 
 export function fetchFileParseTargetPlans() {
-  return apiRequestJson<FileParseTargetPlanPayload[]>('/api/file-management/parse/target-plans');
+  return requestJson<FileParseTargetPlanPayload[]>('/api/file-management/parse/target-plans');
 }
 
 export function fetchFileParseTasks(params?: {
@@ -97,24 +117,24 @@ export function fetchFileParseTasks(params?: {
   page?: number;
   pageSize?: number;
 }) {
-  return apiRequestJson<FileParseTaskListPayload>(
+  return requestJson<FileParseTaskListPayload>(
     withQuery('/api/file-management/parse/tasks', params ?? {})
   );
 }
 
 export function fetchFileParseTaskDetail(taskId: string | number) {
-  return apiRequestJson<FileParseTaskDetailPayload>(`/api/file-management/parse/tasks/${taskId}`);
+  return requestJson<FileParseTaskDetailPayload>(`/api/file-management/parse/tasks/${taskId}`);
 }
 
 export function deleteFileParseTask(taskId: string | number) {
-  return apiRequestNoContent(`/api/file-management/parse/tasks/${taskId}`, { method: 'DELETE' });
+  return requestJson<void>(`/api/file-management/parse/tasks/${taskId}`, { method: 'DELETE' });
 }
 
 export function uploadFileParseInput(targetPlanId: string | number, file: File) {
   const formData = new FormData();
   formData.set('targetPlanId', String(targetPlanId));
   formData.set('file', file);
-  return apiRequestJson<FileParseUploadPayload>('/api/file-management/parse/uploads', {
+  return requestJson<FileParseUploadPayload>('/api/file-management/parse/uploads', {
     method: 'POST',
     body: formData
   });
@@ -125,19 +145,19 @@ export function createFileParseTask(payload: CreateTaskPayload, idempotencyKey: 
 }
 
 export function runFileParseTask(taskId: string | number) {
-  return apiRequestJson<FileParseRunPayload>(`/api/file-management/parse/tasks/${taskId}/run`, {
+  return requestJson<FileParseRunPayload>(`/api/file-management/parse/tasks/${taskId}/run`, {
     method: 'POST'
   });
 }
 
 export function fetchFileParseProcessingItems(taskId: string | number, pageSize = 1000) {
-  return apiRequestJson<FileParseProcessingItemsPayload>(
+  return requestJson<FileParseProcessingItemsPayload>(
     withQuery(`/api/file-management/parse/tasks/${taskId}/processing-items`, { page: 1, pageSize })
   );
 }
 
 export function fetchFileParseOverviewItems(taskId: string | number, pageSize = 1000) {
-  return apiRequestJson<FileParseOverviewItemsPayload>(
+  return requestJson<FileParseOverviewItemsPayload>(
     withQuery(`/api/file-management/parse/tasks/${taskId}/overview-items`, { page: 1, pageSize })
   );
 }
@@ -149,7 +169,7 @@ export function buildFileParseOverviewExportUrl(taskId: string | number) {
 export async function downloadFileParseOverview(taskId: string | number) {
   const response = await apiFetch(buildFileParseOverviewExportUrl(taskId));
   if (!response.ok) {
-    throw await readApiError(response);
+    throw await responseError(response);
   }
   const disposition = response.headers.get('Content-Disposition') ?? '';
   const match = disposition.match(/filename\*=UTF-8''([^;]+)/);
@@ -160,13 +180,13 @@ export async function downloadFileParseOverview(taskId: string | number) {
 }
 
 export function fetchFileParseVersions(targetPlanId: string | number, pageSize = 100) {
-  return apiRequestJson<FileParseVersionListPayload>(
+  return requestJson<FileParseVersionListPayload>(
     withQuery(`/api/file-management/parse/target-plans/${targetPlanId}/versions`, { page: 1, pageSize })
   );
 }
 
 export function fetchFileParseVersionItems(versionId: string | number, pageSize = 1000) {
-  return apiRequestJson<FileParseVersionItemsPayload>(
+  return requestJson<FileParseVersionItemsPayload>(
     withQuery(`/api/file-management/parse/versions/${versionId}/items`, { page: 1, pageSize })
   );
 }
@@ -213,7 +233,7 @@ export function fetchFileParseLogisticsActivations(
   targetPlanId: string | number,
   versionId?: string | number
 ) {
-  return apiRequestJson<FileParseLogisticsActivationPayload>(
+  return requestJson<FileParseLogisticsActivationPayload>(
     withQuery('/api/file-management/parse/logistics-channel-activations', { targetPlanId, versionId })
   );
 }

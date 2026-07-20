@@ -26,6 +26,7 @@ type ReviewWorkflowInput = {
   blockingItems: AiParseResultItem[];
   selectedStandard: AiParseDocumentStandard | undefined;
   permission: AiParseRolePermission;
+  detailLoadRevision: number;
   setActionLoading: Dispatch<SetStateAction<boolean>>;
   loadTasks: (selectedTaskId?: string) => Promise<AiParseTask[]>;
   loadDetailData: (taskId: string) => Promise<void>;
@@ -34,6 +35,7 @@ type ReviewWorkflowInput = {
 export function useFileParseReviewWorkflow(input: ReviewWorkflowInput) {
   const {
     blockingItems,
+    detailLoadRevision,
     loadDetailData,
     loadTasks,
     messageApi,
@@ -60,7 +62,7 @@ export function useFileParseReviewWorkflow(input: ReviewWorkflowInput) {
 
   useEffect(() => {
     setSelectedItemIds([]);
-  }, [selectedTask?.id]);
+  }, [detailLoadRevision, selectedTask?.id]);
 
   const reload = async () => {
     if (!selectedTask) return;

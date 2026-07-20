@@ -76,6 +76,7 @@ export function AiFileParseBoard() {
     blockingItems: snapshot.blockingItems,
     selectedStandard: snapshot.selectedStandard,
     permission,
+    detailLoadRevision: snapshot.detailLoadRevision,
     setActionLoading,
     loadTasks: collection.loadTasks,
     loadDetailData: snapshot.loadDetailData
