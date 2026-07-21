@@ -136,7 +136,6 @@ const SYSTEM_ADMIN_LANDING_ORDER: AppMenuKey[] = [
   'system-report-noon-data-gaps',
   'operations-config-versions',
   'data-activity-config',
-  'operations-lifecycle-rules',
   'product-manual-selection',
   'product-specs',
   'product-image-profile',
@@ -167,7 +166,6 @@ const BOSS_MANAGEMENT_LANDING_ORDER: AppMenuKey[] = [
   'system-report-noon-data-gaps',
   'operations-config-versions',
   'data-activity-config',
-  'operations-lifecycle-rules',
   'product-image-profile',
   'product-manual-selection'
 ]
@@ -196,7 +194,6 @@ const OPERATOR_LANDING_ORDER: AppMenuKey[] = [
   'system-report-noon-data-gaps',
   'operations-config-versions',
   'data-activity-config',
-  'operations-lifecycle-rules',
   'product-image-profile',
   'product-manual-selection'
 ]

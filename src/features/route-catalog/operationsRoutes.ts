@@ -82,7 +82,9 @@ export const OPERATION_CONFIG_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     tabLabel: '生命周期配置',
     contentKind: 'operations-lifecycle-rules',
     closable: true,
-    sidebarOrder: 2
+    sidebarOrder: 2,
+    visibleInSidebar: false,
+    visibleInWorkspaceTabs: false
   }
 } as const satisfies Record<string, WorkspaceMenuDefinitionBase>)
 
@@ -119,11 +121,10 @@ export const OPERATIONS_GRANT_RULES = freezeCatalogMetadata([
 
 export const OPERATION_CONFIG_GRANT_RULES = freezeCatalogMetadata([
   {
-    keys: ['operations-config-versions', 'data-activity-config', 'operations-lifecycle-rules'],
+    keys: ['operations-config-versions', 'data-activity-config'],
     urlPaths: [
       '/operations/config/versions',
       '/operations/config/business-calendar',
-      '/operations/config/lifecycle-rules',
       '/operation-config/holiday',
       '/data/activity-config',
       '/api/operations-config/scope'
@@ -133,9 +134,7 @@ export const OPERATION_CONFIG_GRANT_RULES = freezeCatalogMetadata([
       '运营配置',
       '运营配置版本',
       '业务日历',
-      '生命周期配置',
       '业务日历与活动因子',
-      '生命周期规则配置',
       '节日配置',
       '节日/活动配置',
       '活动配置'

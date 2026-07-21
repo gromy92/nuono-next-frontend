@@ -107,8 +107,7 @@ export const BOSS_OPERATOR_MENU_KEYS = freezeCatalogMetadata<AppMenuKey[]>([
   'system-report-noon-data-completeness',
   'system-report-noon-data-gaps',
   'operations-config-versions',
-  'data-activity-config',
-  'operations-lifecycle-rules'
+  'data-activity-config'
 ])
 
 export const MANAGEMENT_MENU_KEYS = freezeCatalogMetadata<AppMenuKey[]>([
