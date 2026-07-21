@@ -124,7 +124,7 @@
     {"path":"src/features/purchase-order/types.ts","ceiling":536},
     {"path":"src/features/replenishment-plan/ReplenishmentPlanTab.css","ceiling":593},
     {"path":"src/features/replenishment-plan/ReplenishmentPlanTab.tsx","ceiling":1165},
-    {"path":"src/features/sales-analytics/SalesAnalyticsPage.tsx","ceiling":2073},
+    {"path":"src/features/sales-analytics/SalesAnalyticsPage.tsx","ceiling":2013},
     {"path":"src/features/system-reports/NoonCallStoreDataPage.tsx","ceiling":397},
     {"path":"src/features/system-reports/NoonDataCompletenessPage.tsx","ceiling":365},
     {"path":"src/features/system-reports/StoreDataReportPage.tsx","ceiling":674},

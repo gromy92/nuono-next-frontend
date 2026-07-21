@@ -11,6 +11,8 @@ import {
   WORKSPACE_SECTION_DEFINITIONS,
   assertRouteCatalogIntegrity,
   routeCatalogIntegrityIssues,
+  shouldShowWorkspaceMenuInSidebar,
+  shouldShowWorkspaceMenuInTabs,
   workspaceMenuDefinition,
   workspaceMenuMount
 } from './RouteCatalog'
@@ -90,8 +92,7 @@ const EXPECTED_SECTION_MENU_KEYS = {
   ],
   'operation-config': [
     'operations-config-versions',
-    'data-activity-config',
-    'operations-lifecycle-rules'
+    'data-activity-config'
   ],
   data: ['data-sales-analysis', 'data-order-analysis'],
   'system-reports': [
@@ -186,6 +187,8 @@ assert.equal(resolveWorkspaceMenuKeyFromLocation('/WAREHOUSE/FBN/'), 'official-w
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/system/ai-file-parse/jobs/1'), 'system-file-management')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/operation-config/holiday'), 'data-activity-config')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/unknown'), null)
+assert.equal(shouldShowWorkspaceMenuInSidebar('operations-lifecycle-rules'), false)
+assert.equal(shouldShowWorkspaceMenuInTabs('operations-lifecycle-rules'), false)
 
 assert.deepEqual(
   matchGrantedMenuToWorkspaceMenuKeys({ menuId: 1, menuName: '', urlPath: '/api/product-keywords/items' }),
@@ -203,6 +206,17 @@ assert.deepEqual(
     session({ grantedMenus: [{ menuId: 2, menuName: '仓库发运', urlPath: '/warehouse/dispatch' }] })
   ),
   warehouseKeys
+)
+assert.deepEqual(
+  resolveSessionAllowedMenuKeys(
+    session({
+      grantedMenus: [
+        { menuId: 3, menuName: '生命周期配置', urlPath: '/operations/config/lifecycle-rules' }
+      ]
+    })
+  ),
+  [],
+  '退役能力即使残留后端菜单授权，也不得重新暴露'
 )
 
 const bossManagementKeys = resolveSessionAllowedMenuKeys(

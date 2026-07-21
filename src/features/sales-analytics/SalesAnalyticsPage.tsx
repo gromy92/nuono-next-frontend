@@ -113,7 +113,6 @@ export function SalesAnalyticsPage({ session, mode = 'analytics' }: SalesAnalyti
   const [brand, setBrand] = useState('')
   const [productFulltype, setProductFulltype] = useState('')
   const [dataQualityCode, setDataQualityCode] = useState<string | undefined>()
-  const [lifecycleCode, setLifecycleCode] = useState<string | undefined>()
   const [classificationOptions, setClassificationOptions] = useState<{
     brands: ProductClassificationOptionPayload[]
     fulltypes: ProductClassificationOptionPayload[]
@@ -156,10 +155,9 @@ export function SalesAnalyticsPage({ session, mode = 'analytics' }: SalesAnalyti
       partnerSkuList: parsePartnerSkuText(partnerSkuText),
       brand,
       productFulltype,
-      dataQualityCode,
-      lifecycleCode
+      dataQualityCode
     }
-  }, [brand, categoryKeyword, currentStore, dataQualityCode, dateRange, lifecycleCode, partnerSkuText, productFulltype, search])
+  }, [brand, categoryKeyword, currentStore, dataQualityCode, dateRange, partnerSkuText, productFulltype, search])
   const forecastQuery = useMemo<SalesForecastQuery | null>(() => {
     if (!query) return null
     return {
@@ -325,7 +323,6 @@ export function SalesAnalyticsPage({ session, mode = 'analytics' }: SalesAnalyti
     setBrand('')
     setProductFulltype('')
     setDataQualityCode(undefined)
-    setLifecycleCode(undefined)
     setSelectedRowKeys([])
     setSelectedProducts([])
   }
@@ -567,14 +564,6 @@ export function SalesAnalyticsPage({ session, mode = 'analytics' }: SalesAnalyti
           />
           <Select
             allowClear
-            data-testid="sales-lifecycle-filter"
-            placeholder="商品生命周期"
-            value={lifecycleCode}
-            options={lifecycleFilterOptions}
-            onChange={(value) => setLifecycleCode(value)}
-          />
-          <Select
-            allowClear
             data-testid="sales-health-filter"
             placeholder="健康度标签"
             value={dataQualityCode}
@@ -732,16 +721,6 @@ function ActivityMarkerSummary({
   )
 }
 
-const lifecycleFilterOptions = [
-  { label: '新品', value: 'new' },
-  { label: '增长', value: 'growth' },
-  { label: '稳定', value: 'stable' },
-  { label: '衰退', value: 'decline' },
-  { label: '长尾期', value: 'longTail' },
-  { label: '数据不足', value: 'data_insufficient' },
-  { label: '待计算', value: 'pending' }
-]
-
 const healthFilterOptions = [
   { label: '销量就绪', value: 'sales_fact_ready' },
   { label: '商品主档未匹配', value: 'product_dimension_missing' },
@@ -772,7 +751,6 @@ function DataStatus({
         <Text>{productCount} 个商品 · 真实销量最新日 {latestSalesDate || '—'}</Text>
         <Tag color={available ? 'green' : 'gold'}>{statusState ? syncStatusLabel(statusState) : 'ready'}</Tag>
         <Text type="secondary">已选 {selectedCount} 个</Text>
-        <Text type="secondary">未接入字段：在途、退货率、竞品价格、去年同期。</Text>
       </Space>
     </div>
   )
@@ -814,7 +792,7 @@ function ComparisonDialog({
                         ]}
                       />
                       <Text>
-                        发货 {formatNumber(product.shippedUnits)} / PV {formatNumber(product.yourVisitors)} / 可售库存 {formatNumber(product.currentStock)} / 在途 — / 30天预测 — / {primaryHealthLabel(product)}
+                        发货 {formatNumber(product.shippedUnits)} / PV {formatNumber(product.yourVisitors)} / 可售库存 {formatNumber(product.currentStock)} / {primaryHealthLabel(product)}
                       </Text>
                     </Space>
                   </div>
@@ -885,7 +863,6 @@ function ProductDetailDialog({
   const sku = row?.sku || detail?.sku || '-'
   const brandLabel = row?.brand || '品牌 —'
   const categoryLabel = lastCategoryLabel(row?.productFulltype)
-  const lifecycleLabel = row?.lifecycleLabel || '生命周期 —'
   const trendDataRange = formatTrendDataRange(detail?.facts || [], detail?.priceTrend || []) || formatDateRange(detailDateRange)
   const [activeDetailTab, setActiveDetailTab] = useState<'sales' | 'forecast'>('sales')
 
@@ -914,7 +891,6 @@ function ProductDetailDialog({
               <>
                 <Tag style={{ marginInlineEnd: 0 }}>{brandLabel}</Tag>
                 <Tag title={row?.productFulltype || undefined} style={{ marginInlineEnd: 0 }}>{categoryLabel}</Tag>
-                <Tag color={lifecycleColor(row?.lifecycleCode)} style={{ marginInlineEnd: 0 }}>{lifecycleLabel}</Tag>
               </>
             }
             extra={
@@ -1517,7 +1493,7 @@ function TrendLineChart({
 const productColumnHelp = {
   product: {
     testId: 'sales-column-help-product',
-    description: '展示商品标题、PSKU、SKU、品牌、后台类目和生命周期。品牌/后台类目来自商品管理主档，未匹配时会显示缺失标签。'
+    description: '展示商品标题、PSKU、SKU、品牌和后台类目。品牌/后台类目来自商品管理主档，未匹配时会显示缺失标签。'
   },
   health: {
     testId: 'sales-column-help-health',
@@ -1538,10 +1514,6 @@ const productColumnHelp = {
   inventory: {
     testId: 'sales-column-help-inventory',
     description: '可售库存来自商品管理库存数据，包含 FBN、Supermall、FBP；覆盖天数按当前库存除以当前范围日均净销量估算。'
-  },
-  inTransit: {
-    testId: 'sales-column-help-in-transit',
-    description: '在途库存用于展示采购或物流途中数量；当前底层数据尚未接入，因此保持为空。'
   },
   trendSnapshot: {
     testId: 'sales-column-help-trend-snapshot',
@@ -1596,9 +1568,6 @@ function productColumns(
               ]}
               tags={
                 <>
-                  <Tag color={lifecycleColor(row.lifecycleCode)} style={{ fontSize: 11, marginInlineEnd: 0, maxWidth: 70, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {row.lifecycleLabel || '生命周期 —'}
-                  </Tag>
                   <Tag style={{ fontSize: 11, marginInlineEnd: 0, maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.brand || '品牌 —'}</Tag>
                   <Tag title={row.productFulltype || undefined} style={{ fontSize: 11, marginInlineEnd: 0, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {lastCategoryLabel(row.productFulltype)}
@@ -1658,12 +1627,6 @@ function productColumns(
       )
     },
     {
-      title: columnTitle('在途', productColumnHelp.inTransit),
-      key: 'inTransit',
-      width: 90,
-      render: () => <Text>—</Text>
-    },
-    {
       title: columnTitle('趋势快照', productColumnHelp.trendSnapshot),
       key: 'trendSnapshot',
       width: 150,
@@ -1712,9 +1675,6 @@ function healthTags(row?: SalesProductRow) {
   for (const code of codes) {
     if (code === 'product_dimension_matched') continue
     tags.push(<Tag key={code} color={dataQualityColor(code)}>{dataQualityLabel(code)}</Tag>)
-  }
-  if (row.lifecycleQualityState && row.lifecycleQualityState !== 'ready') {
-    tags.push(<Tag key="lifecycle-quality">{lifecycleQualityLabel(row.lifecycleQualityState)}</Tag>)
   }
   return tags.length ? tags : <Tag>—</Tag>
 }
@@ -2025,26 +1985,6 @@ function compactRangeText(label: string, dateFrom?: string | null, dateTo?: stri
 
 function formatPercent(value?: number | null) {
   return typeof value === 'number' ? `${value.toLocaleString('zh-CN', { maximumFractionDigits: 2 })}%` : '-'
-}
-
-function lifecycleColor(code?: string) {
-  if (code === 'growth') return 'green'
-  if (code === 'decline') return 'red'
-  if (code === 'longTail') return 'default'
-  if (code === 'data_insufficient') return 'gold'
-  if (code === 'new') return 'blue'
-  if (code === 'pending') return 'default'
-  return 'processing'
-}
-
-function lifecycleQualityLabel(state?: string) {
-  if (state === 'pending') return '待计算'
-  if (state === 'stockout_hold') return '库存保持'
-  if (state === 'data_insufficient_hold') return '数据保持'
-  if (state === 'historical_old_product') return '历史老品'
-  if (state === 'low_confidence') return '低置信'
-  if (state === 'data_insufficient' || state === 'pv_unresolvable') return '数据不足'
-  return state || '-'
 }
 
 function dataQualityLabel(code?: string) {
