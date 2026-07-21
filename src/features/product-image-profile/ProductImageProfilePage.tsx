@@ -2970,7 +2970,7 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                                     复制草稿
                                   </Button>
                                 ) : null}
-                                {suite.suiteStatus === 'PENDING_REVIEW' ? (
+                                {suite.suiteStatus === 'PENDING_REVIEW' || suite.suiteStatus === 'ADOPTED' ? (
                                   <>
                                     <Button
                                       icon={<CheckCircleOutlined />}
