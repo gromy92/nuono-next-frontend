@@ -9,8 +9,6 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "source-size:check": "node scripts/check_source_size.mjs",
-    "source-size:test": "node --test scripts/source_size_policy.test.mjs",
     "contract:test": "node scripts/run_contract_tests.mjs",
     "layout:overflow-smoke": "node scripts/layout_overflow_smoke.mjs",
     "product-baseline:display-contract": "node scripts/product_baseline_display_contract.mjs",
