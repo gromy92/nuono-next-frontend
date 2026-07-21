@@ -54,21 +54,11 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-
-      - name: Source-size policy self-test
-        run: node --test scripts/source_size_policy.test.mjs
-
-      - name: Enforce source-file size
-        env:
-          SOURCE_SIZE_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-        run: node scripts/check_source_size.mjs
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4

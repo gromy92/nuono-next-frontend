@@ -1,4 +1,41 @@
-import { lazyWorkspace } from '../route-catalog/workspaceMount';
+import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
+import { Card, Spin } from 'antd';
+
+const DYNAMIC_IMPORT_RELOAD_KEY = 'nuono:dynamic-import-reload';
+
+function isDynamicImportLoadFailure(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || '');
+  return message.includes('Failed to fetch dynamically imported module') || message.includes('Importing a module script failed');
+}
+
+function lazyWorkspace<T extends ComponentType<any>>(
+  loader: () => Promise<{ default: T }>
+) {
+  return lazy(() =>
+    loader()
+      .then((module) => {
+        if (typeof window !== 'undefined') {
+          window.sessionStorage.removeItem(DYNAMIC_IMPORT_RELOAD_KEY);
+        }
+        return module;
+      })
+      .catch((error) => {
+        if (
+          isDynamicImportLoadFailure(error) &&
+          typeof window !== 'undefined' &&
+          window.sessionStorage.getItem(DYNAMIC_IMPORT_RELOAD_KEY) !== '1'
+        ) {
+          window.sessionStorage.setItem(DYNAMIC_IMPORT_RELOAD_KEY, '1');
+          window.location.reload();
+        }
+        throw error;
+      })
+  );
+}
+
+export const AiFileParseBoard = lazyWorkspace(() =>
+  import('../ai-file-parse/AiFileParseBoard').then((module) => ({ default: module.AiFileParseBoard }))
+);
 export const LogisticsQuoteBoard = lazyWorkspace(() =>
   import('../logistics-quote/LogisticsQuoteBoard').then((module) => ({ default: module.LogisticsQuoteBoard }))
 );
@@ -150,3 +187,15 @@ export const LifecycleVersionLibraryPage = lazyWorkspace(() =>
     default: module.LifecycleVersionLibraryPage
   }))
 );
+
+function WorkspaceLoadingFallback() {
+  return (
+    <Card variant="borderless" style={{ boxShadow: 'none', background: '#ffffff' }}>
+      <Spin size="small" />
+    </Card>
+  );
+}
+
+export function LazyWorkspaceBoundary({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<WorkspaceLoadingFallback />}>{children}</Suspense>;
+}
