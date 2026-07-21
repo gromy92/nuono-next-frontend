@@ -1,6 +1,9 @@
 import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { workspaceMenuDefinition } from '../route-catalog/RouteCatalog'
+import { OPERATIONS_PRODUCT_KEYWORDS_PATH } from '../route-catalog/routePaths'
+import { matchGrantedMenuToWorkspaceMenuKeys } from '../route-catalog/sessionAccessPolicy'
 
 const root = process.cwd()
 
@@ -10,10 +13,6 @@ function source(path: string) {
 
 const apiSource = source('src/features/product-keywords/api.ts')
 const typesSource = source('src/features/product-keywords/types.ts')
-const menuSource = source('src/features/app-shell/WorkspaceMenuRegistry.ts')
-const lazySource = source('src/features/app-shell/ShellWorkspaceLazyComponents.tsx')
-const contentSource = source('src/features/app-shell/ShellWorkspaceContent.tsx')
-const routingSource = source('src/features/app-shell/WorkspaceRouting.ts')
 const sessionSource = source('src/features/app-shell/ShellSessionStorage.ts')
 
 assert.match(apiSource, /\/api\/product-keywords/)
@@ -39,11 +38,14 @@ assert.match(typesSource, /titleUsageStates/)
 assert.match(typesSource, /competitorEvidence/)
 assert.match(typesSource, /adsEvidence/)
 assert.match(typesSource, /negativeCandidate/)
-assert.match(menuSource, /'operations-product-keywords'/)
-assert.match(menuSource, /\/operations\/product-keywords/)
-assert.match(lazySource, /ProductKeywordDataPage/)
-assert.match(contentSource, /ProductKeywordDataPage/)
-assert.match(routingSource, /OPERATIONS_PRODUCT_KEYWORDS_PATH/)
+const keywordRoute = workspaceMenuDefinition('operations-product-keywords')
+assert.equal(keywordRoute.path, '/operations/product-keywords')
+assert.equal(keywordRoute.contentKind, 'product-keywords')
+assert.equal(OPERATIONS_PRODUCT_KEYWORDS_PATH, keywordRoute.path)
+assert.deepEqual(
+  matchGrantedMenuToWorkspaceMenuKeys({ menuId: 9804, menuName: '关键词数据', urlPath: '/api/product-keywords' }),
+  ['operations-product-keywords']
+)
 assert.match(sessionSource, /OPERATIONS_PRODUCT_KEYWORDS_PATH/)
 assert.match(sessionSource, /search\.get\('grantProductKeywords'\)/)
 assert.match(sessionSource, /menuId:\s*9804/)
