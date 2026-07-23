@@ -1,0 +1,265 @@
+.warehouse-dispatch-source-list {
+  color: #475569;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.warehouse-dispatch-ready-source-row {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 2px 0;
+}
+
+.warehouse-dispatch-ready-source-main {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.warehouse-dispatch-ready-source-main .ant-typography {
+  margin: 0;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.warehouse-dispatch-ready-source-separator {
+  color: #cbd5e1;
+}
+
+.warehouse-dispatch-ready-source-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.warehouse-dispatch-ready-source-action.ant-btn {
+  height: 22px;
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.warehouse-dispatch-target-modal {
+  width: 100%;
+}
+
+.warehouse-dispatch-target-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.warehouse-dispatch-target-summary > div,
+.warehouse-dispatch-target-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.warehouse-dispatch-target-summary .ant-typography {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-dispatch-target-summary-psku {
+  grid-column: span 2;
+}
+
+.warehouse-dispatch-target-summary-psku .ant-typography {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  word-break: break-all;
+}
+
+.warehouse-dispatch-target-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.warehouse-dispatch-target-section-title.ant-typography {
+  margin: 0;
+}
+
+.warehouse-dispatch-target-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.warehouse-dispatch-target-field .ant-select,
+.warehouse-dispatch-target-field .ant-input-number {
+  width: 100%;
+}
+
+.warehouse-dispatch-receipt-source {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.warehouse-dispatch-receipt-source-title.ant-typography,
+.warehouse-dispatch-receipt-source-date.ant-typography {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-dispatch-source-qty {
+  margin-left: 6px;
+  color: #94a3b8;
+}
+
+.warehouse-dispatch-receipt-number.ant-input-number {
+  width: 76px;
+}
+
+.warehouse-dispatch-issue-editor {
+  display: grid;
+  grid-template-columns: auto 48px auto 48px auto 48px;
+  align-items: center;
+  gap: 4px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.warehouse-dispatch-issue-editor .ant-input-number {
+  width: 48px;
+}
+
+.warehouse-dispatch-empty {
+  padding: 42px 12px;
+}
+
+@media (max-width: 1120px) {
+  .warehouse-dispatch-summary-grid {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .warehouse-dispatch-summary-grid.warehouse-dispatch-header-summary {
+    grid-template-columns: repeat(6, minmax(88px, 1fr));
+    overflow-x: auto;
+  }
+
+  .warehouse-dispatch-split,
+  .warehouse-dispatch-plan-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .warehouse-dispatch-shipping-selection-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .warehouse-dispatch-shipping-selection-control {
+    flex-wrap: wrap;
+  }
+
+  .warehouse-dispatch-shipping-option-select {
+    width: min(100%, 520px);
+  }
+
+  .warehouse-dispatch-shipping-selection-actions {
+    justify-content: flex-end;
+  }
+
+  .warehouse-dispatch-target-summary,
+  .warehouse-dispatch-target-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .warehouse-dispatch-receipt-summary-card {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .warehouse-dispatch-receipt-summary-item:nth-child(3) {
+    border-right: 0;
+  }
+
+  .warehouse-dispatch-receipt-summary-item:nth-child(-n + 3) {
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .warehouse-dispatch-receipt-detail-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .warehouse-dispatch-receipt-detail-search {
+    width: 100%;
+  }
+
+  .warehouse-dispatch-cost-summary {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+  }
+
+  .warehouse-dispatch-cost-summary-item:nth-child(3) {
+    border-right: 0;
+  }
+
+  .warehouse-dispatch-cost-summary-item:nth-child(-n + 3) {
+    border-bottom: 1px solid #dbe4ef;
+  }
+
+}
+
+@media (max-width: 720px) {
+  .warehouse-dispatch-cost-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .warehouse-dispatch-cost-summary-item:nth-child(3) {
+    border-right: 1px solid #dbe4ef;
+  }
+
+  .warehouse-dispatch-cost-summary-item:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .warehouse-dispatch-cost-summary-item:nth-child(-n + 4) {
+    border-bottom: 1px solid #dbe4ef;
+  }
+
+  .warehouse-dispatch-cost-summary-item:nth-child(n + 5) {
+    border-bottom: 0;
+  }
+
+  .warehouse-dispatch-cost-comparison .ant-table-expanded-row > td {
+    padding: 8px !important;
+  }
+
+  .warehouse-dispatch-cost-drawer-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .warehouse-dispatch-plan-table .ant-table-cell-fix-left,
+  .warehouse-dispatch-plan-table .ant-table-cell-fix-right {
+    position: static !important;
+    right: auto !important;
+    left: auto !important;
+  }
+
+  .warehouse-dispatch-plan-table .ant-table-cell-fix-left-last::after,
+  .warehouse-dispatch-plan-table .ant-table-cell-fix-right-first::after {
+    display: none;
+  }
+}

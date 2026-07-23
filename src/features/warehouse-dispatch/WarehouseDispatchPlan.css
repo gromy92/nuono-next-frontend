@@ -1,0 +1,140 @@
+.warehouse-dispatch-plan-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 12px;
+  min-width: 0;
+}
+
+.warehouse-dispatch-plan-layout.is-generated {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.warehouse-dispatch-plan-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.warehouse-dispatch-plan-detail.is-modal {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.warehouse-dispatch-plan-detail-modal .ant-modal-body {
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+}
+
+.warehouse-dispatch-detail-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.warehouse-dispatch-shipping-selection-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.warehouse-dispatch-shipping-selection-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.warehouse-dispatch-shipping-option-select {
+  width: min(420px, 42vw);
+}
+
+.warehouse-dispatch-shipping-option-amount {
+  white-space: nowrap;
+}
+
+.warehouse-dispatch-shipping-selection-actions {
+  flex: 0 0 auto;
+}
+
+.warehouse-dispatch-selected-row > td {
+  background: #eef2ff !important;
+}
+
+.warehouse-dispatch-selected-row:hover > td {
+  background: #e0e7ff !important;
+}
+
+.warehouse-dispatch-clickable-row {
+  cursor: pointer;
+}
+
+.warehouse-dispatch-clickable-row:hover > td {
+  background: #f0fdf4 !important;
+}
+
+.warehouse-dispatch-route-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.warehouse-dispatch-route-list-title {
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 20px;
+}
+
+.warehouse-dispatch-route-card {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fbfcfe;
+  cursor: pointer;
+  text-align: left;
+}
+
+.warehouse-dispatch-route-card:hover {
+  border-color: #a5b4fc;
+  background: #f5f7ff;
+}
+
+.warehouse-dispatch-route-card.is-selected {
+  border-color: #6366f1;
+  background: #eef2ff;
+  box-shadow: inset 3px 0 0 #6366f1;
+}
+
+.warehouse-dispatch-route-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: #0f172a;
+  font-weight: 760;
+}
+
+.warehouse-dispatch-route-meta {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.warehouse-dispatch-route-meta.is-warning {
+  margin-top: 4px;
+  color: #b45309;
+}

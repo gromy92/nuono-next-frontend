@@ -1,52 +1,23 @@
-import { ReloadOutlined } from '@ant-design/icons'
-import { Button, Empty, Select, Space, Table, Tag, Typography, message } from 'antd'
+import { DownloadOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons'
+import { Button, Empty, Space, Table, Typography, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
-import type { ReactNode } from 'react'
-import { loadOutboundOrders, loadPackingLists, loadShippingBatch, loadShippingBatches } from './api'
-import type {
-  OutboundOrder,
-  PackingList,
-  ShippingBatch,
-  ShippingSuggestionOption,
-  WarehouseFulfillmentType
-} from './types'
+import { loadOutboundOrders, loadPackingLists, loadShippingBatches } from './api'
+import type { PackingBatchDetails } from './packingExportDomain'
+import { mergeBatchOutboundOrder } from './shippingExecutionDomain'
+import type { OutboundOrder, PackingList, ShippingBatch } from './types'
+import { usePackingListExport } from './usePackingListExport'
+import { WarehousePackingExportModal } from './WarehousePackingExportModal'
+import { renderShippingBatchStatus } from './WarehousePackingListView'
+import { WarehousePackingSubmissionDrawer } from './WarehousePackingSubmissionDrawer'
 
 const { Text } = Typography
 
-const FULFILLMENT_LABELS: Record<WarehouseFulfillmentType, string> = {
-  WAREHOUSE_RECEIPT: '到仓收货',
-  FACTORY_DIRECT: '厂家直发'
-}
-
-const SHIPPING_BATCH_STATUS_META: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: '待物流计划', color: 'gold' },
-  OPTION_SELECTED: { label: '已给出物流计划', color: 'blue' },
-  OUTBOUND_CREATED: { label: '已生成发货单', color: 'purple' },
-  PACKING: { label: '装箱中', color: 'processing' },
-  PACKED: { label: '已封箱', color: 'green' },
-  SHIPPED: { label: '已发货', color: 'green' }
-}
-
-const OUTBOUND_ORDER_STATUS_META: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: '待装箱', color: 'gold' },
-  PACKING: { label: '装箱中', color: 'processing' },
-  PACKED: { label: '已封箱', color: 'green' },
-  SHIPPED: { label: '已发货', color: 'green' }
-}
-
-const PACKING_LIST_STATUS_META: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: '草稿', color: 'gold' },
-  CONFIRMED: { label: '已封箱', color: 'green' },
-  SEALED: { label: '已封箱', color: 'green' },
-  SHIPPED: { label: '已发货', color: 'green' }
-}
-
-const OUTBOUND_TABLE_PAGINATION = {
+const PAGINATION = {
   pageSize: 30,
   showSizeChanger: true,
-  pageSizeOptions: [20, 30, 50, 100],
-  showTotal: (total: number) => `共 ${total} 行`,
+  pageSizeOptions: [20, 30, 50],
+  showTotal: (total: number) => `共 ${total} 张发货单`,
   size: 'small' as const
 }
 
@@ -56,42 +27,28 @@ export function WarehousePackingListPanel() {
   const [outboundOrdersByBatch, setOutboundOrdersByBatch] = useState<Record<string, OutboundOrder[]>>({})
   const [packingListsByOutboundOrder, setPackingListsByOutboundOrder] = useState<Record<string, PackingList[]>>({})
   const [loading, setLoading] = useState(false)
-  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailLoadingBatchId, setDetailLoadingBatchId] = useState<string>()
   const [loadError, setLoadError] = useState<string>()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const packingExport = usePackingListExport(loadBatchDetails)
 
   const selectedBatch = useMemo(
-    () => shippingBatches.find((batch) => batch.id === selectedBatchId) || shippingBatches[0],
+    () => shippingBatches.find((batch) => batch.id === selectedBatchId),
     [selectedBatchId, shippingBatches]
   )
-  const selectedBatchDetailId = selectedBatch?.id
   const selectedOutboundOrders = selectedBatch ? outboundOrdersByBatch[selectedBatch.id] || [] : []
   const selectedPackingLists = selectedOutboundOrders.flatMap((order) => packingListsByOutboundOrder[order.id] || [])
+  const displayOutboundOrder = selectedBatch
+    ? mergeBatchOutboundOrder(selectedBatch, selectedOutboundOrders)
+    : undefined
+  const displayOutboundOrders = displayOutboundOrder ? [displayOutboundOrder] : []
+  const displayPackingListsByOrder = displayOutboundOrder
+    ? { [displayOutboundOrder.id]: selectedPackingLists }
+    : {}
 
   useEffect(() => {
     void refreshPackingLists()
   }, [])
-
-  useEffect(() => {
-    if (!shippingBatches.length) {
-      setSelectedBatchId(undefined)
-      return
-    }
-    if (!selectedBatchId || !shippingBatches.some((batch) => batch.id === selectedBatchId)) {
-      setSelectedBatchId(shippingBatches[0].id)
-    }
-  }, [selectedBatchId, shippingBatches])
-
-  useEffect(() => {
-    if (!selectedBatchDetailId || outboundOrdersByBatch[selectedBatchDetailId]) {
-      return
-    }
-    setDetailLoading(true)
-    loadBatchDetails(selectedBatchDetailId)
-      .catch((error) => {
-        setLoadError(error instanceof Error ? error.message : '装箱单详情读取失败')
-      })
-      .finally(() => setDetailLoading(false))
-  }, [outboundOrdersByBatch, selectedBatchDetailId])
 
   async function refreshPackingLists() {
     setLoading(true)
@@ -99,72 +56,139 @@ export function WarehousePackingListPanel() {
     try {
       const nextBatches = await loadShippingBatches()
       setShippingBatches(nextBatches)
-      return nextBatches
+      setOutboundOrdersByBatch({})
+      setPackingListsByOutboundOrder({})
+      setSelectedBatchId(undefined)
+      setDrawerOpen(false)
     } catch (error) {
-      const messageText = error instanceof Error ? error.message : '装箱单读取失败'
+      const messageText = error instanceof Error ? error.message : '发货单读取失败'
       setLoadError(messageText)
       message.error(messageText)
-      return []
     } finally {
       setLoading(false)
     }
   }
 
-  async function loadBatchDetails(batchId: string) {
-    const [batchDetail, outboundOrders] = await Promise.all([
-      loadShippingBatch(batchId).catch(() => undefined),
-      loadOutboundOrders(batchId)
-    ])
-    if (batchDetail) {
-      setShippingBatches((current) => current.map((batch) => (batch.id === batchDetail.id ? batchDetail : batch)))
+  async function loadBatchDetails(batchId: string): Promise<PackingBatchDetails> {
+    const cachedOrders = outboundOrdersByBatch[batchId]
+    if (cachedOrders) {
+      return {
+        outboundOrders: cachedOrders,
+        packingListsByOutboundOrder: Object.fromEntries(
+          cachedOrders.map((order) => [order.id, packingListsByOutboundOrder[order.id] || []])
+        )
+      }
     }
+    const outboundOrders = await loadOutboundOrders(batchId)
     const packingEntries = await Promise.all(
       outboundOrders.map(async (order) => [order.id, await loadPackingLists(order.id)] as const)
     )
+    const nextPackingLists = Object.fromEntries(packingEntries)
     setOutboundOrdersByBatch((current) => ({ ...current, [batchId]: outboundOrders }))
     setPackingListsByOutboundOrder((current) => ({
       ...current,
-      ...Object.fromEntries(packingEntries)
+      ...nextPackingLists
     }))
-    return outboundOrders
+    return { outboundOrders, packingListsByOutboundOrder: nextPackingLists }
   }
 
-  const outboundOrderColumns: ColumnsType<OutboundOrder> = [
+  async function openPackingDetails(batch: ShippingBatch) {
+    setSelectedBatchId(batch.id)
+    if (!Object.prototype.hasOwnProperty.call(outboundOrdersByBatch, batch.id)) {
+      setDetailLoadingBatchId(batch.id)
+      try {
+        await loadBatchDetails(batch.id)
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : '装箱详情读取失败')
+        return
+      } finally {
+        setDetailLoadingBatchId(undefined)
+      }
+    }
+    setDrawerOpen(true)
+  }
+
+  const columns: ColumnsType<ShippingBatch> = [
     {
       title: '发货单',
-      dataIndex: 'outboundNo',
-      width: 170,
-      render: (_value, order) => (
+      dataIndex: 'batchNo',
+      width: 210,
+      render: (_value, batch) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{order.outboundNo || order.id}</Text>
-          <Text type="secondary">{order.originName || FULFILLMENT_LABELS[order.originType || 'WAREHOUSE_RECEIPT']}</Text>
+          <Text strong>{batch.batchNo || batch.id}</Text>
+          <Text type="secondary">{batch.createdAt || '-'}</Text>
         </Space>
       )
     },
     {
       title: '状态',
       width: 110,
-      render: (_value, order) => renderOutboundOrderStatus(order.status)
+      render: (_value, batch) => renderShippingBatchStatus(batch.status)
     },
-    { title: 'PSKU', dataIndex: 'skuCount', width: 72 },
-    { title: '数量', dataIndex: 'totalQuantity', width: 72 },
     {
-      title: '商品',
-      render: (_value, order) => (
-        <Space direction="vertical" size={2}>
-          {order.lines.slice(0, 3).map((line) => (
-            <Text key={line.id} type="secondary">
-              {line.psku || line.title} / {line.quantity} 件
-            </Text>
-          ))}
-          {order.lines.length > 3 ? <Text type="secondary">还有 {order.lines.length - 3} 个 PSKU</Text> : null}
+      title: '总体积',
+      width: 120,
+      align: 'right',
+      render: (_value, batch) => actualMetric(batch.volumeCbm, 4, 'm³')
+    },
+    {
+      title: '总毛重',
+      width: 120,
+      align: 'right',
+      render: (_value, batch) => actualMetric(batch.grossWeightKg, 1, 'kg')
+    },
+    {
+      title: '箱数',
+      dataIndex: 'boxCount',
+      width: 90,
+      align: 'right',
+      render: (value: number) => value > 0 ? `${value} 箱` : <Text type="secondary">待装箱</Text>
+    },
+    {
+      title: '商品数',
+      dataIndex: 'skuCount',
+      width: 110,
+      align: 'right',
+      render: (value: number) => `${value} PSKU`
+    },
+    {
+      title: '件数',
+      dataIndex: 'totalQuantity',
+      width: 100,
+      align: 'right',
+      render: (value: number) => `${value.toLocaleString('zh-CN')} 件`
+    },
+    {
+      title: '计划物流数',
+      dataIndex: 'optionCount',
+      width: 110,
+      align: 'right',
+      render: (value: number) => `${value} 个`
+    },
+    {
+      title: '操作',
+      width: 270,
+      fixed: 'right',
+      render: (_value, batch) => (
+        <Space size={0}>
+          <Button type="link" icon={<EyeOutlined />}
+            loading={detailLoadingBatchId === batch.id}
+            onClick={(event) => {
+              event.stopPropagation()
+              void openPackingDetails(batch)
+            }}>
+            查看装箱详情
+          </Button>
+          <Button type="link" icon={<DownloadOutlined />} disabled={batch.boxCount <= 0}
+            loading={packingExport.loadingBatchId === batch.id}
+            onClick={(event) => {
+              event.stopPropagation()
+              void packingExport.open(batch)
+            }}>
+            导出装箱单
+          </Button>
         </Space>
       )
-    },
-    {
-      title: '装箱单',
-      width: 220,
-      render: (_value, order) => renderPackingListSummary(packingListsByOutboundOrder[order.id] || [])
     }
   ]
 
@@ -172,138 +196,32 @@ export function WarehousePackingListPanel() {
     <div className="warehouse-dispatch-panel">
       <div className="warehouse-dispatch-toolbar">
         <div className="warehouse-dispatch-toolbar-left">
-          <Select
-            className="warehouse-dispatch-filter-select"
-            style={{ width: 260 }}
-            placeholder="选择发货单"
-            value={selectedBatch?.id}
-            options={shippingBatches.map((batch) => ({
-              label: `${batch.batchNo || batch.id} / ${batch.totalQuantity} 件`,
-              value: batch.id
-            }))}
-            onChange={(value) => setSelectedBatchId(String(value))}
-          />
-          {selectedBatch ? renderShippingBatchStatus(selectedBatch.status) : null}
+          <Text strong>发货单</Text>
+          <Text type="secondary">共 {shippingBatches.length} 张</Text>
         </div>
-        <div className="warehouse-dispatch-toolbar-right">
-          <Button
-            icon={<ReloadOutlined />}
-            loading={loading}
-            onClick={() => {
-              void refreshPackingLists()
-            }}
-          >
-            刷新
-          </Button>
-        </div>
+        <Button icon={<ReloadOutlined />} loading={loading} onClick={() => void refreshPackingLists()}>
+          刷新
+        </Button>
       </div>
-      {selectedBatch ? (
-        <div className="warehouse-dispatch-plan-layout">
-          <div>
-            {renderSummaryGrid([
-              ['批次号', selectedBatch.batchNo || selectedBatch.id],
-              ['来源', selectedBatch.sourceCount],
-              ['PSKU', selectedBatch.skuCount],
-              ['数量', selectedBatch.totalQuantity],
-              ['装箱单', selectedPackingLists.length]
-            ])}
-            <Table
-              rowKey="id"
-              size="small"
-              columns={outboundOrderColumns}
-              dataSource={selectedOutboundOrders}
-              loading={detailLoading || loading}
-              pagination={OUTBOUND_TABLE_PAGINATION}
-              locale={{ emptyText: <Empty description={loadError || '当前发货单还没有装箱单'} /> }}
-            />
-          </div>
-          <div className="warehouse-dispatch-route-list">
-            {selectedBatch.options.length ? (
-              selectedBatch.options.map(renderShippingOptionCard)
-            ) : (
-              <Empty description="暂无物流计划" />
-            )}
-          </div>
-        </div>
-      ) : (
-        <Empty className="warehouse-dispatch-empty" description={loadError || '暂无装箱单，App 装箱提交后会进入这里'} />
-      )}
+      <Table rowKey="id" size="small" columns={columns} dataSource={shippingBatches}
+        loading={loading} pagination={PAGINATION} scroll={{ x: 1240 }}
+        rowClassName="warehouse-dispatch-clickable-row"
+        onRow={(batch) => ({ onClick: () => void openPackingDetails(batch) })}
+        locale={{ emptyText: <Empty description={loadError || '暂无发货单'} /> }} />
+      <WarehousePackingSubmissionDrawer open={drawerOpen} batch={selectedBatch}
+        outboundOrders={displayOutboundOrders} packingListsByOutboundOrder={displayPackingListsByOrder}
+        loading={Boolean(detailLoadingBatchId)} onClose={() => setDrawerOpen(false)} />
+      <WarehousePackingExportModal batch={packingExport.targetBatch}
+        channels={packingExport.channels} selection={packingExport.selection}
+        loading={Boolean(packingExport.loadingBatchId)}
+        onSelectionChange={packingExport.setSelection}
+        onConfirm={() => void packingExport.confirm()} onClose={packingExport.close} />
     </div>
   )
 }
 
-function renderSummaryGrid(items: Array<[string, ReactNode]>) {
-  return (
-    <div className="warehouse-dispatch-summary-grid">
-      {items.map(([label, value]) => (
-        <div className="warehouse-dispatch-metric" key={label}>
-          <span className="warehouse-dispatch-metric-value">{value}</span>
-          <span className="warehouse-dispatch-metric-label">{label}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function renderShippingBatchStatus(status?: string) {
-  const normalized = String(status || '').toUpperCase()
-  const meta = SHIPPING_BATCH_STATUS_META[normalized] || { label: status || '未知', color: 'default' }
-  return <Tag color={meta.color}>{meta.label}</Tag>
-}
-
-function renderOutboundOrderStatus(status?: string) {
-  const normalized = String(status || '').toUpperCase()
-  const meta = OUTBOUND_ORDER_STATUS_META[normalized] || { label: status || '未知', color: 'default' }
-  return <Tag color={meta.color}>{meta.label}</Tag>
-}
-
-function renderPackingListStatus(status?: string) {
-  const normalized = String(status || '').toUpperCase()
-  const meta = PACKING_LIST_STATUS_META[normalized] || { label: status || '未知', color: 'default' }
-  return <Tag color={meta.color}>{meta.label}</Tag>
-}
-
-function shippingOptionLabel(option: ShippingSuggestionOption) {
-  const forwarders = option.targetForwarderNames.length ? option.targetForwarderNames.join(' + ') : option.optionName
-  const recommended = option.autoRecommended ? ' / 推荐' : ''
-  return `${forwarders}${recommended}`
-}
-
-function renderShippingOptionCard(option: ShippingSuggestionOption) {
-  return (
-    <div className="warehouse-dispatch-route-card" key={option.id}>
-      <div className="warehouse-dispatch-route-title">
-        <span>{shippingOptionLabel(option)}</span>
-        {option.selectedFlag ? <Tag color="green">当前物流计划</Tag> : option.autoRecommended ? <Tag color="blue">推荐</Tag> : null}
-      </div>
-      <div className="warehouse-dispatch-route-meta">
-        空运 {option.airQuantity} 件 / 海运 {option.seaQuantity} 件 / 共 {option.totalQuantity} 件
-      </div>
-      <div className="warehouse-dispatch-route-meta">
-        {option.estimatedTotalAmount !== undefined ? `${option.currency || ''} ${option.estimatedTotalAmount}` : '暂无预估费用'}
-      </div>
-      {option.blockedReasons.length ? (
-        <div className="warehouse-dispatch-route-meta">
-          <Tag color="red">{option.blockedReasons[0]}</Tag>
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-function renderPackingListSummary(packingLists: PackingList[]) {
-  if (!packingLists.length) {
-    return <Text type="secondary">未提交</Text>
-  }
-  return (
-    <Space direction="vertical" size={2}>
-      {packingLists.map((packingList) => (
-        <Space key={packingList.id} size={4}>
-          <Text strong>{packingList.packingNo || packingList.id}</Text>
-          {renderPackingListStatus(packingList.status)}
-          <Text type="secondary">{packingList.boxCount} 箱 / {packingList.packedQuantity} 件</Text>
-        </Space>
-      ))}
-    </Space>
-  )
+function actualMetric(value: number | undefined, digits: number, unit: string) {
+  return Number(value || 0) > 0
+    ? `${Number(value).toFixed(digits)} ${unit}`
+    : <Text type="secondary">待装箱</Text>
 }
