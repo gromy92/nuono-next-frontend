@@ -29,7 +29,7 @@ assert.match(sources.dispatchApi, /issueShippingBatch[\s\S]*shipping-batches\/\$
 assert.doesNotMatch(sources.planDetail + sources.shippingWorkspace, /同步发货单|selectShippingOption\(|createOutboundOrders\(/);
 assert.match(sources.planDetail, /shippingBatch\.status !== 'OUTBOUND_CREATED'[\s\S]*确认物流并下发发货单/);
 
-assert.match(sources.workbench, /key: 'packing-list'[\s\S]*buildTabLabel\('装箱单'[\s\S]*WarehousePackingListPanel/);
+assert.match(sources.workbench, /key: 'packing-list'[\s\S]*buildTabLabel\('发货执行'[\s\S]*WarehousePackingListPanel/);
 assert.match(sources.packingPanel, /loadShippingBatches\(/);
 assert.match(sources.packingPanel, /loadPackingLists\(/);
 assert.doesNotMatch(sources.packingPanel, /createPackingList\(|createOutboundOrders\(|selectShippingOption\(|生成装箱单/);

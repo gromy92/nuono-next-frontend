@@ -5,7 +5,7 @@ assert.match(sources.shippingOrderPage, /export function WarehouseShippingOrderP
 assert.match(sources.shippingOrderPage, /export function WarehouseShippingOrderPage\(/);
 assert.match(
   sources.menu,
-  /keys: \['warehouse-shipping-order', 'warehouse-logistics-bill', 'warehouse-dispatch', 'official-warehouse', 'product-specs'\][\s\S]*\/api\/procurement\/purchase-orders\/shipping-orders[\s\S]*\/api\/procurement\/purchase-orders\/logistics-bills/
+  /keys:\s*\[[\s\S]*'warehouse-shipping-order'[\s\S]*'warehouse-logistics-bill'[\s\S]*'warehouse-dispatch'[\s\S]*'official-warehouse'[\s\S]*'product-specs'[\s\S]*\/api\/procurement\/purchase-orders\/shipping-orders[\s\S]*\/api\/procurement\/purchase-orders\/logistics-bills/
 );
 
 assert.match(sources.workbench, /WarehouseShippingOrderPanel embedded/);

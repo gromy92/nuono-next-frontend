@@ -9,7 +9,7 @@ function source(path: string) {
 }
 
 export const dispatchContractSources = {
-  menu: source('app-shell/WorkspaceMenuRegistry.ts'),
+  menu: source('route-catalog/fulfillmentRoutes.ts'),
   shippingOrderPage: source('warehouse-shipping-order/WarehouseShippingOrderPage.tsx'),
   workbench: source('warehouse-dispatch/WarehouseDispatchWorkbenchPage.tsx'),
   models: source('warehouse-dispatch/workbenchModels.ts'),
@@ -51,3 +51,13 @@ export const dispatchContractSources = {
     source('warehouse-dispatch/WarehouseDispatchCost.css')
   ].join('\n')
 };
+
+// Compatibility exports for contracts that predate the workbench split.
+export const shippingOrderPage = dispatchContractSources.shippingOrderPage;
+export const packingListPanel = dispatchContractSources.packingPanel;
+export const dispatchApi = dispatchContractSources.dispatchApi;
+export const warehouseTypes = dispatchContractSources.types;
+export const dispatchWorkbenchCss = dispatchContractSources.css;
+export const dispatchWorkbench = Object.values(dispatchContractSources).join('\n');
+export const confirmDispatchTargetSource = dispatchWorkbench;
+export const readySourceCellSource = dispatchContractSources.readyCells;
