@@ -57,8 +57,11 @@ export function InTransitGoodsPage({
         boxGroups={boxDetail.boxGroups}
         productGroups={boxDetail.productGroups}
         loading={boxDetail.loadingBoxLines}
+        productMatchCandidates={boxDetail.productMatchCandidates}
+        rematchingProducts={boxDetail.rematchingProducts}
         skuFreight={skuFreight}
         onTabChange={boxDetail.setBoxDetailTab}
+        onRematchProducts={() => void boxDetail.rematchProducts()}
       />
     )
   }

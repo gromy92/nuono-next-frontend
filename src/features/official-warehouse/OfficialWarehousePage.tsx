@@ -44,7 +44,6 @@ import {
   loadOfficialWarehouseAppointments,
   loadOfficialWarehouseAsns,
   loadOfficialWarehouseCandidates,
-  loadOfficialWarehouseShippingBatches,
   officialWarehouseError,
   officialWarehouseProblem,
   queryOfficialWarehouseAppointmentAvailability,
@@ -67,6 +66,7 @@ import {
   type OfficialWarehouseShippingBatchCandidate,
   type UpsertOfficialWarehouseAppointmentPayload
 } from './api'
+import { loadPreparedOfficialWarehouseShippingBatches } from './productMatchPreparation'
 import { parseCandidateSearch } from './createAsnFlow'
 import {
   DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES,
@@ -891,7 +891,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     }
     setShippingBatchLoading(true)
     try {
-      const rows = await loadOfficialWarehouseShippingBatches({
+      const rows = await loadPreparedOfficialWarehouseShippingBatches({
         storeCode,
         siteCode
       })
