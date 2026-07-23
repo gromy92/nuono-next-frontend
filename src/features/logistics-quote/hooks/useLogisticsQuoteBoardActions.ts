@@ -1,139 +1,40 @@
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react'
 import { useCallback } from 'react'
 import {
   appendLogisticsQuoteSourceBundleFile,
   appendLogisticsQuoteSourceBundleNote,
   archiveLogisticsQuoteSourceBundleFile,
-  createLogisticsQuoteSourceBundle,
   updateLogisticsQuoteSourceBundleAnalysisSummary,
   updateLogisticsQuoteSourceBundleFile,
   updateLogisticsQuoteSourceBundleNote
 } from '../api'
-import { emptyAppendFileDraft, emptyCreateDraft } from '../defaults'
-import { buildSourceBundleCreateRequest } from '../requestMappers'
-import type {
-  AppendFileDraft,
-  AsyncActionState,
-  FileEditDraft,
-  SourceBundleCreateDraft
-} from '../state'
-import type {
-  LogisticsQuoteBundleDetailDto,
-  LogisticsQuoteSourceNoteDto,
-  LogisticsQuoteWorkbenchResponse
-} from '../types'
+import { emptyAppendFileDraft } from '../defaults'
+import type { UseLogisticsQuoteBoardActionsParams } from './logisticsQuoteBoardActionTypes'
+import { useLogisticsQuoteSourceBundleCreate } from './useLogisticsQuoteSourceBundleCreate'
 
-type UseLogisticsQuoteBoardActionsParams = {
-  selectedBundle: LogisticsQuoteBundleDetailDto | null
-  currentSelectedNoteId: number | null
-  currentSelectedFileId: number | null
-  editableNote: LogisticsQuoteSourceNoteDto | null
-  createDraft: SourceBundleCreateDraft
-  createArchiveFiles: File[]
-  noteEditDraft: string
-  appendNoteDraft: string
-  appendFileDraft: AppendFileDraft
-  fileEditDraft: FileEditDraft
-  analysisSummaryDraft: string
-  beginWorkbenchRequest: () => number
-  commitWorkbenchData: (data: LogisticsQuoteWorkbenchResponse, requestId?: number) => boolean
-  workbenchRequestIdRef: MutableRefObject<number>
-  setCreateDraft: Dispatch<SetStateAction<SourceBundleCreateDraft>>
-  setCreateArchiveFiles: Dispatch<SetStateAction<File[]>>
-  setCreateState: Dispatch<SetStateAction<AsyncActionState>>
-  setNoteEditState: Dispatch<SetStateAction<AsyncActionState>>
-  setAppendNoteDraft: Dispatch<SetStateAction<string>>
-  setAppendNoteState: Dispatch<SetStateAction<AsyncActionState>>
-  setAppendFileDraft: Dispatch<SetStateAction<AppendFileDraft>>
-  setAppendFileState: Dispatch<SetStateAction<AsyncActionState>>
-  setArchiveFileState: Dispatch<SetStateAction<AsyncActionState>>
-  setFileEditState: Dispatch<SetStateAction<AsyncActionState>>
-  setAnalysisSummaryState: Dispatch<SetStateAction<AsyncActionState>>
-}
-
-export function useLogisticsQuoteBoardActions({
-  selectedBundle,
-  currentSelectedNoteId,
-  currentSelectedFileId,
-  editableNote,
-  createDraft,
-  createArchiveFiles,
-  noteEditDraft,
-  appendNoteDraft,
-  appendFileDraft,
-  fileEditDraft,
-  analysisSummaryDraft,
-  beginWorkbenchRequest,
-  commitWorkbenchData,
-  workbenchRequestIdRef,
-  setCreateDraft,
-  setCreateArchiveFiles,
-  setCreateState,
-  setNoteEditState,
-  setAppendNoteDraft,
-  setAppendNoteState,
-  setAppendFileDraft,
-  setAppendFileState,
-  setArchiveFileState,
-  setFileEditState,
-  setAnalysisSummaryState
-}: UseLogisticsQuoteBoardActionsParams) {
-  const handleCreateSourceBundle = useCallback(async () => {
-    setCreateState({ status: 'loading' })
-    const requestId = beginWorkbenchRequest()
-    let latestData: LogisticsQuoteWorkbenchResponse | null = null
-    try {
-      let data = await createLogisticsQuoteSourceBundle(buildSourceBundleCreateRequest(createDraft, createArchiveFiles))
-      latestData = data
-      const usedFileIds = new Set<number>()
-      for (const archiveFile of createArchiveFiles) {
-        const targetFile = data.selectedBundle?.files.find((item) => {
-          if (typeof item.id !== 'number' || usedFileIds.has(item.id)) {
-            return false
-          }
-          return item.fileName === archiveFile.name
-        })
-        if (typeof targetFile?.id === 'number') {
-          usedFileIds.add(targetFile.id)
-        }
-        data = await archiveLogisticsQuoteSourceBundleFile(
-          data.selectedBundleId ?? data.selectedBundle?.id ?? 0,
-          archiveFile,
-          data.selectedBundle?.selectedNoteId ?? undefined,
-          targetFile?.id
-        )
-        latestData = data
-      }
-      if (!commitWorkbenchData(data, requestId)) {
-        setCreateState({ status: 'idle' })
-        return
-      }
-      setCreateDraft(emptyCreateDraft)
-      setCreateArchiveFiles([])
-      setCreateState({ status: 'idle' })
-    } catch (error) {
-      if (requestId !== workbenchRequestIdRef.current) {
-        setCreateState({ status: 'idle' })
-        return
-      }
-      if (latestData) {
-        commitWorkbenchData(latestData, requestId)
-      }
-      setCreateState({
-        status: 'error',
-        message: error instanceof Error ? error.message : '来源包保存或文件归档失败'
-      })
-    }
-  }, [
+export function useLogisticsQuoteBoardActions(params: UseLogisticsQuoteBoardActionsParams) {
+  const handleCreateSourceBundle = useLogisticsQuoteSourceBundleCreate(params)
+  const {
+    selectedBundle,
+    currentSelectedNoteId,
+    currentSelectedFileId,
+    editableNote,
+    noteEditDraft,
+    appendNoteDraft,
+    appendFileDraft,
+    fileEditDraft,
+    analysisSummaryDraft,
     beginWorkbenchRequest,
     commitWorkbenchData,
-    createArchiveFiles,
-    createDraft,
-    setCreateArchiveFiles,
-    setCreateDraft,
-    setCreateState,
-    workbenchRequestIdRef
-  ])
+    workbenchRequestIdRef,
+    setNoteEditState,
+    setAppendNoteDraft,
+    setAppendNoteState,
+    setAppendFileDraft,
+    setAppendFileState,
+    setArchiveFileState,
+    setFileEditState,
+    setAnalysisSummaryState
+  } = params
 
   const handleUpdateSelectedNote = useCallback(async () => {
     if (!selectedBundle?.id || !editableNote?.id) {

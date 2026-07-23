@@ -1,0 +1,219 @@
+.warehouse-dispatch-cost-drawer,
+.warehouse-dispatch-cost-comparison,
+.warehouse-dispatch-cost-breakdown {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.warehouse-dispatch-cost-drawer-shell .ant-drawer-body,
+.warehouse-dispatch-cost-drawer-shell .ant-drawer-footer {
+  overflow-x: hidden;
+}
+
+.warehouse-dispatch-cost-fit-table,
+.warehouse-dispatch-cost-fit-table .ant-spin-nested-loading,
+.warehouse-dispatch-cost-fit-table .ant-spin-container,
+.warehouse-dispatch-cost-fit-table .ant-table,
+.warehouse-dispatch-cost-fit-table .ant-table-container,
+.warehouse-dispatch-cost-fit-table .ant-table-content {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.warehouse-dispatch-cost-fit-table .ant-table-content {
+  overflow-x: hidden !important;
+}
+
+.warehouse-dispatch-cost-fit-table .ant-table-content > table {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.warehouse-dispatch-cost-fit-table .ant-table-cell {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.warehouse-dispatch-cost-comparison {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.warehouse-dispatch-cost-viewing-row > td {
+  background: #ecfeff !important;
+}
+
+.warehouse-dispatch-cost-selected-row > td {
+  box-shadow: inset 0 2px 0 #10b981, inset 0 -2px 0 #10b981;
+}
+
+.warehouse-dispatch-cost-selected-row > td:first-child {
+  box-shadow: inset 2px 0 0 #10b981, inset 0 2px 0 #10b981, inset 0 -2px 0 #10b981;
+}
+
+.warehouse-dispatch-cost-selected-row > td:last-child {
+  box-shadow: inset -2px 0 0 #10b981, inset 0 2px 0 #10b981, inset 0 -2px 0 #10b981;
+}
+
+.warehouse-dispatch-cost-breakdown {
+  padding-top: 12px;
+}
+
+.warehouse-dispatch-cost-drawer-footer {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.warehouse-dispatch-cost-drawer-selection {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.warehouse-dispatch-cost-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.warehouse-dispatch-cost-heading > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.warehouse-dispatch-cost-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(110px, 1fr));
+  min-width: 0;
+  overflow-x: hidden;
+  border: 1px solid #dbe4ef;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.warehouse-dispatch-cost-summary-item {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  border-right: 1px solid #dbe4ef;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.warehouse-dispatch-cost-summary-item:last-child {
+  border-right: 0;
+}
+
+.warehouse-dispatch-cost-summary-item strong {
+  color: #0f172a;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.warehouse-dispatch-cost-summary-item.is-strong {
+  background: #ecfdf5;
+}
+
+.warehouse-dispatch-cost-summary-item.is-strong strong {
+  color: #047857;
+}
+
+.warehouse-dispatch-cost-table-block {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.warehouse-dispatch-forwarder-breakdown {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.warehouse-dispatch-forwarder-amount,
+.warehouse-dispatch-forwarder-cost-components {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.warehouse-dispatch-forwarder-amount {
+  align-items: flex-end;
+}
+
+.warehouse-dispatch-forwarder-cost-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) auto;
+  gap: 10px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.warehouse-dispatch-forwarder-cost-row span:last-child {
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.warehouse-dispatch-cost-comparison .ant-table-expanded-row > td {
+  padding: 8px 16px 12px 48px !important;
+  background: #f8fafc !important;
+}
+
+.warehouse-dispatch-cost-name,
+.warehouse-dispatch-cost-product,
+.warehouse-dispatch-cost-billing {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.warehouse-dispatch-cost-product .ant-typography {
+  max-width: 260px;
+  margin: 0;
+}
+
+.warehouse-dispatch-cost-billing {
+  align-items: flex-end;
+}
+
+.warehouse-dispatch-product-cost-components {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.warehouse-dispatch-product-cost-row {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto;
+  gap: 10px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.warehouse-dispatch-product-cost-row span:last-child {
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}

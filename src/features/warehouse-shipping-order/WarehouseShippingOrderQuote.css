@@ -1,0 +1,94 @@
+.warehouse-shipping-order-create-modal,
+.warehouse-shipping-order-edit-form {
+  display: grid;
+  gap: 10px;
+}
+
+.warehouse-shipping-order-edit-form .ant-form-item {
+  margin-bottom: 0;
+}
+
+.warehouse-shipping-quote-export {
+  display: grid;
+  gap: 12px;
+}
+
+.warehouse-shipping-quote-export-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.42fr) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.warehouse-shipping-quote-export-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  color: #475569;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.warehouse-shipping-quote-export-detail strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.warehouse-shipping-order-import-result {
+  display: grid;
+  gap: 8px;
+}
+
+.warehouse-shipping-order-import-alert {
+  margin-bottom: 10px;
+}
+
+.warehouse-shipping-order-quote-field {
+  width: 100%;
+}
+
+.warehouse-shipping-order-price-cell {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.warehouse-shipping-order-price-unit {
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.warehouse-shipping-order-bulk-quote-modal {
+  display: grid;
+  gap: 12px;
+}
+
+.warehouse-shipping-order-bulk-quote-scope {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.warehouse-shipping-order-bulk-quote-price {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.warehouse-shipping-order-import-result ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.warehouse-shipping-order-import-result li {
+  margin: 3px 0;
+}
+
+@media (max-width: 920px) {
+  .warehouse-shipping-quote-export-controls {
+    grid-template-columns: 1fr;
+  }
+}

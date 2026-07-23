@@ -1,0 +1,139 @@
+.warehouse-shipping-execution-drawer .ant-drawer-body {
+  padding: 0 24px 24px;
+  overflow-x: hidden;
+}
+
+.warehouse-shipping-execution-summary {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: grid;
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.warehouse-shipping-execution-summary h4,
+.warehouse-shipping-execution-order h5 {
+  margin: 0;
+}
+
+.warehouse-shipping-execution-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+
+.warehouse-shipping-execution-metric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.warehouse-shipping-execution-orders {
+  display: grid;
+  gap: 24px;
+  padding-top: 20px;
+}
+
+.warehouse-shipping-execution-order {
+  min-width: 0;
+}
+
+.warehouse-shipping-execution-order > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #0f766e;
+}
+
+.warehouse-shipping-execution-packing {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+}
+
+.warehouse-shipping-execution-packing-title,
+.warehouse-shipping-execution-box-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.warehouse-shipping-execution-boxes {
+  display: grid;
+  gap: 10px;
+}
+
+.warehouse-shipping-execution-box {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dbe4ea;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.warehouse-shipping-execution-box-title > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.warehouse-shipping-execution-products {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px 16px;
+  overflow: hidden;
+  border-top: 1px solid #e2e8f0;
+}
+
+.warehouse-shipping-execution-product {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.warehouse-shipping-execution-product .ant-image-img,
+.warehouse-shipping-execution-image-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.warehouse-shipping-execution-image-placeholder {
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  background: #eef2f6;
+  font-size: 12px;
+}
+
+.warehouse-shipping-execution-product-main {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+@media (max-width: 720px) {
+  .warehouse-shipping-execution-metrics,
+  .warehouse-shipping-execution-products {
+    grid-template-columns: 1fr;
+  }
+
+  .warehouse-shipping-execution-packing-title,
+  .warehouse-shipping-execution-box-title {
+    flex-direction: column;
+  }
+}

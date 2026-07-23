@@ -3,9 +3,25 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
-const typesSource = readFileSync(resolve(root, 'src/features/warehouse-dispatch/types.ts'), 'utf8');
-const apiSource = readFileSync(resolve(root, 'src/features/warehouse-dispatch/api.ts'), 'utf8');
-const pageSource = readFileSync(resolve(root, 'src/features/warehouse-dispatch/WarehouseDispatchWorkbenchPage.tsx'), 'utf8');
+const feature = (name) =>
+  readFileSync(resolve(root, 'src/features/warehouse-dispatch', name), 'utf8');
+const typesSource = [
+  feature('warehouseCoreTypes.ts'),
+  feature('shippingTypes.ts'),
+].join('\n');
+const apiSource = [
+  feature('api.ts'),
+  feature('dispatchApiTypes.ts'),
+  feature('apiNormalizers.ts'),
+  feature('dispatchApiMappers.ts'),
+].join('\n');
+const pageSource = [
+  feature('WarehouseDispatchWorkbenchPage.tsx'),
+  feature('WarehouseReadyCells.tsx'),
+  feature('WarehouseReadyPanel.tsx'),
+  feature('useReadyWorkspace.ts'),
+  feature('useShippingPlanWorkspace.ts'),
+].join('\n');
 
 assert.match(typesSource, /logisticsQuoteStatus\?:\s*LogisticsQuoteStatus/);
 assert.match(typesSource, /logisticsShippingSubmitStatus\?:\s*LogisticsShippingSubmitStatus/);
@@ -28,7 +44,7 @@ assert.match(pageSource, /待报价/);
 assert.match(pageSource, /未提交发货/);
 assert.match(pageSource, /logisticsQuoteBlocking/);
 assert.match(pageSource, /updateReadyItemDispatchTarget/);
-assert.match(pageSource, /issueShippingBatch\(generatedShippingBatch\.id, selectedShippingOptionId\)/);
+assert.match(pageSource, /issueShippingBatch\(shippingBatch\.id, selectedOptionId\)/);
 assert.doesNotMatch(pageSource, /createReadySourceDispatchPlan|createDispatchPlan\(/);
 assert.doesNotMatch(pageSource, /selectShippingOption\(generatedShippingBatch\.id|createOutboundOrders\(generatedShippingBatch\.id/);
 
