@@ -16,6 +16,7 @@ import type {
   InTransitImportPreview,
   InTransitLogisticsNode,
   InTransitLogisticsNodeList,
+  InTransitLogisticsAutoSyncAccount,
   InTransitSkuFreightCostHistory,
   SaveInTransitGoodsLineRequest,
   SaveInTransitForwarderAliasRequest,
@@ -46,6 +47,11 @@ export async function fetchInTransitContract(): Promise<InTransitContract> {
 export async function fetchInTransitForwarders(): Promise<InTransitForwarder[]> {
   const response = await apiFetch('/api/in-transit-goods/forwarders')
   return readJson<InTransitForwarder[]>(response)
+}
+
+export async function fetchInTransitLogisticsAutoSyncAccounts(): Promise<InTransitLogisticsAutoSyncAccount[]> {
+  const response = await apiFetch('/api/in-transit-goods/logistics-auto-sync/accounts')
+  return readJson<InTransitLogisticsAutoSyncAccount[]>(response)
 }
 
 export async function saveInTransitForwarderAlias(

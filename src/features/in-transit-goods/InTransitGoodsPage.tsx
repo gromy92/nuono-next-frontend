@@ -6,6 +6,7 @@ import { InTransitImportDrawer } from './InTransitImportDrawer'
 import { InTransitBatchEditorDrawer } from './InTransitBatchEditorDrawer'
 import { InTransitEstimatedArrivalModal } from './InTransitEstimatedArrivalModal'
 import { InTransitSkuFreightDrawer } from './InTransitSkuFreightDrawer'
+import { InTransitAutoSyncAlert } from './InTransitAutoSyncAlert'
 import type { InTransitGoodsPageProps } from './InTransitGoodsPage.models'
 import { stripedRowClassName } from './InTransitGoodsPage.utils'
 import { useInTransitBatchColumns } from './useInTransitBatchColumns'
@@ -16,6 +17,7 @@ import { useInTransitBoxDetail } from './useInTransitBoxDetail'
 import { useInTransitForwarderAlias } from './useInTransitForwarderAlias'
 import { useInTransitImport } from './useInTransitImport'
 import { useInTransitSkuFreight } from './useInTransitSkuFreight'
+import { useInTransitAutoSyncAlerts } from './useInTransitAutoSyncAlerts'
 import './InTransitGoodsPage.css'
 
 export function InTransitGoodsPage({
@@ -25,6 +27,7 @@ export function InTransitGoodsPage({
   onCloseBoxDetailTab
 }: InTransitGoodsPageProps = {}) {
   const batchList = useInTransitBatchList(isBoxDetailTab)
+  const autoSyncAlerts = useInTransitAutoSyncAlerts(!isBoxDetailTab)
   const batchEditor = useInTransitBatchEditor(batchList.filters, batchList.load)
   const estimatedArrival = useInTransitEstimatedArrival(batchList.filters, batchList.load)
   const alias = useInTransitForwarderAlias(batchList.filters, batchList.load)
@@ -69,6 +72,7 @@ export function InTransitGoodsPage({
   return (
     <div className="in-transit-page" data-testid="in-transit-goods-page">
       {batchList.state.status === 'error' ? <Alert type="error" showIcon message={batchList.state.message} /> : null}
+      <InTransitAutoSyncAlert state={autoSyncAlerts.state} />
 
       <InTransitBatchToolbar
         filters={batchList.filters}
@@ -80,7 +84,10 @@ export function InTransitGoodsPage({
         statusOptions={batchList.statusOptions}
         onForwarderChange={batchList.updateForwarderFilter}
         onFilterChange={batchList.updateFilters}
-        onRefresh={() => void batchList.load(batchList.filters)}
+        onRefresh={() => {
+          void batchList.load(batchList.filters)
+          void autoSyncAlerts.load()
+        }}
         onOpenImport={importer.openImportDrawer}
         onOpenCreate={batchEditor.openCreate}
       />

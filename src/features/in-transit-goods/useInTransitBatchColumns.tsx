@@ -6,13 +6,11 @@ import type { InTransitBatch, InTransitBatchFilters } from './types'
 import type { BoxDetailTabKey } from './InTransitGoodsPage.models'
 import { MISSING_FIELD_LABELS } from './InTransitGoodsPage.constants'
 import { estimatedArrivalSourceColor, estimatedArrivalSourceLabel } from './InTransitEstimatedArrivalModal'
+import { buildBatchNodeHistoryItems } from './batchNodeHistory'
 import {
   formatInTransitDuration,
   formatNodeDate,
-  formatNodeDateTime,
-  logisticsNodeDisplayLabel,
-  nodeTimelineColor,
-  shouldShowNodeDescription
+  formatNodeDateTime
 } from './InTransitGoodsPage.utils'
 
 const { Text } = Typography
@@ -91,7 +89,7 @@ export function useInTransitBatchColumns({
       title: '时间节点',
       dataIndex: 'etaDate',
       key: 'timeNodes',
-      width: 280,
+      width: 380,
       sorter: true,
       sortOrder: batchSortOrder('etaDate'),
       render: (_value, row) => renderTimeNodes(row, nodeStatusLabel, onOpenEstimatedArrival)
@@ -153,12 +151,12 @@ function renderTimeNodes(
   nodeStatusLabel: Map<string, string>,
   onOpenEstimatedArrival: (row: InTransitBatch) => void
 ) {
-  const label = logisticsNodeDisplayLabel(nodeStatusLabel, row.latestNodeStatus, row.latestNodeDescription)
   const actualArrivalText = row.actualArrivalAt ? formatNodeDateTime(row.actualArrivalAt) : undefined
   const estimatedArrivalText = row.estimatedArrivalAt ? formatNodeDate(row.estimatedArrivalAt) : row.etaDate || undefined
   const arrivalText = actualArrivalText || estimatedArrivalText || '未维护'
   const hasEffectiveArrival = Boolean(row.effectiveArrivalAt || row.actualArrivalAt || row.estimatedArrivalAt || row.etaDate)
   const effectiveArrivalSource = row.effectiveArrivalSource || row.estimatedArrivalSource
+  const historyItems = buildBatchNodeHistoryItems(row.nodeHistory, nodeStatusLabel)
   return (
     <Space direction="vertical" size={2}>
       <Text type="secondary">国内收货 {formatNodeDateTime(row.domesticReceivedAt)}</Text>
@@ -180,18 +178,24 @@ function renderTimeNodes(
         ) : null}
       </Space>
       {actualArrivalText && estimatedArrivalText ? <Text type="secondary">预计到达 {estimatedArrivalText}</Text> : null}
-      <Space size={6} wrap>
-        <Text type="secondary">最新</Text>
-        {row.latestNodeStatus ? (
-          <Tag color={nodeTimelineColor(row.latestNodeStatus)} style={{ marginInlineEnd: 0 }}>
-            {label}
-          </Tag>
-        ) : (
-          <Text type="secondary">-</Text>
-        )}
-        <Text type="secondary">{formatNodeDate(row.latestNodeHappenedAt)}</Text>
-      </Space>
-      {shouldShowNodeDescription(row.latestNodeDescription) ? <Text>{row.latestNodeDescription}</Text> : null}
+      <Text type="secondary">历史状态时间</Text>
+      {historyItems.length ? (
+        <div className="in-transit-node-history">
+          {historyItems.map((item) => (
+            <div className="in-transit-node-history__item" key={item.nodeId}>
+              <span className="in-transit-node-history__marker" aria-hidden="true" />
+              <div className="in-transit-node-history__content">
+                <Space size={6} wrap>
+                  <Tag color={item.color} style={{ marginInlineEnd: 0 }}>{item.label}</Tag>
+                  <Text type="secondary">{item.happenedAtText}</Text>
+                </Space>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Text type="secondary">暂无历史节点</Text>
+      )}
     </Space>
   )
 }
