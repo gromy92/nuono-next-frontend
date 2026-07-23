@@ -19,7 +19,7 @@ assert.match(
 assert.doesNotMatch(
   pageSource,
   /selectProductSpecEffectiveSource/,
-  'purchase order product-data completion must not mutate the global effective source'
+  'saving pre-application procurement specs must not mutate the global effective source'
 )
 
 assert.match(
