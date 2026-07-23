@@ -3,7 +3,12 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const featureDir = path.resolve('src/features/product-logistics-costs')
-const pageSource = fs.readFileSync(path.join(featureDir, 'ProductLogisticsCostsPage.tsx'), 'utf8')
+const pageSource = fs
+  .readdirSync(featureDir)
+  .filter((fileName) => /\.(ts|tsx)$/.test(fileName) && !fileName.endsWith('.test.ts'))
+  .sort()
+  .map((fileName) => fs.readFileSync(path.join(featureDir, fileName), 'utf8'))
+  .join('\n')
 const pageCss = fs.readFileSync(path.join(featureDir, 'ProductLogisticsCostsPage.css'), 'utf8')
 
 assert(
@@ -31,7 +36,7 @@ assert(
 )
 
 assert(
-  pageSource.includes('function isBatchHistoryCost') && pageSource.includes('row.batchReferenceNo'),
+  pageSource.includes('function groupHistoryByPartnerSku') && pageSource.includes('row.batchReferenceNo'),
   'product logistics cost history list should only show batch-backed history quotes'
 )
 
@@ -57,8 +62,8 @@ assert(
 )
 
 assert(
-  pageSource.includes('syncSelectedProductsAfterRateCardSave') &&
-    pageSource.includes('assignableSelectedRows.length > 0') &&
+  pageSource.includes('syncSelectedProducts') &&
+    pageSource.includes('assignableSelectedRows.length') &&
     pageSource.includes('已保存线路报价，并更新') &&
     pageSource.includes('firstFormValidationMessage(error)'),
   'route category quote save should visibly handle validation and sync selected products when rows are selected'
@@ -86,7 +91,7 @@ assert(
     manualQuoteModalSource.indexOf('label="类别"') > 0 &&
     manualQuoteModalSource.indexOf('label="类别"') < manualQuoteModalSource.indexOf('label="当前报价"') &&
     manualQuoteModalSource.includes("rules={[{ required: true, message: '请选择类别' }]}") &&
-    manualQuoteModalSource.includes('onChange={handleManualQuoteCategoryChange}'),
+    manualQuoteModalSource.includes('onChange={mutations.handleManualQuoteCategoryChange}'),
   'manual current quote modal should choose a route category first and use the same category selector behavior as batch maintenance'
 )
 

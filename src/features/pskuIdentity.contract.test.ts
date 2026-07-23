@@ -18,7 +18,11 @@ const officialWarehouseStatisticsApi = readFileSync(
   join(featuresDir, 'official-warehouse/statisticsApi.ts'),
   'utf8'
 )
-const warehouseDispatch = readFileSync(join(featuresDir, 'warehouse-dispatch/WarehouseDispatchWorkbenchPage.tsx'), 'utf8')
+const warehouseDispatch = [
+  'WarehouseDispatchWorkbenchPage.tsx',
+  'readyDomain.ts',
+  'receiptDomain.ts'
+].map((fileName) => readFileSync(join(featuresDir, 'warehouse-dispatch', fileName), 'utf8')).join('\n')
 const warehouseDispatchApi = readFileSync(join(featuresDir, 'warehouse-dispatch/api.ts'), 'utf8')
 const ali1688SkuPurchaseHistory = readFileSync(
   join(featuresDir, 'ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage.tsx'),
@@ -106,7 +110,7 @@ assert.doesNotMatch(
 
 assert.match(
   warehouseDispatch,
-  /sourceStoreScope[\s\S]*productScope[\s\S]*item\.siteCode[\s\S]*fulfillmentScope[\s\S]*item\.specStatus/,
+  /function readyShipmentBusinessScopeKey[\s\S]*source\.storeCode[\s\S]*normalizeProductKey\(item\.psku\)[\s\S]*item\.siteCode,\s*item\.transportMode[\s\S]*item\.fulfillmentType[\s\S]*item\.specStatus/,
   'warehouse dispatch ready-row key must keep source store, PSKU, site, fulfillment, and spec status'
 )
 
