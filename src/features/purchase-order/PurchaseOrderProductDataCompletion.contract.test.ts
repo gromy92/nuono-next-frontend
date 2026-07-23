@@ -12,8 +12,14 @@ assert.match(
 
 assert.match(
   pageSource,
-  /saveProductSpecSource\(\{[\s\S]*sourceType: 'ali1688'[\s\S]*selectProductSpecEffectiveSource/,
-  'purchase order product-data completion must save product specs as 1688 and set the saved source as effective'
+  /saveProductSpecSource\(\{[\s\S]*sourceType: 'ali1688'/,
+  'purchase order product-data completion must save product specs to the 1688 source'
+)
+
+assert.doesNotMatch(
+  pageSource,
+  /selectProductSpecEffectiveSource/,
+  'purchase order product-data completion must not mutate the global effective source'
 )
 
 assert.match(

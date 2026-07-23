@@ -42,7 +42,6 @@ import {
   fetchProductLogisticsProfiles,
   fetchProductSpecDetail,
   saveProductSpecSource,
-  selectProductSpecEffectiveSource,
   saveProductLogisticsProfile
 } from '../product-management/api'
 import type {
@@ -1031,15 +1030,6 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
         if (!source.sourceId) {
           throw new Error('商品规格保存后缺少来源编号。')
         }
-        await selectProductSpecEffectiveSource({
-          ownerUserId: context.ownerUserId,
-          storeCode: context.storeCode,
-          variantId: context.variantId,
-          partnerSku: context.partnerSku,
-          currentZCode: context.currentZCode,
-          skuParent: context.currentZCode,
-          sourceId: source.sourceId
-        })
       }
       if (saveLogistics) {
         await saveProductLogisticsProfile({
