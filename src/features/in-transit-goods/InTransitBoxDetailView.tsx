@@ -1,10 +1,12 @@
 import { Table, Tabs } from 'antd'
 import type { BoxDetailTabKey, InTransitBoxGroup, InTransitProductGroup } from './InTransitGoodsPage.models'
 import type { InTransitBatch } from './types'
+import type { InTransitProductMatchCandidate } from './types'
 import { stripedRowClassName } from './InTransitGoodsPage.utils'
 import { useInTransitBoxDetailColumns } from './useInTransitBoxDetailColumns'
 import { InTransitSkuFreightDrawer } from './InTransitSkuFreightDrawer'
 import type { useInTransitSkuFreight } from './useInTransitSkuFreight'
+import { InTransitProductMatchPanel } from './InTransitProductMatchPanel'
 
 type InTransitBoxDetailViewProps = {
   batch: InTransitBatch
@@ -12,8 +14,11 @@ type InTransitBoxDetailViewProps = {
   boxGroups: InTransitBoxGroup[]
   productGroups: InTransitProductGroup[]
   loading: boolean
+  productMatchCandidates: InTransitProductMatchCandidate[]
+  rematchingProducts: boolean
   skuFreight: ReturnType<typeof useInTransitSkuFreight>
   onTabChange: (tab: BoxDetailTabKey) => void
+  onRematchProducts: () => void
 }
 
 export function InTransitBoxDetailView({
@@ -22,8 +27,11 @@ export function InTransitBoxDetailView({
   boxGroups,
   productGroups,
   loading,
+  productMatchCandidates,
+  rematchingProducts,
   skuFreight,
-  onTabChange
+  onTabChange,
+  onRematchProducts
 }: InTransitBoxDetailViewProps) {
   const { boxDetailColumns, productColumns } = useInTransitBoxDetailColumns((row) => void skuFreight.openSkuFreightHistory(row))
   return (
@@ -37,6 +45,12 @@ export function InTransitBoxDetailView({
           <span className="in-transit-page__stat">剩余 {batch.remainingQuantityTotal ?? '-'}</span>
         </div>
       </div>
+      <InTransitProductMatchPanel
+        items={productMatchCandidates}
+        loading={loading}
+        rematching={rematchingProducts}
+        onRematch={onRematchProducts}
+      />
       <div className="in-transit-detail">
         <Tabs
           activeKey={activeTab}

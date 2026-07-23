@@ -186,6 +186,37 @@ export type InTransitGoodsLineList = {
   items: InTransitGoodsLine[]
 }
 
+export type InTransitProductMatchCandidate = {
+  id: number
+  batchId: number
+  packageId?: number | null
+  boxNo: string
+  sourceBarcode: string
+  sourcePsku?: string | null
+  sourceMsku?: string | null
+  productName?: string | null
+  storeCode?: string | null
+  siteCode?: string | null
+  shippedQuantity: number
+  receivedQuantity: number
+  cartonCount?: number | null
+  unitsPerCarton?: number | null
+  cartonWeightKg?: number | null
+  cartonVolumeCbm?: number | null
+  matchStatus: 'UNMATCHED'
+  matchMessage?: string | null
+}
+
+export type InTransitProductMatchCandidateList = {
+  items: InTransitProductMatchCandidate[]
+}
+
+export type InTransitProductRematchResult = {
+  matchedCount: number
+  pendingCount: number
+  pendingItems: InTransitProductMatchCandidate[]
+}
+
 export type SaveInTransitGoodsLineRequest = {
   lineId?: number
   boxNo: string

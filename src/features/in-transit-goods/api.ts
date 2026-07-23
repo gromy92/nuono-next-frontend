@@ -10,6 +10,8 @@ import type {
   InTransitFreightStatistics,
   InTransitGoodsLine,
   InTransitGoodsLineList,
+  InTransitProductMatchCandidateList,
+  InTransitProductRematchResult,
   InTransitImportConfirm,
   InTransitImportPreview,
   InTransitLogisticsNode,
@@ -104,6 +106,23 @@ export async function saveInTransitActualArrival(
 export async function fetchInTransitGoodsLines(batchId: number): Promise<InTransitGoodsLineList> {
   const response = await apiFetch(`/api/in-transit-goods/batches/${batchId}/lines`)
   return readJson<InTransitGoodsLineList>(response)
+}
+
+export async function fetchInTransitProductMatchCandidates(
+  batchId: number
+): Promise<InTransitProductMatchCandidateList> {
+  const response = await apiFetch(`/api/in-transit-goods/batches/${batchId}/product-match-candidates`)
+  return readJson<InTransitProductMatchCandidateList>(response)
+}
+
+export async function rematchInTransitProducts(
+  batchId: number
+): Promise<InTransitProductRematchResult> {
+  const response = await apiFetch(
+    `/api/in-transit-goods/batches/${batchId}/product-match-candidates/rematch`,
+    { method: 'POST' }
+  )
+  return readJson<InTransitProductRematchResult>(response)
 }
 
 export async function saveInTransitGoodsLine(
