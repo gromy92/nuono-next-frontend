@@ -229,7 +229,6 @@ export type OfficialWarehouseAppointment = {
   storeCode?: string
   siteCode?: string
   status: string
-  warehouseFrom: string
   warehouseToPartnerCode: string
   warehouseToCode?: string
   apStartDate: string
@@ -256,8 +255,6 @@ export type OfficialWarehouseAppointmentAvailability = {
   date?: string
   slotId?: number
   time?: string
-  warehouseFrom?: string
-  warehouseFromCode?: string
   label?: string
 }
 

@@ -1528,10 +1528,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       title: '仓库',
       width: 160,
       render: (_, row) => (
-        <div className="official-warehouse-stack">
-          <Text>{row.warehouseToPartnerCode || '-'}</Text>
-          <Text type="secondary">{row.warehouseFrom || '-'}</Text>
-        </div>
+        <Text>{row.warehouseToPartnerCode || '-'}</Text>
       )
     },
     {
