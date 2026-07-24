@@ -23,13 +23,13 @@ assert.match(
 
 assert.match(
   planPanel,
-  /const columns: ColumnsType<DispatchPlan>[\s\S]*dataSource=\{plans\}/,
+  /const filteredPlans = useMemo[\s\S]*const columns: ColumnsType<DispatchPlan>[\s\S]*dataSource=\{filteredPlans\}/,
   'dispatch requests must render as the primary table list'
 )
 
 assert.match(
   planPanel,
-  /title: '站点 \/ 运输方式'[\s\S]*buildPlanSiteTransportLabels\(plan\.lines\)[\s\S]*<Tag color="blue"/,
+  /title: '站点 \/ 运输方式'[\s\S]*<LogisticsPartitionTags summary=\{planPartition\(plan\)\}/,
   'dispatch requests must expose every site and transport-mode pair'
 )
 

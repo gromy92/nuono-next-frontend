@@ -3,7 +3,10 @@ import { dispatchContractSources as sources } from './warehouseDispatchContractS
 
 assert.match(sources.workbench, /key: 'dispatch-plan'[\s\S]*buildTabLabel\('发货申请单'/);
 assert.match(sources.planPanel, /ColumnsType<DispatchPlan>/);
-assert.match(sources.planPanel, /title: '站点 \/ 运输方式'[\s\S]*buildPlanSiteTransportLabels[\s\S]*<Tag/);
+assert.match(
+  sources.planPanel,
+  /title: '站点 \/ 运输方式'[\s\S]*<LogisticsPartitionTags summary=\{planPartition\(plan\)\}/
+);
 assert.match(sources.planPanel, /title: '整批统计'[\s\S]*重量[\s\S]*formatDispatchPlanBatchMetric[\s\S]*体积/);
 assert.match(
   sources.planPanel,

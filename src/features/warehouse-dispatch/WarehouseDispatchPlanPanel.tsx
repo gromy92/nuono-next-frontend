@@ -1,12 +1,21 @@
 import { CalculatorOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Empty, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { useMemo, useState } from 'react'
 import {
-  buildPlanSiteTransportLabels,
   countPlanSourceOrders,
   countPlanStores,
   sumPlanQuantity
 } from './dispatchPlanDomain'
+import {
+  matchesLogisticsPartition,
+  summarizeLogisticsPartitions
+} from './logisticsPartitionDomain'
+import type {
+  LogisticsSiteFilter,
+  LogisticsTransportFilter
+} from './logisticsPartitionDomain'
+import { LogisticsPartitionFilters, LogisticsPartitionTags } from './LogisticsPartitionViews'
 import { formatDispatchPlanBatchMetric } from './shippingCostDomain'
 import type { DispatchPlan } from './types'
 import type { useShippingPlanWorkspace } from './useShippingPlanWorkspace'
@@ -30,6 +39,11 @@ export function WarehouseDispatchPlanPanel({
   dataError,
   onRefresh
 }: WarehouseDispatchPlanPanelProps) {
+  const [siteFilter, setSiteFilter] = useState<LogisticsSiteFilter>('all')
+  const [transportFilter, setTransportFilter] = useState<LogisticsTransportFilter>('all')
+  const filteredPlans = useMemo(() => plans.filter((plan) => (
+    matchesLogisticsPartition(planPartition(plan), siteFilter, transportFilter)
+  )), [plans, siteFilter, transportFilter])
   const columns: ColumnsType<DispatchPlan> = [
     {
       title: '发货申请单',
@@ -65,12 +79,7 @@ export function WarehouseDispatchPlanPanel({
     {
       title: '站点 / 运输方式',
       width: 160,
-      render: (_, plan) => {
-        const labels = buildPlanSiteTransportLabels(plan.lines)
-        return labels.length
-          ? <Space size={[4, 4]} wrap>{labels.map((label) => <Tag color="blue" key={label}>{label}</Tag>)}</Space>
-          : <Text type="secondary">-</Text>
-      }
+      render: (_, plan) => <LogisticsPartitionTags summary={planPartition(plan)} />
     },
     {
       title: '物流计划',
@@ -122,11 +131,13 @@ export function WarehouseDispatchPlanPanel({
           {dataError ? <Tag color="red">{dataError}</Tag> : null}
         </div>
         <div className="warehouse-dispatch-toolbar-right">
+          <LogisticsPartitionFilters siteFilter={siteFilter} transportFilter={transportFilter}
+            onSiteFilterChange={setSiteFilter} onTransportFilterChange={setTransportFilter} />
           <Button icon={<ReloadOutlined />} loading={dataLoading} onClick={() => { void onRefresh() }}>刷新</Button>
         </div>
       </div>
       <Table className="warehouse-dispatch-plan-table" rowKey="id" size="small" columns={columns}
-        dataSource={plans} loading={dataLoading} pagination={DISPATCH_PLAN_TABLE_PAGINATION}
+        dataSource={filteredPlans} loading={dataLoading} pagination={DISPATCH_PLAN_TABLE_PAGINATION}
         scroll={{ x: 1120 }} rowClassName={(plan) => plan.id === workspace.selectedPlan?.id
           ? 'warehouse-dispatch-selected-row'
           : ''}
@@ -134,6 +145,13 @@ export function WarehouseDispatchPlanPanel({
         onRow={(plan) => ({ onClick: () => workspace.selectPlan(plan.id) })} />
     </div>
   )
+}
+
+function planPartition(plan: DispatchPlan) {
+  return summarizeLogisticsPartitions(plan.lines.map((line) => ({
+    siteCode: line.siteCode,
+    transportMode: line.transportMode
+  })))
 }
 
 function BatchMetric({ label, metric }: {

@@ -6,7 +6,20 @@ import {
   SearchOutlined
 } from '@ant-design/icons';
 import { Button, Empty, Input, Spin, Table, Tabs, Tag, Typography } from 'antd';
+import { useMemo, useState } from 'react';
 import type { ShippingOrder } from '../purchase-order/types';
+import {
+  matchesLogisticsPartition,
+  summarizeLogisticsPartitions
+} from '../warehouse-dispatch/logisticsPartitionDomain';
+import type {
+  LogisticsSiteFilter,
+  LogisticsTransportFilter
+} from '../warehouse-dispatch/logisticsPartitionDomain';
+import {
+  LogisticsPartitionFilters,
+  LogisticsPartitionTags
+} from '../warehouse-dispatch/LogisticsPartitionViews';
 import { WarehouseOrderIssueTags } from './WarehouseShippingOrderSharedViews';
 import {
   formatDate,
@@ -25,6 +38,11 @@ export function WarehouseShippingOrderList({
   data: WarehouseShippingOrderData;
   embedded: boolean;
 }) {
+  const [siteFilter, setSiteFilter] = useState<LogisticsSiteFilter>('all');
+  const [transportFilter, setTransportFilter] = useState<LogisticsTransportFilter>('all');
+  const filteredOrders = useMemo(() => data.visibleShippingOrders.filter((order) => (
+    matchesLogisticsPartition(orderPartition(order), siteFilter, transportFilter)
+  )), [data.visibleShippingOrders, siteFilter, transportFilter]);
   const orderList = (
     <Spin spinning={data.loading}>
       <div className="warehouse-shipping-order-main">
@@ -50,6 +68,11 @@ export function WarehouseShippingOrderList({
                     </div>
                   );
                 }
+              },
+              {
+                title: '站点 / 运输方式',
+                width: 190,
+                render: (_, order) => <LogisticsPartitionTags summary={orderPartition(order)} />
               },
               {
                 title: '来源采购单',
@@ -110,7 +133,7 @@ export function WarehouseShippingOrderList({
                 )
               }
             ]}
-            dataSource={data.visibleShippingOrders}
+            dataSource={filteredOrders}
             locale={{
               emptyText: data.loadError ? (
                 <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={data.loadError}>
@@ -136,6 +159,8 @@ export function WarehouseShippingOrderList({
           </div>
         )}
         <div className="warehouse-shipping-order-toolbar-actions">
+          <LogisticsPartitionFilters siteFilter={siteFilter} transportFilter={transportFilter}
+            onSiteFilterChange={setSiteFilter} onTransportFilterChange={setTransportFilter} />
           <Input
             allowClear
             prefix={<SearchOutlined />}
@@ -162,4 +187,11 @@ export function WarehouseShippingOrderList({
       )}
     </>
   );
+}
+
+function orderPartition(order: ShippingOrder) {
+  return summarizeLogisticsPartitions((order.segments || []).map((segment) => ({
+    siteCode: segment.siteCode,
+    transportMode: segment.transportMode
+  })));
 }
