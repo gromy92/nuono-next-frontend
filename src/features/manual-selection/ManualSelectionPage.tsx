@@ -5,6 +5,8 @@ import {
   addManualSelectionGroupMaterials,
   analyzeManualSelectionCollection,
   createManualSelectionGroup,
+  deleteManualSelectionCollection,
+  deleteManualSelectionGroup,
   deleteManualSelectionGroupCompetitor,
   loadManualSelectionGroupProfitEstimate,
   loadManualSelectionGroups,
@@ -40,6 +42,7 @@ import {
   loadManualSelectionGroupWorkspace
 } from './manualSelectionGroupRepository'
 import { normalizeManualSelectionPageErrorMessage } from './manualSelectionErrorMessage'
+import type { ManualSelectionGroupDeleteMode } from './manualSelectionDeleteOptions'
 import { saveManualSelectionGroupListingPrefill } from '../product-listing/sourcePrefill'
 import type {
   ManualSelectionAli1688ProcurementInfo,
@@ -197,6 +200,8 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
   const [analyzingCollectionIds, setAnalyzingCollectionIds] = useState<string[]>([])
   const [recollectingCompetitorIds, setRecollectingCompetitorIds] = useState<string[]>([])
   const [deletingCompetitorIds, setDeletingCompetitorIds] = useState<string[]>([])
+  const [deletingCollectionIds, setDeletingCollectionIds] = useState<string[]>([])
+  const [deletingGroupIds, setDeletingGroupIds] = useState<string[]>([])
   const [activeTabKey, setActiveTabKey] = useState<ManualSelectionTabKey>(() => initialManualSelectionTabKey())
   const [analysisGroups, setAnalysisGroups] = useState<ManualSelectionGroupView[]>([])
   const [analysisGroupsLoading, setAnalysisGroupsLoading] = useState(false)
@@ -705,6 +710,65 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
     }
   }
 
+  const handleDeleteCollection = async (record: ProductSelectionSourceCollection) => {
+    if (analysisCollectionIds.includes(record.id)) {
+      message.warning('该采集数据已被选品分析引用，请先在选品分析中解除关联')
+      return
+    }
+    if (deletingCollectionIds.includes(record.id)) {
+      return
+    }
+    setDeletingCollectionIds((current) => [...current, record.id])
+    try {
+      await deleteManualSelectionCollection(record.id, props.storeCode)
+      setSelectedCollectionRowKeys((current) => current.filter((id) => id !== record.id))
+      await loadCollections()
+      message.success('人工采集数据已删除')
+    } catch (error) {
+      const messageText = normalizeManualSelectionPageErrorMessage(
+        error instanceof Error ? error.message : undefined,
+        '删除人工采集数据失败'
+      )
+      message.error(messageText)
+    } finally {
+      setDeletingCollectionIds((current) => current.filter((id) => id !== record.id))
+    }
+  }
+
+  const handleDeleteGroup = async (
+    project: ManualSelectionAnalysisProjectView,
+    mode: ManualSelectionGroupDeleteMode
+  ) => {
+    const groupId = project.groupId || project.projectId
+    if (deletingGroupIds.includes(groupId)) {
+      return
+    }
+    setDeletingGroupIds((current) => [...current, groupId])
+    try {
+      await deleteManualSelectionGroup(groupId, mode, props.storeCode)
+      setAnalysisGroups((current) => current.filter((group) => group.groupId !== groupId))
+      const sourceCollectionIds = new Set(project.records.map((record) => record.id))
+      setSelectedCollectionRowKeys((current) => current.filter((id) => !sourceCollectionIds.has(id)))
+      await loadCollections()
+      try {
+        const groups = await loadManualSelectionGroupWorkspace(props.storeName, props.storeCode)
+        setAnalysisGroups(groups.map(normalizeManualSelectionGroup))
+      } catch (refreshError) {
+        message.warning(refreshError instanceof Error ? refreshError.message : '选品分析已更新，请稍后刷新页面')
+      }
+      message.success(mode === 'group-only' ? '整组选品分析已删除，采集数据已保留' : '整组选品分析和对应采集数据已删除')
+    } catch (error) {
+      const messageText = normalizeManualSelectionPageErrorMessage(
+        error instanceof Error ? error.message : undefined,
+        '删除选品分析失败'
+      )
+      message.error(messageText)
+      throw error
+    } finally {
+      setDeletingGroupIds((current) => current.filter((id) => id !== groupId))
+    }
+  }
+
   return (
     <Space className="manual-selection-page" direction="vertical" size={16}>
       <Tabs
@@ -734,10 +798,12 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
                   analysisCollectionIds={analysisCollectionIds}
                   analysisProjectByCollectionId={analysisProjectByCollectionId}
                   dataSource={visibleCollections}
+                  deletingCollectionIds={deletingCollectionIds}
                   loading={loading}
                   recollecting={submitting}
                   selectedRowKeys={selectedCollectionRowKeys}
                   onAddToAnalysis={(record) => openAddCollectionsToAnalysis([record])}
+                  onDelete={(record) => void handleDeleteCollection(record)}
                   onOpenDetail={setSelectedCollection}
                   onRecollect={(record) => void recollect(record)}
                   onSelectedRowKeysChange={setSelectedCollectionRowKeys}
@@ -756,10 +822,12 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
                   projects={analysisProjects}
                   loading={analysisGroupsLoading}
                   deletingCompetitorIds={deletingCompetitorIds}
+                  deletingGroupIds={deletingGroupIds}
                   recollectingCompetitorIds={recollectingCompetitorIds}
                   onChangeGroupProcurementInfo={handleChangeAli1688ProcurementInfo}
                   onChangeGroupName={handleChangeGroupName}
                   onDeleteCompetitor={(project, competitor) => void handleDeleteCompetitor(project, competitor)}
+                  onDeleteGroup={handleDeleteGroup}
                   onOpenAiAnalysis={(project) => void handleOpenAiAnalysis(project)}
                   onOpenCompetitorDetail={handleOpenCompetitorDetail}
                   onOpenCompetitors={handleOpenCompetitors}

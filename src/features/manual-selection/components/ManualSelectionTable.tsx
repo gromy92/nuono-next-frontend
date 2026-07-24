@@ -8,10 +8,12 @@ export function ManualSelectionTable(props: ManualSelectionTableProps) {
     analysisCollectionIds,
     analysisProjectByCollectionId,
     dataSource,
+    deletingCollectionIds,
     loading,
     recollecting,
     selectedRowKeys,
     onAddToAnalysis,
+    onDelete,
     onOpenDetail,
     onRecollect,
     onSelectedRowKeysChange
@@ -21,8 +23,10 @@ export function ManualSelectionTable(props: ManualSelectionTableProps) {
   const columns = buildManualSelectionTableColumns({
     analysisCollectionIds,
     analysisProjectByCollectionId,
+    deletingCollectionIds,
     recollecting,
     onAddToAnalysis,
+    onDelete,
     onOpenDetail,
     onRecollect
   })

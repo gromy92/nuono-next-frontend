@@ -11,6 +11,10 @@ import type { ColumnsType } from 'antd/es/table'
 import { useState } from 'react'
 import type { ProductSelectionSourceCollection } from '../../source-collection/types'
 import { MANUAL_SELECTION_IMAGE_FALLBACK } from '../constants'
+import {
+  MANUAL_SELECTION_GROUP_DELETE_OPTIONS,
+  type ManualSelectionGroupDeleteMode
+} from '../manualSelectionDeleteOptions'
 import type {
   ManualSelectionAli1688ProcurementInfo,
   ManualSelectionAnalysisProjectView,
@@ -45,10 +49,15 @@ type ManualSelectionAnalysisPanelProps = {
   projects: ManualSelectionAnalysisProjectView[]
   loading?: boolean
   deletingCompetitorIds?: string[]
+  deletingGroupIds?: string[]
   recollectingCompetitorIds?: string[]
   onChangeGroupProcurementInfo: (groupId: string, values: Partial<ManualSelectionAli1688ProcurementInfo>) => void
   onChangeGroupName: (groupId: string, groupName: string) => Promise<void> | void
   onDeleteCompetitor: (project: ManualSelectionAnalysisProjectView, competitor: ManualSelectionCompetitor) => void
+  onDeleteGroup: (
+    project: ManualSelectionAnalysisProjectView,
+    mode: ManualSelectionGroupDeleteMode
+  ) => Promise<void> | void
   onOpenAiAnalysis: (project: ManualSelectionAnalysisProjectView) => void
   onOpenCompetitorDetail: (project: ManualSelectionAnalysisProjectView, focus: { kind: 'link' | 'collection'; id: string }) => void
   onOpenCompetitors: (project: ManualSelectionAnalysisProjectView) => void
@@ -239,10 +248,12 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
     projects,
     loading,
     deletingCompetitorIds = [],
+    deletingGroupIds = [],
     recollectingCompetitorIds = [],
     onChangeGroupProcurementInfo,
     onChangeGroupName,
     onDeleteCompetitor,
+    onDeleteGroup,
     onOpenAiAnalysis,
     onOpenCompetitorDetail,
     onOpenCompetitors,
@@ -254,6 +265,7 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
   const [groupNameEditor, setGroupNameEditor] = useState<GroupNameEditorState | null>(null)
   const [groupNameSaving, setGroupNameSaving] = useState(false)
   const [groupNameError, setGroupNameError] = useState('')
+  const [groupDeleteTarget, setGroupDeleteTarget] = useState<ManualSelectionAnalysisProjectView | null>(null)
   const collectedCount = dataSource.filter((record) => record.status === 'success').length
   const ali1688ReadyCount = dataSource.filter((record) => ali1688CandidateCount(record) > 0).length
   const recommendedCount = dataSource.reduce((total, record) => total + recommendedCandidateCount(record), 0)
@@ -331,29 +343,29 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
       width: 690,
       render: (_, project) => (
         <div
-            className="manual-selection-analysis-collection-overview"
-            data-testid="manual-selection-analysis-collection-overview"
-          >
+          className="manual-selection-analysis-collection-overview"
+          data-testid="manual-selection-analysis-collection-overview"
+        >
           {project.records.map((record) => (
-              <button
-                key={record.id}
-                type="button"
-                className="manual-selection-analysis-competitor-overview-row"
-                title={collectionOverviewText(record)}
-                onClick={() => onOpenCompetitorDetail(project, { kind: 'collection', id: record.id })}
-              >
-                <span className="manual-selection-analysis-competitor-platform is-collected">
-                  {record.sourcePlatform || '平台'}
-                </span>
-                <span className="manual-selection-analysis-competitor-status is-success">
-                  {manualSelectionCollectionSourceLabel(record)}
-                </span>
-                <span className="manual-selection-analysis-competitor-summary">
-                  {collectionOverviewText(record)}
-                </span>
-              </button>
-            ))}
-            {project.competitors?.map((competitor, index) => {
+            <button
+              key={record.id}
+              type="button"
+              className="manual-selection-analysis-competitor-overview-row"
+              title={collectionOverviewText(record)}
+              onClick={() => onOpenCompetitorDetail(project, { kind: 'collection', id: record.id })}
+            >
+              <span className="manual-selection-analysis-competitor-platform is-collected">
+                {record.sourcePlatform || '平台'}
+              </span>
+              <span className="manual-selection-analysis-competitor-status is-success">
+                {manualSelectionCollectionSourceLabel(record)}
+              </span>
+              <span className="manual-selection-analysis-competitor-summary">
+                {collectionOverviewText(record)}
+              </span>
+            </button>
+          ))}
+          {project.competitors?.map((competitor, index) => {
               const focusId = competitor.id || competitor.url || String(index)
               const isFailed = competitor.fetchStatus === 'failed'
               const isSuccess = competitor.fetchStatus === 'success'
@@ -530,6 +542,19 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
           >
             上架
           </Button>
+          <Button
+            danger
+            size="small"
+            type="text"
+            icon={<DeleteOutlined />}
+            data-testid="manual-selection-analysis-group-delete-button"
+            loading={deletingGroupIds.includes(project.groupId || project.projectId)}
+            disabled={deletingGroupIds.includes(project.groupId || project.projectId)}
+            aria-label={`删除整组选品分析：${project.projectName}`}
+            onClick={() => setGroupDeleteTarget(project)}
+          >
+            删除
+          </Button>
         </div>
       )
     }
@@ -565,6 +590,18 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
       purchasePrice: ali1688Editor.purchasePrice
     })
     setAli1688Editor(null)
+  }
+
+  const handleDeleteGroup = async (mode: ManualSelectionGroupDeleteMode) => {
+    if (!groupDeleteTarget) {
+      return
+    }
+    try {
+      await onDeleteGroup(groupDeleteTarget, mode)
+      setGroupDeleteTarget(null)
+    } catch {
+      // 页面层已展示后端业务错误，保留弹窗方便用户重新选择。
+    }
   }
 
   return (
@@ -607,6 +644,50 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
       ) : (
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无选品分析商品" />
       )}
+
+      <Modal
+        title="删除整组选品分析"
+        open={Boolean(groupDeleteTarget)}
+        width={560}
+        closable={!groupDeleteTarget || !deletingGroupIds.includes(groupDeleteTarget.groupId || groupDeleteTarget.projectId)}
+        maskClosable={false}
+        onCancel={() => setGroupDeleteTarget(null)}
+        footer={groupDeleteTarget ? [
+          <Button
+            key="cancel"
+            disabled={deletingGroupIds.includes(groupDeleteTarget.groupId || groupDeleteTarget.projectId)}
+            onClick={() => setGroupDeleteTarget(null)}
+          >
+            取消
+          </Button>,
+          ...MANUAL_SELECTION_GROUP_DELETE_OPTIONS.map((option) => (
+            <Button
+              key={option.mode}
+              danger={option.mode === 'group-and-source-collections'}
+              type={option.mode === 'group-and-source-collections' ? 'primary' : 'default'}
+              loading={deletingGroupIds.includes(groupDeleteTarget.groupId || groupDeleteTarget.projectId)}
+              onClick={() => void handleDeleteGroup(option.mode)}
+            >
+              {option.label}
+            </Button>
+          ))
+        ] : null}
+        destroyOnClose
+      >
+        {groupDeleteTarget ? (
+          <Space direction="vertical" size={12}>
+            <Text strong>{groupDeleteTarget.projectName}</Text>
+            <Text type="secondary">该选品分析包含 {groupDeleteTarget.records.length} 条采集数据，删除会一次解除全部关联。</Text>
+            {MANUAL_SELECTION_GROUP_DELETE_OPTIONS.map((option) => (
+              <div key={option.mode}>
+                <Text strong>{option.label}</Text>
+                <br />
+                <Text type="secondary">{option.description}</Text>
+              </div>
+            ))}
+          </Space>
+        ) : null}
+      </Modal>
 
       <Modal
         title="编辑组名"
