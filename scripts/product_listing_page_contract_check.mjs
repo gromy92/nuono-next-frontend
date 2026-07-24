@@ -49,6 +49,12 @@ const metadataValues = sliceBetween(
   'export function productListingEditorDraftToPayload',
   'ProductListingMetadataFormValues'
 )
+const metadataForm = sliceBetween(
+  page,
+  '<Form\n        form={form}',
+  '</Form>',
+  'ProductListingPage metadata form'
+)
 
 assertIncludes(page, 'name="storeCode" hidden', 'ProductListingPage hidden store context')
 assertIncludes(page, 'name="sourceType" hidden', 'ProductListingPage hidden source context')
@@ -85,7 +91,7 @@ for (const label of [
   '仓库 ID',
   '数量'
 ]) {
-  assertNotIncludes(page, label, 'ProductListingPage metadata form')
+  assertNotIncludes(metadataForm, label, 'ProductListingPage metadata form')
 }
 
 for (const implementationDetail of [
