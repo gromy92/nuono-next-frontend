@@ -84,7 +84,7 @@ assert.doesNotMatch(
 assert.doesNotMatch(
   buildAppointmentPayloadSource,
   /warehouseFrom/,
-  'appointment payload should not send warehouse-from because the backend resolves it'
+  'appointment payload should not send a departure warehouse'
 )
 assert.doesNotMatch(
   manualAvailabilityQueryKeySource,
@@ -95,6 +95,16 @@ assert.doesNotMatch(
   submitAppointmentSource,
   /warehouseFrom|appointmentWarehouseFromMissingMessage/,
   'submitting should not block on a frontend warehouse-from value'
+)
+assert.doesNotMatch(
+  pageSource,
+  /warehouseFrom|出发仓库/,
+  'official warehouse pages should not display or reference a departure warehouse'
+)
+assert.doesNotMatch(
+  apiSource,
+  /warehouseFrom|warehouseFromCode/,
+  'official warehouse API models should not expose departure warehouse fields'
 )
 assert.match(
   warehouseLabelSource,
