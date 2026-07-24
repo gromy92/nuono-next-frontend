@@ -35,6 +35,7 @@ import {
 } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
+import { withPublicBasePath } from '../../runtimePaths'
 import { firstFormValidationMessage, normalizeError } from '../../shared/api'
 import type { AuthSession } from '../auth/session'
 import { ReplenishmentPlanTab } from '../replenishment-plan/ReplenishmentPlanTab'
@@ -85,7 +86,6 @@ import type {
 import './PurchaseOrderPage.css'
 
 const { Text } = Typography
-
 type PurchaseOrderPageProps = {
   session?: AuthSession | null
 }
@@ -719,7 +719,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       const shippingOrder = await createShippingOrder({ purchaseOrderIds })
       closeShippingMergeMode()
       message.success(`已创建仓库单 ${shippingOrder.shippingOrderNo}。`)
-      window.location.href = '/warehouse/dispatch?devSession=1&grantPurchase=1&grantWarehouse=1'
+      window.location.href = withPublicBasePath('/warehouse/dispatch?devSession=1&grantPurchase=1&grantWarehouse=1')
     } catch (error) {
       const errorMessage = normalizeError(error, '创建仓库单失败')
       setShippingMergeErrorMessage(errorMessage)
@@ -3377,5 +3377,5 @@ function openTop5(item: PurchaseOrderItem, order: PurchaseOrder) {
   if (order.storeCode) {
     params.set('storeCode', order.storeCode)
   }
-  window.location.href = `/purchase/1688-collection?${params.toString()}#top5`
+  window.location.href = withPublicBasePath(`/purchase/1688-collection?${params.toString()}#top5`)
 }
