@@ -42,6 +42,8 @@ export function mapShippingBatch(batch: ApiShippingBatch): ShippingBatch {
     sourceCount: Number(batch.sourceCount || 0),
     skuCount: Number(batch.skuCount || 0),
     totalQuantity: Number(batch.totalQuantity || 0),
+    siteCodes: (batch.siteCodes || []).map(normalizeSiteCode),
+    transportModes: (batch.transportModes || []).map(normalizeTransportMode),
     optionCount: Number(batch.optionCount ?? batch.options?.length ?? 0),
     packingListCount: Number(batch.packingListCount || 0),
     boxCount: Number(batch.boxCount || 0),
