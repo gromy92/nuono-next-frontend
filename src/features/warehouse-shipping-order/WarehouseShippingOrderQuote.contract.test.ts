@@ -22,6 +22,14 @@ assert.equal(
   'RMB 67/KG'
 );
 assert.equal(
+  formatPublishedQuotePrice({ currency: 'RMB', unitPrice: 67, billingUnit: 'KG' }),
+  'RMB 67/KG'
+);
+assert.equal(
+  formatPublishedQuotePrice({ priceStatus: 'INQUIRY', unitPrice: null, billingUnit: 'KG' }),
+  '需询价'
+);
+assert.equal(
   formatPublishedQuoteSurcharge({
     feeName: '沙特利雅得FBN/FBA送仓费',
     currency: 'RMB',
