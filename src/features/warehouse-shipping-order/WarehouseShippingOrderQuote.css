@@ -60,6 +60,12 @@
   white-space: nowrap;
 }
 
+.warehouse-shipping-order-price-source {
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
 .warehouse-shipping-order-bulk-quote-modal {
   display: grid;
   gap: 12px;

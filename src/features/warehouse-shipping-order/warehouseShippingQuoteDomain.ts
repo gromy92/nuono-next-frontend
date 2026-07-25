@@ -56,6 +56,15 @@ export function quoteUnitDisplayText(transportMode?: string) {
   return `CNY / ${defaultQuoteBillingUnit(transportMode)}`;
 }
 
+export function quotePriceSourceLabel(source?: string) {
+  switch (source) {
+    case 'SHIPPING_ORDER_SNAPSHOT': return '本单已确认';
+    case 'PRODUCT_CURRENT': return '商品当前价 · 待确认';
+    case 'LEGACY_CHANNEL_QUOTE': return '历史渠道价 · 待确认';
+    default: return '';
+  }
+}
+
 export function transportModeLabel(value?: string) {
   switch ((value || '').toUpperCase()) {
     case 'SEA': return '海运';

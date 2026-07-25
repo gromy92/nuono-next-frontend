@@ -1,5 +1,11 @@
 import type { PurchaseSiteCode, PurchaseTransportMode } from './types';
 
+export type WarehouseQuotePriceSource =
+  | 'SHIPPING_ORDER_SNAPSHOT'
+  | 'PRODUCT_CURRENT'
+  | 'LEGACY_CHANNEL_QUOTE'
+  | string
+
 export type PurchaseOrderLogisticsQuoteSummary = {
   totalLineCount: number
   pendingLineCount: number
@@ -71,6 +77,7 @@ export type PurchaseOrderLogisticsQuoteChannelLine = {
   currency?: string
   billingUnit?: string
   yiteMaterial?: string
+  priceSource?: WarehouseQuotePriceSource
 }
 
 export type PurchaseOrderLogisticsQuoteForwarderOption = {

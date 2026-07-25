@@ -65,9 +65,9 @@ export type ShippingOrderLine = {
   unitPrice?: string | number | null
   currency?: string
   billingUnit?: string
+  priceSource?: string
   quantity: number
 }
-
 export type ShippingOrderSegment = {
   id: string
   segmentNo: string

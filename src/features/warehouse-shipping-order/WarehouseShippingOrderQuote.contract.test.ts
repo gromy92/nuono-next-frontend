@@ -5,12 +5,16 @@ import {
   formatPublishedQuotePrice,
   formatPublishedQuoteSurcharge,
   publishedQuoteConstraintLabels,
+  quotePriceSourceLabel,
   quoteUnitDisplayText
 } from './warehouseShippingQuoteDomain';
 
 assert.equal(defaultQuoteBillingUnit('AIR'), 'KG');
 assert.equal(defaultQuoteBillingUnit('SEA'), 'CBM');
 assert.equal(quoteUnitDisplayText('SEA'), 'CNY / CBM');
+assert.equal(quotePriceSourceLabel('SHIPPING_ORDER_SNAPSHOT'), '本单已确认');
+assert.equal(quotePriceSourceLabel('PRODUCT_CURRENT'), '商品当前价 · 待确认');
+assert.equal(quotePriceSourceLabel('LEGACY_CHANNEL_QUOTE'), '历史渠道价 · 待确认');
 assert.equal(
   formatPublishedQuotePrice({
     cargoCategoryName: '沙特空运（普货）',
@@ -74,6 +78,7 @@ assert.match(
   sources.quoteState,
   /linesWithSelectedQuote[\s\S]*applySelectedChannelQuoteToLine\(line, selectedChannel\)/
 );
+assert.match(sources.orderDomain, /priceSource: quote\.priceSource/);
 assert.match(sources.quoteState, /selectedChannel\?\.pendingLineCount[\s\S]*Number\(selectedChannel\.pendingLineCount/);
 assert.match(sources.quoteState, /activeMaintenanceKey: `\$\{selectedOption\.forwarderCode/);
 assert.match(sources.sharedViews, /QuoteChipGroup label="货代"[\s\S]*forwarders\.map/);
@@ -89,4 +94,8 @@ assert.match(sources.quoteTransfer, /selectedChannel\?\.totalLineCount[\s\S]*sel
 assert.match(sources.purchaseOrderApi, /missingOnly\?: boolean[\s\S]*params\.set\('missingOnly', 'true'\)/);
 assert.doesNotMatch(sources.detailToolbar, /导出缺报价|生成账单/);
 assert.doesNotMatch(sources.lineTable, /title: '币种'|title: '计费单位'/);
+assert.match(
+  sources.lineTable,
+  /quotePriceSourceLabel\(line\.priceSource\)[\s\S]*warehouse-shipping-order-price-source/
+);
 assert.match(sources.detailCss, /warehouse-shipping-order-published-price-card \{[\s\S]*background: #f7fbff/);

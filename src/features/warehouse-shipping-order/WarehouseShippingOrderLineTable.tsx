@@ -9,7 +9,7 @@ import {
   shippingOrderLineTitleEn
 } from './warehouseShippingOrderDomain';
 import { YITE_MATERIAL_OPTIONS } from './warehouseShippingOrderModels';
-import { quoteUnitDisplayText } from './warehouseShippingQuoteDomain';
+import { quotePriceSourceLabel, quoteUnitDisplayText } from './warehouseShippingQuoteDomain';
 import type { ShippingOrderQuoteActions } from './useShippingOrderQuoteActions';
 import type { ShippingOrderQuoteState } from './useShippingOrderQuoteState';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
@@ -123,6 +123,7 @@ export function WarehouseShippingOrderLineTable({
           width: 138,
           render: (_, line) => {
             const draft = quote.readLineDraft(line);
+            const priceSourceLabel = quotePriceSourceLabel(line.priceSource);
             return (
               <div className="warehouse-shipping-order-price-cell">
                 <Input
@@ -137,6 +138,14 @@ export function WarehouseShippingOrderLineTable({
                 <Text type="secondary" className="warehouse-shipping-order-price-unit">
                   {quoteUnitDisplayText(quote.activeSegment?.transportMode || line.plannedTransportMode)}
                 </Text>
+                {priceSourceLabel ? (
+                  <Text
+                    type={line.priceSource === 'SHIPPING_ORDER_SNAPSHOT' ? 'success' : 'secondary'}
+                    className="warehouse-shipping-order-price-source"
+                  >
+                    {priceSourceLabel}
+                  </Text>
+                ) : null}
               </div>
             );
           }
