@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { message } from 'antd'
 import {
+  excludeInTransitProductFromAsn,
   fetchInTransitGoodsLines,
   fetchInTransitProductMatchCandidates,
   rematchInTransitProducts
@@ -21,6 +22,7 @@ export function useInTransitBoxDetail({
   const [productMatchCandidates, setProductMatchCandidates] = useState<InTransitProductMatchCandidate[]>([])
   const [loadingBoxLines, setLoadingBoxLines] = useState(false)
   const [rematchingProducts, setRematchingProducts] = useState(false)
+  const [excludingProductCandidateId, setExcludingProductCandidateId] = useState<number | null>(null)
   const requestGuard = useRef(createLatestRequestGuard())
 
   useEffect(() => {
@@ -98,6 +100,21 @@ export function useInTransitBoxDetail({
     }
   }
 
+  const excludeProductFromAsn = async (candidateId: number) => {
+    const batchId = boxDetailRequest?.batchId
+    if (!batchId) return
+    setExcludingProductCandidateId(candidateId)
+    try {
+      const result = await excludeInTransitProductFromAsn(batchId, candidateId)
+      setProductMatchCandidates(result.pendingItems ?? [])
+      message.success('已标记为非库存物料，不再参与 ASN')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '排除非库存物料失败')
+    } finally {
+      setExcludingProductCandidateId(null)
+    }
+  }
+
   return {
     boxDetailTab,
     setBoxDetailTab,
@@ -107,7 +124,9 @@ export function useInTransitBoxDetail({
     productGroups,
     loadingBoxLines,
     rematchingProducts,
+    excludingProductCandidateId,
     rematchProducts,
+    excludeProductFromAsn,
     openBoxDetail,
     closeBoxDetail
   }

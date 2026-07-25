@@ -59,9 +59,11 @@ export function InTransitGoodsPage({
         loading={boxDetail.loadingBoxLines}
         productMatchCandidates={boxDetail.productMatchCandidates}
         rematchingProducts={boxDetail.rematchingProducts}
+        excludingProductCandidateId={boxDetail.excludingProductCandidateId}
         skuFreight={skuFreight}
         onTabChange={boxDetail.setBoxDetailTab}
         onRematchProducts={() => void boxDetail.rematchProducts()}
+        onExcludeFromAsn={(candidateId) => void boxDetail.excludeProductFromAsn(candidateId)}
       />
     )
   }
