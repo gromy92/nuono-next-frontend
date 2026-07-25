@@ -124,6 +124,7 @@ export function applySelectedChannelQuoteToLine(
     unitPrice: quote.unitPrice ?? null,
     currency: quote.currency,
     billingUnit: quote.billingUnit,
+    priceSource: quote.priceSource,
     yiteMaterial: quote.yiteMaterial ?? line.yiteMaterial
   } : line;
 }

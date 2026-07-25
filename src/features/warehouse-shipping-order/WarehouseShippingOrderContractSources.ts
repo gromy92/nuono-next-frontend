@@ -10,6 +10,7 @@ export const contractSources = {
   lineTable: source('./WarehouseShippingOrderLineTable.tsx'),
   detailToolbar: source('./WarehouseShippingOrderDetailToolbar.tsx'),
   sharedViews: source('./WarehouseShippingOrderSharedViews.tsx'),
+  publishedPriceCard: source('./WarehouseShippingOrderPublishedPriceCard.tsx'),
   bulkModal: source('./WarehouseShippingOrderBulkQuoteModal.tsx'),
   quoteState: source('./useShippingOrderQuoteState.ts'),
   quoteActions: source('./useShippingOrderQuoteActions.ts'),
