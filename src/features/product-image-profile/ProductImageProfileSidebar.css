@@ -1,0 +1,39 @@
+.product-image-profile-sidebar-filters {
+  display: grid;
+  gap: 6px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  margin-top: 8px;
+}
+
+.product-image-profile-sidebar-filters .ant-select {
+  min-width: 0;
+  width: 100%;
+}
+
+.product-image-profile-product-statuses {
+  align-items: flex-end;
+  display: grid;
+  flex: 0 0 auto;
+  gap: 3px;
+  justify-items: end;
+  max-width: 88px;
+}
+
+.product-image-profile-product-statuses .ant-tag {
+  font-size: 11px;
+  line-height: 18px;
+  margin: 0;
+  max-width: 88px;
+  overflow: hidden;
+  padding-inline: 5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-image-profile-filter-empty {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  min-height: 360px;
+}

@@ -2,8 +2,23 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const apiSource = fs.readFileSync(path.join(process.cwd(), 'src/features/product-image-profile/api.ts'), 'utf8')
-const pageSource = fs.readFileSync(path.join(process.cwd(), 'src/features/product-image-profile/ProductImageProfilePage.tsx'), 'utf8')
+const featurePath = (file: string) => path.join(
+  process.cwd(),
+  'src/features/product-image-profile',
+  file
+)
+const readFeatureSource = (...files: string[]) => files
+  .map((file) => fs.readFileSync(featurePath(file), 'utf8'))
+  .join('\n')
+
+const apiSource = readFeatureSource('apiTypes.ts', 'suiteApi.ts')
+const pageSource = readFeatureSource(
+  'ProductImageProfilePage.tsx',
+  'ProductImageSuitesTab.tsx',
+  'ProductImageSuiteDialogs.tsx',
+  'useProductImageProfileData.ts',
+  'useProductImageSuiteWorkflow.ts'
+)
 
 assert.equal(apiSource.includes('productVariantId'), false, '商品图 API 不应再传递 variant_id')
 assert.equal(pageSource.includes('productVariantId'), false, '商品图页面不应再依赖 variant_id')
