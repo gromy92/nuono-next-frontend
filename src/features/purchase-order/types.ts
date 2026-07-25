@@ -1,3 +1,5 @@
+import type { PurchaseOrderLogisticsQuoteSummary } from './purchaseOrderLogisticsQuoteTypes';
+
 export type PurchaseSiteCode = string
 
 export type PurchaseTransportMode = 'AIR' | 'SEA' | 'UNSPECIFIED' | string
@@ -22,85 +24,18 @@ export type PurchaseOrderStatus =
   | 'submitted'
   | 'deleted'
 
-export type PurchaseOrderLogisticsQuoteSummary = {
-  totalLineCount: number
-  pendingLineCount: number
-  confirmedLineCount: number
-  submittedLineCount: number
-  newProductLineCount: number
-  shippingSubmitStatus: 'NOT_SUBMITTED' | 'SUBMITTED' | string
-}
-
-export type PurchaseOrderLogisticsQuoteChannelOption = {
-  routeCode: string
-  routeName?: string
-  serviceCode?: string
-  serviceName?: string
-  siteCode?: PurchaseSiteCode
-  transportMode?: PurchaseTransportMode
-  transportModeLabel?: string
-  country?: string
-  targetPlatform?: string
-  deliveryCity?: string
-  destinationNode?: string
-  transitTimeText?: string
-  priceSummary?: string
-  totalLineCount?: number
-  pendingLineCount: number
-  confirmedLineCount?: number
-  newProductLineCount: number
-  lineQuotes?: PurchaseOrderLogisticsQuoteChannelLine[]
-}
-
-export type PurchaseOrderLogisticsQuoteChannelLine = {
-  shippingOrderLineId?: string
-  purchaseOrderItemSiteId?: string
-  partnerSku?: string
-  barcode?: string
-  quoteStatus?: 'PENDING_QUOTE' | 'CONFIRMED' | string
-  unitPrice?: string | number | null
-  currency?: string
-  billingUnit?: string
-  yiteMaterial?: string
-}
-
-export type PurchaseOrderLogisticsQuoteForwarderOption = {
-  forwarderCode: string
-  forwarderName?: string
-  templateType?: string
-  templateName?: string
-  channels: PurchaseOrderLogisticsQuoteChannelOption[]
-}
-
-export type PurchaseOrderLogisticsQuoteOptions = {
-  purchaseOrderId: string
-  purchaseOrderNo?: string
-  pendingLineCount: number
-  unsupportedChannelCount: number
-  forwarders: PurchaseOrderLogisticsQuoteForwarderOption[]
-}
-
-export type PurchaseOrderLogisticsQuoteExportSelection = {
-  forwarderCode: string
-  routeCode: string
-}
-
-export type PurchaseOrderLogisticsQuoteImportResult = {
-  totalRows: number
-  updatedRows: number
-  skippedRows: number
-  errors?: Array<{
-    rowNumber?: number
-    message?: string
-  }>
-}
-
-export type PurchaseOrderShippingSubmitResult = {
-  purchaseOrderId: string
-  purchaseOrderNo: string
-  shippingSubmitStatus: 'SUBMITTED' | string
-  submittedLineCount: number
-}
+export type {
+  PurchaseOrderLogisticsQuoteChannelLine,
+  PurchaseOrderLogisticsQuoteChannelOption,
+  PurchaseOrderLogisticsQuoteExportSelection,
+  PurchaseOrderLogisticsQuoteForwarderOption,
+  PurchaseOrderLogisticsQuoteImportResult,
+  PurchaseOrderLogisticsQuoteOptions,
+  PurchaseOrderLogisticsQuotePublishedPrice,
+  PurchaseOrderLogisticsQuoteSummary,
+  PurchaseOrderLogisticsQuoteSurcharge,
+  PurchaseOrderShippingSubmitResult
+} from './purchaseOrderLogisticsQuoteTypes';
 
 export type ShippingOrderLine = {
   id: string

@@ -2,12 +2,41 @@ import { strict as assert } from 'node:assert';
 import { contractSources as sources } from './WarehouseShippingOrderContractSources';
 import {
   defaultQuoteBillingUnit,
+  formatPublishedQuotePrice,
+  formatPublishedQuoteSurcharge,
+  publishedQuoteConstraintLabels,
   quoteUnitDisplayText
 } from './warehouseShippingQuoteDomain';
 
 assert.equal(defaultQuoteBillingUnit('AIR'), 'KG');
 assert.equal(defaultQuoteBillingUnit('SEA'), 'CBM');
 assert.equal(quoteUnitDisplayText('SEA'), 'CNY / CBM');
+assert.equal(
+  formatPublishedQuotePrice({
+    cargoCategoryName: '沙特空运（普货）',
+    priceStatus: 'NORMAL',
+    currency: 'RMB',
+    unitPrice: 67,
+    billingUnit: 'KG'
+  }),
+  'RMB 67/KG'
+);
+assert.equal(
+  formatPublishedQuoteSurcharge({
+    feeName: '沙特利雅得FBN/FBA送仓费',
+    currency: 'RMB',
+    amount: 2,
+    billingUnit: 'KG'
+  }),
+  '+ RMB 2/KG'
+);
+assert.deepEqual(
+  publishedQuoteConstraintLabels([
+    { volumeDivisor: 6000, minBillableUnit: 10, minBillableUnitType: 'KG' },
+    { volumeDivisor: 6000, minBillableUnit: 10, minBillableUnitType: 'KG' }
+  ]),
+  ['体积重 ÷ 6,000', '最低计费 10 KG']
+);
 
 assert.match(
   sources.quoteActions,
@@ -40,8 +69,11 @@ assert.match(
 assert.match(sources.quoteState, /selectedChannel\?\.pendingLineCount[\s\S]*Number\(selectedChannel\.pendingLineCount/);
 assert.match(sources.quoteState, /activeMaintenanceKey: `\$\{selectedOption\.forwarderCode/);
 assert.match(sources.sharedViews, /QuoteChipGroup label="货代"[\s\S]*forwarders\.map/);
-assert.match(sources.sharedViews, /QuoteChipGroup label="渠道"[\s\S]*selectedForwarder\?\.channels/);
-assert.doesNotMatch(sources.sharedViews, /<Select/);
+assert.doesNotMatch(sources.sharedViews, /QuoteChipGroup label="渠道"/);
+assert.match(sources.sharedViews, /selectedForwarder\?\.channels \|\| \[\]\)\.length > 1[\s\S]*<Select/);
+assert.match(sources.sharedViews, /WarehouseShippingOrderPublishedPriceCard channel=\{selectedChannel\}/);
+assert.match(sources.publishedPriceCard, /线上报价[\s\S]*暂无线上报价/);
+assert.match(sources.publishedPriceCard, /publishedPrices[\s\S]*surcharges[\s\S]*quoteVersionCode/);
 
 assert.match(sources.quoteTransfer, /useState\(false\)[\s\S]*exportMissingOnly/);
 assert.match(sources.quoteTransfer, /exportShippingOrderLogisticsQuoteReport[\s\S]*missingOnly: exportMissingOnly/);
@@ -49,4 +81,4 @@ assert.match(sources.quoteTransfer, /selectedChannel\?\.totalLineCount[\s\S]*sel
 assert.match(sources.purchaseOrderApi, /missingOnly\?: boolean[\s\S]*params\.set\('missingOnly', 'true'\)/);
 assert.doesNotMatch(sources.detailToolbar, /导出缺报价|生成账单/);
 assert.doesNotMatch(sources.lineTable, /title: '币种'|title: '计费单位'/);
-assert.match(sources.detailCss, /warehouse-shipping-order-chip--channel \{[\s\S]*max-width: 420px/);
+assert.match(sources.detailCss, /warehouse-shipping-order-published-price-card \{[\s\S]*background: #f7fbff/);

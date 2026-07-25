@@ -51,10 +51,6 @@
   flex: 1 1 auto;
 }
 
-.warehouse-shipping-order-chip-group--channel {
-  flex: 1 1 360px;
-}
-
 .warehouse-shipping-order-chip-label {
   flex: 0 0 auto;
   color: #8c8c8c;
@@ -111,15 +107,63 @@
   color: #fff;
 }
 
-.warehouse-shipping-order-chip--channel {
-  max-width: 420px;
-}
-
 .warehouse-shipping-order-chip--muted {
   border-color: #f0f0f0;
   background: #fafafa;
   color: #8c8c8c;
   cursor: default;
+}
+
+.warehouse-shipping-order-compact-channel-selector {
+  display: flex;
+  flex: 0 1 320px;
+  min-width: 220px;
+  align-items: center;
+  gap: 6px;
+}
+
+.warehouse-shipping-order-compact-channel-selector .ant-select {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.warehouse-shipping-order-published-price-card {
+  display: flex;
+  flex: 1 0 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  border: 1px solid #e6f4ff;
+  border-radius: 8px;
+  background: #f7fbff;
+  padding: 8px 12px;
+}
+
+.warehouse-shipping-order-published-price-header,
+.warehouse-shipping-order-published-price-list,
+.warehouse-shipping-order-published-surcharge-list,
+.warehouse-shipping-order-published-price-item,
+.warehouse-shipping-order-published-surcharge-item {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.warehouse-shipping-order-published-price-header .ant-tag {
+  margin-inline-end: 0;
+}
+
+.warehouse-shipping-order-published-price-item,
+.warehouse-shipping-order-published-surcharge-item {
+  border-left: 1px solid #d9e8f5;
+  padding-left: 12px;
+}
+
+.warehouse-shipping-order-published-price-constraints {
+  flex: 1 0 100%;
 }
 
 .warehouse-shipping-order-detail-subbar {
