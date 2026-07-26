@@ -44,9 +44,9 @@ export function WarehouseShippingQuoteExportModal({
               showIcon
               message={selected
                 ? transfer.exportMissingOnly
-                  ? `将导出报价缺失 ${transfer.pendingCount} 行：${quoteChannelLabel(transfer.selectedForwarder, transfer.selectedChannel!)}`
-                  : `将导出全部 ${transfer.totalCount} 行：${quoteChannelLabel(transfer.selectedForwarder, transfer.selectedChannel!)}（待报价 ${transfer.pendingCount}，已报价 ${transfer.confirmedCount}）`
-                : `请先选择货代和渠道，待报价 ${transfer.exportOptions?.pendingLineCount || 0} 行，已报价商品会一并导出`}
+                  ? `将导出未确认 ${transfer.pendingCount} 行：${quoteChannelLabel(transfer.selectedForwarder, transfer.selectedChannel!)}`
+                  : `将导出全部 ${transfer.totalCount} 行：${quoteChannelLabel(transfer.selectedForwarder, transfer.selectedChannel!)}（未确认 ${transfer.pendingCount}，已确认 ${transfer.confirmedCount}）`
+                : `请先选择货代和渠道，未确认 ${transfer.exportOptions?.pendingLineCount || 0} 行，已确认商品会一并导出`}
             />
             <div className="warehouse-shipping-quote-export-controls">
               <Form.Item label="选择货代" required>
@@ -74,14 +74,14 @@ export function WarehouseShippingQuoteExportModal({
               disabled={!transfer.selectedChannel}
               onChange={(event) => transfer.setExportMissingOnly(event.target.checked)}
             >
-              只导出报价缺失
+              只导出未确认
             </Checkbox>
             {transfer.selectedChannel ? (
               <div className="warehouse-shipping-quote-export-detail">
                 <Tag color="blue">{quoteForwarderLabel(transfer.selectedForwarder)}</Tag>
                 <Tag color="processing">{transfer.selectedChannel.siteCode || '-'}</Tag>
                 <strong>{transfer.exportMissingOnly
-                  ? `报价缺失 ${transfer.pendingCount} 行`
+                  ? `未确认 ${transfer.pendingCount} 行`
                   : `全部 ${transfer.totalCount} 行`}</strong>
               </div>
             ) : null}

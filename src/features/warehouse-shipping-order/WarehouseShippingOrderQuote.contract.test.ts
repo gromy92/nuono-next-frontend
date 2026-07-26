@@ -6,7 +6,8 @@ import {
   formatPublishedQuoteSurcharge,
   publishedQuoteConstraintLabels,
   quotePriceSourceLabel,
-  quoteUnitDisplayText
+  quoteUnitDisplayText,
+  warehouseQuoteConfirmationState
 } from './warehouseShippingQuoteDomain';
 
 assert.equal(defaultQuoteBillingUnit('AIR'), 'KG');
@@ -15,6 +16,9 @@ assert.equal(quoteUnitDisplayText('SEA'), 'CNY / CBM');
 assert.equal(quotePriceSourceLabel('SHIPPING_ORDER_SNAPSHOT'), '本单已确认');
 assert.equal(quotePriceSourceLabel('PRODUCT_CURRENT'), '商品当前价 · 待确认');
 assert.equal(quotePriceSourceLabel('LEGACY_CHANNEL_QUOTE'), '历史渠道价 · 待确认');
+assert.equal(warehouseQuoteConfirmationState({ quoteStatus: 'CONFIRMED', unitPrice: 65 }), 'CONFIRMED');
+assert.equal(warehouseQuoteConfirmationState({ quoteStatus: 'PENDING_QUOTE', unitPrice: 65 }), 'SUGGESTED_PRICE');
+assert.equal(warehouseQuoteConfirmationState({ quoteStatus: 'PENDING_QUOTE', unitPrice: null }), 'MISSING_PRICE');
 assert.equal(
   formatPublishedQuotePrice({
     cargoCategoryName: '沙特空运（普货）',
@@ -80,6 +84,8 @@ assert.match(
 );
 assert.match(sources.orderDomain, /priceSource: quote\.priceSource/);
 assert.match(sources.quoteState, /selectedChannel\?\.pendingLineCount[\s\S]*Number\(selectedChannel\.pendingLineCount/);
+assert.match(sources.quoteState, /pendingConfirmationCount[\s\S]*warehouseQuoteConfirmationState/);
+assert.match(sources.quoteState, /missingPriceCount[\s\S]*warehouseQuoteConfirmationState/);
 assert.match(sources.quoteState, /activeMaintenanceKey: `\$\{selectedOption\.forwarderCode/);
 assert.match(sources.sharedViews, /QuoteChipGroup label="货代"[\s\S]*forwarders\.map/);
 assert.doesNotMatch(sources.sharedViews, /QuoteChipGroup label="渠道"/);
@@ -93,6 +99,7 @@ assert.match(sources.quoteTransfer, /exportShippingOrderLogisticsQuoteReport[\s\
 assert.match(sources.quoteTransfer, /selectedChannel\?\.totalLineCount[\s\S]*selectedChannel\?\.pendingLineCount[\s\S]*selectedChannel\?\.confirmedLineCount/);
 assert.match(sources.purchaseOrderApi, /missingOnly\?: boolean[\s\S]*params\.set\('missingOnly', 'true'\)/);
 assert.doesNotMatch(sources.detailToolbar, /导出缺报价|生成账单/);
+assert.match(sources.detailToolbar, /label="待确认"[\s\S]*label="无价格"/);
 assert.doesNotMatch(sources.lineTable, /title: '币种'|title: '计费单位'/);
 assert.match(
   sources.lineTable,
