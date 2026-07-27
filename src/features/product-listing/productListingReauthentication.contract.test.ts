@@ -99,6 +99,10 @@ const workflowPanelSource = readFileSync(
   new URL('./ProductListingWorkflowPanel.tsx', import.meta.url),
   'utf8'
 )
+const workflowActionButtonSource = readFileSync(
+  new URL('./ProductListingWorkflowActionButton.tsx', import.meta.url),
+  'utf8'
+)
 
 assert.ok(
   apiSource.includes('/tasks/${taskId}/reauthenticate') &&
@@ -116,8 +120,9 @@ assert.ok(
     controllerSource.includes('setBusy(true)') &&
     controllerSource.includes('setBusy(false)') &&
     pageSource.includes('reauthentication.busy') &&
-    workflowPanelSource.includes('loading={busy}') &&
-    workflowPanelSource.includes('disabled={busy || actionDisabled}'),
+    workflowPanelSource.includes('busy={busy}') &&
+    workflowActionButtonSource.includes('loading={props.busy}') &&
+    workflowActionButtonSource.includes('disabled={props.busy || props.disabled}'),
   'reauthentication must use the current real-run task and reject stale or malformed workflow responses'
 )
 assert.ok(
