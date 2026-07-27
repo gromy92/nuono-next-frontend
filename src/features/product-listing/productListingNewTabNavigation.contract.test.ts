@@ -35,15 +35,30 @@ assert.match(
 let openedUrl = ''
 let openedTarget = ''
 let openedFeatures = ''
+let navigatedUrl = ''
+const openedWindow = {
+  opener: {} as Window,
+  location: {
+    replace: (nextUrl: string) => {
+      navigatedUrl = nextUrl
+    }
+  },
+  close: () => undefined
+} as unknown as Window
 const didOpen = openProductListingTargetInNewTab('/purchase/listing?listingSource=test', (url, target, features) => {
   openedUrl = url
   openedTarget = target || ''
   openedFeatures = features || ''
-  return {} as Window
+  return openedWindow
 })
 
 assert.equal(didOpen, true)
 assert.equal(openedUrl, '/purchase/listing?listingSource=test')
+assert.equal(navigatedUrl, '')
 assert.equal(openedTarget, '_blank')
-assert.match(openedFeatures, /noopener/)
-assert.match(openedFeatures, /noreferrer/)
+assert.equal(openedFeatures, '')
+assert.equal(openedWindow.opener, null)
+assert.equal(
+  openProductListingTargetInNewTab('/purchase/listing?listingSource=blocked', () => null),
+  false
+)

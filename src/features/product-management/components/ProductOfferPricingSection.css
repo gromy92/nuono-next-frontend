@@ -1,0 +1,28 @@
+.product-offer-pricing-horizontal .product-offer-pricing-field {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+}
+
+.product-offer-pricing-horizontal .product-offer-pricing-field > .ant-typography {
+  margin-bottom: 0 !important;
+}
+
+.product-offer-pricing-horizontal .product-offer-pricing-field > .ant-typography-danger {
+  grid-column: 2;
+}
+
+@media (max-width: 767px) {
+  .product-offer-pricing-horizontal .product-offer-pricing-field {
+    grid-template-columns: 1fr;
+  }
+
+  .product-offer-pricing-horizontal .product-offer-pricing-field > .ant-typography {
+    margin-bottom: 6px !important;
+  }
+
+  .product-offer-pricing-horizontal .product-offer-pricing-field > .ant-typography-danger {
+    grid-column: 1;
+  }
+}

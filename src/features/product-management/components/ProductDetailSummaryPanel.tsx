@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, message, Modal, Space, Tooltip, Typography } from 'antd';
+import { openProductListingTargetInNewTab } from '../../product-listing/listingTabNavigation';
 import {
   isPublicDetailReadonlyWorkbench,
   getProductCurrentZCode,
@@ -10,13 +11,14 @@ import {
   textInputValue
 } from '../utils';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
+import { buildProductDetailListingTarget } from '../utils/productDetailListingNavigation';
 import { ProductDetailSummaryBar } from './ProductDetailSummaryBar';
 import { ProductDetailSyncAlert } from './ProductDetailSyncAlert';
 
 const { Text } = Typography;
 
-const NOT_LISTED_PUBLISH_BLOCK_REASON =
-  '当前商品还没有完成真实上架，请先从上架入口提交；上架成功后再编辑发布。';
+const LISTING_DRAFT_MISSING_REASON =
+  '当前商品没有关联到原上架草稿，暂时无法继续上架。';
 
 type ProductDetailSummaryPanelProps = {
   workspace: ProductManagementWorkspace;
@@ -60,12 +62,16 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
     isLocalDraftNoonCode(productSnapshotView?.identity.skuParent) ||
     isLocalDraftNoonCode(activeProductSiteOffer?.currentZCode) ||
     isLocalDraftNoonCode(activeProductSiteOffer?.skuParent);
+  const listingDraftTarget = productNotReadyForCurrentPublish
+    ? buildProductDetailListingTarget(productSnapshotView)
+    : undefined;
   const publishButtonDisabled =
     !workbenchReady ||
     publicDetailReadonly ||
     publishTaskActive ||
     productPublishTaskActionSubmitting ||
-    productNotReadyForCurrentPublish;
+    (productNotReadyForCurrentPublish &&
+      (productActionSubmitting || !listingDraftTarget));
   const requestPullFromNoon = () => {
     if (publicDetailReadonly) {
       return;
@@ -90,7 +96,13 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
 
   const submitPublish = () => {
     if (productNotReadyForCurrentPublish) {
-      message.warning(NOT_LISTED_PUBLISH_BLOCK_REASON);
+      if (!listingDraftTarget) {
+        message.warning(LISTING_DRAFT_MISSING_REASON);
+        return;
+      }
+      if (!openProductListingTargetInNewTab(listingDraftTarget)) {
+        message.warning('浏览器拦截了上架草稿新标签页，请允许弹窗后重试');
+      }
       return;
     }
     if (publishTaskNeedsAttention && publishTaskId) {
@@ -165,7 +177,7 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
             >
               回滚草稿
             </Button>
-            <Tooltip title={productNotReadyForCurrentPublish ? NOT_LISTED_PUBLISH_BLOCK_REASON : undefined}>
+            <Tooltip title={productNotReadyForCurrentPublish && !listingDraftTarget ? LISTING_DRAFT_MISSING_REASON : undefined}>
               <span>
                 <Button
                   size="small"
@@ -174,7 +186,11 @@ export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: Pro
                   disabled={publishButtonDisabled}
                   onClick={submitPublish}
                 >
-                  {publishTaskNeedsAttention ? '重试发布' : '发布当前修改'}
+                  {productNotReadyForCurrentPublish
+                    ? '上架'
+                    : publishTaskNeedsAttention
+                      ? '重试发布'
+                      : '发布当前修改'}
                 </Button>
               </span>
             </Tooltip>

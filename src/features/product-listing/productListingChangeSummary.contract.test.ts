@@ -63,7 +63,6 @@ const defaultTemplateOnlyChanges = buildProductListingChangeSummary(
       { code: 'care_instructions', label: 'Care Instructions', commonValue: '' },
       { code: 'barcode', label: 'Barcode', commonValue: 'test1101' }
     ],
-    fbp: true,
     isActive: true,
     barcode: 'test1101'
   },
@@ -75,7 +74,7 @@ const defaultTemplateOnlyChanges = buildProductListingChangeSummary(
 assert.deepEqual(
   defaultTemplateOnlyChanges.map((change) => change.fieldKey),
   ['barcode'],
-  'change summary should ignore empty key attribute templates and default listing switches'
+  'change summary should ignore empty key attribute templates and the default listing switch'
 )
 assert.equal(defaultTemplateOnlyChanges[0].after, 'test1101')
 

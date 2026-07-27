@@ -47,15 +47,13 @@ export type ProductListingDraftPayload = {
   supplyEvidenceType?: string
   supplyEvidenceRefId?: number
   optionalPurchaseOrderId?: number
-  fbp?: boolean
-  warehouseId?: string
-  warehouseCode?: string
-  quantity?: number
   idWarranty?: number
   isActive?: boolean
   offerNote?: string
   barcode?: string
   competitorMaterials?: ProductCompetitorContentMaterial[]
+  listingKeywordSuggestionsEn?: string[]
+  listingKeywordSuggestionsAr?: string[]
 }
 
 export type ProductListingDraftView = {
@@ -66,6 +64,7 @@ export type ProductListingDraftView = {
   status: string
   draft?: ProductListingDraftPayload
   validationIssues: ProductListingValidationIssue[]
+  workflow?: ProductListingWorkflowSummaryView
 }
 
 export type ProductListingFieldValidationView = {
@@ -95,6 +94,8 @@ export type ProductListingTaskView = {
   ownerUserId?: number
   storeCode: string
   partnerSku?: string
+  skuParent?: string
+  pskuCode?: string
   mode: string
   status: string
   sourceTaskId?: number
@@ -111,6 +112,65 @@ export type ProductListingTaskView = {
 export type ProductListingRealRunCommand = {
   confirmRealNoonWrite: boolean
   confirmationNote?: string
+}
+
+export type ProductListingWorkflowPhase =
+  | 'EDITING'
+  | 'READY_TO_CONFIRM'
+  | 'PUBLISHING'
+  | 'PUBLISHED'
+  | 'ACTION_REQUIRED'
+
+export type ProductListingWriteCertainty =
+  | 'NOT_STARTED'
+  | 'UNKNOWN'
+  | 'WRITTEN'
+  | 'VERIFIED'
+
+export type ProductListingWorkflowNextAction =
+  | 'REVIEW_DRAFT'
+  | 'EDIT_DRAFT'
+  | 'CONFIRM_PUBLISH'
+  | 'WAIT'
+  | 'WAIT_FOR_REAUTHENTICATION'
+  | 'REAUTHENTICATE'
+  | 'CHECK_CREATE_RESULT'
+  | 'CONTINUE_AFTER_CREATE'
+  | 'VERIFY_READBACK'
+  | 'REPLAY_PROJECTION'
+  | 'NONE'
+
+export type ProductListingWorkflowView = {
+  phase: ProductListingWorkflowPhase
+  writeCertainty: ProductListingWriteCertainty
+  nextAction: ProductListingWorkflowNextAction
+  reasonCode?: string
+  message?: string
+  draft?: ProductListingDraftView
+  dryRunTask?: ProductListingTaskView
+  realRunTask?: ProductListingTaskView
+}
+
+export type ProductListingWorkflowSummaryView = Pick<
+  ProductListingWorkflowView,
+  'phase' | 'writeCertainty' | 'nextAction' | 'reasonCode' | 'message'
+>
+
+export type ProductListingCreateOutcomeVerificationStatus =
+  | 'found'
+  | 'not_found'
+  | 'reauthentication_required'
+  | 'lookup_failed'
+
+export type ProductListingCreateOutcomeVerificationView = {
+  taskId: number
+  status: ProductListingCreateOutcomeVerificationStatus
+  canConfirmNotCreated?: boolean
+  lookupAttemptCount?: number
+  message?: string
+  partnerSku?: string
+  skuParent?: string
+  pskuCode?: string
 }
 
 export type ProductListingAiListingDraft = {
@@ -167,6 +227,17 @@ export type ProductListingAiListingData = {
   warnings?: string[]
   needsHumanConfirmation?: string[]
   noonUploadDraft?: ProductListingAiListingDraft
+}
+
+export type ProductListingKeywordSuggestionItem = {
+  keyword: string
+  keywordNorm: string
+  locale: string
+}
+
+export type ProductListingKeywordSuggestionView = {
+  draftId?: number
+  items: ProductListingKeywordSuggestionItem[]
 }
 
 export type ProductListingAiListingCommand = {

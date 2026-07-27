@@ -46,10 +46,6 @@ const CHANGE_FIELDS: ProductListingChangeField[] = [
   { fieldKey: 'supplyEvidenceType', label: '供货证据' },
   { fieldKey: 'supplyEvidenceRefId', label: '供货证据编号' },
   { fieldKey: 'optionalPurchaseOrderId', label: '采购单' },
-  { fieldKey: 'fbp', label: '履约模式' },
-  { fieldKey: 'warehouseId', label: '仓库 ID' },
-  { fieldKey: 'warehouseCode', label: '仓库编码' },
-  { fieldKey: 'quantity', label: '库存数量' },
   { fieldKey: 'idWarranty', label: '质保 ID' },
   { fieldKey: 'isActive', label: '上架状态' },
   { fieldKey: 'offerNote', label: 'Offer Note' },
@@ -90,7 +86,7 @@ function isMeaningfulFirstSubmitValue(
   if (displayValue === '-') {
     return false
   }
-  if ((fieldKey === 'fbp' || fieldKey === 'isActive') && rawValue === true) {
+  if (fieldKey === 'isActive' && rawValue === true) {
     return false
   }
   return true
@@ -101,7 +97,7 @@ function isDefaultOnlyChange(
   beforeValue: unknown,
   afterValue: unknown
 ) {
-  if ((fieldKey === 'fbp' || fieldKey === 'isActive') && (beforeValue === undefined || beforeValue === null)) {
+  if (fieldKey === 'isActive' && (beforeValue === undefined || beforeValue === null)) {
     return afterValue === true
   }
   return false
@@ -120,15 +116,6 @@ function formatFieldValue(fieldKey: keyof ProductListingDraftPayload, value: unk
   }
   if (fieldKey === 'keyAttributes') {
     return formatKeyAttributes(value)
-  }
-  if (fieldKey === 'fbp') {
-    if (value === true) {
-      return 'FBP'
-    }
-    if (value === false) {
-      return '非 FBP'
-    }
-    return '-'
   }
   if (fieldKey === 'isActive') {
     if (value === true) {

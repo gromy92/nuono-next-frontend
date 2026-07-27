@@ -34,6 +34,13 @@ assert.deepEqual(activeImageRoleAssignments(stateWithSizeImage), [
   { imageUrl: 'https://example.test/detail-2.jpg', imageRole: 'DETAIL', sortOrder: 2 }
 ])
 
+const stateWithSceneImage = setActiveImageRole(stateWithSizeImage, 2, 'SCENE')
+assert.deepEqual(activeImageRoleAssignments(stateWithSceneImage), [
+  { imageUrl: 'https://example.test/main.jpg', imageRole: 'MAIN', sortOrder: 0 },
+  { imageUrl: 'https://example.test/detail-1.jpg', imageRole: 'SIZE', sortOrder: 1 },
+  { imageUrl: 'https://example.test/detail-2.jpg', imageRole: 'SCENE', sortOrder: 2 }
+])
+
 const stateWithNewMainImage = setActiveImageRole(stateWithSizeImage, 2, 'MAIN')
 assert.deepEqual(activeImageUrls(stateWithNewMainImage), [
   'https://example.test/detail-2.jpg',

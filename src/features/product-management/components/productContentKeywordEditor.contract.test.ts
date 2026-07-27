@@ -6,6 +6,7 @@ import {
   competitorSourceDisplayText,
   dedupeProductCompetitorContentTextItems,
   editableKeywordRowsFromPanel,
+  keywordRowHasKeywordChange,
   noonCompetitorTextItems,
   titleKeywordChineseTranslations
 } from './productContentKeywordEditor'
@@ -73,6 +74,11 @@ const panel: ProductKeywordPanelView = {
 }
 
 assert.deepEqual(editableKeywordRowsFromPanel(panel).map((row) => row.value), ['MagSafe'])
+assert.equal(
+  keywordRowHasKeywordChange({ id: 'ai-keyword', value: 'Phone Case', automatic: true }),
+  false,
+  'AI-suggested keywords should not be upgraded to manual active keywords unless the operator edits them'
+)
 
 const materials = competitorMaterialsFromKeywordEvents(panel.events)
 const textItems = collectProductCompetitorContentTextItems(materials, 'title', 'EN')

@@ -13,47 +13,71 @@ export function ProductOfferTab(props: ProductDetailOfficialTabsProps) {
     currentProductSummarySurface,
     productWarehouseStockRows,
     offerHeaderExtra,
+    offerPresentation,
+    hideOfferStockSection,
     barcodeValidationIssue,
     onBarcodeDraftChange,
     updateSiteOfferField,
     updateProductSectionField,
     updateProductAttributeField,
   } = props;
+  const compactListingOffer = offerPresentation === 'listing-create';
+  const showVisibilitySection = !compactListingOffer;
+  const visibilitySection = (
+    <ProductOfferVisibilitySection
+      activeProductSiteOffer={activeProductSiteOffer}
+      currentProductSummarySurface={currentProductSummarySurface}
+      productSnapshotView={productSnapshotView}
+      hideLiveStatusText={compactListingOffer}
+      updateSiteOfferField={updateSiteOfferField}
+    />
+  );
 
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
       <ProductDetailSection>
         <Space direction="vertical" size={16} style={{ width: '100%' }}>
-          {offerHeaderExtra ? (
+          {offerHeaderExtra && compactListingOffer ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px 32px' }}>
+              <div style={{ flex: '0 1 620px', minWidth: 'min(100%, 320px)' }}>{offerHeaderExtra}</div>
+            </div>
+          ) : (
             <>
-              {offerHeaderExtra}
-              <Divider style={{ margin: 0 }} />
+              {offerHeaderExtra ? (
+                <>
+                  {offerHeaderExtra}
+                  <Divider style={{ margin: 0 }} />
+                </>
+              ) : null}
+              {showVisibilitySection ? visibilitySection : null}
             </>
-          ) : null}
-          <ProductOfferVisibilitySection
-            activeProductSiteOffer={activeProductSiteOffer}
-            currentProductSummarySurface={currentProductSummarySurface}
-            productSnapshotView={productSnapshotView}
-            updateSiteOfferField={updateSiteOfferField}
-          />
+          )}
           <Divider style={{ margin: 0 }} />
           <ProductOfferPricingSection
             productSnapshotView={productSnapshotView}
             activeProductSiteOffer={activeProductSiteOffer}
+            hidePricingSummary={compactListingOffer}
+            horizontalPricingLayout={compactListingOffer}
             updateSiteOfferField={updateSiteOfferField}
           />
-          <Divider style={{ margin: 0 }} />
-          <ProductOfferStockSection
-            productSnapshotView={productSnapshotView}
-            activeProductSiteOffer={activeProductSiteOffer}
-            productWarehouseStockRows={productWarehouseStockRows}
-          />
+          {!hideOfferStockSection ? (
+            <>
+              <Divider style={{ margin: 0 }} />
+              <ProductOfferStockSection
+                productSnapshotView={productSnapshotView}
+                activeProductSiteOffer={activeProductSiteOffer}
+                productWarehouseStockRows={productWarehouseStockRows}
+              />
+            </>
+          ) : null}
           <Divider style={{ margin: 0 }} />
           <ProductOfferMetaSection
             productSnapshotView={productSnapshotView}
             currentProductSummarySurface={currentProductSummarySurface}
             activeProductSiteOffer={activeProductSiteOffer}
             barcodeValidationIssue={barcodeValidationIssue}
+            hideHelperText={compactListingOffer}
+            horizontalBarcodeLayout={compactListingOffer}
             onBarcodeDraftChange={onBarcodeDraftChange}
             updateSiteOfferField={updateSiteOfferField}
             updateProductSectionField={updateProductSectionField}

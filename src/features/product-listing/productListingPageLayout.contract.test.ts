@@ -2,6 +2,19 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 const pageSource = readFileSync(new URL('./ProductListingPage.tsx', import.meta.url), 'utf8')
+const pageStatusSource = readFileSync(
+  new URL('./ProductListingPageStatus.tsx', import.meta.url),
+  'utf8'
+)
+const reviewSource = readFileSync(new URL('./ProductListingReviewModal.tsx', import.meta.url), 'utf8')
+const workflowPanelSource = readFileSync(
+  new URL('./ProductListingWorkflowPanel.tsx', import.meta.url),
+  'utf8'
+)
+const workflowActionSource = readFileSync(
+  new URL('./ProductListingWorkflowActionButton.tsx', import.meta.url),
+  'utf8'
+)
 
 assert(
   !pageSource.includes('点击上架会先自动保存草稿并提交 dry-run'),
@@ -13,25 +26,35 @@ assert(
   'listing page should expose a stable page layout class'
 )
 assert(
-  pageSource.includes('className="product-listing-page-actions"'),
-  'listing actions should live in a stable top-right action bar'
+  pageSource.includes('tabBarExtraContent={') &&
+    pageSource.includes('<ProductListingSaveDraftButton') &&
+    pageSource.includes('<ProductListingWorkflowActionButton') &&
+    pageSource.includes('onlyAction="REVIEW_DRAFT"') &&
+    pageSource.includes('hidePrimaryAction') &&
+    pageStatusSource.includes('export function ProductListingSaveDraftButton'),
+  'save and listing actions should share the Offer/Content tab row without a duplicate lower action'
 )
 assert(
-  pageSource.indexOf('className="product-listing-page-actions"') < pageSource.indexOf('<ProductListingDetailEditor'),
-  'listing actions should be rendered before the editor so they sit at the upper right'
+  workflowActionSource.includes('data-testid="product-listing-workflow-action"') &&
+    workflowPanelSource.includes('hidePrimaryAction ? null :'),
+  'the workflow primary action should remain one shared implementation'
 )
 assert(
-  pageSource.includes('className="product-listing-real-run-steps-table"') &&
-    pageSource.includes('tableLayout="fixed"'),
-  'real-run step table should use fixed layout so long Noon references cannot cover other columns'
+  pageSource.indexOf('<ProductListingPageStatus') <
+    pageSource.indexOf('<ProductListingDetailEditor'),
+  'draft save feedback should remain above the editor'
 )
 assert(
-  pageSource.includes('className="product-listing-real-run-step-reference"') &&
-    pageSource.includes("copyable={{ text: value") &&
-    pageSource.includes("ellipsis={{ rows: 3"),
-  'real-run external references should be wrapped, expandable, and copyable instead of rendered as raw long text'
+  pageSource.indexOf('<ProductListingWorkflowPanel') >
+    pageSource.indexOf('<ProductListingDetailEditor'),
+  'the user-facing listing action should be rendered after the editor instead of above it'
 )
 assert(
-  pageSource.includes("barcode: 'Barcode'"),
+  !workflowPanelSource.includes('ProductListingWorkflowTechnicalDetails') &&
+    !workflowPanelSource.includes('技术详情'),
+  'internal workflow and task diagnostics must not be rendered to operators'
+)
+assert(
+  reviewSource.includes("barcode: 'Barcode'"),
   'listing validation summary should render barcode issues with a readable field label'
 )

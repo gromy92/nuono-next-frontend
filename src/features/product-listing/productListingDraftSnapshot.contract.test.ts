@@ -17,9 +17,6 @@ const draft: ProductListingEditorDraft = {
   imageUrls: ['https://images.example.test/case-main.jpg'],
   price: 49.9,
   purchasePrice: 18.5,
-  fbp: true,
-  warehouseCode: 'Riyadh-FBP',
-  quantity: 120,
   idWarranty: 24,
   isActive: false,
   offerNote: '选品组 PSG-91001 已完成利润测算',
@@ -42,7 +39,7 @@ assert.equal(snapshot.variants[0]?.sizeEn, 'One Size')
 assert.equal(snapshot.variants[0]?.sizeAr, 'مقاس واحد')
 assert.equal(snapshot.pricing.price, 49.9)
 assert.equal(snapshot.pricing.purchasePrice, 18.5)
-assert.equal(snapshot.stock.quantity, 120)
+assert.deepEqual(snapshot.stock, {})
 assert.equal(snapshot.siteOffers[0]?.storeCode, 'STR245027-NSA')
 assert.equal(snapshot.siteOffers[0]?.site, 'SA')
-assert.equal(snapshot.siteOffers[0]?.isActive, false)
+assert.equal(snapshot.siteOffers[0]?.isActive, true)

@@ -38,11 +38,17 @@ export function ProductDetailOfficialTabs(props: ProductDetailOfficialTabsProps)
     productSiteDomain,
     productSharedDomainDirtyCount
   } = props;
+  const listingCreatePresentation = props.offerPresentation === 'listing-create';
 
   const items = [
     {
       key: 'offer',
-      label: <ProductDetailTabLabel title="Offer" badge={<ProductDomainStatusBadge domain={productSiteDomain} />} />,
+      label: (
+        <ProductDetailTabLabel
+          title="Offer"
+          badge={listingCreatePresentation ? undefined : <ProductDomainStatusBadge domain={productSiteDomain} />}
+        />
+      ),
       children: <ProductOfferTab {...props} />
     },
     {
@@ -62,21 +68,30 @@ export function ProductDetailOfficialTabs(props: ProductDetailOfficialTabsProps)
         />
       ),
       children: <ProductContentTab {...props} />
-    },
-    {
-      key: 'sizes',
-      label: <ProductDetailTabLabel title="Sizes" />,
-      children: <ProductSizesTab {...props} />
     }
   ];
 
-  if (FEATURE_PRODUCT_INSIGHTS_ENABLED) {
+  if (!listingCreatePresentation) {
     items.push({
-      key: 'product-insights',
-      label: <ProductDetailTabLabel title="Product Insights" />,
-      children: <ProductInsightsTab {...props} />
+      key: 'sizes',
+      label: <ProductDetailTabLabel title="Sizes" />,
+      children: <ProductSizesTab {...props} />
     });
+    if (FEATURE_PRODUCT_INSIGHTS_ENABLED) {
+      items.push({
+        key: 'product-insights',
+        label: <ProductDetailTabLabel title="Product Insights" />,
+        children: <ProductInsightsTab {...props} />
+      });
+    }
   }
 
-  return <Tabs defaultActiveKey={defaultActiveKey ?? 'offer'} items={items} />;
+  return (
+    <Tabs
+      className={props.offerPresentation === 'listing-create' ? 'product-listing-editor-tabs' : undefined}
+      defaultActiveKey={defaultActiveKey ?? 'offer'}
+      items={items}
+      tabBarExtraContent={props.tabBarExtraContent}
+    />
+  );
 }

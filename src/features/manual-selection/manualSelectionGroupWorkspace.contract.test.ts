@@ -119,3 +119,40 @@ assert.deepEqual(
 )
 assert.deepEqual(merged[0].competitors, [{ id: 'saved', url: 'https://saved.example.test' }])
 assert.equal(merged[1].groupName, 'Keep me')
+
+const latestMaterialJoinFirst = mergeManualSelectionGroups(currentGroups, [
+  {
+    groupId: 'G2',
+    groupName: 'Keep me',
+    materials: [{ sourceCollectionId: 'S4', sourceCollection: sourceRecord('S4') }]
+  }
+])
+
+assert.deepEqual(
+  latestMaterialJoinFirst.map((group) => group.groupId),
+  ['G2', 'G1']
+)
+
+const metadataOnlyUpdateKeepsOrder = mergeManualSelectionGroups([
+  {
+    groupId: 'G2',
+    groupName: 'Second',
+    materials: [{ sourceCollectionId: 'S2', sourceCollection: sourceRecord('S2') }]
+  },
+  {
+    groupId: 'G1',
+    groupName: 'First',
+    materials: [{ sourceCollectionId: 'S1', sourceCollection: sourceRecord('S1') }]
+  }
+], [
+  {
+    groupId: 'G1',
+    groupName: 'Renamed first',
+    materials: [{ sourceCollectionId: 'S1', sourceCollection: sourceRecord('S1') }]
+  }
+])
+
+assert.deepEqual(
+  metadataOnlyUpdateKeepsOrder.map((group) => group.groupId),
+  ['G2', 'G1']
+)

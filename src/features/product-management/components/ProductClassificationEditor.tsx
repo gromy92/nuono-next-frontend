@@ -1,15 +1,14 @@
-import { EditOutlined, LinkOutlined } from '@ant-design/icons';
-import { AutoComplete, Button, Col, Modal, Row, Space, Table, Tag, Typography } from 'antd';
+import { LinkOutlined } from '@ant-design/icons';
+import { AutoComplete, Button, Modal, Space, Table, Tag, Typography } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchProductClassificationOptions, type ProductClassificationOptionPayload } from '../api';
 import type { ProductFieldDomainSurface, ProductMasterSnapshotPayload } from '../types';
 import type { ProductCompetitorContentMaterial } from '../types/competitorContent';
 import { textInputValue } from '../utils';
+import { preferredCompetitorCategoryLabel } from './competitorCategoryPresentation';
+import { ProductClassificationFields } from './ProductClassificationFields';
 import { ProductDetailSection } from './ProductDetailSection';
-
 const { Text } = Typography;
-
-const LABEL_STYLE = { color: 'var(--pm-text-muted)', display: 'block', marginBottom: 6 } as const;
 
 type ProductCompetitorCategoryRow = {
   rowKey: string;
@@ -113,7 +112,7 @@ function buildProductCompetitorCategoryRows(
           rowKey: `${material.id || materialIndex}-${linkIndex}`,
           competitorLabel: label,
           sourceHost,
-          categoryPath: categoryValue || '未命名类目',
+          categoryPath: preferredCompetitorCategoryLabel(categoryValue, material, item.url) || '未命名类目',
           categoryUrl: textInputValue(item.url),
           productUrl,
           categoryValue
@@ -131,7 +130,7 @@ function buildProductCompetitorCategoryRows(
         rowKey: material.id || String(materialIndex),
         competitorLabel: label,
         sourceHost,
-        categoryPath: categoryValue || label,
+        categoryPath: preferredCompetitorCategoryLabel(categoryValue, material, categoryUrl) || label,
         categoryUrl,
         productUrl,
         categoryValue
@@ -144,13 +143,14 @@ export function ProductClassificationEditor(props: {
   productMainDomain?: ProductFieldDomainSurface;
   productSnapshotView?: ProductMasterSnapshotPayload;
   productCompetitorMaterials?: ProductCompetitorContentMaterial[];
+  horizontalLayout?: boolean;
   updateProductSectionField: (
     section: 'identity' | 'taxonomy' | 'content' | 'group',
     field: string,
     value: unknown
   ) => void;
 }) {
-  const { productMainDomain, productSnapshotView, productCompetitorMaterials, updateProductSectionField } = props;
+  const { productMainDomain, productSnapshotView, productCompetitorMaterials, horizontalLayout, updateProductSectionField } = props;
   const taxonomy = productSnapshotView?.taxonomy ?? {};
   const storeContext = productSnapshotView?.storeContext ?? {};
   const ownerUserId = Number(storeContext.ownerUserId);
@@ -245,10 +245,14 @@ export function ProductClassificationEditor(props: {
 
   return (
     <>
-      <ProductDetailSection title="品牌与类目" domain={productMainDomain}>
-        <Row gutter={[12, 12]}>
-          <Col xs={24} md={12}>
-            <Text style={LABEL_STYLE}>品牌</Text>
+      <ProductDetailSection
+        title={horizontalLayout ? undefined : '品牌与类目'}
+        domain={horizontalLayout ? undefined : productMainDomain}
+      >
+        <ProductClassificationFields
+          horizontalLayout={horizontalLayout}
+          onEditCategory={() => setCategoryEditorOpen(true)}
+          brandInput={
             <AutoComplete
               allowClear
               aria-label="品牌"
@@ -261,22 +265,9 @@ export function ProductClassificationEditor(props: {
               onSearch={(value) => void loadClassificationOptions({ brandQuery: value })}
               onChange={(value) => updateProductSectionField('identity', 'brand', value)}
             />
-          </Col>
-          <Col xs={24} md={12}>
-            <Space align="center" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={{ color: 'var(--pm-text-muted)' }}>Product Fulltype（官方类目）</Text>
-              <Button
-                size="small"
-                icon={<EditOutlined />}
-                data-testid="product-listing-category-editor-button"
-                onClick={() => setCategoryEditorOpen(true)}
-              >
-                编辑类目
-              </Button>
-            </Space>
-            {renderFulltypeInput()}
-          </Col>
-        </Row>
+          }
+          fulltypeInput={renderFulltypeInput()}
+        />
       </ProductDetailSection>
 
       <Modal

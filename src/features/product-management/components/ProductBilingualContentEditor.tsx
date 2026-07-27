@@ -18,8 +18,6 @@ import {
 } from './ProductContentTranslationEditor.helpers';
 import {
   extractSharedProductTitleKeywords,
-  normalizeProductTitleKeywordInput,
-  parseProductTitleKeywordInputList,
   splitProductTitleKeywordHighlights,
   type ProductTitleSharedKeyword
 } from './productCompetitorContentKeywords';
@@ -46,6 +44,14 @@ import {
   type ProductContentKeywordSaveChangeDetails,
   type ProductContentKeywordInputRow
 } from './productContentKeywordEditor';
+import { ProductKeywordCompetitorMatchModal } from './ProductKeywordCompetitorMatchModal';
+import {
+  matchingCompetitorsForKeyword,
+  matchingCompetitorsForKeywordRow,
+  mergeAiSuggestedKeywordRows,
+  sharedAiTitleKeywords,
+  withAutomaticKeywordCompetitorMatches
+} from './productKeywordCompetitorMatching';
 
 const { Text } = Typography;
 
@@ -86,6 +92,10 @@ const TITLE_KEYWORD_HIGHLIGHT_STYLES = {
 export function ProductBilingualContentEditor(props: {
   productSnapshotView?: ProductMasterSnapshotPayload;
   productCompetitorMaterials?: ProductCompetitorContentMaterial[];
+  productListingKeywordSuggestions?: {
+    EN?: string[];
+    AR?: string[];
+  };
   enableCompetitorContentMerge?: boolean;
   updateProductSectionField: (
     section: 'identity' | 'taxonomy' | 'content' | 'group',
@@ -97,6 +107,7 @@ export function ProductBilingualContentEditor(props: {
   const {
     enableCompetitorContentMerge = false,
     productCompetitorMaterials = [],
+    productListingKeywordSuggestions,
     productSnapshotView,
     updateProductSectionField,
     updateProductMultilineField
@@ -163,6 +174,7 @@ export function ProductBilingualContentEditor(props: {
           fieldType={editModal.fieldType}
           lang={editModal.lang}
           materials={productCompetitorMaterials}
+          suggestedKeywords={productListingKeywordSuggestions?.[editModal.lang] || []}
           productSnapshotView={productSnapshotView}
           sourceText={editModal.sourceText}
           value={editModal.value}
@@ -286,6 +298,7 @@ function ProductContentFieldEditModal(props: {
   sourceText: string;
   productSnapshotView?: ProductMasterSnapshotPayload;
   materials: ProductCompetitorContentMaterial[];
+  suggestedKeywords: string[];
   enableCompetitorContentMerge: boolean;
   onSave: (value: string) => void;
   onCancel: () => void;
@@ -300,6 +313,7 @@ function ProductContentFieldEditModal(props: {
     open,
     productSnapshotView,
     sourceText,
+    suggestedKeywords,
     value
   } = props;
   const [draftValue, setDraftValue] = useState(value);
@@ -322,7 +336,7 @@ function ProductContentFieldEditModal(props: {
   const [saveConfirmDetail, setSaveConfirmDetail] = useState<ProductContentKeywordSaveChangeDetails | null>(null);
   const [saveConfirmError, setSaveConfirmError] = useState<string | null>(null);
   const [keywordPanelCompetitorMaterials, setKeywordPanelCompetitorMaterials] = useState<ProductCompetitorContentMaterial[]>([]);
-  const [competitorPickerRowId, setCompetitorPickerRowId] = useState<string>();
+  const [competitorMatchRowId, setCompetitorMatchRowId] = useState<string>();
   const combinedMaterials = useMemo(
     () => [...materials, ...keywordPanelCompetitorMaterials],
     [keywordPanelCompetitorMaterials, materials]
@@ -332,13 +346,16 @@ function ProductContentFieldEditModal(props: {
     [combinedMaterials, fieldType, lang]
   );
   const noonCompetitorItems = useMemo(() => noonCompetitorTextItems(competitorTextItems), [competitorTextItems]);
+  const automaticKeywordRows = useMemo(
+    () => withAutomaticKeywordCompetitorMatches(keywordInputRows, draftValue, noonCompetitorItems),
+    [draftValue, keywordInputRows, noonCompetitorItems]
+  );
   const selectedCompetitorTexts = useMemo(
     () => selectedCompetitorContentTexts(competitorTextItems, selectedCompetitorKeys),
     [competitorTextItems, selectedCompetitorKeys]
   );
   const selectedCompetitorKeywordEvidenceItems = (row: ProductContentKeywordInputRow) => {
-    const selectedKeySet = new Set(row.competitorSourceKeys || []);
-    return noonCompetitorItems.filter((item) => selectedKeySet.has(item.key)).map(competitorEvidenceFromItem);
+    return matchingCompetitorsForKeywordRow(draftValue, row, noonCompetitorItems).map(competitorEvidenceFromItem);
   };
   const allCompetitorsSelected = competitorTextItems.length > 0 && selectedCompetitorKeys.length === competitorTextItems.length;
   const partiallySelected = selectedCompetitorKeys.length > 0 && selectedCompetitorKeys.length < competitorTextItems.length;
@@ -364,6 +381,7 @@ function ProductContentFieldEditModal(props: {
   const keywordScopeKey = keywordManagementScope
     ? `${keywordManagementScope.storeCode}|${keywordManagementScope.siteCode}|${keywordManagementScope.partnerSku}`
     : '';
+  const suggestedKeywordKey = suggestedKeywords.join('|');
 
   useEffect(() => {
     if (!open) {
@@ -376,13 +394,13 @@ function ProductContentFieldEditModal(props: {
     setSelectedCompetitorKeys(initialSelectedCompetitorContentKeys(competitorTextItems));
     setCompetitorTranslations({});
     setCompetitorTranslationNotices({});
-    setTitleKeywords([]);
+    setTitleKeywords(sharedAiTitleKeywords(value, suggestedKeywords, noonCompetitorItems));
     setTitleKeywordTranslations({});
     setKeywordTranslationNotice(null);
-    setKeywordInputRows([]);
+    setKeywordInputRows(mergeAiSuggestedKeywordRows([], suggestedKeywords));
     setDeletedKeywordRows([]);
     setKeywordPanelCompetitorMaterials([]);
-    setCompetitorPickerRowId(undefined);
+    setCompetitorMatchRowId(undefined);
     setLoading({});
     setCompetitorLoading(false);
     setKeywordPanelLoading(false);
@@ -390,7 +408,7 @@ function ProductContentFieldEditModal(props: {
     keywordRowsDirtyRef.current = false;
     setSaveConfirmDetail(null);
     setSaveConfirmError(null);
-  }, [open, value, fieldType, lang]);
+  }, [open, value, fieldType, lang, suggestedKeywordKey]);
 
   useEffect(() => {
     if (!open) {
@@ -414,7 +432,9 @@ function ProductContentFieldEditModal(props: {
           return;
         }
         if (!keywordRowsDirtyRef.current) {
-          setKeywordInputRows(editableKeywordRowsFromPanel(panel));
+          setKeywordInputRows(
+            mergeAiSuggestedKeywordRows(editableKeywordRowsFromPanel(panel), suggestedKeywords)
+          );
           setDeletedKeywordRows([]);
         }
         setKeywordPanelCompetitorMaterials(competitorMaterialsFromKeywordEvents(panel.events));
@@ -437,7 +457,7 @@ function ProductContentFieldEditModal(props: {
     return () => {
       cancelled = true;
     };
-  }, [keywordManagementScope, keywordScopeKey, open, supportsTitleKeywords]);
+  }, [keywordManagementScope, keywordScopeKey, open, suggestedKeywordKey, supportsTitleKeywords]);
 
   const setCompetitorTranslationNotice = (key: string): Dispatch<SetStateAction<TranslationNotice>> => (nextValue) => {
     setCompetitorTranslationNotices((currentValue) => {
@@ -488,7 +508,7 @@ function ProductContentFieldEditModal(props: {
     keywordRowsDirtyRef.current = true;
     setSaveConfirmDetail(null);
     setKeywordInputRows((currentValue) =>
-      currentValue.map((row) => (row.id === rowId ? { ...row, value } : row))
+      currentValue.map((row) => (row.id === rowId ? { ...row, value, automatic: false } : row))
     );
   };
 
@@ -518,7 +538,7 @@ function ProductContentFieldEditModal(props: {
       }
       return;
     }
-    const rowsToSave = keywordRowsForSave(keywordInputRows);
+    const rowsToSave = keywordRowsForSave(automaticKeywordRows);
     const changedRows = rowsToSave.filter((row) =>
       keywordRowHasKeywordChange(row) || Boolean(row.competitorSourceKeys?.length)
     );
@@ -532,12 +552,15 @@ function ProductContentFieldEditModal(props: {
         deletedKeywordIds: deletedKeywordRows.map((row) => row.id),
         rows: changedRows.flatMap((row) => {
           const keywords = keywordRowKeywords(row);
-          const competitorSources = selectedCompetitorKeywordEvidenceItems(row);
           return keywords.map((keyword, index) => ({
             keywordId: index === 0 ? row.sourceKeywordId : undefined,
             keyword,
             saveKeyword: index === 0 && keywordRowHasKeywordChange(row),
-            competitorSources
+            competitorSources: matchingCompetitorsForKeyword(
+              draftValue,
+              keyword,
+              noonCompetitorItems
+            ).map(competitorEvidenceFromItem)
           }));
         })
       });
@@ -559,17 +582,16 @@ function ProductContentFieldEditModal(props: {
     }
   };
 
-  const openCompetitorPickerForKeywordRow = (row: ProductContentKeywordInputRow) => {
-    const selectedKeywords = parseProductTitleKeywordInputList(row.value);
-    if (!selectedKeywords.length) {
+  const openAutomaticCompetitorMatches = (row: ProductContentKeywordInputRow) => {
+    if (!keywordRowKeywords(row).length) {
       antdMessage.warning('请先填写关键词');
       return;
     }
-    if (!noonCompetitorItems.length) {
-      antdMessage.warning('当前没有可添加的 Noon 竞品');
+    if (!matchingCompetitorsForKeywordRow(draftValue, row, noonCompetitorItems).length) {
+      antdMessage.warning('我方标题和竞品标题中没有同时出现该关键词');
       return;
     }
-    setCompetitorPickerRowId(row.id);
+    setCompetitorMatchRowId(row.id);
   };
 
   const generateTranslation = async () => {
@@ -685,6 +707,12 @@ function ProductContentFieldEditModal(props: {
         ? extractSharedProductTitleKeywords(mergedText, selectedCompetitorTexts)
         : [];
       setTitleKeywords(sharedKeywords);
+      if (sharedKeywords.length) {
+        keywordRowsDirtyRef.current = true;
+        setKeywordInputRows((currentValue) =>
+          mergeAiSuggestedKeywordRows(currentValue, sharedKeywords.map((keyword) => keyword.label))
+        );
+      }
       setSaveConfirmDetail(null);
       await translateTitleKeywordsToChinese(sharedKeywords);
     } catch (error) {
@@ -716,7 +744,7 @@ function ProductContentFieldEditModal(props: {
   const requestProductContentSave = () => {
     const competitorLabelsByRowId = supportsTitleKeywords
       ? Object.fromEntries(
-        keywordInputRows.map((row) => [
+        automaticKeywordRows.map((row) => [
           row.id,
           selectedCompetitorKeywordEvidenceItems(row).map((item) => item.label)
         ])
@@ -726,7 +754,7 @@ function ProductContentFieldEditModal(props: {
       fieldType,
       initialValue: value,
       draftValue,
-      rows: supportsTitleKeywords ? keywordInputRows : [],
+      rows: supportsTitleKeywords ? automaticKeywordRows : [],
       deletedKeywords: supportsTitleKeywords ? deletedKeywordRows.map((row) => row.value) : [],
       competitorLabelsByRowId
     });
@@ -821,9 +849,12 @@ function ProductContentFieldEditModal(props: {
             <Text type="secondary">关键词管理</Text>
             {keywordPanelLoading ? <Tag color="processing">加载中</Tag> : null}
           </Space>
-          {keywordInputRows.length ? (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            AI 自动匹配竞品；只有我方标题和竞品标题同时包含同一个关键词时才会建立关联。
+          </Text>
+          {automaticKeywordRows.length ? (
             <Space direction="vertical" size={8} style={{ width: '100%' }}>
-              {keywordInputRows.map((row, index) => (
+              {automaticKeywordRows.map((row, index) => (
                 <Space key={row.id} align="center" size={8} style={{ display: 'flex', width: '100%' }}>
                   <Input
                     data-testid="product-competitor-keyword-row-input"
@@ -833,11 +864,13 @@ function ProductContentFieldEditModal(props: {
                     onChange={(event) => updateKeywordInputRow(row.id, event.target.value)}
                   />
                   <Button
-                    disabled={keywordEditingDisabled || !noonCompetitorItems.length}
+                    disabled={keywordEditingDisabled || !row.competitorSourceKeys?.length}
                     style={{ flex: '0 0 auto' }}
-                    onClick={() => openCompetitorPickerForKeywordRow(row)}
+                    onClick={() => openAutomaticCompetitorMatches(row)}
                   >
-                    {row.competitorSourceKeys?.length ? `已选 ${row.competitorSourceKeys.length}` : '添加到竞品'}
+                    {row.competitorSourceKeys?.length
+                      ? `AI 匹配 ${row.competitorSourceKeys.length} 个`
+                      : '无共同关键词'}
                   </Button>
                   <Tooltip title="删除关键词">
                     <Button
@@ -999,19 +1032,12 @@ function ProductContentFieldEditModal(props: {
           </Col>
         ) : null}
       </Row>
-      <ProductKeywordCompetitorPickerModal
-        open={Boolean(competitorPickerRowId)}
-        row={keywordInputRows.find((row) => row.id === competitorPickerRowId)}
+      <ProductKeywordCompetitorMatchModal
+        open={Boolean(competitorMatchRowId)}
+        row={automaticKeywordRows.find((row) => row.id === competitorMatchRowId)}
         competitors={noonCompetitorItems}
-        onCancel={() => setCompetitorPickerRowId(undefined)}
-        onSave={(rowId, selectedKeys) => {
-          setSaveConfirmDetail(null);
-          keywordRowsDirtyRef.current = true;
-          setKeywordInputRows((currentValue) =>
-            currentValue.map((row) => (row.id === rowId ? { ...row, competitorSourceKeys: selectedKeys } : row))
-          );
-          setCompetitorPickerRowId(undefined);
-        }}
+        productTitle={draftValue}
+        onCancel={() => setCompetitorMatchRowId(undefined)}
       />
       <ProductContentSaveConfirmModal
         detail={saveConfirmDetail}
@@ -1115,87 +1141,6 @@ function SaveConfirmList(props: { title: string; items: string[] }) {
         ))}
       </ul>
     </div>
-  );
-}
-
-function ProductKeywordCompetitorPickerModal(props: {
-  open: boolean;
-  row?: ProductContentKeywordInputRow;
-  competitors: ReturnType<typeof noonCompetitorTextItems>;
-  onCancel: () => void;
-  onSave: (rowId: string, selectedKeys: string[]) => void;
-}) {
-  const { competitors, onCancel, onSave, open, row } = props;
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    setSelectedKeys(row?.competitorSourceKeys || []);
-  }, [open, row]);
-
-  const toggleCompetitor = (key: string, checked: boolean) => {
-    setSelectedKeys((currentValue) =>
-      checked
-        ? currentValue.includes(key)
-          ? currentValue
-          : [...currentValue, key]
-        : currentValue.filter((item) => item !== key)
-    );
-  };
-
-  return (
-    <Modal
-      destroyOnClose
-      open={open}
-      title="选择要添加的 Noon 竞品"
-      width={720}
-      onCancel={onCancel}
-      onOk={() => {
-        if (row) {
-          onSave(row.id, selectedKeys);
-        }
-      }}
-      okText="确认选择"
-      cancelText="取消"
-    >
-      <Space direction="vertical" size={10} style={{ width: '100%' }}>
-        <Text type="secondary">只展示 Noon 竞品；Amazon 和其它来源只作为参考，不写入系统竞品。</Text>
-        {competitors.length ? (
-          <List
-            bordered
-            size="small"
-            dataSource={competitors}
-            renderItem={(item) => (
-              <List.Item key={item.key}>
-                <Space align="start" size={10} style={{ width: '100%' }}>
-                  <Checkbox
-                    checked={selectedKeys.includes(item.key)}
-                    style={{ marginTop: 4 }}
-                    onChange={(event) => toggleCompetitor(item.key, event.target.checked)}
-                  />
-                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                    {item.source.url ? (
-                      <Typography.Link href={item.source.url} rel="noreferrer" target="_blank" title={competitorSourceLinkTitle(item)}>
-                        {competitorSourceDisplayText(item)}
-                      </Typography.Link>
-                    ) : (
-                      <Text>{competitorSourceDisplayText(item)}</Text>
-                    )}
-                    <Text type="secondary" style={{ whiteSpace: 'pre-wrap' }}>
-                      {item.text}
-                    </Text>
-                  </Space>
-                </Space>
-              </List.Item>
-            )}
-          />
-        ) : (
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无 Noon 竞品" />
-        )}
-      </Space>
-    </Modal>
   );
 }
 
