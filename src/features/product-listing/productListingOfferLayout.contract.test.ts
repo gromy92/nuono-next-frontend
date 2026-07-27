@@ -102,10 +102,10 @@ assert(
 )
 
 assert(
-  officialTabsSource.includes("props.offerPresentation !== 'listing-create'") &&
-    officialTabsSource.indexOf("key: 'sizes'") > officialTabsSource.indexOf("props.offerPresentation !== 'listing-create'") &&
+  officialTabsSource.includes('if (!listingCreatePresentation)') &&
+    officialTabsSource.indexOf("key: 'sizes'") > officialTabsSource.indexOf('if (!listingCreatePresentation)') &&
     officialTabsSource.indexOf("key: 'product-insights'") >
-      officialTabsSource.indexOf("props.offerPresentation !== 'listing-create'"),
+      officialTabsSource.indexOf('if (!listingCreatePresentation)'),
   'new listing flow must temporarily omit Sizes and Product Insights while retaining them for normal product details'
 )
 
