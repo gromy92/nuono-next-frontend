@@ -5,8 +5,7 @@ import { buildYiteMaterialCellModel } from './WarehouseShippingOrderPage.models'
 import {
   isLineQuoteConfirmed,
   shippingOrderLineImageUrl,
-  shippingOrderLineTitleCn,
-  shippingOrderLineTitleEn
+  shippingOrderLineTitleCn
 } from './warehouseShippingOrderDomain';
 import { YITE_MATERIAL_OPTIONS } from './warehouseShippingOrderModels';
 import { quotePriceSourceLabel, quoteUnitDisplayText } from './warehouseShippingQuoteDomain';
@@ -74,7 +73,7 @@ export function WarehouseShippingOrderLineTable({
         {
           title: '商品',
           dataIndex: 'productTitle',
-          width: 420,
+          width: 360,
           render: (_, line) => {
             const imageUrl = shippingOrderLineImageUrl(line);
             const titleCn = shippingOrderLineTitleCn(line);
@@ -92,9 +91,6 @@ export function WarehouseShippingOrderLineTable({
                 ) : <div className="warehouse-shipping-order-product-placeholder" />}
                 <div>
                   <Text strong className="warehouse-shipping-order-product-title-cn">{titleCn}</Text>
-                  <Text type="secondary" className="warehouse-shipping-order-product-title-en">
-                    {shippingOrderLineTitleEn(line)}
-                  </Text>
                 </div>
               </div>
             );
@@ -103,10 +99,19 @@ export function WarehouseShippingOrderLineTable({
         {
           title: '来源/数量',
           dataIndex: 'lineMeta',
-          width: 180,
+          width: 220,
           render: (_, line) => (
             <div className="warehouse-shipping-order-line-meta-cell">
-              <Text strong className="warehouse-shipping-order-line-meta-barcode">{line.barcode || '-'}</Text>
+              <Text strong className="warehouse-shipping-order-line-meta-psku">
+                <span className="warehouse-shipping-order-line-meta-label">PSKU:</span>
+                <span className="warehouse-shipping-order-line-meta-value">
+                  {line.partnerSku || line.pskuCode || '-'}
+                </span>
+              </Text>
+              <Text type="secondary" className="warehouse-shipping-order-line-meta-barcode">
+                <span className="warehouse-shipping-order-line-meta-label">Barcode:</span>
+                <span className="warehouse-shipping-order-line-meta-value">{line.barcode || '-'}</span>
+              </Text>
               <Text type="secondary" className="warehouse-shipping-order-line-meta-source">
                 {line.purchaseOrderTitle || line.purchaseOrderNo || '-'}
               </Text>
@@ -120,24 +125,26 @@ export function WarehouseShippingOrderLineTable({
         {
           title: '报价单价',
           dataIndex: 'unitPrice',
-          width: 138,
+          width: 158,
           render: (_, line) => {
             const draft = quote.readLineDraft(line);
             const priceSourceLabel = quotePriceSourceLabel(line.priceSource);
             return (
               <div className="warehouse-shipping-order-price-cell">
-                <Input
-                  className="warehouse-shipping-order-quote-field"
-                  size="small"
-                  inputMode="decimal"
-                  value={draft.unitPrice}
-                  placeholder="单价"
-                  disabled={line.shippingSubmitStatus === 'SUBMITTED'}
-                  onChange={(event) => quote.updateLineDraft(line.id, { unitPrice: event.target.value })}
-                />
-                <Text type="secondary" className="warehouse-shipping-order-price-unit">
-                  {quoteUnitDisplayText(quote.activeSegment?.transportMode || line.plannedTransportMode)}
-                </Text>
+                <div className="warehouse-shipping-order-price-entry">
+                  <Input
+                    className="warehouse-shipping-order-quote-field"
+                    size="small"
+                    inputMode="decimal"
+                    value={draft.unitPrice}
+                    placeholder="单价"
+                    disabled={line.shippingSubmitStatus === 'SUBMITTED'}
+                    onChange={(event) => quote.updateLineDraft(line.id, { unitPrice: event.target.value })}
+                  />
+                  <Text type="secondary" className="warehouse-shipping-order-price-unit">
+                    {quoteUnitDisplayText(quote.activeSegment?.transportMode || line.plannedTransportMode)}
+                  </Text>
+                </div>
                 {priceSourceLabel ? (
                   <Text
                     type={line.priceSource === 'SHIPPING_ORDER_SNAPSHOT' ? 'success' : 'secondary'}

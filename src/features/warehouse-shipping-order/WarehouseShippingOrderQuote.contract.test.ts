@@ -103,6 +103,10 @@ assert.match(sources.detailToolbar, /label="待确认"[\s\S]*label="无价格"/)
 assert.doesNotMatch(sources.lineTable, /title: '币种'|title: '计费单位'/);
 assert.match(
   sources.lineTable,
+  /warehouse-shipping-order-price-entry[\s\S]*warehouse-shipping-order-quote-field[\s\S]*warehouse-shipping-order-price-unit[\s\S]*quoteUnitDisplayText/
+);
+assert.match(
+  sources.lineTable,
   /quotePriceSourceLabel\(line\.priceSource\)[\s\S]*warehouse-shipping-order-price-source/
 );
 assert.match(sources.detailCss, /warehouse-shipping-order-published-price-card \{[\s\S]*background: #f7fbff/);

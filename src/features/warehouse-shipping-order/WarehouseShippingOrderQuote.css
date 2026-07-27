@@ -45,12 +45,20 @@
 }
 
 .warehouse-shipping-order-quote-field {
-  width: 100%;
+  flex: 0 0 72px;
+  width: 72px;
 }
 
 .warehouse-shipping-order-price-cell {
   display: grid;
   gap: 3px;
+  min-width: 0;
+}
+
+.warehouse-shipping-order-price-entry {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   min-width: 0;
 }
 

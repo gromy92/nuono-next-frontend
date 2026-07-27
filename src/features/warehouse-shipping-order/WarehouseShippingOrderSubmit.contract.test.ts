@@ -21,6 +21,17 @@ assert.match(
   sources.submit,
   /handleSubmit[\s\S]*countShippingOrderPendingQuoteLines\(order\)[\s\S]*if \(pendingQuoteCount > 0\)[\s\S]*title: '报价缺失'[\s\S]*submitShippingOrder\(order\.id\)/
 );
+assert.match(sources.submit, /import \{ App \} from 'antd'/);
+assert.match(sources.submit, /const \{ modal, message \} = App\.useApp\(\)/);
+assert.match(
+  sources.submit,
+  /modal\.warning\(\{[\s\S]*整张仓库单[\s\S]*其他站点或运输方式[\s\S]*modal\.success\(\{[\s\S]*message\.error\(/
+);
+assert.doesNotMatch(
+  sources.submit,
+  /\bModal\.(?:warning|success)\(/,
+  '提交反馈必须使用 App 上下文实例，避免静态 Modal 在 React 19 页面中不显示'
+);
 assert.match(sources.orderDomain, /isZdShippingForwarder[\s\S]*sameCode\(target\.forwarderCode, 'ZD'\)[\s\S]*众鸫/);
 assert.match(
   sources.detailToolbar,
