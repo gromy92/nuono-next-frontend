@@ -154,7 +154,7 @@ try {
     fetchOperationConfigVersions(),
     (error) => error instanceof OperationsConfigApiError
       && error.status === 503
-      && error.message === '运营配置版本读取失败：503'
+      && error.message === '服务正在更新，请稍后重试'
   )
 
   const abortError = new DOMException('cancelled', 'AbortError')
