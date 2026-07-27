@@ -200,6 +200,7 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
       }
       closeRateCardModal();
       await data.load(data.appliedFilters);
+      setRateCardListModalOpen(true);
     } catch (error) {
       message.error(firstFormValidationMessage(error) || (error instanceof Error ? error.message : '保存线路类别报价失败'));
     } finally {

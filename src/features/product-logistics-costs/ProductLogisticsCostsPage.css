@@ -16,7 +16,8 @@
 }
 
 .product-logistics-costs-page__category-filter {
-  min-width: 132px;
+  width: 320px;
+  min-width: 320px;
 }
 
 .product-logistics-costs-page__search {

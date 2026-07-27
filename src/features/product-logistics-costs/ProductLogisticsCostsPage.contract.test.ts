@@ -77,6 +77,18 @@ assert(
   'route category quote save should visibly handle validation and sync selected products when rows are selected'
 )
 
+const submitRateCardSource = pageSource.slice(
+  pageSource.indexOf('const submitRateCard = async () =>'),
+  pageSource.indexOf('return {', pageSource.indexOf('const submitRateCard = async () =>'))
+)
+assert(
+  submitRateCardSource.includes('await data.load(data.appliedFilters)') &&
+    submitRateCardSource.includes('setRateCardListModalOpen(true)') &&
+    submitRateCardSource.indexOf('await data.load(data.appliedFilters)') <
+      submitRateCardSource.indexOf('setRateCardListModalOpen(true)'),
+  'route category quote save should refresh data and open the current rate card table as visible readback'
+)
+
 assert(
   pageSource.includes('批量设类别') && pageSource.includes('batchCategoryCode'),
   'product logistics cost page should expose a batch category selector and submit action'
@@ -136,4 +148,11 @@ assert(
 assert(
   pageCss.includes('.product-logistics-costs-page__batch-actions'),
   'batch category controls should have a dedicated compact layout class'
+)
+
+assert(
+  pageCss.includes('.product-logistics-costs-page__category-filter') &&
+    pageCss.includes('width: 320px') &&
+    pageCss.includes('min-width: 320px'),
+  'category filter should be wide enough to show route category names and prices'
 )
