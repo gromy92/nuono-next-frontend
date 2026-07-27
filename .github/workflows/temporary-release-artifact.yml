@@ -5,6 +5,9 @@ on:
     branches:
       - codex/release-artifact-frontend-20260727-1855
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,3 +42,20 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: 1
+
+      - name: Package temporary transfer asset
+        run: |
+          cd dist
+          zip -qr ../nuono-next-frontend-d58c912.zip .
+
+      - name: Publish temporary transfer prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create temporary-listing-workflow-frontend-d58c912-20260727 \
+            nuono-next-frontend-d58c912.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --target d58c91243a0e359a1f277295ad66510dcb71ac9c \
+            --title "Temporary frontend release artifact d58c912" \
+            --notes "Temporary transfer asset for the 2026-07-27 production release; delete after checksum verification." \
+            --prerelease
