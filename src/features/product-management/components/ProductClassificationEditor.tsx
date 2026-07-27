@@ -20,9 +20,7 @@ type ProductCompetitorCategoryRow = {
   categoryValue: string;
 };
 
-function optionValue(option: ProductClassificationOptionPayload) {
-  return textInputValue(option.value || option.label).trim();
-}
+function optionValue(option: ProductClassificationOptionPayload) { return textInputValue(option.value || option.label).trim(); }
 
 function fulltypeParts(value: string) {
   const parts = value.split('-').map((item) => item.trim()).filter(Boolean);
@@ -33,9 +31,7 @@ function fulltypeParts(value: string) {
   };
 }
 
-function isOfficialNoonFulltypeCode(value: string) {
-  return /^[a-z0-9_]+-[a-z0-9_]+-[a-z0-9_]+$/.test(value.trim());
-}
+function isOfficialNoonFulltypeCode(value: string) { return /^[a-z0-9_]+-[a-z0-9_]+-[a-z0-9_]+$/.test(value.trim()); }
 
 function normalizeOptions(
   options: ProductClassificationOptionPayload[],

@@ -1,9 +1,4 @@
-import {
-  DeleteOutlined,
-  EyeInvisibleOutlined,
-  StarFilled,
-  UploadOutlined
-} from '@ant-design/icons';
+import { DeleteOutlined, EyeInvisibleOutlined, StarFilled, UploadOutlined } from '@ant-design/icons';
 import { Alert, Button, Drawer, Empty, Segmented, Space, Tag, Typography } from 'antd';
 import type { MessageInstance } from 'antd/es/message/interface';
 import { type ChangeEvent, useEffect, useRef, useState } from 'react';
@@ -22,24 +17,18 @@ import {
   type ProductImageManagerState
 } from './productImageManagerState';
 import { ProductImageAssetPreview } from './ProductImageAssetPreview';
-import type {
-  ProductImageRoleAssignment,
-  ProductImageUsageRole
-} from '../types/productImageRole';
+import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../types/productImageRole';
 import {
   evaluateNoonImageDimensions,
   NOON_IMAGE_TARGET_ASPECT_RATIO,
   noonImageMetadataFromDimensions,
   normalizeNoonImageAssetMetadata,
-  selectNoonImageAdaptTarget,
-  type NoonImageAssetMetadata,
-  type NoonImageDimensions
+  selectNoonImageAdaptTarget, type NoonImageAssetMetadata, type NoonImageDimensions
 } from '../utils/noonImageRequirements';
 import { isProductImageAssetUrl, resolveProductImageDisplayUrl } from '../utils/productImageAssetDisplay';
 
 const { Text } = Typography;
 const IMAGE_PROCESS_TIMEOUT_MS = 15000;
-
 type ProductImageManagerDrawerProps = {
   open: boolean;
   images: string[];
