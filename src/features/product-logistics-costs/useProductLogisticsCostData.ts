@@ -12,17 +12,18 @@ import type {
   ProductLogisticsCostRow,
   ProductLogisticsRateCardRow
 } from './productLogisticsCostModels';
-import { ALL_CATEGORY_FILTER, FORWARDER_OPTIONS } from './productLogisticsCostModels';
+import { ALL_CATEGORY_FILTER } from './productLogisticsCostModels';
 import {
   categoryFilterOptionsFromRows,
   categoryOptionsForRoute,
   defaultFiltersForSite,
-  mergeCategoryOptions,
+  forwarderOptionsFromRateCards,
   normalizeRouteFilters,
   normalizeSite,
   optionLabel,
   rateCardByCategory,
   rateCardOptionsFromRows,
+  routeOptionsFromRateCards,
   textValue,
   transportLabel,
   transportOptionsForForwarder
@@ -51,6 +52,7 @@ export function useProductLogisticsCostData(session: AuthSession) {
   const [currentRows, setCurrentRows] = useState<ProductLogisticsCostRow[]>([]);
   const [historyRows, setHistoryRows] = useState<ProductLogisticsCostRow[]>([]);
   const [rateCards, setRateCards] = useState<ProductLogisticsRateCardRow[]>([]);
+  const [availableRateCards, setAvailableRateCards] = useState<ProductLogisticsRateCardRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>();
   const [pagination, setPagination] = useState({ current: 1, pageSize: 50 });
@@ -64,21 +66,24 @@ export function useProductLogisticsCostData(session: AuthSession) {
       setCurrentRows([]);
       setHistoryRows([]);
       setRateCards([]);
+      setAvailableRateCards([]);
       return;
     }
     setLoading(true);
     setErrorMessage(undefined);
     try {
-      const [productDataset, current, history, rateCardView] = await Promise.all([
+      const [productDataset, current, history, rateCardView, availableRateCardView] = await Promise.all([
         fetchProductListDataset({ ownerUserId, storeCode }),
         fetchCosts('current', storeCode, nextFilters),
         fetchCosts('history', storeCode, nextFilters),
-        fetchRateCards(nextFilters)
+        fetchRateCards(nextFilters),
+        fetchRateCards({ siteCode: nextFilters.siteCode })
       ]);
       setProducts(productDataset.items || []);
       setCurrentRows(current.items || []);
       setHistoryRows(history.items || []);
       setRateCards(rateCardView.items || []);
+      setAvailableRateCards(availableRateCardView.items || []);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '读取商品物流价格失败');
     } finally {
@@ -130,14 +135,22 @@ export function useProductLogisticsCostData(session: AuthSession) {
     const priced = baseTableRows.filter(hasCostData).length;
     return { total: baseTableRows.length, priced, missing: baseTableRows.length - priced };
   }, [baseTableRows]);
+  const routeOptions = useMemo(
+    () => routeOptionsFromRateCards(availableRateCards),
+    [availableRateCards]
+  );
+  const forwarderOptions = useMemo(
+    () => forwarderOptionsFromRateCards(availableRateCards),
+    [availableRateCards]
+  );
   const activeTransportOptions = useMemo(
-    () => transportOptionsForForwarder(filters.forwarderCode),
-    [filters.forwarderCode]
+    () => transportOptionsForForwarder(filters.forwarderCode, routeOptions),
+    [filters.forwarderCode, routeOptions]
   );
-  const activeCategoryOptions = useMemo(
-    () => mergeCategoryOptions(categoryOptionsForRoute(appliedFilters), rateCardOptionsFromRows(rateCards)),
-    [appliedFilters, rateCards]
-  );
+  const activeCategoryOptions = useMemo(() => {
+    const publishedOptions = rateCardOptionsFromRows(rateCards);
+    return publishedOptions.length ? publishedOptions : categoryOptionsForRoute(appliedFilters);
+  }, [appliedFilters, rateCards]);
   const categoryFilterSelectOptions = useMemo(() => {
     const cards = rateCardOptionsFromRows(rateCards);
     const options = cards.length ? cards : categoryFilterOptionsFromRows([...currentRows, ...historyRows]);
@@ -162,7 +175,7 @@ export function useProductLogisticsCostData(session: AuthSession) {
   }, [tableRows.length]);
 
   const applyFilters = () => {
-    const next = normalizeRouteFilters({ ...filters, searchText: filters.searchText.trim() });
+    const next = normalizeRouteFilters({ ...filters, searchText: filters.searchText.trim() }, routeOptions);
     setFilters(next);
     setAppliedFilters(next);
     void load(next);
@@ -173,7 +186,7 @@ export function useProductLogisticsCostData(session: AuthSession) {
       ...patch,
       searchText: filters.searchText.trim(),
       cargoCategoryCode: ALL_CATEGORY_FILTER
-    });
+    }, routeOptions);
     setFilters(next);
     setAppliedFilters(next);
     void load(next);
@@ -197,13 +210,14 @@ export function useProductLogisticsCostData(session: AuthSession) {
   const markImageFailed = useCallback((url: string) => {
     setFailedImageUrls((current) => current.has(url) ? current : new Set(current).add(url));
   }, []);
-  const routeLabel = `${appliedFilters.siteCode} / ${optionLabel(FORWARDER_OPTIONS, appliedFilters.forwarderCode)} / ${transportLabel(appliedFilters.transportMode)}`;
+  const routeLabel = `${appliedFilters.siteCode} / ${optionLabel(forwarderOptions, appliedFilters.forwarderCode)} / ${transportLabel(appliedFilters.transportMode)}`;
 
   return {
     currentStore, storeCode, filters, setFilters, appliedFilters, products, currentRows, historyRows,
     loading, errorMessage, pagination, selectedRowKeys, setSelectedRowKeys, imagePreview, setImagePreview,
     failedImageUrls, tableRows, resultStats, activeTransportOptions, activeCategoryOptions,
-    categoryFilterSelectOptions, assignableSelectedRows, rateCardMap, routeLabel,
+    availableRateCards, routeOptions, forwarderOptions, categoryFilterSelectOptions,
+    assignableSelectedRows, rateCardMap, routeLabel,
     routeHasNoCost: !loading && products.length > 0 && currentRows.length === 0 && historyRows.length === 0,
     load, applyFilters, applyRouteFilters, applyCategoryFilter, applyDataStatusFilter, handleTableChange,
     rowSelection, markImageFailed

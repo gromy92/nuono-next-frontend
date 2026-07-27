@@ -3,11 +3,9 @@ import type { CostFilters, ProductCostTableRow, ProductLogisticsCostRow } from '
 import {
   formatPrice,
   formatShortDate,
-  optionLabel,
   textValue,
   transportLabel
 } from './productLogisticsCostRouteDomain';
-import { FORWARDER_OPTIONS } from './productLogisticsCostModels';
 
 export function QuotePriceCell({
   row,
@@ -46,7 +44,7 @@ export function RouteCell({ row, filters }: { row: ProductCostTableRow; filters:
   const siteCode = sourceRow?.siteCode || filters.siteCode;
   const forwarder = sourceRow?.forwarderName
     || sourceRow?.forwarderCode
-    || optionLabel(FORWARDER_OPTIONS, filters.forwarderCode);
+    || filters.forwarderCode;
   const transportMode = sourceRow?.transportMode || filters.transportMode;
   return (
     <Space direction="vertical" size={0} className="product-logistics-costs-page__route-cell">
