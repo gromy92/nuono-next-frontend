@@ -7,7 +7,7 @@ import {
 } from '@ant-design/icons';
 import { Button, Empty, Input, Spin, Table, Tabs, Tag, Typography } from 'antd';
 import { useMemo, useState } from 'react';
-import type { ShippingOrder } from '../../purchase-order/types';
+import type { ShippingOrder, ShippingOrderSegment } from '../../purchase-order/types';
 import {
   matchesLogisticsPartition,
   summarizeLogisticsPartitions
@@ -70,31 +70,19 @@ export function WarehouseShippingOrderList({
                 }
               },
               {
-                title: '站点 / 运输方式',
-                width: 190,
+                title: '分区明细',
+                width: 500,
+                render: (_, order) => <WarehouseOrderPartitionDetails order={order} />
+              },
+              {
+                title: '总SKU / 总件数',
+                width: 150,
                 render: (_, order) => (
-                  <LogisticsPartitionCombinationTags
-                    points={(order.segments || []).map((segment) => ({
-                      siteCode: segment.siteCode,
-                      transportMode: segment.transportMode
-                    }))}
-                  />
+                  <div className="warehouse-order-total-cell">
+                    <Text strong>{formatQuantity(Number(order.skuCount || 0))} SKU</Text>
+                    <Text>{formatQuantity(Number(order.totalQuantity || 0))} 件</Text>
+                  </div>
                 )
-              },
-              {
-                title: '来源采购单',
-                dataIndex: 'purchaseOrderCount',
-                width: 110,
-                render: (value) => `${value || 0} 单`
-              },
-              { title: '商品行', dataIndex: 'lineCount', width: 90 },
-              { title: 'SKU', dataIndex: 'skuCount', width: 80 },
-              {
-                title: '数量',
-                dataIndex: 'totalQuantity',
-                width: 100,
-                align: 'right',
-                render: (value) => formatQuantity(Number(value || 0))
               },
               {
                 title: '关联发运',
@@ -201,4 +189,54 @@ function orderPartition(order: ShippingOrder) {
     siteCode: segment.siteCode,
     transportMode: segment.transportMode
   })));
+}
+
+function WarehouseOrderPartitionDetails({ order }: { order: ShippingOrder }) {
+  const segments = order.segments || [];
+  if (!segments.length) {
+    return <LogisticsPartitionCombinationTags points={[]} />;
+  }
+  return (
+    <div className="warehouse-order-partition-list">
+      {segments.map((segment) => (
+        <WarehouseOrderPartitionRow
+          key={segment.id || `${segment.siteCode}:${segment.transportMode}`}
+          order={order}
+          segment={segment}
+        />
+      ))}
+    </div>
+  );
+}
+
+function WarehouseOrderPartitionRow({
+  order,
+  segment
+}: {
+  order: ShippingOrder;
+  segment: ShippingOrderSegment;
+}) {
+  return (
+    <div className="warehouse-order-partition-row">
+      <div className="warehouse-order-partition-route">
+        <LogisticsPartitionCombinationTags points={[{
+          siteCode: segment.siteCode,
+          transportMode: segment.transportMode
+        }]} />
+      </div>
+      <PartitionMetric label="来源采购单" value={`${segment.purchaseOrderCount ?? order.purchaseOrderCount ?? 0} 单`} />
+      <PartitionMetric label="商品行" value={formatQuantity(Number(segment.lineCount || 0))} />
+      <PartitionMetric label="SKU" value={formatQuantity(Number(segment.skuCount || 0))} />
+      <PartitionMetric label="件数" value={`${formatQuantity(Number(segment.totalQuantity || 0))} 件`} />
+    </div>
+  );
+}
+
+function PartitionMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="warehouse-order-partition-metric">
+      <span className="warehouse-order-partition-metric-label">{label}</span>
+      <strong>{value}</strong>
+    </span>
+  );
 }

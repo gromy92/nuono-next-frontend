@@ -25,8 +25,23 @@ assert.match(shippingExecution, /batch\.siteCodes/)
 assert.match(shippingExecution, /batch\.transportModes/)
 assert.match(
   warehouseOrders,
-  /<LogisticsPartitionCombinationTags[\s\S]*points=\{\(order\.segments \|\| \[\]\)\.map/,
+  /segments\.map[\s\S]*WarehouseOrderPartitionRow[\s\S]*<LogisticsPartitionCombinationTags points=\{\[\{/,
   '父仓库单必须按子计划的真实站点+运输方式组合逐项展示'
+)
+assert.match(
+  warehouseOrders,
+  /title: '分区明细'[\s\S]*segment\.purchaseOrderCount[\s\S]*segment\.lineCount[\s\S]*segment\.skuCount[\s\S]*segment\.totalQuantity/,
+  '每个分区必须在同一列展示来源采购单、商品行、SKU 和件数'
+)
+assert.match(
+  warehouseOrders,
+  /title: '总SKU \/ 总件数'[\s\S]*order\.skuCount[\s\S]*order\.totalQuantity/,
+  '仓库单必须另列展示整单去重 SKU 和总件数'
+)
+assert.doesNotMatch(
+  warehouseOrders,
+  /title: '站点 \/ 运输方式'|title: '来源采购单'|title: '商品行'|title: 'SKU'|title: '数量'/,
+  '旧的五个独立统计列必须收口为分区明细与整单合计'
 )
 assert.match(
   partitionViews,

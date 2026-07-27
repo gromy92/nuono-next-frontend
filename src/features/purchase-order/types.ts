@@ -81,6 +81,7 @@ export type ShippingOrderSegment = {
   serviceName?: string
   quoteStatus?: 'PENDING_QUOTE' | 'CONFIRMED' | string
   shippingSubmitStatus?: 'NOT_SUBMITTED' | 'SUBMITTED' | string
+  purchaseOrderCount?: number
   lineCount?: number
   skuCount?: number
   totalQuantity?: number
@@ -439,7 +440,6 @@ export type PurchaseOrderItemSiteQuantityCommand = {
   transportMode: PurchaseTransportMode
   quantity: number
 }
-
 export type CreatePurchaseOrderPayload = {
   storeCode: string
   title: string

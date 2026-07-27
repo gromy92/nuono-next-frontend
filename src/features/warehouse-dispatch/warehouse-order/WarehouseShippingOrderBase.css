@@ -110,6 +110,56 @@
   gap: 6px;
 }
 
+.warehouse-order-partition-list {
+  display: grid;
+  gap: 6px;
+}
+
+.warehouse-order-partition-row {
+  display: grid;
+  grid-template-columns: minmax(86px, 1.1fr) repeat(4, minmax(68px, auto));
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+
+.warehouse-order-partition-row + .warehouse-order-partition-row {
+  border-top: 1px dashed #e2e8f0;
+}
+
+.warehouse-order-partition-route {
+  min-width: 0;
+}
+
+.warehouse-order-partition-route .ant-tag {
+  margin-inline-end: 0;
+  white-space: nowrap;
+}
+
+.warehouse-order-partition-metric {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+  white-space: nowrap;
+}
+
+.warehouse-order-partition-metric-label {
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.warehouse-order-partition-metric strong {
+  color: #334155;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.warehouse-order-total-cell {
+  display: grid;
+  gap: 2px;
+}
+
 .warehouse-order-journey-cell,
 .warehouse-order-journey-popover {
   display: flex;
