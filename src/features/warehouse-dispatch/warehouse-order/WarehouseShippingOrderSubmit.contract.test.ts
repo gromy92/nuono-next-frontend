@@ -1,7 +1,10 @@
 import { strict as assert } from 'node:assert';
-import type { ShippingOrder } from '../purchase-order/types';
-import { contractSources as sources } from './WarehouseShippingOrderContractSources';
-import { countShippingOrderPendingQuoteLines } from './warehouseShippingOrderDomain';
+import type { ShippingOrder } from '../../purchase-order/types';
+import { contractSources as sources } from './WarehouseOrderContractSources';
+import {
+  countShippingOrderPendingQuoteLines,
+  shippingOrderQuoteIssueSummary
+} from './warehouseShippingOrderDomain';
 
 const order = {
   quoteStatus: 'PENDING_QUOTE',
@@ -17,16 +20,30 @@ const order = {
 } as ShippingOrder;
 assert.equal(countShippingOrderPendingQuoteLines(order), 1, 'ZD 缺价不应阻塞整单提交');
 
+const overlappingIssues = {
+  segments: [{ id: 'yt', forwarderCode: 'YT' }],
+  lines: [
+    { id: '1', shippingOrderSegmentId: 'yt', quoteStatus: 'PENDING_QUOTE', yiteMaterial: '' },
+    { id: '2', shippingOrderSegmentId: 'yt', quoteStatus: 'CONFIRMED', yiteMaterial: '' }
+  ]
+} as ShippingOrder;
+assert.deepEqual(shippingOrderQuoteIssueSummary(overlappingIssues), {
+  pendingQuoteCount: 1,
+  missingMaterialCount: 2,
+  totalCount: 2
+}, '报价状态和义特材质问题必须按商品行取并集，不能重复计数');
+
 assert.match(
   sources.submit,
-  /handleSubmit[\s\S]*countShippingOrderPendingQuoteLines\(order\)[\s\S]*if \(pendingQuoteCount > 0\)[\s\S]*title: '报价缺失'[\s\S]*submitShippingOrder\(order\.id\)/
+  /handleSubmit[\s\S]*shippingOrderQuoteIssueSummary\(order\)[\s\S]*if \(quoteIssue\.totalCount > 0\)[\s\S]*title: '报价缺失'[\s\S]*submitShippingOrder\(order\.id\)/
 );
 assert.match(sources.submit, /import \{ App \} from 'antd'/);
 assert.match(sources.submit, /const \{ modal, message \} = App\.useApp\(\)/);
 assert.match(
   sources.submit,
-  /modal\.warning\(\{[\s\S]*整张仓库单[\s\S]*其他站点或运输方式[\s\S]*modal\.success\(\{[\s\S]*message\.error\(/
+  /缺单价或报价待确认[\s\S]*缺少材质[\s\S]*title: '报价缺失'[\s\S]*整张仓库单的报价资料尚未完整[\s\S]*modal\.success\(\{[\s\S]*message\.error\(/
 );
+assert.doesNotMatch(sources.submit, /title: '义特材质缺失'/);
 assert.doesNotMatch(
   sources.submit,
   /\bModal\.(?:warning|success)\(/,

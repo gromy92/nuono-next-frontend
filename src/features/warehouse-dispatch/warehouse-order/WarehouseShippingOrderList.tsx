@@ -1,31 +1,33 @@
 import {
-  EditOutlined,
   EyeOutlined,
   PlusOutlined,
   ReloadOutlined,
   SearchOutlined
 } from '@ant-design/icons';
-import { Button, Empty, Input, Spin, Table, Tabs, Tag, Typography } from 'antd';
+import { Button, Empty, Input, Select, Spin, Table, Tabs, Tag, Typography } from 'antd';
 import { useMemo, useState } from 'react';
-import type { ShippingOrder } from '../purchase-order/types';
+import type { ShippingOrder, ShippingOrderSegment } from '../../purchase-order/types';
 import {
   matchesLogisticsPartition,
   summarizeLogisticsPartitions
-} from '../warehouse-dispatch/logisticsPartitionDomain';
+} from '../logisticsPartitionDomain';
 import type {
   LogisticsSiteFilter,
   LogisticsTransportFilter
-} from '../warehouse-dispatch/logisticsPartitionDomain';
+} from '../logisticsPartitionDomain';
 import {
   LogisticsPartitionFilters,
-  LogisticsPartitionTags
-} from '../warehouse-dispatch/LogisticsPartitionViews';
+  LogisticsPartitionCombinationTags
+} from '../LogisticsPartitionViews';
 import { WarehouseOrderIssueTags } from './WarehouseShippingOrderSharedViews';
 import {
+  filterShippingOrdersByStatus,
   formatDate,
   formatQuantity,
+  SHIPPING_ORDER_STATUS_FILTER_OPTIONS,
   shippingOrderStatusMeta
 } from './warehouseShippingOrderDomain';
+import type { ShippingOrderStatusFilter } from './warehouseShippingOrderDomain';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
 import { WarehouseOrderJourneyCell } from './WarehouseOrderJourneyCell';
 
@@ -40,9 +42,14 @@ export function WarehouseShippingOrderList({
 }) {
   const [siteFilter, setSiteFilter] = useState<LogisticsSiteFilter>('all');
   const [transportFilter, setTransportFilter] = useState<LogisticsTransportFilter>('all');
-  const filteredOrders = useMemo(() => data.visibleShippingOrders.filter((order) => (
-    matchesLogisticsPartition(orderPartition(order), siteFilter, transportFilter)
-  )), [data.visibleShippingOrders, siteFilter, transportFilter]);
+  const [statusFilter, setStatusFilter] = useState<ShippingOrderStatusFilter>('all');
+  const filteredOrders = useMemo(() => filterShippingOrdersByStatus(
+    data.visibleShippingOrders.filter((order) => (
+      matchesLogisticsPartition(orderPartition(order), siteFilter, transportFilter)
+    )),
+    statusFilter,
+    data.journeysByOrder
+  ), [data.journeysByOrder, data.visibleShippingOrders, siteFilter, statusFilter, transportFilter]);
   const orderList = (
     <Spin spinning={data.loading}>
       <div className="warehouse-shipping-order-main">
@@ -57,11 +64,18 @@ export function WarehouseShippingOrderList({
                 dataIndex: 'title',
                 width: 260,
                 render: (_, order) => {
-                  const status = shippingOrderStatusMeta(order);
+                  const journeys = data.journeysByOrder.get(order.id) || [];
+                  const status = shippingOrderStatusMeta(order, journeys);
                   return (
                     <div className="warehouse-shipping-order-source-name">
-                      <Text strong>{order.title || order.shippingOrderNo}</Text>
-                      <Text type="secondary">{order.shippingOrderNo}</Text>
+                      <button
+                        type="button"
+                        className="warehouse-shipping-order-title-button"
+                        disabled={data.actionKey === `update-shipping-order:${order.id}`}
+                        onClick={() => data.openEditModal(order)}
+                      >
+                        {order.title || '未命名仓库单'}
+                      </button>
                       <div className="warehouse-shipping-order-status-tags">
                         <Tag color={status.color}>{status.label}</Tag>
                       </div>
@@ -70,24 +84,19 @@ export function WarehouseShippingOrderList({
                 }
               },
               {
-                title: '站点 / 运输方式',
-                width: 190,
-                render: (_, order) => <LogisticsPartitionTags summary={orderPartition(order)} />
+                title: '分区明细',
+                width: 500,
+                render: (_, order) => <WarehouseOrderPartitionDetails order={order} />
               },
               {
-                title: '来源采购单',
-                dataIndex: 'purchaseOrderCount',
-                width: 110,
-                render: (value) => `${value || 0} 单`
-              },
-              { title: '商品行', dataIndex: 'lineCount', width: 90 },
-              { title: 'SKU', dataIndex: 'skuCount', width: 80 },
-              {
-                title: '数量',
-                dataIndex: 'totalQuantity',
-                width: 100,
-                align: 'right',
-                render: (value) => formatQuantity(Number(value || 0))
+                title: '总SKU / 总件数',
+                width: 150,
+                render: (_, order) => (
+                  <div className="warehouse-order-total-cell">
+                    <Text strong>{formatQuantity(Number(order.skuCount || 0))} SKU</Text>
+                    <Text>{formatQuantity(Number(order.totalQuantity || 0))} 件</Text>
+                  </div>
+                )
               },
               {
                 title: '关联发运',
@@ -109,7 +118,7 @@ export function WarehouseShippingOrderList({
               },
               {
                 title: '操作',
-                width: 180,
+                width: 110,
                 render: (_, order) => (
                   <div className="warehouse-shipping-order-table-actions" onClick={(event) => event.stopPropagation()}>
                     <Button
@@ -120,14 +129,6 @@ export function WarehouseShippingOrderList({
                       onClick={() => void data.openDetail(order)}
                     >
                       查看详情
-                    </Button>
-                    <Button
-                      size="small"
-                      icon={<EditOutlined />}
-                      loading={data.actionKey === `update-shipping-order:${order.id}`}
-                      onClick={() => data.openEditModal(order)}
-                    >
-                      改名
                     </Button>
                   </div>
                 )
@@ -161,7 +162,15 @@ export function WarehouseShippingOrderList({
         <div className="warehouse-shipping-order-toolbar-actions">
           <LogisticsPartitionFilters siteFilter={siteFilter} transportFilter={transportFilter}
             onSiteFilterChange={setSiteFilter} onTransportFilterChange={setTransportFilter} />
+          <Select
+            className="warehouse-shipping-order-status-filter"
+            aria-label="筛选发货单状态"
+            value={statusFilter}
+            options={SHIPPING_ORDER_STATUS_FILTER_OPTIONS}
+            onChange={(value) => setStatusFilter(value)}
+          />
           <Input
+            className="warehouse-shipping-order-keyword-search"
             allowClear
             prefix={<SearchOutlined />}
             placeholder="搜索仓库单 / 发运批次 / SKU / 采购单"
@@ -194,4 +203,51 @@ function orderPartition(order: ShippingOrder) {
     siteCode: segment.siteCode,
     transportMode: segment.transportMode
   })));
+}
+
+function WarehouseOrderPartitionDetails({ order }: { order: ShippingOrder }) {
+  const segments = order.segments || [];
+  if (!segments.length) {
+    return <LogisticsPartitionCombinationTags points={[]} />;
+  }
+  return (
+    <div className="warehouse-order-partition-list">
+      {segments.map((segment) => (
+        <WarehouseOrderPartitionRow
+          key={segment.id || `${segment.siteCode}:${segment.transportMode}`}
+          segment={segment}
+        />
+      ))}
+    </div>
+  );
+}
+
+function WarehouseOrderPartitionRow({
+  segment
+}: {
+  segment: ShippingOrderSegment;
+}) {
+  return (
+    <div className="warehouse-order-partition-row">
+      <div className="warehouse-order-partition-route">
+        <LogisticsPartitionCombinationTags points={[{
+          siteCode: segment.siteCode,
+          transportMode: segment.transportMode
+        }]} />
+      </div>
+      <PartitionMetric label="来源采购单" value={segment.purchaseOrderNames || '—'} source />
+      <PartitionMetric label="商品行" value={formatQuantity(Number(segment.lineCount || 0))} />
+      <PartitionMetric label="SKU" value={formatQuantity(Number(segment.skuCount || 0))} />
+      <PartitionMetric label="件数" value={`${formatQuantity(Number(segment.totalQuantity || 0))} 件`} />
+    </div>
+  );
+}
+
+function PartitionMetric({ label, value, source = false }: { label: string; value: string; source?: boolean }) {
+  return (
+    <span className={`warehouse-order-partition-metric${source ? ' warehouse-order-partition-metric--source' : ''}`}>
+      <span className="warehouse-order-partition-metric-label">{label}</span>
+      <strong title={source ? value : undefined}>{value}</strong>
+    </span>
+  );
 }

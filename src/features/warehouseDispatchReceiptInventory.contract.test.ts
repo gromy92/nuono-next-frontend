@@ -3,7 +3,7 @@ import { matchGrantedMenuToWorkspaceMenuKeys } from './route-catalog/sessionAcce
 import { dispatchContractSources } from './warehouseDispatchContractSources'
 
 const {
-  shippingOrderPage,
+  warehouseOrderPanel,
   workbench,
   models,
   receiptPanel,
@@ -16,7 +16,6 @@ const {
 } = dispatchContractSources
 
 const expectedWarehouseDispatchMenuKeys = [
-  'warehouse-shipping-order',
   'warehouse-logistics-bill',
   'warehouse-dispatch',
   'official-warehouse',
@@ -24,15 +23,24 @@ const expectedWarehouseDispatchMenuKeys = [
 ]
 
 assert.match(
-  shippingOrderPage,
-  /export function WarehouseShippingOrderPanel\(/,
-  'warehouse order flow must expose a reusable embedded panel'
+  warehouseOrderPanel,
+  /export function WarehouseOrderPanel\(/,
+  'warehouse order flow must be owned by warehouse dispatch'
 )
 
-assert.match(
-  shippingOrderPage,
-  /export function WarehouseShippingOrderPage\(/,
-  'legacy warehouse order route must remain as a compatibility wrapper'
+assert.doesNotMatch(
+  warehouseOrderPanel,
+  /WarehouseShippingOrderPage|embedded\?:/,
+  'warehouse order must not retain a standalone workspace wrapper'
+)
+
+assert.deepEqual(
+  matchGrantedMenuToWorkspaceMenuKeys({
+    menuId: 9250,
+    menuName: '仓库发货单',
+    urlPath: '/warehouse/shipping-orders'
+  }),
+  expectedWarehouseDispatchMenuKeys
 )
 
 assert.deepEqual(
@@ -67,7 +75,7 @@ assert.match(
 
 assert.match(
   workbench,
-  /key: 'warehouse-order'[\s\S]*WarehouseShippingOrderPanel embedded[\s\S]*key: 'receipt-list'/,
+  /key: 'warehouse-order'[\s\S]*WarehouseOrderPanel[\s\S]*key: 'receipt-list'/,
   '仓库单 must be placed before 采购收货'
 )
 

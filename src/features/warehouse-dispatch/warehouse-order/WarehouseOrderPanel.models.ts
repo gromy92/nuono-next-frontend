@@ -1,4 +1,4 @@
-import type { ShippingOrderLine } from '../purchase-order/types'
+import type { ShippingOrderLine } from '../../purchase-order/types'
 
 type YiteMaterialCellLine = Pick<
   ShippingOrderLine,

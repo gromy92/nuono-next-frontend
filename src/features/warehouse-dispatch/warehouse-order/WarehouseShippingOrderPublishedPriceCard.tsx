@@ -1,14 +1,11 @@
-import { Tag, Typography } from 'antd';
+import { DownOutlined, UpOutlined } from '@ant-design/icons';
+import { Button, Tag, Typography } from 'antd';
+import { useEffect, useState } from 'react';
 import type {
   PurchaseOrderLogisticsQuoteChannelOption,
-  PurchaseOrderLogisticsQuotePublishedPrice,
-  PurchaseOrderLogisticsQuoteSurcharge
-} from '../purchase-order/types';
-import {
-  formatPublishedQuotePrice,
-  formatPublishedQuoteSurcharge,
-  publishedQuoteConstraintLabels
-} from './warehouseShippingQuoteDomain';
+  PurchaseOrderLogisticsQuotePublishedPrice
+} from '../../purchase-order/types';
+import { formatPublishedQuotePrice } from './warehouseShippingQuoteDomain';
 
 const { Text } = Typography;
 
@@ -17,6 +14,12 @@ export function WarehouseShippingOrderPublishedPriceCard({
 }: {
   channel?: PurchaseOrderLogisticsQuoteChannelOption;
 }) {
+  const [seaPricesExpanded, setSeaPricesExpanded] = useState(false);
+
+  useEffect(() => {
+    setSeaPricesExpanded(false);
+  }, [channel?.routeCode]);
+
   if (!channel) {
     return (
       <div className="warehouse-shipping-order-published-price-card">
@@ -26,8 +29,8 @@ export function WarehouseShippingOrderPublishedPriceCard({
   }
 
   const prices = channel.publishedPrices || [];
-  const surcharges = channel.surcharges || [];
-  const constraints = publishedQuoteConstraintLabels(prices);
+  const isSea = (channel.transportMode || '').toUpperCase() === 'SEA';
+  const showPrices = !isSea || seaPricesExpanded;
   return (
     <div
       className="warehouse-shipping-order-published-price-card"
@@ -36,9 +39,20 @@ export function WarehouseShippingOrderPublishedPriceCard({
       <div className="warehouse-shipping-order-published-price-header">
         <Text strong>线上报价</Text>
         {channel.quoteVersionCode ? <Tag>{channel.quoteVersionCode}</Tag> : null}
+        {isSea && prices.length ? (
+          <Button
+            className="warehouse-shipping-order-sea-price-toggle"
+            type="link"
+            size="small"
+            icon={seaPricesExpanded ? <UpOutlined /> : <DownOutlined />}
+            onClick={() => setSeaPricesExpanded((expanded) => !expanded)}
+          >
+            {seaPricesExpanded ? '收起海运报价' : `展开海运报价 ${prices.length} 项`}
+          </Button>
+        ) : null}
       </div>
-      {prices.length ? (
-        <div className="warehouse-shipping-order-published-price-list">
+      {prices.length && showPrices ? (
+        <div className={`warehouse-shipping-order-published-price-list${isSea ? ' warehouse-shipping-order-published-price-list--expanded' : ''}`}>
           {prices.map((price, index) => (
             <PublishedPriceItem
               key={price.priceRuleCode || price.cargoCategoryCode || `${price.cargoCategoryName || 'price'}-${index}`}
@@ -46,23 +60,8 @@ export function WarehouseShippingOrderPublishedPriceCard({
             />
           ))}
         </div>
-      ) : (
+      ) : !prices.length ? (
         <Text type="warning">暂无线上报价</Text>
-      )}
-      {surcharges.length ? (
-        <div className="warehouse-shipping-order-published-surcharge-list">
-          {surcharges.map((fee, index) => (
-            <PublishedSurchargeItem
-              key={`${fee.feeType || fee.feeName || 'fee'}-${index}`}
-              fee={fee}
-            />
-          ))}
-        </div>
-      ) : null}
-      {constraints.length ? (
-        <Text type="secondary" className="warehouse-shipping-order-published-price-constraints">
-          {constraints.join(' · ')}
-        </Text>
       ) : null}
     </div>
   );
@@ -73,16 +72,6 @@ function PublishedPriceItem({ price }: { price: PurchaseOrderLogisticsQuotePubli
     <div className="warehouse-shipping-order-published-price-item">
       <Text type="secondary">{price.cargoCategoryName || '基础价'}</Text>
       <Text strong>{formatPublishedQuotePrice(price)}</Text>
-    </div>
-  );
-}
-
-function PublishedSurchargeItem({ fee }: { fee: PurchaseOrderLogisticsQuoteSurcharge }) {
-  return (
-    <div className="warehouse-shipping-order-published-surcharge-item">
-      <Text type="secondary">{fee.feeName || '附加费'}</Text>
-      <Text>{formatPublishedQuoteSurcharge(fee)}</Text>
-      {fee.triggerCondition ? <Text type="secondary">{fee.triggerCondition}</Text> : null}
     </div>
   );
 }

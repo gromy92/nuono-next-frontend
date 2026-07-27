@@ -19,8 +19,7 @@ import {
   ProductSpecsPage,
   PurchaseOrderPage,
   WarehouseDispatchWorkbenchPage,
-  WarehouseLogisticsBillPage,
-  WarehouseShippingOrderPage
+  WarehouseLogisticsBillPage
 } from './ShellWorkspaceLazyComponents'
 import type {
   LegacyWorkspaceRenderResult,
@@ -164,13 +163,6 @@ export function renderLegacyCommerceWorkspace(
           onCloseBoxDetailTab={onCloseInTransitBoxDetailTab}
           onOpenBoxDetailTab={onOpenInTransitBoxDetailTab}
         />
-      </LazyWorkspaceBoundary>
-    )
-  }
-  if (activeContentKind === 'warehouse-shipping-order') {
-    return handled(
-      <LazyWorkspaceBoundary>
-        <WarehouseShippingOrderPage session={shellSession} />
       </LazyWorkspaceBoundary>
     )
   }

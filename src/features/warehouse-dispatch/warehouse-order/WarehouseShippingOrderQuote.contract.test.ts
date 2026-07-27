@@ -1,10 +1,8 @@
 import { strict as assert } from 'node:assert';
-import { contractSources as sources } from './WarehouseShippingOrderContractSources';
+import { contractSources as sources } from './WarehouseOrderContractSources';
 import {
   defaultQuoteBillingUnit,
   formatPublishedQuotePrice,
-  formatPublishedQuoteSurcharge,
-  publishedQuoteConstraintLabels,
   quotePriceSourceLabel,
   quoteUnitDisplayText,
   warehouseQuoteConfirmationState
@@ -36,22 +34,6 @@ assert.equal(
 assert.equal(
   formatPublishedQuotePrice({ priceStatus: 'INQUIRY', unitPrice: null, billingUnit: 'KG' }),
   '需询价'
-);
-assert.equal(
-  formatPublishedQuoteSurcharge({
-    feeName: '沙特利雅得FBN/FBA送仓费',
-    currency: 'RMB',
-    amount: 2,
-    billingUnit: 'KG'
-  }),
-  '+ RMB 2/KG'
-);
-assert.deepEqual(
-  publishedQuoteConstraintLabels([
-    { volumeDivisor: 6000, minBillableUnit: 10, minBillableUnitType: 'KG' },
-    { volumeDivisor: 6000, minBillableUnit: 10, minBillableUnitType: 'KG' }
-  ]),
-  ['体积重 ÷ 6,000', '最低计费 10 KG']
 );
 
 assert.match(
@@ -92,15 +74,24 @@ assert.doesNotMatch(sources.sharedViews, /QuoteChipGroup label="渠道"/);
 assert.match(sources.sharedViews, /selectedForwarder\?\.channels \|\| \[\]\)\.length > 1[\s\S]*<Select/);
 assert.match(sources.sharedViews, /WarehouseShippingOrderPublishedPriceCard channel=\{selectedChannel\}/);
 assert.match(sources.publishedPriceCard, /线上报价[\s\S]*暂无线上报价/);
-assert.match(sources.publishedPriceCard, /publishedPrices[\s\S]*surcharges[\s\S]*quoteVersionCode/);
+assert.match(sources.publishedPriceCard, /quoteVersionCode[\s\S]*展开海运报价/);
+assert.match(sources.publishedPriceCard, /收起海运报价/);
+assert.match(sources.publishedPriceCard, /transportMode[\s\S]*SEA[\s\S]*seaPricesExpanded/);
+assert.doesNotMatch(sources.publishedPriceCard, /surcharges|triggerCondition|published-price-constraints/);
 
 assert.match(sources.quoteTransfer, /useState\(false\)[\s\S]*exportMissingOnly/);
 assert.match(sources.quoteTransfer, /exportShippingOrderLogisticsQuoteReport[\s\S]*missingOnly: exportMissingOnly/);
 assert.match(sources.quoteTransfer, /selectedChannel\?\.totalLineCount[\s\S]*selectedChannel\?\.pendingLineCount[\s\S]*selectedChannel\?\.confirmedLineCount/);
 assert.match(sources.purchaseOrderApi, /missingOnly\?: boolean[\s\S]*params\.set\('missingOnly', 'true'\)/);
 assert.doesNotMatch(sources.detailToolbar, /导出缺报价|生成账单/);
-assert.match(sources.detailToolbar, /label="待确认"[\s\S]*label="无价格"/);
+assert.match(sources.detailToolbar, /label="缺义特材质"[\s\S]*label="待确认"[\s\S]*label="缺单价"/);
+assert.doesNotMatch(sources.sharedViews, />材料缺失 /);
 assert.doesNotMatch(sources.lineTable, /title: '币种'|title: '计费单位'/);
+assert.match(sources.lineTable, /pagination=\{\{ pageSize: 20, showSizeChanger: false \}\}/);
+assert.match(
+  sources.lineTable,
+  /warehouse-shipping-order-product-title-cn[\s\S]*warehouse-shipping-order-product-identity-label">PSKU:[\s\S]*warehouse-shipping-order-product-identity-label">Barcode:/
+);
 assert.match(
   sources.lineTable,
   /warehouse-shipping-order-price-entry[\s\S]*warehouse-shipping-order-quote-field[\s\S]*warehouse-shipping-order-price-unit[\s\S]*quoteUnitDisplayText/

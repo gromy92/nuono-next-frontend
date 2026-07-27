@@ -1,4 +1,4 @@
-import type { PurchaseOrderLogisticsQuoteImportResult } from '../purchase-order/types';
+import type { PurchaseOrderLogisticsQuoteImportResult } from '../../purchase-order/types';
 
 export type QuoteExportSelection = {
   forwarderCode?: string;
