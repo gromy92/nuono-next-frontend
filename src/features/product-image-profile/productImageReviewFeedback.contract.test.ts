@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import {
   buildReviewAssetPrompts,
+  buildReviewAssetPresentation,
   buildReviewAssetTemplate,
   buildReviewRejectPayload
 } from './productImageReviewFeedback'
@@ -72,4 +73,22 @@ assert.deepEqual(
     comment: '整体意见：\n整体重新调整留白',
     wholeSuite: true
   }
+)
+
+const visibleAssets = [
+  { ...asset(46, 'MATERIAL_DETAIL'), roleOrdinal: 2, sortOrder: 30, title: '细节2' },
+  { ...asset(51, 'CORE_FEATURE'), roleOrdinal: 1, sortOrder: 30, title: '卖点1' },
+  { ...asset(45, 'MATERIAL_DETAIL'), roleOrdinal: 1, sortOrder: 20, title: '细节1' },
+  { ...asset(47, 'MATERIAL_DETAIL'), roleOrdinal: 3, sortOrder: 40, title: '细节3' }
+]
+const presentedAssets = buildReviewAssetPresentation(visibleAssets)
+assert.deepEqual(
+  presentedAssets.map((item) => [item.backendId, item.title]),
+  [
+    [45, '细节1'],
+    [51, '细节2'],
+    [46, '细节3'],
+    [47, '细节4']
+  ],
+  '套图卡片名称和顺序必须与驳回弹窗使用同一 asset 映射'
 )

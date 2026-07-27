@@ -75,6 +75,23 @@ export function buildReviewAssetPrompts(
     })
 }
 
+export function buildReviewAssetPresentation(
+  assets: ProductImageSuiteAsset[]
+): ProductImageSuiteAsset[] {
+  const prompts = buildReviewAssetPrompts(assets)
+  const assetsById = new Map(
+    assets.flatMap((asset) =>
+      typeof asset.backendId === 'number' ? [[asset.backendId, asset] as const] : []
+    )
+  )
+  const presented = prompts.flatMap((prompt) => {
+    const asset = assetsById.get(prompt.assetId)
+    return asset ? [{ ...asset, title: prompt.label }] : []
+  })
+  const unresolved = assets.filter((asset) => typeof asset.backendId !== 'number')
+  return [...presented, ...unresolved]
+}
+
 export function buildReviewAssetTemplate(prompts: ProductImageReviewAssetPrompt[]) {
   return prompts.map((prompt) => `${prompt.label}：`).join('\n')
 }
