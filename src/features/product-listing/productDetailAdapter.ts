@@ -42,7 +42,6 @@ export type ProductListingEditorDraft = Omit<
   | 'purchasePrice'
   | 'supplyEvidenceRefId'
   | 'optionalPurchaseOrderId'
-  | 'quantity'
   | 'idWarranty'
 > & {
   idProductFullType?: NumericDraftValue
@@ -50,7 +49,6 @@ export type ProductListingEditorDraft = Omit<
   purchasePrice?: NumericDraftValue
   supplyEvidenceRefId?: NumericDraftValue
   optionalPurchaseOrderId?: NumericDraftValue
-  quantity?: NumericDraftValue
   idWarranty?: NumericDraftValue
   productTitleCn?: string
   productDescriptionCn?: string
@@ -86,7 +84,6 @@ export function createProductListingEditorDraft(storeCode?: string): ProductList
     imageRoleAssignments: [],
     imageAssetMetadata: [],
     keyAttributes: normalizeProductListingKeyAttributes([]),
-    fbp: true,
     isActive: true,
     supplyEvidenceType: undefined
   })
@@ -96,7 +93,7 @@ export function normalizeProductListingEditorDraft(
   draft: Partial<ProductListingEditorDraft>,
   fallbackStoreCode?: string
 ): ProductListingEditorDraft {
-  return {
+  const normalized = {
     ...draft,
     storeCode: text(draft.storeCode) || text(fallbackStoreCode),
     psku: text(draft.psku),
@@ -104,9 +101,15 @@ export function normalizeProductListingEditorDraft(
     imageRoleAssignments: normalizeProductListingImageRoleAssignments(draft.imageUrls, draft.imageRoleAssignments),
     imageAssetMetadata: normalizeNoonImageAssetMetadata(draft.imageUrls, draft.imageAssetMetadata),
     keyAttributes: normalizeProductListingKeyAttributes(draft.keyAttributes, draft.barcode),
-    fbp: draft.fbp ?? true,
-    isActive: draft.isActive ?? true
-  }
+    listingKeywordSuggestionsEn: normalizeKeywordSuggestions(draft.listingKeywordSuggestionsEn),
+    listingKeywordSuggestionsAr: normalizeKeywordSuggestions(draft.listingKeywordSuggestionsAr),
+    isActive: true
+  } as ProductListingEditorDraft & Record<string, unknown>
+  delete normalized.fbp
+  delete normalized.warehouseId
+  delete normalized.warehouseCode
+  delete normalized.quantity
+  return normalized
 }
 
 export function mergeProductListingPrefillDraft(
@@ -120,23 +123,6 @@ export function mergeProductListingPrefillDraft(
     }
   })
   return merged as Partial<ProductListingEditorDraft>
-}
-
-export function ensureProductListingEditorDraftPsku(
-  draft: Partial<ProductListingEditorDraft>,
-  timestamp = Date.now()
-): ProductListingEditorDraft {
-  const normalized = normalizeProductListingEditorDraft(draft)
-  if (normalized.psku) {
-    return normalized
-  }
-  const sourceRef = optionalInteger(normalized.sourceRefId)
-  const sourcePart = sourceRef ? String(sourceRef) : 'LISTING'
-  const suffix = Math.max(0, Math.trunc(timestamp)).toString(36).toUpperCase()
-  return normalizeProductListingEditorDraft({
-    ...normalized,
-    psku: sanitizeGeneratedPsku(`NUONO-TEST-${sourcePart}-${suffix}`)
-  })
 }
 
 export function productListingEditorDraftToMetadataValues(
@@ -192,16 +178,26 @@ export function productListingEditorDraftToPayload(
     supplyEvidenceType: optionalText(draft.supplyEvidenceType),
     supplyEvidenceRefId: optionalInteger(draft.supplyEvidenceRefId),
     optionalPurchaseOrderId: optionalInteger(draft.optionalPurchaseOrderId),
-    fbp: draft.fbp,
-    warehouseId: optionalText(draft.warehouseId),
-    warehouseCode: optionalText(draft.warehouseCode),
-    quantity: optionalInteger(draft.quantity),
     idWarranty: optionalInteger(draft.idWarranty),
-    isActive: draft.isActive ?? true,
+    isActive: true,
     offerNote: optionalText(draft.offerNote),
     barcode: optionalText(draft.barcode),
-    competitorMaterials: normalizeProductListingCompetitorMaterials(draft.competitorMaterials)
+    competitorMaterials: normalizeProductListingCompetitorMaterials(draft.competitorMaterials),
+    listingKeywordSuggestionsEn: normalizeKeywordSuggestions(draft.listingKeywordSuggestionsEn),
+    listingKeywordSuggestionsAr: normalizeKeywordSuggestions(draft.listingKeywordSuggestionsAr)
   }
+}
+
+function normalizeKeywordSuggestions(value: unknown) {
+  const seen = new Set<string>()
+  return normalizeStringList(value).filter((keyword) => {
+    const key = keyword.normalize('NFKC').toLocaleLowerCase()
+    if (!key || seen.has(key)) {
+      return false
+    }
+    seen.add(key)
+    return true
+  }).slice(0, 6)
 }
 
 export function productListingEditorDraftToSnapshot(
@@ -272,12 +268,7 @@ export function productListingEditorDraftToSnapshot(
       idWarranty: draft.idWarranty,
       barcode
     },
-    stock: {
-      fbp: draft.fbp,
-      warehouseId: text(draft.warehouseId),
-      warehouseCode: text(draft.warehouseCode),
-      quantity: draft.quantity
-    },
+    stock: {},
     siteOffers: [productListingEditorDraftToSiteOffer(draft)]
   })
 }
@@ -286,7 +277,7 @@ export function productListingEditorDraftToSiteOffer(draft: ProductListingEditor
   return {
     storeCode: draft.storeCode,
     site: siteFromStoreCode(draft.storeCode),
-    isActive: draft.isActive ?? true,
+    isActive: true,
     liveStatus: 'not_live',
     price: valueText(draft.price),
     priceMin: valueText(draft.priceMin),
@@ -315,7 +306,7 @@ export function productListingEditorDraftToSummary(draft: ProductListingEditorDr
     barcode: text(draft.barcode),
     referencePrice: valueText(draft.price),
     productFulltype: text(draft.productFullType),
-    isActive: draft.isActive ?? true,
+    isActive: true,
     listingStartedSource: 'not_listed',
     liveStatus: 'not_live',
     syncStatus: 'draft',
@@ -325,24 +316,6 @@ export function productListingEditorDraftToSummary(draft: ProductListingEditorDr
     siteLabels: [siteFromStoreCode(draft.storeCode)].filter(Boolean),
     liveStatuses: ['not_live']
   }
-}
-
-export function productListingEditorDraftToStockRows(draft: ProductListingEditorDraft): Array<Record<string, unknown>> {
-  const warehouseId = text(draft.warehouseId)
-  const warehouseCode = text(draft.warehouseCode)
-  const quantity = optionalInteger(draft.quantity)
-  if (!warehouseId && !warehouseCode && quantity === undefined) {
-    return []
-  }
-  return [
-    {
-      warehouseCode: warehouseCode || warehouseId,
-      stockType: draft.fbp ? 'FBP' : 'Seller',
-      stockTransferred: '-',
-      stockReserved: '-',
-      netStock: quantity ?? '-'
-    }
-  ]
 }
 
 export function productListingEditorDraftDomains(draft: ProductListingEditorDraft) {
@@ -526,7 +499,13 @@ export function normalizeProductListingImageRoleAssignments(
 
 function normalizeProductImageUsageRole(value: unknown): ProductImageUsageRole | undefined {
   const normalized = text(value).toUpperCase()
-  if (normalized === 'MAIN' || normalized === 'SIZE' || normalized === 'DETAIL' || normalized === 'PACKAGE') {
+  if (
+    normalized === 'MAIN' ||
+    normalized === 'SIZE' ||
+    normalized === 'DETAIL' ||
+    normalized === 'SCENE' ||
+    normalized === 'PACKAGE'
+  ) {
     return normalized
   }
   return undefined
@@ -648,15 +627,6 @@ function hasFilledDraftValue(value: unknown): boolean {
 function siteFromStoreCode(storeCode?: string) {
   const match = text(storeCode).match(/-N?([A-Z]{2})$/i)
   return match ? match[1].toUpperCase() : ''
-}
-
-function sanitizeGeneratedPsku(value: string) {
-  return value
-    .toUpperCase()
-    .replace(/[^A-Z0-9_-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 48)
 }
 
 function hasAttributeValue(attribute: Record<string, unknown>) {

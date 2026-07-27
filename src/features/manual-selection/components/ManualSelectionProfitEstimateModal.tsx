@@ -3,7 +3,6 @@ import { Alert, Button, Col, Form, Input, InputNumber, Modal, Row, Select, Space
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import { fetchLogisticsQuoteOperationPriceItems } from '../../logistics-quote/api'
-import type { LogisticsQuoteOperationPriceItemDto } from '../../logistics-quote/types'
 import { calculateProfitEstimate } from '../../profit-calculator/api'
 import {
   formatMoney,
@@ -28,8 +27,21 @@ import {
   buildCompetitorCategoryRows,
   type CompetitorCategoryRow
 } from '../profitCompetitorCategoryLinks'
-import { normalizeLogisticsQuoteText } from '../profitEstimateLogisticsEncoding'
+import {
+  buildLogisticsProviderOptions,
+  buildLogisticsQuoteOptions,
+  scenarioMatchesLogisticsQuotes,
+  transportModeLabel,
+  type LogisticsProviderOption,
+  type LogisticsQuoteOption
+} from '../profitEstimateLogisticsOptions'
+import {
+  logisticsProvidersForMode,
+  logisticsSelectionEvidence,
+  resolvePersistedLogisticsSelections
+} from '../profitEstimateLogisticsSelection'
 import type { ManualSelectionGroupProfitEstimateSnapshot, ManualSelectionProfitEstimateSeed } from '../types'
+import { ManualSelectionProfitLogisticsFields, profitQuoteOptionLabel } from './ManualSelectionProfitLogisticsFields'
 
 const { Text } = Typography
 const SYSTEM_CATEGORY_SELECT_LIMIT = 5000
@@ -45,7 +57,12 @@ type ProfitEstimateFormValues = {
   heightCm: number
   grossWeightKg: number
   categoryKey: string
+  airProviderKey?: string
+  seaProviderKey?: string
+  /** Legacy v1/v2 snapshot field. */
   logisticsProviderKey?: string
+  airQuoteKey?: string
+  seaQuoteKey?: string
 }
 
 type ManualSelectionProfitEstimateModalProps = {
@@ -59,22 +76,14 @@ type ManualSelectionProfitEstimateModalProps = {
 
 const DEFAULT_CATEGORY_COMMISSION_RATE = PROFIT_FORM_DEFAULTS.fbnCommissionRate
 
-type LogisticsProviderOption = {
-  label: string
-  value: string
-  forwarderName: string
-  serviceName: string
-  transportMode: 'AIR' | 'SEA'
-  cargoCategoryName?: string
-  quoteVersionNo?: string
-  unitPrice: number
-  billingUnit?: string
-  sourceFileName?: string
-}
-
 type SaveFeedback = {
   type: 'success' | 'warning' | 'error'
   message: string
+}
+
+type PersistedProfitFormState = {
+  schemaVersion: number
+  formValues: Partial<ProfitEstimateFormValues>
 }
 
 function initialValues(
@@ -93,32 +102,11 @@ function initialValues(
     heightCm: PROFIT_FORM_DEFAULTS.heightCm,
     grossWeightKg: Number((PROFIT_FORM_DEFAULTS.weightGrams / 1000).toFixed(3)),
     categoryKey,
-    logisticsProviderKey: undefined
+    airProviderKey: undefined,
+    airQuoteKey: undefined,
+    seaProviderKey: undefined,
+    seaQuoteKey: undefined
   }
-}
-
-function logisticsProviderValue(item: LogisticsQuoteOperationPriceItemDto) {
-  return `${item.targetType}:${item.targetId}`
-}
-
-function transportModeLabel(value?: string) {
-  if (value === 'AIR') {
-    return '空运'
-  }
-  if (value === 'SEA') {
-    return '海运'
-  }
-  return value || '-'
-}
-
-function billingUnitLabel(value?: string) {
-  if (value === 'KG') {
-    return 'kg'
-  }
-  if (value === 'CBM') {
-    return 'CBM'
-  }
-  return value || '-'
 }
 
 function normalizeSiteCode(value?: string): 'SA' | 'AE' {
@@ -131,123 +119,6 @@ function normalizeSiteCode(value?: string): 'SA' | 'AE' {
 
 function siteLabel(site: 'SA' | 'AE') {
   return site === 'AE' ? '阿联酋 AE' : '沙特 SA'
-}
-
-function isRmbCurrency(value?: string) {
-  const normalized = value?.trim().toUpperCase()
-  return normalized === 'RMB' || normalized === 'CNY'
-}
-
-function isSupportedMainFreightItem(item: LogisticsQuoteOperationPriceItemDto) {
-  if (item.targetType !== 'BASE_PRICE' || item.priceStatus !== 'NORMAL') {
-    return false
-  }
-  if (typeof item.effectiveValue !== 'number' || !Number.isFinite(item.effectiveValue) || item.effectiveValue <= 0) {
-    return false
-  }
-  if (!isRmbCurrency(item.currency)) {
-    return false
-  }
-  const transportMode = item.transportMode?.toUpperCase()
-  const pricingModel = item.pricingModel?.toUpperCase()
-  const billingUnit = item.billingUnit?.toUpperCase()
-  return (
-    (transportMode === 'AIR' && pricingModel === 'PER_KG' && billingUnit === 'KG') ||
-    (transportMode === 'SEA' && pricingModel === 'PER_CBM' && billingUnit === 'CBM')
-  )
-}
-
-function itemSiteSearchText(item: LogisticsQuoteOperationPriceItemDto) {
-  return [
-    item.forwarderName,
-    item.serviceCode,
-    item.serviceName,
-    item.targetPlatform,
-    item.deliveryCity,
-    item.cargoCategoryCode,
-    item.cargoCategoryName,
-    item.categoryLevel1,
-    item.categoryLevel2,
-    item.sourceFileName,
-    item.remark
-  ].map((value) => normalizeLogisticsQuoteText(value)).filter(Boolean).join(' ')
-}
-
-function hasSiteCodeToken(text: string, tokens: string[]) {
-  return new RegExp(`(^|[^A-Z0-9])(${tokens.join('|')})([^A-Z0-9]|$)`).test(text)
-}
-
-function siteMarkerMatched(item: LogisticsQuoteOperationPriceItemDto, site: 'SA' | 'AE') {
-  const rawText = itemSiteSearchText(item)
-  const upperText = rawText.toUpperCase()
-  const lowerText = rawText.toLowerCase()
-  if (site === 'AE') {
-    return (
-      hasSiteCodeToken(upperText, ['AE', 'ARE', 'UAE', 'NAE']) ||
-      lowerText.includes('dubai') ||
-      rawText.includes('阿联酋') ||
-      rawText.includes('迪拜') ||
-      rawText.includes('DXB')
-    )
-  }
-  return (
-    hasSiteCodeToken(upperText, ['SA', 'SAU', 'KSA', 'NSA']) ||
-    lowerText.includes('saudi') ||
-    lowerText.includes('riyadh') ||
-    lowerText.includes('jeddah') ||
-    rawText.includes('沙特') ||
-    rawText.includes('利雅得') ||
-    rawText.includes('吉达') ||
-    rawText.includes('RUH') ||
-    rawText.includes('JED')
-  )
-}
-
-function logisticsItemMatchesSite(item: LogisticsQuoteOperationPriceItemDto, site: 'SA' | 'AE') {
-  const matchesCurrentSite = siteMarkerMatched(item, site)
-  const matchesOtherSite = siteMarkerMatched(item, site === 'AE' ? 'SA' : 'AE')
-  return matchesCurrentSite || !matchesOtherSite
-}
-
-function buildLogisticsProviderOptions(items: LogisticsQuoteOperationPriceItemDto[], site: 'SA' | 'AE') {
-  const seenValues = new Set<string>()
-  return items
-    .filter(isSupportedMainFreightItem)
-    .filter((item) => logisticsItemMatchesSite(item, site))
-    .map((item): LogisticsProviderOption => {
-      const transportMode = item.transportMode?.toUpperCase() === 'SEA' ? 'SEA' : 'AIR'
-      const unitPrice = Number(item.effectiveValue)
-      const value = logisticsProviderValue(item)
-      const forwarderName = normalizeLogisticsQuoteText(item.forwarderName) || '未命名货代'
-      const serviceName = normalizeLogisticsQuoteText(item.serviceName || item.serviceCode) || '未命名服务线'
-      const cargoCategoryName = normalizeLogisticsQuoteText(
-        item.cargoCategoryName || item.categoryLevel2 || item.categoryLevel1
-      )
-      return {
-        value,
-        label: [
-          forwarderName,
-          serviceName,
-          cargoCategoryName,
-          `${transportModeLabel(transportMode)} ¥${formatMoney(unitPrice)}/${billingUnitLabel(item.billingUnit)}`
-        ].filter(Boolean).join(' / '),
-        forwarderName,
-        serviceName,
-        transportMode,
-        cargoCategoryName,
-        quoteVersionNo: item.quoteVersionNo,
-        unitPrice,
-        billingUnit: item.billingUnit,
-        sourceFileName: normalizeLogisticsQuoteText(item.sourceFileName)
-      }
-    })
-    .filter((item) => {
-      if (seenValues.has(item.value)) {
-        return false
-      }
-      seenValues.add(item.value)
-      return true
-    })
 }
 
 function siteVatRate(site?: string) {
@@ -271,7 +142,6 @@ function requiredValuesReady(values?: Partial<ProfitEstimateFormValues>) {
     && values.heightCm
     && values.grossWeightKg
     && values.categoryKey
-    && values.logisticsProviderKey
   )
 }
 
@@ -286,8 +156,8 @@ function savedFormValues(snapshot?: ManualSelectionGroupProfitEstimateSnapshot |
   return snapshotObject(snapshot?.snapshot?.formValues) as Partial<ProfitEstimateFormValues> | undefined
 }
 
-function savedCalculation(snapshot?: ManualSelectionGroupProfitEstimateSnapshot | null) {
-  return snapshotObject(snapshot?.snapshot?.calculation) as ProfitCalculationPayload | undefined
+function savedSnapshotVersion(snapshot?: ManualSelectionGroupProfitEstimateSnapshot | null) {
+  return Number(snapshotObject(snapshot?.snapshot)?.schemaVersion || 1)
 }
 
 function categorySelectLabel(option: ManualSelectionSystemCategoryOption) {
@@ -351,7 +221,11 @@ async function fetchSystemCategoryOptions(storeCode: string | undefined, seed?: 
   return uniqueCategoryOptions([matchedOptions, options])
 }
 
-function buildProfitRequest(values: ProfitEstimateFormValues, provider: LogisticsProviderOption) {
+function buildProfitRequest(
+  values: ProfitEstimateFormValues,
+  airQuote: LogisticsQuoteOption,
+  seaQuote: LogisticsQuoteOption
+) {
   return {
     title: values.title || values.ali1688Url || '',
     site: values.site,
@@ -365,12 +239,8 @@ function buildProfitRequest(values: ProfitEstimateFormValues, provider: Logistic
     exchangeRate: values.site === 'AE' ? 1.96 : PROFIT_FORM_DEFAULTS.exchangeRate,
     domesticShippingFee: domesticShippingFee(values.grossWeightKg),
     warehouseDeliveryUnitPrice: PROFIT_FORM_DEFAULTS.warehouseDeliveryUnitPrice,
-    airFreightUnitPrice: provider.transportMode === 'AIR'
-      ? provider.unitPrice
-      : PROFIT_FORM_DEFAULTS.airFreightUnitPrice,
-    oceanFreightUnitPrice: provider.transportMode === 'SEA'
-      ? provider.unitPrice
-      : PROFIT_FORM_DEFAULTS.oceanFreightUnitPrice,
+    airFreightUnitPrice: airQuote.unitPrice,
+    oceanFreightUnitPrice: seaQuote.unitPrice,
     airFreightDimFactor: PROFIT_FORM_DEFAULTS.airFreightDimFactor,
     fbnCommissionRate: DEFAULT_CATEGORY_COMMISSION_RATE,
     fbpCommissionRate: DEFAULT_CATEGORY_COMMISSION_RATE,
@@ -379,19 +249,6 @@ function buildProfitRequest(values: ProfitEstimateFormValues, provider: Logistic
     fbpDirectShipFee: PROFIT_FORM_DEFAULTS.fbpDirectShipFee,
     fulfillmentFee: PROFIT_FORM_DEFAULTS.fulfillmentFee
   }
-}
-
-function scenarioMatchesProvider(scenarioCode: string, provider?: LogisticsProviderOption) {
-  if (!provider) {
-    return false
-  }
-  if (provider.transportMode === 'AIR') {
-    return scenarioCode.includes('_AIR')
-  }
-  if (provider.transportMode === 'SEA') {
-    return scenarioCode.includes('_OCEAN')
-  }
-  return false
 }
 
 function scenarioColumns(): ColumnsType<ProfitCalculationPayload['scenarios'][number]> {
@@ -486,8 +343,11 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
   const [categoryOptions, setCategoryOptions] = useState<ManualSelectionSystemCategoryOption[]>([])
   const [categoryLoading, setCategoryLoading] = useState(false)
   const [categoryError, setCategoryError] = useState<string | null>(null)
+  const [persistedFormState, setPersistedFormState] = useState<PersistedProfitFormState | null>(null)
+  const [logisticsQuoteOptions, setLogisticsQuoteOptions] = useState<LogisticsQuoteOption[]>([])
   const [logisticsOptions, setLogisticsOptions] = useState<LogisticsProviderOption[]>([])
   const [logisticsLoading, setLogisticsLoading] = useState(false)
+  const [logisticsHydrated, setLogisticsHydrated] = useState(false)
   const [logisticsError, setLogisticsError] = useState<string | null>(null)
   const [competitorCategoryOpen, setCompetitorCategoryOpen] = useState(false)
 
@@ -495,10 +355,14 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
     if (!open) {
       return
     }
+    let cancelled = false
     form.setFieldsValue(initialValues(seed, currentSiteCode))
     setCategoryOptions([])
     setCategoryError(null)
+    setPersistedFormState(null)
+    setLogisticsQuoteOptions([])
     setLogisticsOptions([])
+    setLogisticsHydrated(false)
     setLogisticsError(null)
     setCalculation(null)
     setError(null)
@@ -508,7 +372,11 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
     if (seed?.groupId) {
       loadManualSelectionGroupProfitEstimate(seed.groupId)
         .then((snapshot) => {
+          if (cancelled) {
+            return
+          }
           if (!snapshot || snapshot.status === 'missing') {
+            setPersistedFormState({ schemaVersion: 0, formValues: {} })
             return
           }
           const formValues = savedFormValues(snapshot)
@@ -518,19 +386,28 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
               site: currentSiteCode
             })
           }
-          const persistedCalculation = savedCalculation(snapshot)
-          if (persistedCalculation) {
-            setCalculation(persistedCalculation)
-          }
+          setPersistedFormState({
+            schemaVersion: savedSnapshotVersion(snapshot),
+            formValues: formValues || {}
+          })
           setSavedAt(snapshot.createdAt || null)
         })
         .catch((reason) => {
+          if (cancelled) {
+            return
+          }
+          setPersistedFormState({ schemaVersion: 0, formValues: {} })
           setError(reason instanceof Error ? reason.message : '读取已保存预估利润失败')
         })
+    } else {
+      setPersistedFormState({ schemaVersion: 0, formValues: {} })
     }
     setCategoryLoading(true)
     fetchSystemCategoryOptions(storeCode, seed)
       .then((options) => {
+        if (cancelled) {
+          return
+        }
         setCategoryOptions(options)
         const matchedCategory = chooseSystemCategoryOption(options, seed)
         if (!form.getFieldValue('categoryKey')) {
@@ -549,47 +426,119 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
         }
       })
       .catch((reason) => {
+        if (cancelled) {
+          return
+        }
         setCategoryOptions([])
         setCategoryError(reason instanceof Error ? reason.message : '读取系统类目表失败')
       })
-      .finally(() => setCategoryLoading(false))
+      .finally(() => {
+        if (!cancelled) {
+          setCategoryLoading(false)
+        }
+      })
     setLogisticsLoading(true)
     fetchLogisticsQuoteOperationPriceItems()
       .then((payload) => {
-        const options = buildLogisticsProviderOptions(payload.items || [], currentSiteCode)
+        if (cancelled) {
+          return
+        }
+        const quotes = buildLogisticsQuoteOptions(payload.items || [], currentSiteCode)
+        const options = buildLogisticsProviderOptions(quotes)
+        setLogisticsQuoteOptions(quotes)
         setLogisticsOptions(options)
         if (!options.length) {
           setLogisticsError(`${siteLabel(currentSiteCode)} 未维护可用于利润预估的空运/KG 或海运/CBM 主报价。`)
-          return
-        }
-        const currentProviderKey = form.getFieldValue('logisticsProviderKey')
-        if (!currentProviderKey || !options.some((option) => option.value === currentProviderKey)) {
-          form.setFieldValue('logisticsProviderKey', options[0].value)
         }
       })
       .catch((reason) => {
-        setLogisticsError(reason instanceof Error ? reason.message : '读取系统货代报价失败')
+        if (!cancelled) {
+          setLogisticsError(reason instanceof Error ? reason.message : '读取系统货代报价失败')
+        }
       })
-      .finally(() => setLogisticsLoading(false))
+      .finally(() => {
+        if (!cancelled) {
+          setLogisticsLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
   }, [currentSiteCode, form, open, seed, storeCode])
+
+  useEffect(() => {
+    if (!open || persistedFormState === null || logisticsLoading) {
+      return
+    }
+    const selections = resolvePersistedLogisticsSelections(
+      logisticsOptions,
+      logisticsQuoteOptions,
+      persistedFormState.schemaVersion,
+      persistedFormState.formValues
+    )
+    form.setFieldsValue({
+      airProviderKey: selections.air.providerValue,
+      airQuoteKey: selections.air.quoteValue,
+      seaProviderKey: selections.sea.providerValue,
+      seaQuoteKey: selections.sea.quoteValue
+    })
+    if (selections.staleModes.length) {
+      const labels = selections.staleModes.map(transportModeLabel).join('、')
+      setLogisticsError(`已保存的${labels}货代或报价当前不可用，请重新选择。`)
+    }
+    setLogisticsHydrated(true)
+  }, [form, logisticsLoading, logisticsOptions, logisticsQuoteOptions, open, persistedFormState])
 
   const computedDomesticShippingFee = domesticShippingFee(watchedValues?.grossWeightKg)
   const effectiveSite = normalizeSiteCode(watchedValues?.site || currentSiteCode)
   const vatRate = siteVatRate(effectiveSite)
   const selectedCategory = categoryOptions.find((item) => item.value === watchedValues?.categoryKey)
-  const selectedProvider = logisticsOptions.find((item) => item.value === watchedValues?.logisticsProviderKey)
-  const canCalculate = requiredValuesReady({ ...watchedValues, site: currentSiteCode }) && Boolean(selectedCategory && selectedProvider)
+  const airProviders = logisticsProvidersForMode(logisticsOptions, 'AIR')
+  const seaProviders = logisticsProvidersForMode(logisticsOptions, 'SEA')
+  const selectedAirProvider = airProviders.find((item) => item.value === watchedValues?.airProviderKey)
+  const selectedSeaProvider = seaProviders.find((item) => item.value === watchedValues?.seaProviderKey)
+  const selectedAirQuote = selectedAirProvider?.airQuotes.find((quote) => quote.value === watchedValues?.airQuoteKey)
+  const selectedSeaQuote = selectedSeaProvider?.seaQuotes.find((quote) => quote.value === watchedValues?.seaQuoteKey)
+  const quoteSelectionReady = Boolean(
+    selectedAirProvider
+    && selectedAirQuote
+    && selectedSeaProvider
+    && selectedSeaQuote
+  )
+  const canCalculate = requiredValuesReady({ ...watchedValues, site: currentSiteCode })
+    && Boolean(selectedCategory && quoteSelectionReady)
   const visibleScenarios = useMemo(() => (
-    calculation?.scenarios?.filter((scenario) => scenarioMatchesProvider(scenario.code, selectedProvider)) || []
-  ), [calculation, selectedProvider])
+    calculation?.scenarios?.filter((scenario) => (
+      scenarioMatchesLogisticsQuotes(scenario.code, selectedAirQuote, selectedSeaQuote)
+    )) || []
+  ), [calculation, selectedAirQuote, selectedSeaQuote])
   const competitorCategoryRows = useMemo(() => (
     buildCompetitorCategoryRows(seed?.competitors || [])
   ), [seed?.competitors])
 
+  const handleLogisticsProviderChange = (mode: 'AIR' | 'SEA', providerValue: string) => {
+    const provider = logisticsOptions.find((item) => item.value === providerValue)
+    const quotes = mode === 'AIR' ? provider?.airQuotes : provider?.seaQuotes
+    form.setFieldsValue(mode === 'AIR'
+      ? { airQuoteKey: quotes?.length === 1 ? quotes[0].value : undefined }
+      : { seaQuoteKey: quotes?.length === 1 ? quotes[0].value : undefined })
+    setCalculation(null)
+    setLogisticsError(null)
+  }
+
+  const handleLogisticsQuoteChange = () => {
+    setCalculation(null)
+    setLogisticsError(null)
+  }
+
   useEffect(() => {
-    if (!open || !canCalculate || !selectedProvider) {
+    if (!open || !canCalculate || !selectedAirQuote || !selectedSeaQuote) {
+      setCalculation(null)
+      setLoading(false)
       return
     }
+    let cancelled = false
+    setCalculation(null)
     const timer = window.setTimeout(() => {
       const values = {
         ...form.getFieldsValue(),
@@ -597,17 +546,30 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
       }
       setLoading(true)
       setError(null)
-      calculateProfitEstimate(buildProfitRequest(values, selectedProvider))
-        .then((payload) => setCalculation(payload))
-        .catch((reason) => {
-          setCalculation(null)
-          setError(reason instanceof Error ? reason.message : '预估利润计算失败')
+      calculateProfitEstimate(buildProfitRequest(values, selectedAirQuote, selectedSeaQuote))
+        .then((payload) => {
+          if (!cancelled) {
+            setCalculation(payload)
+          }
         })
-        .finally(() => setLoading(false))
+        .catch((reason) => {
+          if (!cancelled) {
+            setCalculation(null)
+            setError(reason instanceof Error ? reason.message : '预估利润计算失败')
+          }
+        })
+        .finally(() => {
+          if (!cancelled) {
+            setLoading(false)
+          }
+        })
     }, 450)
 
-    return () => window.clearTimeout(timer)
-  }, [canCalculate, currentSiteCode, form, open, selectedProvider, watchedValues])
+    return () => {
+      cancelled = true
+      window.clearTimeout(timer)
+    }
+  }, [canCalculate, currentSiteCode, form, open, selectedAirQuote, selectedSeaQuote, watchedValues])
 
   const bestScenario = useMemo(() => {
     return visibleScenarios
@@ -627,27 +589,48 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
         ...(await form.validateFields()),
         site: currentSiteCode
       }
-      const provider = logisticsOptions.find((item) => item.value === values.logisticsProviderKey)
+      const airProvider = airProviders.find((item) => item.value === values.airProviderKey)
+      const seaProvider = seaProviders.find((item) => item.value === values.seaProviderKey)
       const category = categoryOptions.find((item) => item.value === values.categoryKey)
-      if (!provider || !category) {
-        setSaveFeedback({ type: 'warning', message: '请先选择系统类目和货代。' })
+      const airQuote = airProvider?.airQuotes.find((quote) => quote.value === values.airQuoteKey)
+      const seaQuote = seaProvider?.seaQuotes.find((quote) => quote.value === values.seaQuoteKey)
+      if (!airProvider || !airQuote || !seaProvider || !seaQuote || !category) {
+        setSaveFeedback({ type: 'warning', message: '请先选择系统类目、空运货代与报价、海运货代与报价。' })
         return
       }
       setSaving(true)
+      const currentCalculation = await calculateProfitEstimate(
+        buildProfitRequest(values, airQuote, seaQuote)
+      )
+      const currentVisibleScenarios = currentCalculation.scenarios.filter((scenario) => (
+        scenarioMatchesLogisticsQuotes(scenario.code, airQuote, seaQuote)
+      ))
+      const currentBestScenario = currentVisibleScenarios
+        .slice()
+        .sort((left, right) => right.profitRmb - left.profitRmb)[0]
+      if (!currentBestScenario) {
+        throw new Error('利润接口未返回可保存的空运或海运方案。')
+      }
+      setCalculation(currentCalculation)
       await saveManualSelectionGroupProcurement(groupId, {
         purchaseUrl: values.ali1688Url,
         purchasePrice: values.purchasePrice
       })
       const snapshot = await saveManualSelectionGroupProfitEstimate(groupId, {
         currencyCode: 'RMB',
-        profitAmount: bestScenario?.profitRmb,
-        profitMargin: bestScenario?.marginRatePct,
+        profitAmount: currentBestScenario.profitRmb,
+        profitMargin: currentBestScenario.marginRatePct,
         snapshot: {
+          schemaVersion: 3,
           formValues: values,
           selectedCategory: category,
-          selectedProvider: provider,
-          calculation,
-          bestScenario,
+          selectedLogistics: {
+            AIR: logisticsSelectionEvidence(airProvider, airQuote),
+            SEA: logisticsSelectionEvidence(seaProvider, seaQuote)
+          },
+          calculation: currentCalculation,
+          visibleScenarioCodes: currentVisibleScenarios.map((scenario) => scenario.code),
+          bestScenario: currentBestScenario,
           savedAt: new Date().toISOString()
         }
       })
@@ -679,7 +662,13 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
       open={open}
       width={1040}
       footer={[
-        <Button key="save" type="primary" loading={saving} onClick={() => void handleSave()}>
+        <Button
+          key="save"
+          type="primary"
+          loading={saving}
+          disabled={!logisticsHydrated}
+          onClick={() => void handleSave()}
+        >
           {saving ? '保存中' : '保存'}
         </Button>,
         <Button key="close" onClick={onCancel}>
@@ -697,7 +686,7 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
                 <Input placeholder="粘贴 1688 商品链接" />
               </Form.Item>
             </Col>
-            <Col span={5}>
+            <Col span={11}>
               <Form.Item
                 label={(
                   <Space size={6}>
@@ -747,18 +736,26 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
                 <Tag color="blue">{siteLabel(currentSiteCode)}</Tag>
               </div>
             </Col>
-            <Col span={6}>
-              <Form.Item label="货代" name="logisticsProviderKey" rules={[{ required: true, message: '请选择货代' }]}>
-                <Select
-                  loading={logisticsLoading}
-                  optionFilterProp="label"
-                  options={logisticsOptions.map(({ label, value }) => ({ label, value }))}
-                  placeholder={logisticsLoading ? '读取系统货代' : '选择系统货代'}
-                  showSearch
-                  notFoundContent={logisticsLoading ? <Spin size="small" /> : '暂无系统货代报价'}
-                />
-              </Form.Item>
-            </Col>
+          </Row>
+          <Row gutter={10}>
+            <ManualSelectionProfitLogisticsFields
+              mode="AIR"
+              providers={airProviders}
+              selectedProvider={selectedAirProvider}
+              loading={logisticsLoading}
+              disabled={!logisticsHydrated}
+              onProviderChange={(value) => handleLogisticsProviderChange('AIR', value)}
+              onQuoteChange={handleLogisticsQuoteChange}
+            />
+            <ManualSelectionProfitLogisticsFields
+              mode="SEA"
+              providers={seaProviders}
+              selectedProvider={selectedSeaProvider}
+              loading={logisticsLoading}
+              disabled={!logisticsHydrated}
+              onProviderChange={(value) => handleLogisticsProviderChange('SEA', value)}
+              onQuoteChange={handleLogisticsQuoteChange}
+            />
           </Row>
           <Row gutter={10}>
             <Col span={5}>
@@ -799,16 +796,11 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
           <Tag>佣金率 {(DEFAULT_CATEGORY_COMMISSION_RATE * 100).toFixed(0)}%</Tag>
           <Tag>国内物流 ¥{formatMoney(computedDomesticShippingFee)}</Tag>
           <Tag>毛重 × 2 RMB/kg</Tag>
-          <Tag color={selectedCategory ? 'blue' : undefined}>
-            系统类目 {selectedCategory ? systemCategoryDisplayLabel(selectedCategory) : '未匹配'}
-          </Tag>
-          {selectedProvider ? (
-            <>
-              <Tag>{selectedProvider.forwarderName}</Tag>
-              <Tag>{transportModeLabel(selectedProvider.transportMode)}</Tag>
-              <Tag>主运费 ¥{formatMoney(selectedProvider.unitPrice)}/{billingUnitLabel(selectedProvider.billingUnit)}</Tag>
-              {selectedProvider.quoteVersionNo ? <Tag>报价 {selectedProvider.quoteVersionNo}</Tag> : null}
-            </>
+          {selectedAirProvider && selectedAirQuote ? (
+            <Tag>空运 {selectedAirProvider.forwarderName} · {profitQuoteOptionLabel(selectedAirQuote)}</Tag>
+          ) : null}
+          {selectedSeaProvider && selectedSeaQuote ? (
+            <Tag>海运 {selectedSeaProvider.forwarderName} · {profitQuoteOptionLabel(selectedSeaQuote)}</Tag>
           ) : null}
           {bestScenario ? (
             <Tag color={bestScenario.profitRmb >= 0 ? 'success' : 'error'}>
@@ -822,7 +814,13 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
         {categoryError ? <Alert showIcon type="warning" message={categoryError} /> : null}
         {saveFeedback ? <Alert showIcon type={saveFeedback.type} message={saveFeedback.message} /> : null}
         {error ? <Alert showIcon type="error" message={error} /> : null}
-        {!canCalculate ? <Alert showIcon type="warning" message="请补齐售价、采购价、尺寸、毛重、类目和物流商" /> : null}
+        {!canCalculate ? (
+          <Alert
+            showIcon
+            type="warning"
+            message="请补齐售价、采购价、尺寸、毛重、类目、空运货代与报价、海运货代与报价"
+          />
+        ) : null}
 
         <Spin spinning={loading}>
           <Table

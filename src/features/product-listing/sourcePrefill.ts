@@ -10,24 +10,10 @@ import type { ProductListingDraftView } from './types'
 
 const PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY = 'nuono:product-listing:source-prefill'
 
-type PreOrderProfitListingPrefillCandidate = {
-  id: string
-  storeCode?: string
-  title: string
-  skuHint: string
-  purchaseUrl: string
-  purchasePriceRmb: number
-  salePrice: number
-  categoryLabel?: string
-  logisticsCarrierLabel?: string
-}
-
 export type ProductListingSourcePrefill = {
-  source: 'manual-selection' | 'pre-order-profit' | 'listing-draft'
-  sourceCollectionId?: string
+  source: 'manual-selection' | 'listing-draft'
   sourceGroupId?: string
   sourceGroupNo?: string
-  sourceCandidateId?: string
   sourceDraftId?: string
   pendingServerHydration?: boolean
   collectionNo?: string
@@ -61,15 +47,6 @@ type ManualSelectionListingCompetitor = {
   fetchStatus?: string
 }
 
-export function saveManualSelectionListingPrefill(
-  record: ProductSelectionSourceCollection,
-  storeCode?: string,
-  competitors: ManualSelectionListingCompetitor[] = []
-) {
-  const prefill = buildManualSelectionListingPrefill(record, storeCode, competitors)
-  window.sessionStorage.setItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY, JSON.stringify(prefill))
-}
-
 export function saveManualSelectionGroupListingPrefill(
   project: ManualSelectionAnalysisProjectView,
   storeCode?: string,
@@ -77,14 +54,6 @@ export function saveManualSelectionGroupListingPrefill(
   profitEstimate?: ManualSelectionGroupProfitEstimateSnapshot | null
 ) {
   const prefill = buildManualSelectionGroupListingPrefill(project, storeCode, competitors, profitEstimate)
-  window.sessionStorage.setItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY, JSON.stringify(prefill))
-}
-
-export function savePreOrderProfitListingPrefill(
-  candidate: PreOrderProfitListingPrefillCandidate,
-  storeCode?: string
-) {
-  const prefill = buildPreOrderProfitListingPrefill(candidate, storeCode)
   window.sessionStorage.setItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY, JSON.stringify(prefill))
 }
 
@@ -100,15 +69,13 @@ export function readProductListingSourcePrefill() {
 
   const search = new URLSearchParams(window.location.search)
   const listingSource = search.get('listingSource')
-  if (listingSource !== 'manual-selection' && listingSource !== 'pre-order-profit' && listingSource !== 'listing-draft') {
+  if (listingSource !== 'manual-selection' && listingSource !== 'listing-draft') {
     return undefined
   }
   const sourceId =
     listingSource === 'manual-selection'
-      ? search.get('selectionGroupId') || search.get('sourceCollectionId') || ''
-      : listingSource === 'pre-order-profit'
-        ? search.get('sourceCandidateId') || ''
-        : search.get('listingDraftId') || ''
+      ? search.get('selectionGroupId') || ''
+      : search.get('listingDraftId') || ''
   if (!sourceId) {
     return undefined
   }
@@ -130,7 +97,10 @@ export function readProductListingSourcePrefill() {
     if (parsedSourceId !== sourceId) {
       return sourceLocatorPrefill(search)
     }
-    return sanitizeProductListingSourcePrefill(parsed)
+    const sanitized = sanitizeProductListingSourcePrefill(parsed, search)
+    return listingSource === 'manual-selection'
+      ? { ...sanitized, pendingServerHydration: true }
+      : sanitized
   } catch {
     return sourceLocatorPrefill(search)
   }
@@ -138,10 +108,7 @@ export function readProductListingSourcePrefill() {
 
 function sourcePrefillId(prefill: ProductListingSourcePrefill) {
   if (prefill.source === 'manual-selection') {
-    return prefill.sourceGroupId || prefill.sourceCollectionId
-  }
-  if (prefill.source === 'pre-order-profit') {
-    return prefill.sourceCandidateId
+    return prefill.sourceGroupId
   }
   return prefill.sourceDraftId
 }
@@ -149,12 +116,12 @@ function sourcePrefillId(prefill: ProductListingSourcePrefill) {
 function sourceLocatorPrefill(search: URLSearchParams): ProductListingSourcePrefill | undefined {
   return manualSelectionGroupLocatorPrefill(search) || listingDraftLocatorPrefill(search)
 }
-
-function sanitizeProductListingSourcePrefill(prefill: ProductListingSourcePrefill): ProductListingSourcePrefill {
+function sanitizeProductListingSourcePrefill(prefill: ProductListingSourcePrefill, search: URLSearchParams): ProductListingSourcePrefill {
   return {
     ...prefill,
     draft: {
       ...prefill.draft,
+      storeCode: text(search.get('storeCode') || '') || prefill.draft.storeCode,
       productFullType: officialNoonFulltypeOrEmpty(prefill.draft.productFullType)
     }
   }
@@ -172,7 +139,7 @@ function manualSelectionGroupLocatorPrefill(search: URLSearchParams): ProductLis
     source: 'manual-selection',
     sourceGroupId,
     pendingServerHydration: true,
-    draft: {}
+    draft: { storeCode: text(search.get('storeCode') || '') }
   }
 }
 
@@ -191,40 +158,6 @@ function listingDraftLocatorPrefill(search: URLSearchParams): ProductListingSour
     pendingServerHydration: true,
     draft: {
       ...(Number.isFinite(draftId) && draftId > 0 ? { draftId } : {})
-    }
-  }
-}
-
-function buildManualSelectionListingPrefill(
-  record: ProductSelectionSourceCollection,
-  storeCode?: string,
-  competitors: ManualSelectionListingCompetitor[] = []
-): ProductListingSourcePrefill {
-  const sourceRefId = numericSourceRefId(record.id)
-  return {
-    source: 'manual-selection',
-    sourceCollectionId: record.id,
-    collectionNo: record.collectionNo,
-    sourcePlatform: record.sourcePlatform,
-    sourceTitleCn: record.sourceTitleCn || record.selectedText,
-    sourceUrl: record.pageUrl || record.sourceUrl,
-    competitorMaterials: normalizeCompetitorMaterials(competitors),
-    draft: {
-      storeCode: record.storeCode || storeCode || '',
-      productTitleCn: text(record.sourceTitleCn || record.selectedText),
-      productTitleEn: text(record.sourceTitle),
-      productTitleAr: text(record.sourceTitleAr),
-      productDescriptionEn: text(record.sourceDescriptionEn),
-      productDescriptionAr: text(record.sourceDescriptionAr || record.selectedTextAr),
-      productHighlightsEn: uniqueTexts(record.sourceSellingPointsEn || []),
-      productHighlightsAr: uniqueTexts(record.sourceSellingPointsAr || []),
-      productBrand: text(record.brandName),
-      imageUrls: uniqueTexts([record.sourceImageUrl, ...(record.imageUrls || [])]),
-      price: numberFromPriceSummary(record.priceSummary),
-      supplyEvidenceType: 'OTHER',
-      supplyEvidenceRefId: sourceRefId,
-      sourceType: 'manual_selection',
-      sourceRefId
     }
   }
 }
@@ -338,33 +271,6 @@ export function buildProductListingDraftRecoveryPrefill(
       draftId: draftView.draftId,
       storeCode: draft.storeCode || draftView.storeCode || '',
       productFullType: officialNoonFulltypeOrEmpty(draft.productFullType)
-    }
-  }
-}
-
-function buildPreOrderProfitListingPrefill(
-  candidate: PreOrderProfitListingPrefillCandidate,
-  storeCode?: string
-): ProductListingSourcePrefill {
-  const sourceRefId = numericSourceRefId(candidate.id)
-  return {
-    source: 'pre-order-profit',
-    sourceCandidateId: candidate.id,
-    sourcePlatform: '选品池',
-    sourceTitleCn: candidate.title,
-    sourceUrl: candidate.purchaseUrl,
-    draft: {
-      storeCode: candidate.storeCode || storeCode || '',
-      psku: text(candidate.skuHint),
-      productTitleCn: text(candidate.title),
-      price: finitePositiveNumber(candidate.salePrice),
-      salePrice: finitePositiveNumber(candidate.salePrice),
-      purchasePrice: finitePositiveNumber(candidate.purchasePriceRmb),
-      supplyEvidenceType: 'OTHER',
-      supplyEvidenceRefId: sourceRefId,
-      sourceType: 'pre_order_profit',
-      sourceRefId,
-      offerNote: buildPreOrderProfitOfferNote(candidate)
     }
   }
 }
@@ -522,13 +428,4 @@ function numericSourceRefId(value?: string) {
 
 function finitePositiveNumber(value?: number) {
   return Number.isFinite(value) && Number(value) > 0 ? Number(value) : undefined
-}
-
-function buildPreOrderProfitOfferNote(candidate: PreOrderProfitListingPrefillCandidate) {
-  const parts = [
-    `选品池: ${text(candidate.skuHint) || text(candidate.id)}`,
-    candidate.categoryLabel ? `类目 ${candidate.categoryLabel}` : undefined,
-    candidate.logisticsCarrierLabel ? `物流 ${candidate.logisticsCarrierLabel}` : undefined
-  ].filter(Boolean)
-  return parts.join(' / ')
 }

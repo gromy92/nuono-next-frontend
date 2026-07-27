@@ -3,6 +3,7 @@ import { DeleteOutlined } from '@ant-design/icons';
 import { Button, Col, Input, Row, Select, Space, Tag, Tooltip, Typography, message } from 'antd';
 import type { ProductMasterSnapshotPayload, ProductSummarySurface } from '../types';
 import { siteOfferCode, textInputValue } from '../utils';
+import './ProductOfferMetaSection.css';
 
 const { Text } = Typography;
 
@@ -78,6 +79,8 @@ export function ProductOfferMetaSection(props: {
   currentProductSummarySurface?: ProductSummarySurface | null;
   activeProductSiteOffer?: Record<string, unknown>;
   barcodeValidationIssue?: { message: string };
+  hideHelperText?: boolean;
+  horizontalBarcodeLayout?: boolean;
   onBarcodeDraftChange?: (value: string) => void;
   updateSiteOfferField: (storeCode: string, field: string, value: unknown) => void;
   updateProductSectionField: (
@@ -92,6 +95,8 @@ export function ProductOfferMetaSection(props: {
     currentProductSummarySurface,
     activeProductSiteOffer,
     barcodeValidationIssue,
+    hideHelperText,
+    horizontalBarcodeLayout,
     onBarcodeDraftChange,
     updateSiteOfferField,
     updateProductSectionField,
@@ -156,13 +161,18 @@ export function ProductOfferMetaSection(props: {
   return (
     <Row gutter={[16, 16]}>
       <Col xs={24} lg={8}>
-        <Space direction="vertical" size={8} style={{ width: '100%' }}>
-          <Text strong style={{ color: 'var(--pm-text-primary)' }}>
+        <Space
+          className={horizontalBarcodeLayout ? 'product-offer-barcode-horizontal' : undefined}
+          direction="vertical"
+          size={8}
+          style={{ width: '100%' }}
+        >
+          <Text className="product-offer-barcode-title" strong style={{ color: 'var(--pm-text-primary)' }}>
             Barcode
           </Text>
-          <Text style={{ color: 'var(--pm-text-muted)' }}>已有 Barcode</Text>
+          <Text className="product-offer-barcode-label" style={{ color: 'var(--pm-text-muted)' }}>已有 Barcode</Text>
           {barcodes.length ? (
-            <Space wrap size={[6, 6]}>
+            <Space className="product-offer-barcode-value" wrap size={[6, 6]}>
               {barcodes.map((item) => (
                 <Tag key={item} color="default" style={{ width: 'fit-content', marginInlineEnd: 0 }}>
                   <Space size={4}>
@@ -185,10 +195,12 @@ export function ProductOfferMetaSection(props: {
               ))}
             </Space>
           ) : (
-            <Text style={{ color: 'var(--pm-text-faint)', fontSize: 12 }}>暂无</Text>
+            <Text className="product-offer-barcode-value" style={{ color: 'var(--pm-text-faint)', fontSize: 12 }}>暂无</Text>
           )}
-          <Text style={{ color: 'var(--pm-text-muted)' }}>{barcodes.length ? '更换 Barcode' : '新增 Barcode'}</Text>
-          <Space.Compact style={{ width: '100%' }}>
+          <Text className="product-offer-barcode-label" style={{ color: 'var(--pm-text-muted)' }}>
+            {barcodes.length ? '更换 Barcode' : '新增 Barcode'}
+          </Text>
+          <Space.Compact className="product-offer-barcode-value" style={{ width: '100%' }}>
             <Input
               placeholder="Enter Barcode"
               value={barcodeDraft}
@@ -214,12 +226,12 @@ export function ProductOfferMetaSection(props: {
             </Tooltip>
           </Space.Compact>
           {showBarcodeValidationIssue ? (
-            <Text type="danger" style={{ fontSize: 12 }}>
+            <Text className="product-offer-barcode-message" type="danger" style={{ fontSize: 12 }}>
               {barcodeValidationIssue?.message}
             </Text>
           ) : null}
           {!canAddBarcode ? (
-            <Text style={{ color: 'var(--pm-text-muted)', fontSize: 12 }}>
+            <Text className="product-offer-barcode-message" style={{ color: 'var(--pm-text-muted)', fontSize: 12 }}>
               当前商品模板未提供 Barcode 写回字段，已有值仅作展示。
             </Text>
           ) : null}
@@ -230,7 +242,9 @@ export function ProductOfferMetaSection(props: {
           <Text strong style={{ color: 'var(--pm-text-primary)' }}>
             Warranty
           </Text>
-          <Text style={{ color: 'var(--pm-text-muted)' }}>Select warranty duration</Text>
+          {hideHelperText ? null : (
+            <Text style={{ color: 'var(--pm-text-muted)' }}>Select warranty duration</Text>
+          )}
           <Select
             value={warrantyValue}
             options={warrantySelectOptions(warrantyValue)}
@@ -244,7 +258,7 @@ export function ProductOfferMetaSection(props: {
           <Text strong style={{ color: 'var(--pm-text-primary)' }}>
             Offer Note
           </Text>
-          <Text style={{ color: 'var(--pm-text-muted)' }}>Add offer note</Text>
+          {hideHelperText ? null : <Text style={{ color: 'var(--pm-text-muted)' }}>Add offer note</Text>}
           <Input.TextArea
             autoSize={{ minRows: 2, maxRows: 4 }}
             maxLength={255}

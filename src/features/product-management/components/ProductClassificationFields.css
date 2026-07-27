@@ -1,0 +1,32 @@
+.product-classification-horizontal .product-classification-field {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.product-classification-horizontal .product-classification-category-field {
+  grid-template-columns: 180px minmax(0, 1fr);
+}
+
+.product-classification-horizontal .product-classification-field > .ant-typography {
+  margin-bottom: 0 !important;
+}
+
+.product-classification-input-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 767px) {
+  .product-classification-horizontal .product-classification-field,
+  .product-classification-horizontal .product-classification-category-field {
+    grid-template-columns: 1fr;
+  }
+
+  .product-classification-horizontal .product-classification-field > .ant-typography {
+    margin-bottom: 6px !important;
+  }
+}

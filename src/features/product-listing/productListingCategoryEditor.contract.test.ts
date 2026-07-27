@@ -1,10 +1,16 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { preferredCompetitorCategoryLabel } from '../product-management/components/competitorCategoryPresentation'
 
 const classificationEditorSource = readFileSync(
   new URL('../product-management/components/ProductClassificationEditor.tsx', import.meta.url),
   'utf8'
 )
+const classificationFieldsSource = readFileSync(
+  new URL('../product-management/components/ProductClassificationFields.tsx', import.meta.url),
+  'utf8'
+)
+const classificationUiSource = `${classificationEditorSource}\n${classificationFieldsSource}`
 const contentTabSource = readFileSync(
   new URL('../product-management/components/ProductContentTab.tsx', import.meta.url),
   'utf8'
@@ -14,6 +20,10 @@ const competitorContentTypeSource = readFileSync(
   'utf8'
 )
 const sourcePrefillSource = readFileSync(new URL('./sourcePrefill.ts', import.meta.url), 'utf8')
+const categoryPresentationSource = readFileSync(
+  new URL('../product-management/components/competitorCategoryPresentation.ts', import.meta.url),
+  'utf8'
+)
 
 assert(
   competitorContentTypeSource.includes('ProductCompetitorCategoryLink') &&
@@ -39,11 +49,15 @@ assert(
 )
 
 assert(
-  classificationEditorSource.includes('data-testid="product-listing-category-editor-button"') &&
-    classificationEditorSource.includes('编辑类目') &&
+  classificationUiSource.includes('data-testid="product-listing-category-editor-button"') &&
+    classificationUiSource.includes('编辑类目') &&
     classificationEditorSource.includes('data-testid="product-listing-competitor-category-table"') &&
     classificationEditorSource.includes('竞品类目') &&
     classificationEditorSource.includes('buildProductCompetitorCategoryRows') &&
+    classificationEditorSource.includes('preferredCompetitorCategoryLabel') &&
+    categoryPresentationSource.includes('containsArabicScript') &&
+    categoryPresentationSource.includes('englishCategoryPathFromUrl') &&
+    categoryPresentationSource.includes('material.categoryName') &&
     classificationEditorSource.includes('categoryLinks') &&
     classificationEditorSource.includes('updateFulltype(record.categoryValue)') &&
     classificationEditorSource.includes('isOfficialNoonFulltypeCode') &&
@@ -58,4 +72,23 @@ assert(
     sourcePrefillSource.includes('isOfficialNoonFulltypeCode') &&
     sourcePrefillSource.includes('stringValue(selectedCategory?.label)'),
   '人工选品利润类目和草稿恢复只有 Noon 官方 fulltype code 才能预填到上架 Fulltype'
+)
+
+assert.equal(
+  preferredCompetitorCategoryLabel('الرئيسية < الإلكترونيات والموبايلات', {
+    id: 'noon-1',
+    categoryName: 'Phone Cases'
+  }),
+  'Phone Cases',
+  '阿语竞品面包屑必须优先回退到已采集的英文类目名'
+)
+
+assert.equal(
+  preferredCompetitorCategoryLabel(
+    'الرئيسية < الإلكترونيات والموبايلات',
+    { id: 'noon-2' },
+    'https://www.noon.com/saudi-en/electronics-and-mobiles/mobiles-and-accessories/accessories-16176/cases-and-covers/'
+  ),
+  'Electronics And Mobiles > Mobiles And Accessories > Accessories > Cases And Covers',
+  '没有英文采集字段时必须从 Noon 英文类目链接生成可读路径'
 )

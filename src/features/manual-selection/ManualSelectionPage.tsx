@@ -24,7 +24,10 @@ import { ManualSelectionToolbar } from './components/ManualSelectionToolbar'
 import { NewCollectionModal } from './components/NewCollectionModal'
 import { useManualSelectionCollections } from './hooks/useManualSelectionCollections'
 import { collectionFromLinkCompetitor } from './competitorDetailAdapter'
-import { openManualSelectionGroupListingInNewTab } from './listingNavigation'
+import {
+  buildManualSelectionGroupListingTarget,
+  openManualSelectionGroupListingInNewTab
+} from './listingNavigation'
 import { normalizeManualSelectionKeyword } from './utils'
 import { createManualSelectionProfitEstimateSeed } from './profitEstimateSeed'
 import {
@@ -343,26 +346,23 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
 
   const representativeRecordFromProject = (project: ManualSelectionAnalysisProjectView) => project.records[0]
 
-  const handleOpenListing = async (project: ManualSelectionAnalysisProjectView) => {
+  const handleOpenListing = (project: ManualSelectionAnalysisProjectView) => {
     if (!(project.groupId || project.projectId)) {
       message.warning('选品组缺少组编号，无法进入上架')
       return
     }
-    const groupId = project.groupId || project.projectId
-    let profitEstimate: ManualSelectionGroupProfitEstimateSnapshot | null = null
-    try {
-      profitEstimate = await loadManualSelectionGroupProfitEstimate(groupId)
-    } catch {
-      // 上架仍可进入，缺少利润快照时由上架页展示类目缺失校验。
-    }
+    const listingTarget = buildManualSelectionGroupListingTarget(project, props.storeCode)
     saveManualSelectionGroupListingPrefill(
       project,
       props.storeCode,
       project.competitors || [],
-      profitEstimate
+      null
     )
-    if (!openManualSelectionGroupListingInNewTab(project)) {
-      message.warning('浏览器拦截了上架新标签页，请允许弹窗后重试')
+    // The listing page performs authoritative server hydration for the group
+    // and profit snapshot, so the user click can open the destination
+    // synchronously without losing browser new-tab permission.
+    if (!openManualSelectionGroupListingInNewTab(project, props.storeCode)) {
+      window.location.assign(listingTarget)
     }
   }
 

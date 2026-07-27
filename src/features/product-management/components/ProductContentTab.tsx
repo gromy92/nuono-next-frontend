@@ -10,7 +10,10 @@ export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
     productContentDomain,
     productContentProgressDone,
     productContentProgressTotal,
+    contentHeaderExtra,
+    offerPresentation,
     productCompetitorMaterials,
+    productListingKeywordSuggestions,
     enableCompetitorContentMerge,
     productImageUrls,
     allowEmptyImages,
@@ -24,21 +27,25 @@ export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
     updateProductAttributeField,
     openCurrentProductGallery
   } = props;
+  const listingCreatePresentation = offerPresentation === 'listing-create';
 
   return (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
+      {contentHeaderExtra}
       <ProductClassificationEditor
         productMainDomain={productMainDomain}
         productSnapshotView={productSnapshotView}
         productCompetitorMaterials={productCompetitorMaterials}
+        horizontalLayout={offerPresentation === 'listing-create'}
         updateProductSectionField={updateProductSectionField}
       />
 
       <ProductBasicContentPanel
-        productContentDomain={productContentDomain}
+        productContentDomain={listingCreatePresentation ? undefined : productContentDomain}
         productContentProgressDone={productContentProgressDone}
         productContentProgressTotal={productContentProgressTotal}
         productCompetitorMaterials={productCompetitorMaterials}
+        productListingKeywordSuggestions={productListingKeywordSuggestions}
         enableCompetitorContentMerge={enableCompetitorContentMerge}
         productSnapshotView={productSnapshotView}
         updateProductSectionField={updateProductSectionField}
@@ -46,7 +53,7 @@ export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
       />
 
       <ProductImagesPanel
-        productContentDomain={productContentDomain}
+        productContentDomain={listingCreatePresentation ? undefined : productContentDomain}
         productSnapshotView={productSnapshotView}
         productImageUrls={productImageUrls}
         productImageRoleAssignments={productImageRoleAssignments}
@@ -65,7 +72,7 @@ export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
       />
 
       <ProductAttributesPanel
-        productAttributesDomain={productAttributesDomain}
+        productAttributesDomain={listingCreatePresentation ? undefined : productAttributesDomain}
         productSnapshotView={productSnapshotView}
         updateProductAttributeField={updateProductAttributeField}
       />

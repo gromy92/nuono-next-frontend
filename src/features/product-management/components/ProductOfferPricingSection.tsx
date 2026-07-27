@@ -2,9 +2,8 @@ import { Button, Col, Descriptions, Input, Row, Space, Typography } from 'antd';
 import type { ProductMasterSnapshotPayload } from '../types';
 import { formatSnapshotValue, siteOfferCode, textInputValue } from '../utils';
 import { collectOfferPricingValidationIssues } from '../utils/offerPricingValidation';
-
+import './ProductOfferPricingSection.css';
 const { Text } = Typography;
-
 const FIELD_LABEL_STYLE = { color: 'var(--pm-text-muted)', display: 'block', marginBottom: 6 } as const;
 const PRODUCT_MANAGEMENT_TIME_ZONE = 'Asia/Shanghai';
 const DEFAULT_SALE_WINDOW_YEARS = 10;
@@ -199,30 +198,28 @@ function resolvePricingSummary(
 
 export function ProductOfferPricingSection(props: {
   productSnapshotView?: ProductMasterSnapshotPayload;
-  activeProductSiteOffer?: Record<string, unknown>;
+  activeProductSiteOffer?: Record<string, unknown>; hidePricingSummary?: boolean; horizontalPricingLayout?: boolean;
   updateSiteOfferField: (storeCode: string, field: string, value: unknown) => void;
 }) {
-  const { productSnapshotView, activeProductSiteOffer, updateSiteOfferField } = props;
+  const { productSnapshotView, activeProductSiteOffer, hidePricingSummary, horizontalPricingLayout, updateSiteOfferField } = props;
   const pricingSummary = resolvePricingSummary(productSnapshotView, activeProductSiteOffer);
   const saleWindowInputs = saleWindowInputValues(activeProductSiteOffer);
   const pricingValidationIssues = collectOfferPricingValidationIssues(activeProductSiteOffer, '当前站点');
   const priceValidationIssue = pricingValidationIssues.find((issue) => issue.fieldKey === 'price');
   const salePriceValidationIssue = pricingValidationIssues.find((issue) => issue.fieldKey === 'salePrice');
-
   const updateField = (field: string, value: unknown) => {
     if (!activeProductSiteOffer) {
       return;
     }
     updateSiteOfferField(siteOfferCode(activeProductSiteOffer), field, value);
   };
-
   return (
-    <div>
+    <div className={horizontalPricingLayout ? 'product-offer-pricing-horizontal' : undefined}>
       <Text strong style={{ display: 'block', color: 'var(--pm-text-primary)', marginBottom: 12 }}>
         价格
       </Text>
       <Row gutter={[12, 12]}>
-        <Col xs={24} md={8}>
+        <Col className="product-offer-pricing-field" xs={24} md={8}>
           <Text style={FIELD_LABEL_STYLE}>Base Price</Text>
           <Input
             value={textInputValue(activeProductSiteOffer?.price)}
@@ -235,7 +232,7 @@ export function ProductOfferPricingSection(props: {
             </Text>
           ) : null}
         </Col>
-        <Col xs={24} md={16}>
+        <Col className="product-offer-pricing-field" xs={24} md={16}>
           <Text style={FIELD_LABEL_STYLE}>Price Min / Max</Text>
           <Space.Compact style={{ width: '100%' }}>
             <Input
@@ -258,9 +255,9 @@ export function ProductOfferPricingSection(props: {
       </Row>
 
       <div style={{ marginTop: 12 }}>
-        <Text style={FIELD_LABEL_STYLE}>Sale Price / Sale Start / Sale End</Text>
         <Row gutter={[12, 12]}>
-          <Col xs={24} md={8}>
+          <Col className="product-offer-pricing-field" xs={24} md={8}>
+            <Text style={FIELD_LABEL_STYLE}>Sale Price</Text>
             <Input
               aria-label="Sale Price"
               placeholder="Sale Price"
@@ -274,7 +271,8 @@ export function ProductOfferPricingSection(props: {
               </Text>
             ) : null}
           </Col>
-          <Col xs={24} md={8}>
+          <Col className="product-offer-pricing-field" xs={24} md={8}>
+            <Text style={FIELD_LABEL_STYLE}>Sale Start</Text>
             <Input
               aria-label="Sale Start"
               placeholder="YYYY-MM-DD HH:mm:ss"
@@ -282,7 +280,8 @@ export function ProductOfferPricingSection(props: {
               onChange={(event) => updateField('saleStart', event.target.value)}
             />
           </Col>
-          <Col xs={24} md={8}>
+          <Col className="product-offer-pricing-field" xs={24} md={8}>
+            <Text style={FIELD_LABEL_STYLE}>Sale End</Text>
             <Input
               aria-label="Sale End"
               placeholder="YYYY-MM-DD HH:mm:ss"
@@ -292,29 +291,30 @@ export function ProductOfferPricingSection(props: {
           </Col>
         </Row>
       </div>
-
-      <Descriptions column={{ xs: 1, md: 4 }} size="small" colon={false} style={{ marginTop: 12 }}>
-        <Descriptions.Item label="最终价格">
-          <Text strong>{formatSnapshotValue(pricingSummary.finalPrice)}</Text>
-        </Descriptions.Item>
-        <Descriptions.Item label="价格来源">{pricingSummary.priceSource}</Descriptions.Item>
-        <Descriptions.Item label="具体活动">
-          {pricingSummary.promoUrl ? (
-            <Button
-              href={pricingSummary.promoUrl}
-              target="_blank"
-              rel="noreferrer"
-              type="link"
-              size="small"
-              style={{ height: 'auto', padding: 0 }}
-            >
-              {pricingSummary.promoName || '查看活动'}
-            </Button>
-          ) : (
-            formatSnapshotValue(pricingSummary.promoName)
-          )}
-        </Descriptions.Item>
-      </Descriptions>
+      {hidePricingSummary ? null : (
+        <Descriptions column={{ xs: 1, md: 4 }} size="small" colon={false} style={{ marginTop: 12 }}>
+          <Descriptions.Item label="最终价格">
+            <Text strong>{formatSnapshotValue(pricingSummary.finalPrice)}</Text>
+          </Descriptions.Item>
+          <Descriptions.Item label="价格来源">{pricingSummary.priceSource}</Descriptions.Item>
+          <Descriptions.Item label="具体活动">
+            {pricingSummary.promoUrl ? (
+              <Button
+                href={pricingSummary.promoUrl}
+                target="_blank"
+                rel="noreferrer"
+                type="link"
+                size="small"
+                style={{ height: 'auto', padding: 0 }}
+              >
+                {pricingSummary.promoName || '查看活动'}
+              </Button>
+            ) : (
+              formatSnapshotValue(pricingSummary.promoName)
+            )}
+          </Descriptions.Item>
+        </Descriptions>
+      )}
     </div>
   );
 }

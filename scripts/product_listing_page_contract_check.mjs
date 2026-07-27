@@ -70,7 +70,11 @@ assertIncludes(detailEditor, 'defaultActiveKey="offer"', 'ProductListingDetailEd
 assertNotIncludes(detailEditor, 'ProductDetailSummaryBar', 'ProductListingDetailEditor screenshot summary')
 assertIncludes(officialTabsTypes, 'offerHeaderExtra?: ReactNode', 'ProductDetailOfficialTabs offer extra slot')
 assertIncludes(offerTab, 'offerHeaderExtra', 'ProductOfferTab offer extra slot')
-assertIncludes(sourcePrefill, 'price: numberFromPriceSummary(record.priceSummary)', 'Manual selection listing price prefill')
+assertIncludes(
+  sourcePrefill,
+  'price: numberFromPriceSummary(firstText(records.map((record) => record.priceSummary)))',
+  'Manual selection listing price prefill'
+)
 
 for (const label of [
   '店铺编码',

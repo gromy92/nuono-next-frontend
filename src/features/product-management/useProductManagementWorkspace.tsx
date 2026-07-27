@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { message } from 'antd';
 import { fetchProductPublishTask } from './api';
-import { consumeProductListingReturnNotice } from '../product-listing/productListingReturnNotice';
 import { createProductListColumns } from './productListColumns';
 import { useMockProductActions } from './hooks/useMockProductActions';
 import { useProductDraftMutations } from './hooks/useProductDraftMutations';
@@ -12,6 +11,7 @@ import { useProductMediaAndHistoryActions } from './hooks/useProductMediaAndHist
 import { useProductLocalDeletion } from './hooks/useProductLocalDeletion';
 import { useProductOperationStage } from './hooks/useProductOperationStage';
 import { useProductListSource } from './hooks/useProductListSource';
+import { useProductListingReturnNavigation } from './hooks/useProductListingReturnNavigation';
 import { useProductPublishTaskActions } from './hooks/useProductPublishTaskActions';
 import { useProductStoreInitialization } from './hooks/useProductStoreInitialization';
 import { useProductWorkbenchApiActions } from './hooks/useProductWorkbenchApiActions';
@@ -81,16 +81,6 @@ export function useProductManagementWorkspace({
     setProductListDatasetState
   });
   const { loadProductListDataset } = productListDatasetLoader;
-
-  useEffect(() => {
-    if (!enabled) {
-      return;
-    }
-    const notice = consumeProductListingReturnNotice();
-    if (notice) {
-      message.info(notice);
-    }
-  }, [enabled]);
 
   const storeInitialization = useProductStoreInitialization({
     activeOwnerId,
@@ -353,6 +343,14 @@ export function useProductManagementWorkspace({
     openMockProductWorkbench,
     syncProductWorkspacePath,
     usingMockProductList
+  });
+  useProductListingReturnNavigation({
+    enabled,
+    activeOwnerId,
+    loadProductListDataset,
+    openProductWorkbenchInCurrentPage: navigation.openProductWorkbenchInCurrentPage,
+    selectStore: (nextStoreCode) =>
+      setSelectedInitializationStoreCodeOverride(nextStoreCode)
   });
 
   const productLocalDeletion = useProductLocalDeletion({
