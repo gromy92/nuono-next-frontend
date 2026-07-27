@@ -116,13 +116,13 @@ try {
   nextFetch = async () => new Response(null, { status: 503 })
   await assert.rejects(
     apiRequestJson('/transport-empty-error', undefined, (status) => `fallback:${status}`),
-    (error) => error instanceof ApiError && error.message === 'fallback:503'
+    (error) => error instanceof ApiError && error.message === '服务正在更新，请稍后重试'
   )
 
   nextFetch = async () => new Response('gateway unavailable', { status: 502 })
   await assert.rejects(
     apiRequestNoContent('/transport-text-error', undefined, 'fallback'),
-    (error) => error instanceof ApiError && error.message === 'gateway unavailable'
+    (error) => error instanceof ApiError && error.message === '服务正在更新，请稍后重试'
   )
 
   nextFetch = async () => new Response('{malformed', { status: 200 })

@@ -21,11 +21,19 @@ export class ApiError extends Error {
   }
 }
 
+const RELEASE_UPDATE_MESSAGE = '服务正在更新，请稍后重试';
+
 export async function readApiError(response: Response, fallback?: string) {
   let message = fallback || `后端返回 ${response.status}`;
+  if (response.status === 502 || response.status === 503) {
+    return new ApiError(response.status, RELEASE_UPDATE_MESSAGE);
+  }
   try {
     const text = (await response.text()).trim();
     if (!text) {
+      return new ApiError(response.status, message);
+    }
+    if (isHtmlErrorResponse(response, text)) {
       return new ApiError(response.status, message);
     }
     try {
@@ -71,6 +79,11 @@ function normalizeApiMessage(value: unknown) {
 
 function isBackendDefaultEmptyMessage(messageText: string) {
   return messageText === 'No message available';
+}
+
+function isHtmlErrorResponse(response: Response, text: string) {
+  const contentType = response.headers.get('content-type')?.toLowerCase() || '';
+  return contentType.includes('text/html') || /^\s*(?:<!doctype\s+html|<html\b)/i.test(text);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

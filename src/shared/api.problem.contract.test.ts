@@ -34,7 +34,7 @@ async function main() {
   }
 
   const legacyResponse = new Response(JSON.stringify({ message: 'legacy message' }), {
-    status: 502,
+    status: 409,
     headers: { 'Content-Type': 'application/json' }
   })
   try {
