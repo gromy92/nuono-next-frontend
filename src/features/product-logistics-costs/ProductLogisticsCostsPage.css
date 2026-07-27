@@ -25,12 +25,6 @@
   flex: 1 1 280px;
 }
 
-.product-logistics-costs-page__store {
-  color: #6b7280;
-  font-size: 12px;
-  white-space: nowrap;
-}
-
 .product-logistics-costs-page__stats {
   display: flex;
   align-items: center;
@@ -83,6 +77,10 @@
 }
 
 .product-logistics-costs-page__batch-modal-select {
+  width: 100%;
+}
+
+.product-logistics-costs-page__rate-card-list {
   width: 100%;
 }
 

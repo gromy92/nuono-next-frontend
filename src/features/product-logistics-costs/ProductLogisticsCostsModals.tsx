@@ -1,5 +1,7 @@
-import { Form, Input, InputNumber, Modal, Select, Space } from 'antd';
+import { Form, Input, InputNumber, Modal, Select, Space, Table } from 'antd';
 import { CHARGE_UNIT_OPTIONS } from './productLogisticsCostModels';
+import type { ProductLogisticsRateCardRow } from './productLogisticsCostModels';
+import { formatPrice, formatShortDate } from './productLogisticsCostRouteDomain';
 import type { ProductLogisticsCostData } from './useProductLogisticsCostData';
 import type { ProductLogisticsCostMutations } from './useProductLogisticsCostMutations';
 
@@ -12,6 +14,63 @@ export function ProductLogisticsCostsModals({
 }) {
   return (
     <>
+      <Modal
+        title="现有报价表"
+        open={mutations.rateCardListModalOpen}
+        onCancel={mutations.closeRateCardListModal}
+        footer={null}
+        width={820}
+        destroyOnClose
+      >
+        <Space direction="vertical" size={12} className="product-logistics-costs-page__rate-card-list">
+          <Space direction="vertical" size={2}>
+            <span>{data.routeLabel}</span>
+            <span className="product-logistics-costs-page__subtext">
+              当前查询线路共 {data.rateCards.length} 个类别报价
+            </span>
+          </Space>
+          <Table<ProductLogisticsRateCardRow>
+            rowKey={(row) => `${row.sourceType}:${row.id}`}
+            dataSource={data.rateCards}
+            pagination={false}
+            size="small"
+            scroll={{ y: 420 }}
+            locale={{ emptyText: '当前线路暂无报价' }}
+            columns={[
+              {
+                title: '类别',
+                key: 'category',
+                render: (_, row) => row.cargoCategoryName || row.cargoCategoryCode || '-'
+              },
+              {
+                title: '当前报价（RMB）',
+                dataIndex: 'unitCostCny',
+                width: 150,
+                render: (value: number) => formatPrice(value)
+              },
+              {
+                title: '计费单位',
+                dataIndex: 'chargeUnit',
+                width: 110,
+                render: (value: string) => value || '-'
+              },
+              {
+                title: '生效日期',
+                dataIndex: 'effectiveAt',
+                width: 120,
+                render: (value?: string | null) => formatShortDate(value)
+              },
+              {
+                title: '来源',
+                key: 'source',
+                render: (_, row) => row.sourceReference
+                  || (row.sourceType === 'PUBLISHED_FORWARDER_QUOTE' ? '已发布报价' : '人工维护')
+              }
+            ]}
+          />
+        </Space>
+      </Modal>
+
       <Modal
         title="批量维护类别"
         open={mutations.batchCategoryModalOpen}

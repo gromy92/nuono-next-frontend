@@ -24,6 +24,7 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
   const [savingBatchCategory, setSavingBatchCategory] = useState(false);
   const [savingRateCard, setSavingRateCard] = useState(false);
   const [manualQuoteRow, setManualQuoteRow] = useState<ProductCostTableRow>();
+  const [rateCardListModalOpen, setRateCardListModalOpen] = useState(false);
   const [rateCardModalOpen, setRateCardModalOpen] = useState(false);
   const [batchCategoryModalOpen, setBatchCategoryModalOpen] = useState(false);
   const [batchCategoryCode, setBatchCategoryCode] = useState<string>();
@@ -89,6 +90,9 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
     fillRateCardFormForCategory(code);
     setRateCardModalOpen(true);
   };
+
+  const openRateCardListModal = () => setRateCardListModalOpen(true);
+  const closeRateCardListModal = () => setRateCardListModalOpen(false);
 
   const closeRateCardModal = () => {
     setRateCardModalOpen(false);
@@ -205,9 +209,10 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
 
   return {
     savingManualQuote, savingBatchCategory, savingRateCard, manualQuoteRow,
-    rateCardModalOpen, batchCategoryModalOpen, batchCategoryCode, setBatchCategoryCode,
+    rateCardListModalOpen, rateCardModalOpen, batchCategoryModalOpen, batchCategoryCode, setBatchCategoryCode,
     manualQuoteForm, rateCardForm, openManualQuoteModal, closeManualQuoteModal,
-    openBatchCategoryModal, closeBatchCategoryModal, openRateCardModal, closeRateCardModal,
+    openBatchCategoryModal, closeBatchCategoryModal, openRateCardListModal, closeRateCardListModal,
+    openRateCardModal, closeRateCardModal,
     fillRateCardFormForCategory, handleManualQuoteCategoryChange, submitManualQuote,
     submitBatchCategoryAssignment, submitRateCard
   };

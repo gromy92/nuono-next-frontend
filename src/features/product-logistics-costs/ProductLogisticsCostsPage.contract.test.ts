@@ -82,6 +82,24 @@ assert(
   'product logistics cost page should expose a batch category selector and submit action'
 )
 
+assert(
+  !pageSource.includes('product-logistics-costs-page__store') &&
+    !pageSource.includes("data.currentStore?.projectName || data.currentStore?.projectCode || '当前店铺'"),
+  'product logistics cost toolbar should not display the current store name or code'
+)
+
+assert(
+  pageSource.includes('现有报价表') &&
+    pageSource.includes('openRateCardListModal') &&
+    pageSource.includes('rateCardListModalOpen') &&
+    pageSource.includes('fetchRateCards(nextFilters)') &&
+    pageSource.includes('dataSource={data.rateCards}') &&
+    pageSource.includes('当前查询线路共') &&
+    pageSource.includes('当前报价（RMB）') &&
+    pageSource.includes('当前线路暂无报价'),
+  'product logistics cost page should show a read-only rate card table for the selected forwarder and transport mode'
+)
+
 const rateCardModalSource = pageSource.slice(
   pageSource.indexOf('title="维护线路类别报价"'),
   pageSource.indexOf('title="维护当前报价"')
