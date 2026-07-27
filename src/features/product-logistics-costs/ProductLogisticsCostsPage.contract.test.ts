@@ -100,6 +100,18 @@ assert(
   'product logistics cost page should show a read-only rate card table for the selected forwarder and transport mode'
 )
 
+const rateCardListModalSource = pageSource.slice(
+  pageSource.indexOf('title="现有报价表"'),
+  pageSource.indexOf('title="批量维护类别"')
+)
+assert(
+  rateCardListModalSource.includes("title: '类别说明'") &&
+    rateCardListModalSource.includes('cargoCategoryDescription') &&
+    !rateCardListModalSource.includes("title: '来源'") &&
+    !rateCardListModalSource.includes('row.sourceReference'),
+  'existing rate card table should show category descriptions and hide internal source metadata'
+)
+
 const rateCardModalSource = pageSource.slice(
   pageSource.indexOf('title="维护线路类别报价"'),
   pageSource.indexOf('title="维护当前报价"')

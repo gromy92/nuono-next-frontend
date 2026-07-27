@@ -19,7 +19,7 @@ export function ProductLogisticsCostsModals({
         open={mutations.rateCardListModalOpen}
         onCancel={mutations.closeRateCardListModal}
         footer={null}
-        width={820}
+        width={1180}
         destroyOnClose
       >
         <Space direction="vertical" size={12} className="product-logistics-costs-page__rate-card-list">
@@ -40,7 +40,17 @@ export function ProductLogisticsCostsModals({
               {
                 title: '类别',
                 key: 'category',
+                width: 210,
                 render: (_, row) => row.cargoCategoryName || row.cargoCategoryCode || '-'
+              },
+              {
+                title: '类别说明',
+                dataIndex: 'cargoCategoryDescription',
+                render: (value?: string | null) => (
+                  <span className="product-logistics-costs-page__rate-card-description">
+                    {value || '-'}
+                  </span>
+                )
               },
               {
                 title: '当前报价（RMB）',
@@ -59,12 +69,6 @@ export function ProductLogisticsCostsModals({
                 dataIndex: 'effectiveAt',
                 width: 120,
                 render: (value?: string | null) => formatShortDate(value)
-              },
-              {
-                title: '来源',
-                key: 'source',
-                render: (_, row) => row.sourceReference
-                  || (row.sourceType === 'PUBLISHED_FORWARDER_QUOTE' ? '已发布报价' : '人工维护')
               }
             ]}
           />

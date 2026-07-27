@@ -84,6 +84,14 @@
   width: 100%;
 }
 
+.product-logistics-costs-page__rate-card-description {
+  display: block;
+  color: #4b5563;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
 .product-logistics-costs-page__product {
   display: flex;
   align-items: center;
