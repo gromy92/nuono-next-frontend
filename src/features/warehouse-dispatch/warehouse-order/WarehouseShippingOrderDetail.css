@@ -196,16 +196,16 @@
 
 .warehouse-shipping-order-product-cell {
   display: grid;
-  grid-template-columns: 70px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 8px;
   align-items: center;
   min-width: 0;
 }
 
 .warehouse-shipping-order-product-placeholder {
   display: block;
-  width: 70px;
-  height: 70px;
+  width: 52px;
+  height: 52px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   background: #f8fafc;
@@ -214,14 +214,14 @@
 
 .warehouse-shipping-order-product-cell .ant-image {
   display: block;
-  width: 70px;
-  height: 70px;
+  width: 52px;
+  height: 52px;
 }
 
 .warehouse-shipping-order-product-cell .ant-image-img.warehouse-shipping-order-product-image {
   display: block;
-  width: 70px;
-  height: 70px;
+  width: 52px;
+  height: 52px;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   background: #f8fafc;
@@ -234,14 +234,46 @@
   margin: 0;
 }
 
+.warehouse-shipping-order-product-copy {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
 .warehouse-shipping-order-product-cell .warehouse-shipping-order-product-title-cn {
   color: #111827;
-  line-height: 20px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.warehouse-shipping-order-product-identity {
+  display: flex !important;
+  min-width: 0;
+  gap: 4px;
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.warehouse-shipping-order-product-identity-label {
+  flex: 0 0 46px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.warehouse-shipping-order-product-identity-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .warehouse-shipping-order-line-meta-cell {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
   min-width: 0;
 }
 
@@ -250,37 +282,19 @@
   margin: 0;
 }
 
-.warehouse-shipping-order-line-meta-psku,
-.warehouse-shipping-order-line-meta-barcode,
 .warehouse-shipping-order-line-meta-source {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.warehouse-shipping-order-line-meta-psku,
-.warehouse-shipping-order-line-meta-barcode {
-  display: flex !important;
-  gap: 6px;
-  align-items: baseline;
-}
-
-.warehouse-shipping-order-line-meta-label {
-  flex: 0 0 50px;
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.warehouse-shipping-order-line-meta-value {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .warehouse-shipping-order-line-meta-quantity {
+  flex: 0 0 auto;
   color: #0f172a;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .warehouse-shipping-order-yite-price {

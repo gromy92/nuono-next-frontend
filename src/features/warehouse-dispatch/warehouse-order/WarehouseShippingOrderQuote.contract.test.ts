@@ -101,6 +101,11 @@ assert.match(sources.purchaseOrderApi, /missingOnly\?: boolean[\s\S]*params\.set
 assert.doesNotMatch(sources.detailToolbar, /导出缺报价|生成账单/);
 assert.match(sources.detailToolbar, /label="待确认"[\s\S]*label="无价格"/);
 assert.doesNotMatch(sources.lineTable, /title: '币种'|title: '计费单位'/);
+assert.match(sources.lineTable, /pagination=\{\{ pageSize: 20, showSizeChanger: false \}\}/);
+assert.match(
+  sources.lineTable,
+  /warehouse-shipping-order-product-title-cn[\s\S]*warehouse-shipping-order-product-identity-label">PSKU:[\s\S]*warehouse-shipping-order-product-identity-label">Barcode:/
+);
 assert.match(
   sources.lineTable,
   /warehouse-shipping-order-price-entry[\s\S]*warehouse-shipping-order-quote-field[\s\S]*warehouse-shipping-order-price-unit[\s\S]*quoteUnitDisplayText/
