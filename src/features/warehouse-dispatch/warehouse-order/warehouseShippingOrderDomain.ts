@@ -215,6 +215,30 @@ export function countShippingOrderPendingQuoteLines(order: ShippingOrder) {
   return order.quoteStatus === 'CONFIRMED' ? 0 : Number(order.lineCount || 0);
 }
 
+export function shippingOrderQuoteIssueSummary(order: ShippingOrder) {
+  const pendingQuoteCount = countShippingOrderPendingQuoteLines(order);
+  if (!order.lines?.length) {
+    const missingMaterialCount = Number(order.missingYiteMaterialCount || 0);
+    return {
+      pendingQuoteCount,
+      missingMaterialCount,
+      // 列表接口只有两个可能重叠的汇总数，取较大值可避免把同一商品重复计数。
+      totalCount: Math.max(pendingQuoteCount, missingMaterialCount)
+    };
+  }
+  const segmentById = new Map((order.segments || []).map((segment) => [segment.id, segment]));
+  const yiteSegmentIds = new Set((order.segments || []).filter(isYiteSegment).map((segment) => segment.id));
+  const missingMaterialCount = order.lines
+    .filter((line) => isMissingYiteMaterial(line, yiteSegmentIds)).length;
+  const totalCount = order.lines.filter((line) => {
+    const segment = line.shippingOrderSegmentId ? segmentById.get(line.shippingOrderSegmentId) : undefined;
+    const quoteIncomplete = (!segment || !isZdShippingForwarder(segment))
+      && line.quoteStatus !== 'CONFIRMED';
+    return quoteIncomplete || isMissingYiteMaterial(line, yiteSegmentIds);
+  }).length;
+  return { pendingQuoteCount, missingMaterialCount, totalCount };
+}
+
 function isZdShippingForwarder(target: {
   forwarderCode?: string;
   forwarderName?: string;

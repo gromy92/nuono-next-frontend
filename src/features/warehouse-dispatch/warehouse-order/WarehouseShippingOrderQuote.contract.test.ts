@@ -84,7 +84,8 @@ assert.match(sources.quoteTransfer, /exportShippingOrderLogisticsQuoteReport[\s\
 assert.match(sources.quoteTransfer, /selectedChannel\?\.totalLineCount[\s\S]*selectedChannel\?\.pendingLineCount[\s\S]*selectedChannel\?\.confirmedLineCount/);
 assert.match(sources.purchaseOrderApi, /missingOnly\?: boolean[\s\S]*params\.set\('missingOnly', 'true'\)/);
 assert.doesNotMatch(sources.detailToolbar, /导出缺报价|生成账单/);
-assert.match(sources.detailToolbar, /label="待确认"[\s\S]*label="无价格"/);
+assert.match(sources.detailToolbar, /label="缺义特材质"[\s\S]*label="待确认"[\s\S]*label="缺单价"/);
+assert.doesNotMatch(sources.sharedViews, />材料缺失 /);
 assert.doesNotMatch(sources.lineTable, /title: '币种'|title: '计费单位'/);
 assert.match(sources.lineTable, /pagination=\{\{ pageSize: 20, showSizeChanger: false \}\}/);
 assert.match(

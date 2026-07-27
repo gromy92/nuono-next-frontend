@@ -182,8 +182,8 @@ export function WarehouseShippingOrderLineTable({
             description={quote.detailLineFilter === 'PENDING_CONFIRMATION'
               ? '暂无待确认价格'
               : quote.detailLineFilter === 'MISSING_PRICE'
-                ? '暂无无价格商品'
-              : quote.detailLineFilter === 'MISSING_MATERIAL' ? '暂无材料缺失商品' : '暂无商品'}
+                ? '暂无缺单价商品'
+              : quote.detailLineFilter === 'MISSING_MATERIAL' ? '暂无缺义特材质商品' : '暂无商品'}
           />
         )
       }}

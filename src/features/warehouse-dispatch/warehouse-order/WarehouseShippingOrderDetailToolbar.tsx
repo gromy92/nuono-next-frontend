@@ -106,7 +106,7 @@ export function WarehouseShippingOrderDetailToolbar({
             options={[
               { label: `全部 ${quote.activeLines.length}`, value: 'ALL' },
               ...(quote.showYiteFields ? [{
-                label: <DetailLineFilterLabel label="材料缺失" count={quote.missingMaterialCount} />,
+                label: <DetailLineFilterLabel label="缺义特材质" count={quote.missingMaterialCount} />,
                 value: 'MISSING_MATERIAL'
               }] : []),
               {
@@ -114,7 +114,7 @@ export function WarehouseShippingOrderDetailToolbar({
                 value: 'PENDING_CONFIRMATION'
               },
               {
-                label: <DetailLineFilterLabel label="无价格" count={quote.missingPriceCount} />,
+                label: <DetailLineFilterLabel label="缺单价" count={quote.missingPriceCount} />,
                 value: 'MISSING_PRICE'
               }
             ]}
