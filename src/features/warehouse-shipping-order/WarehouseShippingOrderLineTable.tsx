@@ -172,8 +172,10 @@ export function WarehouseShippingOrderLineTable({
         emptyText: (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={quote.detailLineFilter === 'PENDING_QUOTE'
-              ? '暂无缺报价商品'
+            description={quote.detailLineFilter === 'PENDING_CONFIRMATION'
+              ? '暂无待确认价格'
+              : quote.detailLineFilter === 'MISSING_PRICE'
+                ? '暂无无价格商品'
               : quote.detailLineFilter === 'MISSING_MATERIAL' ? '暂无材料缺失商品' : '暂无商品'}
           />
         )

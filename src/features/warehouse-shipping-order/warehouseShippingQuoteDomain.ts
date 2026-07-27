@@ -65,6 +65,18 @@ export function quotePriceSourceLabel(source?: string) {
   }
 }
 
+export type WarehouseQuoteConfirmationState = 'CONFIRMED' | 'SUGGESTED_PRICE' | 'MISSING_PRICE';
+
+export function warehouseQuoteConfirmationState(line: {
+  quoteStatus?: string;
+  unitPrice?: string | number | null;
+}): WarehouseQuoteConfirmationState {
+  if (line.quoteStatus === 'CONFIRMED') return 'CONFIRMED';
+  return line.unitPrice === null || line.unitPrice === undefined || line.unitPrice === ''
+    ? 'MISSING_PRICE'
+    : 'SUGGESTED_PRICE';
+}
+
 export function transportModeLabel(value?: string) {
   switch ((value || '').toUpperCase()) {
     case 'SEA': return '海运';
