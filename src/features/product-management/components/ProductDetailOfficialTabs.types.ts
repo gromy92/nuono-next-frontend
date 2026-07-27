@@ -37,6 +37,10 @@ export type ProductDetailOfficialTabsProps = {
   productContentProgressDone: number;
   productContentProgressTotal: number;
   productCompetitorMaterials?: ProductCompetitorContentMaterial[];
+  productListingKeywordSuggestions?: {
+    EN?: string[];
+    AR?: string[];
+  };
   enableCompetitorContentMerge?: boolean;
   productMainDomain?: ProductFieldDomainSurface;
   productImageUrls: string[];
@@ -53,6 +57,10 @@ export type ProductDetailOfficialTabsProps = {
   productLeadImage?: string;
   allowEmptyImages?: boolean;
   offerHeaderExtra?: ReactNode;
+  contentHeaderExtra?: ReactNode;
+  tabBarExtraContent?: ReactNode;
+  offerPresentation?: 'default' | 'listing-create';
+  hideOfferStockSection?: boolean;
   barcodeValidationIssue?: ProductFieldValidationIssue;
   onBarcodeDraftChange?: (value: string) => void;
   previewProductAction: (action: 'save' | 'publish-current' | 'pull', options?: ProductWorkbenchActionOptions) => void | Promise<void>;

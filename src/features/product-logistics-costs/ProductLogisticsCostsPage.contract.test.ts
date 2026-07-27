@@ -55,6 +55,14 @@ assert(
 )
 
 assert(
+  pageSource.includes('availableRateCards') &&
+    pageSource.includes('forwarderOptionsFromRateCards') &&
+    pageSource.includes('options={data.forwarderOptions}') &&
+    !pageSource.includes('export const FORWARDER_OPTIONS'),
+  'forwarder and transport options should come from backend rate cards instead of a fixed frontend allowlist'
+)
+
+assert(
   pageSource.includes('/api/product-logistics-costs/rate-cards/manual') &&
     pageSource.includes('维护报价') &&
     pageSource.includes('rateCardModalOpen'),
@@ -69,9 +77,51 @@ assert(
   'route category quote save should visibly handle validation and sync selected products when rows are selected'
 )
 
+const submitRateCardSource = pageSource.slice(
+  pageSource.indexOf('const submitRateCard = async () =>'),
+  pageSource.indexOf('return {', pageSource.indexOf('const submitRateCard = async () =>'))
+)
+assert(
+  submitRateCardSource.includes('await data.load(data.appliedFilters)') &&
+    submitRateCardSource.includes('setRateCardListModalOpen(true)') &&
+    submitRateCardSource.indexOf('await data.load(data.appliedFilters)') <
+      submitRateCardSource.indexOf('setRateCardListModalOpen(true)'),
+  'route category quote save should refresh data and open the current rate card table as visible readback'
+)
+
 assert(
   pageSource.includes('批量设类别') && pageSource.includes('batchCategoryCode'),
   'product logistics cost page should expose a batch category selector and submit action'
+)
+
+assert(
+  !pageSource.includes('product-logistics-costs-page__store') &&
+    !pageSource.includes("data.currentStore?.projectName || data.currentStore?.projectCode || '当前店铺'"),
+  'product logistics cost toolbar should not display the current store name or code'
+)
+
+assert(
+  pageSource.includes('现有报价表') &&
+    pageSource.includes('openRateCardListModal') &&
+    pageSource.includes('rateCardListModalOpen') &&
+    pageSource.includes('fetchRateCards(nextFilters)') &&
+    pageSource.includes('dataSource={data.rateCards}') &&
+    pageSource.includes('当前查询线路共') &&
+    pageSource.includes('当前报价（RMB）') &&
+    pageSource.includes('当前线路暂无报价'),
+  'product logistics cost page should show a read-only rate card table for the selected forwarder and transport mode'
+)
+
+const rateCardListModalSource = pageSource.slice(
+  pageSource.indexOf('title="现有报价表"'),
+  pageSource.indexOf('title="批量维护类别"')
+)
+assert(
+  rateCardListModalSource.includes("title: '类别说明'") &&
+    rateCardListModalSource.includes('cargoCategoryDescription') &&
+    !rateCardListModalSource.includes("title: '来源'") &&
+    !rateCardListModalSource.includes('row.sourceReference'),
+  'existing rate card table should show category descriptions and hide internal source metadata'
 )
 
 const rateCardModalSource = pageSource.slice(
@@ -98,4 +148,11 @@ assert(
 assert(
   pageCss.includes('.product-logistics-costs-page__batch-actions'),
   'batch category controls should have a dedicated compact layout class'
+)
+
+assert(
+  pageCss.includes('.product-logistics-costs-page__category-filter') &&
+    pageCss.includes('width: 320px') &&
+    pageCss.includes('min-width: 320px'),
+  'category filter should be wide enough to show route category names and prices'
 )

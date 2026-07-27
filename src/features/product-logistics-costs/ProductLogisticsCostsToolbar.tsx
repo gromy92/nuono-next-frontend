@@ -1,6 +1,5 @@
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { Button, Input, Select } from 'antd';
-import { FORWARDER_OPTIONS } from './productLogisticsCostModels';
 import { dataStatusButtonClass } from './productLogisticsCostProductDomain';
 import type { ProductLogisticsCostData } from './useProductLogisticsCostData';
 import type { ProductLogisticsCostMutations } from './useProductLogisticsCostMutations';
@@ -26,7 +25,7 @@ export function ProductLogisticsCostsToolbar({
         />
         <Select
           aria-label="货代"
-          options={FORWARDER_OPTIONS}
+          options={data.forwarderOptions}
           value={data.filters.forwarderCode}
           onChange={(value) => data.applyRouteFilters({ forwarderCode: value })}
         />
@@ -43,12 +42,15 @@ export function ProductLogisticsCostsToolbar({
           value={data.filters.cargoCategoryCode}
           onChange={data.applyCategoryFilter}
         />
+        <Button
+          disabled={data.loading || !!data.errorMessage}
+          onClick={mutations.openRateCardListModal}
+        >
+          现有报价表
+        </Button>
         <Button onClick={mutations.openRateCardModal}>维护报价</Button>
         <Button type="primary" icon={<SearchOutlined />} onClick={data.applyFilters}>查询</Button>
         <Button icon={<ReloadOutlined />} onClick={() => void data.load(data.appliedFilters)}>刷新</Button>
-        <span className="product-logistics-costs-page__store">
-          {data.currentStore?.projectName || data.currentStore?.projectCode || '当前店铺'} · {data.storeCode || '-'}
-        </span>
       </div>
 
       <div className="product-logistics-costs-page__stats">

@@ -36,7 +36,9 @@ export async function fetchCosts(kind: 'current' | 'history', storeCode: string,
   return (await response.json()) as CostView;
 }
 
-export async function fetchRateCards(filters: CostFilters) {
+export async function fetchRateCards(
+  filters: Pick<CostFilters, 'siteCode'> & Partial<Pick<CostFilters, 'forwarderCode' | 'transportMode'>>
+) {
   const query = new URLSearchParams();
   if (filters.siteCode) query.set('siteCode', filters.siteCode);
   if (filters.forwarderCode) query.set('forwarderCode', filters.forwarderCode);

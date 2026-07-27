@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import {
-  ensureProductListingEditorDraftPsku,
   mergeProductListingPrefillDraft,
+  normalizeProductListingEditorDraft,
   productListingEditorDraftToPayload,
   type ProductListingEditorDraft
 } from './productDetailAdapter'
@@ -25,10 +25,15 @@ const draft: ProductListingEditorDraft = {
   productHighlightsAr: ['Arabic bullet'],
   sizeEn: 'One Size',
   sizeAr: 'مقاس واحد',
-  imageUrls: ['https://images.example.test/case-main.jpg', 'https://images.example.test/case-size.jpg'],
+  imageUrls: [
+    'https://images.example.test/case-main.jpg',
+    'https://images.example.test/case-size.jpg',
+    'https://images.example.test/case-scene.jpg'
+  ],
   imageRoleAssignments: [
     { imageUrl: 'https://images.example.test/case-main.jpg', imageRole: 'MAIN', sortOrder: 0 },
-    { imageUrl: 'https://images.example.test/case-size.jpg', imageRole: 'SIZE', sortOrder: 1 }
+    { imageUrl: 'https://images.example.test/case-size.jpg', imageRole: 'SIZE', sortOrder: 1 },
+    { imageUrl: 'https://images.example.test/case-scene.jpg', imageRole: 'SCENE', sortOrder: 2 }
   ],
   imageAssetMetadata: [
     { imageUrl: 'https://images.example.test/case-main.jpg', width: 1247, height: 1706 },
@@ -44,10 +49,6 @@ const draft: ProductListingEditorDraft = {
   purchasePrice: 18.5,
   supplyEvidenceType: 'OTHER',
   supplyEvidenceRefId: 91001,
-  fbp: true,
-  warehouseId: 'W00752151SA',
-  warehouseCode: 'Riyadh-FBP',
-  quantity: 120,
   idWarranty: 24,
   isActive: false,
   offerNote: '选品组 PSG-91001 已完成利润测算',
@@ -88,7 +89,8 @@ assert.equal(payload.sizeEn, 'One Size')
 assert.equal(payload.sizeAr, 'مقاس واحد')
 assert.deepEqual(payload.imageRoleAssignments, [
   { imageUrl: 'https://images.example.test/case-main.jpg', imageRole: 'MAIN', sortOrder: 0 },
-  { imageUrl: 'https://images.example.test/case-size.jpg', imageRole: 'SIZE', sortOrder: 1 }
+  { imageUrl: 'https://images.example.test/case-size.jpg', imageRole: 'SIZE', sortOrder: 1 },
+  { imageUrl: 'https://images.example.test/case-scene.jpg', imageRole: 'SCENE', sortOrder: 2 }
 ])
 assert.deepEqual(payload.imageAssetMetadata, [
   {
@@ -113,8 +115,12 @@ assert.equal(payload.priceMax, 59)
 assert.equal(payload.salePrice, 47.5)
 assert.equal(payload.saleStart, '2026-07-06')
 assert.equal(payload.saleEnd, '2026-07-16')
-assert.equal(payload.isActive, false)
+assert.equal(payload.isActive, true)
 assert.equal(payload.offerNote, '选品组 PSG-91001 已完成利润测算')
+assert.equal('fbp' in payload, false)
+assert.equal('warehouseId' in payload, false)
+assert.equal('warehouseCode' in payload, false)
+assert.equal('quantity' in payload, false)
 assert.deepEqual(payload.competitorMaterials, [
   {
     id: 'noon-zsku-1',
@@ -142,15 +148,17 @@ assert.deepEqual(payload.competitorMaterials, [
   }
 ])
 
-const generatedDraft = ensureProductListingEditorDraftPsku({
-  storeCode: 'STR245027-NSA',
-  sourceType: 'manual_selection_group',
-  sourceRefId: 91015,
-  psku: '',
-  imageUrls: []
-}, 1783512000000)
-
-assert.equal(generatedDraft.psku, 'NUONO-TEST-91015-MRC0ZUO0')
+const normalizedLegacyDraft = normalizeProductListingEditorDraft({
+  ...draft,
+  fbp: true,
+  warehouseId: 'W00752151SA',
+  warehouseCode: 'Riyadh-FBP',
+  quantity: 120
+} as Partial<ProductListingEditorDraft>)
+assert.equal('fbp' in normalizedLegacyDraft, false)
+assert.equal('warehouseId' in normalizedLegacyDraft, false)
+assert.equal('warehouseCode' in normalizedLegacyDraft, false)
+assert.equal('quantity' in normalizedLegacyDraft, false)
 
 const hydratedPrefill = mergeProductListingPrefillDraft(
   {

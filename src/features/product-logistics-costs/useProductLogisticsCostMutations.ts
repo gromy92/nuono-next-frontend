@@ -11,7 +11,7 @@ import type {
   ProductCostTableRow,
   RateCardFormValues
 } from './productLogisticsCostModels';
-import { ALL_CATEGORY_FILTER, FORWARDER_OPTIONS } from './productLogisticsCostModels';
+import { ALL_CATEGORY_FILTER } from './productLogisticsCostModels';
 import {
   categoryNameForValue,
   normalizeCategoryFilterValue,
@@ -24,6 +24,7 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
   const [savingBatchCategory, setSavingBatchCategory] = useState(false);
   const [savingRateCard, setSavingRateCard] = useState(false);
   const [manualQuoteRow, setManualQuoteRow] = useState<ProductCostTableRow>();
+  const [rateCardListModalOpen, setRateCardListModalOpen] = useState(false);
   const [rateCardModalOpen, setRateCardModalOpen] = useState(false);
   const [batchCategoryModalOpen, setBatchCategoryModalOpen] = useState(false);
   const [batchCategoryCode, setBatchCategoryCode] = useState<string>();
@@ -33,7 +34,7 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
   const routePayload = {
     siteCode: data.appliedFilters.siteCode,
     forwarderCode: data.appliedFilters.forwarderCode,
-    forwarderName: optionLabel(FORWARDER_OPTIONS, data.appliedFilters.forwarderCode),
+    forwarderName: optionLabel(data.forwarderOptions, data.appliedFilters.forwarderCode),
     transportMode: data.appliedFilters.transportMode
   };
   const categoryName = (code?: string) => categoryNameForValue(data.activeCategoryOptions, code) || code;
@@ -89,6 +90,9 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
     fillRateCardFormForCategory(code);
     setRateCardModalOpen(true);
   };
+
+  const openRateCardListModal = () => setRateCardListModalOpen(true);
+  const closeRateCardListModal = () => setRateCardListModalOpen(false);
 
   const closeRateCardModal = () => {
     setRateCardModalOpen(false);
@@ -196,6 +200,7 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
       }
       closeRateCardModal();
       await data.load(data.appliedFilters);
+      setRateCardListModalOpen(true);
     } catch (error) {
       message.error(firstFormValidationMessage(error) || (error instanceof Error ? error.message : '保存线路类别报价失败'));
     } finally {
@@ -205,9 +210,10 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
 
   return {
     savingManualQuote, savingBatchCategory, savingRateCard, manualQuoteRow,
-    rateCardModalOpen, batchCategoryModalOpen, batchCategoryCode, setBatchCategoryCode,
+    rateCardListModalOpen, rateCardModalOpen, batchCategoryModalOpen, batchCategoryCode, setBatchCategoryCode,
     manualQuoteForm, rateCardForm, openManualQuoteModal, closeManualQuoteModal,
-    openBatchCategoryModal, closeBatchCategoryModal, openRateCardModal, closeRateCardModal,
+    openBatchCategoryModal, closeBatchCategoryModal, openRateCardListModal, closeRateCardListModal,
+    openRateCardModal, closeRateCardModal,
     fillRateCardFormForCategory, handleManualQuoteCategoryChange, submitManualQuote,
     submitBatchCategoryAssignment, submitRateCard
   };

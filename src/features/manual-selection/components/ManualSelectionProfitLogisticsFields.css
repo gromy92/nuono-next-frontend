@@ -1,0 +1,32 @@
+.manual-selection-profit-logistics-quote-dropdown {
+  width: min(560px, calc(100vw - 80px)) !important;
+  min-width: min(520px, calc(100vw - 80px)) !important;
+  max-width: calc(100vw - 80px);
+}
+
+.manual-selection-profit-logistics-quote-dropdown .ant-select-item-option-content {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.manual-selection-profit-logistics-quote-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+  width: 100%;
+  line-height: 1.45;
+  white-space: normal;
+}
+
+.manual-selection-profit-logistics-quote-option-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.manual-selection-profit-logistics-quote-option-price {
+  color: #475467;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

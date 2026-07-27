@@ -31,11 +31,21 @@ export function mergeManualSelectionGroups(
   incoming: ManualSelectionGroupView[]
 ) {
   const groupById = new Map(current.map((group) => [group.groupId, normalizeManualSelectionGroup(group)]))
+  const recentlyJoinedGroupIds = new Set<string>()
   incoming.forEach((group) => {
     if (!group?.groupId) {
       return
     }
     const previous = groupById.get(group.groupId)
+    const previousMaterialIds = new Set(
+      (previous?.materials || []).map((material) => material.sourceCollectionId)
+    )
+    const hasNewMaterial = !previous || (group.materials || []).some(
+      (material) => !previousMaterialIds.has(material.sourceCollectionId)
+    )
+    if (hasNewMaterial) {
+      recentlyJoinedGroupIds.add(group.groupId)
+    }
     groupById.set(group.groupId, normalizeManualSelectionGroup({
       ...previous,
       ...group,
@@ -44,7 +54,15 @@ export function mergeManualSelectionGroups(
       competitors: group.competitors || previous?.competitors || []
     }))
   })
-  return Array.from(groupById.values())
+  if (!recentlyJoinedGroupIds.size) {
+    return Array.from(groupById.values())
+  }
+  return [
+    ...Array.from(recentlyJoinedGroupIds)
+      .map((groupId) => groupById.get(groupId))
+      .filter((group): group is ManualSelectionGroupView => Boolean(group)),
+    ...Array.from(groupById.values()).filter((group) => !recentlyJoinedGroupIds.has(group.groupId))
+  ]
 }
 
 export function groupsFromLegacyAnalysisItems(items: ManualSelectionAnalysisItemView[]): ManualSelectionGroupView[] {

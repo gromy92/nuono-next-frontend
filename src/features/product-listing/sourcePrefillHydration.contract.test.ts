@@ -1,110 +1,11 @@
 import assert from 'node:assert/strict'
 import * as sourcePrefill from './sourcePrefill'
 import { hydrateProductListingSourcePrefill } from './sourcePrefillHydration'
-import type { ManualSelectionGroupView, ManualSelectionGroupProfitEstimateSnapshot } from '../manual-selection/types'
-import type { ProductSelectionSourceCollection } from '../source-collection/types'
-
-function sourceRecord(id: string): ProductSelectionSourceCollection {
-  return {
-    id,
-    collectionNo: `PSC-${id}`,
-    storeCode: 'STR245027-NSA',
-    siteCode: 'SA',
-    sourceType: 'marketplace-url',
-    collectionSource: 'plugin',
-    sourcePlatform: 'Noon',
-    sourceUrl: `https://www.noon.com/saudi-en/source-${id}/p/`,
-    pageUrl: `https://www.noon.com/saudi-en/source-${id}/p/`,
-    sourceTitle: `Rugged phone case ${id}`,
-    sourceTitleCn: `防摔手机壳 ${id}`,
-    sourceTitleAr: `Arabic title ${id}`,
-    sourceDescriptionEn: `English description ${id}`,
-    sourceDescriptionAr: `Arabic description ${id}`,
-    sourceSellingPointsEn: [`English selling point ${id}`],
-    sourceSellingPointsAr: [`Arabic selling point ${id}`],
-    sourceImageUrl: `https://images.example.test/${id}.jpg`,
-    imageUrls: [`https://images.example.test/${id}-detail.jpg`],
-    priceSummary: 'SAR 78.00',
-    specHints: [],
-    categoryName: 'Phone Cases',
-    categoryPath: 'Electronics > Mobiles > Phone Cases',
-    categoryUrl: 'https://www.noon.com/saudi-en/electronics/mobiles/phone-cases/',
-    categoryLinks: [
-      {
-        name: 'Phone Cases',
-        path: 'Electronics > Mobiles > Phone Cases',
-        url: 'https://www.noon.com/saudi-en/electronics/mobiles/phone-cases/'
-      }
-    ],
-    status: 'success',
-    statusText: '采集成功',
-    collectedAt: '2026-07-06 10:00:00',
-    collectedBy: '插件',
-    collectedFieldCount: 10,
-    imageCount: 2
-  }
-}
-
-const group: ManualSelectionGroupView = {
-  groupId: '91001',
-  groupNo: 'PSG-91001',
-  groupName: '防摔手机壳组合',
-  siteCode: 'SA',
-  status: 'active',
-  materialCount: 1,
-  materials: [
-    {
-      materialId: '92001',
-      groupId: '91001',
-      sourceCollectionId: '86001',
-      status: 'active',
-      sourceCollection: sourceRecord('86001')
-    }
-  ],
-  procurement: {
-    ali1688PurchaseUrl: 'https://detail.1688.com/offer/1001.html',
-    purchasePriceRmb: 18.5,
-    purchasePrice: 18.5,
-    status: 'active'
-  },
-  competitors: [
-    {
-      id: '93001',
-      url: 'https://www.noon.com/saudi-en/competitor/p/',
-      fetchStatus: 'success',
-      fetchedTitle: 'Competitor case title',
-      fetchedDescriptionEn: 'Competitor English description',
-      fetchedSellingPointsEn: ['Competitor selling point'],
-      fetchedSourceHost: 'noon',
-      fetchedCategoryName: 'Phone Cases',
-      fetchedCategoryPath: 'Electronics / Mobiles / Cases',
-      fetchedCategoryUrl: 'https://www.noon.com/saudi-en/mobiles-accessories/c/',
-      fetchedAt: '2026-07-06 10:10:00'
-    }
-  ]
-}
-
-const profitEstimate: ManualSelectionGroupProfitEstimateSnapshot = {
-  groupId: '91001',
-  status: 'saved',
-  snapshot: {
-    selectedCategory: {
-      value: 'electronic_accessories-mobile_accessories-phone_cases',
-      label: 'Phone cases'
-    }
-  }
-}
-
-const displayOnlyProfitEstimate: ManualSelectionGroupProfitEstimateSnapshot = {
-  groupId: '91001',
-  status: 'saved',
-  snapshot: {
-    selectedCategory: {
-      value: 'Kitchen Utensils & Gadgets',
-      label: 'Kitchen Utensils & Gadgets'
-    }
-  }
-}
+import {
+  displayOnlyProfitEstimate,
+  manualSelectionGroup as group,
+  manualSelectionProfitEstimate as profitEstimate
+} from './sourcePrefillHydration.contract.fixtures'
 
 const buildFromGroup = (sourcePrefill as Record<string, unknown>).buildManualSelectionGroupListingPrefillFromGroup
 assert.equal(typeof buildFromGroup, 'function')
@@ -135,27 +36,116 @@ const displayOnlyPrefill = (buildFromGroup as Function)(group, 'STR245027-NSA', 
 
 assert.equal(displayOnlyPrefill.draft.productFullType, '')
 
+const groupWithoutStore = {
+  ...group,
+  materials: group.materials.map((material) => ({
+    ...material,
+    sourceCollection: { ...material.sourceCollection, storeCode: '' }
+  }))
+}
 const hydrated = await hydrateProductListingSourcePrefill({
   source: 'manual-selection',
   sourceGroupId: '91001',
   pendingServerHydration: true,
-  draft: {}
-}, 'STR245027-NSA', {
+  draft: { storeCode: 'STR-SOURCE-NSA' }
+}, 'STR-SHELL-NSA', {
   loadManualSelectionGroup: async (groupId) => {
     assert.equal(groupId, '91001')
-    return group
+    return groupWithoutStore
   },
   loadManualSelectionGroupProfitEstimate: async (groupId) => {
     assert.equal(groupId, '91001')
     return profitEstimate
+  },
+  fetchActiveProductListingDraft: async (storeCode) => {
+    assert.equal(storeCode, 'STR-SOURCE-NSA')
+    return undefined
   }
 })
 
 assert.equal(hydrated.pendingServerHydration, undefined)
 assert.equal(hydrated.sourceGroupNo, 'PSG-91001')
+assert.equal(hydrated.draft.storeCode, 'STR-SOURCE-NSA')
 assert.equal(hydrated.draft.productFullType, 'electronic_accessories-mobile_accessories-phone_cases')
 assert.equal(hydrated.competitorMaterials?.length, 2)
 assert.equal(hydrated.competitorMaterials?.[1]?.categoryName, 'Phone Cases')
+
+const activeDraftRecovered = await hydrateProductListingSourcePrefill({
+  source: 'manual-selection',
+  sourceGroupId: '91001',
+  pendingServerHydration: true,
+  draft: {}
+}, 'STR245027-NSA', {
+  loadManualSelectionGroup: async () => group,
+  loadManualSelectionGroupProfitEstimate: async () => profitEstimate,
+  fetchActiveProductListingDraft: async (storeCode, sourceType, sourceRefId) => {
+    assert.equal(storeCode, 'STR245027-NSA')
+    assert.equal(sourceType, 'manual_selection_group')
+    assert.equal(sourceRefId, 91001)
+    return {
+      draftId: 12004,
+      draftNo: 'PLD-12004',
+      storeCode,
+      status: 'ready_for_dry_run',
+      validationIssues: []
+    }
+  },
+  fetchProductListingDraft: async (draftId) => {
+    assert.equal(draftId, 12004)
+    return {
+      draftId,
+      draftNo: 'PLD-12004',
+      storeCode: 'STR245027-NSA',
+      status: 'ready_for_dry_run',
+      validationIssues: [],
+      draft: {
+        draftId,
+        storeCode: 'STR245027-NSA',
+        sourceType: 'manual_selection_group',
+        sourceRefId: 91001,
+        psku: 'CASE-RECOVERED-FROM-SOURCE',
+        productTitleEn: 'Saved operator title must remain authoritative',
+        productFullType: 'electronic_accessories-mobile_accessories-phone_cases',
+        purchasePrice: 21,
+        imageUrls: [],
+        listingKeywordSuggestionsEn: ['saved keyword'],
+        competitorMaterials: [
+          {
+            id: '86001',
+            titleEn: 'Saved competitor title must not be replaced'
+          }
+        ]
+      }
+    }
+  }
+})
+
+assert.equal(activeDraftRecovered.source, 'listing-draft')
+assert.equal(activeDraftRecovered.sourceDraftId, '12004')
+assert.equal(activeDraftRecovered.draft.draftId, 12004)
+assert.equal(activeDraftRecovered.draft.psku, 'CASE-RECOVERED-FROM-SOURCE')
+assert.equal(activeDraftRecovered.draft.productTitleEn, 'Saved operator title must remain authoritative')
+assert.equal(activeDraftRecovered.draft.purchasePrice, 21)
+assert.deepEqual(activeDraftRecovered.draft.listingKeywordSuggestionsEn, ['saved keyword'])
+assert.equal(activeDraftRecovered.competitorMaterials?.[0]?.titleEn, 'Saved competitor title must not be replaced')
+assert.equal(activeDraftRecovered.competitorMaterials?.[0]?.categoryName, 'Phone Cases')
+assert.equal(activeDraftRecovered.competitorMaterials?.length, 2)
+
+await assert.rejects(
+  () => hydrateProductListingSourcePrefill({
+    source: 'manual-selection',
+    sourceGroupId: '91001',
+    pendingServerHydration: true,
+    draft: {}
+  }, 'STR245027-NSA', {
+    loadManualSelectionGroup: async () => group,
+    loadManualSelectionGroupProfitEstimate: async () => profitEstimate,
+    fetchActiveProductListingDraft: async () => {
+      throw new Error('active draft lookup failed')
+    }
+  }),
+  /active draft lookup failed/
+)
 
 const draftHydrated = await hydrateProductListingSourcePrefill({
   source: 'listing-draft',
@@ -231,6 +221,7 @@ const legacyDraftHydrated = await hydrateProductListingSourcePrefill({
 })
 
 assert.equal(legacyDraftHydrated.draft.productTitleEn, 'Legacy draft before competitor materials were persisted')
+assert.equal(legacyDraftHydrated.draft.purchasePrice, 18.5)
 assert.equal(legacyDraftHydrated.competitorMaterials?.length, 2)
 assert.equal(legacyDraftHydrated.draft.competitorMaterials?.length, 2)
 

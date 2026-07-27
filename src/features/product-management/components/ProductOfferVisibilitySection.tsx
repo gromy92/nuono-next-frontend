@@ -9,9 +9,10 @@ export function ProductOfferVisibilitySection(props: {
   activeProductSiteOffer?: Record<string, unknown>;
   currentProductSummarySurface: ProductSummarySurface | null;
   productSnapshotView?: ProductMasterSnapshotPayload;
+  hideLiveStatusText?: boolean;
   updateSiteOfferField: (storeCode: string, field: string, value: unknown) => void;
 }) {
-  const { activeProductSiteOffer, updateSiteOfferField } = props;
+  const { activeProductSiteOffer, hideLiveStatusText, updateSiteOfferField } = props;
   const liveActive = isLiveStatusActive(activeProductSiteOffer?.liveStatus);
   const liveLabel = activeProductSiteOffer?.liveStatus === undefined ? '-' : liveActive ? 'Live' : 'Not Live';
   const liveTag = (
@@ -35,7 +36,7 @@ export function ProductOfferVisibilitySection(props: {
             }
           />
         </Space>
-        {liveTag}
+        {hideLiveStatusText ? null : liveTag}
       </Space>
     </div>
   );

@@ -134,3 +134,52 @@ export function withCurrentWorkspaceDevQuery(path: string) {
   const separator = pathWithoutHash.includes('?') ? '&' : '?'
   return `${pathWithoutHash}${separator}${preservedSearchText}${hash}`
 }
+
+export function withWorkspaceStoreDevQuery(
+  path: string,
+  storeCode?: string | null,
+  siteCode?: string | null
+) {
+  const target = withCurrentWorkspaceDevQuery(path)
+  const normalizedStoreCode = normalizeWorkspaceDevQueryValue(storeCode)
+  if (
+    typeof window === 'undefined' ||
+    new URLSearchParams(window.location.search).get('devSession') !== '1' ||
+    !normalizedStoreCode
+  ) {
+    return target
+  }
+
+  const hashIndex = target.indexOf('#')
+  const targetWithoutHash = hashIndex >= 0 ? target.slice(0, hashIndex) : target
+  const hash = hashIndex >= 0 ? target.slice(hashIndex) : ''
+  const searchIndex = targetWithoutHash.indexOf('?')
+  const pathname = searchIndex >= 0 ? targetWithoutHash.slice(0, searchIndex) : targetWithoutHash
+  const search = new URLSearchParams(searchIndex >= 0 ? targetWithoutHash.slice(searchIndex + 1) : '')
+  WORKSPACE_DEV_QUERY_KEYS.forEach((key) => {
+    const values = search.getAll(key)
+    if (values.length > 1) {
+      search.set(key, values[values.length - 1])
+    }
+  })
+  search.delete('devAccount')
+  search.set('devStore', normalizedStoreCode)
+  const normalizedSiteCode =
+    normalizeWorkspaceDevQueryValue(siteCode)?.toUpperCase() ??
+    inferNoonSiteFromStoreCode(normalizedStoreCode)
+  if (normalizedSiteCode) {
+    search.set('devSite', normalizedSiteCode)
+  }
+  return `${pathname}?${search.toString()}${hash}`
+}
+
+function inferNoonSiteFromStoreCode(storeCode: string) {
+  const normalizedStoreCode = storeCode.trim().toUpperCase()
+  if (normalizedStoreCode.endsWith('-NAE')) {
+    return 'AE'
+  }
+  if (normalizedStoreCode.endsWith('-NSA')) {
+    return 'SA'
+  }
+  return null
+}

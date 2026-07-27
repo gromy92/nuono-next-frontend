@@ -40,8 +40,9 @@ assert(
 )
 assert(
   detailEditorSource.includes('competitorMaterials?: ProductCompetitorContentMaterial[]') &&
-    detailEditorSource.includes('enableCompetitorContentMerge'),
-  'Listing detail editor should expose competitor merge support'
+    detailEditorSource.includes('listingCompetitorMaterials') &&
+    !detailEditorSource.includes('enableCompetitorContentMerge'),
+  'Listing detail editor should feed competitor evidence into the single v3.3 AI path instead of exposing a second merge path'
 )
 assert(
   listingPageSource.includes('competitorMaterials={sourcePrefill?.competitorMaterials') &&
@@ -66,8 +67,9 @@ assert(
     bilingualContentEditorSource.includes('extractSharedProductTitleKeywords(mergedText, selectedCompetitorTexts)') &&
     bilingualContentEditorSource.includes("fieldType === 'title'") &&
     bilingualContentEditorSource.includes('setTitleKeywords(sharedKeywords)') &&
-    !bilingualContentEditorSource.includes('setKeywordInputRows(sharedKeywords.map'),
-  'Bilingual content editor should show AI shared keywords for titles without automatically turning them into keyword input rows'
+    bilingualContentEditorSource.includes('mergeAiSuggestedKeywordRows') &&
+    bilingualContentEditorSource.includes('sharedKeywords.map((keyword) => keyword.label)'),
+  'Bilingual content editor should turn AI shared title keywords into automatically matched keyword rows'
 )
 assert(
   bilingualContentEditorSource.includes('saveKeywordRowsToManagement') &&
@@ -77,7 +79,7 @@ assert(
     bilingualContentEditorSource.includes('keywordRowsDirtyRef') &&
     bilingualContentEditorSource.includes('deletedRow.originalValue || deletedRow.value') &&
     bilingualContentEditorSource.includes('closable={!keywordSaving}') &&
-    bilingualContentEditorSource.includes('openCompetitorPickerForKeywordRow') &&
+    bilingualContentEditorSource.includes('openAutomaticCompetitorMatches') &&
     bilingualContentEditorSource.includes('requestProductContentSave') &&
     bilingualContentEditorSource.includes('saveConfirmDetail') &&
     bilingualContentEditorSource.includes('ProductContentSaveConfirmModal') &&
@@ -90,12 +92,17 @@ assert(
     bilingualContentEditorSource.includes('确认保存') &&
     bilingualContentEditorSource.includes('editableKeywordRowsFromPanel') &&
     bilingualContentEditorSource.includes('selectedCompetitorKeywordEvidenceItems') &&
+    bilingualContentEditorSource.includes('matchingCompetitorsForKeyword') &&
+    bilingualContentEditorSource.includes('automaticKeywordRows') &&
     bilingualContentEditorSource.includes('keywordInputRows') &&
-    bilingualContentEditorSource.includes('parseProductTitleKeywordInputList') &&
     bilingualContentEditorSource.includes('product-competitor-keyword-row-input') &&
     bilingualContentEditorSource.includes('添加关键词') &&
     bilingualContentEditorSource.includes('PlusOutlined') &&
-    bilingualContentEditorSource.includes('添加到竞品') &&
+    bilingualContentEditorSource.includes('AI 匹配') &&
+    bilingualContentEditorSource.includes('无共同关键词') &&
+    bilingualContentEditorSource.includes('ProductKeywordCompetitorMatchModal') &&
+    !bilingualContentEditorSource.includes('添加到竞品') &&
+    !bilingualContentEditorSource.includes('ProductKeywordCompetitorPickerModal') &&
     bilingualContentEditorSource.includes('aria-label=\"删除关键词\"') &&
     bilingualContentEditorSource.includes('competitorSources') &&
     bilingualContentEditorSource.includes('copyTitleKeywordToClipboard') &&
@@ -107,7 +114,7 @@ assert(
     !bilingualContentEditorSource.includes('加入关键词管理') &&
     !bilingualContentEditorSource.includes('appendProductTitleKeywords') &&
     !bilingualContentEditorSource.includes('加入标题'),
-  'Bilingual content editor should let operators copy AI keywords, edit existing title keywords, choose Noon competitor evidence, and confirm changes before saving'
+  'Bilingual content editor should automatically match Noon competitor evidence by shared title keyword and confirm changes before saving'
 )
 assert(
   bilingualContentEditorSource.includes('splitProductTitleKeywordHighlights') &&
@@ -165,7 +172,7 @@ assert(
     bilingualContentEditorSource.includes("loading['title-keyword-translation']") &&
     bilingualContentEditorSource.includes('dedupeProductCompetitorContentTextItems') &&
     bilingualContentEditorSource.includes('noonCompetitorTextItems') &&
-    bilingualContentEditorSource.includes('ProductKeywordCompetitorPickerModal'),
+    bilingualContentEditorSource.includes('ProductKeywordCompetitorMatchModal'),
   'Keyword controls should be restricted to title editing, and Arabic AI keywords should translate to Chinese in the chips'
 )
 

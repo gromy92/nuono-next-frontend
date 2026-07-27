@@ -1,9 +1,10 @@
-import { EditOutlined, FileTextOutlined, ReloadOutlined } from '@ant-design/icons'
+import { FileTextOutlined, ReloadOutlined, RightOutlined } from '@ant-design/icons'
 import { Button, Drawer, Empty, List, Space, Tag, Tooltip, Typography, message } from 'antd'
 import { useCallback, useState } from 'react'
-import { PURCHASE_LISTING_PATH, withCurrentWorkspaceDevQuery } from '../../app-shell/WorkspaceRouting'
+import { PURCHASE_LISTING_PATH, withWorkspaceStoreDevQuery } from '../../app-shell/WorkspaceRouting'
 import { fetchProductListingDrafts } from '../../product-listing/api'
 import { openProductListingTargetInNewTab } from '../../product-listing/listingTabNavigation'
+import { presentProductListingDraftWorkflow } from '../../product-listing/productListingDraftWorkflowPresentation'
 import { saveProductListingDraftRecoveryPrefill } from '../../product-listing/sourcePrefill'
 import type { ProductListingDraftView } from '../../product-listing/types'
 
@@ -21,14 +22,14 @@ export function ProductListingDraftDrawer({ storeCode, activeOwnerId }: ProductL
 
   const loadDrafts = useCallback(async () => {
     if (!storeCode) {
-      message.warning('请先选择店铺后再查看上架草稿。')
+      message.warning('请先选择店铺后再查看上架记录。')
       return
     }
     setLoading(true)
     try {
       setDrafts(await fetchProductListingDrafts(storeCode, 30))
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '读取上架草稿失败')
+      message.error(error instanceof Error ? error.message : '读取上架记录失败')
     } finally {
       setLoading(false)
     }
@@ -45,30 +46,33 @@ export function ProductListingDraftDrawer({ storeCode, activeOwnerId }: ProductL
       listingSource: 'listing-draft',
       listingDraftId: String(draft.draftId)
     })
-    if (!openProductListingTargetInNewTab(withCurrentWorkspaceDevQuery(`${PURCHASE_LISTING_PATH}?${params.toString()}`))) {
+    if (!openProductListingTargetInNewTab(withWorkspaceStoreDevQuery(
+      `${PURCHASE_LISTING_PATH}?${params.toString()}`,
+      draft.storeCode
+    ))) {
       message.warning('浏览器拦截了上架新标签页，请允许弹窗后重试')
     }
   }
 
   return (
     <>
-      <Tooltip title="查看当前店铺未完成的上架草稿">
+      <Tooltip title="查看当前店铺最近的上架记录与五态流程">
         <Button
           icon={<FileTextOutlined />}
           onClick={openDrawer}
           disabled={!storeCode || !activeOwnerId}
         >
-          上架草稿
+          上架记录
         </Button>
       </Tooltip>
       <Drawer
-        title="上架草稿"
+        title="上架记录"
         width={920}
         open={open}
         onClose={() => setOpen(false)}
         extra={
-          <Tooltip title="刷新草稿">
-            <Button aria-label="刷新草稿" icon={<ReloadOutlined />} loading={loading} onClick={() => void loadDrafts()} />
+          <Tooltip title="刷新上架记录">
+            <Button aria-label="刷新上架记录" icon={<ReloadOutlined />} loading={loading} onClick={() => void loadDrafts()} />
           </Tooltip>
         }
       >
@@ -79,11 +83,12 @@ export function ProductListingDraftDrawer({ storeCode, activeOwnerId }: ProductL
             loading={loading}
             dataSource={drafts}
             rowKey={(record) => String(record.draftId)}
-            pagination={{ pageSize: 8, showSizeChanger: false, showTotal: (total) => `共 ${total} 个草稿` }}
-            locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前店铺暂无上架草稿" /> }}
+            pagination={{ pageSize: 8, showSizeChanger: false, showTotal: (total) => `共 ${total} 条记录` }}
+            locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="当前店铺暂无上架记录" /> }}
             renderItem={(record) => {
               const title = draftTitle(record)
               const draftNo = record.draftNo || `#${record.draftId}`
+              const workflow = presentProductListingDraftWorkflow(record.workflow)
               return (
                 <List.Item style={{ padding: '8px 0' }}>
                   <div
@@ -105,8 +110,8 @@ export function ProductListingDraftDrawer({ storeCode, activeOwnerId }: ProductL
                         <Text strong ellipsis={{ tooltip: draftNo }} style={{ maxWidth: 220 }}>
                           {draftNo}
                         </Text>
-                        <Tag color={draftStatusColor(record.status)} style={{ marginInlineEnd: 0 }}>
-                          {draftStatusLabel(record.status)}
+                        <Tag color={workflow.tagColor} style={{ marginInlineEnd: 0 }}>
+                          {workflow.phaseLabel}
                         </Tag>
                       </Space>
                       <Text ellipsis={{ tooltip: record.draft?.psku || '-' }} style={{ maxWidth: '100%' }}>
@@ -138,15 +143,22 @@ export function ProductListingDraftDrawer({ storeCode, activeOwnerId }: ProductL
                           #{record.draft.sourceRefId}
                         </Text>
                       ) : null}
+                      <Text
+                        type="secondary"
+                        ellipsis={{ tooltip: workflow.message }}
+                        style={{ maxWidth: '100%' }}
+                      >
+                        {workflow.message}
+                      </Text>
                     </Space>
 
                     <Button
-                      icon={<EditOutlined />}
+                      icon={<RightOutlined />}
                       type="primary"
                       onClick={() => continueDraft(record)}
                       style={{ flexShrink: 0 }}
                     >
-                      继续编辑
+                      {workflow.actionLabel}
                     </Button>
                   </div>
                 </List.Item>
@@ -168,26 +180,6 @@ function draftTitle(record: ProductListingDraftView) {
   )
 }
 
-function draftStatusLabel(status?: string) {
-  if (status === 'ready_for_dry_run') {
-    return '可提交'
-  }
-  if (status === 'validation_failed') {
-    return '需修改'
-  }
-  return '草稿'
-}
-
-function draftStatusColor(status?: string) {
-  if (status === 'ready_for_dry_run') {
-    return 'green'
-  }
-  if (status === 'validation_failed') {
-    return 'orange'
-  }
-  return 'default'
-}
-
 function draftSourceLabel(sourceType?: string) {
   const normalized = sourceType?.trim().toLowerCase()
   if (normalized === 'manual_selection_group' || normalized === 'manual-selection-group') {
@@ -195,9 +187,6 @@ function draftSourceLabel(sourceType?: string) {
   }
   if (normalized === 'manual_selection' || normalized === 'manual-selection') {
     return '人工采集'
-  }
-  if (normalized === 'pre_order_profit' || normalized === 'pre-order-profit') {
-    return '选品池'
   }
   if (normalized === 'product_rebuild' || normalized === 'product-rebuild') {
     return '商品重建'
