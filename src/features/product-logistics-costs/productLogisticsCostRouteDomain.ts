@@ -2,7 +2,8 @@ import type {
   CargoCategoryOption,
   CostFilters,
   ProductLogisticsCostRow,
-  ProductLogisticsRateCardRow
+  ProductLogisticsRateCardRow,
+  ProductLogisticsRouteOption
 } from './productLogisticsCostModels';
 import {
   DEFAULT_FILTERS,
@@ -39,18 +40,69 @@ export function normalizeCategoryFilterValue(value?: string | null) {
   return textValue(value).toUpperCase();
 }
 
-export function transportOptionsForForwarder(forwarderCode: string) {
-  if (forwarderCode === 'QIKE') {
-    return TRANSPORT_OPTIONS.filter((option) => option.value === 'AIR');
+function forwarderLabel(forwarderCode: string, forwarderName?: string | null) {
+  const code = textValue(forwarderCode).toUpperCase();
+  const name = textValue(forwarderName);
+  if (code === 'ZD' && name && name.toUpperCase() !== code) {
+    return `ZD · ${name}`;
   }
-  if (forwarderCode === 'YITE') {
-    return TRANSPORT_OPTIONS.filter((option) => option.value === 'SEA');
-  }
-  return TRANSPORT_OPTIONS;
+  return name || code;
 }
 
-export function normalizeRouteFilters(filters: CostFilters): CostFilters {
-  const options = transportOptionsForForwarder(filters.forwarderCode);
+export function routeOptionsFromRateCards(rows: ProductLogisticsRateCardRow[]) {
+  const options = new Map<string, ProductLogisticsRouteOption>();
+  rows.forEach((row) => {
+    const siteCode = normalizeSite(row.siteCode);
+    const forwarderCode = textValue(row.forwarderCode).toUpperCase();
+    const transportMode = textValue(row.transportMode).toUpperCase();
+    if (!forwarderCode || !transportMode) return;
+    const key = `${siteCode}|${forwarderCode}|${transportMode}`;
+    options.set(key, {
+      siteCode,
+      forwarderCode,
+      forwarderName: forwarderLabel(forwarderCode, row.forwarderName),
+      transportMode
+    });
+  });
+  return Array.from(options.values());
+}
+
+export function forwarderOptionsFromRateCards(rows: ProductLogisticsRateCardRow[]) {
+  const preferredOrder = new Map(['YITE', 'ET', 'QIKE'].map((code, index) => [code, index]));
+  const options = new Map<string, { label: string; value: string }>();
+  routeOptionsFromRateCards(rows).forEach((route) => {
+    options.set(route.forwarderCode, {
+      label: route.forwarderName,
+      value: route.forwarderCode
+    });
+  });
+  return Array.from(options.values()).sort((left, right) => {
+    const leftOrder = preferredOrder.get(left.value) ?? preferredOrder.size;
+    const rightOrder = preferredOrder.get(right.value) ?? preferredOrder.size;
+    return leftOrder !== rightOrder
+      ? leftOrder - rightOrder
+      : left.label.localeCompare(right.label, 'zh-CN');
+  });
+}
+
+export function transportOptionsForForwarder(
+  forwarderCode: string,
+  routes: ProductLogisticsRouteOption[]
+) {
+  const supportedModes = new Set(
+    routes
+      .filter((route) => route.forwarderCode === forwarderCode)
+      .map((route) => route.transportMode)
+  );
+  const options = TRANSPORT_OPTIONS.filter((option) => supportedModes.has(option.value));
+  return options.length ? options : TRANSPORT_OPTIONS;
+}
+
+export function normalizeRouteFilters(
+  filters: CostFilters,
+  routes: ProductLogisticsRouteOption[] = []
+): CostFilters {
+  const options = transportOptionsForForwarder(filters.forwarderCode, routes);
   const transportMode = options.some((option) => option.value === filters.transportMode)
     ? filters.transportMode
     : options[0]?.value || filters.transportMode;

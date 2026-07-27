@@ -55,6 +55,14 @@ assert(
 )
 
 assert(
+  pageSource.includes('availableRateCards') &&
+    pageSource.includes('forwarderOptionsFromRateCards') &&
+    pageSource.includes('options={data.forwarderOptions}') &&
+    !pageSource.includes('export const FORWARDER_OPTIONS'),
+  'forwarder and transport options should come from backend rate cards instead of a fixed frontend allowlist'
+)
+
+assert(
   pageSource.includes('/api/product-logistics-costs/rate-cards/manual') &&
     pageSource.includes('维护报价') &&
     pageSource.includes('rateCardModalOpen'),

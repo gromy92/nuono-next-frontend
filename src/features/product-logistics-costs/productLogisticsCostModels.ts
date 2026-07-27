@@ -85,6 +85,13 @@ export type CargoCategoryOption = {
   cargoCategoryName: string;
 };
 
+export type ProductLogisticsRouteOption = {
+  siteCode: string;
+  forwarderCode: string;
+  forwarderName: string;
+  transportMode: string;
+};
+
 export const DEFAULT_FILTERS: CostFilters = {
   searchText: '',
   siteCode: 'SA',
@@ -93,12 +100,6 @@ export const DEFAULT_FILTERS: CostFilters = {
   cargoCategoryCode: 'ALL',
   dataStatus: 'ALL'
 };
-
-export const FORWARDER_OPTIONS = [
-  { label: '义特', value: 'YITE' },
-  { label: '易通', value: 'ET' },
-  { label: 'CHIC', value: 'QIKE' }
-];
 
 export const TRANSPORT_OPTIONS = [
   { label: '海运', value: 'SEA' },

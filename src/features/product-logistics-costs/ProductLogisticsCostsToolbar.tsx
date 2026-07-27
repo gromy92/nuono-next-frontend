@@ -1,6 +1,5 @@
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { Button, Input, Select } from 'antd';
-import { FORWARDER_OPTIONS } from './productLogisticsCostModels';
 import { dataStatusButtonClass } from './productLogisticsCostProductDomain';
 import type { ProductLogisticsCostData } from './useProductLogisticsCostData';
 import type { ProductLogisticsCostMutations } from './useProductLogisticsCostMutations';
@@ -26,7 +25,7 @@ export function ProductLogisticsCostsToolbar({
         />
         <Select
           aria-label="货代"
-          options={FORWARDER_OPTIONS}
+          options={data.forwarderOptions}
           value={data.filters.forwarderCode}
           onChange={(value) => data.applyRouteFilters({ forwarderCode: value })}
         />
