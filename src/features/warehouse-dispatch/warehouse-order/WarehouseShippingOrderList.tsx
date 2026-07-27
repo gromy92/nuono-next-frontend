@@ -4,7 +4,7 @@ import {
   ReloadOutlined,
   SearchOutlined
 } from '@ant-design/icons';
-import { Button, Empty, Input, Spin, Table, Tabs, Tag, Typography } from 'antd';
+import { Button, Empty, Input, Select, Spin, Table, Tabs, Tag, Typography } from 'antd';
 import { useMemo, useState } from 'react';
 import type { ShippingOrder, ShippingOrderSegment } from '../../purchase-order/types';
 import {
@@ -21,10 +21,13 @@ import {
 } from '../LogisticsPartitionViews';
 import { WarehouseOrderIssueTags } from './WarehouseShippingOrderSharedViews';
 import {
+  filterShippingOrdersByStatus,
   formatDate,
   formatQuantity,
+  SHIPPING_ORDER_STATUS_FILTER_OPTIONS,
   shippingOrderStatusMeta
 } from './warehouseShippingOrderDomain';
+import type { ShippingOrderStatusFilter } from './warehouseShippingOrderDomain';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
 import { WarehouseOrderJourneyCell } from './WarehouseOrderJourneyCell';
 
@@ -39,9 +42,14 @@ export function WarehouseShippingOrderList({
 }) {
   const [siteFilter, setSiteFilter] = useState<LogisticsSiteFilter>('all');
   const [transportFilter, setTransportFilter] = useState<LogisticsTransportFilter>('all');
-  const filteredOrders = useMemo(() => data.visibleShippingOrders.filter((order) => (
-    matchesLogisticsPartition(orderPartition(order), siteFilter, transportFilter)
-  )), [data.visibleShippingOrders, siteFilter, transportFilter]);
+  const [statusFilter, setStatusFilter] = useState<ShippingOrderStatusFilter>('all');
+  const filteredOrders = useMemo(() => filterShippingOrdersByStatus(
+    data.visibleShippingOrders.filter((order) => (
+      matchesLogisticsPartition(orderPartition(order), siteFilter, transportFilter)
+    )),
+    statusFilter,
+    data.journeysByOrder
+  ), [data.journeysByOrder, data.visibleShippingOrders, siteFilter, statusFilter, transportFilter]);
   const orderList = (
     <Spin spinning={data.loading}>
       <div className="warehouse-shipping-order-main">
@@ -154,7 +162,15 @@ export function WarehouseShippingOrderList({
         <div className="warehouse-shipping-order-toolbar-actions">
           <LogisticsPartitionFilters siteFilter={siteFilter} transportFilter={transportFilter}
             onSiteFilterChange={setSiteFilter} onTransportFilterChange={setTransportFilter} />
+          <Select
+            className="warehouse-shipping-order-status-filter"
+            aria-label="筛选发货单状态"
+            value={statusFilter}
+            options={SHIPPING_ORDER_STATUS_FILTER_OPTIONS}
+            onChange={(value) => setStatusFilter(value)}
+          />
           <Input
+            className="warehouse-shipping-order-keyword-search"
             allowClear
             prefix={<SearchOutlined />}
             placeholder="搜索仓库单 / 发运批次 / SKU / 采购单"

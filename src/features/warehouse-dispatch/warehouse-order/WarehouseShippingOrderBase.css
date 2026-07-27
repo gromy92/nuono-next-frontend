@@ -57,6 +57,17 @@
   min-width: 0;
 }
 
+.warehouse-shipping-order-page--embedded .warehouse-shipping-order-toolbar-actions .warehouse-shipping-order-status-filter {
+  flex: 0 0 160px;
+  width: 160px;
+}
+
+.warehouse-shipping-order-page--embedded .warehouse-shipping-order-toolbar-actions .warehouse-shipping-order-keyword-search.ant-input-affix-wrapper {
+  flex: 0 1 420px;
+  width: 420px;
+  min-width: 240px;
+}
+
 .warehouse-shipping-order-page--embedded .warehouse-shipping-order-toolbar-actions .ant-btn {
   flex: 0 0 auto;
 }

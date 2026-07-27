@@ -11,6 +11,36 @@ import { sameCode } from './warehouseShippingQuoteDomain';
 import type { WarehouseOrderJourney } from './warehouseOrderJourney';
 import { warehouseOrderJourneyStatusMeta } from './warehouseOrderJourney';
 
+export type ShippingOrderStatusFilter =
+  | 'all'
+  | 'QUOTE_PENDING'
+  | 'QUOTE_EXPORTED'
+  | 'QUOTE_CONFIRMED'
+  | 'SHIPPING_SUBMITTED'
+  | 'OPTION_SELECTED'
+  | 'OUTBOUND_CREATED'
+  | 'PACKING'
+  | 'PACKED'
+  | 'SHIPPED'
+  | 'PLANNING';
+
+export const SHIPPING_ORDER_STATUS_FILTER_OPTIONS: Array<{
+  label: string;
+  value: ShippingOrderStatusFilter;
+}> = [
+  { label: '全部状态', value: 'all' },
+  { label: '报价待确认', value: 'QUOTE_PENDING' },
+  { label: '已导出', value: 'QUOTE_EXPORTED' },
+  { label: '报价已确认', value: 'QUOTE_CONFIRMED' },
+  { label: '已提交发货', value: 'SHIPPING_SUBMITTED' },
+  { label: '计划中', value: 'PLANNING' },
+  { label: '已选物流', value: 'OPTION_SELECTED' },
+  { label: '待装箱', value: 'OUTBOUND_CREATED' },
+  { label: '装箱中', value: 'PACKING' },
+  { label: '待物流交接', value: 'PACKED' },
+  { label: '已发运', value: 'SHIPPED' }
+];
+
 export function filterShippingOrders(
   orders: ShippingOrder[],
   keyword: string,
@@ -37,6 +67,17 @@ export function filterShippingOrders(
       line.purchaseOrderNo
     ])
   ].filter(Boolean).join(' ').toLowerCase().includes(normalized));
+}
+
+export function filterShippingOrdersByStatus(
+  orders: ShippingOrder[],
+  statusFilter: ShippingOrderStatusFilter,
+  journeysByOrder = new Map<string, WarehouseOrderJourney[]>()
+) {
+  if (statusFilter === 'all') return orders;
+  return orders.filter((order) => (
+    shippingOrderStatusCode(order, journeysByOrder.get(order.id) || []) === statusFilter
+  ));
 }
 
 export function filterPurchaseOrders(orders: PurchaseOrder[], keyword: string) {
@@ -100,6 +141,18 @@ export function sumPurchaseOrderQuantity(orders: PurchaseOrder[]) {
 }
 
 export function shippingOrderStatusMeta(order: ShippingOrder, journeys: WarehouseOrderJourney[] = []) {
+  const status = shippingOrderStatusCode(order, journeys);
+  if (status === 'SHIPPING_SUBMITTED') return { label: '已提交发货', color: 'green' };
+  if (status === 'QUOTE_CONFIRMED') return { label: '报价已确认', color: 'blue' };
+  if (status === 'QUOTE_EXPORTED') return { label: '已导出', color: 'cyan' };
+  if (status === 'QUOTE_PENDING') return { label: '报价待确认', color: 'gold' };
+  return warehouseOrderJourneyStatusMeta(status);
+}
+
+export function shippingOrderStatusCode(
+  order: ShippingOrder,
+  journeys: WarehouseOrderJourney[] = []
+): ShippingOrderStatusFilter {
   if (journeys.length) {
     const rank = { OPTION_SELECTED: 1, OUTBOUND_CREATED: 2, PACKING: 3, PACKED: 4, SHIPPED: 5 } as const;
     const current = journeys.reduce((earliest, journey) => (
@@ -107,12 +160,19 @@ export function shippingOrderStatusMeta(order: ShippingOrder, journeys: Warehous
         ? journey
         : earliest
     ));
-    return warehouseOrderJourneyStatusMeta(current.status);
+    return isKnownJourneyStatus(current.status) ? current.status : 'PLANNING';
   }
-  if (order.shippingSubmitStatus === 'SUBMITTED') return { label: '已提交发货', color: 'green' };
-  if (order.quoteStatus === 'CONFIRMED') return { label: '报价已确认', color: 'blue' };
-  if (order.quoteStatus === 'EXPORTED') return { label: '已导出', color: 'cyan' };
-  return { label: '报价待确认', color: 'gold' };
+  if (order.shippingSubmitStatus === 'SUBMITTED') return 'SHIPPING_SUBMITTED';
+  if (order.quoteStatus === 'CONFIRMED') return 'QUOTE_CONFIRMED';
+  if (order.quoteStatus === 'EXPORTED') return 'QUOTE_EXPORTED';
+  return 'QUOTE_PENDING';
+}
+
+function isKnownJourneyStatus(status: string): status is Exclude<
+  ShippingOrderStatusFilter,
+  'all' | 'QUOTE_PENDING' | 'QUOTE_EXPORTED' | 'QUOTE_CONFIRMED' | 'SHIPPING_SUBMITTED' | 'PLANNING'
+> {
+  return ['OPTION_SELECTED', 'OUTBOUND_CREATED', 'PACKING', 'PACKED', 'SHIPPED'].includes(status);
 }
 
 export function isLineQuoteConfirmed(line: ShippingOrderLine) {
