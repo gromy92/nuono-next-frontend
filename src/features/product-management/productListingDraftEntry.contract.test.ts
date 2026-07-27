@@ -21,7 +21,7 @@ assert.match(
 assert.match(
   drawerSource,
   /fetchProductListingDrafts/,
-  '上架草稿入口必须从后端读取当前店铺草稿'
+  '上架记录入口必须从后端读取当前店铺记录'
 )
 
 assert.match(
@@ -69,5 +69,11 @@ assert.match(
 assert.match(
   drawerSource,
   /flexShrink:\s*0/,
-  '上架草稿继续编辑按钮不能被列表内容挤压'
+  '上架记录操作按钮不能被列表内容挤压'
+)
+
+assert.match(
+  drawerSource,
+  /presentProductListingDraftWorkflow\(record\.workflow\)/,
+  '上架记录必须展示后端汇总的五态流程'
 )

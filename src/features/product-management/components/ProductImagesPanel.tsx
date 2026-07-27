@@ -8,7 +8,10 @@ import { ProductDetailSection } from './ProductDetailSection';
 import { ProductImageAssetPreview } from './ProductImageAssetPreview';
 import { ProductImageManagerDrawer } from './ProductImageManagerDrawer';
 import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../types/productImageRole';
-import type { NoonImageAssetMetadata } from '../utils/noonImageRequirements';
+import {
+  NOON_IMAGE_TARGET_ASPECT_RATIO,
+  type NoonImageAssetMetadata
+} from '../utils/noonImageRequirements';
 
 const { Text } = Typography;
 
@@ -87,7 +90,7 @@ export function ProductImagesPanel(props: {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 200px))',
             gap: 12
           }}
         >
@@ -117,14 +120,14 @@ export function ProductImagesPanel(props: {
                 style={{
                   position: 'relative',
                   width: '100%',
-                  minHeight: 220,
+                  aspectRatio: NOON_IMAGE_TARGET_ASPECT_RATIO,
                   background: 'var(--pm-subtle-bg)'
                 }}
               >
                 <ProductImageAssetPreview
                   src={item}
                   alt={`商品图 ${index + 1}`}
-                  style={{ width: '100%', height: 220, objectFit: 'cover', display: 'block' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
                 />
                 <div
                   style={{
@@ -182,6 +185,9 @@ function imageRoleLabel(imageRole: ProductImageUsageRole | undefined, index: num
   }
   if (normalized === 'SIZE') {
     return '尺寸图';
+  }
+  if (normalized === 'SCENE') {
+    return '场景图';
   }
   if (normalized === 'PACKAGE') {
     return '包装图';

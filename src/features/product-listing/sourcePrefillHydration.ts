@@ -6,7 +6,10 @@ import type {
   ManualSelectionGroupProfitEstimateSnapshot,
   ManualSelectionGroupView
 } from '../manual-selection/types'
-import { fetchProductListingDraft } from './api'
+import {
+  fetchActiveProductListingDraft,
+  fetchProductListingDraft
+} from './api'
 import {
   buildManualSelectionGroupListingPrefillFromGroup,
   buildProductListingDraftRecoveryPrefill,
@@ -18,6 +21,11 @@ import type { ProductCompetitorContentMaterial } from '../product-management/typ
 type SourcePrefillHydrationLoaders = {
   loadManualSelectionGroup?: (groupId: string) => Promise<ManualSelectionGroupView>
   loadManualSelectionGroupProfitEstimate?: (groupId: string) => Promise<ManualSelectionGroupProfitEstimateSnapshot>
+  fetchActiveProductListingDraft?: (
+    storeCode: string,
+    sourceType: string,
+    sourceRefId: number
+  ) => Promise<ProductListingDraftView | undefined>
   fetchProductListingDraft?: (draftId: number) => Promise<ProductListingDraftView>
 }
 
@@ -30,9 +38,22 @@ export async function hydrateProductListingSourcePrefill(
     return prefill
   }
   if (prefill.source === 'manual-selection' && prefill.sourceGroupId) {
+    const sourceStoreCode = prefill.draft.storeCode?.trim() || storeCode
     const group = await (loaders.loadManualSelectionGroup || loadManualSelectionGroup)(prefill.sourceGroupId)
     const profitEstimate = await loadProfitEstimate(prefill.sourceGroupId, loaders)
-    return buildManualSelectionGroupListingPrefillFromGroup(group, storeCode, profitEstimate)
+    const groupPrefill = buildManualSelectionGroupListingPrefillFromGroup(
+      group,
+      sourceStoreCode,
+      profitEstimate
+    )
+    const activeDraft = await loadActiveManualSelectionDraft(groupPrefill, sourceStoreCode, loaders)
+    if (!activeDraft) {
+      return groupPrefill
+    }
+    const draftView = await (loaders.fetchProductListingDraft || fetchProductListingDraft)(
+      activeDraft.draftId
+    )
+    return mergeManualSelectionDraftPrefill(draftView, groupPrefill)
   }
   if (prefill.source === 'listing-draft' && prefill.sourceDraftId) {
     const draftId = Number(prefill.sourceDraftId)
@@ -48,26 +69,57 @@ export async function hydrateProductListingSourcePrefill(
       const groupId = String(draftView.draft?.sourceRefId || '')
       const group = await (loaders.loadManualSelectionGroup || loadManualSelectionGroup)(groupId)
       const groupPrefill = buildManualSelectionGroupListingPrefillFromGroup(group, storeCode)
-      if (!groupPrefill.competitorMaterials?.length) {
-        return recoveredPrefill
-      }
-      const competitorMaterials = mergeRecoveredCompetitorCategories(
-        recoveredPrefill.competitorMaterials || [],
-        groupPrefill.competitorMaterials
-      )
-      return {
-        ...recoveredPrefill,
-        competitorMaterials,
-        draft: {
-          ...recoveredPrefill.draft,
-          competitorMaterials
-        }
-      }
+      return mergeManualSelectionDraftPrefill(draftView, groupPrefill)
     } catch {
       return recoveredPrefill
     }
   }
   return prefill
+}
+
+async function loadActiveManualSelectionDraft(
+  groupPrefill: ProductListingSourcePrefill,
+  fallbackStoreCode: string | undefined,
+  loaders: SourcePrefillHydrationLoaders
+) {
+  const sourceType = groupPrefill.draft.sourceType
+  const sourceRefId = positiveNumber(groupPrefill.draft.sourceRefId)
+  const authoritativeStoreCode = groupPrefill.draft.storeCode || fallbackStoreCode
+  if (!authoritativeStoreCode || !sourceType || sourceRefId === undefined) {
+    return undefined
+  }
+  return (loaders.fetchActiveProductListingDraft || fetchActiveProductListingDraft)(
+    authoritativeStoreCode,
+    sourceType,
+    sourceRefId
+  )
+}
+
+function mergeManualSelectionDraftPrefill(
+  draftView: ProductListingDraftView,
+  groupPrefill: ProductListingSourcePrefill
+) {
+  const recoveredPrefill = buildProductListingDraftRecoveryPrefill(draftView)
+  const competitorMaterials = mergeRecoveredCompetitorCategories(
+    recoveredPrefill.competitorMaterials || [],
+    groupPrefill.competitorMaterials || []
+  )
+  const purchasePrice = positiveNumber(recoveredPrefill.draft.purchasePrice)
+    ?? positiveNumber(groupPrefill.draft.purchasePrice)
+  return {
+    ...recoveredPrefill,
+    competitorMaterials,
+    draft: {
+      ...recoveredPrefill.draft,
+      ...(purchasePrice === undefined ? {} : { purchasePrice }),
+      competitorMaterials
+    }
+  }
+}
+
+function positiveNumber(value: unknown) {
+  const amount = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(amount) && amount > 0 ? amount : undefined
 }
 
 function mergeRecoveredCompetitorCategories(

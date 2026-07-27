@@ -25,17 +25,9 @@ type AmountRequirement = {
   kind: 'amount'
 }
 
-type OptionalPositiveIntegerRequirement = {
-  fieldKey: keyof ProductListingEditorDraft
-  domainKey: ProductFieldDomainKey
-  message: string
-  kind: 'optionalPositiveInteger'
-}
-
 type ProductListingDraftRequirement =
   | TextRequirement
   | AmountRequirement
-  | OptionalPositiveIntegerRequirement
 
 const REQUIRED_REQUIREMENTS = [
   textRequirement('storeCode', 'main', '上架信息缺少逻辑店铺。'),
@@ -47,20 +39,12 @@ const REQUIRED_REQUIREMENTS = [
   textRequirement('supplyEvidenceType', 'site', '当前站点缺少供货证据。')
 ] satisfies ProductListingDraftRequirement[]
 
-const OPTIONAL_POSITIVE_REQUIREMENTS = [
-  optionalPositiveIntegerRequirement('quantity', 'site', '当前站点数量必须大于 0。')
-] satisfies ProductListingDraftRequirement[]
-
 export const PRODUCT_LISTING_DRAFT_REQUIRED_FIELD_KEYS: string[] = REQUIRED_REQUIREMENTS.map((item) => item.fieldKey)
-
-export const PRODUCT_LISTING_DRAFT_OPTIONAL_POSITIVE_FIELD_KEYS: string[] = OPTIONAL_POSITIVE_REQUIREMENTS.map(
-  (item) => item.fieldKey
-)
 
 export function collectProductListingDraftCompletenessIssues(
   draft: ProductListingEditorDraft
 ): ProductListingDraftCompletenessIssue[] {
-  const requirementIssues = [...REQUIRED_REQUIREMENTS, ...OPTIONAL_POSITIVE_REQUIREMENTS]
+  const requirementIssues = REQUIRED_REQUIREMENTS
     .map((requirement) => validateRequirement(draft, requirement))
     .filter((issue): issue is ProductListingDraftCompletenessIssue => Boolean(issue))
   const pricingIssues = collectOfferPricingValidationIssues(draft, '当前站点').map((item) => ({
@@ -97,12 +81,6 @@ function validateRequirement(
       return issue(requirement, amount === null ? 'required' : 'invalid_number')
     }
   }
-  if (requirement.kind === 'optionalPositiveInteger') {
-    const amount = parseOptionalNumber(value)
-    if (amount !== null && Math.trunc(amount) <= 0) {
-      return issue(requirement, 'invalid_number')
-    }
-  }
   return null
 }
 
@@ -133,14 +111,6 @@ function amountRequirement(
   message: string
 ): AmountRequirement {
   return { fieldKey, domainKey, message, kind: 'amount' }
-}
-
-function optionalPositiveIntegerRequirement(
-  fieldKey: keyof ProductListingEditorDraft,
-  domainKey: ProductFieldDomainKey,
-  message: string
-): OptionalPositiveIntegerRequirement {
-  return { fieldKey, domainKey, message, kind: 'optionalPositiveInteger' }
 }
 
 function text(value: unknown) {

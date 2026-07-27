@@ -191,7 +191,13 @@ function normalizeImageRole(
   imageRole?: string,
   fallback?: ProductImageUsageRole
 ): ProductImageUsageRole {
-  if (imageRole === 'MAIN' || imageRole === 'SIZE' || imageRole === 'DETAIL' || imageRole === 'PACKAGE') {
+  if (
+    imageRole === 'MAIN' ||
+    imageRole === 'SIZE' ||
+    imageRole === 'DETAIL' ||
+    imageRole === 'SCENE' ||
+    imageRole === 'PACKAGE'
+  ) {
     return imageRole
   }
   return fallback ?? 'DETAIL'

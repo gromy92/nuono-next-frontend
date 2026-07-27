@@ -60,6 +60,25 @@ assert.equal(urlLocatorPrefill?.sourceDraftId, '10033')
 assert.equal(urlLocatorPrefill?.pendingServerHydration, true)
 assert.equal(urlLocatorPrefill?.draft.draftId, 10033)
 assert.equal(urlLocatorPrefill?.draft.psku, undefined)
+
+;(globalThis as any).window.location.search =
+  '?listingSource=manual-selection&selectionGroupId=91016&storeCode=STR-SOURCE-NSA'
+sessionStorage.set('nuono:product-listing:source-prefill', JSON.stringify({
+  source: 'manual-selection',
+  sourceGroupId: '91016',
+  draft: {
+    storeCode: 'STR-STALE-NSA'
+  }
+}))
+const manualSelectionPrefill = sourcePrefill.readProductListingSourcePrefill()
+assert.equal(manualSelectionPrefill?.source, 'manual-selection')
+assert.equal(manualSelectionPrefill?.sourceGroupId, '91016')
+assert.equal(manualSelectionPrefill?.pendingServerHydration, true)
+assert.equal(manualSelectionPrefill?.draft.storeCode, 'STR-SOURCE-NSA')
+
+sessionStorage.delete('nuono:product-listing:source-prefill')
+const manualSelectionLocatorPrefill = sourcePrefill.readProductListingSourcePrefill()
+assert.equal(manualSelectionLocatorPrefill?.draft.storeCode, 'STR-SOURCE-NSA')
 delete (globalThis as Record<string, unknown>).window
 
 const hydrated = await hydrateProductListingSourcePrefill({

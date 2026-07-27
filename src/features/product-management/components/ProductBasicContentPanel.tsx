@@ -9,6 +9,10 @@ export function ProductBasicContentPanel(props: {
   productContentProgressDone: number;
   productContentProgressTotal: number;
   productCompetitorMaterials?: ProductCompetitorContentMaterial[];
+  productListingKeywordSuggestions?: {
+    EN?: string[];
+    AR?: string[];
+  };
   enableCompetitorContentMerge?: boolean;
   productSnapshotView?: ProductMasterSnapshotPayload;
   updateProductSectionField: (
@@ -23,6 +27,7 @@ export function ProductBasicContentPanel(props: {
     productContentProgressDone,
     productContentProgressTotal,
     productCompetitorMaterials,
+    productListingKeywordSuggestions,
     enableCompetitorContentMerge,
     productSnapshotView,
     updateProductSectionField,
@@ -48,6 +53,7 @@ export function ProductBasicContentPanel(props: {
         <ProductBilingualContentEditor
           productSnapshotView={productSnapshotView}
           productCompetitorMaterials={productCompetitorMaterials}
+          productListingKeywordSuggestions={productListingKeywordSuggestions}
           enableCompetitorContentMerge={enableCompetitorContentMerge}
           updateProductSectionField={updateProductSectionField}
           updateProductMultilineField={updateProductMultilineField}

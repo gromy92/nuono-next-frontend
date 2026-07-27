@@ -22,16 +22,7 @@ assert.deepEqual(PRODUCT_LISTING_DRAFT_REQUIRED_FIELD_KEYS, [
 assert(requiredIssueKeys.includes('purchasePrice'))
 assert(requiredIssueKeys.includes('supplyEvidenceType'))
 assert(!requiredIssueKeys.includes('imageUrls'), 'listing images are optional for upload')
-assert(!requiredIssueKeys.includes('quantity'), 'empty quantity is not a blocking field')
-
-const invalidQuantityIssues = collectProductListingDraftCompletenessIssues({
-  ...missingDraft,
-  quantity: 0
-})
-assert(
-  invalidQuantityIssues.some((item) => item.fieldKey === 'quantity' && item.code === 'invalid_number'),
-  'quantity is optional but must be positive when present'
-)
+assert(!requiredIssueKeys.includes('quantity'), 'inventory is outside the listing write contract')
 
 const domains = productListingEditorDraftDomains(missingDraft)
 assert(domains.site.issues.some((item) => item.includes('采购成本')))

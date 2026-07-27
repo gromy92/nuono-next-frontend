@@ -1,9 +1,4 @@
-import {
-  DeleteOutlined,
-  EyeInvisibleOutlined,
-  StarFilled,
-  UploadOutlined
-} from '@ant-design/icons';
+import { DeleteOutlined, EyeInvisibleOutlined, StarFilled, UploadOutlined } from '@ant-design/icons';
 import { Alert, Button, Drawer, Empty, Segmented, Space, Tag, Typography } from 'antd';
 import type { MessageInstance } from 'antd/es/message/interface';
 import { type ChangeEvent, useEffect, useRef, useState } from 'react';
@@ -22,23 +17,18 @@ import {
   type ProductImageManagerState
 } from './productImageManagerState';
 import { ProductImageAssetPreview } from './ProductImageAssetPreview';
-import type {
-  ProductImageRoleAssignment,
-  ProductImageUsageRole
-} from '../types/productImageRole';
+import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../types/productImageRole';
 import {
   evaluateNoonImageDimensions,
+  NOON_IMAGE_TARGET_ASPECT_RATIO,
   noonImageMetadataFromDimensions,
   normalizeNoonImageAssetMetadata,
-  selectNoonImageAdaptTarget,
-  type NoonImageAssetMetadata,
-  type NoonImageDimensions
+  selectNoonImageAdaptTarget, type NoonImageAssetMetadata, type NoonImageDimensions
 } from '../utils/noonImageRequirements';
 import { isProductImageAssetUrl, resolveProductImageDisplayUrl } from '../utils/productImageAssetDisplay';
 
 const { Text } = Typography;
 const IMAGE_PROCESS_TIMEOUT_MS = 15000;
-
 type ProductImageManagerDrawerProps = {
   open: boolean;
   images: string[];
@@ -146,10 +136,6 @@ export function ProductImageManagerDrawer(props: ProductImageManagerDrawerProps)
 
   const moveImageTo = (index: number, nextIndex: number) => {
     applyDraftState((current) => moveActiveImageTo(current, index, nextIndex));
-  };
-
-  const setMainImage = (index: number) => {
-    moveImageTo(index, 0);
   };
 
   const setImageRole = (index: number, imageRole: ProductImageUsageRole) => {
@@ -370,11 +356,19 @@ export function ProductImageManagerDrawer(props: ProductImageManagerDrawerProps)
                     background: '#fff'
                   }}
                 >
-                  <div style={{ height: 140, borderRadius: 6, overflow: 'hidden', background: 'var(--pm-subtle-bg)' }}>
+                  <div
+                    style={{
+                      width: 140,
+                      aspectRatio: NOON_IMAGE_TARGET_ASPECT_RATIO,
+                      borderRadius: 6,
+                      overflow: 'hidden',
+                      background: 'var(--pm-subtle-bg)'
+                    }}
+                  >
                     <ProductImageAssetPreview
                       src={item.imageUrl}
                       alt={`商品图 ${index + 1}`}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     />
                   </div>
                   <Space direction="vertical" size={8} style={{ width: '100%' }}>
@@ -382,9 +376,6 @@ export function ProductImageManagerDrawer(props: ProductImageManagerDrawerProps)
                       {index === 0 ? <Tag icon={<StarFilled />} color="gold">头图</Tag> : <Tag>商品图 {index + 1}</Tag>}
                       {noonImageStatusTag(imageMetadata, imageDimensionReadError)}
                       {imageMetadata?.width && imageMetadata.height ? <Tag>{imageMetadata.width}x{imageMetadata.height}</Tag> : null}
-                      <Button size="small" disabled={index === 0} onClick={() => setMainImage(index)}>
-                        设为头图
-                      </Button>
                       <Button
                         size="small"
                         loading={adaptingImageUrl === item.imageUrl}
@@ -401,17 +392,21 @@ export function ProductImageManagerDrawer(props: ProductImageManagerDrawerProps)
                     </Space>
                     <Space size={8} wrap>
                       <Text style={{ color: 'var(--pm-text-muted)', fontSize: 12 }}>用途</Text>
-                      <Segmented<ProductImageUsageRole>
-                        size="small"
-                        value={item.imageRole}
-                        options={[
-                          { label: '主图', value: 'MAIN' },
-                          { label: '尺寸图', value: 'SIZE' },
-                          { label: '细节图', value: 'DETAIL' },
-                          { label: '包装图', value: 'PACKAGE' }
-                        ]}
-                        onChange={(value) => setImageRole(index, value)}
-                      />
+                      {index === 0 ? (
+                        <Tag color="gold" style={{ marginInlineEnd: 0 }}>主图</Tag>
+                      ) : (
+                        <Segmented<ProductImageUsageRole>
+                          size="small"
+                          value={item.imageRole}
+                          options={[
+                            { label: '尺寸图', value: 'SIZE' },
+                            { label: '细节图', value: 'DETAIL' },
+                            { label: '场景图', value: 'SCENE' },
+                            { label: '包装图', value: 'PACKAGE' }
+                          ]}
+                          onChange={(value) => setImageRole(index, value)}
+                        />
+                      )}
                     </Space>
                     <Space size={6} wrap>
                       <Text style={{ color: 'var(--pm-text-muted)', fontSize: 12 }}>编号</Text>
@@ -427,9 +422,6 @@ export function ProductImageManagerDrawer(props: ProductImageManagerDrawerProps)
                         </Button>
                       ))}
                     </Space>
-                    <Text copyable style={{ color: item.imageUrl && !validImageUrl(item.imageUrl) ? '#b91c1c' : 'var(--pm-text-faint)' }}>
-                      {item.imageUrl}
-                    </Text>
                     {autoAdaptFeedback?.imageUrl === item.imageUrl ? (
                       <Alert
                         type={autoAdaptFeedback.type}
@@ -458,11 +450,19 @@ export function ProductImageManagerDrawer(props: ProductImageManagerDrawerProps)
                       background: 'var(--pm-subtle-bg)'
                     }}
                   >
-                    <div style={{ height: 140, borderRadius: 6, overflow: 'hidden', background: '#fff' }}>
+                    <div
+                      style={{
+                        width: 140,
+                        aspectRatio: NOON_IMAGE_TARGET_ASPECT_RATIO,
+                        borderRadius: 6,
+                        overflow: 'hidden',
+                        background: '#fff'
+                      }}
+                    >
                       <ProductImageAssetPreview
                         src={item.imageUrl}
                         alt={`不使用图片 ${index + 1}`}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', opacity: 0.55 }}
                       />
                     </div>
                     <Space direction="vertical" size={8} style={{ width: '100%' }}>
@@ -476,9 +476,6 @@ export function ProductImageManagerDrawer(props: ProductImageManagerDrawerProps)
                           删除
                         </Button>
                       </Space>
-                      <Text copyable style={{ color: item.imageUrl && !validImageUrl(item.imageUrl) ? '#b91c1c' : 'var(--pm-text-faint)' }}>
-                        {item.imageUrl}
-                      </Text>
                     </Space>
                   </div>
                 ))}
@@ -499,6 +496,9 @@ function imageRoleLabel(imageRole: ProductImageUsageRole) {
   }
   if (imageRole === 'SIZE') {
     return '尺寸图';
+  }
+  if (imageRole === 'SCENE') {
+    return '场景图';
   }
   if (imageRole === 'PACKAGE') {
     return '包装图';

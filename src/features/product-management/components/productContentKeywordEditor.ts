@@ -14,6 +14,7 @@ export type ProductContentKeywordInputRow = {
   sourceKeywordId?: number;
   originalValue?: string;
   competitorSourceKeys?: string[];
+  automatic?: boolean;
 };
 
 export type ProductContentKeywordScope = {
@@ -107,9 +108,7 @@ export function keywordRowsForSave(rows: ProductContentKeywordInputRow[]) {
 
 export function keywordRowHasKeywordChange(row: ProductContentKeywordInputRow) {
   const keywords = keywordRowKeywords(row);
-  if (!keywords.length) {
-    return false;
-  }
+  if (!keywords.length || row.automatic) return false;
   if (!row.sourceKeywordId) {
     return true;
   }
