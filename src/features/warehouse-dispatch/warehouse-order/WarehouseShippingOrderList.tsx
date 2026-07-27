@@ -1,5 +1,4 @@
 import {
-  EditOutlined,
   EyeOutlined,
   PlusOutlined,
   ReloadOutlined,
@@ -57,11 +56,18 @@ export function WarehouseShippingOrderList({
                 dataIndex: 'title',
                 width: 260,
                 render: (_, order) => {
-                  const status = shippingOrderStatusMeta(order);
+                  const journeys = data.journeysByOrder.get(order.id) || [];
+                  const status = shippingOrderStatusMeta(order, journeys);
                   return (
                     <div className="warehouse-shipping-order-source-name">
-                      <Text strong>{order.title || order.shippingOrderNo}</Text>
-                      <Text type="secondary">{order.shippingOrderNo}</Text>
+                      <button
+                        type="button"
+                        className="warehouse-shipping-order-title-button"
+                        disabled={data.actionKey === `update-shipping-order:${order.id}`}
+                        onClick={() => data.openEditModal(order)}
+                      >
+                        {order.title || '未命名仓库单'}
+                      </button>
                       <div className="warehouse-shipping-order-status-tags">
                         <Tag color={status.color}>{status.label}</Tag>
                       </div>
@@ -104,7 +110,7 @@ export function WarehouseShippingOrderList({
               },
               {
                 title: '操作',
-                width: 180,
+                width: 110,
                 render: (_, order) => (
                   <div className="warehouse-shipping-order-table-actions" onClick={(event) => event.stopPropagation()}>
                     <Button
@@ -115,14 +121,6 @@ export function WarehouseShippingOrderList({
                       onClick={() => void data.openDetail(order)}
                     >
                       查看详情
-                    </Button>
-                    <Button
-                      size="small"
-                      icon={<EditOutlined />}
-                      loading={data.actionKey === `update-shipping-order:${order.id}`}
-                      onClick={() => data.openEditModal(order)}
-                    >
-                      改名
                     </Button>
                   </div>
                 )
@@ -201,7 +199,6 @@ function WarehouseOrderPartitionDetails({ order }: { order: ShippingOrder }) {
       {segments.map((segment) => (
         <WarehouseOrderPartitionRow
           key={segment.id || `${segment.siteCode}:${segment.transportMode}`}
-          order={order}
           segment={segment}
         />
       ))}
@@ -210,10 +207,8 @@ function WarehouseOrderPartitionDetails({ order }: { order: ShippingOrder }) {
 }
 
 function WarehouseOrderPartitionRow({
-  order,
   segment
 }: {
-  order: ShippingOrder;
   segment: ShippingOrderSegment;
 }) {
   return (
@@ -224,7 +219,7 @@ function WarehouseOrderPartitionRow({
           transportMode: segment.transportMode
         }]} />
       </div>
-      <PartitionMetric label="来源采购单" value={`${segment.purchaseOrderCount ?? order.purchaseOrderCount ?? 0} 单`} />
+      <PartitionMetric label="来源采购单" value={segment.purchaseOrderNames || '—'} source />
       <PartitionMetric label="商品行" value={formatQuantity(Number(segment.lineCount || 0))} />
       <PartitionMetric label="SKU" value={formatQuantity(Number(segment.skuCount || 0))} />
       <PartitionMetric label="件数" value={`${formatQuantity(Number(segment.totalQuantity || 0))} 件`} />
@@ -232,11 +227,11 @@ function WarehouseOrderPartitionRow({
   );
 }
 
-function PartitionMetric({ label, value }: { label: string; value: string }) {
+function PartitionMetric({ label, value, source = false }: { label: string; value: string; source?: boolean }) {
   return (
-    <span className="warehouse-order-partition-metric">
+    <span className={`warehouse-order-partition-metric${source ? ' warehouse-order-partition-metric--source' : ''}`}>
       <span className="warehouse-order-partition-metric-label">{label}</span>
-      <strong>{value}</strong>
+      <strong title={source ? value : undefined}>{value}</strong>
     </span>
   );
 }

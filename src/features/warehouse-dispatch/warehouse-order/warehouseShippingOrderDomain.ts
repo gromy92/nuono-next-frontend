@@ -9,6 +9,7 @@ import type {
 } from '../../purchase-order/types';
 import { sameCode } from './warehouseShippingQuoteDomain';
 import type { WarehouseOrderJourney } from './warehouseOrderJourney';
+import { warehouseOrderJourneyStatusMeta } from './warehouseOrderJourney';
 
 export function filterShippingOrders(
   orders: ShippingOrder[],
@@ -98,7 +99,16 @@ export function sumPurchaseOrderQuantity(orders: PurchaseOrder[]) {
     .reduce((sum, item) => sum + Number(item.totalQuantity || 0), 0), 0);
 }
 
-export function shippingOrderStatusMeta(order: ShippingOrder) {
+export function shippingOrderStatusMeta(order: ShippingOrder, journeys: WarehouseOrderJourney[] = []) {
+  if (journeys.length) {
+    const rank = { OPTION_SELECTED: 1, OUTBOUND_CREATED: 2, PACKING: 3, PACKED: 4, SHIPPED: 5 } as const;
+    const current = journeys.reduce((earliest, journey) => (
+      (rank[journey.status as keyof typeof rank] || 0) < (rank[earliest.status as keyof typeof rank] || 0)
+        ? journey
+        : earliest
+    ));
+    return warehouseOrderJourneyStatusMeta(current.status);
+  }
   if (order.shippingSubmitStatus === 'SUBMITTED') return { label: '已提交发货', color: 'green' };
   if (order.quoteStatus === 'CONFIRMED') return { label: '报价已确认', color: 'blue' };
   if (order.quoteStatus === 'EXPORTED') return { label: '已导出', color: 'cyan' };

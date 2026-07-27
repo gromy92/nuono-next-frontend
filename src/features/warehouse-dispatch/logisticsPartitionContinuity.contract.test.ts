@@ -30,8 +30,8 @@ assert.match(
 )
 assert.match(
   warehouseOrders,
-  /title: '分区明细'[\s\S]*segment\.purchaseOrderCount[\s\S]*segment\.lineCount[\s\S]*segment\.skuCount[\s\S]*segment\.totalQuantity/,
-  '每个分区必须在同一列展示来源采购单、商品行、SKU 和件数'
+  /title: '分区明细'[\s\S]*segment\.purchaseOrderNames[\s\S]*segment\.lineCount[\s\S]*segment\.skuCount[\s\S]*segment\.totalQuantity/,
+  '每个分区必须在同一列展示来源采购单名、商品行、SKU 和件数'
 )
 assert.match(
   warehouseOrders,
@@ -43,6 +43,8 @@ assert.doesNotMatch(
   /title: '站点 \/ 运输方式'|title: '来源采购单'|title: '商品行'|title: 'SKU'|title: '数量'/,
   '旧的五个独立统计列必须收口为分区明细与整单合计'
 )
+assert.match(warehouseOrders, /className="warehouse-shipping-order-title-button"[\s\S]*data\.openEditModal\(order\)/)
+assert.doesNotMatch(warehouseOrders, /\{order\.shippingOrderNo\}[\s\S]*>改名<\/Button>/)
 assert.match(
   partitionViews,
   /LogisticsPartitionCombinationTags[\s\S]*summary\.combinations\.map[\s\S]*siteCode[\s\S]*空运[\s\S]*海运/,

@@ -81,6 +81,7 @@ export type ShippingOrderSegment = {
   serviceName?: string
   quoteStatus?: 'PENDING_QUOTE' | 'CONFIRMED' | string
   shippingSubmitStatus?: 'NOT_SUBMITTED' | 'SUBMITTED' | string
+  purchaseOrderNames?: string
   purchaseOrderCount?: number
   lineCount?: number
   skuCount?: number
@@ -451,7 +452,6 @@ export type CreatePurchaseOrderPayload = {
 export type AddPurchaseOrderItemsPayload = {
   items: PurchaseOrderItemCommand[]
 }
-
 export type UpdatePurchaseOrderItemPayload = {
   psku?: string
   fulfillmentType?: PurchaseOrderFulfillmentType

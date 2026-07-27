@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { filterShippingOrders } from './warehouseShippingOrderDomain';
+import { filterShippingOrders, shippingOrderStatusMeta } from './warehouseShippingOrderDomain';
 import {
   groupWarehouseOrderJourneys,
   warehouseOrderJourneyStatusMeta
@@ -26,5 +26,7 @@ const journey = {
 
 const grouped = groupWarehouseOrderJourneys([journey]);
 assert.deepEqual(filterShippingOrders([order], '0718', grouped), [order]);
+assert.deepEqual(filterShippingOrders([{ ...order, status: 'COMPLETED' }], '', grouped), [{ ...order, status: 'COMPLETED' }]);
+assert.equal(shippingOrderStatusMeta(order, [journey]).label, '待物流交接');
 
 assert.equal(warehouseOrderJourneyStatusMeta('PACKED').label, '待物流交接');

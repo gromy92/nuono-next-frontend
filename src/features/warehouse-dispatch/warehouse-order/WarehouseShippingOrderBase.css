@@ -84,6 +84,28 @@
   margin: 0;
 }
 
+.warehouse-shipping-order-title-button {
+  width: fit-content;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  color: #1f2937;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.warehouse-shipping-order-title-button:hover {
+  color: #1677ff;
+}
+
+.warehouse-shipping-order-title-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .warehouse-shipping-order-status-tags {
   display: flex;
   flex-wrap: wrap;
@@ -117,7 +139,7 @@
 
 .warehouse-order-partition-row {
   display: grid;
-  grid-template-columns: minmax(86px, 1.1fr) repeat(4, minmax(68px, auto));
+  grid-template-columns: minmax(86px, 1fr) minmax(156px, 1.8fr) repeat(3, minmax(62px, auto));
   align-items: center;
   gap: 8px;
   padding: 5px 0;
@@ -153,6 +175,11 @@
   color: #334155;
   font-size: 13px;
   line-height: 18px;
+}
+
+.warehouse-order-partition-metric--source strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .warehouse-order-total-cell {
