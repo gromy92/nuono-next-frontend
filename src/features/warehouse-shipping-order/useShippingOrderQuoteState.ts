@@ -26,7 +26,8 @@ import {
   findQuoteForwarderOption,
   firstAvailableSegmentQuoteSelection,
   formatQuoteInputValue,
-  sortShippingOrderSegments
+  sortShippingOrderSegments,
+  warehouseQuoteConfirmationState
 } from './warehouseShippingQuoteDomain';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
 
@@ -80,11 +81,26 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
   const pendingQuoteCount = selectedChannel?.pendingLineCount == null
     ? Math.max(0, linesWithSelectedQuote.length - confirmedQuoteCount)
     : Number(selectedChannel.pendingLineCount || 0);
+  const pendingConfirmationCount = useMemo(
+    () => linesWithSelectedQuote
+      .filter((line) => warehouseQuoteConfirmationState(line) === 'SUGGESTED_PRICE').length,
+    [linesWithSelectedQuote]
+  );
+  const missingPriceCount = useMemo(
+    () => linesWithSelectedQuote
+      .filter((line) => warehouseQuoteConfirmationState(line) === 'MISSING_PRICE').length,
+    [linesWithSelectedQuote]
+  );
   const visibleLines = useMemo(() => linesWithSelectedQuote
     .filter((line) => showYiteFields && detailLineFilter === 'MISSING_MATERIAL'
       ? isMissingYiteQuoteMaterial(line)
       : true)
-    .filter((line) => detailLineFilter === 'PENDING_QUOTE' ? !isLineQuoteConfirmed(line) : true),
+    .filter((line) => detailLineFilter === 'PENDING_CONFIRMATION'
+      ? warehouseQuoteConfirmationState(line) === 'SUGGESTED_PRICE'
+      : true)
+    .filter((line) => detailLineFilter === 'MISSING_PRICE'
+      ? warehouseQuoteConfirmationState(line) === 'MISSING_PRICE'
+      : true),
   [detailLineFilter, linesWithSelectedQuote, showYiteFields]);
   const selectedLines = useMemo(() => {
     const ids = new Set(selectedQuoteLineIds);
@@ -206,7 +222,8 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     setActiveSegmentQuoteOptions, optionsLoading, selectedOption, setSelectedOption,
     selectedSegmentIds, detailLines, detailSegments, sortedSegments, activeSegment, activeSegmentIds,
     activeLines, selectedForwarder, selectedChannel, linesWithSelectedQuote, showYiteFields,
-    missingMaterialCount, confirmedQuoteCount, pendingQuoteCount, visibleLines, selectedLines,
+    missingMaterialCount, confirmedQuoteCount, pendingQuoteCount,
+    pendingConfirmationCount, missingPriceCount, visibleLines, selectedLines,
     forwarderSelectOptions: buildQuoteForwarderSelectOptions(activeSegmentQuoteOptions),
     channelSelectOptions: buildQuoteChannelSelectOptions(selectedForwarder),
     activeMaintenanceKey: `${selectedOption.forwarderCode || ''}:${selectedOption.routeCode || ''}`,

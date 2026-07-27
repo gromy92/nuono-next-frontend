@@ -102,7 +102,7 @@ export function shippingOrderStatusMeta(order: ShippingOrder) {
   if (order.shippingSubmitStatus === 'SUBMITTED') return { label: '已提交发货', color: 'green' };
   if (order.quoteStatus === 'CONFIRMED') return { label: '报价已确认', color: 'blue' };
   if (order.quoteStatus === 'EXPORTED') return { label: '已导出', color: 'cyan' };
-  return { label: '待报价', color: 'gold' };
+  return { label: '报价待确认', color: 'gold' };
 }
 
 export function isLineQuoteConfirmed(line: ShippingOrderLine) {
@@ -124,6 +124,7 @@ export function applySelectedChannelQuoteToLine(
     unitPrice: quote.unitPrice ?? null,
     currency: quote.currency,
     billingUnit: quote.billingUnit,
+    priceSource: quote.priceSource,
     yiteMaterial: quote.yiteMaterial ?? line.yiteMaterial
   } : line;
 }

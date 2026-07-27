@@ -111,8 +111,12 @@ export function WarehouseShippingOrderDetailToolbar({
                 value: 'MISSING_MATERIAL'
               }] : []),
               {
-                label: <DetailLineFilterLabel label="缺报价" count={quote.pendingQuoteCount} />,
-                value: 'PENDING_QUOTE'
+                label: <DetailLineFilterLabel label="待确认" count={quote.pendingConfirmationCount} />,
+                value: 'PENDING_CONFIRMATION'
+              },
+              {
+                label: <DetailLineFilterLabel label="无价格" count={quote.missingPriceCount} />,
+                value: 'MISSING_PRICE'
               }
             ]}
             onChange={(value) => quote.setDetailLineFilter(value as DetailLineFilter)}
@@ -123,8 +127,10 @@ export function WarehouseShippingOrderDetailToolbar({
                 {quote.selectedForwarder?.forwarderName || quote.selectedForwarder?.forwarderCode || '-'}
               </Text>
               <Text type="secondary">{formatQuantity(Number(quote.activeSegment.totalQuantity || 0))} 件</Text>
-              <Tag color={quote.pendingQuoteCount > 0 ? 'red' : 'green'}>
-                {quote.pendingQuoteCount > 0 ? '待报价' : '已报价'}
+              <Tag color={quote.missingPriceCount > 0 ? 'red' : quote.pendingConfirmationCount > 0 ? 'gold' : 'green'}>
+                {quote.missingPriceCount > 0
+                  ? `无价格 ${quote.missingPriceCount}`
+                  : quote.pendingConfirmationCount > 0 ? `待确认 ${quote.pendingConfirmationCount}` : '已确认'}
               </Tag>
               <Tag color={quote.activeSegment.shippingSubmitStatus === 'SUBMITTED' ? 'blue' : 'default'}>
                 {shippingSubmitLabel(quote.activeSegment.shippingSubmitStatus)}

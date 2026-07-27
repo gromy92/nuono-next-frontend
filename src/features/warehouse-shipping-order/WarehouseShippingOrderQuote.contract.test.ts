@@ -2,12 +2,57 @@ import { strict as assert } from 'node:assert';
 import { contractSources as sources } from './WarehouseShippingOrderContractSources';
 import {
   defaultQuoteBillingUnit,
-  quoteUnitDisplayText
+  formatPublishedQuotePrice,
+  formatPublishedQuoteSurcharge,
+  publishedQuoteConstraintLabels,
+  quotePriceSourceLabel,
+  quoteUnitDisplayText,
+  warehouseQuoteConfirmationState
 } from './warehouseShippingQuoteDomain';
 
 assert.equal(defaultQuoteBillingUnit('AIR'), 'KG');
 assert.equal(defaultQuoteBillingUnit('SEA'), 'CBM');
 assert.equal(quoteUnitDisplayText('SEA'), 'CNY / CBM');
+assert.equal(quotePriceSourceLabel('SHIPPING_ORDER_SNAPSHOT'), '本单已确认');
+assert.equal(quotePriceSourceLabel('PRODUCT_CURRENT'), '商品当前价 · 待确认');
+assert.equal(quotePriceSourceLabel('LEGACY_CHANNEL_QUOTE'), '历史渠道价 · 待确认');
+assert.equal(warehouseQuoteConfirmationState({ quoteStatus: 'CONFIRMED', unitPrice: 65 }), 'CONFIRMED');
+assert.equal(warehouseQuoteConfirmationState({ quoteStatus: 'PENDING_QUOTE', unitPrice: 65 }), 'SUGGESTED_PRICE');
+assert.equal(warehouseQuoteConfirmationState({ quoteStatus: 'PENDING_QUOTE', unitPrice: null }), 'MISSING_PRICE');
+assert.equal(
+  formatPublishedQuotePrice({
+    cargoCategoryName: '沙特空运（普货）',
+    priceStatus: 'NORMAL',
+    currency: 'RMB',
+    unitPrice: 67,
+    billingUnit: 'KG'
+  }),
+  'RMB 67/KG'
+);
+assert.equal(
+  formatPublishedQuotePrice({ currency: 'RMB', unitPrice: 67, billingUnit: 'KG' }),
+  'RMB 67/KG'
+);
+assert.equal(
+  formatPublishedQuotePrice({ priceStatus: 'INQUIRY', unitPrice: null, billingUnit: 'KG' }),
+  '需询价'
+);
+assert.equal(
+  formatPublishedQuoteSurcharge({
+    feeName: '沙特利雅得FBN/FBA送仓费',
+    currency: 'RMB',
+    amount: 2,
+    billingUnit: 'KG'
+  }),
+  '+ RMB 2/KG'
+);
+assert.deepEqual(
+  publishedQuoteConstraintLabels([
+    { volumeDivisor: 6000, minBillableUnit: 10, minBillableUnitType: 'KG' },
+    { volumeDivisor: 6000, minBillableUnit: 10, minBillableUnitType: 'KG' }
+  ]),
+  ['体积重 ÷ 6,000', '最低计费 10 KG']
+);
 
 assert.match(
   sources.quoteActions,
@@ -37,16 +82,31 @@ assert.match(
   sources.quoteState,
   /linesWithSelectedQuote[\s\S]*applySelectedChannelQuoteToLine\(line, selectedChannel\)/
 );
+assert.match(sources.orderDomain, /priceSource: quote\.priceSource/);
 assert.match(sources.quoteState, /selectedChannel\?\.pendingLineCount[\s\S]*Number\(selectedChannel\.pendingLineCount/);
+assert.match(sources.quoteState, /pendingConfirmationCount[\s\S]*warehouseQuoteConfirmationState/);
+assert.match(sources.quoteState, /missingPriceCount[\s\S]*warehouseQuoteConfirmationState/);
 assert.match(sources.quoteState, /activeMaintenanceKey: `\$\{selectedOption\.forwarderCode/);
 assert.match(sources.sharedViews, /QuoteChipGroup label="货代"[\s\S]*forwarders\.map/);
-assert.match(sources.sharedViews, /QuoteChipGroup label="渠道"[\s\S]*selectedForwarder\?\.channels/);
-assert.doesNotMatch(sources.sharedViews, /<Select/);
+assert.doesNotMatch(sources.sharedViews, /QuoteChipGroup label="渠道"/);
+assert.match(sources.sharedViews, /selectedForwarder\?\.channels \|\| \[\]\)\.length > 1[\s\S]*<Select/);
+assert.match(sources.sharedViews, /WarehouseShippingOrderPublishedPriceCard channel=\{selectedChannel\}/);
+assert.match(sources.publishedPriceCard, /线上报价[\s\S]*暂无线上报价/);
+assert.match(sources.publishedPriceCard, /publishedPrices[\s\S]*surcharges[\s\S]*quoteVersionCode/);
 
 assert.match(sources.quoteTransfer, /useState\(false\)[\s\S]*exportMissingOnly/);
 assert.match(sources.quoteTransfer, /exportShippingOrderLogisticsQuoteReport[\s\S]*missingOnly: exportMissingOnly/);
 assert.match(sources.quoteTransfer, /selectedChannel\?\.totalLineCount[\s\S]*selectedChannel\?\.pendingLineCount[\s\S]*selectedChannel\?\.confirmedLineCount/);
 assert.match(sources.purchaseOrderApi, /missingOnly\?: boolean[\s\S]*params\.set\('missingOnly', 'true'\)/);
 assert.doesNotMatch(sources.detailToolbar, /导出缺报价|生成账单/);
+assert.match(sources.detailToolbar, /label="待确认"[\s\S]*label="无价格"/);
 assert.doesNotMatch(sources.lineTable, /title: '币种'|title: '计费单位'/);
-assert.match(sources.detailCss, /warehouse-shipping-order-chip--channel \{[\s\S]*max-width: 420px/);
+assert.match(
+  sources.lineTable,
+  /warehouse-shipping-order-price-entry[\s\S]*warehouse-shipping-order-quote-field[\s\S]*warehouse-shipping-order-price-unit[\s\S]*quoteUnitDisplayText/
+);
+assert.match(
+  sources.lineTable,
+  /quotePriceSourceLabel\(line\.priceSource\)[\s\S]*warehouse-shipping-order-price-source/
+);
+assert.match(sources.detailCss, /warehouse-shipping-order-published-price-card \{[\s\S]*background: #f7fbff/);

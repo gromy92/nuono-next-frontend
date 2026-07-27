@@ -16,9 +16,11 @@ type InTransitBoxDetailViewProps = {
   loading: boolean
   productMatchCandidates: InTransitProductMatchCandidate[]
   rematchingProducts: boolean
+  excludingProductCandidateId: number | null
   skuFreight: ReturnType<typeof useInTransitSkuFreight>
   onTabChange: (tab: BoxDetailTabKey) => void
   onRematchProducts: () => void
+  onExcludeFromAsn: (candidateId: number) => void
 }
 
 export function InTransitBoxDetailView({
@@ -29,9 +31,11 @@ export function InTransitBoxDetailView({
   loading,
   productMatchCandidates,
   rematchingProducts,
+  excludingProductCandidateId,
   skuFreight,
   onTabChange,
-  onRematchProducts
+  onRematchProducts,
+  onExcludeFromAsn
 }: InTransitBoxDetailViewProps) {
   const { boxDetailColumns, productColumns } = useInTransitBoxDetailColumns((row) => void skuFreight.openSkuFreightHistory(row))
   return (
@@ -49,7 +53,9 @@ export function InTransitBoxDetailView({
         items={productMatchCandidates}
         loading={loading}
         rematching={rematchingProducts}
+        excludingCandidateId={excludingProductCandidateId}
         onRematch={onRematchProducts}
+        onExcludeFromAsn={onExcludeFromAsn}
       />
       <div className="in-transit-detail">
         <Tabs

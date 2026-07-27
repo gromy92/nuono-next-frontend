@@ -3,6 +3,15 @@ import { Button, Empty, Space, Table, Typography, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
 import { loadOutboundOrders, loadPackingLists, loadShippingBatches } from './api'
+import {
+  matchesLogisticsPartition,
+  summarizeLogisticsPartitionValues
+} from './logisticsPartitionDomain'
+import type {
+  LogisticsSiteFilter,
+  LogisticsTransportFilter
+} from './logisticsPartitionDomain'
+import { LogisticsPartitionFilters, LogisticsPartitionTags } from './LogisticsPartitionViews'
 import type { PackingBatchDetails } from './packingExportDomain'
 import { mergeBatchOutboundOrder } from './shippingExecutionDomain'
 import type { OutboundOrder, PackingList, ShippingBatch } from './types'
@@ -30,7 +39,12 @@ export function WarehousePackingListPanel() {
   const [detailLoadingBatchId, setDetailLoadingBatchId] = useState<string>()
   const [loadError, setLoadError] = useState<string>()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [siteFilter, setSiteFilter] = useState<LogisticsSiteFilter>('all')
+  const [transportFilter, setTransportFilter] = useState<LogisticsTransportFilter>('all')
   const packingExport = usePackingListExport(loadBatchDetails)
+  const filteredBatches = useMemo(() => shippingBatches.filter((batch) => (
+    matchesLogisticsPartition(batchPartition(batch), siteFilter, transportFilter)
+  )), [shippingBatches, siteFilter, transportFilter])
 
   const selectedBatch = useMemo(
     () => shippingBatches.find((batch) => batch.id === selectedBatchId),
@@ -121,6 +135,11 @@ export function WarehousePackingListPanel() {
       )
     },
     {
+      title: '站点 / 运输方式',
+      width: 190,
+      render: (_value, batch) => <LogisticsPartitionTags summary={batchPartition(batch)} />
+    },
+    {
       title: '状态',
       width: 110,
       render: (_value, batch) => renderShippingBatchStatus(batch.status)
@@ -197,14 +216,18 @@ export function WarehousePackingListPanel() {
       <div className="warehouse-dispatch-toolbar">
         <div className="warehouse-dispatch-toolbar-left">
           <Text strong>发货单</Text>
-          <Text type="secondary">共 {shippingBatches.length} 张</Text>
+          <Text type="secondary">显示 {filteredBatches.length} / 共 {shippingBatches.length} 张</Text>
         </div>
-        <Button icon={<ReloadOutlined />} loading={loading} onClick={() => void refreshPackingLists()}>
-          刷新
-        </Button>
+        <Space size={8}>
+          <LogisticsPartitionFilters siteFilter={siteFilter} transportFilter={transportFilter}
+            onSiteFilterChange={setSiteFilter} onTransportFilterChange={setTransportFilter} />
+          <Button icon={<ReloadOutlined />} loading={loading} onClick={() => void refreshPackingLists()}>
+            刷新
+          </Button>
+        </Space>
       </div>
-      <Table rowKey="id" size="small" columns={columns} dataSource={shippingBatches}
-        loading={loading} pagination={PAGINATION} scroll={{ x: 1240 }}
+      <Table rowKey="id" size="small" columns={columns} dataSource={filteredBatches}
+        loading={loading} pagination={PAGINATION} scroll={{ x: 1430 }}
         rowClassName="warehouse-dispatch-clickable-row"
         onRow={(batch) => ({ onClick: () => void openPackingDetails(batch) })}
         locale={{ emptyText: <Empty description={loadError || '暂无发货单'} /> }} />
@@ -218,6 +241,10 @@ export function WarehousePackingListPanel() {
         onConfirm={() => void packingExport.confirm()} onClose={packingExport.close} />
     </div>
   )
+}
+
+function batchPartition(batch: ShippingBatch) {
+  return summarizeLogisticsPartitionValues(batch.siteCodes, batch.transportModes)
 }
 
 function actualMetric(value: number | undefined, digits: number, unit: string) {

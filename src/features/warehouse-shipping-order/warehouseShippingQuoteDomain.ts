@@ -2,6 +2,8 @@ import type {
   PurchaseOrderLogisticsQuoteChannelOption,
   PurchaseOrderLogisticsQuoteForwarderOption,
   PurchaseOrderLogisticsQuoteOptions,
+  PurchaseOrderLogisticsQuotePublishedPrice,
+  PurchaseOrderLogisticsQuoteSurcharge,
   ShippingOrderSegment
 } from '../purchase-order/types';
 import type { QuoteExportSelection } from './warehouseShippingOrderModels';
@@ -52,6 +54,27 @@ export function defaultQuoteBillingUnit(transportMode?: string) {
 
 export function quoteUnitDisplayText(transportMode?: string) {
   return `CNY / ${defaultQuoteBillingUnit(transportMode)}`;
+}
+
+export function quotePriceSourceLabel(source?: string) {
+  switch (source) {
+    case 'SHIPPING_ORDER_SNAPSHOT': return '本单已确认';
+    case 'PRODUCT_CURRENT': return '商品当前价 · 待确认';
+    case 'LEGACY_CHANNEL_QUOTE': return '历史渠道价 · 待确认';
+    default: return '';
+  }
+}
+
+export type WarehouseQuoteConfirmationState = 'CONFIRMED' | 'SUGGESTED_PRICE' | 'MISSING_PRICE';
+
+export function warehouseQuoteConfirmationState(line: {
+  quoteStatus?: string;
+  unitPrice?: string | number | null;
+}): WarehouseQuoteConfirmationState {
+  if (line.quoteStatus === 'CONFIRMED') return 'CONFIRMED';
+  return line.unitPrice === null || line.unitPrice === undefined || line.unitPrice === ''
+    ? 'MISSING_PRICE'
+    : 'SUGGESTED_PRICE';
 }
 
 export function transportModeLabel(value?: string) {
@@ -173,4 +196,50 @@ export function buildQuoteChannelSelectOptions(forwarder?: PurchaseOrderLogistic
     value: channel.routeCode,
     label: quoteChannelLabel(forwarder, channel)
   }));
+}
+
+export function formatPublishedQuotePrice(price: PurchaseOrderLogisticsQuotePublishedPrice) {
+  const status = (price.priceStatus || '').toUpperCase();
+  if ((status && status !== 'NORMAL') || price.unitPrice === null || price.unitPrice === undefined) {
+    return '需询价';
+  }
+  return formatPublishedAmount(price.currency, price.unitPrice, price.billingUnit);
+}
+
+export function formatPublishedQuoteSurcharge(fee: PurchaseOrderLogisticsQuoteSurcharge) {
+  if (fee.amount !== null && fee.amount !== undefined) {
+    return `+ ${formatPublishedAmount(fee.currency, fee.amount, fee.billingUnit)}`;
+  }
+  if (fee.rate !== null && fee.rate !== undefined) {
+    return `费率 ${formatPublishedNumber(fee.rate)}`;
+  }
+  return '按条件计费';
+}
+
+export function publishedQuoteConstraintLabels(prices: PurchaseOrderLogisticsQuotePublishedPrice[]) {
+  const labels = prices.flatMap((price) => [
+    positiveNumber(price.volumeDivisor) ? `体积重 ÷ ${formatPublishedNumber(price.volumeDivisor!)}` : '',
+    positiveNumber(price.minBillableUnit)
+      ? `最低计费 ${formatPublishedNumber(price.minBillableUnit!)} ${price.minBillableUnitType || price.billingUnit || ''}`.trim()
+      : '',
+    positiveNumber(price.minCharge)
+      ? `最低收费 ${formatPublishedAmount(price.currency, price.minCharge!, undefined)}`
+      : ''
+  ]).filter(Boolean);
+  return Array.from(new Set(labels));
+}
+
+function formatPublishedAmount(currency: string | undefined, value: string | number, billingUnit?: string) {
+  const amount = [currency || '', formatPublishedNumber(value)].filter(Boolean).join(' ');
+  return billingUnit ? `${amount}/${billingUnit}` : amount;
+}
+
+function formatPublishedNumber(value: string | number) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return String(value);
+  return number.toLocaleString('zh-CN', { maximumFractionDigits: 4 });
+}
+
+function positiveNumber(value?: string | number | null) {
+  return value !== null && value !== undefined && Number(value) > 0;
 }

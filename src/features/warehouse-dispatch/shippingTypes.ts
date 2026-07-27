@@ -97,6 +97,8 @@ export type ShippingBatch = {
   sourceCount: number
   skuCount: number
   totalQuantity: number
+  siteCodes?: WarehouseSiteCode[]
+  transportModes?: WarehouseTransportMode[]
   optionCount: number
   packingListCount: number
   boxCount: number

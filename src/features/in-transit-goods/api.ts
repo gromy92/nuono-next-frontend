@@ -125,6 +125,17 @@ export async function rematchInTransitProducts(
   return readJson<InTransitProductRematchResult>(response)
 }
 
+export async function excludeInTransitProductFromAsn(
+  batchId: number,
+  candidateId: number
+): Promise<InTransitProductRematchResult> {
+  const response = await apiFetch(
+    `/api/in-transit-goods/batches/${batchId}/product-match-candidates/${candidateId}/exclude-from-asn`,
+    { method: 'POST' }
+  )
+  return readJson<InTransitProductRematchResult>(response)
+}
+
 export async function saveInTransitGoodsLine(
   batchId: number,
   request: SaveInTransitGoodsLineRequest

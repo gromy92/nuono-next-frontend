@@ -20,9 +20,16 @@ assert.match(
   api,
   /product-match-candidates\/rematch[\s\S]*method: 'POST'/
 )
+assert.match(
+  api,
+  /product-match-candidates\/\$\{candidateId\}\/exclude-from-asn[\s\S]*method: 'POST'/
+)
 assert.match(panel, /待匹配/)
 assert.match(panel, /重新匹配/)
 assert.match(panel, /创建 ASN 前需先完成商品匹配/)
+assert.match(panel, /不参与 ASN/)
+assert.match(panel, /确认这是包材等非库存物料/)
+assert.match(detail, /onExcludeFromAsn/)
 assert.match(detail, /<InTransitProductMatchPanel/)
 assert.match(officialPreparation, /product-matches\/prepare/)
 assert.match(officialPreparation, /loadOfficialWarehouseShippingBatches/)

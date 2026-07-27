@@ -36,6 +36,18 @@ assert.match(
 
 assert.match(
   pageSource,
+  /cartonLengthCm: source\.cartonLengthCm \?\? undefined[\s\S]*cartonQuantity: source\.cartonQuantity \?\? undefined/,
+  'nullable carton source values must stay empty when they are loaded into the completion form'
+)
+
+assert.match(
+  pageSource,
+  /appMessage\.error\(validationMessage \|\| normalizeError\(error, '保存商品资料失败'\)\)/,
+  'product-data save failures must use the page message context so the operator sees the error'
+)
+
+assert.match(
+  pageSource,
   /const \[productDataCompletionTarget, setProductDataCompletionTarget\]/,
   'purchase order page must keep one modal target for missing product data'
 )

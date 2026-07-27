@@ -6,6 +6,9 @@ import { dirname, join } from 'node:path'
 const currentDir = dirname(fileURLToPath(import.meta.url))
 const pageSource = readFileSync(join(currentDir, 'OfficialWarehousePage.tsx'), 'utf8')
 const apiSource = readFileSync(join(currentDir, 'api.ts'), 'utf8')
+const preparationSource = readFileSync(join(currentDir, 'productMatchPreparation.ts'), 'utf8')
+const searchHookSource = readFileSync(join(currentDir, 'useShippingBatchSearch.ts'), 'utf8')
+const loadAlertSource = readFileSync(join(currentDir, 'ShippingBatchLoadAlert.tsx'), 'utf8')
 
 const optionTextSource = pageSource.slice(
   pageSource.indexOf('function shippingBatchOptionText'),
@@ -76,15 +79,35 @@ assert.doesNotMatch(
   /仅显示真实在途或已到海外仓且仍有待约仓数量的物流批次号/,
   'create ASN modal should not claim appointed batches are hidden'
 )
-assert.doesNotMatch(
+assert.match(
   pageSource,
-  /搜索物流批次号|shippingBatchKeyword/,
-  'create ASN modal should not render a second logistics batch search above the multi-select'
+  /shippingBatchKeyword/,
+  'create ASN modal should retain the logistics batch remote-search keyword'
 )
 assert.match(
   pageSource,
   /showSearch[\s\S]*?placeholder="选择物流批次号"/,
   'the logistics batch multi-select should retain its built-in search'
+)
+assert.match(
+  pageSource,
+  /filterOption=\{false\}[\s\S]*?onSearch=\{handleShippingBatchSearch\}/,
+  'typing a logistics batch number should use remote search instead of filtering stale options'
+)
+assert.match(
+  searchHookSource,
+  /loadOfficialWarehouseShippingBatches\(\{[\s\S]*?keyword: keywordValue/,
+  'remote logistics batch search should send the keyword to the shipping-batches API'
+)
+assert.match(
+  preparationSource,
+  /catch[\s\S]*?使用已落地数据继续查询[\s\S]*?loadOfficialWarehouseShippingBatches/,
+  'a transient preparation failure should not prevent querying already landed shipping batches'
+)
+assert.match(
+  `${pageSource}\n${loadAlertSource}`,
+  /shippingBatchLoadError[\s\S]*?ShippingBatchLoadAlert[\s\S]*?重试/,
+  'batch loading failures should remain visible and offer an explicit retry'
 )
 assert.match(
   pageSource,

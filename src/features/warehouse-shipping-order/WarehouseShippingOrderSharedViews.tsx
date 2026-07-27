@@ -1,4 +1,4 @@
-import { Spin, Tag, Typography } from 'antd';
+import { Select, Spin, Tag, Typography } from 'antd';
 import type {
   PurchaseOrderLogisticsQuoteChannelOption,
   PurchaseOrderLogisticsQuoteForwarderOption,
@@ -12,6 +12,7 @@ import {
   formatQuantity
 } from './warehouseShippingOrderDomain';
 import type { QuoteExportSelection } from './warehouseShippingOrderModels';
+import { WarehouseShippingOrderPublishedPriceCard } from './WarehouseShippingOrderPublishedPriceCard';
 import {
   findQuoteChannelOption,
   findQuoteForwarderOption,
@@ -107,19 +108,25 @@ export function ActiveSegmentQuoteControls({
           );
         })}
       </QuoteChipGroup>
-      <QuoteChipGroup label="渠道" loading={loading} emptyText="暂无渠道" channel>
-        {(selectedForwarder?.channels || []).map((channel) => (
-          <QuoteChip
-            key={channel.routeCode}
-            active={selectedChannel?.routeCode === channel.routeCode}
-            title={quoteChannelDisplayName(selectedForwarder, channel)}
-            channel
-            onClick={() => onSelect(selectedForwarder!, channel)}
-          >
-            {quoteChannelDisplayName(selectedForwarder, channel)}
-          </QuoteChip>
-        ))}
-      </QuoteChipGroup>
+      {(selectedForwarder?.channels || []).length > 1 ? (
+        <div className="warehouse-shipping-order-compact-channel-selector">
+          <span className="warehouse-shipping-order-chip-label">渠道</span>
+          <Select
+            size="small"
+            value={selectedChannel?.routeCode}
+            placeholder="选择渠道"
+            options={(selectedForwarder?.channels || []).map((channel) => ({
+              value: channel.routeCode,
+              label: quoteChannelDisplayName(selectedForwarder, channel)
+            }))}
+            onChange={(routeCode) => {
+              const channel = findQuoteChannelOption(selectedForwarder, routeCode);
+              if (selectedForwarder && channel) onSelect(selectedForwarder, channel);
+            }}
+          />
+        </div>
+      ) : null}
+      <WarehouseShippingOrderPublishedPriceCard channel={selectedChannel} />
     </>
   );
 }
@@ -153,17 +160,15 @@ function QuoteChipGroup({
 
 function QuoteChip({
   active,
-  channel,
   children,
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean; channel?: boolean }) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean }) {
   return (
     <button
       type="button"
       {...props}
       className={[
         'warehouse-shipping-order-chip',
-        channel ? 'warehouse-shipping-order-chip--channel' : '',
         active ? 'warehouse-shipping-order-chip--active' : ''
       ].filter(Boolean).join(' ')}
     >

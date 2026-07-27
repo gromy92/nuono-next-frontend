@@ -11,7 +11,11 @@ export type QuoteImportResultState = {
   result: PurchaseOrderLogisticsQuoteImportResult;
 };
 
-export type DetailLineFilter = 'ALL' | 'MISSING_MATERIAL' | 'PENDING_QUOTE';
+export type DetailLineFilter =
+  | 'ALL'
+  | 'MISSING_MATERIAL'
+  | 'PENDING_CONFIRMATION'
+  | 'MISSING_PRICE';
 
 export type LineQuoteDraft = {
   unitPrice?: string;

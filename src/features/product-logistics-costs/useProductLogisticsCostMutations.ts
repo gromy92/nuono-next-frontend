@@ -11,7 +11,7 @@ import type {
   ProductCostTableRow,
   RateCardFormValues
 } from './productLogisticsCostModels';
-import { ALL_CATEGORY_FILTER, FORWARDER_OPTIONS } from './productLogisticsCostModels';
+import { ALL_CATEGORY_FILTER } from './productLogisticsCostModels';
 import {
   categoryNameForValue,
   normalizeCategoryFilterValue,
@@ -33,7 +33,7 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
   const routePayload = {
     siteCode: data.appliedFilters.siteCode,
     forwarderCode: data.appliedFilters.forwarderCode,
-    forwarderName: optionLabel(FORWARDER_OPTIONS, data.appliedFilters.forwarderCode),
+    forwarderName: optionLabel(data.forwarderOptions, data.appliedFilters.forwarderCode),
     transportMode: data.appliedFilters.transportMode
   };
   const categoryName = (code?: string) => categoryNameForValue(data.activeCategoryOptions, code) || code;

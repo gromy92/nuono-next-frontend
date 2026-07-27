@@ -35,7 +35,8 @@ assert.equal(packingGroupLabel({
 
 const merged = mergeBatchOutboundOrder({
   id: '700044', batchNo: '0718-海运', status: 'PACKED', sourceCount: 3,
-  skuCount: 49, totalQuantity: 2581, optionCount: 1, packingListCount: 2,
+  skuCount: 49, totalQuantity: 2581, siteCodes: ['SA'], transportModes: ['SEA'],
+  optionCount: 1, packingListCount: 2,
   boxCount: 16, packedQuantity: 2581, createdAt: '', sources: [], options: []
 }, [
   { id: '1', batchId: '700044', outboundNo: 'WO-1', status: 'PACKED', originName: 'canman',

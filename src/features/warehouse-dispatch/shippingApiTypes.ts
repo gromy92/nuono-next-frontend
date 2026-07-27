@@ -7,6 +7,8 @@ export type ApiShippingBatch = {
   sourceCount?: number
   skuCount?: number
   totalQuantity?: number
+  siteCodes?: string[]
+  transportModes?: string[]
   optionCount?: number
   packingListCount?: number
   boxCount?: number

@@ -29,7 +29,6 @@ const scheduledAsn: OfficialWarehouseAsn = {
     storeCode: 'STR108065-NAE',
     siteCode: 'AE',
     status: 'SCHEDULED',
-    warehouseFrom: 'CHICSONGCANGAE',
     warehouseToPartnerCode: 'AUH01S',
     warehouseToCode: 'W00816026AE',
     apStartDate: '2026-06-17',

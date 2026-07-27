@@ -1,0 +1,165 @@
+.product-image-profile-workflow-modal {
+  display: grid;
+  gap: 14px;
+}
+
+.product-image-profile-workflow-modal label {
+  display: grid;
+  gap: 6px;
+}
+
+.product-image-profile-workflow-modal label > span {
+  color: #475569;
+  font-size: 13px;
+}
+
+.product-image-profile-workflow-modal .ant-select {
+  width: 100%;
+}
+
+.product-image-profile-asset-import-modal .ant-modal-content {
+  padding: 18px;
+}
+
+.product-image-profile-asset-import-modal .ant-modal-header {
+  padding-right: 34px;
+}
+
+.product-image-profile-asset-import-modal .ant-modal-body {
+  padding-top: 10px;
+}
+
+.product-image-profile-import-panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.product-image-profile-import-actions,
+.product-image-profile-source-status {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.product-image-profile-source-input {
+  width: 100%;
+}
+
+.product-image-profile-source-input .ant-btn {
+  min-width: 44px;
+  white-space: nowrap;
+}
+
+.product-image-profile-source-input .ant-btn-primary {
+  min-width: 72px;
+}
+
+.product-image-profile-source-status {
+  justify-content: space-between;
+}
+
+.product-image-profile-candidate-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  max-height: 420px;
+  overflow: auto;
+}
+
+.product-image-profile-candidate-card {
+  appearance: none;
+  aspect-ratio: 1 / 1;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  user-select: none;
+}
+
+.product-image-profile-candidate-card.is-selected {
+  border-color: #1677ff;
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.16);
+}
+
+.product-image-profile-candidate-card:focus-visible {
+  outline: 2px solid #1677ff;
+  outline-offset: 2px;
+}
+
+.product-image-profile-candidate-card img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.product-image-profile-candidate-card > .anticon {
+  align-self: center;
+  color: #94a3b8;
+  font-size: 24px;
+}
+
+.product-image-profile-asset-detail {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 220px;
+}
+
+.product-image-profile-asset-detail-preview {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: grid;
+  justify-items: center;
+  min-height: 420px;
+  overflow: hidden;
+}
+
+.product-image-profile-asset-detail-preview img {
+  display: block;
+  height: auto;
+  max-height: 70vh;
+  max-width: 100%;
+  width: auto;
+}
+
+.product-image-profile-asset-detail-info {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: grid;
+  margin: 0;
+  overflow: hidden;
+}
+
+.product-image-profile-asset-detail-info div {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+
+.product-image-profile-asset-detail-info div + div {
+  border-top: 1px solid #eef2f7;
+}
+
+.product-image-profile-asset-detail-info dt {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.product-image-profile-asset-detail-info dd {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  overflow-wrap: anywhere;
+}

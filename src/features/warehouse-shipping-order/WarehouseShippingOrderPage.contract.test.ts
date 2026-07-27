@@ -23,10 +23,11 @@ assert.equal(emptyPriceModel.priceText, '-');
 
 assert.match(
   sources.lineTable,
-  /title: '来源\/数量'[\s\S]*warehouse-shipping-order-line-meta-cell[\s\S]*line\.barcode[\s\S]*line\.purchaseOrderTitle \|\| line\.purchaseOrderNo[\s\S]*line\.quantity/,
-  '商品明细应将条码、来源采购单和数量收在同一列'
+  /title: '来源\/数量'[\s\S]*warehouse-shipping-order-line-meta-cell[\s\S]*PSKU[\s\S]*line\.partnerSku \|\| line\.pskuCode[\s\S]*Barcode[\s\S]*line\.barcode[\s\S]*line\.purchaseOrderTitle \|\| line\.purchaseOrderNo[\s\S]*line\.quantity/,
+  '商品明细应将 PSKU、条码、来源采购单和数量收在同一列'
 );
 assert.doesNotMatch(sources.lineTable, /title: 'Barcode'|title: '来源采购单'|title: '数量'/);
+assert.doesNotMatch(sources.lineTable, /shippingOrderLineTitleEn|warehouse-shipping-order-product-title-en/);
 assert.match(sources.lineTable, /scroll=\{\{ x: quote\.showYiteFields \? 1120 : 860 \}\}/);
 assert.match(sources.lineTable, /key=\{quote\.activeMaintenanceKey\}[\s\S]*rowKey="id"/);
 
@@ -48,4 +49,7 @@ assert.match(sources.detailCss, /warehouse-shipping-order-detail-status-row \{[\
 assert.match(sources.detailCss, /warehouse-shipping-order-chip \{[\s\S]*border-radius: 6px[\s\S]*font-size: 12px/);
 assert.match(sources.detailCss, /warehouse-shipping-order-chip--active \{[\s\S]*background: #1677ff/);
 assert.match(sources.detailCss, /warehouse-shipping-order-line-meta-cell \{[\s\S]*display: grid[\s\S]*gap: 2px/);
+assert.match(sources.detailCss, /warehouse-shipping-order-line-meta-label \{[\s\S]*flex: 0 0 50px/);
+assert.match(sources.quoteCss, /warehouse-shipping-order-quote-field \{[\s\S]*flex: 0 0 72px[\s\S]*width: 72px/);
+assert.match(sources.quoteCss, /warehouse-shipping-order-price-entry \{[\s\S]*display: flex[\s\S]*align-items: center/);
 assert.match(sources.baseCss, /warehouse-shipping-order-page--embedded[\s\S]*warehouse-shipping-order-toolbar-actions[\s\S]*flex-wrap: nowrap/);

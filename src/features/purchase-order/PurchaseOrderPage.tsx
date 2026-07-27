@@ -35,6 +35,7 @@ import {
 } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
+import { withPublicBasePath } from '../../runtimePaths'
 import { firstFormValidationMessage, normalizeError } from '../../shared/api'
 import type { AuthSession } from '../auth/session'
 import { ReplenishmentPlanTab } from '../replenishment-plan/ReplenishmentPlanTab'
@@ -65,6 +66,7 @@ import {
   updatePurchaseOrderItem,
   updatePurchaseOrderItemSourcingRequirement
 } from './api'
+import { normalizeProductDataNumber } from './productDataCompletionNumbers'
 import type {
   PurchaseCollectionStatus,
   PurchaseOrder,
@@ -84,7 +86,6 @@ import type {
 import './PurchaseOrderPage.css'
 
 const { Text } = Typography
-
 type PurchaseOrderPageProps = {
   session?: AuthSession | null
 }
@@ -718,7 +719,7 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       const shippingOrder = await createShippingOrder({ purchaseOrderIds })
       closeShippingMergeMode()
       message.success(`已创建仓库单 ${shippingOrder.shippingOrderNo}。`)
-      window.location.href = '/warehouse/dispatch?devSession=1&grantPurchase=1&grantWarehouse=1'
+      window.location.href = withPublicBasePath('/warehouse/dispatch?devSession=1&grantPurchase=1&grantWarehouse=1')
     } catch (error) {
       const errorMessage = normalizeError(error, '创建仓库单失败')
       setShippingMergeErrorMessage(errorMessage)
@@ -978,25 +979,25 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
     const action = `product-data-completion:${target.item.id}`
     const context = buildProductDataCompletionContext(target.order, target.item, session)
     if (!context.storeCode || !context.partnerSku) {
-      message.warning('缺少店铺或 PSKU，不能保存商品资料。')
+      appMessage.warning('缺少店铺或 PSKU，不能保存商品资料。')
       return
     }
     setActionKey(action)
     try {
       const values = await productDataCompletionForm.validateFields()
       if (productDataHasAnyProductSpecValue(values) && !productDataHasCompleteProductSpecValues(values)) {
-        message.warning('产品规格需要完整填写商品长宽高重。')
+        appMessage.warning('产品规格需要完整填写商品长宽高重。')
         return
       }
       if (productDataHasAnyConfirmedLogisticsValue(values) && !productDataHasCompleteLogisticsValues(values)) {
-        message.warning('商品属性需要七项全部选择明确值。')
+        appMessage.warning('商品属性需要七项全部选择明确值。')
         return
       }
       const saveSpec = shouldSaveProductDataSpec(values)
       const saveLogistics = shouldSaveProductDataLogistics(target.item, values)
       const saveSourcing = shouldSaveProductDataSourcing(target.item, values)
       if (!saveSourcing && !saveSpec && !saveLogistics) {
-        message.warning('没有需要保存的商品资料。')
+        appMessage.warning('没有需要保存的商品资料。')
         return
       }
       if (saveSourcing) {
@@ -1044,10 +1045,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
       await loadOrders()
       setSelectedOrderId(target.order.id)
       closeProductDataCompletionModal()
-      message.success('商品资料已保存。')
+      appMessage.success('商品资料已保存。')
     } catch (error) {
       const validationMessage = firstFormValidationMessage(error)
-      message.error(validationMessage || normalizeError(error, '保存商品资料失败'))
+      appMessage.error(validationMessage || normalizeError(error, '保存商品资料失败'))
     } finally {
       setActionKey((current) => (current === action ? undefined : current))
     }
@@ -3089,15 +3090,15 @@ function productDataSpecValuesFromSource(
     return {}
   }
   return {
-    productLengthCm: source.productLengthCm,
-    productWidthCm: source.productWidthCm,
-    productHeightCm: source.productHeightCm,
-    productWeightG: source.productWeightG,
-    cartonLengthCm: source.cartonLengthCm,
-    cartonWidthCm: source.cartonWidthCm,
-    cartonHeightCm: source.cartonHeightCm,
-    cartonWeightKg: source.cartonWeightKg,
-    cartonQuantity: source.cartonQuantity
+    productLengthCm: source.productLengthCm ?? undefined,
+    productWidthCm: source.productWidthCm ?? undefined,
+    productHeightCm: source.productHeightCm ?? undefined,
+    productWeightG: source.productWeightG ?? undefined,
+    cartonLengthCm: source.cartonLengthCm ?? undefined,
+    cartonWidthCm: source.cartonWidthCm ?? undefined,
+    cartonHeightCm: source.cartonHeightCm ?? undefined,
+    cartonWeightKg: source.cartonWeightKg ?? undefined,
+    cartonQuantity: source.cartonQuantity ?? undefined
   }
 }
 
@@ -3202,11 +3203,6 @@ function productDataHasCompleteLogisticsValues(values: ProductDataCompletionForm
 
 function isConfirmedProductDataAttribute(value: unknown) {
   return Boolean(value && String(value) !== 'unknown')
-}
-
-function normalizeProductDataNumber(value: unknown) {
-  const numberValue = Number(value)
-  return Number.isFinite(numberValue) ? numberValue : undefined
 }
 
 function normalizeOptionalText(value: unknown) {
@@ -3381,5 +3377,5 @@ function openTop5(item: PurchaseOrderItem, order: PurchaseOrder) {
   if (order.storeCode) {
     params.set('storeCode', order.storeCode)
   }
-  window.location.href = `/purchase/1688-collection?${params.toString()}#top5`
+  window.location.href = withPublicBasePath(`/purchase/1688-collection?${params.toString()}#top5`)
 }

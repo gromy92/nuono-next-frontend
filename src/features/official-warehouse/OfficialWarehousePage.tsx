@@ -66,8 +66,9 @@ import {
   type OfficialWarehouseShippingBatchCandidate,
   type UpsertOfficialWarehouseAppointmentPayload
 } from './api'
-import { loadPreparedOfficialWarehouseShippingBatches } from './productMatchPreparation'
 import { parseCandidateSearch } from './createAsnFlow'
+import { ShippingBatchLoadAlert } from './ShippingBatchLoadAlert'
+import { useShippingBatchSearch } from './useShippingBatchSearch'
 import {
   DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES,
   appointmentStatusDisplayMeta,
@@ -521,7 +522,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const [candidateKeyword, setCandidateKeyword] = useState('')
   const [candidateLoading, setCandidateLoading] = useState(false)
   const [candidates, setCandidates] = useState<OfficialWarehouseProductCandidate[]>([])
-  const [shippingBatchLoading, setShippingBatchLoading] = useState(false)
   const [shippingBatches, setShippingBatches] = useState<OfficialWarehouseShippingBatchCandidate[]>([])
   const [selectedShippingBatchIds, setSelectedShippingBatchIds] = useState<string[]>([])
   const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<Key[]>([])
@@ -563,6 +563,20 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const availabilityInFlightKeyRef = useRef<string | null>(null)
   const appointmentStatusFilterInitializedRef = useRef(false)
   const inboundDetailRequestRef = useRef(0)
+  const {
+    shippingBatchKeyword,
+    shippingBatchLoading,
+    shippingBatchLoadError,
+    loadShippingBatches,
+    handleShippingBatchSearch,
+    resetShippingBatchSearch
+  } = useShippingBatchSearch({
+    storeCode,
+    siteCode,
+    selectedShippingBatchIds,
+    setShippingBatches,
+    setSelectedShippingBatchIds
+  })
 
   const visibleAsns = useMemo(() => {
     const filteredAsns = asns.filter((row) => matchesOfficialWarehouseAsnFilters(
@@ -703,12 +717,15 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       setCreateSubmitFeedback(undefined)
       setCreateAsnConfirmation(undefined)
       setCandidateKeyword('')
+      resetShippingBatchSearch()
       setSelectedShippingBatchIds([])
       setSelectedCandidateKeys([])
       setSelectedCandidateByKey({})
       setQuantityByCandidateKey({})
       void loadCandidates([], '')
-      void loadShippingBatches()
+      void loadShippingBatches('', true)
+    } else {
+      resetShippingBatchSearch()
     }
   }, [createOpen])
 
@@ -881,26 +898,6 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       message.error(officialWarehouseError(error, '读取可创建 ASN 商品失败'))
     } finally {
       setCandidateLoading(false)
-    }
-  }
-
-  async function loadShippingBatches() {
-    if (!storeCode || !siteCode) {
-      message.warning('请选择店铺和站点')
-      return
-    }
-    setShippingBatchLoading(true)
-    try {
-      const rows = await loadPreparedOfficialWarehouseShippingBatches({
-        storeCode,
-        siteCode
-      })
-      setShippingBatches(rows)
-      setSelectedShippingBatchIds((current) => current.filter((id) => rows.some((row) => row.id === id)))
-    } catch (error) {
-      message.error(officialWarehouseError(error, '读取物流批次失败'))
-    } finally {
-      setShippingBatchLoading(false)
     }
   }
 
@@ -1528,10 +1525,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
       title: '仓库',
       width: 160,
       render: (_, row) => (
-        <div className="official-warehouse-stack">
-          <Text>{row.warehouseToPartnerCode || '-'}</Text>
-          <Text type="secondary">{row.warehouseFrom || '-'}</Text>
-        </div>
+        <Text>{row.warehouseToPartnerCode || '-'}</Text>
       )
     },
     {
@@ -1956,17 +1950,18 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
                 <Text strong>物流批次号</Text>
               </div>
             </div>
+            <ShippingBatchLoadAlert error={shippingBatchLoadError} onRetry={() => void loadShippingBatches(shippingBatchKeyword, true)} />
             <Select
               mode="multiple"
               allowClear
               showSearch
               placeholder="选择物流批次号"
               loading={shippingBatchLoading}
+              disabled={shippingBatchLoading && !shippingBatches.length}
               value={selectedShippingBatchIds}
               options={shippingBatchOptions}
-              filterOption={(input, option) =>
-                String(option?.label || '').toLowerCase().includes(input.toLowerCase())
-              }
+              filterOption={false}
+              onSearch={handleShippingBatchSearch}
               onChange={(value) => {
                 const nextBatchIds = Array.isArray(value) ? value : []
                 setSelectedShippingBatchIds(nextBatchIds)
