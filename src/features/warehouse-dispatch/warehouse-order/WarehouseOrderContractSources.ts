@@ -20,6 +20,7 @@ export const contractSources = {
   quoteDomain: source('./warehouseShippingQuoteDomain.ts'),
   baseCss: source('./WarehouseShippingOrderBase.css'),
   detailCss: source('./WarehouseShippingOrderDetail.css'),
+  lineTableCss: source('./WarehouseShippingOrderLineTable.css'),
   quoteCss: source('./WarehouseShippingOrderQuote.css'),
   purchaseOrderApi: source('../../purchase-order/api.ts')
 };
