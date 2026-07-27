@@ -1,0 +1,41 @@
+name: Temporary Frontend Release Artifact
+
+on:
+  push:
+    branches:
+      - codex/release-artifact-frontend-20260727-1855
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout frozen master
+        uses: actions/checkout@v4
+        with:
+          ref: d58c91243a0e359a1f277295ad66510dcb71ac9c
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        env:
+          NUONO_NEXT_PUBLIC_BASE_PATH: /ai/
+        run: pnpm build
+
+      - name: Upload release static
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuono-next-frontend-d58c912
+          path: dist/
+          if-no-files-found: error
+          retention-days: 1
