@@ -18,7 +18,7 @@ import type {
 } from '../logisticsPartitionDomain';
 import {
   LogisticsPartitionFilters,
-  LogisticsPartitionTags
+  LogisticsPartitionCombinationTags
 } from '../LogisticsPartitionViews';
 import { WarehouseOrderIssueTags } from './WarehouseShippingOrderSharedViews';
 import {
@@ -73,9 +73,11 @@ export function WarehouseShippingOrderList({
                 title: '站点 / 运输方式',
                 width: 190,
                 render: (_, order) => (
-                  <LogisticsPartitionTags
-                    summary={orderPartition(order)}
-                    showHistoricalMixed={false}
+                  <LogisticsPartitionCombinationTags
+                    points={(order.segments || []).map((segment) => ({
+                      siteCode: segment.siteCode,
+                      transportMode: segment.transportMode
+                    }))}
                   />
                 )
               },

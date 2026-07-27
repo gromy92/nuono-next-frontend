@@ -14,16 +14,24 @@ const partitionViews = source('./LogisticsPartitionViews.tsx')
 
 for (const [name, content] of Object.entries({ warehouseOrders, dispatchPlans, shippingExecution })) {
   assert.match(content, /LogisticsPartitionFilters/, `${name} 必须提供站点和运输方式筛选`)
-  assert.match(content, /LogisticsPartitionTags/, `${name} 必须展示物流分区`)
   assert.match(content, /matchesLogisticsPartition/, `${name} 必须实际应用物流分区筛选`)
 }
 
+assert.match(warehouseOrders, /LogisticsPartitionCombinationTags/)
+assert.doesNotMatch(warehouseOrders, /LogisticsPartitionTags/)
+assert.match(dispatchPlans, /LogisticsPartitionTags/)
+assert.match(shippingExecution, /LogisticsPartitionTags/)
 assert.match(shippingExecution, /batch\.siteCodes/)
 assert.match(shippingExecution, /batch\.transportModes/)
 assert.match(
   warehouseOrders,
-  /<LogisticsPartitionTags[\s\S]*showHistoricalMixed=\{false\}/,
-  '父仓库单合法聚合多个子分区时不得标记为历史混合'
+  /<LogisticsPartitionCombinationTags[\s\S]*points=\{\(order\.segments \|\| \[\]\)\.map/,
+  '父仓库单必须按子计划的真实站点+运输方式组合逐项展示'
+)
+assert.match(
+  partitionViews,
+  /LogisticsPartitionCombinationTags[\s\S]*summary\.combinations\.map[\s\S]*siteCode[\s\S]*空运[\s\S]*海运/,
+  '组合标签必须按真实组合显示站点与运输方式'
 )
 assert.match(
   partitionViews,

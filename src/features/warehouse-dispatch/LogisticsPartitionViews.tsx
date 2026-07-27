@@ -1,9 +1,11 @@
 import { Select, Space, Tag, Typography } from 'antd'
 import type {
+  LogisticsPartitionPoint,
   LogisticsPartitionSummary,
   LogisticsSiteFilter,
   LogisticsTransportFilter
 } from './logisticsPartitionDomain'
+import { summarizeLogisticsPartitionCombinations } from './logisticsPartitionDomain'
 
 const { Text } = Typography
 
@@ -57,6 +59,27 @@ export function LogisticsPartitionTags({
         </Tag>
       ))}
       {showHistoricalMixed && summary.historicalMixed ? <Tag color="orange">历史混合</Tag> : null}
+    </Space>
+  )
+}
+
+export function LogisticsPartitionCombinationTags({
+  points
+}: {
+  points: LogisticsPartitionPoint[]
+}) {
+  const summary = summarizeLogisticsPartitionCombinations(points)
+  if (summary.incomplete) return <Text type="warning">分区缺失</Text>
+  return (
+    <Space size={[4, 4]} wrap>
+      {summary.combinations.map(({ siteCode, transportMode }) => (
+        <Tag
+          color={transportMode === 'AIR' ? 'cyan' : 'geekblue'}
+          key={`${siteCode}:${transportMode}`}
+        >
+          {siteCode}-{transportMode === 'AIR' ? '空运' : '海运'}
+        </Tag>
+      ))}
     </Space>
   )
 }

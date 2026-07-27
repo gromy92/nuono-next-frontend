@@ -15,6 +15,14 @@ export type LogisticsPartitionSummary = {
   incomplete: boolean
 }
 
+export type LogisticsPartitionCombinationSummary = {
+  combinations: Array<{
+    siteCode: LogisticsSiteCode
+    transportMode: LogisticsTransportMode
+  }>
+  incomplete: boolean
+}
+
 const SITE_ORDER: LogisticsSiteCode[] = ['SA', 'AE']
 const TRANSPORT_ORDER: LogisticsTransportMode[] = ['AIR', 'SEA']
 
@@ -48,6 +56,29 @@ export function summarizeLogisticsPartitionValues(
     historicalMixed: normalizedSites.length > 1 || normalizedTransports.length > 1,
     incomplete: normalizedSites.length === 0 || normalizedTransports.length === 0
   }
+}
+
+export function summarizeLogisticsPartitionCombinations(
+  points: LogisticsPartitionPoint[]
+): LogisticsPartitionCombinationSummary {
+  const combinations: LogisticsPartitionCombinationSummary['combinations'] = []
+  const seen = new Set<string>()
+  let incomplete = points.length === 0
+
+  for (const point of points) {
+    const siteCode = normalizeSiteCode(point.siteCode)
+    const transportMode = normalizeTransportMode(point.transportMode)
+    if (!siteCode || !transportMode) {
+      incomplete = true
+      continue
+    }
+    const key = `${siteCode}:${transportMode}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    combinations.push({ siteCode, transportMode })
+  }
+
+  return { combinations, incomplete }
 }
 
 export function matchesLogisticsPartition(
