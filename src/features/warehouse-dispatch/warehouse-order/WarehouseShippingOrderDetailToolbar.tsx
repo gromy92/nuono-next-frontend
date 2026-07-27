@@ -4,7 +4,7 @@ import {
   SendOutlined,
   UploadOutlined
 } from '@ant-design/icons';
-import { Button, Segmented, Tag, Typography, Upload } from 'antd';
+import { Button, Segmented, Typography, Upload } from 'antd';
 import {
   ActiveSegmentQuoteControls,
   DetailLineFilterLabel,
@@ -12,7 +12,6 @@ import {
 } from './WarehouseShippingOrderSharedViews';
 import { formatQuantity } from './warehouseShippingOrderDomain';
 import type { DetailLineFilter } from './warehouseShippingOrderModels';
-import { shippingSubmitLabel } from './warehouseShippingQuoteDomain';
 import type { ShippingOrderQuoteState } from './useShippingOrderQuoteState';
 import type { ShippingOrderQuoteTransfer } from './useShippingOrderQuoteTransfer';
 import type { ShippingOrderSubmit } from './useShippingOrderSubmit';
@@ -127,14 +126,6 @@ export function WarehouseShippingOrderDetailToolbar({
                 {quote.selectedForwarder?.forwarderName || quote.selectedForwarder?.forwarderCode || '-'}
               </Text>
               <Text type="secondary">{formatQuantity(Number(quote.activeSegment.totalQuantity || 0))} 件</Text>
-              <Tag color={quote.missingPriceCount > 0 ? 'red' : quote.pendingConfirmationCount > 0 ? 'gold' : 'green'}>
-                {quote.missingPriceCount > 0
-                  ? `无价格 ${quote.missingPriceCount}`
-                  : quote.pendingConfirmationCount > 0 ? `待确认 ${quote.pendingConfirmationCount}` : '已确认'}
-              </Tag>
-              <Tag color={quote.activeSegment.shippingSubmitStatus === 'SUBMITTED' ? 'blue' : 'default'}>
-                {shippingSubmitLabel(quote.activeSegment.shippingSubmitStatus)}
-              </Tag>
             </div>
           ) : null}
         </div>
