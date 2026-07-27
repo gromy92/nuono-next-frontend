@@ -1,7 +1,6 @@
 import { Tabs } from 'antd'
 import { useMemo, useState } from 'react'
 import { PRODUCT_SPECS_PATH, withCurrentWorkspaceDevQuery } from '../app-shell/WorkspaceRouting'
-import { WarehouseShippingOrderPanel } from '../warehouse-shipping-order/WarehouseShippingOrderPage'
 import { buildProductBaselineStoreCodes } from './readyDomain'
 import { useProductBaselines } from './useProductBaselines'
 import { useReadyWorkspace } from './useReadyWorkspace'
@@ -15,6 +14,7 @@ import { WarehousePackingListPanel } from './WarehousePackingListPanel'
 import { WarehouseReadyPanel } from './WarehouseReadyPanel'
 import { WarehouseReceiptPanel } from './WarehouseReceiptPanel'
 import { WarehouseShippingCostDrawer } from './WarehouseShippingCostDrawer'
+import { WarehouseOrderPanel } from './warehouse-order/WarehouseOrderPanel'
 import type {
   ReadyShipmentRow,
   WarehouseDispatchTabKey,
@@ -53,7 +53,7 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     {
       key: 'warehouse-order',
       label: buildTabLabel('仓库单', 0, 'operations'),
-      children: <WarehouseShippingOrderPanel embedded session={session} />
+      children: <WarehouseOrderPanel />
     },
     {
       key: 'receipt-list',

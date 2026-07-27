@@ -7,7 +7,7 @@ const source = (relativePath: string) => readFileSync(
   'utf8'
 )
 
-const warehouseOrders = source('../warehouse-shipping-order/WarehouseShippingOrderList.tsx')
+const warehouseOrders = source('./warehouse-order/WarehouseShippingOrderList.tsx')
 const dispatchPlans = source('./WarehouseDispatchPlanPanel.tsx')
 const shippingExecution = source('./WarehousePackingListPanel.tsx')
 const partitionViews = source('./LogisticsPartitionViews.tsx')

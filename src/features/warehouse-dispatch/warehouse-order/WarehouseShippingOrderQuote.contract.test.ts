@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { contractSources as sources } from './WarehouseShippingOrderContractSources';
+import { contractSources as sources } from './WarehouseOrderContractSources';
 import {
   defaultQuoteBillingUnit,
   formatPublishedQuotePrice,

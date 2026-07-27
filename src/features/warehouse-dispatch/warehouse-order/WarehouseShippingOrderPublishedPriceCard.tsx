@@ -3,7 +3,7 @@ import type {
   PurchaseOrderLogisticsQuoteChannelOption,
   PurchaseOrderLogisticsQuotePublishedPrice,
   PurchaseOrderLogisticsQuoteSurcharge
-} from '../purchase-order/types';
+} from '../../purchase-order/types';
 import {
   formatPublishedQuotePrice,
   formatPublishedQuoteSurcharge,

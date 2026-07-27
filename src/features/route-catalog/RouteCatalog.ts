@@ -93,7 +93,6 @@ export const BOSS_OPERATOR_MENU_KEYS = freezeCatalogMetadata<AppMenuKey[]>([
   'purchase-product-logistics-costs',
   'purchase-profit',
   'purchase-logistics-quote',
-  'warehouse-shipping-order',
   'warehouse-logistics-bill',
   'warehouse-dispatch',
   'official-warehouse',

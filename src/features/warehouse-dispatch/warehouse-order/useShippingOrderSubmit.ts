@@ -1,6 +1,6 @@
 import { App } from 'antd';
-import { submitShippingOrder } from '../purchase-order/api';
-import type { ShippingOrder } from '../purchase-order/types';
+import { submitShippingOrder } from '../../purchase-order/api';
+import type { ShippingOrder } from '../../purchase-order/types';
 import {
   countShippingOrderPendingQuoteLines,
   isMissingYiteMaterial,

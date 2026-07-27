@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
-import type { ShippingOrder } from '../purchase-order/types';
-import { contractSources as sources } from './WarehouseShippingOrderContractSources';
+import type { ShippingOrder } from '../../purchase-order/types';
+import { contractSources as sources } from './WarehouseOrderContractSources';
 import { countShippingOrderPendingQuoteLines } from './warehouseShippingOrderDomain';
 
 const order = {

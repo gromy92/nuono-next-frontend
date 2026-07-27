@@ -3,11 +3,11 @@ import {
   loadShippingOrderLogisticsQuoteOptionsForScope,
   updateShippingOrderLineQuote,
   updateShippingOrderLineQuotes
-} from '../purchase-order/api';
+} from '../../purchase-order/api';
 import type {
   PurchaseOrderLogisticsQuoteForwarderOption,
   ShippingOrderLine
-} from '../purchase-order/types';
+} from '../../purchase-order/types';
 import { isYiteQuoteForwarder } from './warehouseShippingOrderDomain';
 import {
   defaultQuoteBillingUnit,

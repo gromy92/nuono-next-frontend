@@ -7,19 +7,19 @@ import {
 } from '@ant-design/icons';
 import { Button, Empty, Input, Spin, Table, Tabs, Tag, Typography } from 'antd';
 import { useMemo, useState } from 'react';
-import type { ShippingOrder } from '../purchase-order/types';
+import type { ShippingOrder } from '../../purchase-order/types';
 import {
   matchesLogisticsPartition,
   summarizeLogisticsPartitions
-} from '../warehouse-dispatch/logisticsPartitionDomain';
+} from '../logisticsPartitionDomain';
 import type {
   LogisticsSiteFilter,
   LogisticsTransportFilter
-} from '../warehouse-dispatch/logisticsPartitionDomain';
+} from '../logisticsPartitionDomain';
 import {
   LogisticsPartitionFilters,
   LogisticsPartitionTags
-} from '../warehouse-dispatch/LogisticsPartitionViews';
+} from '../LogisticsPartitionViews';
 import { WarehouseOrderIssueTags } from './WarehouseShippingOrderSharedViews';
 import {
   formatDate,

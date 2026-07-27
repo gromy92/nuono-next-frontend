@@ -6,7 +6,7 @@ import type {
   PurchaseOrderLogisticsQuoteOptions,
   ShippingOrder,
   ShippingOrderSegment
-} from '../purchase-order/types';
+} from '../../purchase-order/types';
 import {
   countShippingOrderPendingQuoteLines,
   formatQuantity

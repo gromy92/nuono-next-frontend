@@ -5,7 +5,7 @@ import type {
   PurchaseOrderLogisticsQuotePublishedPrice,
   PurchaseOrderLogisticsQuoteSurcharge,
   ShippingOrderSegment
-} from '../purchase-order/types';
+} from '../../purchase-order/types';
 import type { QuoteExportSelection } from './warehouseShippingOrderModels';
 
 export function sameCode(left?: string, right?: string) {

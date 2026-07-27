@@ -7,8 +7,8 @@ import {
   loadShippingOrder,
   loadShippingOrders,
   updateShippingOrder
-} from '../purchase-order/api';
-import type { PurchaseOrder, ShippingOrder } from '../purchase-order/types';
+} from '../../purchase-order/api';
+import type { PurchaseOrder, ShippingOrder } from '../../purchase-order/types';
 import {
   filterPurchaseOrders,
   filterShippingOrders

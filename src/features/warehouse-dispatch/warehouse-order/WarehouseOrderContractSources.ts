@@ -5,7 +5,7 @@ function source(file: string) {
 }
 
 export const contractSources = {
-  page: source('./WarehouseShippingOrderPage.tsx'),
+  page: source('./WarehouseOrderPanel.tsx'),
   list: source('./WarehouseShippingOrderList.tsx'),
   lineTable: source('./WarehouseShippingOrderLineTable.tsx'),
   detailToolbar: source('./WarehouseShippingOrderDetailToolbar.tsx'),
@@ -21,5 +21,5 @@ export const contractSources = {
   baseCss: source('./WarehouseShippingOrderBase.css'),
   detailCss: source('./WarehouseShippingOrderDetail.css'),
   quoteCss: source('./WarehouseShippingOrderQuote.css'),
-  purchaseOrderApi: source('../purchase-order/api.ts')
+  purchaseOrderApi: source('../../purchase-order/api.ts')
 };

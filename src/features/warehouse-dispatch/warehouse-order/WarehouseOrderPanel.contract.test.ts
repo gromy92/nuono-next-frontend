@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
-import { buildYiteMaterialCellModel } from './WarehouseShippingOrderPage.models';
-import { contractSources as sources } from './WarehouseShippingOrderContractSources';
+import { buildYiteMaterialCellModel } from './WarehouseOrderPanel.models';
+import { contractSources as sources } from './WarehouseOrderContractSources';
 
 const editableModel = buildYiteMaterialCellModel({
   yiteMaterial: '塑料',

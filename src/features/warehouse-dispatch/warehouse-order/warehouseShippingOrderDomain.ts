@@ -6,7 +6,7 @@ import type {
   ShippingOrder,
   ShippingOrderLine,
   ShippingOrderSegment
-} from '../purchase-order/types';
+} from '../../purchase-order/types';
 import { sameCode } from './warehouseShippingQuoteDomain';
 import type { WarehouseOrderJourney } from './warehouseOrderJourney';
 
