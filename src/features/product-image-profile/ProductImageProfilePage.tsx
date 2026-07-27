@@ -86,8 +86,8 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
   const {
     approveSuite, changingSuiteAssetId, createSuiteDraft, creatingSuiteDraft, deletingSuiteId,
     moveSuiteAsset, openRejectSuite, previewSuiteAsset, removeSuite, removeSuiteAsset, retrySuite,
-    reviewAssetIds, reviewComment, reviewingSuite, reviewWholeSuite, setPreviewSuiteAsset,
-    setReviewAssetIds, setReviewComment, setReviewingSuite, setReviewWholeSuite,
+    reviewAssetFeedback, reviewOverallComment, reviewingSuite, setPreviewSuiteAsset,
+    setReviewAssetFeedback, setReviewOverallComment, setReviewingSuite,
     submitRejectSuite, submittingSuiteAction
   } = useProductImageSuiteWorkflow({
     feedback: message, modal, onMissingProfile: setActiveProfileTab, patchSelectedProfile,
@@ -319,16 +319,14 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
       />
       <ProductImageSuiteDialogs
         previewAsset={previewSuiteAsset}
-        reviewAssetIds={reviewAssetIds}
-        reviewComment={reviewComment}
+        reviewAssetFeedback={reviewAssetFeedback}
+        reviewOverallComment={reviewOverallComment}
         reviewingSuite={reviewingSuite}
-        reviewWholeSuite={reviewWholeSuite}
         submitting={submittingSuiteAction}
         onClosePreview={() => setPreviewSuiteAsset(null)}
         onCloseReview={() => setReviewingSuite(null)}
-        onSetReviewAssetIds={setReviewAssetIds}
-        onSetReviewComment={setReviewComment}
-        onSetReviewWholeSuite={setReviewWholeSuite}
+        onSetReviewAssetFeedback={setReviewAssetFeedback}
+        onSetReviewOverallComment={setReviewOverallComment}
         onSubmitReview={() => void submitRejectSuite()}
       />
     </div>

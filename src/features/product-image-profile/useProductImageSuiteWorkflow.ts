@@ -10,6 +10,11 @@ import {
 } from './api'
 import { missingGenerationProfileFields } from './productImageAssetModel'
 import { mapBackendProfile } from './productImageProfileMapper'
+import {
+  buildReviewAssetPrompts,
+  buildReviewAssetTemplate,
+  buildReviewRejectPayload
+} from './productImageReviewFeedback'
 import type {
   ProductImageProfile,
   ProductImageProfileTabKey,
@@ -62,9 +67,8 @@ export function useProductImageSuiteWorkflow({
 }: SuiteWorkflowOptions) {
   const [creatingSuiteDraft, setCreatingSuiteDraft] = useState(false)
   const [reviewingSuite, setReviewingSuite] = useState<ProductImageSuite | null>(null)
-  const [reviewComment, setReviewComment] = useState('')
-  const [reviewWholeSuite, setReviewWholeSuite] = useState(false)
-  const [reviewAssetIds, setReviewAssetIds] = useState<Set<number>>(() => new Set())
+  const [reviewAssetFeedback, setReviewAssetFeedback] = useState('')
+  const [reviewOverallComment, setReviewOverallComment] = useState('')
   const [submittingSuiteAction, setSubmittingSuiteAction] = useState(false)
   const [changingSuiteAssetId, setChangingSuiteAssetId] = useState<string>()
   const [deletingSuiteId, setDeletingSuiteId] = useState<string>()
@@ -153,19 +157,23 @@ export function useProductImageSuiteWorkflow({
 
   const openRejectSuite = (suite: ProductImageSuite) => {
     setReviewingSuite(suite)
-    setReviewComment('')
-    setReviewWholeSuite(false)
-    setReviewAssetIds(new Set())
+    setReviewAssetFeedback(buildReviewAssetTemplate(buildReviewAssetPrompts(suite.assets)))
+    setReviewOverallComment('')
   }
 
   const submitRejectSuite = async () => {
     if (!selectedProfile?.backendId || !reviewingSuite?.backendId) return
-    if (!reviewComment.trim()) {
-      feedback.warning('请填写整套审核意见')
+    const payload = buildReviewRejectPayload(
+      reviewAssetFeedback,
+      reviewOverallComment,
+      buildReviewAssetPrompts(reviewingSuite.assets)
+    )
+    if (!payload) {
+      feedback.warning('请填写逐图修改意见或整体意见')
       return
     }
-    if (!reviewWholeSuite && !reviewAssetIds.size) {
-      feedback.warning('请选择需要重做的图片，或选择整套重做')
+    if (payload.comment.length > 2000) {
+      feedback.warning('逐图修改意见和整体意见合计不能超过 2000 字')
       return
     }
     setSubmittingSuiteAction(true)
@@ -175,11 +183,7 @@ export function useProductImageSuiteWorkflow({
         reviewingSuite.backendId,
         requestOwnerId,
         storeCode,
-        {
-          assetIds: Array.from(reviewAssetIds),
-          comment: reviewComment.trim(),
-          wholeSuite: reviewWholeSuite
-        }
+        payload
       )
       replaceSelectedProfile(selectedProfile.id, mapBackendProfile(saved))
       setReviewingSuite(null)
@@ -283,15 +287,13 @@ export function useProductImageSuiteWorkflow({
     removeSuite,
     removeSuiteAsset,
     retrySuite,
-    reviewAssetIds,
-    reviewComment,
+    reviewAssetFeedback,
+    reviewOverallComment,
     reviewingSuite,
-    reviewWholeSuite,
     setPreviewSuiteAsset,
-    setReviewAssetIds,
-    setReviewComment,
+    setReviewAssetFeedback,
+    setReviewOverallComment,
     setReviewingSuite,
-    setReviewWholeSuite,
     submitRejectSuite,
     submittingSuiteAction
   }
