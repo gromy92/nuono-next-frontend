@@ -42,12 +42,15 @@ export function ProductLogisticsCostsToolbar({
           value={data.filters.cargoCategoryCode}
           onChange={data.applyCategoryFilter}
         />
+        <Button
+          disabled={data.loading || !!data.errorMessage}
+          onClick={mutations.openRateCardListModal}
+        >
+          现有报价表
+        </Button>
         <Button onClick={mutations.openRateCardModal}>维护报价</Button>
         <Button type="primary" icon={<SearchOutlined />} onClick={data.applyFilters}>查询</Button>
         <Button icon={<ReloadOutlined />} onClick={() => void data.load(data.appliedFilters)}>刷新</Button>
-        <span className="product-logistics-costs-page__store">
-          {data.currentStore?.projectName || data.currentStore?.projectCode || '当前店铺'} · {data.storeCode || '-'}
-        </span>
       </div>
 
       <div className="product-logistics-costs-page__stats">

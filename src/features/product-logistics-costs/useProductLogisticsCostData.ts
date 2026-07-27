@@ -216,7 +216,7 @@ export function useProductLogisticsCostData(session: AuthSession) {
     currentStore, storeCode, filters, setFilters, appliedFilters, products, currentRows, historyRows,
     loading, errorMessage, pagination, selectedRowKeys, setSelectedRowKeys, imagePreview, setImagePreview,
     failedImageUrls, tableRows, resultStats, activeTransportOptions, activeCategoryOptions,
-    availableRateCards, routeOptions, forwarderOptions, categoryFilterSelectOptions,
+    rateCards, availableRateCards, routeOptions, forwarderOptions, categoryFilterSelectOptions,
     assignableSelectedRows, rateCardMap, routeLabel,
     routeHasNoCost: !loading && products.length > 0 && currentRows.length === 0 && historyRows.length === 0,
     load, applyFilters, applyRouteFilters, applyCategoryFilter, applyDataStatusFilter, handleTableChange,

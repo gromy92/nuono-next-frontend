@@ -37,6 +37,7 @@ export type ProductLogisticsRateCardRow = {
   feeType: string;
   cargoCategoryCode: string;
   cargoCategoryName: string;
+  cargoCategoryDescription?: string | null;
   chargeUnit: string;
   unitCostCny: number;
   currencyCode?: string | null;
