@@ -40,7 +40,13 @@ export function LogisticsPartitionFilters({
   )
 }
 
-export function LogisticsPartitionTags({ summary }: { summary: LogisticsPartitionSummary }) {
+export function LogisticsPartitionTags({
+  summary,
+  showHistoricalMixed = true
+}: {
+  summary: LogisticsPartitionSummary
+  showHistoricalMixed?: boolean
+}) {
   if (summary.incomplete) return <Text type="warning">分区缺失</Text>
   return (
     <Space size={[4, 4]} wrap>
@@ -50,7 +56,7 @@ export function LogisticsPartitionTags({ summary }: { summary: LogisticsPartitio
           {mode === 'AIR' ? '空运' : '海运'}
         </Tag>
       ))}
-      {summary.historicalMixed ? <Tag color="orange">历史混合</Tag> : null}
+      {showHistoricalMixed && summary.historicalMixed ? <Tag color="orange">历史混合</Tag> : null}
     </Space>
   )
 }

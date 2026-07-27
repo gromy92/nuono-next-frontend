@@ -72,7 +72,12 @@ export function WarehouseShippingOrderList({
               {
                 title: '站点 / 运输方式',
                 width: 190,
-                render: (_, order) => <LogisticsPartitionTags summary={orderPartition(order)} />
+                render: (_, order) => (
+                  <LogisticsPartitionTags
+                    summary={orderPartition(order)}
+                    showHistoricalMixed={false}
+                  />
+                )
               },
               {
                 title: '来源采购单',
