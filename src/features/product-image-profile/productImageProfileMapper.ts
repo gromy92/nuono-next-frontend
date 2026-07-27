@@ -9,7 +9,8 @@ import { resolveProductImageShortTitleAr, resolveProductImageShortTitleEn } from
 import { summarizeImageStatus } from './profileSummaryStatus'
 import { profileMissingFields } from './productImageAssetModel'
 import type { ProductImageProfile, ProfileAsset, RepeatableImageSection, SimpleImageSection } from './productImageProfileTypes'
-import { accentAt, imageRoleLabel, optionalNumber, optionalText, suiteAssetRoleLabel } from './productImageProfileConstants'
+import { accentAt, imageRoleLabel, optionalNumber, optionalText } from './productImageProfileConstants'
+import { buildReviewAssetPresentation } from './productImageReviewFeedback'
 
 export function emptySimpleSection(): SimpleImageSection {
   return {
@@ -132,16 +133,16 @@ export function mapBackendProfile(profile: ProductImageProfileDetailView): Produ
       publishedAt: optionalText(suite.publishedAt) || undefined,
       createdAt: optionalText(suite.updatedAt),
       adoptedAt: optionalText(suite.adoptedAt) || undefined,
-      assets: (suite.assets ?? []).map((asset, assetIndex) => ({
+      assets: buildReviewAssetPresentation((suite.assets ?? []).map((asset, assetIndex) => ({
         id: asset.id ? `suite-asset-${asset.id}` : `suite-asset-${suite.id}-${assetIndex}`,
         backendId: optionalNumber(asset.id),
         imageRole: asset.imageRole || 'MAIN',
         roleOrdinal: asset.roleOrdinal ?? 1,
-        title: `${suiteAssetRoleLabel[asset.imageRole || 'MAIN']}${asset.roleOrdinal ?? 1}`,
+        title: asset.imageRole || 'MAIN',
         imageUrl: optionalText(asset.imageUrl) || undefined,
         sortOrder: asset.sortOrder ?? assetIndex + 1,
         accent: accentAt(assetIndex)
-      }))
+      })))
     }))
   }
   const missingProfileFields = profileMissingFields(mappedProfile)

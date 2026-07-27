@@ -1,5 +1,4 @@
-import { Checkbox, Input, Modal, Space, Typography } from 'antd'
-import { suiteAssetRoleLabel } from './productImageProfileConstants'
+import { Input, Modal, Space, Typography } from 'antd'
 import type { ProductImageSuite, ProductImageSuiteAsset } from './productImageProfileTypes'
 import { SuitePreviewModal } from './ProductImageSuitePreview'
 
@@ -8,31 +7,27 @@ const { TextArea } = Input
 
 type ProductImageSuiteDialogsProps = {
   previewAsset: ProductImageSuiteAsset | null
-  reviewAssetIds: Set<number>
-  reviewComment: string
+  reviewAssetFeedback: string
+  reviewOverallComment: string
   reviewingSuite: ProductImageSuite | null
-  reviewWholeSuite: boolean
   submitting: boolean
   onClosePreview: () => void
   onCloseReview: () => void
-  onSetReviewAssetIds: (ids: Set<number>) => void
-  onSetReviewComment: (comment: string) => void
-  onSetReviewWholeSuite: (wholeSuite: boolean) => void
+  onSetReviewAssetFeedback: (comment: string) => void
+  onSetReviewOverallComment: (comment: string) => void
   onSubmitReview: () => void
 }
 
 export function ProductImageSuiteDialogs({
   previewAsset,
-  reviewAssetIds,
-  reviewComment,
+  reviewAssetFeedback,
+  reviewOverallComment,
   reviewingSuite,
-  reviewWholeSuite,
   submitting,
   onClosePreview,
   onCloseReview,
-  onSetReviewAssetIds,
-  onSetReviewComment,
-  onSetReviewWholeSuite,
+  onSetReviewAssetFeedback,
+  onSetReviewOverallComment,
   onSubmitReview
 }: ProductImageSuiteDialogsProps) {
   return (
@@ -47,46 +42,29 @@ export function ProductImageSuiteDialogs({
         onOk={onSubmitReview}
       >
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <div>
+            <Text strong>逐图修改意见</Text>
+            <Text type="secondary">（在对应图片名称后填写；可只填需要修改的图片）</Text>
+          </div>
           <TextArea
             maxLength={2000}
-            placeholder="填写整套图的审核意见（必填）"
+            rows={Math.min(12, Math.max(5, (reviewingSuite?.assets.length ?? 0) + 1))}
+            showCount
+            value={reviewAssetFeedback}
+            onChange={(event) => onSetReviewAssetFeedback(event.target.value)}
+          />
+          <Text strong>整体意见</Text>
+          <TextArea
+            maxLength={2000}
+            placeholder="填写整套图片的统一修改意见"
             rows={4}
             showCount
-            value={reviewComment}
-            onChange={(event) => onSetReviewComment(event.target.value)}
+            value={reviewOverallComment}
+            onChange={(event) => onSetReviewOverallComment(event.target.value)}
           />
-          <Checkbox
-            checked={reviewWholeSuite}
-            onChange={(event) => {
-              onSetReviewWholeSuite(event.target.checked)
-              if (event.target.checked) onSetReviewAssetIds(new Set())
-            }}
-          >
-            整套重做
-          </Checkbox>
-          {!reviewWholeSuite ? (
-            <div>
-              <Text type="secondary">选择需要重做的图片：</Text>
-              <Space direction="vertical" style={{ display: 'flex', marginTop: 8 }}>
-                {(reviewingSuite?.assets ?? []).map((asset) => (
-                  <Checkbox
-                    checked={Boolean(asset.backendId && reviewAssetIds.has(asset.backendId))}
-                    disabled={!asset.backendId}
-                    key={asset.id}
-                    onChange={(event) => {
-                      if (!asset.backendId) return
-                      const next = new Set(reviewAssetIds)
-                      if (event.target.checked) next.add(asset.backendId)
-                      else next.delete(asset.backendId)
-                      onSetReviewAssetIds(next)
-                    }}
-                  >
-                    {suiteAssetRoleLabel[asset.imageRole]}{asset.roleOrdinal}
-                  </Checkbox>
-                ))}
-              </Space>
-            </div>
-          ) : null}
+          <Text type="secondary">
+            逐图修改意见和整体意见至少填写一项。只填写整体意见时，将整套重新做图。
+          </Text>
         </Space>
       </Modal>
       <SuitePreviewModal asset={previewAsset} onClose={onClosePreview} />
