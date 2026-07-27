@@ -1,4 +1,4 @@
-import { apiFetch, parseApiResponse } from '../../shared/api';
+import { apiFetch, parseApiResponse } from '../../../shared/api';
 
 export type WarehouseOrderJourney = {
   warehouseOrderId: string;

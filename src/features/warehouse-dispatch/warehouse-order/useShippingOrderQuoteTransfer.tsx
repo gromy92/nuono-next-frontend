@@ -6,11 +6,11 @@ import {
   loadShippingOrder,
   loadShippingOrderLogisticsQuoteOptions,
   loadShippingOrderLogisticsQuoteOptionsForScope
-} from '../purchase-order/api';
+} from '../../purchase-order/api';
 import type {
   PurchaseOrderLogisticsQuoteOptions,
   ShippingOrder
-} from '../purchase-order/types';
+} from '../../purchase-order/types';
 import { QuoteImportResultContent } from './WarehouseShippingOrderSharedViews';
 import {
   quoteImportResultTitle,

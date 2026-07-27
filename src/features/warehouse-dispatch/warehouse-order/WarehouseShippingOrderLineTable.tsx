@@ -1,7 +1,7 @@
 import { SaveOutlined } from '@ant-design/icons';
 import { Button, Empty, Image, Input, Select, Table, Typography } from 'antd';
-import type { ShippingOrderLine } from '../purchase-order/types';
-import { buildYiteMaterialCellModel } from './WarehouseShippingOrderPage.models';
+import type { ShippingOrderLine } from '../../purchase-order/types';
+import { buildYiteMaterialCellModel } from './WarehouseOrderPanel.models';
 import {
   isLineQuoteConfirmed,
   shippingOrderLineImageUrl,
@@ -68,12 +68,12 @@ export function WarehouseShippingOrderLineTable({
         getCheckboxProps: (line) => ({ disabled: line.shippingSubmitStatus === 'SUBMITTED' })
       }}
       scroll={{ x: quote.showYiteFields ? 1120 : 860 }}
-      pagination={{ pageSize: 8, showSizeChanger: false }}
+      pagination={{ pageSize: 20, showSizeChanger: false }}
       columns={[
         {
           title: '商品',
           dataIndex: 'productTitle',
-          width: 360,
+          width: 400,
           render: (_, line) => {
             const imageUrl = shippingOrderLineImageUrl(line);
             const titleCn = shippingOrderLineTitleCn(line);
@@ -84,13 +84,23 @@ export function WarehouseShippingOrderLineTable({
                     className="warehouse-shipping-order-product-image"
                     src={imageUrl}
                     alt={titleCn}
-                    width={70}
-                    height={70}
+                    width={52}
+                    height={52}
                     preview={{ src: imageUrl }}
                   />
                 ) : <div className="warehouse-shipping-order-product-placeholder" />}
-                <div>
+                <div className="warehouse-shipping-order-product-copy">
                   <Text strong className="warehouse-shipping-order-product-title-cn">{titleCn}</Text>
+                  <Text type="secondary" className="warehouse-shipping-order-product-identity">
+                    <span className="warehouse-shipping-order-product-identity-label">PSKU:</span>
+                    <span className="warehouse-shipping-order-product-identity-value">
+                      {line.partnerSku || line.pskuCode || '-'}
+                    </span>
+                  </Text>
+                  <Text type="secondary" className="warehouse-shipping-order-product-identity">
+                    <span className="warehouse-shipping-order-product-identity-label">Barcode:</span>
+                    <span className="warehouse-shipping-order-product-identity-value">{line.barcode || '-'}</span>
+                  </Text>
                 </div>
               </div>
             );
@@ -102,16 +112,6 @@ export function WarehouseShippingOrderLineTable({
           width: 220,
           render: (_, line) => (
             <div className="warehouse-shipping-order-line-meta-cell">
-              <Text strong className="warehouse-shipping-order-line-meta-psku">
-                <span className="warehouse-shipping-order-line-meta-label">PSKU:</span>
-                <span className="warehouse-shipping-order-line-meta-value">
-                  {line.partnerSku || line.pskuCode || '-'}
-                </span>
-              </Text>
-              <Text type="secondary" className="warehouse-shipping-order-line-meta-barcode">
-                <span className="warehouse-shipping-order-line-meta-label">Barcode:</span>
-                <span className="warehouse-shipping-order-line-meta-value">{line.barcode || '-'}</span>
-              </Text>
               <Text type="secondary" className="warehouse-shipping-order-line-meta-source">
                 {line.purchaseOrderTitle || line.purchaseOrderNo || '-'}
               </Text>
@@ -182,8 +182,8 @@ export function WarehouseShippingOrderLineTable({
             description={quote.detailLineFilter === 'PENDING_CONFIRMATION'
               ? '暂无待确认价格'
               : quote.detailLineFilter === 'MISSING_PRICE'
-                ? '暂无无价格商品'
-              : quote.detailLineFilter === 'MISSING_MATERIAL' ? '暂无材料缺失商品' : '暂无商品'}
+                ? '暂无缺单价商品'
+              : quote.detailLineFilter === 'MISSING_MATERIAL' ? '暂无缺义特材质商品' : '暂无商品'}
           />
         )
       }}

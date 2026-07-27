@@ -2,17 +2,6 @@ import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from '
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
 
 export const FULFILLMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
-  'warehouse-shipping-order': {
-    key: 'warehouse-shipping-order',
-    label: '发货单',
-    path: '/warehouse/shipping-orders',
-    sectionKey: 'warehouse',
-    pathLabel: '仓储 / 发货单',
-    tabLabel: '发货单',
-    contentKind: 'warehouse-shipping-order',
-    closable: true,
-    visibleInSidebar: false
-  },
   'warehouse-logistics-bill': {
     key: 'warehouse-logistics-bill',
     label: '物流账单',
@@ -33,7 +22,8 @@ export const FULFILLMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     tabLabel: '仓库发运',
     contentKind: 'warehouse-dispatch',
     closable: true,
-    sidebarOrder: 1
+    sidebarOrder: 1,
+    routeAliases: ['/warehouse/shipping-orders']
   },
   'official-warehouse': {
     key: 'official-warehouse',
@@ -52,7 +42,6 @@ export const FULFILLMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
 export const FULFILLMENT_GRANT_RULES = freezeCatalogMetadata([
   {
     keys: [
-      'warehouse-shipping-order',
       'warehouse-logistics-bill',
       'warehouse-dispatch',
       'official-warehouse',

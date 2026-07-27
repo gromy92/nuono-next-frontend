@@ -34,7 +34,6 @@ export type WorkspaceContentKind =
   | 'purchase-logistics-quote'
   | 'purchase-product-logistics-costs'
   | 'purchase-in-transit-goods'
-  | 'warehouse-shipping-order'
   | 'warehouse-logistics-bill'
   | 'warehouse-dispatch'
   | 'official-warehouse'

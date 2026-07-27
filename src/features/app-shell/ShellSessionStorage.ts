@@ -28,7 +28,7 @@ import {
   PURCHASE_LOGISTICS_QUOTE_PATH,
   PURCHASE_PRODUCT_LOGISTICS_COSTS_PATH,
   WAREHOUSE_LOGISTICS_BILL_PATH,
-  WAREHOUSE_SHIPPING_ORDER_PATH,
+  WAREHOUSE_SHIPPING_ORDER_LEGACY_PATH,
   WAREHOUSE_DISPATCH_PATH,
   OFFICIAL_WAREHOUSE_PATH,
   SYSTEM_FILE_MANAGEMENT_PATH
@@ -156,7 +156,7 @@ function readDevSessionOverride(): AuthSession | null {
     pathname.startsWith(PURCHASE_PRODUCT_LOGISTICS_COSTS_PATH) ||
     search.get('grantProductLogisticsCosts') === '1'
   const includeWarehouseDevMenu =
-    pathname.startsWith(WAREHOUSE_SHIPPING_ORDER_PATH) ||
+    pathname.startsWith(WAREHOUSE_SHIPPING_ORDER_LEGACY_PATH) ||
     pathname.startsWith(WAREHOUSE_DISPATCH_PATH) ||
     pathname.startsWith(OFFICIAL_WAREHOUSE_PATH) ||
     search.get('grantWarehouse') === '1'
@@ -367,7 +367,7 @@ function readDevSessionOverride(): AuthSession | null {
     grantedMenus.push({ menuId: 9304, menuName: '商品物流价格', urlPath: PURCHASE_PRODUCT_LOGISTICS_COSTS_PATH })
   }
   if (includeWarehouseDevMenu) {
-    grantedMenus.push({ menuId: 9250, menuName: '仓库发货单', urlPath: WAREHOUSE_SHIPPING_ORDER_PATH })
+    grantedMenus.push({ menuId: 9250, menuName: '仓库发货单', urlPath: WAREHOUSE_SHIPPING_ORDER_LEGACY_PATH })
     grantedMenus.push({ menuId: 9251, menuName: '物流账单', urlPath: WAREHOUSE_LOGISTICS_BILL_PATH })
     grantedMenus.push({ menuId: 9252, menuName: '仓库发运', urlPath: WAREHOUSE_DISPATCH_PATH })
     grantedMenus.push({ menuId: 9253, menuName: 'Noon官方仓', urlPath: OFFICIAL_WAREHOUSE_PATH })

@@ -1,19 +1,23 @@
 import { strict as assert } from 'node:assert';
 import { dispatchContractSources as sources } from './warehouseDispatchContractSources';
 
-assert.match(sources.shippingOrderPage, /export function WarehouseShippingOrderPanel\(/);
-assert.match(sources.shippingOrderPage, /export function WarehouseShippingOrderPage\(/);
+assert.match(sources.warehouseOrderPanel, /export function WarehouseOrderPanel\(/);
+assert.doesNotMatch(sources.warehouseOrderPanel, /WarehouseShippingOrderPage|embedded\?:/);
 assert.match(
   sources.menu,
-  /keys:\s*\[[\s\S]*'warehouse-shipping-order'[\s\S]*'warehouse-logistics-bill'[\s\S]*'warehouse-dispatch'[\s\S]*'official-warehouse'[\s\S]*'product-specs'[\s\S]*\/api\/procurement\/purchase-orders\/shipping-orders[\s\S]*\/api\/procurement\/purchase-orders\/logistics-bills/
+  /'warehouse-dispatch':[\s\S]*routeAliases:\s*\[[\s\S]*'\/warehouse\/shipping-orders'[\s\S]*keys:\s*\[[\s\S]*'warehouse-logistics-bill'[\s\S]*'warehouse-dispatch'[\s\S]*'official-warehouse'[\s\S]*'product-specs'[\s\S]*\/api\/procurement\/purchase-orders\/shipping-orders[\s\S]*\/api\/procurement\/purchase-orders\/logistics-bills/
 );
+assert.doesNotMatch(sources.menu, /'warehouse-shipping-order':\s*\{/);
+assert.doesNotMatch(sources.routeTypes, /\|\s*'warehouse-shipping-order'/);
+assert.doesNotMatch(sources.lazyWorkspaces, /WarehouseShippingOrderPage/);
+assert.doesNotMatch(sources.legacyWorkspace, /warehouse-shipping-order|WarehouseShippingOrderPage/);
 
-assert.match(sources.workbench, /WarehouseShippingOrderPanel embedded/);
+assert.match(sources.workbench, /WarehouseOrderPanel/);
 assert.match(sources.models, /WarehouseDispatchTabKey[\s\S]*'warehouse-order'[\s\S]*'receipt-list'/);
 assert.match(sources.workbench, /useState<WarehouseDispatchTabKey>\('warehouse-order'\)/);
 assert.match(
   sources.workbench,
-  /key: 'warehouse-order'[\s\S]*buildTabLabel\('仓库单'[\s\S]*key: 'receipt-list'[\s\S]*buildTabLabel\('采购收货'/
+  /key: 'warehouse-order'[\s\S]*buildTabLabel\('仓库单'[\s\S]*WarehouseOrderPanel[\s\S]*key: 'receipt-list'[\s\S]*buildTabLabel\('采购收货'/
 );
 assert.doesNotMatch(sources.workbench, /收货验收|receipt-confirm/);
 assert.doesNotMatch(sources.dispatchApi, /\/api\/warehouse\/dispatch\/confirmations|createFulfillmentConfirmation/);

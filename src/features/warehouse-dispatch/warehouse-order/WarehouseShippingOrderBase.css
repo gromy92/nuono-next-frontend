@@ -57,6 +57,17 @@
   min-width: 0;
 }
 
+.warehouse-shipping-order-page--embedded .warehouse-shipping-order-toolbar-actions .warehouse-shipping-order-status-filter {
+  flex: 0 0 160px;
+  width: 160px;
+}
+
+.warehouse-shipping-order-page--embedded .warehouse-shipping-order-toolbar-actions .warehouse-shipping-order-keyword-search.ant-input-affix-wrapper {
+  flex: 0 1 420px;
+  width: 420px;
+  min-width: 240px;
+}
+
 .warehouse-shipping-order-page--embedded .warehouse-shipping-order-toolbar-actions .ant-btn {
   flex: 0 0 auto;
 }
@@ -84,6 +95,28 @@
   margin: 0;
 }
 
+.warehouse-shipping-order-title-button {
+  width: fit-content;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  color: #1f2937;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.warehouse-shipping-order-title-button:hover {
+  color: #1677ff;
+}
+
+.warehouse-shipping-order-title-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .warehouse-shipping-order-status-tags {
   display: flex;
   flex-wrap: wrap;
@@ -108,6 +141,61 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.warehouse-order-partition-list {
+  display: grid;
+  gap: 6px;
+}
+
+.warehouse-order-partition-row {
+  display: grid;
+  grid-template-columns: minmax(86px, 1fr) minmax(156px, 1.8fr) repeat(3, minmax(62px, auto));
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+
+.warehouse-order-partition-row + .warehouse-order-partition-row {
+  border-top: 1px dashed #e2e8f0;
+}
+
+.warehouse-order-partition-route {
+  min-width: 0;
+}
+
+.warehouse-order-partition-route .ant-tag {
+  margin-inline-end: 0;
+  white-space: nowrap;
+}
+
+.warehouse-order-partition-metric {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+  white-space: nowrap;
+}
+
+.warehouse-order-partition-metric-label {
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.warehouse-order-partition-metric strong {
+  color: #334155;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.warehouse-order-partition-metric--source strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.warehouse-order-total-cell {
+  display: grid;
+  gap: 2px;
 }
 
 .warehouse-order-journey-cell,

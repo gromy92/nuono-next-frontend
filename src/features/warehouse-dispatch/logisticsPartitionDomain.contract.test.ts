@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert'
 import {
   matchesLogisticsPartition,
+  summarizeLogisticsPartitionCombinations,
   summarizeLogisticsPartitions,
   summarizeLogisticsPartitionValues
 } from './logisticsPartitionDomain'
@@ -27,10 +28,31 @@ const historicalMixed = summarizeLogisticsPartitionValues(
 assert.equal(historicalMixed.historicalMixed, true)
 assert.equal(matchesLogisticsPartition(historicalMixed, 'AE', 'SEA'), true)
 
+const combinations = summarizeLogisticsPartitionCombinations([
+  { siteCode: 'SA', transportMode: 'AIR' },
+  { siteCode: 'SA', transportMode: 'SEA' },
+  { siteCode: 'SA', transportMode: 'AIR' },
+  { siteCode: 'AE', transportMode: 'AIR' }
+])
+assert.deepEqual(combinations, {
+  combinations: [
+    { siteCode: 'SA', transportMode: 'AIR' },
+    { siteCode: 'SA', transportMode: 'SEA' },
+    { siteCode: 'AE', transportMode: 'AIR' }
+  ],
+  incomplete: false
+})
+
 const incomplete = summarizeLogisticsPartitions([
   { siteCode: 'SA', transportMode: 'UNSPECIFIED' }
 ])
 assert.equal(incomplete.incomplete, true)
+assert.deepEqual(
+  summarizeLogisticsPartitionCombinations([
+    { siteCode: 'SA', transportMode: 'UNSPECIFIED' }
+  ]),
+  { combinations: [], incomplete: true }
+)
 
 const mappedBatch = mapShippingBatch({
   id: '700001',
