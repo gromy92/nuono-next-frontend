@@ -39,7 +39,6 @@ const EXPECTED_MENU_KEYS = [
   'purchase-logistics-quote',
   'purchase-product-logistics-costs',
   'purchase-in-transit-goods',
-  'warehouse-shipping-order',
   'warehouse-logistics-bill',
   'warehouse-dispatch',
   'official-warehouse',
@@ -127,7 +126,7 @@ function assertDeepFrozen(value: unknown, path: string) {
 }
 
 assert.deepEqual(ALL_WORKSPACE_MENU_KEYS, EXPECTED_MENU_KEYS)
-assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 37)
+assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 36)
 assert.equal(WORKSPACE_SECTION_DEFINITIONS.length, 11)
 assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 26)
 const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
@@ -183,6 +182,11 @@ assert.deepEqual(workspaceMenuDefinition('official-warehouse').routeAliases, [
   '/storage/warehouse',
   '/warehouse/official-warehouse-stock'
 ])
+assert.deepEqual(workspaceMenuDefinition('warehouse-dispatch').routeAliases, [
+  '/warehouse/shipping-orders'
+])
+assert.equal(resolveWorkspaceMenuKeyFromLocation('/warehouse/shipping-orders'), 'warehouse-dispatch')
+assert.equal(resolveWorkspaceMenuKeyFromLocation('/warehouse/shipping-orders/legacy'), 'warehouse-dispatch')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/WAREHOUSE/FBN/'), 'official-warehouse')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/system/ai-file-parse/jobs/1'), 'system-file-management')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/operation-config/holiday'), 'data-activity-config')
@@ -196,7 +200,6 @@ assert.deepEqual(
 )
 const warehouseKeys = [
   'product-specs',
-  'warehouse-shipping-order',
   'warehouse-logistics-bill',
   'warehouse-dispatch',
   'official-warehouse'

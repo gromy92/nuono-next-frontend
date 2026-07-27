@@ -6,10 +6,10 @@ import type {
   PurchaseOrderLogisticsQuoteOptions,
   ShippingOrder,
   ShippingOrderSegment
-} from '../purchase-order/types';
+} from '../../purchase-order/types';
 import {
-  countShippingOrderPendingQuoteLines,
-  formatQuantity
+  formatQuantity,
+  shippingOrderQuoteIssueSummary
 } from './warehouseShippingOrderDomain';
 import type { QuoteExportSelection } from './warehouseShippingOrderModels';
 import { WarehouseShippingOrderPublishedPriceCard } from './WarehouseShippingOrderPublishedPriceCard';
@@ -24,19 +24,18 @@ import {
 const { Text } = Typography;
 
 export function WarehouseOrderIssueTags({ order }: { order: ShippingOrder }) {
-  const missingMaterialCount = Number(order.missingYiteMaterialCount || 0);
-  const pendingQuoteCount = countShippingOrderPendingQuoteLines(order);
-  if (!missingMaterialCount && !pendingQuoteCount) {
+  const quoteIssue = shippingOrderQuoteIssueSummary(order);
+  if (!quoteIssue.totalCount) {
     return <Text type="secondary">无</Text>;
   }
   return (
     <div className="warehouse-shipping-order-issue-tags">
-      {missingMaterialCount > 0 ? (
-        <Tag color="red">材料缺失 {formatQuantity(missingMaterialCount)}</Tag>
-      ) : null}
-      {pendingQuoteCount > 0 ? (
-        <Tag color="gold">报价缺失 {formatQuantity(pendingQuoteCount)}</Tag>
-      ) : null}
+      <Tag color="red" title={[
+        quoteIssue.pendingQuoteCount > 0 ? `缺单价或待确认 ${formatQuantity(quoteIssue.pendingQuoteCount)}` : '',
+        quoteIssue.missingMaterialCount > 0 ? `缺义特材质 ${formatQuantity(quoteIssue.missingMaterialCount)}` : ''
+      ].filter(Boolean).join('；')}>
+        报价缺失 {formatQuantity(quoteIssue.totalCount)}
+      </Tag>
     </div>
   );
 }

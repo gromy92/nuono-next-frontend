@@ -1,12 +1,12 @@
 import { message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import { loadShippingOrderLogisticsQuoteOptionsForScope } from '../purchase-order/api';
+import { loadShippingOrderLogisticsQuoteOptionsForScope } from '../../purchase-order/api';
 import type {
   PurchaseOrderLogisticsQuoteChannelOption,
   PurchaseOrderLogisticsQuoteForwarderOption,
   PurchaseOrderLogisticsQuoteOptions,
   ShippingOrderLine
-} from '../purchase-order/types';
+} from '../../purchase-order/types';
 import {
   applySelectedChannelQuoteToLine,
   isLineQuoteConfirmed,

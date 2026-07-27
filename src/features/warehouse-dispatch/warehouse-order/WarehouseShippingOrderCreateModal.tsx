@@ -1,6 +1,6 @@
 import { SearchOutlined } from '@ant-design/icons';
 import { Alert, Button, Empty, Input, Modal, Table, Typography } from 'antd';
-import type { PurchaseOrder } from '../purchase-order/types';
+import type { PurchaseOrder } from '../../purchase-order/types';
 import {
   countPurchaseOrderSku,
   formatDate,

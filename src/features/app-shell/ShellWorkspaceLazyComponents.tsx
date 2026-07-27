@@ -74,11 +74,6 @@ export const WarehouseDispatchWorkbenchPage = lazyWorkspace(() =>
     default: module.WarehouseDispatchWorkbenchPage
   }))
 );
-export const WarehouseShippingOrderPage = lazyWorkspace(() =>
-  import('../warehouse-shipping-order/WarehouseShippingOrderPage').then((module) => ({
-    default: module.WarehouseShippingOrderPage
-  }))
-);
 export const WarehouseLogisticsBillPage = lazyWorkspace(() =>
   import('../warehouse-logistics-bill/WarehouseLogisticsBillPage').then((module) => ({
     default: module.WarehouseLogisticsBillPage

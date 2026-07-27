@@ -1,4 +1,3 @@
-import type { AuthSession } from '../auth/session';
 import { WarehouseShippingOrderBulkQuoteModal } from './WarehouseShippingOrderBulkQuoteModal';
 import { WarehouseShippingOrderCreateModal } from './WarehouseShippingOrderCreateModal';
 import { WarehouseShippingOrderDetailModal } from './WarehouseShippingOrderDetailModal';
@@ -10,19 +9,9 @@ import { useShippingOrderQuoteState } from './useShippingOrderQuoteState';
 import { useShippingOrderQuoteTransfer } from './useShippingOrderQuoteTransfer';
 import { useShippingOrderSubmit } from './useShippingOrderSubmit';
 import { useWarehouseShippingOrderData } from './useWarehouseShippingOrderData';
-import './WarehouseShippingOrderPage.css';
+import './WarehouseOrderPanel.css';
 
-type WarehouseShippingOrderPageProps = {
-  session?: AuthSession | null;
-};
-
-export function WarehouseShippingOrderPage(props: WarehouseShippingOrderPageProps) {
-  return <WarehouseShippingOrderPanel {...props} />;
-}
-
-export function WarehouseShippingOrderPanel({
-  embedded = false
-}: WarehouseShippingOrderPageProps & { embedded?: boolean }) {
+export function WarehouseOrderPanel() {
   const data = useWarehouseShippingOrderData();
   const quote = useShippingOrderQuoteState(data);
   const quoteActions = useShippingOrderQuoteActions(data, quote);
@@ -31,10 +20,10 @@ export function WarehouseShippingOrderPanel({
 
   return (
     <div
-      className={`warehouse-shipping-order-page${embedded ? ' warehouse-shipping-order-page--embedded' : ''}`}
+      className="warehouse-shipping-order-page warehouse-shipping-order-page--embedded"
       data-testid="warehouse-shipping-order-page"
     >
-      <WarehouseShippingOrderList data={data} embedded={embedded} />
+      <WarehouseShippingOrderList data={data} embedded />
       <WarehouseShippingOrderEditModal data={data} />
       <WarehouseShippingOrderDetailModal
         data={data}

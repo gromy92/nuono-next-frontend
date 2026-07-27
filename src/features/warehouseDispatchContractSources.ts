@@ -10,7 +10,11 @@ function source(path: string) {
 
 export const dispatchContractSources = {
   menu: source('route-catalog/fulfillmentRoutes.ts'),
-  shippingOrderPage: source('warehouse-shipping-order/WarehouseShippingOrderPage.tsx'),
+  routeTypes: source('route-catalog/types.ts'),
+  routePaths: source('route-catalog/routePaths.ts'),
+  legacyWorkspace: source('app-shell/LegacyCommerceWorkspaceContent.tsx'),
+  lazyWorkspaces: source('app-shell/ShellWorkspaceLazyComponents.tsx'),
+  warehouseOrderPanel: source('warehouse-dispatch/warehouse-order/WarehouseOrderPanel.tsx'),
   workbench: source('warehouse-dispatch/WarehouseDispatchWorkbenchPage.tsx'),
   models: source('warehouse-dispatch/workbenchModels.ts'),
   receiptPanel: source('warehouse-dispatch/WarehouseReceiptPanel.tsx'),
@@ -53,7 +57,6 @@ export const dispatchContractSources = {
 };
 
 // Compatibility exports for contracts that predate the workbench split.
-export const shippingOrderPage = dispatchContractSources.shippingOrderPage;
 export const packingListPanel = dispatchContractSources.packingPanel;
 export const dispatchApi = dispatchContractSources.dispatchApi;
 export const warehouseTypes = dispatchContractSources.types;
