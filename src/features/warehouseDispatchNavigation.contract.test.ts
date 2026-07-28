@@ -5,8 +5,10 @@ assert.match(sources.warehouseOrderPanel, /export function WarehouseOrderPanel\(
 assert.doesNotMatch(sources.warehouseOrderPanel, /WarehouseShippingOrderPage|embedded\?:/);
 assert.match(
   sources.menu,
-  /'warehouse-dispatch':[\s\S]*routeAliases:\s*\[[\s\S]*'\/warehouse\/shipping-orders'[\s\S]*keys:\s*\[[\s\S]*'warehouse-logistics-bill'[\s\S]*'warehouse-dispatch'[\s\S]*'official-warehouse'[\s\S]*'product-specs'[\s\S]*\/api\/procurement\/purchase-orders\/shipping-orders[\s\S]*\/api\/procurement\/purchase-orders\/logistics-bills/
+  /'warehouse-dispatch':[\s\S]*routeAliases:\s*\[[\s\S]*'\/warehouse\/shipping-orders'[\s\S]*keys:\s*\['warehouse-logistics-bill'\][\s\S]*\/api\/procurement\/purchase-orders\/logistics-bills[\s\S]*keys:\s*\['warehouse-dispatch'\][\s\S]*\/api\/procurement\/purchase-orders\/shipping-orders[\s\S]*keys:\s*\['official-warehouse'\]/
 );
+assert.doesNotMatch(sources.menu, /keys:\s*\[[^\]]*'warehouse-dispatch'[^\]]*'official-warehouse'/);
+assert.doesNotMatch(sources.menu, /'product-specs'/);
 assert.doesNotMatch(sources.menu, /'warehouse-shipping-order':\s*\{/);
 assert.doesNotMatch(sources.routeTypes, /\|\s*'warehouse-shipping-order'/);
 assert.doesNotMatch(sources.lazyWorkspaces, /WarehouseShippingOrderPage/);

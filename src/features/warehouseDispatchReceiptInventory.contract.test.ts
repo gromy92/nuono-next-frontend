@@ -15,13 +15,6 @@ const {
   css
 } = dispatchContractSources
 
-const expectedWarehouseDispatchMenuKeys = [
-  'warehouse-logistics-bill',
-  'warehouse-dispatch',
-  'official-warehouse',
-  'product-specs'
-]
-
 assert.match(
   warehouseOrderPanel,
   /export function WarehouseOrderPanel\(/,
@@ -40,7 +33,7 @@ assert.deepEqual(
     menuName: '仓库发货单',
     urlPath: '/warehouse/shipping-orders'
   }),
-  expectedWarehouseDispatchMenuKeys
+  ['warehouse-dispatch']
 )
 
 assert.deepEqual(
@@ -49,7 +42,7 @@ assert.deepEqual(
     menuName: '',
     urlPath: '/api/procurement/purchase-orders/shipping-orders/1'
   }),
-  expectedWarehouseDispatchMenuKeys
+  ['warehouse-dispatch']
 )
 
 assert.deepEqual(
@@ -58,7 +51,16 @@ assert.deepEqual(
     menuName: '',
     urlPath: '/api/procurement/purchase-orders/logistics-bills/1'
   }),
-  expectedWarehouseDispatchMenuKeys
+  ['warehouse-logistics-bill']
+)
+
+assert.deepEqual(
+  matchGrantedMenuToWorkspaceMenuKeys({
+    menuId: 9253,
+    menuName: 'Noon官方仓',
+    urlPath: '/warehouse/official-warehouse'
+  }),
+  ['official-warehouse']
 )
 
 assert.match(

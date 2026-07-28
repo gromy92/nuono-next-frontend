@@ -34,8 +34,8 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     path: '/user/store-binding',
     sectionKey: 'user',
     pathLabel: '用户 / 店铺管理',
-    tabLabel: '角色分配',
-    contentKind: 'user-role',
+    tabLabel: '店铺管理',
+    contentKind: 'user-administration',
     closable: true,
     tabKey: 'user-role',
     visibleInSidebar: false,
@@ -48,7 +48,7 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'user',
     pathLabel: '用户 / 角色分配',
     tabLabel: '角色分配',
-    contentKind: 'user-role',
+    contentKind: 'user-administration',
     closable: true,
     sidebarOrder: 1
   },
@@ -77,8 +77,8 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
 } as const satisfies Record<string, WorkspaceMenuDefinitionBase>)
 
 export const ADMINISTRATION_IDENTITY_GRANT_RULES = freezeCatalogMetadata([
-  { keys: ['user-account', 'user-store-noon'], urlPaths: ['/api/user/manage'], menuNames: ['用户管理'] },
-  { keys: ['user-role', 'user-store-noon'], urlPaths: ['/api/user/role'], menuNames: ['角色分配'] },
+  { keys: ['user-account'], urlPaths: ['/api/user/manage'], menuNames: ['用户管理'] },
+  { keys: ['user-role'], urlPaths: ['/api/user/role'], menuNames: ['角色分配'] },
   { keys: ['system-role'], urlPaths: ['/system/role'], menuNames: ['角色维护', '角色管理'] },
   { keys: ['system-menu'], urlPaths: ['/system/menu'], menuNames: ['菜单维护'] }
 ] as const satisfies readonly WorkspaceGrantedMenuRuleBase[])

@@ -43,7 +43,7 @@ export function renderLegacyAdministrationWorkspace(
       </LazyWorkspaceBoundary>
     )
   }
-  if (activeContentKind === 'user-role') {
+  if (activeContentKind === 'user-administration') {
     return handled(
       <LazyWorkspaceBoundary>
         <RoleManagementWorkspace

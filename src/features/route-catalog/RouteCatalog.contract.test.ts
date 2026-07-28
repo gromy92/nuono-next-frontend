@@ -11,8 +11,6 @@ import {
   WORKSPACE_SECTION_DEFINITIONS,
   assertRouteCatalogIntegrity,
   routeCatalogIntegrityIssues,
-  shouldShowWorkspaceMenuInSidebar,
-  shouldShowWorkspaceMenuInTabs,
   workspaceMenuDefinition,
   workspaceMenuMount
 } from './RouteCatalog'
@@ -53,7 +51,6 @@ const EXPECTED_MENU_KEYS = [
   'system-report-noon-data-gaps',
   'operations-config-versions',
   'data-activity-config',
-  'operations-lifecycle-rules',
   'system-file-management',
   'user-account',
   'user-store-noon',
@@ -126,9 +123,9 @@ function assertDeepFrozen(value: unknown, path: string) {
 }
 
 assert.deepEqual(ALL_WORKSPACE_MENU_KEYS, EXPECTED_MENU_KEYS)
-assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 36)
+assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 35)
 assert.equal(WORKSPACE_SECTION_DEFINITIONS.length, 11)
-assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 26)
+assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 29)
 const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.workspaceMount === 'function'
 )
@@ -190,31 +187,48 @@ assert.equal(resolveWorkspaceMenuKeyFromLocation('/warehouse/shipping-orders/leg
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/WAREHOUSE/FBN/'), 'official-warehouse')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/system/ai-file-parse/jobs/1'), 'system-file-management')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/operation-config/holiday'), 'data-activity-config')
+assert.equal(resolveWorkspaceMenuKeyFromLocation('/operations/config/lifecycle-rules'), null)
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/unknown'), null)
-assert.equal(shouldShowWorkspaceMenuInSidebar('operations-lifecycle-rules'), false)
-assert.equal(shouldShowWorkspaceMenuInTabs('operations-lifecycle-rules'), false)
+
+const storeManagementDefinition = workspaceMenuDefinition('user-store-noon')
+assert.equal(storeManagementDefinition.tabLabel, '店铺管理')
+assert.equal(storeManagementDefinition.contentKind, 'user-administration')
+assert.equal(
+  storeManagementDefinition.contentKind,
+  workspaceMenuDefinition('user-role').contentKind
+)
 
 assert.deepEqual(
   matchGrantedMenuToWorkspaceMenuKeys({ menuId: 1, menuName: '', urlPath: '/api/product-keywords/items' }),
   ['operations-product-keywords']
 )
-const warehouseKeys = [
-  'product-specs',
-  'warehouse-logistics-bill',
-  'warehouse-dispatch',
-  'official-warehouse'
-]
 assert.deepEqual(
   resolveSessionAllowedMenuKeys(
     session({ grantedMenus: [{ menuId: 2, menuName: '仓库发运', urlPath: '/warehouse/dispatch' }] })
   ),
-  warehouseKeys
+  ['warehouse-dispatch']
+)
+assert.deepEqual(
+  matchGrantedMenuToWorkspaceMenuKeys({
+    menuId: 3,
+    menuName: '物流账单',
+    urlPath: '/warehouse/logistics-bills'
+  }),
+  ['warehouse-logistics-bill']
+)
+assert.deepEqual(
+  matchGrantedMenuToWorkspaceMenuKeys({
+    menuId: 4,
+    menuName: 'Noon官方仓',
+    urlPath: '/warehouse/official-warehouse'
+  }),
+  ['official-warehouse']
 )
 assert.deepEqual(
   resolveSessionAllowedMenuKeys(
     session({
       grantedMenus: [
-        { menuId: 3, menuName: '生命周期配置', urlPath: '/operations/config/lifecycle-rules' }
+        { menuId: 5, menuName: '生命周期配置', urlPath: '/operations/config/lifecycle-rules' }
       ]
     })
   ),

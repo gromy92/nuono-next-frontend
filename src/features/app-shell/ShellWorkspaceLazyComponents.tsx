@@ -140,8 +140,3 @@ export const BusinessCalendarVersionLibraryPage = lazyWorkspace(() =>
     default: module.BusinessCalendarVersionLibraryPage
   }))
 );
-export const LifecycleVersionLibraryPage = lazyWorkspace(() =>
-  import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
-    default: module.LifecycleVersionLibraryPage
-  }))
-);

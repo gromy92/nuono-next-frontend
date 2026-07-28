@@ -133,9 +133,15 @@ export const PROCUREMENT_GRANT_RULES = freezeCatalogMetadata([
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
-    keys: ['purchase-in-transit-goods', 'purchase-product-logistics-costs'],
-    urlPaths: ['/purchase/in-transit-goods', '/purchase/product-logistics-costs'],
-    urlPathPrefixes: ['/api/in-transit-goods', '/api/product-logistics-costs'],
-    menuNames: ['在途商品', '在途物流', '在途物流信息', '商品物流价格', '商品物流成本']
+    keys: ['purchase-in-transit-goods'],
+    urlPaths: ['/purchase/in-transit-goods'],
+    urlPathPrefixes: ['/api/in-transit-goods'],
+    menuNames: ['在途商品', '在途物流', '在途物流信息']
+  },
+  {
+    keys: ['purchase-product-logistics-costs'],
+    urlPaths: ['/purchase/product-logistics-costs'],
+    urlPathPrefixes: ['/api/product-logistics-costs'],
+    menuNames: ['商品物流价格', '商品物流成本']
   }
 ] as const satisfies readonly WorkspaceGrantedMenuRuleBase[])

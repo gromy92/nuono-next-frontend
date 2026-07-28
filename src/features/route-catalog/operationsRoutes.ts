@@ -72,19 +72,6 @@ export const OPERATION_CONFIG_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     closable: true,
     sidebarOrder: 1,
     routeAliases: ['/operation-config/holiday', '/data/activity-config']
-  },
-  'operations-lifecycle-rules': {
-    key: 'operations-lifecycle-rules',
-    label: '生命周期配置',
-    path: '/operations/config/lifecycle-rules',
-    sectionKey: 'operation-config',
-    pathLabel: '运营配置 / 生命周期配置',
-    tabLabel: '生命周期配置',
-    contentKind: 'operations-lifecycle-rules',
-    closable: true,
-    sidebarOrder: 2,
-    visibleInSidebar: false,
-    visibleInWorkspaceTabs: false
   }
 } as const satisfies Record<string, WorkspaceMenuDefinitionBase>)
 

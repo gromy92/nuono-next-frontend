@@ -4,7 +4,6 @@ import { LazyWorkspaceBoundary } from '../route-catalog/workspaceMount'
 import {
   BusinessCalendarVersionLibraryPage,
   CompetitorAnalysisPage,
-  LifecycleVersionLibraryPage,
   NoonAdvertisingPage,
   NoonCallStoreDataPage,
   NoonDataCompletenessPage,
@@ -102,13 +101,6 @@ export function renderLegacyOperationsWorkspace(
     return handled(
       <LazyWorkspaceBoundary>
         <OperationConfigSuiteVersionPage session={shellSession} />
-      </LazyWorkspaceBoundary>
-    )
-  }
-  if (activeContentKind === 'operations-lifecycle-rules') {
-    return handled(
-      <LazyWorkspaceBoundary>
-        <LifecycleVersionLibraryPage session={shellSession} />
       </LazyWorkspaceBoundary>
     )
   }

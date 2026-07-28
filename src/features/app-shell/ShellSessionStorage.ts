@@ -21,7 +21,6 @@ import {
   SYSTEM_REPORT_NOON_DATA_GAPS_PATH,
   OPERATIONS_CONFIG_VERSIONS_PATH,
   DATA_ACTIVITY_CONFIG_PATH,
-  OPERATIONS_LIFECYCLE_RULES_PATH,
   PURCHASE_ALI1688_HISTORICAL_ORDERS_PATH,
   PURCHASE_ALI1688_SKU_PURCHASE_HISTORY_PATH,
   PURCHASE_IN_TRANSIT_GOODS_PATH,
@@ -185,7 +184,6 @@ function readDevSessionOverride(): AuthSession | null {
   const includeOperationsConfigDevMenu =
     pathname.startsWith(OPERATIONS_CONFIG_VERSIONS_PATH) ||
     pathname.startsWith(DATA_ACTIVITY_CONFIG_PATH) ||
-    pathname.startsWith(OPERATIONS_LIFECYCLE_RULES_PATH) ||
     pathname.startsWith('/operation-config/holiday') ||
     search.get('grantOperationsConfig') === '1'
   const includeFileManagementDevMenu =
@@ -395,7 +393,6 @@ function readDevSessionOverride(): AuthSession | null {
   if (includeOperationsConfigDevMenu) {
     grantedMenus.push({ menuId: 9503, menuName: '运营配置版本', urlPath: OPERATIONS_CONFIG_VERSIONS_PATH })
     grantedMenus.push({ menuId: 9501, menuName: '业务日历', urlPath: DATA_ACTIVITY_CONFIG_PATH })
-    grantedMenus.push({ menuId: 9502, menuName: '生命周期配置', urlPath: OPERATIONS_LIFECYCLE_RULES_PATH })
   }
   if (includeFileManagementDevMenu && !useBossDevSession) {
     grantedMenus.push({ menuId: 9202, menuName: '文件管理', urlPath: SYSTEM_FILE_MANAGEMENT_PATH })

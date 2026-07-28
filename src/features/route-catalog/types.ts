@@ -48,9 +48,8 @@ export type WorkspaceContentKind =
   | 'system-report-noon-data-gaps'
   | 'operations-config-versions'
   | 'operations-business-calendar'
-  | 'operations-lifecycle-rules'
   | 'user-account'
-  | 'user-role'
+  | 'user-administration'
   | 'system-menu'
   | 'system-role'
 

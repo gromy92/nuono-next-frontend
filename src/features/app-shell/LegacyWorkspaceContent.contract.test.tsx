@@ -36,7 +36,7 @@ const context = {
 const legacyDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.contentKind === 'string'
 )
-assert.equal(legacyDefinitions.length, 35)
+assert.equal(legacyDefinitions.length, 34)
 for (const definition of legacyDefinitions) {
   assert.doesNotThrow(
     () => renderLegacyWorkspaceContent(definition.key, context),

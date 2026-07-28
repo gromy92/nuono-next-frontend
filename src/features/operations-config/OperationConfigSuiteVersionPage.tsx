@@ -12,7 +12,3 @@ export function OperationConfigSuiteVersionPage({ session }: OperationConfigSuit
 export function BusinessCalendarVersionLibraryPage({ session }: OperationConfigSuiteVersionPageProps) {
   return <OperationConfigVersionLibraryPage session={session} configType="BUSINESS_CALENDAR" title="业务日历" />
 }
-
-export function LifecycleVersionLibraryPage({ session }: OperationConfigSuiteVersionPageProps) {
-  return <OperationConfigVersionLibraryPage session={session} configType="PRODUCT_LIFECYCLE" title="生命周期配置" />
-}

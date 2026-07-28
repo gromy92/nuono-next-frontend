@@ -41,34 +41,36 @@ export const FULFILLMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
 
 export const FULFILLMENT_GRANT_RULES = freezeCatalogMetadata([
   {
-    keys: [
-      'warehouse-logistics-bill',
-      'warehouse-dispatch',
-      'official-warehouse',
-      'product-specs'
-    ],
-    urlPaths: [
-      '/warehouse/shipping-orders',
-      '/warehouse/logistics-bills',
-      '/warehouse/dispatch',
-      '/warehouse/official-warehouse',
-      '/warehouse/official-warehouse-stock',
-      '/storage/warehouse'
-    ],
+    keys: ['warehouse-logistics-bill'],
+    urlPaths: ['/warehouse/logistics-bills'],
+    urlPathPrefixes: ['/api/procurement/purchase-orders/logistics-bills'],
+    menuNames: ['物流账单']
+  },
+  {
+    keys: ['warehouse-dispatch'],
+    urlPaths: ['/warehouse/shipping-orders', '/warehouse/dispatch'],
     urlPathPrefixes: [
       '/api/warehouse/dispatch',
-      '/api/warehouse/official-warehouse',
-      '/api/procurement/purchase-orders/shipping-orders',
-      '/api/procurement/purchase-orders/logistics-bills'
+      '/api/procurement/purchase-orders/shipping-orders'
     ],
     menuNames: [
       '发货单',
       '仓库发货单',
-      '物流账单',
       '仓库发运',
       '仓储发运',
       '采购收货',
-      '发运计划',
+      '发运计划'
+    ]
+  },
+  {
+    keys: ['official-warehouse'],
+    urlPaths: [
+      '/warehouse/official-warehouse',
+      '/warehouse/official-warehouse-stock',
+      '/storage/warehouse'
+    ],
+    urlPathPrefixes: ['/api/warehouse/official-warehouse'],
+    menuNames: [
       'Noon官方仓',
       'FBN抢仓',
       '约仓看板',
