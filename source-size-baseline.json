@@ -20,7 +20,6 @@
     {"path":"src/features/procurement/ProcurementAcceptanceBoard.tsx","ceiling":314},
     {"path":"src/features/procurement/ProcurementCandidateResultCard.tsx","ceiling":347},
     {"path":"src/features/product-baseline/ProductBaselineDisplay.tsx","ceiling":335},
-    {"path":"src/features/product-image-profile/aiCopyText.ts","ceiling":349},
     {"path":"src/features/product-image-profile/ProductImageProfilePage.tsx","ceiling":334},
     {"path":"src/features/product-management/components/ProductListIdentityCells.tsx","ceiling":389},
     {"path":"src/features/product-management/components/ProductRichTextEditor.tsx","ceiling":389},
