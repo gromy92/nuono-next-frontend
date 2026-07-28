@@ -2,24 +2,44 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const rootDir = path.resolve(new URL('..', import.meta.url).pathname);
-const pagePath = path.join(rootDir, 'src/features/competitor-analysis/CompetitorAnalysisPage.tsx');
-const apiPath = path.join(rootDir, 'src/features/competitor-analysis/api.ts');
 const typesPath = path.join(rootDir, 'src/features/competitor-analysis/types.ts');
-const cssPath = path.join(rootDir, 'src/features/competitor-analysis/CompetitorAnalysisPage.css');
 
-const pageSource = fs.readFileSync(pagePath, 'utf8');
-const apiSource = fs.readFileSync(apiPath, 'utf8');
+const readSources = (paths) => paths.map((filePath) => fs.readFileSync(path.join(rootDir, filePath), 'utf8')).join('\n');
+const pageSource = readSources([
+  'src/features/competitor-analysis/CompetitorAnalysisPage.tsx',
+  'src/features/competitor-analysis/productChanges/ProductChangeModal.tsx',
+  'src/features/competitor-analysis/productChanges/ProductChangeCompetitorCard.tsx',
+  'src/features/competitor-analysis/productChanges/productChangeModel.ts',
+  'src/features/competitor-analysis/rankReports/SelfRankReportModal.tsx',
+  'src/features/competitor-analysis/rankReports/RankKeywordReportPanel.tsx',
+  'src/features/competitor-analysis/rankReports/rankCompetitorSeries.ts',
+  'src/features/competitor-analysis/rankReports/rankReportModel.ts',
+  'src/features/competitor-analysis/competitorRankHistory.ts'
+]);
+const apiSource = readSources([
+  'src/features/competitor-analysis/api/backendContracts.ts',
+  'src/features/competitor-analysis/api/watchProductMapper.ts',
+  'src/features/competitor-analysis/api/watchProductTransport.ts',
+  'src/features/competitor-analysis/api/productChangeTransport.ts',
+  'src/features/competitor-analysis/api/transportValues.ts'
+]);
 const typesSource = fs.readFileSync(typesPath, 'utf8');
-const cssSource = fs.readFileSync(cssPath, 'utf8');
+const cssSource = readSources([
+  'src/features/competitor-analysis/CompetitorAnalysisPage.css',
+  ...fs.readdirSync(path.join(rootDir, 'src/features/competitor-analysis/styles'))
+    .filter((fileName) => fileName.endsWith('.css'))
+    .map((fileName) => `src/features/competitor-analysis/styles/${fileName}`)
+]);
 
 const checks = [
-  ['analysis modal title in compact header', pageSource, 'competitor-analysis-report-heading">商品分析'],
+  ['analysis modal compact header class', pageSource, 'competitor-analysis-report-heading'],
+  ['analysis modal title', pageSource, '商品分析'],
   ['analysis modal psku in header', pageSource, 'competitor-analysis-report-product-psku'],
   ['analysis modal english title wraps fully', cssSource, 'competitor-analysis-report-product-title-en-full'],
   ['changes analysis tab', pageSource, '变化历史'],
   ['changes embedded in report modal', pageSource, 'changeGroups={changeRows}'],
   ['changes modal component', pageSource, 'ProductChangeModal'],
-  ['report modal wider for change cards', pageSource, 'width="min(1680px, calc(100vw - 32px))"'],
+  ['report modal width', pageSource, 'width="min(1180px, calc(100vw - 96px))"'],
   ['real empty changes state', pageSource, '暂无商品详情变化'],
   ['changes summary single line', pageSource, 'competitor-analysis-product-change-summary-line'],
   ['changes summary reusable component', pageSource, 'function ProductChangeSummaryLine'],
@@ -31,7 +51,7 @@ const checks = [
   ['report compact empty rank panel', pageSource, 'function RankCompactEmpty'],
   ['report hides empty rank chart', pageSource, 'hasRenderableRankData(report)'],
   ['report keyword count is independent from chart series', pageSource, 'function rankedMonitoredCompetitorCount'],
-  ['report change rank does not use future fallback', pageSource, 'if (earlierPoints.length) {\n    return earlierPoints\n  }\n  return []'],
+  ['report change rank does not use future fallback', pageSource, 'point.factDate <= factDate'],
   ['rank scan depth normalized in api adapter', apiSource, 'function normalizeRankScanDepth'],
   ['list exposes recent competitor change count', apiSource, 'recent7dCompetitorChangeCount'],
   ['list exposes recent changed competitor product count', apiSource, 'recent7dChangedCompetitorCount'],

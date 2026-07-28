@@ -2,16 +2,27 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const rootDir = path.resolve(new URL('..', import.meta.url).pathname);
-const pagePath = path.join(rootDir, 'src/features/competitor-analysis/CompetitorAnalysisPage.tsx');
-const apiPath = path.join(rootDir, 'src/features/competitor-analysis/api.ts');
 const typesPath = path.join(rootDir, 'src/features/competitor-analysis/types.ts');
-const cssPath = path.join(rootDir, 'src/features/competitor-analysis/CompetitorAnalysisPage.css');
 const baselinePath = path.join(rootDir, 'src/features/product-baseline/ProductBaselineDisplay.tsx');
 
-const pageSource = fs.readFileSync(pagePath, 'utf8');
-const apiSource = fs.readFileSync(apiPath, 'utf8');
+const readSources = (paths) => paths.map((filePath) => fs.readFileSync(path.join(rootDir, filePath), 'utf8')).join('\n');
+const pageSource = readSources([
+  'src/features/competitor-analysis/CompetitorAnalysisPage.tsx',
+  'src/features/competitor-analysis/CompetitorProductListCells.tsx'
+]);
+const apiSource = readSources([
+  'src/features/competitor-analysis/api/backendContracts.ts',
+  'src/features/competitor-analysis/api/contracts.ts',
+  'src/features/competitor-analysis/api/watchProductMapper.ts',
+  'src/features/competitor-analysis/api/watchProductTransport.ts'
+]);
 const typesSource = fs.readFileSync(typesPath, 'utf8');
-const cssSource = fs.readFileSync(cssPath, 'utf8');
+const cssSource = readSources([
+  'src/features/competitor-analysis/CompetitorAnalysisPage.css',
+  ...fs.readdirSync(path.join(rootDir, 'src/features/competitor-analysis/styles'))
+    .filter((fileName) => fileName.endsWith('.css'))
+    .map((fileName) => `src/features/competitor-analysis/styles/${fileName}`)
+]);
 const baselineSource = fs.readFileSync(baselinePath, 'utf8');
 
 const checks = [
@@ -40,9 +51,9 @@ const checks = [
   ['candidate count centered row', cssSource, 'justify-content: center'],
   ['keyword links stay visible', pageSource, 'competitor-analysis-keyword-link'],
   ['keyword text stays visible', pageSource, 'competitor-analysis-keyword-text'],
-  ['per-keyword monitored count value only', pageSource, '{keyword.monitoredCount ?? 0}'],
-  ['per-keyword monitored count class', pageSource, 'competitor-analysis-keyword-monitor-count'],
-  ['per-keyword monitored count css', cssSource, '.competitor-analysis-keyword-monitor-count']
+  ['zero-monitor keywords collapse from the inline list', pageSource, 'keyword.monitoredCount !== 0'],
+  ['collapsed keywords keep a visible count', pageSource, 'hiddenKeywordCount'],
+  ['collapsed keyword count class', pageSource, 'competitor-analysis-keyword-other-tag']
 ];
 
 const failures = checks
@@ -55,7 +66,8 @@ const forbiddenSnippets = [
   ['old zero count checkbox wrapper', pageSource, 'competitor-analysis-zero-filters'],
   ['old per-keyword monitored label', pageSource, '监控 ${keyword.monitoredCount ?? 0}'],
   ['old bare per-keyword count class', pageSource, 'competitor-analysis-keyword-link-count'],
-  ['old bare per-keyword count css', cssSource, '.competitor-analysis-keyword-link-count']
+  ['old bare per-keyword count css', cssSource, '.competitor-analysis-keyword-link-count'],
+  ['old monitored count css', cssSource, '.competitor-analysis-keyword-monitor-count']
 ];
 
 const forbiddenFailures = forbiddenSnippets
