@@ -38,11 +38,11 @@ const metaCssSource = readFileSync(
 )
 const listingPageCssSource = readFileSync(new URL('./ProductListingPage.css', import.meta.url), 'utf8')
 const classificationFieldsSource = readFileSync(
-  new URL('../product-management/components/ProductClassificationFields.tsx', import.meta.url),
+  new URL('../product-editor/ProductClassificationFields.tsx', import.meta.url),
   'utf8'
 )
 const classificationCssSource = readFileSync(
-  new URL('../product-management/components/ProductClassificationFields.css', import.meta.url),
+  new URL('../product-editor/ProductClassificationFields.css', import.meta.url),
   'utf8'
 )
 

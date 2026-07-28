@@ -3,14 +3,18 @@ import { readFileSync } from 'node:fs'
 import { preferredCompetitorCategoryLabel } from '../product-domain/productCompetitorContent'
 
 const classificationEditorSource = readFileSync(
-  new URL('../product-management/components/ProductClassificationEditor.tsx', import.meta.url),
+  new URL('../product-editor/ProductClassificationEditor.tsx', import.meta.url),
   'utf8'
 )
 const classificationFieldsSource = readFileSync(
-  new URL('../product-management/components/ProductClassificationFields.tsx', import.meta.url),
+  new URL('../product-editor/ProductClassificationFields.tsx', import.meta.url),
   'utf8'
 )
-const classificationUiSource = `${classificationEditorSource}\n${classificationFieldsSource}`
+const competitorCategoryModalSource = readFileSync(
+  new URL('../product-editor/ProductCompetitorCategoryModal.tsx', import.meta.url),
+  'utf8'
+)
+const classificationUiSource = `${classificationEditorSource}\n${classificationFieldsSource}\n${competitorCategoryModalSource}`
 const contentTabSource = readFileSync(
   new URL('../product-management/components/ProductContentTab.tsx', import.meta.url),
   'utf8'
@@ -51,17 +55,17 @@ assert(
 assert(
   classificationUiSource.includes('data-testid="product-listing-category-editor-button"') &&
     classificationUiSource.includes('编辑类目') &&
-    classificationEditorSource.includes('data-testid="product-listing-competitor-category-table"') &&
-    classificationEditorSource.includes('竞品类目') &&
-    classificationEditorSource.includes('buildProductCompetitorCategoryRows') &&
-    classificationEditorSource.includes('preferredCompetitorCategoryLabel') &&
+    competitorCategoryModalSource.includes('data-testid="product-listing-competitor-category-table"') &&
+    competitorCategoryModalSource.includes('竞品类目') &&
+    competitorCategoryModalSource.includes('buildProductCompetitorCategoryRows') &&
+    competitorCategoryModalSource.includes('preferredCompetitorCategoryLabel') &&
     categoryPresentationSource.includes('containsArabicScript') &&
     categoryPresentationSource.includes('englishCategoryPathFromUrl') &&
     categoryPresentationSource.includes('material.categoryName') &&
-    classificationEditorSource.includes('categoryLinks') &&
-    classificationEditorSource.includes('updateFulltype(record.categoryValue)') &&
+    competitorCategoryModalSource.includes('categoryLinks') &&
+    competitorCategoryModalSource.includes('onUseFulltype(record.categoryValue)') &&
     classificationEditorSource.includes('isOfficialNoonFulltypeCode') &&
-    classificationEditorSource.includes('当前上架资料暂无竞品类目'),
+    competitorCategoryModalSource.includes('当前上架资料暂无竞品类目'),
   '上架类目填写区必须提供编辑弹窗，并列出所有竞品类目供填入'
 )
 
