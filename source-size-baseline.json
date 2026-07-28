@@ -70,7 +70,6 @@
     {"path":"src/features/product-management/utils/workbench.ts","ceiling":377},
     {"path":"src/features/purchase-order/api.ts","ceiling":395},
     {"path":"src/features/purchase-order/types.ts","ceiling":471},
-    {"path":"src/features/replenishment-plan/ReplenishmentPlanTab.tsx","ceiling":1165},
     {"path":"src/features/system-reports/NoonCallStoreDataPage.tsx","ceiling":397},
     {"path":"src/features/system-reports/NoonDataCompletenessPage.tsx","ceiling":365},
     {"path":"src/features/system-reports/StoreDataReportPage.tsx","ceiling":674},

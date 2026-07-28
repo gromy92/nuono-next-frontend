@@ -25,7 +25,16 @@ export const purchaseDuplicateNoticeSource = readFileSync(
   join(replenishmentDir, 'purchaseDuplicateNotice.ts'),
   'utf8'
 )
-export const tabSource = readFileSync(join(replenishmentDir, 'ReplenishmentPlanTab.tsx'), 'utf8')
+export const tabSource = [
+  'ReplenishmentPlanTab.tsx',
+  'components/ReplenishmentPlanWorkbench.tsx',
+  'components/replenishmentPresentation.tsx',
+  'hooks/useReplenishmentColumns.tsx',
+  'hooks/useReplenishmentPlanController.ts',
+  'pageTypes.ts',
+  'replenishmentDomain.ts',
+  'replenishmentFormatting.ts'
+].map((fileName) => readFileSync(join(replenishmentDir, fileName), 'utf8')).join('\n')
 export const cssSource = [
   'ReplenishmentPlanTab.css',
   'ReplenishmentPlanTab.styles/01.css',
