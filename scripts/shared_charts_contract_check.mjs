@@ -49,7 +49,8 @@ const storeReportApi = read('src/features/system-reports/api.ts')
 const competitorPage = read('src/features/competitor-analysis/CompetitorAnalysisPage.tsx')
 const competitorProductTable = read('src/features/competitor-analysis/productList/CompetitorProductTable.tsx')
 const competitorProductListSeam = [competitorPage, competitorProductTable].join('\n')
-const competitorDashboard = read('src/features/competitor-analysis/CompetitorDashboardTab.tsx')
+const competitorDashboard = ['CompetitorDashboardTab.tsx', 'competitorDashboardModel.ts']
+  .map((path) => read(`src/features/competitor-analysis/${path}`)).join('\n')
 const competitorPriceChangeTab = read('src/features/competitor-analysis/CompetitorPriceChangeTab.tsx')
 const competitorDashboardPriorityPanels = [
   read('src/features/competitor-analysis/CompetitorDashboardPriorityPanels.tsx'),

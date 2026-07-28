@@ -9,7 +9,6 @@
     {"path":"scripts/product_management_10_page_acceptance.mjs","ceiling":684},
     {"path":"scripts/profit_pending_page_smoke.mjs","ceiling":437},
     {"path":"src/features/auth/ReplicaLoginPage.tsx","ceiling":390},
-    {"path":"src/features/competitor-analysis/CompetitorDashboardTab.tsx","ceiling":367},
     {"path":"src/features/in-transit-goods/useInTransitBatchEditor.ts","ceiling":371},
     {"path":"src/features/official-warehouse/domain.contract.test.ts","ceiling":319},
     {"path":"src/features/official-warehouse/printFbnTransferPdf.ts","ceiling":406},
