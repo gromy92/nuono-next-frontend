@@ -12,7 +12,14 @@ const aiGenerationSource = readFileSync(
 const aiFlowSource = `${detailEditorSource}\n${aiGenerationSource}`
 const resultPreviewSource = readFileSync(new URL('./ProductListingAiResultPreview.tsx', import.meta.url), 'utf8')
 const listingPageSource = readFileSync(new URL('./ProductListingPage.tsx', import.meta.url), 'utf8')
-const adapterSource = readFileSync(new URL('./productDetailAdapter.ts', import.meta.url), 'utf8')
+const adapterSource = [
+  './productDetailAdapter.ts',
+  './productDetailAdapterTypes.ts',
+  './productDetailAdapterDraft.ts',
+  './productDetailAdapterSnapshot.ts',
+  './productDetailAdapterDomains.ts',
+  './productDetailAdapterNormalization.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 
 assert.ok(
   apiSource.includes("'/api/product-listing/ai/noon-listing'"),

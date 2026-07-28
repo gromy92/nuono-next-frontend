@@ -27,7 +27,14 @@ const pricingCssSource = readFileSync(
   new URL('../product-editor/ProductOfferPricingSection.css', import.meta.url),
   'utf8'
 )
-const adapterSource = readFileSync(new URL('./productDetailAdapter.ts', import.meta.url), 'utf8')
+const adapterSource = [
+  './productDetailAdapter.ts',
+  './productDetailAdapterTypes.ts',
+  './productDetailAdapterDraft.ts',
+  './productDetailAdapterSnapshot.ts',
+  './productDetailAdapterDomains.ts',
+  './productDetailAdapterNormalization.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 const metaSource = readFileSync(
   new URL('../product-editor/ProductOfferMetaSection.tsx', import.meta.url),
   'utf8'

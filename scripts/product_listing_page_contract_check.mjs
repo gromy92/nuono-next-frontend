@@ -38,7 +38,14 @@ function sliceBetween(source, startNeedle, endNeedle, label) {
 const page = read('src/features/product-listing/ProductListingPage.tsx')
 const detailEditor = read('src/features/product-listing/ProductListingDetailEditor.tsx')
 const sourcePrefill = read('src/features/product-listing/sourcePrefill.ts')
-const adapter = read('src/features/product-listing/productDetailAdapter.ts')
+const adapter = [
+  'productDetailAdapter.ts',
+  'productDetailAdapterTypes.ts',
+  'productDetailAdapterDraft.ts',
+  'productDetailAdapterSnapshot.ts',
+  'productDetailAdapterDomains.ts',
+  'productDetailAdapterNormalization.ts'
+].map((fileName) => read(`src/features/product-listing/${fileName}`)).join('\n')
 const api = read('src/features/product-listing/api.ts')
 const types = read('src/features/product-listing/types.ts')
 const officialTabsTypes = read('src/features/product-editor/productDetailEditorTypes.ts')

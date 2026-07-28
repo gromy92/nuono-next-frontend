@@ -49,7 +49,12 @@ const callers = [
 ]
 
 callers.forEach((filePath) => {
-  const source = readFileSync(filePath, 'utf8')
+  const source = filePath.endsWith('productDetailAdapter.ts')
+    ? [
+        filePath,
+        'src/features/product-listing/productDetailAdapterNormalization.ts'
+      ].map((path) => readFileSync(path, 'utf8')).join('\n')
+    : readFileSync(filePath, 'utf8')
   assert.match(
     source,
     /product-domain\/productDetailedAttributeCatalog/,
