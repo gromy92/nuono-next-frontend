@@ -2,10 +2,13 @@ import { useCallback, useMemo, useState } from 'react';
 import { Form, message } from 'antd';
 import type { MenuProps } from 'antd';
 import { LockOutlined, LogoutOutlined } from '@ant-design/icons';
+import {
+  buildChangePasswordRequest,
+  type ChangePasswordFormValues
+} from '../auth/changePassword';
 import type { AuthRoleView, AuthSession } from '../auth/session';
 import { currentAppPathname } from '../../runtimePaths';
 import { apiFetch } from '../../shared/api';
-import type { ChangePasswordFormValues } from './ShellFrame';
 import { SESSION_STORAGE_KEY } from './ShellSessionStorage';
 import type { AppMenuKey } from '../route-catalog/RouteCatalog';
 import {
@@ -20,6 +23,11 @@ import {
 } from '../route-catalog/routePaths';
 import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery';
 
+function redirectToLogin() {
+  if (typeof window === 'undefined') return;
+  window.history.replaceState({}, '', withCurrentWorkspaceDevQuery('/login'));
+  window.dispatchEvent(new PopStateEvent('popstate'));
+}
 type UseShellAccountControllerParams = {
   activeMenuKey: AppMenuKey;
   resetStoreSync: () => void;
@@ -47,6 +55,20 @@ export function useShellAccountController({
   const [changePasswordForm] = Form.useForm<ChangePasswordFormValues>();
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
+  const clearLocalSession = useCallback(() => {
+    setSession(null);
+    setActiveMenuKey('purchase-order');
+    setLoginError(null);
+    resetStoreSync();
+    loginForm.resetFields();
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.removeItem(SESSION_STORAGE_KEY);
+      } catch {
+        // Ignore localStorage failures; the in-memory session is already cleared.
+      }
+    }
+  }, [loginForm, resetStoreSync, setActiveMenuKey, setSession]);
   const submitLogin = useCallback(async () => {
     try {
       setLoginError(null);
@@ -128,10 +150,7 @@ export function useShellAccountController({
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          userId: session.userId,
-          newPassword: values.password1
-        })
+        body: JSON.stringify(buildChangePasswordRequest(values))
       });
 
       if (!response.ok) {
@@ -149,6 +168,8 @@ export function useShellAccountController({
       message.success(payload.message ?? '密码修改成功');
       setChangePasswordOpen(false);
       changePasswordForm.resetFields();
+      clearLocalSession();
+      redirectToLogin();
     } catch (error) {
       if (error && typeof error === 'object' && 'errorFields' in error) {
         return;
@@ -158,7 +179,7 @@ export function useShellAccountController({
     } finally {
       setChangePasswordSubmitting(false);
     }
-  }, [changePasswordForm, session]);
+  }, [changePasswordForm, clearLocalSession, session]);
 
   const handleSessionStoreChange = useCallback((nextSession: AuthSession) => {
     const normalizedNextSession = normalizeSessionRoleView(nextSession);
@@ -199,27 +220,17 @@ export function useShellAccountController({
     void apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => {
       // Cookie cleanup is best-effort; local state is still cleared below.
     });
-    setSession(null);
-    setActiveMenuKey('purchase-order');
-    setLoginError(null);
-    resetStoreSync();
-    loginForm.resetFields();
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem(SESSION_STORAGE_KEY);
-    }
+    clearLocalSession();
+    redirectToLogin();
     message.success('已退出当前登录');
-  }, [loginForm, resetStoreSync, setActiveMenuKey, setSession]);
+  }, [clearLocalSession]);
 
   const requestLogout = useCallback(() => {
     if (session) {
       setLogoutConfirmOpen(true);
       return;
     }
-    if (typeof window === 'undefined') {
-      return;
-    }
-    window.history.replaceState({}, '', withCurrentWorkspaceDevQuery('/login'));
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    redirectToLogin();
   }, [session]);
 
   const userDropdownItems = useMemo<MenuProps['items']>(
