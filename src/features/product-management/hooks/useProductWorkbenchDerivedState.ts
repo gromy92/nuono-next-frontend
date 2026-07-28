@@ -1,13 +1,7 @@
-import { useEffect, useMemo } from 'react';
-import type { Dispatch, RefObject, SetStateAction } from 'react';
+import { useEffect, useMemo, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import { isVisibleDetailedAttributeRecord } from '../../product-editor/productAttributeTemplate';
 import { productSharedSnapshot } from '../workspaceHelpers';
-import {
-  areSnapshotPartsEqual,
-  normalizeSnapshotTextList,
-  normalizeStringList,
-  siteOfferEditableFieldsEqual, siteOfferCode, textInputValue
-} from '../utils/common';
+import { areSnapshotPartsEqual, normalizeSnapshotTextList, normalizeStringList, siteOfferEditableFieldsEqual, siteOfferCode, textInputValue } from '../utils/common';
 import {
   buildProductInsightMetrics,
   buildProductSiteSummary,

@@ -1,15 +1,5 @@
 import { type Dispatch, type Key, type SetStateAction } from 'react';
-import {
-  App as AntdApp,
-  Col,
-  ConfigProvider,
-  Form,
-  Input,
-  Layout,
-  Modal,
-  Row,
-  Typography
-} from 'antd';
+import { App as AntdApp, Col, ConfigProvider, Form, Input, Layout, Modal, Row, Typography } from 'antd';
 import type { FormInstance, MenuProps, TabsProps } from 'antd';
 import { WorkspaceTabsBar, type WorkspaceTabItem } from './WorkspaceTabsBar';
 import { ReplicaLoginPage } from '../auth/ReplicaLoginPage';

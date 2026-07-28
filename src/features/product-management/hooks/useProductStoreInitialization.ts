@@ -1,17 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import { message } from 'antd';
 import type { AuthSession } from '../../auth/session';
 import { fetchStoreInitializationStatus, startStoreInitializationRequest } from '../api';
 import { findProductStoreByCode, pickPreferredBoundStore, resolveProductApiStoreCode } from '../workspaceHelpers';
 import type { LoadProductListDatasetOptions } from './useProductListDatasetLoader';
-import {
-  buildAuthorizedStoreOptions,
-  resolvePreferredInitializationStoreCode,
-  resolveSelectedInitializationStoreCode,
-  toInitializationStoreOption,
-  toProductStoreOption
-} from '../utils/storeInitialization';
+import { buildAuthorizedStoreOptions, resolvePreferredInitializationStoreCode, resolveSelectedInitializationStoreCode, toInitializationStoreOption, toProductStoreOption } from '../utils/storeInitialization';
 import type { StoreSyncOverviewState } from '../workspaceContracts';
 import type { ProductListDatasetState, StoreInitializationPayload, StoreInitializationState } from '../types';
 type UseProductStoreInitializationParams = {
