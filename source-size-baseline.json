@@ -22,7 +22,6 @@
     {"path":"src/features/procurement-confirmation/hooks/useProcurementRequirementActions.ts","ceiling":374},
     {"path":"src/features/procurement/autoInquiry.ts","ceiling":319},
     {"path":"src/features/procurement/ProcurementAcceptanceBoard.tsx","ceiling":314},
-    {"path":"src/features/procurement/ProcurementAutoInquiryValidationPanel.tsx","ceiling":425},
     {"path":"src/features/procurement/ProcurementCandidateResultCard.tsx","ceiling":347},
     {"path":"src/features/procurement/types.ts","ceiling":337},
     {"path":"src/features/product-baseline/ProductBaselineDisplay.tsx","ceiling":335},
