@@ -1,4 +1,5 @@
 import { ProductDetailOfficialTabs } from './ProductDetailOfficialTabs';
+import { ProductOfferStockSection } from './ProductOfferStockSection';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 
 type ProductDetailOfficialTabsPanelProps = {
@@ -38,7 +39,13 @@ export function ProductDetailOfficialTabsPanel({ workspace }: ProductDetailOffic
       currentProductSummarySurface={currentProductSummarySurface}
       productSnapshotView={productSnapshotView}
       activeProductSiteOffer={activeProductSiteOffer}
-      productWarehouseStockRows={productWarehouseStockRows}
+      offerStockSection={
+        <ProductOfferStockSection
+          productSnapshotView={productSnapshotView}
+          activeProductSiteOffer={activeProductSiteOffer}
+          productWarehouseStockRows={productWarehouseStockRows}
+        />
+      }
       productContentDomain={productContentDomain}
       productContentProgressDone={productContentProgressDone}
       productContentProgressTotal={productContentProgressTotal}

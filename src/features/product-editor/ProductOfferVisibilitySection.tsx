@@ -1,20 +1,16 @@
 import { EyeOutlined } from '@ant-design/icons';
 import { Space, Switch, Tag, Typography } from 'antd';
-import type { ProductSummarySurface } from '../types';
-import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
-import { isLiveStatusActive, siteOfferCode } from '../utils';
+import { isProductOfferLiveStatusActive, productOfferStoreCode } from './productOfferValues';
 
 const { Text } = Typography;
 
 export function ProductOfferVisibilitySection(props: {
   activeProductSiteOffer?: Record<string, unknown>;
-  currentProductSummarySurface: ProductSummarySurface | null;
-  productSnapshotView?: ProductMasterSnapshotPayload;
   hideLiveStatusText?: boolean;
   updateSiteOfferField: (storeCode: string, field: string, value: unknown) => void;
 }) {
   const { activeProductSiteOffer, hideLiveStatusText, updateSiteOfferField } = props;
-  const liveActive = isLiveStatusActive(activeProductSiteOffer?.liveStatus);
+  const liveActive = isProductOfferLiveStatusActive(activeProductSiteOffer?.liveStatus);
   const liveLabel = activeProductSiteOffer?.liveStatus === undefined ? '-' : liveActive ? 'Live' : 'Not Live';
   const liveTag = (
     <Tag color={liveActive ? 'success' : 'default'} style={{ marginInlineEnd: 0, borderRadius: 999, paddingInline: 12 }}>
@@ -32,7 +28,7 @@ export function ProductOfferVisibilitySection(props: {
             checked={Boolean(activeProductSiteOffer?.isActive)}
             onChange={(checked) =>
               activeProductSiteOffer
-                ? updateSiteOfferField(siteOfferCode(activeProductSiteOffer), 'isActive', checked)
+                ? updateSiteOfferField(productOfferStoreCode(activeProductSiteOffer), 'isActive', checked)
                 : undefined
             }
           />

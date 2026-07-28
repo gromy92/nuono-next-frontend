@@ -6,7 +6,7 @@ const tabsTypesSource = readFileSync(
   new URL('../product-editor/productDetailEditorTypes.ts', import.meta.url),
   'utf8'
 )
-const offerTabSource = readFileSync(new URL('../product-management/components/ProductOfferTab.tsx', import.meta.url), 'utf8')
+const offerTabSource = readFileSync(new URL('../product-editor/ProductOfferTab.tsx', import.meta.url), 'utf8')
 const contentTabSource = readFileSync(
   new URL('../product-management/components/ProductContentTab.tsx', import.meta.url),
   'utf8'
@@ -16,24 +16,24 @@ const officialTabsSource = readFileSync(
   'utf8'
 )
 const visibilitySource = readFileSync(
-  new URL('../product-management/components/ProductOfferVisibilitySection.tsx', import.meta.url),
+  new URL('../product-editor/ProductOfferVisibilitySection.tsx', import.meta.url),
   'utf8'
 )
 const pricingSource = readFileSync(
-  new URL('../product-management/components/ProductOfferPricingSection.tsx', import.meta.url),
+  new URL('../product-editor/ProductOfferPricingSection.tsx', import.meta.url),
   'utf8'
 )
 const pricingCssSource = readFileSync(
-  new URL('../product-management/components/ProductOfferPricingSection.css', import.meta.url),
+  new URL('../product-editor/ProductOfferPricingSection.css', import.meta.url),
   'utf8'
 )
 const adapterSource = readFileSync(new URL('./productDetailAdapter.ts', import.meta.url), 'utf8')
 const metaSource = readFileSync(
-  new URL('../product-management/components/ProductOfferMetaSection.tsx', import.meta.url),
+  new URL('../product-editor/ProductOfferMetaSection.tsx', import.meta.url),
   'utf8'
 )
 const metaCssSource = readFileSync(
-  new URL('../product-management/components/ProductOfferMetaSection.css', import.meta.url),
+  new URL('../product-editor/ProductOfferMetaSection.css', import.meta.url),
   'utf8'
 )
 const listingPageCssSource = readFileSync(new URL('./ProductListingPage.css', import.meta.url), 'utf8')

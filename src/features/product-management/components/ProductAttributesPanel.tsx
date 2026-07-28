@@ -15,7 +15,7 @@ import {
   ProductAttributeValueInput,
   writableAttributeField
 } from './ProductAttributeFieldControl';
-import { ProductDetailSection } from './ProductDetailSection';
+import { ProductDetailSection } from '../../product-editor/ProductDetailSection';
 
 const { Text } = Typography;
 

@@ -317,8 +317,6 @@ export function ProductListingDetailEditor({
         currentProductSummarySurface={summary}
         productSnapshotView={snapshot}
         activeProductSiteOffer={activeSiteOffer}
-        productWarehouseStockRows={[]}
-        hideOfferStockSection
         productContentDomain={domains.content}
         productContentProgressDone={contentProgress.done} productContentProgressTotal={contentProgress.total}
         productCompetitorMaterials={competitorMaterials}

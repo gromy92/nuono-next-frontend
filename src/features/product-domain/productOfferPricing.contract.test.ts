@@ -57,7 +57,7 @@ assert.equal(existsSync(oldModulePath), false, 'product-management must not reta
 
 const callers = [
   'src/features/product-listing/productListingDraftCompleteness.ts',
-  'src/features/product-management/components/ProductOfferPricingSection.tsx',
+  'src/features/product-editor/ProductOfferPricingSection.tsx',
   'src/features/product-management/utils/fieldDomainIssues.ts'
 ]
 

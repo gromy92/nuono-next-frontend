@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 import { Button, Col, Input, Row, Select, Space, Tag, Tooltip, Typography, message } from 'antd';
-import type { ProductSummarySurface } from '../types';
-import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
-import { siteOfferCode, textInputValue } from '../utils';
+import type { ProductMasterSnapshotPayload } from '../product-domain/productMasterSnapshot';
+import type { ProductSummarySurface } from '../product-domain/productSummaryTypes';
+import { productOfferStoreCode, productOfferTextValue } from './productOfferValues';
 import './ProductOfferMetaSection.css';
 
 const { Text } = Typography;
@@ -18,7 +18,7 @@ const WARRANTY_OPTIONS = [
 
 function findBarcodeAttribute(productSnapshotView?: ProductMasterSnapshotPayload) {
   return productSnapshotView?.keyAttributes.find((item) => {
-    const code = textInputValue(item.code).toLowerCase();
+    const code = productOfferTextValue(item.code).toLowerCase();
     return ['barcode', 'gtin', 'ean', 'upc'].some((keyword) => code.includes(keyword));
   });
 }
@@ -27,7 +27,7 @@ function splitBarcodeValues(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value.flatMap((item) => splitBarcodeValues(item));
   }
-  return textInputValue(value)
+  return productOfferTextValue(value)
     .split(/[,;\n]/)
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
@@ -109,11 +109,12 @@ export function ProductOfferMetaSection(props: {
   );
   const primaryBarcode = barcodes[0] ?? '';
   const barcodeAttribute = useMemo(() => findBarcodeAttribute(productSnapshotView), [productSnapshotView]);
-  const barcodeAttributeCode = textInputValue(barcodeAttribute?.code);
+  const barcodeAttributeCode = productOfferTextValue(barcodeAttribute?.code);
   const canAddBarcode = Boolean(barcodeAttributeCode);
   const canDeleteBarcode = productSnapshotView?.mode === 'listing-draft';
   const [barcodeDraft, setBarcodeDraft] = useState('');
-  const warrantyValue = textInputValue(activeProductSiteOffer?.idWarranty ?? productSnapshotView?.pricing.idWarranty ?? '0') || '0';
+  const warrantyValue =
+    productOfferTextValue(activeProductSiteOffer?.idWarranty ?? productSnapshotView?.pricing.idWarranty ?? '0') || '0';
 
   useEffect(() => {
     setBarcodeDraft('');
@@ -124,7 +125,7 @@ export function ProductOfferMetaSection(props: {
     if (!activeProductSiteOffer) {
       return;
     }
-    updateSiteOfferField(siteOfferCode(activeProductSiteOffer), field, value);
+    updateSiteOfferField(productOfferStoreCode(activeProductSiteOffer), field, value);
   };
 
   const submitBarcode = () => {
@@ -264,7 +265,7 @@ export function ProductOfferMetaSection(props: {
             autoSize={{ minRows: 2, maxRows: 4 }}
             maxLength={255}
             showCount
-            value={textInputValue(activeProductSiteOffer?.offerNote)}
+            value={productOfferTextValue(activeProductSiteOffer?.offerNote)}
             onChange={(event) => updateField('offerNote', event.target.value)}
           />
         </Space>

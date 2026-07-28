@@ -1,9 +1,8 @@
 import { Divider, Space } from 'antd';
 import { ProductDetailSection } from './ProductDetailSection';
-import type { ProductOfferEditorProps } from '../../product-editor/productDetailEditorTypes';
+import type { ProductOfferEditorProps } from './productDetailEditorTypes';
 import { ProductOfferMetaSection } from './ProductOfferMetaSection';
 import { ProductOfferPricingSection } from './ProductOfferPricingSection';
-import { ProductOfferStockSection } from './ProductOfferStockSection';
 import { ProductOfferVisibilitySection } from './ProductOfferVisibilitySection';
 
 export function ProductOfferTab(props: ProductOfferEditorProps) {
@@ -11,10 +10,9 @@ export function ProductOfferTab(props: ProductOfferEditorProps) {
     productSnapshotView,
     activeProductSiteOffer,
     currentProductSummarySurface,
-    productWarehouseStockRows,
     offerHeaderExtra,
+    offerStockSection,
     offerPresentation,
-    hideOfferStockSection,
     barcodeValidationIssue,
     onBarcodeDraftChange,
     updateSiteOfferField,
@@ -26,8 +24,6 @@ export function ProductOfferTab(props: ProductOfferEditorProps) {
   const visibilitySection = (
     <ProductOfferVisibilitySection
       activeProductSiteOffer={activeProductSiteOffer}
-      currentProductSummarySurface={currentProductSummarySurface}
-      productSnapshotView={productSnapshotView}
       hideLiveStatusText={compactListingOffer}
       updateSiteOfferField={updateSiteOfferField}
     />
@@ -60,14 +56,10 @@ export function ProductOfferTab(props: ProductOfferEditorProps) {
             horizontalPricingLayout={compactListingOffer}
             updateSiteOfferField={updateSiteOfferField}
           />
-          {!hideOfferStockSection ? (
+          {offerStockSection ? (
             <>
               <Divider style={{ margin: 0 }} />
-              <ProductOfferStockSection
-                productSnapshotView={productSnapshotView}
-                activeProductSiteOffer={activeProductSiteOffer}
-                productWarehouseStockRows={productWarehouseStockRows}
-              />
+              {offerStockSection}
             </>
           ) : null}
           <Divider style={{ margin: 0 }} />

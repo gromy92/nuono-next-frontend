@@ -5,9 +5,9 @@ import {
   type ProductFieldDomainSurface
 } from '../../product-editor/productFieldDomain';
 import type { ProductDetailEditorHostProps } from '../../product-editor/productDetailEditorTypes';
+import { ProductOfferTab } from '../../product-editor/ProductOfferTab';
 import { ProductContentTab } from './ProductContentTab';
 import { ProductInsightsTab } from './ProductInsightsTab';
-import { ProductOfferTab } from './ProductOfferTab';
 import { ProductSizesTab } from './ProductSizesTab';
 
 function ProductDetailTabLabel(props: { title: string; badge?: React.ReactNode }) {

@@ -7,9 +7,9 @@ const officialTabsTypesSource = readFileSync(
   new URL('../product-editor/productDetailEditorTypes.ts', import.meta.url),
   'utf8'
 )
-const offerTabSource = readFileSync(new URL('../product-management/components/ProductOfferTab.tsx', import.meta.url), 'utf8')
+const offerTabSource = readFileSync(new URL('../product-editor/ProductOfferTab.tsx', import.meta.url), 'utf8')
 const offerMetaSource = readFileSync(
-  new URL('../product-management/components/ProductOfferMetaSection.tsx', import.meta.url),
+  new URL('../product-editor/ProductOfferMetaSection.tsx', import.meta.url),
   'utf8'
 )
 

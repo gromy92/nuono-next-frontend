@@ -3,7 +3,7 @@ import type { ProductFieldDomainSurface } from '../../product-editor/productFiel
 import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import type { ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent';
 import { ProductBilingualContentEditor } from './ProductBilingualContentEditor';
-import { ProductDetailSection } from './ProductDetailSection';
+import { ProductDetailSection } from '../../product-editor/ProductDetailSection';
 
 export function ProductBasicContentPanel(props: {
   productContentDomain?: ProductFieldDomainSurface;

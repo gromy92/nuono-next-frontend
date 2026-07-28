@@ -5,7 +5,7 @@ import { importProductImageAsset, uploadProductImageAsset } from '../api';
 import type { ProductFieldDomainSurface } from '../../product-editor/productFieldDomain';
 import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import { textInputValue } from '../utils';
-import { ProductDetailSection } from './ProductDetailSection';
+import { ProductDetailSection } from '../../product-editor/ProductDetailSection';
 import { ProductImageAssetPreview } from './ProductImageAssetPreview';
 import { ProductImageManagerDrawer } from './ProductImageManagerDrawer';
 import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../../product-image-profile/productImageRole';

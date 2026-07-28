@@ -35,7 +35,6 @@ assert.doesNotMatch(
 });
 
 [
-  ['ProductOfferTab.tsx', 'ProductOfferEditorProps'],
   ['ProductContentTab.tsx', 'ProductContentEditorProps'],
   ['ProductSizesTab.tsx', 'ProductSizesEditorProps'],
   ['ProductInsightsTab.tsx', 'ProductInsightsEditorProps']
@@ -44,6 +43,10 @@ assert.doesNotMatch(
   assert.match(source, new RegExp(`props: ${typeName}`), `${fileName} must consume its narrow Interface`);
   assert.doesNotMatch(source, /ProductDetailOfficialTabsProps/, `${fileName} must not consume the aggregate Interface`);
 });
+
+const offerTabSource = readFileSync('src/features/product-editor/ProductOfferTab.tsx', 'utf8');
+assert.match(offerTabSource, /props: ProductOfferEditorProps/, 'Offer editor must consume its narrow Interface');
+assert.doesNotMatch(offerTabSource, /product-management|product-listing/, 'Offer editor must not depend on either host Module');
 
 assert.match(
   officialTabsSource,

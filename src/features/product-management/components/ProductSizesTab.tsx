@@ -1,6 +1,6 @@
 import { Space, Table } from 'antd';
 import { createProductSizeColumns } from '../productDetailColumns';
-import { ProductDetailSection } from './ProductDetailSection';
+import { ProductDetailSection } from '../../product-editor/ProductDetailSection';
 import type { ProductSizesEditorProps } from '../../product-editor/productDetailEditorTypes';
 
 export function ProductSizesTab(props: ProductSizesEditorProps) {

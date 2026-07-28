@@ -3,7 +3,7 @@ import { Space, Tag, Typography } from 'antd';
 import {
   productFieldDomainStatusMeta,
   type ProductFieldDomainSurface
-} from '../../product-editor/productFieldDomain';
+} from './productFieldDomain';
 
 const { Text } = Typography;
 

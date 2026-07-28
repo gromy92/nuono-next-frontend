@@ -7,7 +7,7 @@ import type { ProductMasterSnapshotPayload } from '../../product-domain/productM
 import { preferredCompetitorCategoryLabel, type ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent';
 import { textInputValue } from '../utils';
 import { ProductClassificationFields } from './ProductClassificationFields';
-import { ProductDetailSection } from './ProductDetailSection';
+import { ProductDetailSection } from '../../product-editor/ProductDetailSection';
 const { Text } = Typography;
 
 type ProductCompetitorCategoryRow = {

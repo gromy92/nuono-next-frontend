@@ -28,9 +28,8 @@ export type ProductOfferEditorProps = ProductDetailEditorPresentationProps & {
   productSnapshotView?: ProductMasterSnapshotPayload;
   activeProductSiteOffer?: Record<string, unknown>;
   currentProductSummarySurface: ProductSummarySurface | null;
-  productWarehouseStockRows: Array<Record<string, unknown>>;
   offerHeaderExtra?: ReactNode;
-  hideOfferStockSection?: boolean;
+  offerStockSection?: ReactNode;
   barcodeValidationIssue?: ProductFieldValidationIssue;
   onBarcodeDraftChange?: (value: string) => void;
   updateSiteOfferField: (storeCode: string, field: string, value: unknown) => void;
