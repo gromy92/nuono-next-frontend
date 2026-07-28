@@ -37,10 +37,6 @@ const shellWorkspaceContentSource = fs.readFileSync(
   path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
   'utf8'
 )
-const legacyCommerceWorkspaceSource = fs.readFileSync(
-  path.join(process.cwd(), 'src/features/app-shell/LegacyCommerceWorkspaceContent.tsx'),
-  'utf8'
-)
 const shellWorkspaceNavigationSource = fs.readFileSync(
   path.join(process.cwd(), 'src/features/app-shell/useShellWorkspaceNavigation.tsx'),
   'utf8'
@@ -95,8 +91,11 @@ assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-listing'), t
 assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-pre-order-profit'), false)
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/listing'), 'purchase-listing')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/pre-order-profit'), null)
-assert.equal(legacyCommerceWorkspaceSource.includes('ProductListingPage'), false)
-assert.equal(legacyCommerceWorkspaceSource.includes('PreOrderProfitPage'), false)
+assert.equal(
+  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/LegacyCommerceWorkspaceContent.tsx')),
+  false,
+  'commerce routes must not retain a Legacy renderer registry'
+)
 assert.equal(
   fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
     '../pre-order-profit/'

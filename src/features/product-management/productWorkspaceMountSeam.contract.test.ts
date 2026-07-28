@@ -5,10 +5,6 @@ const productRoutes = readFileSync('src/features/route-catalog/productRoutes.ts'
 const productMount = readFileSync('src/features/product-management/ProductWorkspaceMount.tsx', 'utf8');
 const shellRuntime = readFileSync('src/features/app-shell/AppShellRuntime.tsx', 'utf8');
 const shellFrame = readFileSync('src/features/app-shell/ShellFrame.tsx', 'utf8');
-const legacyCommerce = readFileSync(
-  'src/features/app-shell/LegacyCommerceWorkspaceContent.tsx',
-  'utf8'
-);
 const workspaceContent = readFileSync('src/features/app-shell/ShellWorkspaceContent.tsx', 'utf8');
 
 assert.match(
@@ -36,11 +32,6 @@ assert.doesNotMatch(
   `${shellRuntime}\n${shellFrame}`,
   /useProductManagementWorkspace|productWorkspace=|ProductManagementWorkspaceModals|ProductWorkspaceTabKey/,
   'Shell must not own product workspace state or modal Implementation'
-);
-assert.doesNotMatch(
-  legacyCommerce,
-  /product-management|product-groups|product-specs|ProductManagement|ProductGroup|ProductSpecs/,
-  'Legacy commerce dispatch must not retain product branches'
 );
 assert.match(
   workspaceContent,

@@ -14,7 +14,6 @@ import type { FormInstance, MenuProps, TabsProps } from 'antd';
 import { WorkspaceTabsBar, type WorkspaceTabItem } from './WorkspaceTabsBar';
 import { ReplicaLoginPage } from '../auth/ReplicaLoginPage';
 import type { AuthRoleView, AuthSession } from '../auth/session';
-import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
 import type { StoreSyncOverviewState } from '../store-sync/types';
 import { ShellHeader } from './ShellHeader';
@@ -55,9 +54,6 @@ type ShellFrameProps = {
   handleUserDropdownClick: ({ key }: { key: string }) => void;
   handleWorkspaceTabChange: (key: string) => void;
   handleWorkspaceTabEdit: NonNullable<TabsProps['onEdit']>;
-  inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
-  inTransitWorkspaceTabKey: 'purchase-in-transit-goods' | 'in-transit-box-detail';
-  isInTransitBoxDetailTab: boolean;
   loadStoreSync: (ownerUserId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   loginError: string | null;
   loginForm: FormInstance;
@@ -66,8 +62,6 @@ type ShellFrameProps = {
   logoutConfirmOpen: boolean;
   noMenuPermission: boolean;
   notifyRoleManagementDataChanged: (source?: 'store-management') => void;
-  onCloseInTransitBoxDetailTab: () => Promise<void> | void;
-  onOpenInTransitBoxDetailTab: (request: InTransitBoxDetailTabRequest) => void;
   openedWorkspaceTabKeys: AppMenuKey[];
   roleManagementRefreshSignal: number;
   setChangePasswordOpen: (open: boolean) => void;
@@ -110,9 +104,6 @@ export function ShellFrame({
   handleUserDropdownClick,
   handleWorkspaceTabChange,
   handleWorkspaceTabEdit,
-  inTransitBoxDetailTabRequest,
-  inTransitWorkspaceTabKey,
-  isInTransitBoxDetailTab,
   loadStoreSync,
   loginError,
   loginForm,
@@ -121,8 +112,6 @@ export function ShellFrame({
   logoutConfirmOpen,
   noMenuPermission,
   notifyRoleManagementDataChanged,
-  onCloseInTransitBoxDetailTab,
-  onOpenInTransitBoxDetailTab,
   openedWorkspaceTabKeys,
   roleManagementRefreshSignal,
   setChangePasswordOpen,
@@ -249,12 +238,7 @@ export function ShellFrame({
                             activeMenuKey={activeMenuKey}
                             noMenuPermission={noMenuPermission}
                             shellSession={shellSession}
-                            onOpenInTransitBoxDetailTab={onOpenInTransitBoxDetailTab}
-                            onCloseInTransitBoxDetailTab={onCloseInTransitBoxDetailTab}
                             activeOwnerId={activeOwnerId}
-                            inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}
-                            isInTransitBoxDetailTab={isInTransitBoxDetailTab}
-                            inTransitWorkspaceTabKey={inTransitWorkspaceTabKey}
                             roleManagementTabKey={userRoleActiveTabKey}
                             canShowStoreManagement={canShowStoreManagement}
                             roleManagementRefreshSignal={roleManagementRefreshSignal}

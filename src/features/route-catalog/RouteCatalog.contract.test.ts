@@ -129,13 +129,12 @@ assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 29)
 const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.workspaceMount === 'function'
 )
-assert.equal(mountedDefinitions.length, 32)
+assert.equal(mountedDefinitions.length, 33)
 assert.deepEqual(
   Object.values(WORKSPACE_MENU_DEFINITIONS)
     .filter((definition) => typeof definition.contentKind === 'string')
     .map((definition) => definition.key),
   [
-    'purchase-in-transit-goods',
     'user-store-noon',
     'user-role'
   ]

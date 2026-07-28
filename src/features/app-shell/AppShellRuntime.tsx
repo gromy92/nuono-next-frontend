@@ -1,5 +1,3 @@
-import { useCallback, useState } from 'react';
-import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import { StoreSyncProvider, useStoreSyncContext } from '../store-sync/StoreSyncContext';
 import {
   useWorkspaceOwnedTabsController,
@@ -40,10 +38,6 @@ function AppShellRuntimeContent({
     usingProcurementRequirementDemoSession,
     visibleWorkspaceMenuItems
   } = sessionState;
-  const [inTransitBoxDetailTabRequest, setInTransitBoxDetailTabRequest] =
-    useState<InTransitBoxDetailTabRequest | null>(null);
-  const [activeInTransitWorkspaceTabKey, setActiveInTransitWorkspaceTabKey] =
-    useState<'purchase-in-transit-goods' | 'in-transit-box-detail'>('purchase-in-transit-goods');
   const {
     activeOwnerId,
     canManageStoreBinding,
@@ -103,32 +97,6 @@ function AppShellRuntimeContent({
     setSession
   });
 
-  const hasInTransitBoxDetailTab = Boolean(inTransitBoxDetailTabRequest);
-  const resolvedInTransitWorkspaceTabKey =
-    activeInTransitWorkspaceTabKey === 'in-transit-box-detail' && hasInTransitBoxDetailTab
-      ? 'in-transit-box-detail'
-      : 'purchase-in-transit-goods';
-  const isInTransitBoxDetailTab =
-    activeMenuKey === 'purchase-in-transit-goods' && resolvedInTransitWorkspaceTabKey === 'in-transit-box-detail';
-
-  const openInTransitBoxDetailTab = useCallback(
-    (request: InTransitBoxDetailTabRequest) => {
-      setInTransitBoxDetailTabRequest(request);
-      setActiveMenuKey('purchase-in-transit-goods');
-      setActiveInTransitWorkspaceTabKey('in-transit-box-detail');
-      syncWorkspacePathForMenuKey('purchase-in-transit-goods');
-    },
-    [setActiveMenuKey, syncWorkspacePathForMenuKey]
-  );
-
-  const requestCloseInTransitBoxDetailTab = useCallback(() => {
-    setInTransitBoxDetailTabRequest(null);
-    setActiveInTransitWorkspaceTabKey('purchase-in-transit-goods');
-    if (activeMenuKey === 'purchase-in-transit-goods') {
-      syncWorkspacePathForMenuKey('purchase-in-transit-goods');
-    }
-  }, [activeMenuKey, syncWorkspacePathForMenuKey]);
-
   const {
     activeMenuPathLabel,
     activeSidebarOpenKeys,
@@ -146,15 +114,8 @@ function AppShellRuntimeContent({
     workspaceTabItems
   } = useShellWorkspaceNavigation({
     activeMenuKey,
-    hasInTransitBoxDetailTab,
-    inTransitBoxDetailTabRequest,
     ownedTabsController,
-    requestCloseInTransitBoxDetailTab,
-    resolvedInTransitWorkspaceTabKey,
     sessionAllowedMenuKeySet,
-    setActiveMenuKey,
-    setActiveInTransitWorkspaceTabKey,
-    syncWorkspacePathForMenuKey,
     visibleWorkspaceMenuItems
   });
 
@@ -179,9 +140,6 @@ function AppShellRuntimeContent({
       handleUserDropdownClick={handleUserDropdownClick}
       handleWorkspaceTabChange={handleWorkspaceTabChange}
       handleWorkspaceTabEdit={handleWorkspaceTabEdit}
-      inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}
-      isInTransitBoxDetailTab={isInTransitBoxDetailTab}
-      inTransitWorkspaceTabKey={resolvedInTransitWorkspaceTabKey}
       loadStoreSync={loadStoreSync}
       loginError={loginError}
       loginForm={loginForm}
@@ -190,8 +148,6 @@ function AppShellRuntimeContent({
       logoutConfirmOpen={logoutConfirmOpen}
       noMenuPermission={!usingProcurementRequirementDemoSession && !sessionAllowedMenuKeys.length}
       notifyRoleManagementDataChanged={notifyRoleManagementDataChanged}
-      onCloseInTransitBoxDetailTab={requestCloseInTransitBoxDetailTab}
-      onOpenInTransitBoxDetailTab={openInTransitBoxDetailTab}
       openedWorkspaceTabKeys={openedWorkspaceTabKeys}
       roleManagementRefreshSignal={roleManagementRefreshSignal}
       setActiveMenuKey={setActiveMenuKey}

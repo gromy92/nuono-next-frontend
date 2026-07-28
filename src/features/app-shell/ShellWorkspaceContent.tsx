@@ -49,7 +49,6 @@ export function ShellWorkspaceContent({
   activeMenuKey,
   noMenuPermission,
   openedWorkspaceTabKeys,
-  inTransitWorkspaceTabKey,
   ...baseContext
 }: ShellWorkspaceContentProps) {
   const mountedWorkspaceMenuKeys = useMemo(
@@ -89,11 +88,6 @@ export function ShellWorkspaceContent({
       {mountGroups.map((group) => {
         const isActivePane = group.menuKeys.includes(activeWorkspaceMountKey)
         const menuKey = isActivePane ? activeMenuKey : group.key
-        const context: ShellWorkspaceRenderContext = {
-          ...baseContext,
-          isInTransitBoxDetailTab:
-            menuKey === 'purchase-in-transit-goods' && inTransitWorkspaceTabKey === 'in-transit-box-detail'
-        }
         return (
           <div
             key={group.key}
@@ -101,7 +95,7 @@ export function ShellWorkspaceContent({
             data-workspace-menu-key={menuKey}
             aria-hidden={!isActivePane}
           >
-            <ShellWorkspaceContentPane active={isActivePane} menuKey={menuKey} context={context} />
+            <ShellWorkspaceContentPane active={isActivePane} menuKey={menuKey} context={baseContext} />
           </div>
         )
       })}

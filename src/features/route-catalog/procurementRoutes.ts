@@ -158,7 +158,11 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 在途商品',
     tabLabel: '在途商品',
-    contentKind: 'purchase-in-transit-goods',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../in-transit-goods/InTransitGoodsWorkspaceMount').then((module) => ({
+        default: module.InTransitGoodsWorkspaceMount
+      }))
+    ),
     closable: true,
     sidebarOrder: 6
   }
