@@ -30,7 +30,6 @@
     {"path":"src/features/product-image-profile/ProductImageProfilePage.tsx","ceiling":334},
     {"path":"src/features/product-management/components/ProductListIdentityCells.tsx","ceiling":389},
     {"path":"src/features/product-management/components/ProductRichTextEditor.tsx","ceiling":389},
-    {"path":"src/features/product-management/components/ProductVariantSpecTable.tsx","ceiling":429},
     {"path":"src/features/product-management/hooks/useProductListMutations.ts","ceiling":336},
     {"path":"src/features/product-management/hooks/useProductStoreInitialization.ts","ceiling":305},
     {"path":"src/features/product-management/hooks/useProductWorkbenchDerivedState.ts","ceiling":304},
