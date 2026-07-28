@@ -10,7 +10,12 @@ const typesSource = [
   readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderLogisticsPlanTypes.ts'), 'utf8'),
   readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderLogisticsQuoteTypes.ts'), 'utf8')
 ].join('\n');
-const apiSource = readFileSync(resolve(root, 'src/features/purchase-order/api.ts'), 'utf8');
+const apiSource = [
+  readFileSync(resolve(root, 'src/features/purchase-order/api.ts'), 'utf8'),
+  readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderApiClient.ts'), 'utf8'),
+  readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderRequests.ts'), 'utf8'),
+  readFileSync(resolve(root, 'src/features/purchase-order/shippingOrderRequests.ts'), 'utf8')
+].join('\n');
 const pageSource = readFileSync(resolve(root, 'src/features/purchase-order/PurchaseOrderPage.tsx'), 'utf8');
 const formsSource = readFileSync(resolve(root, 'src/features/purchase-order/components/PurchaseOrderForms.tsx'), 'utf8');
 const itemCommandSource = readFileSync(resolve(root, 'src/features/purchase-order/model/purchaseOrderItemCommandModel.ts'), 'utf8');

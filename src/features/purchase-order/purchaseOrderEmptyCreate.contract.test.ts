@@ -24,7 +24,12 @@ const purchaseOrderFeatureSource = [
   storeModelSource,
   uiMetaSource
 ].join('\n')
-const apiSource = readFileSync(join(purchaseOrderDir, 'api.ts'), 'utf8')
+const apiSource = [
+  readFileSync(join(purchaseOrderDir, 'api.ts'), 'utf8'),
+  readFileSync(join(purchaseOrderDir, 'purchaseOrderApiClient.ts'), 'utf8'),
+  readFileSync(join(purchaseOrderDir, 'purchaseOrderRequests.ts'), 'utf8'),
+  readFileSync(join(purchaseOrderDir, 'shippingOrderRequests.ts'), 'utf8')
+].join('\n')
 
 assert.doesNotMatch(
   purchaseOrderFeatureSource,
