@@ -1,6 +1,8 @@
 import dayjs from 'dayjs';
 import type { ProductMasterSnapshotPayload, ProductSyncStatus, ProductWorkbenchPayload } from '../types';
+import { normalizeNoonImageUrl } from '../../product-domain/productImageUrl';
 import { createProductMasterSnapshotPayload } from './productMasterSnapshotFactory';
+export { normalizeNoonImageUrl };
 
 export function parseOptionalNumber(value: unknown) {
   if (value === null || value === undefined || value === '') {
@@ -145,36 +147,6 @@ export function normalizeSnapshotTextList(value: unknown) {
   }
   const normalized = String(value).trim();
   return normalized ? [normalized] : [];
-}
-
-function hasImageExtension(value: string) {
-  return /\.(?:avif|gif|jpe?g|png|webp)(?:[?#].*)?$/i.test(value);
-}
-
-export function normalizeNoonImageUrl(value: unknown) {
-  const raw = String(value ?? '').trim();
-  if (!raw) {
-    return '';
-  }
-
-  let normalized = raw;
-  if (/^original\/pzsku\//i.test(normalized)) {
-    normalized = normalized.replace(/^original\/pzsku\//i, 'https://f.nooncdn.com/p/pzsku/');
-  } else if (/^pzsku\//i.test(normalized)) {
-    normalized = `https://f.nooncdn.com/p/${normalized}`;
-  } else if (/^https:\/\/f\.nooncdn\.com\/p\/original\/pzsku\//i.test(normalized)) {
-    normalized = normalized.replace(
-      /^https:\/\/f\.nooncdn\.com\/p\/original\/pzsku\//i,
-      'https://f.nooncdn.com/p/pzsku/'
-    );
-  } else if (/^https:\/\/f\.nooncdn\.com\/pzsku\//i.test(normalized)) {
-    normalized = normalized.replace(/^https:\/\/f\.nooncdn\.com\/pzsku\//i, 'https://f.nooncdn.com/p/pzsku/');
-  }
-
-  if (/^https:\/\/f\.nooncdn\.com\/p\/pzsku\//i.test(normalized) && !hasImageExtension(normalized)) {
-    return `${normalized}.jpg`;
-  }
-  return normalized;
 }
 
 function galleryImageDedupeKey(value: string) {

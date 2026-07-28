@@ -15,9 +15,9 @@ import type {
   ProductVariantSpecSourcePayload,
   ProductVariantSpecSourceType
 } from '../product-management/types';
-import { formatSnapshotValue, normalizeNoonImageUrl } from '../product-management/utils/common';
-import { getProductCurrentZCode, getProductStableIdentityKey } from '../product-management/utils';
-
+import { getProductCurrentZCode, getProductStableIdentityKey } from '../product-domain/productIdentity';
+import { normalizeNoonImageUrl } from '../product-domain/productImageUrl';
+import { formatSnapshotValue } from '../product-management/utils/common';
 const { Paragraph, Text } = Typography;
 
 type ProductSpecsPageProps = {

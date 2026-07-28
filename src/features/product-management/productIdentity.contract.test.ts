@@ -7,7 +7,7 @@ import {
   getProductStableIdentityKey,
   isLocalDraftNoonCode,
   isSameStableProductIdentity
-} from './utils/productIdentity';
+} from '../product-domain/productIdentity';
 
 assert.equal(
   isSameProductDetailRequest(

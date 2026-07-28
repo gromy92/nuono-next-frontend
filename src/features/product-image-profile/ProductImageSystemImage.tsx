@@ -1,6 +1,6 @@
 import { PictureOutlined } from '@ant-design/icons'
 import { useEffect, useState, type ReactNode } from 'react'
-import { normalizeNoonImageUrl } from '../product-management/utils'
+import { normalizeNoonImageUrl } from '../product-domain/productImageUrl'
 import { fetchProductImageAssetMetadata, fetchProductImageAssetPreviewUrl } from './api'
 import { isCompleteImageMetadata, isManagedAssetUrl } from './productImageAssetModel'
 import { optionalNumber, optionalText } from './productImageProfileConstants'

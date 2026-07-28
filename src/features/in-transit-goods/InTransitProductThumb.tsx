@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { normalizeNoonImageUrl } from '../product-management/utils/common'
+import { normalizeNoonImageUrl } from '../product-domain/productImageUrl'
 
 export function InTransitProductThumb({ imageUrl, title }: { imageUrl?: string | null; title: string }) {
   const [failed, setFailed] = useState(false)

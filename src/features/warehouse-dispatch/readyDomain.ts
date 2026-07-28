@@ -1,5 +1,5 @@
 import type { ProductListRowPayload } from '../product-domain/productListTypes'
-import { normalizeNoonImageUrl } from '../product-management/utils'
+import { normalizeNoonImageUrl } from '../product-domain/productImageUrl'
 import type { DispatchPlan, ReadyShipmentItem, WarehouseFulfillmentType, WarehouseTransportMode } from './types'
 import type {
   DispatchTargetTransportMode,

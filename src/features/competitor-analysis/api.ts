@@ -1,5 +1,5 @@
 import { apiFetch, parseApiResponse } from '../../shared/api'
-import { normalizeNoonImageUrl } from '../product-management/utils/common'
+import { normalizeNoonImageUrl } from '../product-domain/productImageUrl'
 import type {
   CompetitorCandidate,
   CompetitorCandidateSource,
