@@ -33,7 +33,7 @@ const allProductManagementSource = productManagementSources.map((item) => item.s
 const catalogTablePanel = source('./components/ProductCatalogTablePanel.tsx');
 const api = featureSource('product-specs/api.ts') + featureSource('product-specs/logisticsProfileApi.ts');
 const historyModalActions = source('./hooks/useProductHistoryModalActions.ts');
-const listMutations = source('./hooks/useProductListMutations.ts');
+const listMutations = ['./hooks/useProductListMutations.ts', './hooks/useApplyProductListSummary.ts'].map(source).join('\n');
 const localDeletion = source('./hooks/useProductLocalDeletion.ts');
 const mediaAndHistoryActions = source('./hooks/useProductMediaAndHistoryActions.ts');
 const mockProductActions = source('./hooks/useMockProductActions.ts');

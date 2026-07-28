@@ -270,7 +270,7 @@ assert.match(
   'Operations config product dimension picker should use the shared dimension option label component'
 );
 
-const productListMutations = read('src/features/product-management/hooks/useProductListMutations.ts');
+const productListMutations = ['useProductListMutations.ts', 'useApplyProductListSummary.ts'].map((path) => read(`src/features/product-management/hooks/${path}`)).join('\n');
 assert.match(
   productListMutations,
   /function summaryAppliesToListStore\b/,
