@@ -1,4 +1,4 @@
-import type { PurchaseSiteCode, PurchaseTransportMode } from './types';
+import type { PurchaseSiteCode, PurchaseTransportMode } from './purchaseOrderBaseTypes';
 
 export type WarehouseQuotePriceSource =
   | 'SHIPPING_ORDER_SNAPSHOT'

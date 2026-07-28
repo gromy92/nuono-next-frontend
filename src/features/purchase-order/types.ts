@@ -1,29 +1,23 @@
-import type { PurchaseOrderLogisticsQuoteSummary } from './purchaseOrderLogisticsQuoteTypes';
+import type {
+  PurchaseCollectionStatus,
+  PurchaseOrderFulfillmentType,
+  PurchaseOrderStatus,
+  PurchaseSiteCode,
+  PurchaseTransportMode,
+  SiteAllocation
+} from './purchaseOrderBaseTypes'
+import type { PurchaseOrderLogisticsQuoteSummary } from './purchaseOrderLogisticsQuoteTypes'
 
-export type PurchaseSiteCode = string
-
-export type PurchaseTransportMode = 'AIR' | 'SEA' | 'UNSPECIFIED' | string
-
-export type PurchaseOrderFulfillmentType = 'WAREHOUSE_RECEIPT' | 'FACTORY_DIRECT' | string
-
-export type PurchaseCollectionStatus =
-  | 'not_started'
-  | 'collecting'
-  | 'succeeded'
-  | 'failed'
-  | 'reused'
-  | 'cancelled'
-
-export type PurchaseOrderStatus =
-  | 'draft'
-  | 'pending_collection'
-  | 'collecting'
-  | 'partial_done'
-  | 'done'
-  | 'exception'
-  | 'submitted'
-  | 'deleted'
-
+export type {
+  PurchaseCollectionStatus,
+  PurchaseOrderFulfillmentType,
+  PurchaseOrderStatus,
+  PurchaseSiteCode,
+  PurchaseTransportMode,
+  SiteAllocation
+} from './purchaseOrderBaseTypes'
+export type * from './purchaseOrderShippingTypes'
+export type * from './purchaseOrderLogisticsPlanTypes'
 export type {
   PurchaseOrderLogisticsQuoteChannelLine,
   PurchaseOrderLogisticsQuoteChannelOption,
@@ -35,178 +29,7 @@ export type {
   PurchaseOrderLogisticsQuoteSummary,
   PurchaseOrderLogisticsQuoteSurcharge,
   PurchaseOrderShippingSubmitResult
-} from './purchaseOrderLogisticsQuoteTypes';
-
-export type ShippingOrderLine = {
-  id: string
-  shippingOrderSegmentId?: string
-  shippingOrderSegmentNo?: string
-  sourceStoreCode?: string
-  sourceStoreName?: string
-  purchaseOrderId: string
-  purchaseOrderNo?: string
-  purchaseOrderTitle?: string
-  purchaseOrderItemId: string
-  purchaseOrderItemSiteId: string
-  partnerSku: string
-  skuParent?: string
-  barcode?: string
-  productTitle?: string
-  productTitleCn?: string
-  productTitleEn?: string
-  productImageUrl?: string
-  siteCode?: PurchaseSiteCode
-  pskuCode?: string
-  yiteMaterial?: string
-  plannedTransportMode?: PurchaseTransportMode
-  quoteStatus?: 'PENDING_QUOTE' | 'CONFIRMED' | string
-  shippingSubmitStatus?: 'NOT_SUBMITTED' | 'SUBMITTED' | string
-  fulfillmentType?: PurchaseOrderFulfillmentType
-  unitPrice?: string | number | null
-  currency?: string
-  billingUnit?: string
-  priceSource?: string
-  quantity: number
-}
-export type ShippingOrderSegment = {
-  id: string
-  segmentNo: string
-  siteCode?: PurchaseSiteCode | string
-  transportMode?: PurchaseTransportMode | string
-  forwarderCode?: string
-  forwarderName?: string
-  routeCode?: string
-  routeName?: string
-  serviceCode?: string
-  serviceName?: string
-  quoteStatus?: 'PENDING_QUOTE' | 'CONFIRMED' | string
-  shippingSubmitStatus?: 'NOT_SUBMITTED' | 'SUBMITTED' | string
-  purchaseOrderNames?: string
-  purchaseOrderCount?: number
-  lineCount?: number
-  skuCount?: number
-  totalQuantity?: number
-  pendingQuoteLineCount?: number
-  confirmedQuoteLineCount?: number
-  missingYiteMaterialCount?: number
-  submittedAt?: string
-}
-
-export type ShippingOrder = {
-  id: string
-  shippingOrderNo: string
-  title: string
-  status: string
-  purchaseOrderCount: number
-  lineCount: number
-  skuCount: number
-  totalQuantity: number
-  missingYiteMaterialCount?: number
-  quoteStatus: 'PENDING_QUOTE' | 'EXPORTED' | 'CONFIRMED' | string
-  shippingSubmitStatus: 'NOT_SUBMITTED' | 'SUBMITTED' | string
-  forwarderName?: string
-  routeName?: string
-  submittedAt?: string
-  remark?: string
-  createdAt?: string
-  updatedAt?: string
-  warnings?: string[]
-  segments?: ShippingOrderSegment[]
-  lines?: ShippingOrderLine[]
-}
-
-export type CreateShippingOrderPayload = {
-  title?: string
-  remark?: string
-  purchaseOrderIds: string[]
-}
-
-export type UpdateShippingOrderPayload = {
-  title: string
-  remark?: string
-}
-
-export type UpdateShippingOrderLineYiteMaterialPayload = {
-  yiteMaterial?: string
-}
-
-export type UpdateShippingOrderLineQuotePayload = {
-  forwarderCode: string
-  routeCode: string
-  unitPrice: number
-  currency: string
-  billingUnit: string
-  yiteMaterial?: string
-  remark?: string
-}
-
-export type UpdateShippingOrderLineQuotesPayload = UpdateShippingOrderLineQuotePayload & {
-  lineIds: string[]
-}
-
-export type ShippingOrderSubmitResult = {
-  shippingOrderId: string
-  shippingOrderNo: string
-  shippingSubmitStatus: 'SUBMITTED' | string
-  submittedLineCount: number
-}
-
-export type LogisticsBillComponent = {
-  id: string
-  shippingOrderSegmentId?: string
-  shippingOrderLineId?: string
-  quoteLineId?: string
-  barcode?: string
-  pskuCode?: string
-  siteCode?: string
-  feeType?: string
-  quantity?: number
-  chargeQuantity?: number
-  chargeUnit?: string
-  unitPrice?: number
-  currency?: string
-  expectedAmount?: number
-  expectedAmountCny?: number
-}
-
-export type LogisticsBill = {
-  id: string
-  expectedBillNo: string
-  shippingOrderId: string
-  shippingOrderNo: string
-  shippingOrderTitle?: string
-  shippingOrderSegmentId?: string
-  shippingOrderSegmentNo?: string
-  forwarderCode?: string
-  forwarderName?: string
-  routeCode?: string
-  routeName?: string
-  serviceCode?: string
-  serviceName?: string
-  transportMode?: PurchaseTransportMode
-  currency?: string
-  expectedTotalAmount?: number
-  expectedTotalCny?: number
-  actualTotalCny?: number
-  diffAmountCny?: number
-  componentCount?: number
-  billStatus?: string
-  reconciliationStatus?: string
-  createdAt?: string
-  updatedAt?: string
-  components?: LogisticsBillComponent[]
-}
-
-export type SiteAllocation = {
-  site: PurchaseSiteCode
-  siteName: string
-  siteId: number
-  pskuCode?: string
-  transportMode?: PurchaseTransportMode
-  transportModeLabel?: string
-  quantity: number
-  enabled: boolean
-}
+} from './purchaseOrderLogisticsQuoteTypes'
 
 export type PurchaseOrderItem = {
   id: string
@@ -311,113 +134,6 @@ export type PurchaseOrder = {
   logisticsQuoteSummary?: PurchaseOrderLogisticsQuoteSummary
 }
 
-export type LogisticsPlanSiteSummary = {
-  site: PurchaseSiteCode
-  siteName: string
-  transportMode?: PurchaseTransportMode
-  transportModeLabel?: string
-  quantity: number
-}
-
-export type PurchaseOrderLogisticsPlanLine = {
-  itemId: string
-  partnerSku: string
-  productTitle: string
-  productImageUrl?: string
-  totalQuantity: number
-  allocations: SiteAllocation[]
-  productDimensionsText?: string
-  productWeightText?: string
-  cartonDimensionsText?: string
-  cartonWeightText?: string
-  cartonQuantity?: number
-  looseVolumeCbm?: number
-  looseVolumeCbmText?: string
-  seaQuantity?: number
-  seaLooseVolumeCbm?: number
-  seaLooseVolumeCbmText?: string
-  airQuantity?: number
-  airActualWeightKg?: number
-  airActualWeightKgText?: string
-  airLooseVolumeCbm?: number
-  airLooseVolumeCbmText?: string
-  specSourceType?: string
-  missingFields: string[]
-}
-
-export type PurchaseOrderLogisticsCostComponent = {
-  componentType: string
-  componentName: string
-  currency?: string
-  unitPrice?: number
-  billingUnit?: string
-  billableQuantity?: number
-  amount?: number
-  amountText?: string
-  amountStatus?: string
-  includedInTotal: boolean
-  formulaText?: string
-  sourceServiceCode?: string
-  sourceId?: number
-  sourceFeeName?: string
-  remark?: string
-}
-
-export type PurchaseOrderLogisticsRecommendation = {
-  rank: number
-  recommended: boolean
-  routeCode?: string
-  routeName?: string
-  forwarderCode?: string
-  forwarderName?: string
-  serviceCode?: string
-  serviceName?: string
-  transportMode?: PurchaseTransportMode
-  country?: string
-  targetPlatform?: string
-  deliveryCity?: string
-  destinationNode?: string
-  transitTimeText?: string
-  priceSummary?: string
-  cargoCategorySummary?: string
-  estimateStatus?: string
-  estimatedCostText?: string
-  estimatedTotalAmount?: number
-  estimatedTotalCostText?: string
-  recurringAmountPerDay?: number
-  recurringCostText?: string
-  costComponents?: PurchaseOrderLogisticsCostComponent[]
-  excludedCostNotes?: string[]
-  reasons: string[]
-  risks: string[]
-}
-
-export type PurchaseOrderLogisticsPlan = {
-  id: string
-  planNo: string
-  purchaseOrderId: string
-  purchaseOrderNo: string
-  purchaseOrderTitle: string
-  storeName: string
-  storeCode: string
-  status: string
-  transportMode: string
-  generatedAt: string
-  itemCount: number
-  skuCount: number
-  totalQuantity: number
-  missingItemCount: number
-  estimatedSeaVolumeCbm?: number
-  estimatedSeaVolumeCbmText?: string
-  estimatedAirChargeableWeightKg?: number
-  estimatedAirChargeableWeightKgText?: string
-  recommendationStatus?: string
-  siteSummaries: LogisticsPlanSiteSummary[]
-  messages: string[]
-  recommendations: PurchaseOrderLogisticsRecommendation[]
-  lines: PurchaseOrderLogisticsPlanLine[]
-}
-
 export type ProductOption = {
   variantId: string
   skuParent?: string
@@ -441,6 +157,7 @@ export type PurchaseOrderItemSiteQuantityCommand = {
   transportMode: PurchaseTransportMode
   quantity: number
 }
+
 export type CreatePurchaseOrderPayload = {
   storeCode: string
   title: string
@@ -452,6 +169,7 @@ export type CreatePurchaseOrderPayload = {
 export type AddPurchaseOrderItemsPayload = {
   items: PurchaseOrderItemCommand[]
 }
+
 export type UpdatePurchaseOrderItemPayload = {
   psku?: string
   fulfillmentType?: PurchaseOrderFulfillmentType

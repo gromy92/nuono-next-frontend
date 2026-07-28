@@ -5,6 +5,9 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const typesSource = [
   readFileSync(resolve(root, 'src/features/purchase-order/types.ts'), 'utf8'),
+  readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderBaseTypes.ts'), 'utf8'),
+  readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderShippingTypes.ts'), 'utf8'),
+  readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderLogisticsPlanTypes.ts'), 'utf8'),
   readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderLogisticsQuoteTypes.ts'), 'utf8')
 ].join('\n');
 const apiSource = readFileSync(resolve(root, 'src/features/purchase-order/api.ts'), 'utf8');

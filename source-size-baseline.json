@@ -44,7 +44,6 @@
     {"path":"src/features/product-management/utils/summary.ts","ceiling":363},
     {"path":"src/features/product-management/utils/workbench.ts","ceiling":377},
     {"path":"src/features/purchase-order/api.ts","ceiling":395},
-    {"path":"src/features/purchase-order/types.ts","ceiling":471},
     {"path":"src/features/system-reports/NoonCallStoreDataPage.tsx","ceiling":397},
     {"path":"src/features/system-reports/NoonDataCompletenessPage.tsx","ceiling":365},
     {"path":"tests/e2e/ali1688-collection.spec.ts","ceiling":303},
