@@ -8,7 +8,10 @@ const baselinePath = path.join(rootDir, 'src/features/product-baseline/ProductBa
 const readSources = (paths) => paths.map((filePath) => fs.readFileSync(path.join(rootDir, filePath), 'utf8')).join('\n');
 const pageSource = readSources([
   'src/features/competitor-analysis/CompetitorAnalysisPage.tsx',
-  'src/features/competitor-analysis/CompetitorProductListCells.tsx'
+  'src/features/competitor-analysis/CompetitorProductListCells.tsx',
+  'src/features/competitor-analysis/productList/CompetitorProductListTab.tsx',
+  'src/features/competitor-analysis/productList/CompetitorProductTable.tsx',
+  'src/features/competitor-analysis/productList/productListFilters.ts'
 ]);
 const apiSource = readSources([
   'src/features/competitor-analysis/api/backendContracts.ts',

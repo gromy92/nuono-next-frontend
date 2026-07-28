@@ -14,7 +14,10 @@ const pageSource = readSources([
   'src/features/competitor-analysis/rankReports/RankKeywordReportPanel.tsx',
   'src/features/competitor-analysis/rankReports/rankCompetitorSeries.ts',
   'src/features/competitor-analysis/rankReports/rankReportModel.ts',
-  'src/features/competitor-analysis/competitorRankHistory.ts'
+  'src/features/competitor-analysis/competitorRankHistory.ts',
+  'src/features/competitor-analysis/productList/CompetitorProductListTab.tsx',
+  'src/features/competitor-analysis/productList/CompetitorProductTable.tsx',
+  'src/features/competitor-analysis/productList/productListFilters.ts'
 ]);
 const apiSource = readSources([
   'src/features/competitor-analysis/api/backendContracts.ts',
