@@ -6,14 +6,19 @@ import { fileURLToPath } from 'node:url'
 const featuresDir = dirname(fileURLToPath(import.meta.url))
 
 const officialWarehousePage = readFileSync(join(featuresDir, 'official-warehouse/OfficialWarehousePage.tsx'), 'utf8')
-const officialWarehouseStatistics = readFileSync(
-  join(featuresDir, 'official-warehouse/OfficialWarehouseStatisticsPanel.tsx'),
-  'utf8'
-)
-const officialWarehouseStatisticsDomain = readFileSync(
-  join(featuresDir, 'official-warehouse/statisticsDomain.ts'),
-  'utf8'
-)
+const officialWarehouseStatistics = [
+  'OfficialWarehouseStatisticsPanel.tsx',
+  'OfficialWarehouseStatisticsTables.tsx',
+  'ProductStockSourcePreview.tsx',
+  'useOfficialWarehouseStatistics.ts'
+].map((fileName) => readFileSync(join(featuresDir, 'official-warehouse', fileName), 'utf8')).join('\n')
+const officialWarehouseStatisticsDomain = [
+  'statisticsDomain.ts',
+  'stockStatisticsDomain.ts',
+  'productStockSourceInference.ts',
+  'productStockSourceChain.ts',
+  'inboundStatisticsDomain.ts'
+].map((fileName) => readFileSync(join(featuresDir, 'official-warehouse', fileName), 'utf8')).join('\n')
 const officialWarehouseStatisticsApi = readFileSync(
   join(featuresDir, 'official-warehouse/statisticsApi.ts'),
   'utf8'
