@@ -14,7 +14,10 @@ function source(path: string) {
 const apiSource = source('./api.ts');
 const columnsSource = source('./productListColumns.tsx');
 const operationalCellsSource = source('./components/ProductListOperationalCells.tsx');
-const listTypesSource = source('./types/list.ts');
+const listTypesSource = readFileSync(
+  join(productManagementDir, '../product-domain/productListTypes.ts'),
+  'utf8'
+);
 
 assert.doesNotMatch(
   apiSource,

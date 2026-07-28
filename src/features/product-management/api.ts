@@ -49,14 +49,6 @@ export type ProductHistoryRequest = {
 
 export type ProductGroupCandidatesRequest = ProductHistoryRequest;
 
-export type ProductClassificationOptionsRequest = {
-  ownerUserId: number;
-  storeCode: string;
-  brandQuery?: string;
-  fulltypeQuery?: string;
-  limit?: number;
-};
-
 export type ProductContentTranslateRequest = {
   text: string;
   sourceLang?: 'AUTO' | 'ZH' | 'EN' | 'AR';
@@ -95,24 +87,6 @@ export type ProductGroupCandidatesResponse = {
   storeCode?: string;
   skuParent?: string;
   items: ProductListDatasetPayload['items'];
-};
-
-export type ProductClassificationOptionPayload = {
-  value?: string;
-  label?: string;
-  family?: string;
-  productType?: string;
-  productSubtype?: string;
-  usageCount?: number;
-};
-
-export type ProductClassificationOptionsResponse = {
-  ready: boolean;
-  source?: string;
-  message?: string;
-  warnings: string[];
-  brands: ProductClassificationOptionPayload[];
-  fulltypes: ProductClassificationOptionPayload[];
 };
 
 type BackendErrorPayload = {
@@ -254,14 +228,6 @@ export async function fetchProductGroupCandidates(request: ProductGroupCandidate
     '/api/product-master/group-candidates',
     normalizeProductIdentityRequest(request),
     '读取同类目商品失败'
-  );
-}
-
-export async function fetchProductClassificationOptions(request: ProductClassificationOptionsRequest) {
-  return postJson<ProductClassificationOptionsResponse>(
-    '/api/product-master/classification-options',
-    request,
-    '读取品牌和类目候选失败'
   );
 }
 

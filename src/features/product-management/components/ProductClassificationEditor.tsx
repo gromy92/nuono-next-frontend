@@ -1,7 +1,7 @@
 import { LinkOutlined } from '@ant-design/icons';
 import { AutoComplete, Button, Modal, Space, Table, Tag, Typography } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchProductClassificationOptions, type ProductClassificationOptionPayload } from '../api';
+import { fetchProductClassificationOptions, type ProductClassificationOptionPayload } from '../../product-domain/productClassificationApi';
 import type { ProductFieldDomainSurface, ProductMasterSnapshotPayload } from '../types';
 import type { ProductCompetitorContentMaterial } from '../types/competitorContent';
 import { textInputValue } from '../utils';

@@ -4,6 +4,7 @@ import {
   recollectSourceCollection
 } from '../source-collection/api'
 import { apiFetch, readApiErrorMessage } from '../../shared/api'
+import { fetchProductClassificationOptions } from '../product-domain/productClassificationApi'
 import type { ProductSelectionSourceCollection } from '../source-collection/types'
 import type { ManualSelectionSystemCategoryOption } from './profitCategoryMatching'
 import type {
@@ -277,20 +278,19 @@ export function loadManualSelectionSystemCategories(
   storeCode: string | undefined,
   options: { query?: string; limit?: number; includeGlobalFulltypes?: boolean } = {}
 ): Promise<ManualSelectionSystemCategoryOption[]> {
-  return parseManualSelectionResponse<{ fulltypes?: ManualSelectionSystemCategoryOption[] }>(
-    apiFetch('/api/product-master/classification-options', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        storeCode,
-        fulltypeQuery: options.query || '',
-        limit: options.limit || 80,
-        includeGlobalFulltypes: options.includeGlobalFulltypes === true
-      })
-    })
-  ).then((payload) => payload.fulltypes || [])
+  return fetchProductClassificationOptions({
+    storeCode,
+    fulltypeQuery: options.query || '',
+    limit: options.limit || 80,
+    includeGlobalFulltypes: options.includeGlobalFulltypes === true
+  }).then((payload) =>
+    (payload.fulltypes || [])
+      .map((option) => ({
+        ...option,
+        value: option.value || option.label || ''
+      }))
+      .filter((option) => option.value)
+  )
 }
 
 export function saveManualSelectionAnalysisItemProcurement(

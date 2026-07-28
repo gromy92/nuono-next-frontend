@@ -8,7 +8,7 @@ import type { Key, ReactNode } from 'react'
 import { EChartPanel, buildNetUnitsLineOption, buildSalesPriceTrendOption } from '../../shared/charts'
 import type { AuthSession } from '../auth/session'
 import { ProductBaselineIdentity } from '../product-baseline'
-import { fetchProductClassificationOptions, type ProductClassificationOptionPayload } from '../product-management/api'
+import { fetchProductClassificationOptions, type ProductClassificationOptionPayload } from '../product-domain/productClassificationApi'
 import { fetchSalesForecastDetail, fetchSalesForecastOverview, recalculateSalesForecast } from '../sales-forecast/api'
 import type {
   SalesForecastDailyForecast,
