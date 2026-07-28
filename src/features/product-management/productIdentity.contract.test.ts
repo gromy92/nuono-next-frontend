@@ -8,7 +8,6 @@ import {
   isLocalDraftNoonCode,
   isSameStableProductIdentity
 } from '../product-domain/productIdentity';
-
 assert.equal(
   isSameProductDetailRequest(
     {
@@ -29,7 +28,6 @@ assert.equal(
   true,
   'product detail tab identity should be stable by partnerSku within store scope'
 );
-
 assert.equal(
   isSameProductDetailRequest(
     {
@@ -52,7 +50,6 @@ assert.equal(
   true,
   'current Z code changes must not create a different product tab when store + partnerSku are the same'
 );
-
 assert.equal(
   isSameProductDetailRequest(
     {
@@ -71,7 +68,6 @@ assert.equal(
   false,
   'product detail tab identity must not fall back to current Z code when partnerSku is missing'
 );
-
 assert.equal(
   isSameStableProductIdentity(
     {
@@ -88,7 +84,6 @@ assert.equal(
   false,
   'stable product identity comparisons must not treat current Z code as product identity'
 );
-
 assert.equal(
   isSameStableProductIdentity(
     {
@@ -107,7 +102,6 @@ assert.equal(
   true,
   'stable product identity comparisons must match by store + partnerSku even when current Z code changes'
 );
-
 assert.deepEqual(
   getProductIdentityLookupKeys({
     storeCode: 'STR69486-NSA',
@@ -118,7 +112,6 @@ assert.deepEqual(
   ['STR69486-NSA|psku:SGGRB113'],
   'product identity lookup keys must not include current Z code aliases when partnerSku is present'
 );
-
 assert.deepEqual(
   getProductIdentityLookupKeys({
     currentZCode: 'Z20152FFCAE5DA47AC88EZ',
@@ -127,7 +120,6 @@ assert.deepEqual(
   [],
   'product identity lookup keys must not match partnerSku globally without store scope'
 );
-
 assert.deepEqual(
   getProductIdentityLookupKeys({
     storeCode: 'STR69486-NSA',
@@ -137,7 +129,6 @@ assert.deepEqual(
   [],
   'product identity lookup keys must not use current Z code aliases when partnerSku is missing'
 );
-
 assert.deepEqual(
   getProductIdentityLookupKeys({
     storeCode: 'STR69486-NSA',
@@ -147,7 +138,6 @@ assert.deepEqual(
   ['STR69486-NSA|row:123', 'row:123'],
   'legacy row refs may remain as compatibility lookup keys only when partnerSku is missing'
 );
-
 assert.equal(
   getProductStableIdentityKey({
     storeCode: 'STR69486-NSA',
@@ -157,7 +147,6 @@ assert.equal(
   'STR69486-NSA|psku:SGGRB113',
   'stable product key must use store + partnerSku'
 );
-
 assert.equal(
   getProductStableIdentityKey({
     currentZCode: 'ZOLD',
@@ -166,7 +155,6 @@ assert.equal(
   '',
   'stable product key must not use partnerSku without store scope'
 );
-
 assert.equal(
   isSameStableProductIdentity(
     {
@@ -181,7 +169,6 @@ assert.equal(
   false,
   'stable product identity comparisons must require store scope'
 );
-
 assert.equal(
   isSameStableProductIdentity(
     {
@@ -198,7 +185,6 @@ assert.equal(
   false,
   'stable product identity comparisons must not match the same partnerSku across stores'
 );
-
 assert.equal(
   getProductStableIdentityKey({
     storeCode: 'STR69486-NSA',
@@ -207,7 +193,6 @@ assert.equal(
   '',
   'stable product key must not fall back to current Z code when partnerSku and row refs are missing'
 );
-
 assert.equal(
   getProductStableIdentityKey({
     storeCode: 'STR69486-NSA',
@@ -217,7 +202,6 @@ assert.equal(
   'STR69486-NSA|row:123',
   'legacy row refs are the only stable-key fallback when partnerSku is missing'
 );
-
 assert.equal(
   getProductListRowIdentityKey({
     storeCode: 'STR69486-NSA',
@@ -226,18 +210,15 @@ assert.equal(
   '',
   'list row identity keys must not fall back to current Z code'
 );
-
 const baselineDisplaySource = readFileSync(
   new URL('../product-baseline/ProductBaselineListCell.tsx', import.meta.url),
   'utf8'
 );
-
 assert.equal(
   baselineDisplaySource.includes('summary.partnerSku || summary.pskuCode'),
   false,
   'ProductBaselineListCell must not display external pskuCode as business PSKU fallback'
 );
-
 const productDeleteRow = {
   storeCode: 'STR69486-NSA',
   skuParent: 'ZOLDPSKU001',
@@ -247,54 +228,45 @@ const productDeleteRow = {
   liveStatuses: [],
   issueTags: []
 };
-
 assert.equal(
   getProductListRowIdentityKey(productDeleteRow),
   'STR69486-NSA|psku:SGGRB113',
   'product delete pending state should key by store + partnerSku, not skuParent or external pskuCode'
 );
-
 assert.equal(
   isLocalDraftNoonCode('LOCAL-PAPERSAYSB442-13423D84'),
   true,
   'LOCAL-* Noon identity must be treated as a local draft code'
 );
-
 assert.equal(
   isLocalDraftNoonCode('Z20152FFCAE5DA47AC88EZ'),
   false,
   'real Noon Z code must not be treated as a local draft code'
 );
-
 const productDetailSummaryPanelSource = readFileSync(
   new URL('./components/ProductDetailSummaryPanel.tsx', import.meta.url),
   'utf8'
 );
-
 assert.match(
   productDetailSummaryPanelSource,
   /isProductNotListedSource\(productDetailSummarySurface\?\.listingStartedSource\)/,
   'ProductDetailSummaryPanel must block publish-current for products that are not listed yet'
 );
-
 assert.match(
   productDetailSummaryPanelSource,
   /isLocalDraftNoonCode\(currentNoonCode\)/,
   'ProductDetailSummaryPanel must block publish-current for LOCAL-* draft identities'
 );
-
 const productListIdentityCellsSource = [
   readFileSync(new URL('./components/ProductListIdentityCells.tsx', import.meta.url), 'utf8'),
   readFileSync(new URL('./components/ProductListConfirmDescriptions.tsx', import.meta.url), 'utf8')
 ].join('\n');
-
 assert.equal(
   productListIdentityCellsSource.includes('icon={<DeleteOutlined />}') &&
     productListIdentityCellsSource.includes('event.stopPropagation();\n              }}\n              style={{ height: 20'),
   false,
   'product list delete button must not stop propagation before Popconfirm can open'
 );
-
 assert.equal(
   productListIdentityCellsSource.includes('description={<ProductDeleteConfirmDescription record={record} />}') &&
     productListIdentityCellsSource.includes("style={{ width: 360, maxWidth: 'calc(100vw - 72px)' }}") &&
