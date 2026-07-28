@@ -18,15 +18,15 @@ const draft: ProductListingDraftView = {
   validationIssues: []
 }
 let draftResponse = () => Response.json(draft)
-let keywordSuggestionResponse = () => Response.json(
+let keywordSuggestionResponse: (signal?: AbortSignal) => Response | Promise<Response> = () => Response.json(
   { message: 'Keyword suggestions are temporarily unavailable' },
   { status: 503 }
 )
 
-globalThis.fetch = (async (input: RequestInfo | URL) => {
+globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
   const url = String(input)
   if (url.endsWith('/keyword-suggestions')) {
-    return keywordSuggestionResponse()
+    return keywordSuggestionResponse(init?.signal ?? undefined)
   }
   if (url === '/api/product-listing/drafts/10033') {
     return draftResponse()
@@ -55,6 +55,24 @@ try {
     'available keyword suggestions must still enrich the authoritative draft'
   )
   assert.deepEqual(enrichedDraft.draft?.listingKeywordSuggestionsAr, ['كلمة جديدة'])
+
+  let keywordRequestAborted = false
+  keywordSuggestionResponse = (signal) => new Promise<Response>((_resolve, reject) => {
+    signal?.addEventListener('abort', () => {
+      keywordRequestAborted = true
+      reject(new DOMException('aborted', 'AbortError'))
+    }, { once: true })
+  })
+  const timeoutOutcome = await Promise.race([
+    fetchProductListingDraft(10033, { keywordSuggestionTimeoutMs: 20 }),
+    new Promise<'deadline'>((resolve) => setTimeout(() => resolve('deadline'), 100))
+  ])
+  assert.deepEqual(
+    timeoutOutcome,
+    draft,
+    'a hung optional keyword request must not delay the authoritative draft'
+  )
+  assert.equal(keywordRequestAborted, true, 'the timed-out optional request should be aborted')
 
   draftResponse = () => Response.json({ message: 'Draft not found' }, { status: 404 })
   await assert.rejects(

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import {
   countProductListStatuses,
   filterAndSortProductListItems,
@@ -76,4 +77,14 @@ const failedItems = filterAndSortProductListItems({
 assert.deepEqual(
   failedItems.map((item) => item.partnerSku),
   ['FAIL-001', 'REJECT-001', 'SYNC-FAIL-001']
+)
+
+const mutationSource = readFileSync(
+  new URL('./hooks/useProductListMutations.ts', import.meta.url),
+  'utf8'
+)
+assert.match(
+  mutationSource,
+  /countProductListStatuses\(nextItems,\s*\{\},\s*false\)/,
+  'local summary updates must reuse the same failed/rejected status rule as filters and badges'
 )

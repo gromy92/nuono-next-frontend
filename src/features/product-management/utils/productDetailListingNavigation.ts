@@ -16,12 +16,16 @@ export function buildProductDetailListingTarget(snapshot?: ProductMasterSnapshot
     return undefined
   }
 
+  const storeCode = textInputValue(snapshot?.storeContext.storeCode) || undefined
   const params = new URLSearchParams({
     listingSource: 'listing-draft',
     listingDraftId: String(draftId)
   })
+  if (storeCode) {
+    params.set('storeCode', storeCode)
+  }
   return withWorkspaceStoreDevQuery(
     `${PURCHASE_LISTING_PATH}?${params.toString()}`,
-    textInputValue(snapshot?.storeContext.storeCode) || undefined
+    storeCode
   )
 }

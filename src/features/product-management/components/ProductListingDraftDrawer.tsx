@@ -44,7 +44,8 @@ export function ProductListingDraftDrawer({ storeCode, activeOwnerId }: ProductL
     saveProductListingDraftRecoveryPrefill(draft)
     const params = new URLSearchParams({
       listingSource: 'listing-draft',
-      listingDraftId: String(draft.draftId)
+      listingDraftId: String(draft.draftId),
+      storeCode: draft.storeCode
     })
     navigateProductListingTargetInCurrentTab(withWorkspaceStoreDevQuery(
       `${PURCHASE_LISTING_PATH}?${params.toString()}`,

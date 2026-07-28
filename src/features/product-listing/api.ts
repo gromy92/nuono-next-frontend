@@ -12,6 +12,8 @@ import type {
   ProductListingWorkflowView
 } from './types'
 
+const PRODUCT_LISTING_KEYWORD_SUGGESTION_TIMEOUT_MS = 1500
+
 export function saveProductListingDraft(payload: ProductListingDraftPayload) {
   const { draft, keywordSuggestions } = splitKeywordSuggestions(payload)
   return postJson<ProductListingDraftView>(
@@ -55,20 +57,53 @@ export async function fetchActiveProductListingDraft(
   return drafts[0]
 }
 
-export async function fetchProductListingDraft(draftId: number) {
+export async function fetchProductListingDraft(
+  draftId: number,
+  options?: { keywordSuggestionTimeoutMs?: number }
+) {
   const draftRequest = getJson<ProductListingDraftView>(
     `/api/product-listing/drafts/${draftId}`,
     '读取上架草稿失败'
   )
-  const suggestionsRequest = getJson<ProductListingKeywordSuggestionView>(
-    `/api/product-listing/drafts/${draftId}/keyword-suggestions`,
-    '读取 Listing 关键词建议失败'
+  const suggestionsRequest = fetchOptionalProductListingKeywordSuggestions(
+    draftId,
+    options?.keywordSuggestionTimeoutMs
   )
-    .then(suggestionLists)
-    .catch(() => undefined)
   const draft = await draftRequest
   const suggestions = await suggestionsRequest
   return suggestions ? mergeKeywordSuggestions(draft, suggestions) : draft
+}
+
+function fetchOptionalProductListingKeywordSuggestions(
+  draftId: number,
+  timeoutMs = PRODUCT_LISTING_KEYWORD_SUGGESTION_TIMEOUT_MS
+) {
+  const controller = new AbortController()
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  const request = getJson<ProductListingKeywordSuggestionView>(
+    `/api/product-listing/drafts/${draftId}/keyword-suggestions`,
+    '读取 Listing 关键词建议失败',
+    { signal: controller.signal }
+  )
+    .then(suggestionLists)
+    .catch(() => undefined)
+  const deadline = new Promise<undefined>((resolve) => {
+    timeoutId = setTimeout(() => {
+      controller.abort()
+      resolve(undefined)
+    }, positiveTimeout(timeoutMs))
+  })
+  return Promise.race([request, deadline]).finally(() => {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId)
+    }
+  })
+}
+
+function positiveTimeout(value: number) {
+  return Number.isFinite(value) && value > 0
+    ? value
+    : PRODUCT_LISTING_KEYWORD_SUGGESTION_TIMEOUT_MS
 }
 
 export function fetchProductListingWorkflow(draftId: number) {

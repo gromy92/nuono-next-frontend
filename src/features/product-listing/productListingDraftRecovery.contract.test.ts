@@ -39,7 +39,7 @@ assert.equal(prefill.draft.productTitleEn, 'Rugged phone case draft')
 const sessionStorage = new Map<string, string>()
 ;(globalThis as Record<string, unknown>).window = {
   location: {
-    search: '?listingSource=listing-draft&listingDraftId=10033'
+    search: '?listingSource=listing-draft&listingDraftId=10033&storeCode=STR245027-NSA'
   },
   sessionStorage: {
     getItem: (key: string) => sessionStorage.get(key) ?? null,
@@ -59,6 +59,7 @@ assert.equal(urlLocatorPrefill?.source, 'listing-draft')
 assert.equal(urlLocatorPrefill?.sourceDraftId, '10033')
 assert.equal(urlLocatorPrefill?.pendingServerHydration, true)
 assert.equal(urlLocatorPrefill?.draft.draftId, 10033)
+assert.equal(urlLocatorPrefill?.draft.storeCode, 'STR245027-NSA')
 assert.equal(urlLocatorPrefill?.draft.psku, undefined)
 
 ;(globalThis as any).window.location.search =
@@ -79,6 +80,21 @@ assert.equal(manualSelectionPrefill?.draft.storeCode, 'STR-SOURCE-NSA')
 sessionStorage.delete('nuono:product-listing:source-prefill')
 const manualSelectionLocatorPrefill = sourcePrefill.readProductListingSourcePrefill()
 assert.equal(manualSelectionLocatorPrefill?.draft.storeCode, 'STR-SOURCE-NSA')
+
+;(globalThis as any).window.sessionStorage.setItem = () => {
+  throw new Error('storage disabled')
+}
+assert.doesNotThrow(
+  () => sourcePrefill.saveProductListingDraftRecoveryPrefill(draftView),
+  'storage failures must not block URL-based draft recovery navigation'
+)
+;(globalThis as any).window.sessionStorage.getItem = () => {
+  throw new Error('storage disabled')
+}
+const storageBlockedLocatorPrefill = sourcePrefill.readProductListingSourcePrefill()
+assert.equal(storageBlockedLocatorPrefill?.source, 'manual-selection')
+assert.equal(storageBlockedLocatorPrefill?.sourceGroupId, '91016')
+assert.equal(storageBlockedLocatorPrefill?.draft.storeCode, 'STR-SOURCE-NSA')
 delete (globalThis as Record<string, unknown>).window
 
 const hydrated = await hydrateProductListingSourcePrefill({

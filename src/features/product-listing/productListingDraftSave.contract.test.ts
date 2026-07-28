@@ -19,6 +19,10 @@ const sourcePrefillHookSource = readFileSync(
   new URL('./useProductListingSourcePrefill.ts', import.meta.url),
   'utf8'
 )
+const saveFeedbackSource = readFileSync(
+  new URL('./useProductListingDraftSaveFeedback.ts', import.meta.url),
+  'utf8'
+)
 
 assert(
   adapterSource.includes("sourceRefId: optionalInteger(draft.sourceRefId)"),
@@ -39,19 +43,26 @@ assert(
   'manual-selection listing should require an operator PSKU and must not keep a test-PSKU generator'
 )
 assert(
-  pageSource.includes('PRODUCT_LISTING_DRAFT_SAVE_MESSAGE_KEY') &&
-    pageSource.includes('draftSaveNotice') &&
-    pageSource.includes("setDraftSaveNotice({ type: 'info'") &&
-    pageSource.includes('message.loading({') &&
-    pageSource.includes("setDraftSaveNotice({ type: 'success'") &&
-    pageSource.includes("setDraftSaveNotice({ type: 'error'") &&
+  pageSource.includes('useProductListingDraftSaveFeedback()') &&
+    pageSource.includes('draftSaveNotice={draftSaveFeedback.notice}') &&
+    saveFeedbackSource.includes("setNotice({ type: 'info'") &&
+    saveFeedbackSource.includes('message.loading({') &&
+    saveFeedbackSource.includes("setNotice({ type: 'success'") &&
+    saveFeedbackSource.includes("setNotice({ type: 'error'") &&
     pageStatusSource.includes('product-listing-draft-save-feedback'),
   'manual listing draft save should show immediate saving, success and failure feedback instead of relying on a silent button click'
 )
 assert(
-  pageSource.includes('const savedWorkflow = await refreshWorkflow(saved.draftId)') &&
+  pageSource.includes('refreshWorkflow: savedDraftId => refreshWorkflow(savedDraftId)') &&
     !pageSource.includes('setRealRunTaskView(undefined)'),
   'saving an existing draft should reload its durable workflow instead of clearing terminal task state locally'
+)
+assert(
+  pageSource.includes('saveProductListingDraftWithWorkflowRefresh') &&
+    pageSource.includes('if (!saveResult.workflow)') &&
+    saveFeedbackSource.includes('草稿已保存，但暂时无法读取最新上架状态') &&
+    !pageSource.includes('const savedWorkflow = await refreshWorkflow(saved.draftId)'),
+  'a thrown, stale or unapplied workflow refresh after a successful POST must preserve saved success and report only refresh unavailability'
 )
 assert(
   workflowIdentitySource.includes(

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { normalizeError } from '../../shared/api'
 import { ProductListingDetailEditor } from './ProductListingDetailEditor'
 import { ProductListingReviewModal } from './ProductListingReviewModal'
-import { ProductListingPageStatus, ProductListingSaveDraftButton, type ProductListingNotice } from './ProductListingPageStatus'
+import { ProductListingPageStatus, ProductListingSaveDraftButton } from './ProductListingPageStatus'
 import { ProductListingWorkflowPanel } from './ProductListingWorkflowPanel'
 import { ProductListingWorkflowActionButton } from './ProductListingWorkflowActionButton'
 import {
@@ -26,6 +26,7 @@ import {
   type ProductListingEditorDraft,
   type ProductListingMetadataFormValues
 } from './productDetailAdapter'
+import { saveProductListingDraftWithWorkflowRefresh } from './productListingDraftPersistence'
 import { buildProductListingChangeSummary, type ProductListingChangeSummaryItem } from './productListingChangeSummary'
 import { createEditingProductListingWorkflow, presentProductListingWorkflow } from './productListingWorkflowPresentation'
 import { completeProductListingReviewReopen, focusProductListingEditor } from './productListingReviewReopenCompletion'
@@ -36,7 +37,10 @@ import {
   isDangerousProductListingRecoveryAction,
   type DangerousProductListingRecoveryAction
 } from './productListingAmbiguousOutcome'
-import { resolveProductListingWorkflowEditSession } from './productListingWorkflowEditSession'
+import {
+  resolveProductListingWorkflowActionPlacement,
+  resolveProductListingWorkflowEditSession
+} from './productListingWorkflowEditSession'
 import {
   canApplyProductListingWorkflowResponse,
   matchesProductListingPartnerSku,
@@ -51,11 +55,11 @@ import { useProductListingReauthentication } from './useProductListingReauthenti
 import { useProductListingConfirmNotCreated } from './useProductListingConfirmNotCreated'
 import { useProductListingWorkflowReadiness } from './useProductListingWorkflowReadiness'
 import { useProductListingDangerousActionPolling } from './useProductListingDangerousActionPolling'
+import { useProductListingDraftSaveFeedback } from './useProductListingDraftSaveFeedback'
 import type { ProductListingSourcePrefill } from './sourcePrefill'
 import { useProductListingSourcePrefill } from './useProductListingSourcePrefill'
 import type { ProductListingDraftView, ProductListingWorkflowNextAction, ProductListingWorkflowView } from './types'
 import './ProductListingPage.css'
-const PRODUCT_LISTING_DRAFT_SAVE_MESSAGE_KEY = 'product-listing-draft-save'
 const PRODUCT_LISTING_REAL_RUN_PSKU_REQUIRED_MESSAGE = '请先填写正式 PSKU，再点击上架。'
 type ProductListingPageProps = {
   storeCode?: string
@@ -77,7 +81,6 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [listingReviewOpen, setListingReviewOpen] = useState(false)
   const [listingReviewChanges, setListingReviewChanges] = useState<ProductListingChangeSummaryItem[]>([])
   const [listingPreparationError, setListingPreparationError] = useState('')
-  const [draftSaveNotice, setDraftSaveNotice] = useState<ProductListingNotice>()
   const [workflowIntegrityError, setWorkflowIntegrityError] = useState('')
   const listingDraftRef = useRef(listingDraft)
   const workflowIdentityRef = useRef<ProductListingWorkflowIdentity>(
@@ -88,6 +91,11 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const recoveryCommandInFlightRef = useRef(false)
   const workflowPresentation = useMemo(() => presentProductListingWorkflow(workflow), [workflow])
   const editSession = useMemo(() => resolveProductListingWorkflowEditSession(workflow), [workflow])
+  const actionPlacement = useMemo(
+    () => resolveProductListingWorkflowActionPlacement(workflow),
+    [workflow]
+  )
+  const draftSaveFeedback = useProductListingDraftSaveFeedback()
   const currentDraftId = listingDraft.draftId ?? workflow.draft?.draftId
   const workflowReadiness = useProductListingWorkflowReadiness(currentDraftId, listingDraft.storeCode)
   const {
@@ -411,7 +419,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
       )
       return undefined
     }
-    showDraftSaveStart(options?.silent)
+    draftSaveFeedback.start(options?.silent)
     setSaving(true)
     try {
       const currentDraft = options?.draftOverride
@@ -421,50 +429,27 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
           )
         : currentListingDraftFromForm()
       updateEditorDraft(currentDraft)
-      const saved = await saveProductListingDraft(
-        productListingEditorDraftToPayload(currentDraft, currentDraftId)
+      const saveResult = await saveProductListingDraftWithWorkflowRefresh(
+        productListingEditorDraftToPayload(currentDraft, currentDraftId),
+        {
+          saveDraft: saveProductListingDraft,
+          refreshWorkflow: savedDraftId => refreshWorkflow(savedDraftId),
+          onSaved: saved => {
+            updateEditorDraft(editorDraftFromSaved(currentDraft, saved))
+            draftSaveFeedback.success(saved, options?.silent)
+          }
+        }
       )
-      updateEditorDraft(editorDraftFromSaved(currentDraft, saved))
-      const savedWorkflow = await refreshWorkflow(saved.draftId)
-      showDraftSaveSuccess(saved, options?.silent)
-      return { saved, workflow: savedWorkflow }
+      if (!saveResult.workflow) {
+        draftSaveFeedback.workflowRefreshFailure(options?.silent)
+      }
+      return saveResult
     } catch (error) {
-      showDraftSaveFailure(error, options?.silent)
+      draftSaveFeedback.failure(error, options?.silent)
       return undefined
     } finally {
       setSaving(false)
     }
-  }
-
-  function showDraftSaveStart(silent?: boolean) {
-    if (silent) {
-      return
-    }
-    setDraftSaveNotice({ type: 'info', message: '正在保存上架草稿...' })
-    message.loading({
-      key: PRODUCT_LISTING_DRAFT_SAVE_MESSAGE_KEY,
-      content: '正在保存上架草稿...',
-      duration: 0
-    })
-  }
-
-  function showDraftSaveSuccess(saved: ProductListingDraftView, silent?: boolean) {
-    if (silent) {
-      return
-    }
-    const successMessage = saved.draftNo ? `上架草稿已保存：${saved.draftNo}` : '上架草稿已保存'
-    setDraftSaveNotice({ type: 'success', message: successMessage })
-    message.success({ key: PRODUCT_LISTING_DRAFT_SAVE_MESSAGE_KEY, content: successMessage })
-  }
-
-  function showDraftSaveFailure(error: unknown, silent?: boolean) {
-    const errorMessage = normalizeError(error, '保存上架草稿失败')
-    if (silent) {
-      message.error(errorMessage)
-      return
-    }
-    setDraftSaveNotice({ type: 'error', message: errorMessage })
-    message.error({ key: PRODUCT_LISTING_DRAFT_SAVE_MESSAGE_KEY, content: errorMessage })
   }
 
   async function handleOpenListingReview() {
@@ -501,8 +486,14 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     setPreparing(true)
     try {
       const saveResult = await saveDraftFromForm({ silent: true, draftOverride: currentDraft })
-      if (!saveResult?.saved.draftId || !saveResult.workflow) {
+      if (!saveResult?.saved.draftId) {
         setListingPreparationError('自动保存草稿失败，请处理页面提示后重试。')
+        return
+      }
+      if (!saveResult.workflow) {
+        setListingPreparationError(
+          '草稿已保存，但暂时无法读取最新上架状态，请刷新页面后重试。'
+        )
         return
       }
       const latestPresentation = presentProductListingWorkflow(saveResult.workflow)
@@ -772,12 +763,13 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   return (
     <div className="product-listing-page">
       <ProductListingPageStatus
-        draftSaveNotice={draftSaveNotice}
+        draftSaveNotice={draftSaveFeedback.notice}
         workflowIntegrityError={workflowIntegrityError}
         sourceHydrationError={sourceHydrationError}
         reauthenticationNotice={reauthentication.notice}
         dangerousActionAwaiting={Boolean(dangerousActionAwaitingWorkflow)}
         reopenAwaiting={reviewReopen.awaiting}
+        confirmNotCreatedAwaiting={confirmNotCreated.awaiting}
       />
 
       <Form
@@ -802,9 +794,11 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
               <Space>
                 <ProductListingSaveDraftButton saving={saving}
                   disabled={!editSession.canEditAndSave || busy} onSave={() => void saveDraftFromForm()} />
-                <ProductListingWorkflowActionButton workflow={workflow} busy={operationBusy}
-                  disabled={Boolean(workflowActionBlockedMessage)} onlyAction="REVIEW_DRAFT"
-                  onAction={action => void handleWorkflowAction(action)} />
+                {actionPlacement.showReviewActionInEditor ? (
+                  <ProductListingWorkflowActionButton workflow={workflow} busy={operationBusy}
+                    disabled={Boolean(workflowActionBlockedMessage)} onlyAction="REVIEW_DRAFT"
+                    onAction={action => void handleWorkflowAction(action)} />
+                ) : null}
               </Space>
             }
             competitorMaterials={sourcePrefill?.competitorMaterials ?? listingDraft.competitorMaterials}
@@ -829,7 +823,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         busy={operationBusy}
         actionDisabled={Boolean(workflowActionBlockedMessage)}
         actionBlockedMessage={workflowActionBlockedMessage}
-        hidePrimaryAction={workflowPresentation.action?.kind === 'REVIEW_DRAFT'}
+        hidePrimaryAction={actionPlacement.hideWorkflowPanelAction}
         canConfirmNotCreated={confirmNotCreated.canConfirm}
         notCreatedLookupAttemptCount={confirmNotCreated.lookupAttemptCount}
         onAction={action => void handleWorkflowAction(action)}
