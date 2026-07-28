@@ -7,6 +7,7 @@ const typesPath = path.join(rootDir, 'src/features/competitor-analysis/types.ts'
 const readSources = (paths) => paths.map((filePath) => fs.readFileSync(path.join(rootDir, filePath), 'utf8')).join('\n');
 const pageSource = readSources([
   'src/features/competitor-analysis/CompetitorAnalysisPage.tsx',
+  'src/features/competitor-analysis/CompetitorAnalysisOverlays.tsx',
   'src/features/competitor-analysis/productChanges/ProductChangeModal.tsx',
   'src/features/competitor-analysis/productChanges/ProductChangeCompetitorCard.tsx',
   'src/features/competitor-analysis/productChanges/productChangeModel.ts',
@@ -14,6 +15,7 @@ const pageSource = readSources([
   'src/features/competitor-analysis/rankReports/RankKeywordReportPanel.tsx',
   'src/features/competitor-analysis/rankReports/rankCompetitorSeries.ts',
   'src/features/competitor-analysis/rankReports/rankReportModel.ts',
+  'src/features/competitor-analysis/rankReports/useCompetitorReport.ts',
   'src/features/competitor-analysis/competitorRankHistory.ts',
   'src/features/competitor-analysis/productList/CompetitorProductListTab.tsx',
   'src/features/competitor-analysis/productList/CompetitorProductTable.tsx',
