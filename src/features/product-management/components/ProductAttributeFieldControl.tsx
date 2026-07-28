@@ -3,7 +3,7 @@ import {
   PRODUCT_DETAILED_ATTRIBUTE_VALUE_LABELS,
   type ProductDetailedAttributeField,
   type ProductDetailedAttributeGroup
-} from '../productDetailedContentConfig';
+} from '../../product-domain/productDetailedAttributeCatalog';
 import { textInputValue } from '../utils';
 
 const LENGTH_UNIT_OPTIONS = ['mm', 'cm', 'm', 'in', 'ft'].map((unit) => ({ value: unit, label: unit }));

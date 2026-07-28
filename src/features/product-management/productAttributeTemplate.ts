@@ -4,7 +4,7 @@ import {
   type ProductDetailedAttributeGroup,
   type ProductDetailedAttributeKind,
   type ProductDetailedAttributeOption
-} from './productDetailedContentConfig';
+} from '../product-domain/productDetailedAttributeCatalog';
 import { textInputValue } from './utils/common';
 
 const VALID_FIELD_KINDS = new Set<ProductDetailedAttributeKind>(['text', 'textarea', 'select', 'dimension']);

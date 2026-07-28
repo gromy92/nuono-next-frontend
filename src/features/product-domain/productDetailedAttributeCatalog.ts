@@ -1,3 +1,7 @@
+/**
+ * Fallback catalog for Noon detailed attributes when no runtime official
+ * attribute template is available.
+ */
 export type ProductDetailedAttributeKind = 'text' | 'textarea' | 'select' | 'dimension';
 
 export type ProductDetailedAttributeField = {
