@@ -19,7 +19,7 @@ import type {
   Ali1688SkuPurchaseHistoryBatchSource,
   Ali1688SkuPurchaseHistoryView
 } from '../ali1688-historical-orders/types'
-import { normalizeNoonImageUrl } from '../product-domain/productImageUrl'
+import { normalizeNoonImageUrl } from '../product-baseline'
 import { EChartPanel } from '../../shared/charts'
 import './Ali1688SkuPurchaseHistoryPage.css'
 

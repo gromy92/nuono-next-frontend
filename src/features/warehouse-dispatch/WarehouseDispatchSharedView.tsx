@@ -1,6 +1,6 @@
 import { Badge, Popover, Tag, Typography } from 'antd'
 import type { ReactNode } from 'react'
-import { normalizeNoonImageUrl } from '../product-domain/productImageUrl'
+import { normalizeNoonImageUrl } from '../product-baseline'
 import type {
   DispatchPlanStatus,
   ProductSpecStatus,

@@ -1,3 +1,4 @@
+// Compatibility normalizer for historical Noon catalog image references.
 function hasImageExtension(value: string) {
   return /\.(?:avif|gif|jpe?g|png|webp)(?:[?#].*)?$/i.test(value);
 }

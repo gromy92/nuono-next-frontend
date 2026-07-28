@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { normalizeNoonImageUrl } from './productImageUrl';
+import { normalizeNoonImageUrl } from './normalizeNoonImageUrl';
 
 assert.equal(normalizeNoonImageUrl(null), '');
 assert.equal(

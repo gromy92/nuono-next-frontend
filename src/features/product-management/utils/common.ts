@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import type { ProductMasterSnapshotPayload, ProductSyncStatus, ProductWorkbenchPayload } from '../types';
-import { normalizeNoonImageUrl } from '../../product-domain/productImageUrl';
+import { normalizeNoonImageUrl } from '../../product-baseline';
 import { createProductMasterSnapshotPayload } from './productMasterSnapshotFactory';
 export { normalizeNoonImageUrl };
 

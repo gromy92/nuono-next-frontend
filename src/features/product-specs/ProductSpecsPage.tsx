@@ -16,7 +16,7 @@ import type {
   ProductVariantSpecSourceType
 } from '../product-management/types';
 import { getProductCurrentZCode, getProductStableIdentityKey } from '../product-domain/productIdentity';
-import { normalizeNoonImageUrl } from '../product-domain/productImageUrl';
+import { normalizeNoonImageUrl } from '../product-baseline';
 import { formatSnapshotValue } from '../product-management/utils/common';
 const { Paragraph, Text } = Typography;
 
