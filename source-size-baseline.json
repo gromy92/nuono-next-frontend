@@ -18,7 +18,7 @@
     {"path":"src/features/ali1688-historical-orders/types.ts","ceiling":517},
     {"path":"src/features/ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage.css","ceiling":421},
     {"path":"src/features/ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage.tsx","ceiling":1574},
-    {"path":"src/features/app-shell/ShellFrame.tsx","ceiling":349},
+    {"path":"src/features/app-shell/ShellFrame.tsx","ceiling":302},
     {"path":"src/features/app-shell/ShellSessionStorage.ts","ceiling":514},
     {"path":"src/features/auth/ReplicaLoginPage.tsx","ceiling":390},
     {"path":"src/features/competitor-analysis/api.ts","ceiling":1225},

@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { Alert, Card } from 'antd'
 import { workspaceMenuMount } from '../route-catalog/RouteCatalog'
-import { renderLegacyWorkspaceContent } from './LegacyWorkspaceContent'
 import {
   shouldShowWorkspaceMenuInTabs,
   workspaceTabKeyForMenuKey
@@ -39,10 +38,10 @@ type ShellWorkspaceContentPaneProps = {
 
 function ShellWorkspaceContentPane({ active, menuKey, context }: ShellWorkspaceContentPaneProps) {
   const WorkspaceMount = workspaceMenuMount(menuKey)
-  if (WorkspaceMount) {
-    return <WorkspaceMount active={active} menuKey={menuKey} session={context.shellSession} />
+  if (!WorkspaceMount) {
+    throw new Error(`Workspace ${menuKey} does not declare a mount`)
   }
-  return renderLegacyWorkspaceContent(menuKey, context)
+  return <WorkspaceMount active={active} menuKey={menuKey} session={context.shellSession} />
 }
 
 export function ShellWorkspaceContent({

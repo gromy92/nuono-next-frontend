@@ -18,13 +18,6 @@ export type WorkspaceSectionKey =
 
 export type WorkspaceSectionIconKey = WorkspaceSectionKey
 
-export type WorkspaceContentKind =
-  | 'product-management'
-  | 'product-groups'
-  | 'product-specs'
-  | 'purchase-in-transit-goods'
-  | 'user-administration'
-
 type WorkspaceMenuDefinitionCommon<MenuKey extends string> = {
   readonly key: MenuKey
   readonly label: string
@@ -40,15 +33,9 @@ type WorkspaceMenuDefinitionCommon<MenuKey extends string> = {
   readonly visibleInWorkspaceTabs?: boolean
 }
 
-export type WorkspaceMountStrategy =
-  | {
-      readonly contentKind: WorkspaceContentKind
-      readonly workspaceMount?: never
-    }
-  | {
-      readonly workspaceMount: WorkspaceMountAdapter
-      readonly contentKind?: never
-    }
+export type WorkspaceMountStrategy = {
+  readonly workspaceMount: WorkspaceMountAdapter
+}
 
 export type WorkspaceMenuDefinitionBase<MenuKey extends string = string> =
   WorkspaceMenuDefinitionCommon<MenuKey> & WorkspaceMountStrategy

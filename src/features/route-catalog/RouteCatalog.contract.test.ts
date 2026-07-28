@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { AuthSession } from '../auth/session'
 import {
@@ -129,22 +129,10 @@ assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 29)
 const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.workspaceMount === 'function'
 )
-assert.equal(mountedDefinitions.length, 33)
-assert.deepEqual(
-  Object.values(WORKSPACE_MENU_DEFINITIONS)
-    .filter((definition) => typeof definition.contentKind === 'string')
-    .map((definition) => definition.key),
-  [
-    'user-store-noon',
-    'user-role'
-  ]
-)
+assert.equal(mountedDefinitions.length, 35)
 for (const definition of Object.values(WORKSPACE_MENU_DEFINITIONS)) {
-  assert.notEqual(
-    typeof definition.contentKind === 'string',
-    typeof definition.workspaceMount === 'function',
-    `${definition.key} must declare exactly one workspace mount strategy`
-  )
+  assert.equal(typeof definition.workspaceMount, 'function', `${definition.key} must declare a workspace mount`)
+  assert.equal('contentKind' in definition, false, `${definition.key} must not use Legacy dispatch`)
 }
 const systemFileManagementDefinition = workspaceMenuDefinition('system-file-management')
 assert.equal('contentKind' in systemFileManagementDefinition, false)
@@ -209,10 +197,10 @@ assert.equal(resolveWorkspaceMenuKeyFromLocation('/unknown'), null)
 
 const storeManagementDefinition = workspaceMenuDefinition('user-store-noon')
 assert.equal(storeManagementDefinition.tabLabel, '店铺管理')
-assert.equal(storeManagementDefinition.contentKind, 'user-administration')
-assert.equal(
-  storeManagementDefinition.contentKind,
-  workspaceMenuDefinition('user-role').contentKind
+assert.strictEqual(
+  storeManagementDefinition.workspaceMount,
+  workspaceMenuDefinition('user-role').workspaceMount,
+  'role and store routes must share one state-owning mount Adapter'
 )
 
 assert.deepEqual(
@@ -286,14 +274,13 @@ const administrationRoutesSource = readFileSync(
   join(process.cwd(), 'src/features/route-catalog/administrationRoutes.ts'),
   'utf8'
 )
-const shellLazySource = readFileSync(
-  join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'),
-  'utf8'
-)
 const shellContentSource = readFileSync(
   join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
   'utf8'
 )
 assert.match(administrationRoutesSource, /import\('\.\.\/ai-file-parse\/AiFileParseBoard'\)/)
-assert.doesNotMatch(shellLazySource, /AiFileParseBoard|system-file-management/)
 assert.doesNotMatch(shellContentSource, /AiFileParseBoard|system-file-management/)
+assert.equal(
+  existsSync(join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx')),
+  false
+)

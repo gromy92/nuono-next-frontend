@@ -10,24 +10,19 @@ import type { WorkspaceMountStrategy } from './types'
 const knownMenuKey: AppMenuKey = 'purchase-order'
 assert.equal(knownMenuKey, 'purchase-order')
 
-const legacyStrategy: WorkspaceMountStrategy = { contentKind: 'product-management' }
 const mountedStrategy: WorkspaceMountStrategy = { workspaceMount: () => null }
-assert.equal(legacyStrategy.contentKind, 'product-management')
 assert.equal(typeof mountedStrategy.workspaceMount, 'function')
 
 if (false) {
   // @ts-expect-error AppMenuKey is the exact union derived from route definition record keys.
   const unknownMenuKey: AppMenuKey = 'not-a-route'
   assert.ok(unknownMenuKey)
-  // @ts-expect-error A route definition must declare one mount strategy.
+  // @ts-expect-error A route definition must declare a mount Adapter.
   const missingStrategy: WorkspaceMountStrategy = {}
   assert.ok(missingStrategy)
-  // @ts-expect-error A route definition cannot declare both mount strategies.
-  const conflictingStrategy: WorkspaceMountStrategy = {
-    contentKind: 'product-management',
-    workspaceMount: () => null
-  }
-  assert.ok(conflictingStrategy)
+  // @ts-expect-error Legacy content-kind dispatch is not a valid route strategy.
+  const legacyStrategy: WorkspaceMountStrategy = { contentKind: 'product-management' }
+  assert.ok(legacyStrategy)
 }
 
 const knownKeys = new Set(Object.keys(WORKSPACE_MENU_DEFINITIONS))
@@ -47,4 +42,5 @@ const routeDefinitionsSource = readFileSync(
   'utf8'
 )
 assert.doesNotMatch(baseTypesSource, /export type AppMenuKey/)
+assert.doesNotMatch(baseTypesSource, /WorkspaceContentKind|contentKind/)
 assert.match(routeDefinitionsSource, /type AppMenuKey = keyof typeof routeDefinitionInputs/)

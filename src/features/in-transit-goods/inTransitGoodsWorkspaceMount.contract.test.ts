@@ -11,7 +11,6 @@ const shellNavigation = readFileSync(
   'src/features/app-shell/useShellWorkspaceNavigation.tsx',
   'utf8'
 );
-const legacy = readFileSync('src/features/app-shell/LegacyWorkspaceContent.tsx', 'utf8');
 
 assert.match(mount, /useWorkspaceOwnedTabs/);
 assert.match(mount, /InTransitGoodsPage/);
@@ -33,5 +32,9 @@ assert.equal(
   false,
   'empty Legacy commerce dispatcher must be deleted'
 );
-assert.doesNotMatch(legacy, /renderLegacyCommerceWorkspace/);
+assert.equal(
+  existsSync('src/features/app-shell/LegacyWorkspaceContent.tsx'),
+  false,
+  'the final Legacy workspace dispatcher must stay deleted'
+);
 assert(mount.split(/\r?\n/u).length <= 301, 'in-transit mount must remain below 300 lines');

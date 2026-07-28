@@ -30,7 +30,6 @@ export type {
   WorkspaceSidebarEntry
 } from './routeDefinitions'
 export type {
-  WorkspaceContentKind,
   WorkspaceSectionIconKey,
   WorkspaceSectionKey
 } from './types'
@@ -142,17 +141,12 @@ export function workspaceMenuTabLabel(menuKey: AppMenuKey) {
   return workspaceMenuDefinition(menuKey).tabLabel
 }
 
-export function workspaceMenuContentKind(menuKey: AppMenuKey) {
-  return workspaceMenuDefinition(menuKey).contentKind
-}
-
-export function workspaceMenuMount(menuKey: AppMenuKey): WorkspaceMountAdapter | null {
-  return workspaceMenuDefinition(menuKey).workspaceMount ?? null
+export function workspaceMenuMount(menuKey: AppMenuKey): WorkspaceMountAdapter {
+  return workspaceMenuDefinition(menuKey).workspaceMount
 }
 
 export function isProductWorkspaceMenu(menuKey: AppMenuKey) {
-  const contentKind = workspaceMenuContentKind(menuKey)
-  return contentKind === 'product-management' || contentKind === 'product-groups'
+  return menuKey === 'product-manage' || menuKey === 'product-groups'
 }
 
 export function workspaceMenuSectionKey(menuKey: AppMenuKey) {

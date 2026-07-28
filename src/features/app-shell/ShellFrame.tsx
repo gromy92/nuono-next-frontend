@@ -14,8 +14,6 @@ import type { FormInstance, MenuProps, TabsProps } from 'antd';
 import { WorkspaceTabsBar, type WorkspaceTabItem } from './WorkspaceTabsBar';
 import { ReplicaLoginPage } from '../auth/ReplicaLoginPage';
 import type { AuthRoleView, AuthSession } from '../auth/session';
-import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
-import type { StoreSyncOverviewState } from '../store-sync/types';
 import { ShellHeader } from './ShellHeader';
 import { ShellSidebar } from './ShellSidebar';
 import { ShellWorkspaceContent } from './ShellWorkspaceContent';
@@ -23,7 +21,6 @@ import type { SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
 import { WorkspaceErrorBoundary } from './WorkspaceErrorBoundary';
 import { isProductWorkspaceMenu } from './WorkspaceMenuRegistry';
-import type { LoadStoreSyncOptions } from '../store-sync/useStoreSyncOverviewController';
 import './shell-layout.css';
 
 const { Content } = Layout;
@@ -38,13 +35,9 @@ export type ChangePasswordFormValues = {
 type ShellFrameProps = {
   activeMenuKey: AppMenuKey;
   activeMenuPathLabel: string | null;
-  activeOwnerId?: number;
   activeSidebarOpenKeys: string[];
   activeSidebarRootKey?: string;
   activeWorkspaceTabKey: string;
-  canManageStoreBinding: boolean;
-  canSelectStoreOwner: boolean;
-  canShowStoreManagement: boolean;
   changePasswordForm: FormInstance<ChangePasswordFormValues>;
   changePasswordOpen: boolean;
   changePasswordSubmitting: boolean;
@@ -54,33 +47,23 @@ type ShellFrameProps = {
   handleUserDropdownClick: ({ key }: { key: string }) => void;
   handleWorkspaceTabChange: (key: string) => void;
   handleWorkspaceTabEdit: NonNullable<TabsProps['onEdit']>;
-  loadStoreSync: (ownerUserId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   loginError: string | null;
   loginForm: FormInstance;
   loginSubmitting: boolean;
   logout: () => void;
   logoutConfirmOpen: boolean;
   noMenuPermission: boolean;
-  notifyRoleManagementDataChanged: (source?: 'store-management') => void;
   openedWorkspaceTabKeys: AppMenuKey[];
-  roleManagementRefreshSignal: number;
   setChangePasswordOpen: (open: boolean) => void;
   setLoginError: (message: string | null) => void;
   setLogoutConfirmOpen: (open: boolean) => void;
   setSidebarOpenKeys: Dispatch<SetStateAction<string[]>>;
-  setStoreSyncOwnerId: Dispatch<SetStateAction<number | undefined>>;
-  setUserRoleActiveTabKey: (key: RoleManagementWorkspaceTabKey) => void;
-  setActiveMenuKey: (key: AppMenuKey) => void;
   shellSession: AuthSession | null;
   shouldRenderWorkspaceTabs: boolean;
   sidebarOpenKeys: string[];
-  storeSyncOwnerId?: number;
-  storeSyncState: StoreSyncOverviewState;
   submitChangePassword: () => void;
   submitLogin: () => void;
-  syncWorkspacePathForMenuKey: (menuKey: AppMenuKey) => void;
   userDropdownItems: MenuProps['items'];
-  userRoleActiveTabKey: RoleManagementWorkspaceTabKey;
   visibleWorkspaceMenuItems: SidebarMenuItem[];
   workspaceTabItems: WorkspaceTabItem[];
 };
@@ -88,13 +71,9 @@ type ShellFrameProps = {
 export function ShellFrame({
   activeMenuKey,
   activeMenuPathLabel,
-  activeOwnerId,
   activeSidebarOpenKeys,
   activeSidebarRootKey,
   activeWorkspaceTabKey,
-  canManageStoreBinding,
-  canSelectStoreOwner,
-  canShowStoreManagement,
   changePasswordForm,
   changePasswordOpen,
   changePasswordSubmitting,
@@ -104,33 +83,23 @@ export function ShellFrame({
   handleUserDropdownClick,
   handleWorkspaceTabChange,
   handleWorkspaceTabEdit,
-  loadStoreSync,
   loginError,
   loginForm,
   loginSubmitting,
   logout,
   logoutConfirmOpen,
   noMenuPermission,
-  notifyRoleManagementDataChanged,
   openedWorkspaceTabKeys,
-  roleManagementRefreshSignal,
   setChangePasswordOpen,
   setLoginError,
   setLogoutConfirmOpen,
   setSidebarOpenKeys,
-  setStoreSyncOwnerId,
-  setUserRoleActiveTabKey,
-  setActiveMenuKey,
   shellSession,
   shouldRenderWorkspaceTabs,
   sidebarOpenKeys,
-  storeSyncOwnerId,
-  storeSyncState,
   submitChangePassword,
   submitLogin,
-  syncWorkspacePathForMenuKey,
   userDropdownItems,
-  userRoleActiveTabKey,
   visibleWorkspaceMenuItems,
   workspaceTabItems
 }: ShellFrameProps) {
@@ -238,23 +207,7 @@ export function ShellFrame({
                             activeMenuKey={activeMenuKey}
                             noMenuPermission={noMenuPermission}
                             shellSession={shellSession}
-                            activeOwnerId={activeOwnerId}
-                            roleManagementTabKey={userRoleActiveTabKey}
-                            canShowStoreManagement={canShowStoreManagement}
-                            roleManagementRefreshSignal={roleManagementRefreshSignal}
-                            storeSyncState={storeSyncState}
-                            storeSyncOwnerId={storeSyncOwnerId}
-                            canSelectStoreOwner={canSelectStoreOwner}
-                            canManageStoreBinding={canManageStoreBinding}
-                            onStoreOwnerChange={setStoreSyncOwnerId}
-                            onStoreRefresh={loadStoreSync}
                             openedWorkspaceTabKeys={openedWorkspaceTabKeys}
-                            onRoleManagementDataChanged={notifyRoleManagementDataChanged}
-                            onRoleManagementTabChange={(nextKey) => {
-                              setUserRoleActiveTabKey(nextKey);
-                              setActiveMenuKey(nextKey === 'user-store-noon' ? 'user-store-noon' : 'user-role');
-                              syncWorkspacePathForMenuKey(nextKey === 'user-store-noon' ? 'user-store-noon' : 'user-role');
-                            }}
                           />
                         </WorkspaceErrorBoundary>
                       </Col>

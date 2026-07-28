@@ -39,16 +39,8 @@ function AppShellRuntimeContent({
     visibleWorkspaceMenuItems
   } = sessionState;
   const {
-    activeOwnerId,
-    canManageStoreBinding,
-    canSelectStoreOwner,
-    loadStoreSync,
-    notifyRoleManagementDataChanged,
     resetStoreSync,
-    roleManagementRefreshSignal,
-    setStoreSyncOwnerId,
-    storeSyncOwnerId,
-    storeSyncState
+    setStoreSyncOwnerId
   } = useStoreSyncContext();
   const ownedTabsController = useWorkspaceOwnedTabsController({
     setActiveMenuKey,
@@ -107,10 +99,8 @@ function AppShellRuntimeContent({
     handleWorkspaceTabEdit,
     openedWorkspaceTabKeys,
     setSidebarOpenKeys,
-    setUserRoleActiveTabKey,
     shouldRenderWorkspaceTabs,
     sidebarOpenKeys,
-    userRoleActiveTabKey,
     workspaceTabItems
   } = useShellWorkspaceNavigation({
     activeMenuKey,
@@ -122,53 +112,39 @@ function AppShellRuntimeContent({
   return (
     <WorkspaceOwnedTabsProvider controller={ownedTabsController}>
       <ShellFrame
-      activeMenuKey={activeMenuKey}
-      activeMenuPathLabel={activeMenuPathLabel}
-      activeOwnerId={activeOwnerId}
-      activeSidebarOpenKeys={activeSidebarOpenKeys}
-      activeSidebarRootKey={activeSidebarRootKey}
-      activeWorkspaceTabKey={activeWorkspaceTabKey}
-      canManageStoreBinding={canManageStoreBinding}
-      canSelectStoreOwner={canSelectStoreOwner}
-      canShowStoreManagement={sessionAllowedMenuKeySet.has('user-store-noon')}
-      changePasswordForm={changePasswordForm}
-      changePasswordOpen={changePasswordOpen}
-      changePasswordSubmitting={changePasswordSubmitting}
-      handleRoleViewChange={handleRoleViewChange}
-      handleSessionStoreChange={handleSessionStoreChange}
-      handleSidebarMenuClick={handleSidebarMenuClick}
-      handleUserDropdownClick={handleUserDropdownClick}
-      handleWorkspaceTabChange={handleWorkspaceTabChange}
-      handleWorkspaceTabEdit={handleWorkspaceTabEdit}
-      loadStoreSync={loadStoreSync}
-      loginError={loginError}
-      loginForm={loginForm}
-      loginSubmitting={loginSubmitting}
-      logout={logout}
-      logoutConfirmOpen={logoutConfirmOpen}
-      noMenuPermission={!usingProcurementRequirementDemoSession && !sessionAllowedMenuKeys.length}
-      notifyRoleManagementDataChanged={notifyRoleManagementDataChanged}
-      openedWorkspaceTabKeys={openedWorkspaceTabKeys}
-      roleManagementRefreshSignal={roleManagementRefreshSignal}
-      setActiveMenuKey={setActiveMenuKey}
-      setChangePasswordOpen={setChangePasswordOpen}
-      setLoginError={setLoginError}
-      setLogoutConfirmOpen={setLogoutConfirmOpen}
-      setSidebarOpenKeys={setSidebarOpenKeys}
-      setStoreSyncOwnerId={setStoreSyncOwnerId}
-      setUserRoleActiveTabKey={setUserRoleActiveTabKey}
-      shellSession={shellSession}
-      shouldRenderWorkspaceTabs={shouldRenderWorkspaceTabs}
-      sidebarOpenKeys={sidebarOpenKeys}
-      storeSyncOwnerId={storeSyncOwnerId}
-      storeSyncState={storeSyncState}
-      submitChangePassword={submitChangePassword}
-      submitLogin={submitLogin}
-      syncWorkspacePathForMenuKey={syncWorkspacePathForMenuKey}
-      userDropdownItems={userDropdownItems}
-      userRoleActiveTabKey={userRoleActiveTabKey}
-      visibleWorkspaceMenuItems={visibleWorkspaceMenuItems}
-      workspaceTabItems={workspaceTabItems}
+        activeMenuKey={activeMenuKey}
+        activeMenuPathLabel={activeMenuPathLabel}
+        activeSidebarOpenKeys={activeSidebarOpenKeys}
+        activeSidebarRootKey={activeSidebarRootKey}
+        activeWorkspaceTabKey={activeWorkspaceTabKey}
+        changePasswordForm={changePasswordForm}
+        changePasswordOpen={changePasswordOpen}
+        changePasswordSubmitting={changePasswordSubmitting}
+        handleRoleViewChange={handleRoleViewChange}
+        handleSessionStoreChange={handleSessionStoreChange}
+        handleSidebarMenuClick={handleSidebarMenuClick}
+        handleUserDropdownClick={handleUserDropdownClick}
+        handleWorkspaceTabChange={handleWorkspaceTabChange}
+        handleWorkspaceTabEdit={handleWorkspaceTabEdit}
+        loginError={loginError}
+        loginForm={loginForm}
+        loginSubmitting={loginSubmitting}
+        logout={logout}
+        logoutConfirmOpen={logoutConfirmOpen}
+        noMenuPermission={!usingProcurementRequirementDemoSession && !sessionAllowedMenuKeys.length}
+        openedWorkspaceTabKeys={openedWorkspaceTabKeys}
+        setChangePasswordOpen={setChangePasswordOpen}
+        setLoginError={setLoginError}
+        setLogoutConfirmOpen={setLogoutConfirmOpen}
+        setSidebarOpenKeys={setSidebarOpenKeys}
+        shellSession={shellSession}
+        shouldRenderWorkspaceTabs={shouldRenderWorkspaceTabs}
+        sidebarOpenKeys={sidebarOpenKeys}
+        submitChangePassword={submitChangePassword}
+        submitLogin={submitLogin}
+        userDropdownItems={userDropdownItems}
+        visibleWorkspaceMenuItems={visibleWorkspaceMenuItems}
+        workspaceTabItems={workspaceTabItems}
       />
     </WorkspaceOwnedTabsProvider>
   );

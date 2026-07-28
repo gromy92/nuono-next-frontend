@@ -2,6 +2,12 @@ import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from '
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
 import { createLazyWorkspaceMount } from './workspaceMount'
 
+const USER_ADMINISTRATION_WORKSPACE_MOUNT = createLazyWorkspaceMount(() =>
+  import('../master-data/UserAdministrationWorkspaceMount').then((module) => ({
+    default: module.UserAdministrationWorkspaceMount
+  }))
+)
+
 export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'system-file-management': {
     key: 'system-file-management',
@@ -46,7 +52,7 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'user',
     pathLabel: '用户 / 店铺管理',
     tabLabel: '店铺管理',
-    contentKind: 'user-administration',
+    workspaceMount: USER_ADMINISTRATION_WORKSPACE_MOUNT,
     closable: true,
     tabKey: 'user-role',
     visibleInSidebar: false,
@@ -59,7 +65,7 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'user',
     pathLabel: '用户 / 角色分配',
     tabLabel: '角色分配',
-    contentKind: 'user-administration',
+    workspaceMount: USER_ADMINISTRATION_WORKSPACE_MOUNT,
     closable: true,
     sidebarOrder: 1
   },

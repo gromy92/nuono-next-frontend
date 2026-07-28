@@ -1,4 +1,5 @@
 import { strict as assert } from 'node:assert';
+import { existsSync } from 'node:fs';
 import { dispatchContractSources as sources } from './warehouseDispatchContractSources';
 
 assert.match(sources.warehouseOrderPanel, /export function WarehouseOrderPanel\(/);
@@ -11,8 +12,8 @@ assert.doesNotMatch(sources.menu, /keys:\s*\[[^\]]*'warehouse-dispatch'[^\]]*'of
 assert.doesNotMatch(sources.menu, /'product-specs'/);
 assert.doesNotMatch(sources.menu, /'warehouse-shipping-order':\s*\{/);
 assert.doesNotMatch(sources.routeTypes, /\|\s*'warehouse-shipping-order'/);
-assert.doesNotMatch(sources.lazyWorkspaces, /WarehouseShippingOrderPage/);
-assert.doesNotMatch(sources.legacyWorkspace, /warehouse-shipping-order|WarehouseShippingOrderPage/);
+assert.equal(existsSync('src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), false);
+assert.equal(existsSync('src/features/app-shell/LegacyCommerceWorkspaceContent.tsx'), false);
 
 assert.match(sources.workbench, /WarehouseOrderPanel/);
 assert.match(sources.models, /WarehouseDispatchTabKey[\s\S]*'warehouse-order'[\s\S]*'receipt-list'/);

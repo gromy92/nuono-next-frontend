@@ -67,6 +67,11 @@ assert.equal(
   false,
   'operations and report routes must not retain a second Legacy renderer registry'
 )
+assert.equal(
+  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/LegacyWorkspaceContent.tsx')),
+  false,
+  'all routes must use catalog-owned mount Adapters'
+)
 assert.deepEqual(
   workspaceContentMountKeys('user-store-noon', ['user-role']),
   ['user-role'],
@@ -97,16 +102,9 @@ assert.equal(
   'commerce routes must not retain a Legacy renderer registry'
 )
 assert.equal(
-  fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
-    '../pre-order-profit/'
-  ),
-  false
-)
-assert.equal(
-  fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
-    '../product-listing/'
-  ),
-  false
+  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx')),
+  false,
+  'route-owned mount Adapters replace the former global lazy component registry'
 )
 
 const warehouseSection = WORKSPACE_SECTION_DEFINITIONS.find((section) => section.key === 'warehouse')

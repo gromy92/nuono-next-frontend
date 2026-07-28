@@ -1,6 +1,5 @@
 import { type Key, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import type { TabsProps } from 'antd';
-import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
 import type { SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
 import type { WorkspaceOwnedTabsController } from '../route-catalog/WorkspaceOwnedTabs';
@@ -47,8 +46,6 @@ export function useShellWorkspaceNavigation({
   sessionAllowedMenuKeySet,
   visibleWorkspaceMenuItems
 }: UseShellWorkspaceNavigationParams) {
-  const [userRoleActiveTabKey, setUserRoleActiveTabKey] =
-    useState<RoleManagementWorkspaceTabKey>('user-role');
   const [openedWorkspaceTabKeys, setOpenedWorkspaceTabKeys] = useState<AppMenuKey[]>([
     'product-manage'
   ]);
@@ -95,9 +92,6 @@ export function useShellWorkspaceNavigation({
       }
 
       if (isWorkspaceMenuKey(key) && shouldShowWorkspaceMenuInTabs(key)) {
-        if (key === 'user-role') {
-          setUserRoleActiveTabKey('user-role');
-        }
         ownedTabsController.activateParentMenu(key);
         return;
       }
@@ -179,18 +173,6 @@ export function useShellWorkspaceNavigation({
     );
   }, [sessionAllowedMenuKeySet]);
 
-  useEffect(() => {
-    if (activeMenuKey === 'user-store-noon') {
-      setUserRoleActiveTabKey('user-store-noon');
-      return;
-    }
-    if (activeMenuKey === 'user-role') {
-      setUserRoleActiveTabKey((currentValue) =>
-        currentValue === 'user-role-org' || currentValue === 'user-role-overview' ? currentValue : 'user-role'
-      );
-    }
-  }, [activeMenuKey]);
-
   const handleSidebarMenuClick = useCallback(
     ({ key }: { key: Key }) => {
       if (typeof key !== 'string') {
@@ -199,9 +181,6 @@ export function useShellWorkspaceNavigation({
       const nextKey = key as AppMenuKey;
       if (!sessionAllowedMenuKeySet.has(nextKey)) {
         return;
-      }
-      if (nextKey === 'user-role') {
-        setUserRoleActiveTabKey('user-role');
       }
       ownedTabsController.activateParentMenu(nextKey);
     },
@@ -218,10 +197,8 @@ export function useShellWorkspaceNavigation({
     handleWorkspaceTabEdit,
     openedWorkspaceTabKeys,
     setSidebarOpenKeys,
-    setUserRoleActiveTabKey,
     shouldRenderWorkspaceTabs,
     sidebarOpenKeys,
-    userRoleActiveTabKey,
     workspaceTabItems
   };
 }

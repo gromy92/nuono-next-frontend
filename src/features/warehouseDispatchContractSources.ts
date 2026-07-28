@@ -12,8 +12,6 @@ export const dispatchContractSources = {
   menu: source('route-catalog/fulfillmentRoutes.ts'),
   routeTypes: source('route-catalog/types.ts'),
   routePaths: source('route-catalog/routePaths.ts'),
-  legacyWorkspace: source('app-shell/LegacyCommerceWorkspaceContent.tsx'),
-  lazyWorkspaces: source('app-shell/ShellWorkspaceLazyComponents.tsx'),
   warehouseOrderPanel: source('warehouse-dispatch/warehouse-order/WarehouseOrderPanel.tsx'),
   workbench: source('warehouse-dispatch/WarehouseDispatchWorkbenchPage.tsx'),
   models: source('warehouse-dispatch/workbenchModels.ts'),
