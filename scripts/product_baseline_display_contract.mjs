@@ -5,67 +5,80 @@ const rootDir = path.resolve(new URL('..', import.meta.url).pathname);
 
 const contracts = [
   {
-    file: 'src/features/product-management/groups/ProductGroupMemberList.tsx',
+    files: ['src/features/product-management/groups/ProductGroupMemberList.tsx'],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/product-management/groups/ProductGroupAddProductsDrawer.tsx',
+    files: ['src/features/product-management/groups/ProductGroupAddProductsDrawer.tsx'],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/product-management/groups/ProductGroupMemberEditModal.tsx',
+    files: ['src/features/product-management/groups/ProductGroupMemberEditModal.tsx'],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/product-management/groups/ProductGroupUnlinkConfirmModal.tsx',
+    files: ['src/features/product-management/groups/ProductGroupUnlinkConfirmModal.tsx'],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/product-management/components/ProductVariantSpecModal.tsx',
+    files: ['src/features/product-management/components/ProductVariantSpecModal.tsx'],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/product-management/components/ProductInsightsTab.tsx',
+    files: ['src/features/product-editor/ProductInsightsTab.tsx'],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/product-management/components/ProductSummaryBlocks.tsx',
+    files: ['src/features/product-management/components/ProductSummaryBlocks.tsx'],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/product-management/components/ProductHistoryModal.helpers.tsx',
+    files: ['src/features/product-management/components/ProductHistoryModal.helpers.tsx'],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/product-management/components/ProductSiteCompareModal.tsx',
+    files: ['src/features/product-management/components/ProductSiteCompareModal.tsx'],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/product-management/components/ProductDetailPreviewPanel.tsx',
+    files: ['src/features/product-management/components/ProductDetailPreviewPanel.tsx'],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/profit-calculator/ProfitCalculatorPage.tsx',
+    files: [
+      'src/features/profit-calculator/ProfitCalculatorPage.tsx',
+      'src/features/profit-calculator/components/ProductIdentityCell.tsx'
+    ],
     required: ['ProductBaselineListCell'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/sales-analytics/SalesAnalyticsPage.tsx',
+    files: [
+      'src/features/sales-analytics/SalesAnalyticsPage.tsx',
+      'src/features/sales-analytics/presentation/productColumns.tsx',
+      'src/features/sales-analytics/components/ComparisonDialog.tsx',
+      'src/features/sales-analytics/components/ProductDetailDialog.tsx'
+    ],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   },
   {
-    file: 'src/features/competitor-analysis/CompetitorAnalysisPage.tsx',
+    files: [
+      'src/features/competitor-analysis/CompetitorAnalysisPage.tsx',
+      'src/features/competitor-analysis/productList/CompetitorProductTable.tsx',
+      'src/features/competitor-analysis/productDetail/ProductDetail.tsx',
+      'src/features/competitor-analysis/productChanges/ProductChangeModal.tsx'
+    ],
     required: ['ProductBaselineIdentity'],
     forbidden: ['ProductImageThumb']
   }
@@ -74,22 +87,24 @@ const contracts = [
 const failures = [];
 
 for (const contract of contracts) {
-  const absoluteFile = path.join(rootDir, contract.file);
-  const source = fs.readFileSync(absoluteFile, 'utf8');
+  const label = contract.files.join(' + ');
+  const source = contract.files
+    .map((file) => fs.readFileSync(path.join(rootDir, file), 'utf8'))
+    .join('\n');
   const importLines = source
     .split(/\r?\n/)
     .filter((line) => line.trim().startsWith('import '));
 
   for (const symbol of contract.required) {
     if (!source.includes(symbol)) {
-      failures.push(`${contract.file}: missing required ${symbol}`);
+      failures.push(`${label}: missing required ${symbol}`);
     }
   }
 
   for (const symbol of contract.forbidden) {
     const forbiddenImport = importLines.find((line) => line.includes(symbol));
     if (forbiddenImport) {
-      failures.push(`${contract.file}: forbidden direct ${symbol} import`);
+      failures.push(`${label}: forbidden direct ${symbol} import`);
     }
   }
 }
