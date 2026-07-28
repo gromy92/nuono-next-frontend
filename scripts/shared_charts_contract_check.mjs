@@ -29,7 +29,13 @@ function assertNotIncludes(source, needle, label) {
 }
 
 const panel = read('src/shared/charts/EChartPanel.tsx')
-const options = read('src/shared/charts/options.ts')
+const options = [
+  read('src/shared/charts/options.ts'),
+  read('src/shared/charts/netUnitsLineOption.ts'),
+  read('src/shared/charts/salesPriceTrendOption.ts'),
+  read('src/shared/charts/distributionOptions.ts'),
+  read('src/shared/charts/chartOptionTypes.ts')
+].join('\n')
 const chartIndex = read('src/shared/charts/index.ts')
 const salesPage = read('src/features/sales-analytics/SalesAnalyticsPage.tsx')
 const salesTrendLineChart = read('src/features/sales-analytics/components/TrendLineChart.tsx')
