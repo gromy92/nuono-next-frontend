@@ -1,5 +1,6 @@
 import { PURCHASE_LISTING_PATH, withCurrentWorkspaceDevQuery } from '../app-shell/WorkspaceRouting'
 import {
+  navigateProductListingTargetInCurrentTab,
   openProductListingTargetInNewTab,
   reserveProductListingTargetInNewTab,
   type ProductListingTabOpener
@@ -27,11 +28,8 @@ export function navigateManualSelectionGroupListingInCurrentTab(
   storeCode?: string,
   navigate: ManualSelectionListingNavigator = (targetUrl) => window.location.assign(targetUrl)
 ) {
-  // Embedded browsers can return a WindowProxy even when no visible tab was
-  // created, so this entry uses deterministic same-tab navigation.
   const targetUrl = buildManualSelectionGroupListingTarget(project, storeCode)
-  navigate(targetUrl)
-  return targetUrl
+  return navigateProductListingTargetInCurrentTab(targetUrl, navigate)
 }
 
 export function openManualSelectionGroupListingInNewTab(
