@@ -2,7 +2,7 @@ import { apiFetch } from '../../shared/api';
 import type {
   ProductCompetitorContentFieldType,
   ProductCompetitorContentTargetLang
-} from './types/competitorContent';
+} from '../product-domain/productCompetitorContent';
 
 export type ProductCompetitorContentMergeRequest = {
   fieldType: ProductCompetitorContentFieldType;

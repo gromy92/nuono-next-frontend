@@ -87,7 +87,7 @@
     {"path":"src/features/product-management/api.ts","ceiling":301},
     {"path":"src/features/product-management/components/ProductAttributeFieldControl.tsx","ceiling":309},
     {"path":"src/features/product-management/components/ProductBilingualContentEditor.tsx","ceiling":1212},
-    {"path":"src/features/product-management/components/ProductClassificationEditor.tsx","ceiling":365},
+    {"path":"src/features/product-management/components/ProductClassificationEditor.tsx","ceiling":364},
     {"path":"src/features/product-management/components/productContentKeywordEditor.ts","ceiling":335},
     {"path":"src/features/product-management/components/ProductImageManagerDrawer.tsx","ceiling":647},
     {"path":"src/features/product-management/components/ProductListIdentityCells.tsx","ceiling":389},

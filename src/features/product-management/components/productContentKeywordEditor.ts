@@ -3,7 +3,7 @@ import type {
   ProductKeywordItem,
   ProductKeywordPanelView
 } from '../../product-keywords/types';
-import type { ProductCompetitorContentMaterial } from '../types/competitorContent';
+import type { ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent';
 import { normalizeProductTitleKeywordInput, parseProductTitleKeywordInputList } from './productCompetitorContentKeywords';
 import type { ProductCompetitorContentTextItem } from './productCompetitorContentSources';
 import { buildProductCompetitorContentSourceView, isNoonCompetitorContentSource } from './productCompetitorContentSources';

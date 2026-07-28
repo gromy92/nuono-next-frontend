@@ -1,4 +1,4 @@
-import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent'
 import type { ProductImageRoleAssignment } from '../product-management/types/productImageRole'
 import type { NoonImageAssetMetadata } from '../product-management/utils/noonImageRequirements'
 

@@ -15,7 +15,7 @@ import {
   updateProductListingKeyAttributeField,
   type ProductListingEditorDraft
 } from './productDetailAdapter'
-import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent'
 import type { ProductListingValidationIssue } from './types'
 import { useProductListingAiGeneration } from './useProductListingAiGeneration'
 

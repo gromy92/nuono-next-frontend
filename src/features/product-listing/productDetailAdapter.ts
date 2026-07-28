@@ -6,7 +6,7 @@ import type {
 } from '../product-management/types'
 import { PRODUCT_DETAILED_ATTRIBUTE_GROUPS } from '../product-management/productDetailedContentConfig'
 import { createProductMasterSnapshotPayload } from '../product-management/utils'
-import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent'
 import type {
   ProductImageRoleAssignment,
   ProductImageUsageRole

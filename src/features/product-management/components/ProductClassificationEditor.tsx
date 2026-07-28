@@ -3,9 +3,8 @@ import { AutoComplete, Button, Modal, Space, Table, Tag, Typography } from 'antd
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchProductClassificationOptions, type ProductClassificationOptionPayload } from '../../product-domain/productClassificationApi';
 import type { ProductFieldDomainSurface, ProductMasterSnapshotPayload } from '../types';
-import type { ProductCompetitorContentMaterial } from '../types/competitorContent';
+import { preferredCompetitorCategoryLabel, type ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent';
 import { textInputValue } from '../utils';
-import { preferredCompetitorCategoryLabel } from './competitorCategoryPresentation';
 import { ProductClassificationFields } from './ProductClassificationFields';
 import { ProductDetailSection } from './ProductDetailSection';
 const { Text } = Typography;

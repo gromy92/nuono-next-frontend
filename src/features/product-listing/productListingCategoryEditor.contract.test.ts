@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { preferredCompetitorCategoryLabel } from '../product-management/components/competitorCategoryPresentation'
+import { preferredCompetitorCategoryLabel } from '../product-domain/productCompetitorContent'
 
 const classificationEditorSource = readFileSync(
   new URL('../product-management/components/ProductClassificationEditor.tsx', import.meta.url),
@@ -16,12 +16,12 @@ const contentTabSource = readFileSync(
   'utf8'
 )
 const competitorContentTypeSource = readFileSync(
-  new URL('../product-management/types/competitorContent.ts', import.meta.url),
+  new URL('../product-domain/productCompetitorContent.ts', import.meta.url),
   'utf8'
 )
 const sourcePrefillSource = readFileSync(new URL('./sourcePrefill.ts', import.meta.url), 'utf8')
 const categoryPresentationSource = readFileSync(
-  new URL('../product-management/components/competitorCategoryPresentation.ts', import.meta.url),
+  new URL('../product-domain/productCompetitorContent.ts', import.meta.url),
   'utf8'
 )
 

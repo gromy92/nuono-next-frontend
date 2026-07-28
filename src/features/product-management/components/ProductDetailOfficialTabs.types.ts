@@ -7,7 +7,7 @@ import type {
   ProductWorkbenchActionOptions,
   ProductSummarySurface
 } from '../types';
-import type { ProductCompetitorContentMaterial } from '../types/competitorContent';
+import type { ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent';
 import type { ProductImageRoleAssignment } from '../types/productImageRole';
 import type { NoonImageAssetMetadata } from '../utils/noonImageRequirements';
 

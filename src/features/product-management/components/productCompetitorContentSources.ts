@@ -2,7 +2,7 @@ import type {
   ProductCompetitorContentFieldType,
   ProductCompetitorContentMaterial,
   ProductCompetitorContentTargetLang
-} from '../types/competitorContent'
+} from '../../product-domain/productCompetitorContent'
 
 export type ProductCompetitorContentSourceView = {
   label: string

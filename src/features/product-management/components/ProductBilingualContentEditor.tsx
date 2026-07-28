@@ -8,7 +8,7 @@ import type { ProductMasterSnapshotPayload } from '../types';
 import type {
   ProductCompetitorContentFieldType,
   ProductCompetitorContentMaterial
-} from '../types/competitorContent';
+} from '../../product-domain/productCompetitorContent';
 import { normalizeStringList, textInputValue } from '../utils';
 import {
   setLoadingKey,

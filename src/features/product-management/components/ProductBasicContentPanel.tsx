@@ -1,6 +1,6 @@
 import { Progress, Tag } from 'antd';
 import type { ProductFieldDomainSurface, ProductMasterSnapshotPayload } from '../types';
-import type { ProductCompetitorContentMaterial } from '../types/competitorContent';
+import type { ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent';
 import { ProductBilingualContentEditor } from './ProductBilingualContentEditor';
 import { ProductDetailSection } from './ProductDetailSection';
 

@@ -1,4 +1,4 @@
-import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent'
 import type { ProductListingEditorDraft } from './productDetailAdapter'
 import type { ProductListingAiListingData, ProductListingAiListingDraft } from './types'
 
