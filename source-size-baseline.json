@@ -2,7 +2,6 @@
   "version": 1,
   "limit": 300,
   "files": [
-    {"path":"scripts/competitor_analysis_real_data_smoke.mjs","ceiling":316},
     {"path":"scripts/master_data_page_acceptance.mjs","ceiling":480},
     {"path":"scripts/master_data_replica_smoke.mjs","ceiling":555},
     {"path":"scripts/official_warehouse_stock_tabs_smoke.mjs","ceiling":651},
