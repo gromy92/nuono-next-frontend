@@ -1,3 +1,5 @@
+import { normalizeNoonProductCode } from './competitorRankFormatting'
+
 export function buildNoonSearchUrl(
   keyword: string,
   siteCode: string,
@@ -22,4 +24,11 @@ export function noonMarketPath(siteCode: string) {
   if (normalized === 'SA') return 'saudi-en'
   if (normalized === 'EG') return 'egypt-en'
   return 'uae-en'
+}
+
+export function buildNoonProductDetailUrl(productCode: string, siteCode?: string) {
+  const code = normalizeNoonProductCode(productCode)
+  return code
+    ? `https://www.noon.com/${noonMarketPath(siteCode || '')}/p/?o=${encodeURIComponent(code)}`
+    : ''
 }
