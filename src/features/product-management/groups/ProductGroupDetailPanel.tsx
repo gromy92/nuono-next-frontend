@@ -1,12 +1,12 @@
 import { Alert, Button, Empty, Space, Spin, Tag, Typography } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import { ProductGroupOfficialPanel } from './ProductGroupOfficialPanel';
+import { formatSnapshotValue } from '../utils/common';
 import {
-  formatSnapshotValue,
   isProductPublishTaskActive,
   isProductPublishTaskNeedsAttention,
   productPublishTaskStatusLabel
-} from '../utils';
+} from '../utils/workbench';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 import type { ProductGroupRow } from './productGroupRows';
 import type { ProductGroupMemberListItem } from './ProductGroupMemberList';

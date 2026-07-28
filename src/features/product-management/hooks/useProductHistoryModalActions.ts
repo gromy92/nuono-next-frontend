@@ -4,12 +4,9 @@ import { message } from 'antd';
 import { fetchProductHistory } from '../api';
 import { MOCK_PRODUCT_LIST_UI_STATES } from '../mockData';
 import { buildProductHistoryFallback } from '../workspaceHelpers';
-import {
-  buildProductSummarySurfaceFromListSummary,
-  getProductCurrentZCode,
-  getProductListRowIdentityKey,
-  productHistoryEntryMeta
-} from '../utils';
+import { buildProductSummarySurfaceFromListSummary } from '../utils/summary';
+import { getProductCurrentZCode, getProductListRowIdentityKey } from '../../product-domain/productIdentity';
+import { productHistoryEntryMeta } from '../utils/workbench';
 import { buildProductSummarySurfaceFromListItem, productSummaryTitle } from '../../product-baseline';
 import type {
   ProductListSummaryPayload,

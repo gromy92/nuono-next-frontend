@@ -1,14 +1,14 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import { isProductListRowOnline } from '../utils/status';
+import { getProductListRowIdentityKey } from '../../product-domain/productIdentity';
 import {
-  isProductListRowOnline,
-  getProductListRowIdentityKey,
   mergeProductListItemWithSummary,
   mergeSampleProductWithSummary,
-  normalizeProductSyncStatus,
-  productListSummaryAppliesToItem,
-  textInputValue
-} from '../utils';
+  productListSummaryAppliesToItem
+} from '../utils/summary';
+import { normalizeProductSyncStatus } from '../utils/common';
+import { textInputValue } from '../utils/common';
 import type {
   ProductListDatasetState,
   ProductListRowPayload,

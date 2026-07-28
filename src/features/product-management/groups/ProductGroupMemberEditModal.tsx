@@ -1,6 +1,6 @@
 import { Input, Modal, Space, Typography } from 'antd';
 import { useEffect, useState } from 'react';
-import { formatSnapshotValue } from '../utils';
+import { formatSnapshotValue } from '../utils/common';
 import { ProductBaselineIdentity } from '../../product-baseline';
 
 const { Text } = Typography;

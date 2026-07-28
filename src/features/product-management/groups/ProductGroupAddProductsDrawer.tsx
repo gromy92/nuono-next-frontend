@@ -2,7 +2,8 @@ import { SearchOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Drawer, Empty, Input, Space, Spin, Tag, Typography, message } from 'antd';
 import { useMemo, useState } from 'react';
 import type { ProductListRowPayload } from '../types';
-import { formatSnapshotValue, normalizeNoonImageUrl, textInputValue } from '../utils';
+import { formatSnapshotValue, textInputValue } from '../utils/common';
+import { normalizeNoonImageUrl } from '../../product-baseline/normalizeNoonImageUrl';
 import { ProductBaselineIdentity } from '../../product-baseline';
 
 const { Text } = Typography;

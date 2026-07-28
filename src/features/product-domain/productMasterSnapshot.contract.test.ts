@@ -67,10 +67,10 @@ assert.doesNotMatch(
   /export type ProductMasterSnapshotPayload/,
   'workbench types must consume rather than redefine the snapshot Interface'
 )
-assert.doesNotMatch(
-  readFileSync('src/features/product-management/utils.ts', 'utf8'),
-  /productMasterSnapshotFactory/,
-  'product-management utils barrel must not re-export the deleted factory'
+assert.equal(
+  existsSync('src/features/product-management/utils.ts'),
+  false,
+  'product-management must not retain the shallow utils barrel'
 )
 assert.doesNotMatch(
   readFileSync('src/features/product-management/utils/common.ts', 'utf8'),

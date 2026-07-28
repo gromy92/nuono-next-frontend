@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { Button, Space, Typography } from 'antd';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
-import { isProductPublishTaskActive, isProductPublishTaskNeedsAttention } from '../utils';
+import { isProductPublishTaskActive, isProductPublishTaskNeedsAttention } from '../utils/workbench';
 
 const { Text } = Typography;
 

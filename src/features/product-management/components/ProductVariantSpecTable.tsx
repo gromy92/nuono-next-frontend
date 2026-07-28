@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { fetchProductVariantSpecs, saveProductVariantSpec } from '../../product-specs/api';
 import type { ProductVariantSpecLogisticsValue, ProductVariantSpecPayload } from '../../product-specs/types';
 import { formatSnapshotValue, textInputValue } from '../utils/common';
-import { getProductStableIdentityKey } from '../utils';
+import { getProductStableIdentityKey } from '../../product-domain/productIdentity';
 
 const { Text } = Typography;
 

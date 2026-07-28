@@ -1,11 +1,9 @@
 import { useMemo } from 'react';
 import { Alert, Modal, Space, Spin, Table } from 'antd';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
-import {
-  closedProductSiteCompareModalState,
-  formatSnapshotValue,
-  siteOfferCode
-} from '../utils';
+import { closedProductSiteCompareModalState } from '../utils/siteCompare';
+import { formatSnapshotValue } from '../utils/common';
+import { siteOfferCode } from '../utils/common';
 import { createProductSiteCompareColumns } from './ProductSiteCompareModal.helpers';
 import { ProductBaselineIdentity, productSummaryTitle } from '../../product-baseline';
 

@@ -3,7 +3,7 @@ import { Button } from 'antd';
 import type { ReactNode } from 'react';
 import type { ProductSummarySurface } from '../types';
 import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
-import { buildNoonCatalogProductUrl } from '../utils';
+import { buildNoonCatalogProductUrl } from '../utils/noonLinks';
 import { buildNoonProductUrl } from '../../product-baseline';
 import { ProductBaselineHeader } from './ProductBaselineHeader';
 

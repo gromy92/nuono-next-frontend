@@ -3,10 +3,8 @@ import { message } from 'antd';
 import type { FormInstance } from 'antd';
 import { openProductWorkbenchSnapshot } from '../api';
 import { findMockProductItem } from '../mockData';
-import {
-  buildProductWorkbenchContext,
-  findProductByIdentity
-} from '../utils';
+import { buildProductWorkbenchContext } from '../utils/workbench';
+import { findProductByIdentity } from '../../product-domain/productIdentity';
 import { buildProductSummarySurfaceFromListItem } from '../../product-baseline';
 import type {
   ProductListRowPayload,

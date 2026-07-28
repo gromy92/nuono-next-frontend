@@ -22,7 +22,7 @@ import { useProductWorkspaceState } from './hooks/useProductWorkspaceState';
 import type { ProductListRowPayload } from './types';
 import type { UseProductManagementWorkspaceParams } from './workspaceContracts';
 import { storeInitializationStepColor } from './workspaceHelpers';
-import { isProductPublishTaskActive } from './utils';
+import { isProductPublishTaskActive } from './utils/workbench';
 
 export function useProductManagementWorkspace({
   session,

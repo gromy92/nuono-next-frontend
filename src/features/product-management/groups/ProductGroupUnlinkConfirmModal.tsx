@@ -1,5 +1,5 @@
 import { Modal, Space, Typography } from 'antd';
-import { formatSnapshotValue } from '../utils';
+import { formatSnapshotValue } from '../utils/common';
 import { ProductBaselineIdentity } from '../../product-baseline';
 import type { ProductGroupMemberCardView } from './productGroupMemberTypes';
 

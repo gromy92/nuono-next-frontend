@@ -1,11 +1,8 @@
 import { Alert, Col, Descriptions, Row, Space, Spin, Tag, Typography } from 'antd';
 import type { ProductSummarySurface } from '../types';
-import {
-  formatSnapshotValue,
-  getProductCurrentZCode,
-  productSummaryIdentityLine,
-  productSummaryPriceLine
-} from '../utils';
+import { formatSnapshotValue } from '../utils/common';
+import { getProductCurrentZCode } from '../../product-domain/productIdentity';
+import { productSummaryIdentityLine, productSummaryPriceLine } from '../utils/summary';
 import { ProductSummaryPrimaryTags } from './ProductSummaryBlocks';
 import {
   isProductNotListedSource,

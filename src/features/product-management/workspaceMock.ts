@@ -1,8 +1,6 @@
 import { MOCK_PRODUCT_LIST_UI_STATES } from './mockData';
-import {
-  nowSyncTime,
-  textInputValue
-} from './utils';
+import { nowSyncTime } from './utils/common';
+import { textInputValue } from './utils/common';
 import { mergeGalleryImageUrls } from '../product-baseline';
 import type { ProductListUiState, ProductWorkbenchPayload, StoreInitializationPayload } from './types';
 import {

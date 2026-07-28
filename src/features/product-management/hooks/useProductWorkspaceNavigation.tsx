@@ -3,7 +3,8 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { FormInstance } from 'antd';
 import { findMockProductItem } from '../mockData';
 import { isSameProductDetailRequest } from '../workspaceHelpers';
-import { buildProductWorkbenchContext, findProductByIdentity } from '../utils';
+import { buildProductWorkbenchContext } from '../utils/workbench';
+import { findProductByIdentity } from '../../product-domain/productIdentity';
 import { buildProductSummarySurfaceFromListItem } from '../../product-baseline';
 import type {
   ProductDetailTabMode,
@@ -29,7 +30,6 @@ type ProductQuickOpenSample = {
   storeCode?: string;
   referenceStoreCode?: string;
 };
-
 type UseProductWorkspaceNavigationParams = {
   activeOwnerId?: number;
   activeProductWorkspaceTabKey: ProductWorkspaceTabKey;

@@ -1,5 +1,5 @@
 import { Collapse, Descriptions, Divider, Space, Tag, Typography } from 'antd';
-import { formatSnapshotValue } from '../utils';
+import { formatSnapshotValue } from '../utils/common';
 
 const { Text } = Typography;
 

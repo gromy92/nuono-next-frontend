@@ -4,22 +4,21 @@ import { isVisibleDetailedAttributeRecord } from '../../product-editor/productAt
 import { productSharedSnapshot } from '../workspaceHelpers';
 import {
   areSnapshotPartsEqual,
-  buildProductInsightMetrics,
-  buildProductSiteSummary,
-  buildProductFieldDomainSurface,
-  buildProductSummarySurfaceFromWorkbench,
-  buildProductWarehouseStockRows,
-  countProductContentProgress,
-  findProductByIdentity,
-  getProductStableIdentityKey,
   normalizeSnapshotTextList,
   normalizeStringList,
-  pickAttributeValue,
-  productHistoryEntryMeta,
-  siteOfferEditableFieldsEqual,
-  siteOfferCode,
-  textInputValue
-} from '../utils';
+  siteOfferEditableFieldsEqual, siteOfferCode, textInputValue
+} from '../utils/common';
+import {
+  buildProductInsightMetrics,
+  buildProductSiteSummary,
+  buildProductWarehouseStockRows,
+  countProductContentProgress
+} from '../utils/workbenchDerived';
+import { buildProductFieldDomainSurface } from '../utils/fieldDomain';
+import { buildProductSummarySurfaceFromWorkbench } from '../utils/summary';
+import { findProductByIdentity, getProductStableIdentityKey } from '../../product-domain/productIdentity';
+import { pickAttributeValue } from '../utils/fieldDomainIssues';
+import { productHistoryEntryMeta } from '../utils/workbench';
 import { productSyncStatusMeta } from '../../product-baseline';
 import type {
   ProductDetailTabRequest,

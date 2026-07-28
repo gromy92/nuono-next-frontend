@@ -1,7 +1,8 @@
 import { DisconnectOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons';
 import { Button, Space, Tag, Tooltip, Typography } from 'antd';
 import type { ProductGroupMemberCardView } from './productGroupMemberTypes';
-import { formatSnapshotValue, isLiveStatusActive, productLiveStatusLabel } from '../utils';
+import { formatSnapshotValue } from '../utils/common';
+import { isLiveStatusActive, productLiveStatusLabel } from '../utils/status';
 import { ProductBaselineIdentity } from '../../product-baseline';
 
 const { Text } = Typography;

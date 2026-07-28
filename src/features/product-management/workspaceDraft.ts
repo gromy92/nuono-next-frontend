@@ -2,14 +2,13 @@ import {
   areSnapshotPartsEqual,
   cloneRecord,
   cloneRecordList,
-  collectSiteOfferValidationIssues,
-  collectUnsupportedProductPublishIssues,
-  formatSnapshotValue,
   nowSyncTime,
   siteOfferCode,
-  siteOfferEditableFieldsEqual,
-  textInputValue
-} from './utils';
+  siteOfferEditableFieldsEqual
+} from './utils/common';
+import { collectSiteOfferValidationIssues } from './utils/fieldDomainIssues';
+import { collectUnsupportedProductPublishIssues } from './utils/writeCoverage';
+import { formatSnapshotValue, textInputValue } from './utils/common';
 import type { ProductWorkbenchState } from './types';
 import {
   createProductMasterSnapshotPayload,

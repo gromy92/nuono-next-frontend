@@ -1,5 +1,5 @@
 import type { ProductListRowPayload } from '../types';
-import { textInputValue } from '../utils';
+import { textInputValue } from '../utils/common';
 
 export type ProductGroupDraftOverlay = {
   groupKey: string;

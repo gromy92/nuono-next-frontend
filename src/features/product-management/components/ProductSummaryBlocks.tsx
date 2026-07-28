@@ -1,13 +1,8 @@
 import { Button, List, Space, Tag, Typography } from 'antd';
 import type { ProductSummarySurface } from '../types';
-import {
-  formatDateTimeParts,
-  isLiveStatusActive,
-  productLiveStatusLabel,
-  productSummaryIdentityLine,
-  productSummaryPriceLine,
-  productSummaryPrimaryLiveStatus
-} from '../utils';
+import { formatDateTimeParts } from '../utils/common';
+import { isLiveStatusActive, productLiveStatusLabel, productSummaryPrimaryLiveStatus } from '../utils/status';
+import { productSummaryIdentityLine, productSummaryPriceLine } from '../utils/summary';
 import {
   isProductNotListedSource,
   ProductBaselineIdentity,

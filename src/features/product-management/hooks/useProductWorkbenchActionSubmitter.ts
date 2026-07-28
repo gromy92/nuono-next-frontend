@@ -6,9 +6,9 @@ import {
   buildLocalProductRecentAction,
   isPublicDetailReadonlyWorkbench,
   isProductPublishTaskActive,
-  prependRecentAction,
-  siteOfferCode
-} from '../utils';
+  prependRecentAction
+} from '../utils/workbench';
+import { siteOfferCode } from '../utils/common';
 import type {
   ProductListUiState,
   ProductWorkbenchAction,

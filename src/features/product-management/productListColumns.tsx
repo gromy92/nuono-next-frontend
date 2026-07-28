@@ -9,7 +9,7 @@ import {
   SellerStatusCell
 } from './components/ProductListColumnCells';
 import type { ProductListRowPayload, ProductListUiState, ProductOperationStageCode } from './types';
-import { getProductListRowIdentityKey } from './utils';
+import { getProductListRowIdentityKey } from '../product-domain/productIdentity';
 
 type ProductListColumnsParams = {
   deletingProductKey?: string;

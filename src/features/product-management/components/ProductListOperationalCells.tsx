@@ -3,9 +3,9 @@ import { InfoCircleOutlined } from '@ant-design/icons';
 import { Button, Dropdown, message, Popconfirm, Popover, Space, Switch, Tag, Tooltip, Typography } from 'antd';
 import { MOCK_PRODUCT_LIST_UI_STATES } from '../mockData';
 import type { ProductListRowPayload, ProductListUiState, ProductOperationStageCode } from '../types';
+import { formatDateTimeParts } from '../utils/common';
+import { getProductListRowIdentityKey } from '../../product-domain/productIdentity';
 import {
-  formatDateTimeParts,
-  getProductListRowIdentityKey,
   hasProductBlockingIssues,
   isLiveStatusActive,
   isProductIssueBlocking,
@@ -13,7 +13,7 @@ import {
   productListIssueTags,
   productIssueTagLabel,
   productSummaryPrimaryLiveStatus
-} from '../utils';
+} from '../utils/status';
 import { buildProductSummarySurfaceFromListItem, productSyncStatusMeta } from '../../product-baseline';
 import {
   PRODUCT_OPERATION_STAGE_SELECT_OPTIONS,

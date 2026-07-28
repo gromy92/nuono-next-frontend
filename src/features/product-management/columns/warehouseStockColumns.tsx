@@ -1,5 +1,5 @@
 import type { ColumnsType } from 'antd/es/table';
-import { formatSnapshotValue } from '../utils';
+import { formatSnapshotValue } from '../utils/common';
 
 export const warehouseStockColumns: ColumnsType<Record<string, unknown>> = [
   {

@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import { Button, Space, Tag, Tooltip, Typography } from 'antd';
 import type { ProductSummarySurface } from '../types';
-import {
-  normalizeSnapshotTextList,
-  productSummaryIdentityLine,
-  productSummaryPriceLine
-} from '../utils';
+import { normalizeSnapshotTextList } from '../utils/common';
+import { productSummaryIdentityLine, productSummaryPriceLine } from '../utils/summary';
 import {
   formatHistoryDateTime,
   formatHistoryValue,

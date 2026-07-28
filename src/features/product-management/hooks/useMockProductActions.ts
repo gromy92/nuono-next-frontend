@@ -1,14 +1,9 @@
 import { useCallback } from 'react';
 import { message } from 'antd';
 import { buildMockPublishState, validateProductDraft } from '../workspaceHelpers';
-import {
-  areSnapshotPartsEqual,
-  buildLocalProductRecentAction,
-  getProductStableIdentityKey,
-  nowSyncTime,
-  prependRecentAction,
-  siteOfferCode
-} from '../utils';
+import { areSnapshotPartsEqual, nowSyncTime, siteOfferCode } from '../utils/common';
+import { buildLocalProductRecentAction, prependRecentAction } from '../utils/workbench';
+import { getProductStableIdentityKey } from '../../product-domain/productIdentity';
 import { createProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import type { ProductListUiState, ProductWorkbenchState } from '../types';
 import type { ReadyProductWorkbenchSurfaceUpdater } from './useProductWorkbenchSurfaceActions';

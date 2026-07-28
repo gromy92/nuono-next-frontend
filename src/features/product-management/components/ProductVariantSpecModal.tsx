@@ -1,6 +1,6 @@
 import { App as AntdApp, Modal, Space } from 'antd';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
-import { formatSnapshotValue } from '../utils';
+import { formatSnapshotValue } from '../utils/common';
 import { ProductVariantSpecTable } from './ProductVariantSpecTable';
 import { ProductBaselineIdentity } from '../../product-baseline';
 

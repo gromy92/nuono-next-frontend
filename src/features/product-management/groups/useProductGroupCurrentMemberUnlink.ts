@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
 import { memberRecordKey } from './ProductGroupOfficialPanel.helpers';
 import type { ProductGroupMemberCardView } from './productGroupMemberTypes';
-import { textInputValue } from '../utils';
+import { textInputValue } from '../utils/common';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 
 type PendingCurrentMemberUnlink = {

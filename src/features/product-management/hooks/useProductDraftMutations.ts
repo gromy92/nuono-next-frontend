@@ -1,12 +1,7 @@
 import { useCallback } from 'react';
 import { createSiteOfferColumns } from '../productDetailColumns';
-import {
-  cloneRecord,
-  cloneRecordList,
-  siteOfferCode,
-  splitMultilineValue,
-  textInputValue
-} from '../utils';
+import { cloneRecord, cloneRecordList, siteOfferCode, splitMultilineValue } from '../utils/common';
+import { textInputValue } from '../utils/common';
 import type {
   ProductWorkbenchPayload,
   ProductWorkbenchState,
