@@ -35,7 +35,14 @@ function sliceBetween(source, startNeedle, endNeedle, label) {
   return source.slice(start, end)
 }
 
-const page = read('src/features/product-listing/ProductListingPage.tsx')
+const page = [
+  'ProductListingPage.tsx',
+  'useProductListingWorkflowState.ts',
+  'useProductListingWorkflowSynchronization.ts',
+  'useProductListingDraftPersistence.ts',
+  'useProductListingReviewActions.ts',
+  'useProductListingRecoveryActions.ts'
+].map((fileName) => read(`src/features/product-listing/${fileName}`)).join('\n')
 const detailEditor = read('src/features/product-listing/ProductListingDetailEditor.tsx')
 const sourcePrefill = read('src/features/product-listing/sourcePrefill.ts')
 const adapter = [

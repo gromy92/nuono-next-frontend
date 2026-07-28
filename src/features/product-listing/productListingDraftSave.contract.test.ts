@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-const pageSource = readFileSync(new URL('./ProductListingPage.tsx', import.meta.url), 'utf8')
+const pageSource = [
+  './ProductListingPage.tsx',
+  './useProductListingDraftPersistence.ts',
+  './useProductListingReviewActions.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 const adapterSource = [
   './productDetailAdapter.ts',
   './productDetailAdapterTypes.ts',
@@ -32,11 +36,12 @@ assert(
   'product listing payload should preserve sourceRefId from the editor draft'
 )
 assert(
-  pageSource.includes('...listingDraftRef.current') && pageSource.includes('...form.getFieldsValue()'),
+  pageSource.includes('...options.listingDraftRef.current') &&
+    pageSource.includes('...options.form.getFieldsValue()'),
   'product listing save should merge hidden metadata form values over the current editor draft'
 )
 assert(
-  pageSource.includes('productListingEditorDraftToPayload(currentDraft, currentDraftId)'),
+  pageSource.includes('productListingEditorDraftToPayload(currentDraft, options.currentDraftId)'),
   'product listing save should serialize the normalized editor draft payload'
 )
 assert(
@@ -56,7 +61,7 @@ assert(
   'manual listing draft save should show immediate saving, success and failure feedback instead of relying on a silent button click'
 )
 assert(
-  pageSource.includes('const savedWorkflow = await refreshWorkflow(saved.draftId)') &&
+  pageSource.includes('const workflow = await options.refreshWorkflow(saved.draftId)') &&
     !pageSource.includes('setRealRunTaskView(undefined)'),
   'saving an existing draft should reload its durable workflow instead of clearing terminal task state locally'
 )
@@ -67,8 +72,8 @@ assert(
     workflowReadinessSource.includes('setLoadedScope({ draftId, storeCode })') &&
     workflowReadinessSource.includes('setLoadedScope(undefined)') &&
     pageSource.includes('workflowReadiness.locked') &&
-    pageSource.includes('!editSession.canEditAndSave') &&
-    pageSource.includes('!workflowPresentation.allowPrepare') &&
+    pageSource.includes('!options.canEditAndSave') &&
+    pageSource.includes('!options.allowPrepare') &&
     workflowReadinessSource.includes(
       '正在读取后端上架流程，保存与检查暂时锁定。'
     ),

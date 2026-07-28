@@ -11,7 +11,12 @@ const aiGenerationSource = readFileSync(
 )
 const aiFlowSource = `${detailEditorSource}\n${aiGenerationSource}`
 const resultPreviewSource = readFileSync(new URL('./ProductListingAiResultPreview.tsx', import.meta.url), 'utf8')
-const listingPageSource = readFileSync(new URL('./ProductListingPage.tsx', import.meta.url), 'utf8')
+const listingPageSource = [
+  './ProductListingPage.tsx',
+  './useProductListingWorkflowState.ts',
+  './useProductListingDraftPersistence.ts',
+  './useProductListingReviewActions.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 const adapterSource = [
   './productDetailAdapter.ts',
   './productDetailAdapterTypes.ts',

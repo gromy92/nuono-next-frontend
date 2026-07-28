@@ -2,7 +2,13 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 const apiSource = readFileSync(new URL('./api.ts', import.meta.url), 'utf8')
-const pageSource = readFileSync(new URL('./ProductListingPage.tsx', import.meta.url), 'utf8')
+const pageSource = [
+  './ProductListingPage.tsx',
+  './useProductListingWorkflowState.ts',
+  './useProductListingWorkflowSynchronization.ts',
+  './useProductListingReviewActions.ts',
+  './useProductListingRecoveryActions.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 const modalSource = readFileSync(new URL('./ProductListingReviewModal.tsx', import.meta.url), 'utf8')
 const presentationSource = readFileSync(
   new URL('./productListingWorkflowPresentation.ts', import.meta.url),
@@ -61,10 +67,10 @@ const dangerousPollingSource = readFileSync(
   'utf8'
 )
 const terminalDraftHandlerStart = pageSource.indexOf(
-  'async function handleTerminalDraftAction'
+  'const handleTerminalDraftAction = async'
 )
 const terminalDraftHandlerEnd = pageSource.indexOf(
-  'async function executeRealRunRecoveryAction',
+  'const executeRealRunRecoveryAction = async',
   terminalDraftHandlerStart
 )
 const terminalDraftHandlerSource = pageSource.slice(
@@ -73,7 +79,7 @@ const terminalDraftHandlerSource = pageSource.slice(
 )
 const recoveryHandlerStart = terminalDraftHandlerEnd
 const recoveryHandlerEnd = pageSource.indexOf(
-  '\n  return (',
+  '\n  const handleWorkflowAction',
   recoveryHandlerStart
 )
 const recoveryHandlerSource = pageSource.slice(
@@ -95,19 +101,19 @@ assert(
 )
 assert(
   pageSource.includes('verification.taskId !== taskId') &&
-    pageSource.includes('identityMatches(expectedIdentity)') &&
+    pageSource.includes('options.identityMatches(expected)') &&
     pageSource.includes('workflowRequestSequenceRef'),
   'late recovery and polling responses must not apply to a different draft or older request'
 )
 assert(
   pageSource.includes("verification.status === 'found'") &&
-    pageSource.includes('await refreshWorkflow(draftId, expectedIdentity)') &&
+    pageSource.includes('await options.refreshWorkflow(draftId, expected)') &&
     !pageSource.includes('setCanContinueAfterCreate'),
   'create-outcome verification should reload the persisted workflow instead of locally inventing continuation permission'
 )
 assert(
   presentationSource.includes("workflow.writeCertainty === 'NOT_STARTED'") &&
-    pageSource.includes('workflow.nextAction !== action'),
+    pageSource.includes('options.workflow.nextAction !== action'),
   'unknown or written recovery states must not open a new dry-run or a different recovery command'
 )
 assert(
@@ -124,7 +130,7 @@ assert(
 assert(
   apiSource.includes('/reopen-review') &&
     modalSource.includes('product-listing-return-to-edit') &&
-    pageSource.includes("reviewReopen.reopen({ kind: 'RETURN_TO_EDIT' })") &&
+    pageSource.includes("options.reopenReview({ kind: 'RETURN_TO_EDIT' })") &&
     pageSource.includes('reopenReview: reopenProductListingReview') &&
     reviewReopenControllerSource.includes(
       'prepareProductListingReviewReopen({'
@@ -137,7 +143,7 @@ assert(
 assert(
   pageSource.includes('subscribeProductListingWorkflowRefresh(window') &&
     pageSource.includes("workflow.phase !== 'PUBLISHING'") &&
-    pageSource.includes('window.setTimeout(() => void pollWorkflow(), 3000)'),
+    pageSource.includes('window.setTimeout(() => void poll(), 3000)'),
   'workflow recovery should refresh on window restore and poll publishing serially'
 )
 assert(
@@ -168,13 +174,13 @@ assert(
   terminalDraftHandlerStart >= 0 &&
     terminalDraftHandlerEnd > terminalDraftHandlerStart &&
     terminalDraftHandlerSource.includes(
-      "workflow.phase !== 'ACTION_REQUIRED'"
+      "options.workflow.phase !== 'ACTION_REQUIRED'"
     ) &&
     terminalDraftHandlerSource.includes(
-      "workflow.writeCertainty !== 'NOT_STARTED'"
+      "options.workflow.writeCertainty !== 'NOT_STARTED'"
     ) &&
     terminalDraftHandlerSource.includes(
-      'await reviewReopen.reopen({ kind: action })'
+      'await options.reopenReview({ kind: action })'
     ) &&
     reviewReopenCompletionSource.includes('closeReview()') &&
     reviewReopenCompletionSource.includes('focusProductListingEditor()') &&
@@ -209,7 +215,7 @@ assert(
 assert(
   pageSource.includes('matchesProductListingPartnerSku(') &&
     pageSource.includes('verification.partnerSku') &&
-    pageSource.includes('workflow.realRunTask?.partnerSku'),
+    pageSource.includes('options.workflow.realRunTask?.partnerSku'),
   'create-outcome verification should reject a task response for a different partner SKU'
 )
 assert(

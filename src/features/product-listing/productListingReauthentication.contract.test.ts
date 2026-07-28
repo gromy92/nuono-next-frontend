@@ -87,10 +87,10 @@ const confirmationSource = readFileSync(
   new URL('./productListingReauthentication.ts', import.meta.url),
   'utf8'
 )
-const pageSource = readFileSync(
-  new URL('./ProductListingPage.tsx', import.meta.url),
-  'utf8'
-)
+const pageSource = [
+  './ProductListingPage.tsx',
+  './useProductListingRecoveryActions.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 const pageStatusSource = readFileSync(
   new URL('./ProductListingPageStatus.tsx', import.meta.url),
   'utf8'

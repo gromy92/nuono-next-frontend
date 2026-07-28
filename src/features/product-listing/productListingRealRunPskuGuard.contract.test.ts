@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-const pageSource = readFileSync(new URL('./ProductListingPage.tsx', import.meta.url), 'utf8')
+const pageSource = [
+  './ProductListingPage.tsx',
+  './useProductListingReviewActions.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 
 assert(
   pageSource.includes('PRODUCT_LISTING_REAL_RUN_PSKU_REQUIRED_MESSAGE'),

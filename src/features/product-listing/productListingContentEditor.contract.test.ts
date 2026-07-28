@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-const listingPageSource = readFileSync(new URL('./ProductListingPage.tsx', import.meta.url), 'utf8')
+const listingPageSource = [
+  './ProductListingPage.tsx',
+  './useProductListingWorkflowState.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 const detailEditorSource = readFileSync(new URL('./ProductListingDetailEditor.tsx', import.meta.url), 'utf8')
 const contentPanelSource = readFileSync(
   new URL('../product-editor/ProductBasicContentPanel.tsx', import.meta.url),

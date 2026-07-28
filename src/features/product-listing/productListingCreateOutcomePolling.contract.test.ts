@@ -5,10 +5,10 @@ const hookSource = readFileSync(
   new URL('./useProductListingCreateOutcomePolling.ts', import.meta.url),
   'utf8'
 )
-const pageSource = readFileSync(
-  new URL('./ProductListingPage.tsx', import.meta.url),
-  'utf8'
-)
+const pageSource = [
+  './ProductListingPage.tsx',
+  './useProductListingRecoveryActions.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 const confirmNotCreatedSource = readFileSync(
   new URL('./useProductListingConfirmNotCreated.ts', import.meta.url),
   'utf8'
