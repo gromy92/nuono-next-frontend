@@ -5,7 +5,6 @@ import { ReloadOutlined } from '@ant-design/icons'
 import type { AuthSession } from '../auth/session'
 import { isSystemAdminSession } from '../route-catalog/sessionAccessPolicy'
 import { EChartPanel, buildDistributionPieOption, buildHorizontalBarOption } from '../../shared/charts'
-import type { DistributionPoint } from '../../shared/charts'
 import { fetchNoonCallStoreData, syncNoonCallStoreDataCategory } from './api'
 import {
   NoonDataEmpty,
@@ -14,9 +13,21 @@ import {
   NoonDataReportSection,
   StatusTag,
   formatDate,
-  formatDateTime,
-  statusLabel
+  formatDateTime
 } from './NoonDataReportBlocks'
+import {
+  addSyncingKey,
+  applyOptimisticSyncing,
+  buildCategoryGapDistribution,
+  buildCategoryMarkerDistribution,
+  buildMarkerDistribution,
+  categoryTitle,
+  displayStatuses,
+  markerLabel,
+  NOON_CALL_CATEGORY_ORDER,
+  removeSyncingKey,
+  rowCategoryKey
+} from './noonCallStoreDataModel'
 import type { NoonCallStoreCategoryCell, NoonCallStoreDataRow, NoonCallStoreDataView } from './types'
 
 const { Text } = Typography
@@ -29,8 +40,6 @@ type LoadState =
   | { status: 'idle' | 'loading'; data?: NoonCallStoreDataView; message?: string }
   | { status: 'success'; data: NoonCallStoreDataView; message?: string }
   | { status: 'error'; data?: NoonCallStoreDataView; message: string }
-
-const CATEGORY_ORDER = ['PRODUCT_LIST', 'PRODUCT_DETAIL', 'SALES_ORDER', 'SALES_PRODUCT_VIEWS']
 
 export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
   const [state, setState] = useState<LoadState>({ status: 'idle' })
@@ -102,7 +111,7 @@ export function NoonCallStoreDataPage({ session }: NoonCallStoreDataPageProps) {
         width: 88,
         render: (value) => <MarkerTag value={value} />
       },
-      ...CATEGORY_ORDER.map((category) => ({
+      ...NOON_CALL_CATEGORY_ORDER.map((category) => ({
         title: categoryTitle(category),
         key: category,
         width: 160,
@@ -253,72 +262,6 @@ function CategorySyncCell({
   )
 }
 
-function rowCategoryKey(row: NoonCallStoreDataRow, cell: Pick<NoonCallStoreCategoryCell, 'category'>) {
-  return `${row.ownerUserId}:${row.storeCode}:${row.siteCode}:${cell.category}`
-}
-
-function addSyncingKey(current: Set<string>, key: string) {
-  const next = new Set(current)
-  next.add(key)
-  return next
-}
-
-function removeSyncingKey(current: Set<string>, key: string) {
-  const next = new Set(current)
-  next.delete(key)
-  return next
-}
-
-function applyOptimisticSyncing(rows: NoonCallStoreDataRow[], syncingKeys: Set<string>): NoonCallStoreDataRow[] {
-  if (!syncingKeys.size) {
-    return rows
-  }
-  return rows.map((row) => {
-    let changed = false
-    const categories = row.categories.map((cell) => {
-      if (!syncingKeys.has(rowCategoryKey(row, cell))) {
-        return cell
-      }
-      changed = true
-      return {
-        ...cell,
-        marker: 'SYNCING',
-        latestTaskStatus: cell.latestTaskStatus || 'QUEUED'
-      }
-    })
-    return changed ? { ...row, overallMarker: 'SYNCING', categories } : row
-  })
-}
-
-function uniqueStatuses(...values: Array<string | null | undefined>) {
-  const seen = new Set<string>()
-  const statuses: string[] = []
-  values.forEach((value) => {
-    const normalized = (value || '').trim()
-    if (!normalized || seen.has(normalized)) {
-      return
-    }
-    seen.add(normalized)
-    statuses.push(normalized)
-  })
-  return statuses
-}
-
-function displayStatuses(cell: NoonCallStoreCategoryCell, markerText: string) {
-  return uniqueStatuses(cell.latestStatus, cell.historyStatus).filter((status) => {
-    if (statusLabel(status) === markerText) {
-      return false
-    }
-    if (status === 'NOT_REQUIRED') {
-      return false
-    }
-    if (cell.marker === 'COMPLETE' && (status === 'READY' || status === 'COMPLETE')) {
-      return false
-    }
-    return true
-  })
-}
-
 function MarkerTag({ value }: { value?: string | null }) {
   const normalized = (value || '').trim()
   const colors: Record<string, string> = {
@@ -331,67 +274,6 @@ function MarkerTag({ value }: { value?: string | null }) {
     PENDING_CONFIRMATION: 'gold'
   }
   return <Tag color={colors[normalized] || 'default'}>{markerLabel(normalized)}</Tag>
-}
-
-function categoryTitle(category?: string | null) {
-  const labels: Record<string, string> = {
-    PRODUCT_LIST: '商品列表信息',
-    PRODUCT_DETAIL: '商品信息',
-    SALES_ORDER: '订单数据',
-    SALES_PRODUCT_VIEWS: '销量数据'
-  }
-  return labels[category || ''] || category || '未知'
-}
-
-function markerLabel(value?: string | null) {
-  const normalized = (value || '').trim()
-  const labels: Record<string, string> = {
-    COMPLETE: '完整',
-    PENDING_SYNC: '待同步',
-    SYNCING: '同步中',
-    FAILED: '失败',
-    MANUAL_ACTION: '需人工处理',
-    NOT_INTEGRATED: '未接入',
-    PENDING_CONFIRMATION: '待确认'
-  }
-  return labels[normalized] || normalized || '未知'
-}
-
-function buildMarkerDistribution(rows: NoonCallStoreDataRow[]): DistributionPoint[] {
-  const counts = new Map<string, number>()
-  rows.forEach((row) => increment(counts, row.overallMarker || 'UNKNOWN'))
-  return mapCounts(counts, markerLabel)
-}
-
-function buildCategoryMarkerDistribution(rows: NoonCallStoreDataRow[]): DistributionPoint[] {
-  const counts = new Map<string, number>()
-  rows.forEach((row) => {
-    row.categories.forEach((cell) => increment(counts, cell.marker || cell.latestStatus || 'UNKNOWN'))
-  })
-  return mapCounts(counts, markerLabel)
-}
-
-function buildCategoryGapDistribution(rows: NoonCallStoreDataRow[]): DistributionPoint[] {
-  return CATEGORY_ORDER.map((category) => ({
-    key: category,
-    label: categoryTitle(category),
-    value: rows.reduce((total, row) => {
-      const cell = row.categories.find((item) => item.category === category)
-      return total + Number(cell?.activeGapCount || 0)
-    }, 0)
-  }))
-}
-
-function increment(counts: Map<string, number>, key: string) {
-  counts.set(key, (counts.get(key) || 0) + 1)
-}
-
-function mapCounts(counts: Map<string, number>, label: (value: string) => string): DistributionPoint[] {
-  return Array.from(counts.entries()).map(([key, value]) => ({
-    key,
-    label: label(key),
-    value
-  }))
 }
 
 export default NoonCallStoreDataPage

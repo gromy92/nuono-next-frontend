@@ -15,7 +15,6 @@
     {"path":"src/features/procurement-confirmation/hooks/useProcurementRequirementActions.ts","ceiling":374},
     {"path":"src/features/product-management/productIdentity.contract.test.ts","ceiling":304},
     {"path":"src/features/product-management/productPskuModel.contract.test.ts","ceiling":316},
-    {"path":"src/features/system-reports/NoonCallStoreDataPage.tsx","ceiling":397},
     {"path":"tests/e2e/ali1688-collection.spec.ts","ceiling":303},
     {"path":"tests/e2e/ali1688-historical-orders.spec.ts","ceiling":2408},
     {"path":"tests/e2e/ali1688-sku-purchase-history.spec.ts","ceiling":545},
