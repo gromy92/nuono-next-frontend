@@ -31,6 +31,12 @@ export const officialWarehousePageContractSource = [
   read('OfficialWarehousePage.tsx')
 ].join('\n')
 
+export const officialWarehouseApiContractSource = [
+  read('api.ts'),
+  read('officialWarehouseApiClient.ts'),
+  read('officialWarehouseAppointmentTypes.ts')
+].join('\n')
+
 export const officialWarehousePageStyleContractSource = [
   read('OfficialWarehouseLayout.css'),
   read('OfficialWarehouseInbound.css'),

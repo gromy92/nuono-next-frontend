@@ -2,11 +2,14 @@ import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { officialWarehousePageContractSource } from './officialWarehouseContractSources'
+import {
+  officialWarehouseApiContractSource,
+  officialWarehousePageContractSource
+} from './officialWarehouseContractSources'
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
 const pageSource = officialWarehousePageContractSource
-const apiSource = readFileSync(join(currentDir, 'api.ts'), 'utf8')
+const apiSource = officialWarehouseApiContractSource
 
 const appointmentWarehouseOptionsSource = pageSource.slice(
   pageSource.indexOf('const appointmentWarehouseOptions = useMemo'),

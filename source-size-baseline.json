@@ -15,7 +15,6 @@
     {"path":"src/features/competitor-analysis/CompetitorDashboardTab.tsx","ceiling":367},
     {"path":"src/features/competitor-analysis/dashboardCharts.ts","ceiling":390},
     {"path":"src/features/in-transit-goods/useInTransitBatchEditor.ts","ceiling":371},
-    {"path":"src/features/official-warehouse/api.ts","ceiling":555},
     {"path":"src/features/official-warehouse/domain.contract.test.ts","ceiling":319},
     {"path":"src/features/official-warehouse/domain.ts","ceiling":370},
     {"path":"src/features/official-warehouse/printFbnTransferPdf.ts","ceiling":406},
