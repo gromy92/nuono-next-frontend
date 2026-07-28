@@ -129,13 +129,7 @@ export function ProcurementWorkspaceView({ model }: { model: any }) {
 	                  >
                     {procurementAutoSelectionLabel(selectedProcurementItem)}
                   </Button>
-                  <Button onClick={() => onOpenProfitCalculatorPrefilled(
-                      selectedProcurementItem,
-                      comparingProcurementCandidate,
-                      comparingProcurementCandidate?.id
-                        ? selectedProcurementSignalByCandidateId[comparingProcurementCandidate.id]
-                        : undefined
-                    )}>
+                  <Button onClick={onOpenProfitCalculatorPrefilled}>
                     带入利润计算
                   </Button>
                   {selectedProcurementItem.sourceUrl ? (

@@ -17,23 +17,17 @@ import type {
   ActualCommissionSnapshot,
   ActualOutboundFeeSnapshot,
   OfficialCommissionCalculationResult,
-  OfficialOutboundFeeCalculationResult,
-  ProfitQuickSignalsPayload
+  OfficialOutboundFeeCalculationResult
 } from './domain';
 import type { AuthSession } from '../auth/session';
 import { fetchProductListDataset } from '../product-domain/productListApi';
 import type { ProductListDatasetPayload, ProductListRowPayload } from '../product-domain/productListTypes';
-import type { ProcurementCandidate, ProcurementDemandItem } from '../procurement/types';
 
 const ProfitCalculatorPage = lazy(() =>
   import('./ProfitCalculatorPage').then((module) => ({ default: module.ProfitCalculatorPage }))
 );
 
-export type OpenProfitCalculatorPrefilled = (
-  demandItem?: ProcurementDemandItem,
-  candidate?: ProcurementCandidate,
-  signal?: ProfitQuickSignalsPayload['signals'][number]
-) => void;
+export type OpenProfitCalculatorPrefilled = () => void;
 
 export type ProfitProductListState =
   | { status: 'idle' }

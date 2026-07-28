@@ -47,11 +47,7 @@ import type { ProcurementProfitSignalsState, ProfitQuickSignalsPayload } from '.
 type ProcurementWorkspaceProps = {
   session: AuthSession | null;
   activeOwnerId?: number;
-  onOpenProfitCalculatorPrefilled: (
-    demandItem?: ProcurementDemandItem,
-    candidate?: ProcurementCandidate,
-    signal?: ProfitQuickSignalsPayload['signals'][number]
-  ) => void;
+  onOpenProfitCalculatorPrefilled: () => void;
 };
 
 export function ProcurementWorkspace({
