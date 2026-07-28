@@ -2,8 +2,6 @@
   "version": 1,
   "limit": 300,
   "files": [
-    {"path":"scripts/master_data_page_acceptance.mjs","ceiling":480},
-    {"path":"scripts/master_data_replica_smoke.mjs","ceiling":555},
     {"path":"scripts/official_warehouse_stock_tabs_smoke.mjs","ceiling":651},
     {"path":"scripts/product_management_10_page_acceptance.mjs","ceiling":684},
     {"path":"tests/e2e/ali1688-collection.spec.ts","ceiling":303},
