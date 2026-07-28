@@ -3,7 +3,6 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { selectProductSpecEffectiveSource } from '../product-specs/api';
-
 const productManagementDir = dirname(fileURLToPath(import.meta.url));
 const repoFeatureDir = join(productManagementDir, '..');
 
@@ -42,7 +41,8 @@ const productIdentity = featureSource('product-domain/productIdentity.ts');
 const workbenchActionSubmitter = source('./hooks/useProductWorkbenchActionSubmitter.ts');
 const siteCompareModalActions = source('./hooks/useProductSiteCompareModalActions.ts');
 const workspaceAccess = source('./workspaceAccess.ts');
-const productSpecsPage = featureSource('product-specs/ProductSpecsPage.tsx');
+const productSpecsPage = ['ProductSpecsPage.tsx', 'components/DomesticSpecMatrix.tsx', 'components/ProductSpecsWorkbench.tsx',
+  'hooks/useProductSpecsController.ts', 'specDomain.ts'].map((path) => featureSource(`product-specs/${path}`)).join('\n');
 const specTable = source('./components/ProductVariantSpecTable.tsx');
 const specModal = source('./components/ProductVariantSpecModal.tsx');
 const noonLinks = source('./utils/noonLinks.ts');

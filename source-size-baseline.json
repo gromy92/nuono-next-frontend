@@ -68,7 +68,6 @@
     {"path":"src/features/product-management/useProductManagementWorkspace.tsx","ceiling":408},
     {"path":"src/features/product-management/utils/summary.ts","ceiling":363},
     {"path":"src/features/product-management/utils/workbench.ts","ceiling":377},
-    {"path":"src/features/product-specs/ProductSpecsPage.tsx","ceiling":1282},
     {"path":"src/features/profit-calculator/domain.ts","ceiling":437},
     {"path":"src/features/profit-calculator/ProfitCalculatorPage.tsx","ceiling":1212},
     {"path":"src/features/profit-calculator/useProfitCalculatorWorkspace.tsx","ceiling":650},

@@ -52,7 +52,10 @@ const listingAdapter = readFileSync(
   'src/features/product-listing/ProductListingDetailEditor.tsx',
   'utf8'
 );
-const specsPage = readFileSync('src/features/product-specs/ProductSpecsPage.tsx', 'utf8');
+const specsPage = [
+  'src/features/product-specs/ProductSpecsPage.tsx',
+  'src/features/product-specs/hooks/useProductSpecColumns.tsx'
+].map((path) => readFileSync(path, 'utf8')).join('\n');
 
 assert.match(
   managementAdapter,
