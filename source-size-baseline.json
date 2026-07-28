@@ -9,7 +9,6 @@
     {"path":"scripts/product_management_10_page_acceptance.mjs","ceiling":684},
     {"path":"scripts/profit_pending_page_smoke.mjs","ceiling":437},
     {"path":"src/features/official-warehouse/domain.contract.test.ts","ceiling":319},
-    {"path":"src/features/official-warehouse/printFbnTransferPdf.ts","ceiling":406},
     {"path":"src/features/official-warehouse/statisticsDomain.contract.test.ts","ceiling":504},
     {"path":"src/features/product-management/productIdentity.contract.test.ts","ceiling":304},
     {"path":"src/features/product-management/productPskuModel.contract.test.ts","ceiling":316},
