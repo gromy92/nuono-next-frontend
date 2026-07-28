@@ -2,7 +2,7 @@ export type ProductTitleSharedKeyword = {
   key: string
   label: string
   competitorCount: number
-}
+};
 
 export type ProductTitleKeywordHighlightPart = {
   text: string

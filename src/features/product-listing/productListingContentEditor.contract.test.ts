@@ -4,19 +4,31 @@ import { readFileSync } from 'node:fs'
 const listingPageSource = readFileSync(new URL('./ProductListingPage.tsx', import.meta.url), 'utf8')
 const detailEditorSource = readFileSync(new URL('./ProductListingDetailEditor.tsx', import.meta.url), 'utf8')
 const contentPanelSource = readFileSync(
-  new URL('../product-management/components/ProductBasicContentPanel.tsx', import.meta.url),
+  new URL('../product-editor/ProductBasicContentPanel.tsx', import.meta.url),
   'utf8'
 )
 const contentTabSource = readFileSync(
   new URL('../product-management/components/ProductContentTab.tsx', import.meta.url),
   'utf8'
 )
-const bilingualContentEditorSource = readFileSync(
-  new URL('../product-management/components/ProductBilingualContentEditor.tsx', import.meta.url),
-  'utf8'
-)
+const bilingualContentEditorSource = [
+  'ProductBilingualContentEditor.tsx',
+  'ProductContentFieldEditModal.tsx',
+  'ProductContentTranslationSection.tsx',
+  'ProductCompetitorContentSection.tsx',
+  'ProductTitleKeywordPanel.tsx',
+  'ProductTitleKeywordHighlights.tsx',
+  'ProductContentSaveConfirmModal.tsx',
+  'useProductContentFieldEditor.ts',
+  'useProductCompetitorContentEditor.ts',
+  'useProductTitleKeywordEditor.ts',
+  'useProductTitleKeywordTranslations.ts',
+  'productContentKeywordEditor.ts',
+  'productKeywordChineseTranslation.ts',
+  'productContentClipboard.ts'
+].map((path) => readFileSync(new URL(`../product-editor/${path}`, import.meta.url), 'utf8')).join('\n')
 const translationHelperSource = readFileSync(
-  new URL('../product-management/components/ProductContentTranslationEditor.helpers.ts', import.meta.url),
+  new URL('../product-editor/ProductContentTranslationEditor.helpers.ts', import.meta.url),
   'utf8'
 )
 const officialTabsTypeSource = readFileSync(
@@ -72,13 +84,13 @@ assert(
   'Bilingual content editor should turn AI shared title keywords into automatically matched keyword rows'
 )
 assert(
-  bilingualContentEditorSource.includes('saveKeywordRowsToManagement') &&
+  bilingualContentEditorSource.includes('saveKeywordRows') &&
     bilingualContentEditorSource.includes('saveProductKeywordEditorChanges') &&
     bilingualContentEditorSource.includes('fetchProductKeywordProduct') &&
     bilingualContentEditorSource.includes('deletedKeywordRows') &&
     bilingualContentEditorSource.includes('keywordRowsDirtyRef') &&
-    bilingualContentEditorSource.includes('deletedRow.originalValue || deletedRow.value') &&
-    bilingualContentEditorSource.includes('closable={!keywordSaving}') &&
+    bilingualContentEditorSource.includes('deleted.originalValue || deleted.value') &&
+    bilingualContentEditorSource.includes('closable={!keyword.keywordSaving}') &&
     bilingualContentEditorSource.includes('openAutomaticCompetitorMatches') &&
     bilingualContentEditorSource.includes('requestProductContentSave') &&
     bilingualContentEditorSource.includes('saveConfirmDetail') &&
@@ -91,7 +103,7 @@ assert(
     bilingualContentEditorSource.includes('返回修改') &&
     bilingualContentEditorSource.includes('确认保存') &&
     bilingualContentEditorSource.includes('editableKeywordRowsFromPanel') &&
-    bilingualContentEditorSource.includes('selectedCompetitorKeywordEvidenceItems') &&
+    bilingualContentEditorSource.includes('evidenceForRow') &&
     bilingualContentEditorSource.includes('matchingCompetitorsForKeyword') &&
     bilingualContentEditorSource.includes('automaticKeywordRows') &&
     bilingualContentEditorSource.includes('keywordInputRows') &&
@@ -132,7 +144,7 @@ assert(
 )
 assert(
   bilingualContentEditorSource.includes('product-content-translation-draft-preview') &&
-    bilingualContentEditorSource.includes('{translationSection}') &&
+    bilingualContentEditorSource.includes('<ProductContentTranslationSection') &&
     bilingualContentEditorSource.includes('点击生成翻译后在这里显示结果') &&
     !bilingualContentEditorSource.includes('点击生成翻译后在这里预览结果') &&
     !bilingualContentEditorSource.includes("border: '1px solid var(--pm-border-subtle, #d9d9d9)'") &&
@@ -148,11 +160,11 @@ const contentKeywordPanelStart = bilingualContentEditorSource.indexOf(
 )
 assert(contentLeftPanelStart > 0 && contentKeywordPanelStart > contentLeftPanelStart, 'Content modal panels should be present')
 const contentLeftPanelSource = bilingualContentEditorSource.slice(contentLeftPanelStart, contentKeywordPanelStart)
-assert(contentLeftPanelSource.includes('{translationSection}'), 'Title edit modal should include translation controls')
+assert(contentLeftPanelSource.includes('<ProductContentTranslationSection'), 'Title edit modal should include translation controls')
 assert(
-  contentLeftPanelSource.indexOf('{fieldEditor}') > 0 &&
-    contentLeftPanelSource.indexOf('{translationSection}') > contentLeftPanelSource.indexOf('{fieldEditor}') &&
-    contentLeftPanelSource.indexOf('{competitorSection}') > contentLeftPanelSource.indexOf('{translationSection}') &&
+  contentLeftPanelSource.indexOf('<Input.TextArea') > 0 &&
+    contentLeftPanelSource.indexOf('<ProductContentTranslationSection') > contentLeftPanelSource.indexOf('<Input.TextArea') &&
+    contentLeftPanelSource.indexOf('<ProductCompetitorContentSection') > contentLeftPanelSource.indexOf('<ProductContentTranslationSection') &&
     !contentLeftPanelSource.includes('{aiDraftPreview}') &&
     !bilingualContentEditorSource.includes('product-competitor-ai-draft-preview') &&
     !bilingualContentEditorSource.includes('setCompetitorDraft(mergedText)') &&
@@ -162,7 +174,7 @@ assert(
 
 assert(
   bilingualContentEditorSource.includes("const supportsTitleKeywords = fieldType === 'title'") &&
-    bilingualContentEditorSource.includes('titleKeywordPanel') &&
+    bilingualContentEditorSource.includes('ProductTitleKeywordPanel') &&
     bilingualContentEditorSource.includes('titleKeywordTranslations') &&
     bilingualContentEditorSource.includes('translateTitleKeywordsToChinese(sharedKeywords)') &&
     bilingualContentEditorSource.includes("sourceLang: 'AUTO'") &&
@@ -183,7 +195,7 @@ assert(
   'Translation helper should pass source language and reject AI translations that do not match the requested target language'
 )
 
-const translationSourceStart = bilingualContentEditorSource.indexOf('const translationSource = (fieldType: EditableFieldType, lang: ContentLang) => {')
+const translationSourceStart = bilingualContentEditorSource.indexOf('const translationSource = (fieldType: ProductContentEditableField, lang: ProductContentLang) => {')
 const updateFieldValueStart = bilingualContentEditorSource.indexOf('const updateFieldValue =', translationSourceStart)
 const translationSourceBlock = bilingualContentEditorSource.slice(translationSourceStart, updateFieldValueStart)
 
@@ -191,7 +203,7 @@ assert(
   translationSourceBlock.includes("const fallbackLang = lang === 'EN' ? 'AR' : 'EN'") &&
     translationSourceBlock.includes("return fieldValue('title', fallbackLang)") &&
     translationSourceBlock.includes("return fieldValue('description', fallbackLang)") &&
-    translationSourceBlock.includes("return normalizeStringList") &&
+    translationSourceBlock.includes("return stringList") &&
     !translationSourceBlock.includes('titleCn ||') &&
     !translationSourceBlock.includes('descriptionCn ||') &&
     !translationSourceBlock.includes('highlightsCn.join'),

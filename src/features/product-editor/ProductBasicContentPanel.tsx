@@ -1,9 +1,9 @@
 import { Progress, Tag } from 'antd';
-import type { ProductFieldDomainSurface } from '../../product-editor/productFieldDomain';
-import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
-import type { ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent';
+import type { ProductFieldDomainSurface } from './productFieldDomain';
+import type { ProductMasterSnapshotPayload } from '../product-domain/productMasterSnapshot';
+import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent';
 import { ProductBilingualContentEditor } from './ProductBilingualContentEditor';
-import { ProductDetailSection } from '../../product-editor/ProductDetailSection';
+import { ProductDetailSection } from './ProductDetailSection';
 
 export function ProductBasicContentPanel(props: {
   productContentDomain?: ProductFieldDomainSurface;

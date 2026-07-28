@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { message } from 'antd';
-import { translateProductContentText } from '../api';
+import { translateProductContentText } from './productContentApi';
 
 export type LangCode = 'ZH' | 'EN' | 'AR';
 

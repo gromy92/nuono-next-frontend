@@ -5,8 +5,8 @@ import {
   initialSelectedCompetitorContentKeys,
   isNoonCompetitorContentSource,
   selectedCompetitorContentTexts
-} from './productCompetitorContentSources'
-import type { ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent'
+} from './productCompetitorContentSources';
+import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent';
 
 const material: ProductCompetitorContentMaterial = {
   id: 'competitor-1',

@@ -1,4 +1,4 @@
-import { Empty, List, Modal, Space, Tag, Typography } from 'antd'
+import { Empty, List, Modal, Space, Tag, Typography } from 'antd';
 import type { ProductContentKeywordInputRow } from './productContentKeywordEditor'
 import type { ProductCompetitorContentTextItem } from './productCompetitorContentSources'
 import {

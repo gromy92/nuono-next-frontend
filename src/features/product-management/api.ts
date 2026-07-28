@@ -49,25 +49,6 @@ export type ProductHistoryRequest = {
 
 export type ProductGroupCandidatesRequest = ProductHistoryRequest;
 
-export type ProductContentTranslateRequest = {
-  text: string;
-  sourceLang?: 'AUTO' | 'ZH' | 'EN' | 'AR';
-  targetLang: 'ZH' | 'EN' | 'AR';
-};
-
-export type ProductContentTranslateResponse = {
-  ready?: boolean;
-  source?: 'ai' | string;
-  warnings?: string[];
-  data?: {
-    translation?: {
-      text?: string;
-    };
-  };
-  msg?: string;
-  message?: string;
-};
-
 export type ProductGroupCandidatesResponse = {
   ready: boolean;
   source?: string;
@@ -219,21 +200,4 @@ export async function fetchProductGroupCandidates(request: ProductGroupCandidate
     normalizeProductIdentityRequest(request),
     '读取同类目商品失败'
   );
-}
-
-
-export async function translateProductContentText(request: ProductContentTranslateRequest) {
-  const response = await apiFetch('/api/product-master/translate', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  });
-
-  if (!response.ok) {
-    throw new Error(await readBackendError(response, `翻译服务返回 ${response.status}`));
-  }
-
-  return (await response.json()) as ProductContentTranslateResponse;
 }

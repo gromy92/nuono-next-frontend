@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+import assert from 'node:assert/strict';
 import {
   buildProductContentKeywordSaveChangeDetails,
   buildProductContentKeywordSaveChangeSummary,
@@ -7,11 +7,11 @@ import {
   dedupeProductCompetitorContentTextItems,
   editableKeywordRowsFromPanel,
   keywordRowHasKeywordChange,
-  noonCompetitorTextItems,
-  titleKeywordChineseTranslations
+  noonCompetitorTextItems
 } from './productContentKeywordEditor'
 import { collectProductCompetitorContentTextItems } from './productCompetitorContentSources'
-import type { ProductKeywordPanelView } from '../../product-keywords/types'
+import { titleKeywordChineseTranslations } from './productKeywordChineseTranslation'
+import type { ProductKeywordPanelView } from '../product-keywords/types'
 
 const panel: ProductKeywordPanelView = {
   storeCode: 'STR245027-NSA',

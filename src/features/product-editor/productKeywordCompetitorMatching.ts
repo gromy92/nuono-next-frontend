@@ -1,4 +1,4 @@
-import type { ProductCompetitorContentTextItem } from './productCompetitorContentSources'
+import type { ProductCompetitorContentTextItem } from './productCompetitorContentSources';
 import {
   normalizeProductTitleKeywordInput,
   parseProductTitleKeywordInputList,
