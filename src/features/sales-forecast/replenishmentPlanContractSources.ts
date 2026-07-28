@@ -26,7 +26,12 @@ export const purchaseDuplicateNoticeSource = readFileSync(
   'utf8'
 )
 export const tabSource = readFileSync(join(replenishmentDir, 'ReplenishmentPlanTab.tsx'), 'utf8')
-export const cssSource = readFileSync(join(replenishmentDir, 'ReplenishmentPlanTab.css'), 'utf8')
+export const cssSource = [
+  'ReplenishmentPlanTab.css',
+  'ReplenishmentPlanTab.styles/01.css',
+  'ReplenishmentPlanTab.styles/02.css',
+  'ReplenishmentPlanTab.styles/03.css'
+].map((fileName) => readFileSync(join(replenishmentDir, fileName), 'utf8')).join('\n')
 export const inTransitBatchListSource = readFileSync(
   join(featuresDir, 'in-transit-goods', 'useInTransitBatchList.ts'),
   'utf8'

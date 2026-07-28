@@ -1,0 +1,239 @@
+.nuono-store-manager-tag {
+  max-width: 108px;
+  margin-inline-end: 0 !important;
+  padding-inline: 6px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nuono-role-assignment-table .ant-table-content,
+.nuono-role-assignment-table .ant-table-body {
+  overflow-x: auto !important;
+}
+
+.nuono-role-assignment-table table {
+  width: 100% !important;
+  min-width: 1360px !important;
+  table-layout: fixed !important;
+}
+
+.nuono-role-assignment-table .ant-table-cell {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.nuono-role-assignment-table .ant-table-cell .ant-btn-link {
+  padding-inline: 4px;
+}
+
+.nuono-responsive-record-table .ant-table-cell[data-label='操作'] .ant-space {
+  row-gap: 4px;
+}
+
+.nuono-row-actions {
+  flex-wrap: nowrap !important;
+  white-space: nowrap;
+}
+
+.nuono-row-actions .ant-btn {
+  white-space: nowrap;
+}
+
+.nuono-store-assignment-cell {
+  width: 100%;
+}
+
+.nuono-store-summary-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 6px;
+  min-width: 0;
+}
+
+.nuono-store-summary-list-hoverable {
+  cursor: help;
+}
+
+.nuono-store-summary-item {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  color: #334155;
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nuono-store-summary-more {
+  color: #64748b;
+  cursor: default;
+  font-weight: 600;
+}
+
+.nuono-store-summary-tooltip {
+  max-width: min(520px, 82vw);
+  max-height: 280px;
+  overflow: auto;
+  line-height: 20px;
+}
+
+.nuono-store-summary-popover .ant-popover-inner {
+  max-width: min(560px, 86vw);
+}
+
+.nuono-store-assignment-modal .ant-transfer-list-content-item-text {
+  min-width: 0;
+}
+
+.nuono-board-action-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.nuono-masterdata-stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nuono-masterdata-stat-item {
+  display: inline-flex;
+  min-width: 112px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.nuono-masterdata-stat-label {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.nuono-masterdata-stat-value {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.nuono-store-management-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+  width: 100%;
+}
+
+.nuono-store-management-hint {
+  flex: 1 1 280px;
+  min-width: 220px;
+  max-width: 680px;
+}
+
+.nuono-store-management-hint.ant-alert {
+  min-height: 32px;
+  padding: 4px 10px;
+  border-color: #91caff;
+  background: #e6f4ff;
+}
+
+.nuono-store-management-hint .ant-alert-message {
+  color: #1f2937;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.nuono-store-management-stats {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.nuono-store-management-stat-item {
+  min-width: 66px;
+  height: 32px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.04);
+}
+
+.nuono-store-management-stat-total {
+  border-color: #dbeafe;
+}
+
+.nuono-store-management-stat-normal {
+  border-color: #bbf7d0;
+}
+
+.nuono-store-management-stat-abnormal {
+  border-color: #fecaca;
+}
+
+.nuono-store-management-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.nuono-store-management-actions .ant-btn,
+.nuono-store-management-actions .ant-select-selector {
+  min-height: 32px;
+  height: 32px;
+  padding-inline: 12px;
+}
+
+.nuono-store-management-actions .ant-select-selection-item,
+.nuono-store-management-actions .ant-select-selection-placeholder {
+  line-height: 30px;
+}
+
+.nuono-role-assignment-board {
+  width: 100%;
+}
+
+.nuono-role-assignment-toolbar {
+  gap: 8px 10px;
+}
+
+.nuono-role-assignment-hint {
+  flex: 0 1 290px;
+  min-width: 250px;
+  max-width: 310px;
+}
+
+.nuono-role-assignment-hint.ant-alert {
+  border-color: #ccbfff;
+  background: #f3efff;
+}
+
+.nuono-role-assignment-filters {
+  display: inline-flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.nuono-role-assignment-filters .ant-input-search,
+.nuono-role-assignment-filters .ant-select {
+  height: 32px;
+}
+
+.nuono-role-assignment-filters .ant-input-search .ant-input-affix-wrapper,
+.nuono-role-assignment-filters .ant-input-search .ant-input-group-addon .ant-btn,
+.nuono-role-assignment-filters .ant-select .ant-select-selector {
+  min-height: 32px;
+  height: 32px;
+}

@@ -1,0 +1,237 @@
+.manual-selection-source-gallery-thumb {
+  flex: 0 0 72px;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #dbe4ea;
+  border-radius: 8px;
+  background: #f8fafc;
+  cursor: pointer;
+}
+
+.manual-selection-source-gallery-thumb.is-active {
+  border: 2px solid #0f766e;
+}
+
+.manual-selection-source-gallery-thumb:focus-visible {
+  outline: 2px solid #1677ff;
+  outline-offset: 2px;
+}
+
+.manual-selection-source-gallery-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.manual-selection-row-actions {
+  width: 88px;
+}
+
+.manual-selection-row-actions .ant-btn {
+  justify-content: center;
+  padding-inline: 4px;
+  font-size: 12px;
+}
+
+.manual-selection-linked-project {
+  max-width: 112px;
+}
+
+.manual-selection-linked-project .ant-typography {
+  max-width: 100%;
+}
+
+.manual-selection-linked-project .ant-typography:first-child {
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.manual-selection-project-create {
+  width: 100%;
+}
+
+.manual-selection-project-help {
+  margin-bottom: 0;
+  line-height: 1.45;
+}
+
+.manual-selection-profit-category-dropdown {
+  min-width: 760px !important;
+  max-width: min(980px, calc(100vw - 48px));
+}
+
+.manual-selection-profit-category-dropdown .ant-select-item-option-content {
+  overflow: visible;
+  white-space: normal;
+}
+
+.manual-selection-profit-category-option {
+  display: grid;
+  gap: 3px;
+  line-height: 1.35;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+}
+
+.manual-selection-profit-category-option-name {
+  color: #111827;
+  font-weight: 600;
+}
+
+.manual-selection-profit-category-option-path {
+  color: #667085;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.manual-selection-project-name-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.manual-selection-project-selected {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.manual-selection-project-selected-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.manual-selection-project-selected-tag {
+  display: block;
+  max-width: 100%;
+  margin-inline-end: 0;
+  padding-block: 3px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.manual-selection-project-name-field > span {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.manual-selection-project-name-field .ant-input,
+.manual-selection-project-name-field .ant-select {
+  min-width: 0;
+  width: 100%;
+}
+
+.manual-selection-project-name-field .ant-select-selector,
+.manual-selection-project-name-field .ant-select-selection-item {
+  min-width: 0;
+}
+
+.manual-selection-project-name-field .ant-select-selection-item {
+  overflow: hidden;
+}
+
+.manual-selection-project-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.manual-selection-project-option-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manual-selection-project-option-count {
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.manual-selection-project-mode {
+  display: flex;
+  gap: 16px;
+}
+
+.manual-selection-analysis {
+  padding: 12px;
+}
+
+.manual-selection-analysis-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.manual-selection-analysis-metric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.manual-selection-analysis-metric span {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.manual-selection-analysis-metric strong {
+  color: #111827;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.manual-selection-analysis-metric.is-total {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.manual-selection-analysis-metric.is-total strong {
+  color: #1d4ed8;
+}
+
+.manual-selection-analysis-metric.is-success {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.manual-selection-analysis-metric.is-success strong {
+  color: #15803d;
+}
+
+.manual-selection-analysis-metric.is-candidate {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.manual-selection-analysis-metric.is-candidate strong {
+  color: #c2410c;
+}
+
+.manual-selection-analysis-metric.is-recommended {
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+}

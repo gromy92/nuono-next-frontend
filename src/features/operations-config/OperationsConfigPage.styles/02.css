@@ -1,0 +1,235 @@
+.operations-config-suite-boss-scope {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.operations-config-suite-scope-options {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.operations-config-suite-scope-option {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.operations-config-suite-scope-option-all {
+  width: fit-content;
+  min-width: 112px;
+}
+
+.operations-config-suite-scope-option span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operations-config-suite-scope-save {
+  justify-content: space-between;
+}
+
+.operations-config-suite-detail-title-block {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.operations-config-suite-detail-title-block > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operations-config-suite-detail-meta {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 96px 132px minmax(0, 1fr);
+}
+
+.operations-config-suite-detail-meta > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.operations-config-suite-detail-tabs .ant-tabs-nav {
+  margin-bottom: 0;
+}
+
+.operations-config-detail-panel {
+  display: flex;
+  min-height: 104px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0 4px;
+}
+
+.operations-config-detail-panel-copy {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.operations-config-detail-panel-title {
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.operations-config-toolbar {
+  width: 100%;
+}
+
+.operation-calendar-work-context {
+  background: #fbfdff;
+}
+
+.operation-calendar-filter-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 150px 170px 180px minmax(220px, 1fr);
+}
+
+.operation-calendar-rule-workbench {
+  padding-bottom: 8px;
+}
+
+.operation-calendar-editor-section {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 16px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.operation-calendar-template-helper {
+  width: 100%;
+}
+
+.operation-calendar-draft-form {
+  display: grid;
+  width: 100%;
+  gap: 8px;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(140px, 0.8fr) minmax(150px, 0.8fr) minmax(150px, 0.8fr);
+}
+
+.operation-calendar-target-type-select {
+  width: 180px;
+}
+
+.operation-calendar-target-option-select {
+  min-width: 260px;
+}
+
+.operation-calendar-recurring-input {
+  width: 220px;
+}
+
+.operation-calendar-factor-purpose-select {
+  width: 180px;
+}
+
+.operation-calendar-draft-actions {
+  width: 100%;
+  justify-content: flex-end;
+  padding-top: 8px;
+}
+
+.operation-calendar-publish-confirm {
+  display: grid;
+  gap: 8px;
+}
+
+.operation-calendar-batch-action-bar {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+}
+
+.operations-config-empty-section {
+  min-height: 180px;
+  align-items: center;
+}
+
+.operation-lifecycle-version-panel {
+  background: #f8fbff;
+}
+
+.operation-lifecycle-stage-sections {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+}
+
+.operation-lifecycle-stage-section {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.operation-lifecycle-stage-title {
+  font-weight: 600;
+}
+
+.operation-lifecycle-threshold-grid {
+  display: grid;
+  grid-template-columns: minmax(170px, 1fr) 72px 116px;
+  gap: 8px;
+  align-items: center;
+}
+
+.operation-lifecycle-threshold-grid .ant-input-number {
+  width: 100%;
+}
+
+.operation-config-calendar-editor-row {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.9fr) minmax(160px, 1.4fr) minmax(104px, 1fr) minmax(104px, 1fr) minmax(144px, 1.2fr) minmax(128px, 1.1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.operation-config-calendar-version-editor-row {
+  display: grid;
+  grid-template-columns: minmax(190px, 1.2fr) minmax(230px, 1.3fr) minmax(110px, 0.7fr) minmax(132px, 0.8fr) minmax(150px, 1fr) 72px;
+  gap: 8px;
+  align-items: center;
+}
+
+.operation-config-calendar-scope-picker-trigger {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.operation-config-calendar-scope-picker-trigger > span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operation-config-calendar-scope-picker {
+  width: 100%;
+}

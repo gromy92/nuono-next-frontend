@@ -1,0 +1,237 @@
+.ali1688-card-stage {
+  display: grid;
+  grid-template-columns: auto minmax(0, max-content);
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.ali1688-card-stage > span:first-child {
+  white-space: nowrap;
+}
+
+.ali1688-card-stage .ant-tag {
+  margin-inline-end: 0;
+}
+
+.ali1688-card-stage-note {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  color: #475569;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ali1688-pending-slot .ant-typography {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+
+.ali1688-candidate-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ali1688-candidate-card.is-green {
+  border-color: #86efac;
+}
+
+.ali1688-candidate-card.is-orange {
+  border-color: #fdba74;
+}
+
+.ali1688-candidate-carousel {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.ali1688-candidate-carousel > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ali1688-candidate-rank {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.82);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ali1688-carousel-arrow {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.62);
+  color: #ffffff;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.ali1688-carousel-arrow.is-left {
+  left: 8px;
+}
+
+.ali1688-carousel-arrow.is-right {
+  right: 8px;
+}
+
+.ali1688-carousel-dots {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  display: flex;
+  gap: 4px;
+  transform: translateX(-50%);
+}
+
+.ali1688-carousel-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.ali1688-carousel-dots i.is-active {
+  width: 14px;
+  background: #ffffff;
+}
+
+.ali1688-candidate-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.ali1688-candidate-tags {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.ali1688-candidate-tags .ant-typography {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ali1688-score-badge {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 58px;
+  padding: 4px 8px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #eff6ff;
+  text-align: right;
+}
+
+.ali1688-score-badge span {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.ali1688-score-badge strong {
+  color: #0f172a;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.ali1688-score-badge.is-green {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.ali1688-score-badge.is-orange {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.ali1688-score-badge.is-neutral {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
+.ali1688-candidate-title.ant-typography {
+  margin: 0;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.ali1688-candidate-supplier {
+  overflow: hidden;
+  color: #475569;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ali1688-candidate-price-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.ali1688-candidate-price-line span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ali1688-score-panel {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.ali1688-score-panel-title {
+  padding: 7px 9px 4px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ali1688-score-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 8px;
+  padding: 0 9px 9px;
+}
+
+.ali1688-score-row {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 38px;
+  gap: 6px;
+  align-items: center;
+  color: #64748b;
+  font-size: 12px;
+}

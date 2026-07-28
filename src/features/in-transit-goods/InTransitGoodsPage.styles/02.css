@@ -1,0 +1,127 @@
+.in-transit-drawer__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 12px;
+}
+
+.in-transit-drawer__wide {
+  grid-column: 1 / -1;
+}
+
+.in-transit-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.in-transit-lines__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.in-transit-line-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.in-transit-line-editor__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 12px;
+}
+
+.in-transit-line-editor__wide {
+  grid-column: 1 / -1;
+}
+
+.in-transit-nodes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.in-transit-nodes__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.in-transit-node-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.in-transit-node-editor__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 12px;
+}
+
+.in-transit-node-editor__wide {
+  grid-column: 1 / -1;
+}
+
+.in-transit-import {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.in-transit-import__upload {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.in-transit-import__summary {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 10px 0;
+}
+
+@media (max-width: 1100px) {
+  .in-transit-page__toolbar-actions {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .in-transit-detail__header {
+    flex-direction: column;
+  }
+
+  .in-transit-detail__summary {
+    justify-content: flex-start;
+  }
+
+  .in-transit-page__toolbar-actions {
+    flex-wrap: wrap;
+  }
+
+  .in-transit-package-spec,
+  .in-transit-drawer__grid,
+  .in-transit-line-editor__grid,
+  .in-transit-node-editor__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .in-transit-drawer__wide,
+  .in-transit-line-editor__wide,
+  .in-transit-node-editor__wide {
+    grid-column: auto;
+  }
+}

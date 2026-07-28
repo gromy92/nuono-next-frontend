@@ -1,0 +1,232 @@
+.nuono-role-assignment-stats {
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.nuono-role-assignment-stat-item {
+  min-width: 64px;
+}
+
+.nuono-role-assignment-actions .ant-btn {
+  height: 32px;
+  padding-inline: 12px;
+}
+
+@media (max-width: 1180px) {
+  .nuono-store-management-hint {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .nuono-store-management-actions {
+    margin-left: 0;
+  }
+
+  .nuono-role-assignment-filters,
+  .nuono-role-assignment-stats {
+    flex-wrap: wrap;
+  }
+}
+
+.nuono-org-tree-board {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.nuono-org-tree-board .ant-card-body {
+  padding: 14px 18px 18px;
+}
+
+.nuono-org-board-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.nuono-org-board-summary {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.nuono-org-tree-scroll {
+  overflow: auto;
+  max-height: calc(100vh - 222px);
+  padding: 0 2px 4px;
+}
+
+.nuono-org-lane {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 720px;
+  padding: 10px 0;
+  border-top: 1px solid #eef2f7;
+}
+
+.nuono-org-lane:first-child {
+  border-top: 0;
+}
+
+.nuono-org-lane-label {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.nuono-org-lane-track {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.nuono-org-root-row {
+  display: block !important;
+  width: 100%;
+  min-width: 1120px;
+}
+
+.nuono-org-root-row > .ant-space-item {
+  width: 100%;
+}
+
+.nuono-org-node {
+  display: flex;
+  width: auto;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.nuono-org-node-card {
+  align-self: center;
+  width: 176px;
+  min-height: 64px;
+  padding: 9px 11px;
+  border: 1px solid #dbe4f0;
+  border-top: 3px solid #2563eb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 7px 16px rgba(15, 23, 42, 0.05);
+}
+
+.nuono-org-node-card-admin {
+  border-top-color: #7c3aed;
+}
+
+.nuono-org-node-card-boss {
+  border-top-color: #6d28d9;
+}
+
+.nuono-org-node-card-lead {
+  border-top-color: #ea580c;
+}
+
+.nuono-org-node-card-ops {
+  border-top-color: #2563eb;
+}
+
+.nuono-org-node-has-children {
+  justify-self: stretch;
+}
+
+.nuono-org-compact-panel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nuono-org-compact-head {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 12px;
+}
+
+.nuono-org-compact-stats {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(5, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.nuono-org-compact-stat {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.nuono-org-compact-stat-label {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nuono-org-compact-stat strong {
+  color: #0f172a;
+  font-size: 18px;
+  line-height: 22px;
+}
+
+.nuono-org-section {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nuono-org-section-title {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.nuono-org-team-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+
+.nuono-org-team-group {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 172px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
+}
+
+.nuono-org-team-members,
+.nuono-org-member-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fill, minmax(154px, 1fr));
+  gap: 8px;
+}

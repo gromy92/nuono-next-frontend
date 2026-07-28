@@ -1,0 +1,238 @@
+.operations-config-page {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.operations-config-page * {
+  box-sizing: border-box;
+}
+
+.operations-config-header {
+  width: 100%;
+  min-width: 0;
+  justify-content: space-between;
+}
+
+.operations-config-scope-bar {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.operations-config-scope-controls {
+  width: 100%;
+}
+
+.operations-config-boss-select {
+  min-width: 280px;
+}
+
+.operations-config-store-select {
+  min-width: 360px;
+}
+
+.operations-config-scope-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.operations-config-scope-summary-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.operations-config-scope-current-tag {
+  max-width: min(58vw, 520px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operations-config-scope-detail {
+  padding: 0;
+}
+
+.operations-config-store-name {
+  display: inline-block;
+  max-width: 560px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.operations-config-workbench {
+  display: grid;
+  gap: 12px;
+}
+
+.operations-config-section {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.operations-config-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.operations-config-section-heading h5 {
+  margin: 0;
+}
+
+.operations-config-section-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.operations-config-suite-actions {
+  flex-shrink: 0;
+}
+
+.operations-config-suite-layout {
+  width: 100%;
+  min-width: 0;
+}
+
+.operations-config-suite-default-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.operations-config-suite-default-version {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.operations-config-suite-default-version-head {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.operations-config-suite-default-version-meta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.operations-config-suite-default-version-meta span,
+.operations-config-suite-default-item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operations-config-suite-default-items {
+  display: grid;
+  gap: 6px;
+}
+
+.operations-config-suite-default-item {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  padding: 7px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.operations-config-suite-version-table {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.operations-config-suite-version-table .ant-table,
+.operations-config-suite-version-table .ant-table-container {
+  max-width: 100%;
+}
+
+.operations-config-suite-version-name,
+.operations-config-suite-version-code,
+.operations-config-suite-scope-summary {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.operations-config-suite-version-name {
+  max-width: 210px;
+}
+
+.operations-config-suite-version-code {
+  max-width: 210px;
+}
+
+.operations-config-suite-scope-summary {
+  max-width: 118px;
+}
+
+.operations-config-suite-detail-drawer .ant-drawer-body {
+  padding: 16px 20px 20px;
+}
+
+.operations-config-suite-detail-body {
+  width: 100%;
+}
+
+.operations-config-suite-detail-summary {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.operations-config-suite-scope-editor {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #eff6ff;
+}

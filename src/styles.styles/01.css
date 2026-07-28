@@ -1,0 +1,234 @@
+:root {
+  --pm-section-bg: #ffffff;
+  --pm-section-border: #e2e8f0;
+  --pm-section-radius: 8px;
+  --pm-section-padding: 16px;
+  --pm-subtle-bg: #f8fafc;
+  --pm-subtle-border: #dbe4ea;
+  --pm-text-primary: #0f172a;
+  --pm-text-muted: #64748b;
+  --pm-text-faint: #94a3b8;
+}
+
+.pm-detail-section {
+  padding: var(--pm-section-padding);
+  border: 1px solid var(--pm-section-border);
+  border-radius: var(--pm-section-radius);
+  background: var(--pm-section-bg);
+}
+
+.pm-detail-section--subtle {
+  border-color: var(--pm-subtle-border);
+  background: var(--pm-subtle-bg);
+}
+
+.pm-detail-section--full-height {
+  height: 100%;
+}
+
+.pm-detail-section-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.pm-detail-readonly-tag {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: var(--pm-text-muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.pm-rich-text-editor:empty::before {
+  color: var(--pm-text-faint);
+  content: attr(data-placeholder);
+  pointer-events: none;
+}
+
+.pm-rich-text-editor:focus {
+  border-color: #1677ff !important;
+  box-shadow: 0 0 0 2px rgba(5, 145, 255, 0.1);
+}
+
+.nuono-workspace-tabs .ant-tabs-nav {
+  margin: 0;
+}
+
+.nuono-workspace-tabs .ant-tabs-tab {
+  padding: 6px 12px;
+}
+
+.nuono-form-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.nuono-form-toolbar-title {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.nuono-form-toolbar-fields {
+  display: flex;
+  flex: 1 1 620px;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.nuono-form-toolbar-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+@media (max-width: 900px) {
+  .nuono-form-toolbar-title,
+  .nuono-form-toolbar-fields,
+  .nuono-form-toolbar-actions {
+    flex-basis: 100%;
+  }
+
+  .nuono-form-toolbar-actions {
+    margin-left: 0;
+  }
+}
+
+.nuono-shell-sidebar-rail {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  z-index: 2000 !important;
+  overflow: visible !important;
+  background: transparent !important;
+}
+
+.nuono-shell-sidebar-rail:hover {
+  z-index: 3000 !important;
+}
+
+.nuono-shell-sidebar-rail .ant-layout-sider-children {
+  overflow: visible;
+}
+
+.nuono-shell-sidebar-rail-inner {
+  display: flex;
+  flex-direction: column;
+  width: 48px;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  background: #ffffff;
+  border-right: 1px solid #e8ebf3;
+  box-shadow: inset -1px 0 0 rgba(124, 92, 255, 0.04);
+}
+
+.nuono-shell-sidebar-rail-logo {
+  flex: 0 0 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64px;
+  border-bottom: 1px solid #eceff7;
+  background: rgba(255, 255, 255, 0.96);
+  transition: opacity 0.16s ease;
+}
+
+.nuono-shell-sidebar-rail:hover .nuono-shell-sidebar-rail-logo {
+  opacity: 0;
+}
+
+.nuono-shell-sidebar-rail-logo img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.nuono-shell-brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.nuono-shell-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, #7c5cff 0%, #b78cff 100%);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34);
+}
+
+.nuono-shell-brand-mark-compact {
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
+  font-size: 17px;
+}
+
+.nuono-shell-brand-text {
+  min-width: 0;
+  overflow: hidden;
+  color: #202331;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nuono-shell-sidebar-rail-items {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  padding: 14px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.nuono-shell-sidebar-rail-items::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.nuono-shell-sidebar-menu-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  color: inherit;
+  font-size: 15px;
+}

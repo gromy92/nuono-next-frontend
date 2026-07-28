@@ -1,0 +1,115 @@
+.official-warehouse-source-chain-chip-relation_missing,
+.official-warehouse-source-chain-chip-waiting_relation {
+  color: #64748b;
+}
+
+.official-warehouse-source-chain-chip-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.official-warehouse-source-chain-chip-label,
+.official-warehouse-source-chain-chip-qty {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.official-warehouse-source-chain-chip-label {
+  max-width: 110px;
+}
+
+.official-warehouse-source-chain-chip-qty {
+  color: #64748b;
+}
+
+.official-warehouse-source-chain-empty {
+  display: flex;
+  min-height: 58px;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #e2e8f0;
+  border-radius: 7px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.official-warehouse-source-segment-detail {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.official-warehouse-source-segment-detail-head {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.official-warehouse-source-segment-detail-quantity {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.official-warehouse-source-segment-detail-quantity strong {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.official-warehouse-source-segment-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.official-warehouse-source-segment-detail-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.official-warehouse-source-segment-detail-row .ant-typography:last-child {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1280px) {
+  .official-warehouse-statistics-board-header {
+    flex-direction: column;
+  }
+
+  .official-warehouse-statistics-controls,
+  .official-warehouse-statistics-controls .official-warehouse-search {
+    width: 100%;
+  }
+
+  .official-warehouse-statistics-summary-row {
+    grid-template-columns: 1fr;
+  }
+
+  .official-warehouse-statistics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .official-warehouse-statistics-controls .ant-space-item {
+    width: 100%;
+  }
+
+  .official-warehouse-statistics-controls .ant-picker {
+    width: 100%;
+  }
+
+  .official-warehouse-source-chain-grid {
+    grid-template-columns: 1fr;
+  }
+}

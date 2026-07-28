@@ -15,7 +15,10 @@ const logisticsFieldsCss = fs.readFileSync(
   path.join(featureDir, 'components/ManualSelectionProfitLogisticsFields.css'),
   'utf8'
 )
-const pageCss = fs.readFileSync(path.join(featureDir, 'ManualSelectionPage.css'), 'utf8')
+const pageCss = [
+  'ManualSelectionPage.css',
+  ...Array.from({ length: 7 }, (_, index) => `ManualSelectionPage.styles/${String(index + 1).padStart(2, '0')}.css`)
+].map((fileName) => fs.readFileSync(path.join(featureDir, fileName), 'utf8')).join('\n')
 
 assert(
   modalSource.includes('manual-selection-profit-category-option-name')

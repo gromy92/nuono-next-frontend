@@ -1,0 +1,236 @@
+.replenishment-plan-product-stock {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 17px;
+  text-align: left;
+}
+
+.replenishment-plan-product-stock .ant-typography {
+  font-size: 12px;
+}
+
+.replenishment-plan-product-stock-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  min-width: 0;
+  color: #111827;
+}
+
+.replenishment-plan-evidence-cell,
+.replenishment-plan-inbound-cell,
+.replenishment-plan-suggestion-cell,
+.replenishment-plan-window-lines {
+  width: 100%;
+  min-width: 0;
+}
+
+.replenishment-plan-evidence-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.replenishment-plan-evidence-card {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 172px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.replenishment-plan-evidence-card-history {
+  width: 100%;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.replenishment-plan-evidence-card-forecast {
+  width: 100%;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.replenishment-plan-evidence-card-forecast .ant-typography:not(.replenishment-plan-label) {
+  color: #374151 !important;
+}
+
+.replenishment-plan-history-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.replenishment-plan-forecast-stack {
+  width: 100%;
+  min-width: 0;
+}
+
+.replenishment-plan-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.replenishment-plan-history-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: baseline;
+  width: 100%;
+}
+
+.replenishment-plan-history-row .replenishment-plan-label-wide {
+  min-width: 0;
+}
+
+.replenishment-plan-label {
+  flex: 0 0 auto;
+  min-width: 28px;
+  color: #9ca3af !important;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.replenishment-plan-label-wide {
+  min-width: 48px;
+}
+
+.replenishment-plan-primary {
+  color: #111827;
+  font-weight: 600;
+}
+
+.replenishment-plan-muted {
+  color: #6b7280 !important;
+}
+
+.replenishment-plan-metric {
+  display: block;
+  color: #111827;
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.replenishment-plan-inline-muted {
+  min-width: 0;
+  color: #6b7280 !important;
+}
+
+.replenishment-plan-inbound-cell {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.replenishment-plan-inbound-summary {
+  display: grid;
+  grid-template-columns: minmax(118px, 1fr) 44px minmax(92px, max-content);
+  column-gap: 10px;
+  align-items: baseline;
+  width: 100%;
+}
+
+.replenishment-plan-inbound-summary .replenishment-plan-primary,
+.replenishment-plan-inbound-summary .replenishment-plan-inline-muted {
+  min-width: 0;
+}
+
+.replenishment-plan-inbound-summary .replenishment-plan-primary {
+  text-align: right;
+}
+
+.replenishment-plan-inbound-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.replenishment-plan-inbound-list {
+  width: 100%;
+}
+
+.replenishment-plan-inbound-batch {
+  display: grid;
+  grid-template-columns: minmax(118px, 1fr) 44px minmax(92px, max-content);
+  width: 100%;
+  max-width: 100%;
+  column-gap: 10px;
+  row-gap: 2px;
+  justify-content: start;
+  align-items: center;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 17px;
+  color: #111827;
+}
+
+.replenishment-plan-inbound-ref {
+  max-width: 132px;
+  color: #6b7280 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.replenishment-plan-inbound-identity {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.replenishment-plan-inbound-destination {
+  color: #475569 !important;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.replenishment-plan-inbound-quantity {
+  color: #6b7280 !important;
+  text-align: right;
+  font-weight: 400;
+}
+
+.replenishment-plan-inbound-eta {
+  font-weight: 600;
+}
+
+.replenishment-plan-inbound-batch-review .replenishment-plan-inbound-eta {
+  color: #ff4d4f;
+}
+
+.replenishment-plan-suggestion-cell {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.replenishment-plan-suggestion-tags {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.replenishment-plan-suggestion-cell .ant-tag {
+  margin-inline-end: 0;
+  padding-inline: 6px;
+  line-height: 20px;
+  border-radius: 4px;
+  font-weight: 600;
+  white-space: normal;
+}

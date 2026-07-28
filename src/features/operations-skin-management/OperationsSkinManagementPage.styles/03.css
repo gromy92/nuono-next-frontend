@@ -1,0 +1,72 @@
+.operations-skin-empty-panel {
+  min-height: 280px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.operations-skin-assets-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.operations-skin-asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 10px;
+}
+
+.operations-skin-asset-item {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.operations-skin-asset-item .ant-image {
+  width: 88px;
+  height: 88px;
+}
+
+.operations-skin-asset-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.operations-skin-drawer-note {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .operations-skin-toolbar {
+    align-items: stretch;
+  }
+
+  .operations-skin-toolbar > .ant-space {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .operations-skin-search {
+    width: 100%;
+  }
+
+  .operations-skin-basic-form,
+  .operations-skin-suite-editor,
+  .operations-skin-preview-column,
+  .operations-skin-config-grid,
+  .operations-skin-component-slot-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .operations-skin-preview-column {
+    position: static;
+  }
+}

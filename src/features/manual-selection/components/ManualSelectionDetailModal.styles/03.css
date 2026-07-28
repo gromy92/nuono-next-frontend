@@ -1,0 +1,172 @@
+.manual-selection-ali1688 {
+  background: #f8fafc;
+  border: 1px solid #edf0f4;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.manual-selection-ali1688-summary {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(220px, 0.6fr);
+}
+
+.manual-selection-ali1688-main {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.manual-selection-ali1688-message {
+  color: #4b5563;
+  line-height: 22px;
+}
+
+.manual-selection-ali1688-progress {
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.manual-selection-ali1688-progress-head {
+  align-items: center;
+  color: #6b7280;
+  display: flex;
+  font-size: 12px;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.manual-selection-ali1688-progress-head strong {
+  color: #111827;
+  font-size: 16px;
+}
+
+.manual-selection-ali1688-metrics {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.manual-selection-ali1688-metric {
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 8px;
+  min-width: 0;
+  padding: 9px 10px;
+}
+
+.manual-selection-ali1688-metric span {
+  color: #8c8c8c;
+  display: block;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.manual-selection-ali1688-metric strong {
+  color: #1f2937;
+  display: block;
+  font-size: 14px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+
+.manual-selection-ali1688-candidates {
+  display: grid;
+  gap: 8px;
+}
+
+.manual-selection-ali1688-candidate {
+  background: #fff;
+  border: 1px solid #edf0f4;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 42px minmax(0, 1fr);
+  min-width: 0;
+  padding: 10px;
+}
+
+.manual-selection-ali1688-candidate-rank {
+  align-items: center;
+  background: #eff6ff;
+  border-radius: 8px;
+  color: #1d4ed8;
+  display: flex;
+  font-size: 14px;
+  font-weight: 800;
+  justify-content: center;
+}
+
+.manual-selection-ali1688-candidate-body {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.manual-selection-ali1688-candidate-head {
+  align-items: flex-start;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.manual-selection-ali1688-candidate-title {
+  color: #111827;
+  font-weight: 700;
+  line-height: 20px;
+  margin-bottom: 0 !important;
+}
+
+.manual-selection-ali1688-candidate-meta {
+  color: #64748b;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 6px 12px;
+}
+
+.manual-selection-ali1688-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.manual-selection-ali1688-chip {
+  background: #f8fafc;
+  border: 1px solid #edf0f4;
+  border-radius: 999px;
+  color: #334155;
+  font-size: 12px;
+  line-height: 18px;
+  padding: 2px 8px;
+}
+
+@media (max-width: 860px) {
+  .manual-selection-detail-hero {
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  .manual-selection-detail-main-image {
+    height: 96px !important;
+    width: 96px !important;
+  }
+
+  .manual-selection-detail-title-grid,
+  .manual-selection-detail-panel-grid,
+  .manual-selection-detail-spec-grid,
+  .manual-selection-logistics-summary,
+  .manual-selection-logistics-panel-grid,
+  .manual-selection-ali1688-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .manual-selection-logistics-field-grid,
+  .manual-selection-ali1688-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
