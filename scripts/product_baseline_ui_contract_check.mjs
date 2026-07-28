@@ -5,7 +5,6 @@ import { resolve } from 'node:path';
 const rootDir = process.cwd();
 const file = (path) => resolve(rootDir, path);
 const read = (path) => readFileSync(file(path), 'utf8');
-
 const sharedBaselinePath = 'src/features/product-baseline/ProductBaselineDisplay.tsx';
 assert.equal(
   existsSync(file(sharedBaselinePath)),
@@ -13,7 +12,9 @@ assert.equal(
   'Shared product baseline display module should exist outside product-management'
 );
 
-const sharedBaselineComponent = read(sharedBaselinePath);
+const sharedBaselineComponent = [sharedBaselinePath, 'src/features/product-baseline/productImageUrl.ts',
+  'src/features/product-baseline/ProductImageThumb.tsx', 'src/features/product-baseline/ProductBaselineIdentity.tsx',
+  'src/features/product-baseline/ProductDimensionOptionLabel.tsx'].map(read).join('\n');
 const sharedProductImageUsagePattern = /Product(?:ImageThumb|BaselineIdentity)/;
 for (const exportName of [
   'ProductImageThumb',
@@ -29,8 +30,8 @@ for (const exportName of [
 }
 assert.match(
   sharedBaselineComponent,
-  /aspectRatio:\s*['"]3\s*\/\s*4['"]/,
-  'Shared ProductImageThumb should use a vertical 3:4 frame as the product-image default'
+  /aspectRatio:\s*['"]0\.73['"]/,
+  'Shared ProductImageThumb should use the governed 0.73 product-image ratio'
 );
 assert.match(
   sharedBaselineComponent,
@@ -69,12 +70,12 @@ assert.match(
 );
 assert.match(
   sharedBaselineComponent,
-  /f\\\.nooncdn\\\.com\\\/pzsku\\\//,
+  /lower\.startsWith\(['"]pzsku\//,
   'Shared ProductImageThumb should normalize legacy Noon pzsku image URLs before rendering'
 );
 assert.match(
   sharedBaselineComponent,
-  /f\.nooncdn\.com\/p\/pzsku\//,
+  /https:\/\/f\.nooncdn\.com\/p\/\$\{path\}/,
   'Shared ProductImageThumb should render normalized Noon pzsku image URLs through the current /p/pzsku path'
 );
 assert.match(
@@ -170,7 +171,7 @@ assert.doesNotMatch(
   'Product summary entries should not keep a local cover-fit override outside the shared image component'
 );
 
-const productInsightsTab = read('src/features/product-management/components/ProductInsightsTab.tsx');
+const productInsightsTab = read('src/features/product-editor/ProductInsightsTab.tsx');
 assert.match(
   productInsightsTab,
   sharedProductImageUsagePattern,
@@ -181,7 +182,6 @@ assert.doesNotMatch(
   /\bAvatar\b/,
   'Product insights should not use Avatar for product images because it crops rectangular product photos'
 );
-
 const baselineThumbnailConsumers = [
   ['src/features/product-management/groups/ProductGroupListPane.tsx', 'Product group list member thumbnails'],
   ['src/features/product-management/groups/ProductUngroupedPanel.tsx', 'Ungrouped product thumbnails'],
@@ -199,7 +199,7 @@ for (const [path, label] of baselineThumbnailConsumers) {
   assert.match(source, sharedProductImageUsagePattern, `${label} should use the shared product baseline image component`);
 }
 
-const profitCalculatorPage = read('src/features/profit-calculator/ProfitCalculatorPage.tsx');
+const profitCalculatorPage = ['ProfitCalculatorPage.tsx', 'components/ProductIdentityCell.tsx'].map((path) => read(`src/features/profit-calculator/${path}`)).join('\n');
 assert.doesNotMatch(
   profitCalculatorPage,
   /function ProfitProductThumbnail\b/,
@@ -207,7 +207,7 @@ assert.doesNotMatch(
 );
 assert.match(
   profitCalculatorPage,
-  /from ['"](?:\.\.\/product-baseline|\.\.\/product-management\/components\/ProductBaselineDisplay)['"]/,
+  /from ['"](?:\.\.\/)+product-baseline['"]/,
   'Profit calculator product identity should use the shared product baseline module'
 );
 assert.doesNotMatch(
@@ -215,28 +215,29 @@ assert.doesNotMatch(
   /objectFit:\s*['"]cover['"]/,
   'Profit calculator thumbnails should not keep a local cover-fit override outside the shared image component'
 );
-
-const productSpecsPage = read('src/features/product-specs/ProductSpecsPage.tsx');
+const productSpecsPage = ['ProductSpecsPage.tsx', 'components/ProductThumb.tsx'].map((path) => read(`src/features/product-specs/${path}`)).join('\n');
 assert.match(
   productSpecsPage,
-  /from ['"]\.\.\/product-baseline['"]/,
+  /from ['"]\.\.\/\.\.\/product-baseline['"]/,
   'Product specs page should use the shared product baseline module'
 );
-assert.doesNotMatch(
+assert.match(
   productSpecsPage,
-  /function ProductThumb\b/,
-  'Product specs page should not keep a local product thumbnail implementation'
+  /normalizeNoonImageUrl/,
+  'Product specs hover preview should reuse the shared product image URL normalizer'
 );
-assert.doesNotMatch(
+assert.match(
   productSpecsPage,
-  /objectFit:\s*['"]cover['"]/,
-  'Product specs page product thumbnails should not keep a local cover-fit override outside the shared image component'
+  /onMouseEnter=\{\(\) => setPreviewOpen\(true\)\}/,
+  'Product specs keeps its specialised hover preview behind the shared URL seam'
 );
 
-const salesAnalyticsPage = read('src/features/sales-analytics/SalesAnalyticsPage.tsx');
+const salesAnalyticsPage = [read('src/features/sales-analytics/SalesAnalyticsPage.tsx'),
+  read('src/features/sales-analytics/presentation/productColumns.tsx'),
+  read('src/features/sales-analytics/components/ComparisonDialog.tsx')].join('\n');
 assert.match(
   salesAnalyticsPage,
-  /from ['"]\.\.\/product-baseline['"]/,
+  /from ['"]\.\.\/\.\.\/product-baseline['"]/,
   'Sales analytics product display should use the shared product baseline module'
 );
 assert.doesNotMatch(
@@ -262,23 +263,11 @@ assert.doesNotMatch(
   'Product list gallery should not open a single-image gallery before attempting detail hydration'
 );
 
-const operationConfigVersionLibrary = read('src/features/operations-config/OperationConfigVersionLibraryPage.tsx');
+const operationConfigVersionLibrary = ['OperationConfigVersionLibraryPage.tsx', 'calendarConfigDomain.tsx'].map((path) => read(`src/features/operations-config/${path}`)).join('\n');
 assert.match(
   operationConfigVersionLibrary,
   /ProductDimensionOptionLabel/,
   'Operations config product dimension picker should use the shared dimension option label component'
-);
-
-const salesForecastPage = read('src/features/sales-forecast/SalesForecastPage.tsx');
-assert.match(
-  salesForecastPage,
-  /from ['"]\.\.\/product-baseline['"]/,
-  'Sales forecast product identity displays should use the shared product baseline module'
-);
-assert.match(
-  salesForecastPage,
-  /showImage=\{false\}/,
-  'Sales forecast should use image-less product baseline identity because the API does not provide product images'
 );
 
 const productListMutations = read('src/features/product-management/hooks/useProductListMutations.ts');

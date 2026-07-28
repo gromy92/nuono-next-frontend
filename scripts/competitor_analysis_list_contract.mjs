@@ -3,7 +3,6 @@ import path from 'node:path';
 
 const rootDir = path.resolve(new URL('..', import.meta.url).pathname);
 const typesPath = path.join(rootDir, 'src/features/competitor-analysis/types.ts');
-const baselinePath = path.join(rootDir, 'src/features/product-baseline/ProductBaselineDisplay.tsx');
 
 const readSources = (paths) => paths.map((filePath) => fs.readFileSync(path.join(rootDir, filePath), 'utf8')).join('\n');
 const pageSource = readSources([
@@ -26,7 +25,10 @@ const cssSource = readSources([
     .filter((fileName) => fileName.endsWith('.css'))
     .map((fileName) => `src/features/competitor-analysis/styles/${fileName}`)
 ]);
-const baselineSource = fs.readFileSync(baselinePath, 'utf8');
+const baselineSource = readSources([
+  'src/features/product-baseline/ProductBaselineDisplay.tsx',
+  'src/features/product-baseline/ProductBaselineIdentity.tsx'
+]);
 
 const checks = [
   ['product list code helper', pageSource, 'productListIdentityCodes(product)'],
