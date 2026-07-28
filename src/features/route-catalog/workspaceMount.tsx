@@ -1,12 +1,16 @@
 import { lazy, Suspense, type ComponentType, type FunctionComponent, type ReactNode } from 'react'
 import { Card, Spin } from 'antd'
+import type { AuthSession } from '../auth/session'
 
 const DYNAMIC_IMPORT_RELOAD_KEY = 'nuono:dynamic-import-reload'
 
-type WorkspaceModule<T extends ComponentType<any>> = { default: T }
-type ZeroProps = Record<never, never>
+type WorkspaceModule<T extends ComponentType<WorkspaceMountProps>> = { default: T }
 
-export type WorkspaceMountAdapter = FunctionComponent<ZeroProps>
+export type WorkspaceMountProps = {
+  readonly session: AuthSession
+}
+
+export type WorkspaceMountAdapter = FunctionComponent<WorkspaceMountProps>
 
 function isDynamicImportLoadFailure(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || '')
@@ -60,10 +64,10 @@ export function createLazyWorkspaceMount(
 ): WorkspaceMountAdapter {
   const LazyWorkspace = lazyWorkspace(loader)
 
-  const mountAdapter: WorkspaceMountAdapter = function LazyWorkspaceMountAdapter() {
+  const mountAdapter: WorkspaceMountAdapter = function LazyWorkspaceMountAdapter(props) {
     return (
       <LazyWorkspaceBoundary>
-        <LazyWorkspace />
+        <LazyWorkspace {...props} />
       </LazyWorkspaceBoundary>
     )
   }

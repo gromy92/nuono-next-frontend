@@ -1,5 +1,6 @@
 import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from './types'
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
+import { createLazyWorkspaceMount } from './workspaceMount'
 
 export const OPERATIONS_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'operations-competitor-analysis': {
@@ -9,7 +10,11 @@ export const OPERATIONS_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'operations',
     pathLabel: '运营 / 竞品分析',
     tabLabel: '竞品分析',
-    contentKind: 'operations-competitor-analysis',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../competitor-analysis/CompetitorAnalysisPage').then((module) => ({
+        default: module.CompetitorAnalysisPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -20,7 +25,11 @@ export const OPERATIONS_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'operations',
     pathLabel: '运营 / 皮肤管理',
     tabLabel: '皮肤管理',
-    contentKind: 'operations-skin-management',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../operations-skin-management/OperationsSkinManagementPage').then((module) => ({
+        default: module.OperationsSkinManagementPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 1
   },
@@ -31,7 +40,11 @@ export const OPERATIONS_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'operations',
     pathLabel: '运营 / 广告投放经营台',
     tabLabel: '广告投放',
-    contentKind: 'noon-ads',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../noon-ads/NoonAdvertisingPage').then((module) => ({
+        default: module.NoonAdvertisingPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 2
   },
@@ -42,7 +55,11 @@ export const OPERATIONS_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'operations',
     pathLabel: '运营 / 关键词数据',
     tabLabel: '关键词数据',
-    contentKind: 'product-keywords',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../product-keywords/ProductKeywordDataPage').then((module) => ({
+        default: module.ProductKeywordDataPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 3
   }
@@ -56,7 +73,11 @@ export const OPERATION_CONFIG_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'operation-config',
     pathLabel: '运营配置 / 运营配置版本',
     tabLabel: '运营配置版本',
-    contentKind: 'operations-config-versions',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
+        default: module.OperationConfigSuiteVersionPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 0,
     visibleInWorkspaceTabs: true
@@ -68,7 +89,11 @@ export const OPERATION_CONFIG_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'operation-config',
     pathLabel: '运营配置 / 业务日历',
     tabLabel: '业务日历',
-    contentKind: 'operations-business-calendar',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../operations-config/OperationConfigSuiteVersionPage').then((module) => ({
+        default: module.BusinessCalendarVersionLibraryPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 1,
     routeAliases: ['/operation-config/holiday', '/data/activity-config']

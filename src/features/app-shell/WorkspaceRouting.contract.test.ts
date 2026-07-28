@@ -8,6 +8,7 @@ import {
   WORKSPACE_MENU_DEFINITIONS,
   WORKSPACE_SECTION_DEFINITIONS,
   workspaceMenuContentKind,
+  workspaceMenuMount,
   workspaceMenuPath
 } from './WorkspaceMenuRegistry'
 import {
@@ -20,7 +21,7 @@ assert.equal(workspaceMenuPath('official-warehouse'), '/warehouse/official-wareh
 assert.equal(workspaceMenuContentKind('official-warehouse'), 'official-warehouse')
 assert.equal(OPERATIONS_PRODUCT_KEYWORDS_PATH, '/operations/product-keywords')
 assert.equal(workspaceMenuPath('operations-product-keywords'), OPERATIONS_PRODUCT_KEYWORDS_PATH)
-assert.equal(workspaceMenuContentKind('operations-product-keywords'), 'product-keywords')
+assert.equal(typeof workspaceMenuMount('operations-product-keywords'), 'function')
 assert.equal(fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8').includes('<title>诺诺管家</title>'), true)
 assert.equal(
   fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8').includes('href="%BASE_URL%favicon.png"'),
@@ -60,6 +61,16 @@ assert.equal(
   shellWorkspaceContentSource.includes('nuono-shell-workspace-pane-hidden'),
   true,
   'workspace content must hide inactive opened panes instead of unmounting them'
+)
+assert.match(
+  shellWorkspaceContentSource,
+  /<WorkspaceMount session=\{context\.shellSession\} \/>/,
+  'the Shell must pass the authenticated session through the workspace mount Interface'
+)
+assert.equal(
+  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/LegacyOperationsWorkspaceContent.tsx')),
+  false,
+  'operations and report routes must not retain a second Legacy renderer registry'
 )
 assert.deepEqual(
   workspaceContentMountKeys('user-store-noon', ['user-role']),

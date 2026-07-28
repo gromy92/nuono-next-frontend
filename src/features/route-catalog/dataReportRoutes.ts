@@ -1,5 +1,6 @@
 import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from './types'
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
+import { createLazyWorkspaceMount } from './workspaceMount'
 
 export const DATA_REPORT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'data-sales-analysis': {
@@ -9,7 +10,11 @@ export const DATA_REPORT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'data',
     pathLabel: '数据 / 销量分析',
     tabLabel: '销量分析',
-    contentKind: 'sales-analytics',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../sales-analytics/SalesAnalyticsPage').then((module) => ({
+        default: module.SalesAnalyticsPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -20,7 +25,11 @@ export const DATA_REPORT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'data',
     pathLabel: '数据 / 订单分析',
     tabLabel: '订单分析',
-    contentKind: 'order-finance',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../order-finance/OrderFinancePage').then((module) => ({
+        default: module.OrderFinancePage
+      }))
+    ),
     closable: true,
     sidebarOrder: 1
   },
@@ -31,7 +40,11 @@ export const DATA_REPORT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'system-reports',
     pathLabel: '系统报表 / 店铺数据',
     tabLabel: '店铺数据',
-    contentKind: 'noon-call-store-data',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../system-reports/NoonCallStoreDataPage').then((module) => ({
+        default: module.NoonCallStoreDataPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 0,
     visibleInWorkspaceTabs: false,
@@ -44,7 +57,11 @@ export const DATA_REPORT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'system-reports',
     pathLabel: '系统报表 / 数据完整度',
     tabLabel: '数据完整度',
-    contentKind: 'system-report-noon-data-completeness',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../system-reports/NoonDataCompletenessPage').then((module) => ({
+        default: module.NoonDataCompletenessPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 1
   },
@@ -55,7 +72,11 @@ export const DATA_REPORT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'system-reports',
     pathLabel: '系统报表 / 数据缺口巡检',
     tabLabel: '数据缺口巡检',
-    contentKind: 'system-report-noon-data-gaps',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../system-reports/NoonDataGapPatrolPage').then((module) => ({
+        default: module.NoonDataGapPatrolPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 2,
     visibleInWorkspaceTabs: false

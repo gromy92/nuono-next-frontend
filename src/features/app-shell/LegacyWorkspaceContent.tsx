@@ -2,7 +2,6 @@ import type { AppMenuKey } from './WorkspaceRouting'
 import { workspaceMenuContentKind } from './WorkspaceMenuRegistry'
 import { renderLegacyAdministrationWorkspace } from './LegacyAdministrationWorkspaceContent'
 import { renderLegacyCommerceWorkspace } from './LegacyCommerceWorkspaceContent'
-import { renderLegacyOperationsWorkspace } from './LegacyOperationsWorkspaceContent'
 import type { ShellWorkspaceRenderContext } from './ShellWorkspaceContent.types'
 
 export function renderLegacyWorkspaceContent(
@@ -17,11 +16,6 @@ export function renderLegacyWorkspaceContent(
   const commerce = renderLegacyCommerceWorkspace(activeContentKind, context)
   if (commerce.handled) {
     return commerce.content
-  }
-
-  const operations = renderLegacyOperationsWorkspace(activeContentKind, context)
-  if (operations.handled) {
-    return operations.content
   }
 
   const administration = renderLegacyAdministrationWorkspace(activeContentKind, context)

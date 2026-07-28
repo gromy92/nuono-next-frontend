@@ -39,7 +39,7 @@ type ShellWorkspaceContentPaneProps = {
 function ShellWorkspaceContentPane({ menuKey, context }: ShellWorkspaceContentPaneProps) {
   const WorkspaceMount = workspaceMenuMount(menuKey)
   if (WorkspaceMount) {
-    return <WorkspaceMount />
+    return <WorkspaceMount session={context.shellSession} />
   }
   return renderLegacyWorkspaceContent(menuKey, context)
 }

@@ -129,7 +129,20 @@ assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 29)
 const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.workspaceMount === 'function'
 )
-assert.deepEqual(mountedDefinitions.map((definition) => definition.key), ['system-file-management'])
+assert.deepEqual(mountedDefinitions.map((definition) => definition.key), [
+  'operations-competitor-analysis',
+  'operations-skin-management',
+  'operations-noon-ads',
+  'operations-product-keywords',
+  'data-sales-analysis',
+  'data-order-analysis',
+  'noon-call-store-data',
+  'system-report-noon-data-completeness',
+  'system-report-noon-data-gaps',
+  'operations-config-versions',
+  'data-activity-config',
+  'system-file-management'
+])
 for (const definition of Object.values(WORKSPACE_MENU_DEFINITIONS)) {
   assert.notEqual(
     typeof definition.contentKind === 'string',
@@ -147,6 +160,7 @@ assert.strictEqual(
   'Catalog must return a stable module-level mount Adapter'
 )
 assert.equal(workspaceMenuMount('purchase-order'), null)
+assert.equal(typeof workspaceMenuMount('operations-competitor-analysis'), 'function')
 assert.deepEqual(routeCatalogIntegrityIssues(), [])
 assert.doesNotThrow(assertRouteCatalogIntegrity)
 assertDeepFrozen(ALL_WORKSPACE_MENU_KEYS, 'ALL_WORKSPACE_MENU_KEYS')

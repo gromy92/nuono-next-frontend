@@ -40,7 +40,7 @@ assert.match(typesSource, /adsEvidence/)
 assert.match(typesSource, /negativeCandidate/)
 const keywordRoute = workspaceMenuDefinition('operations-product-keywords')
 assert.equal(keywordRoute.path, '/operations/product-keywords')
-assert.equal(keywordRoute.contentKind, 'product-keywords')
+assert.equal(typeof keywordRoute.workspaceMount, 'function')
 assert.equal(OPERATIONS_PRODUCT_KEYWORDS_PATH, keywordRoute.path)
 assert.deepEqual(
   matchGrantedMenuToWorkspaceMenuKeys({ menuId: 9804, menuName: '关键词数据', urlPath: '/api/product-keywords' }),
