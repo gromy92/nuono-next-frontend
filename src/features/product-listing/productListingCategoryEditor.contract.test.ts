@@ -23,7 +23,10 @@ const competitorContentTypeSource = readFileSync(
   new URL('../product-domain/productCompetitorContent.ts', import.meta.url),
   'utf8'
 )
-const sourcePrefillSource = readFileSync(new URL('./sourcePrefill.ts', import.meta.url), 'utf8')
+const sourcePrefillSource = [
+  './sourcePrefill.ts',
+  './sourcePrefillModel.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 const categoryPresentationSource = readFileSync(
   new URL('../product-domain/productCompetitorContent.ts', import.meta.url),
   'utf8'

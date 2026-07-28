@@ -44,7 +44,10 @@ const page = [
   'useProductListingRecoveryActions.ts'
 ].map((fileName) => read(`src/features/product-listing/${fileName}`)).join('\n')
 const detailEditor = read('src/features/product-listing/ProductListingDetailEditor.tsx')
-const sourcePrefill = read('src/features/product-listing/sourcePrefill.ts')
+const sourcePrefill = [
+  read('src/features/product-listing/sourcePrefill.ts'),
+  read('src/features/product-listing/sourcePrefillModel.ts')
+].join('\n')
 const adapter = [
   'productDetailAdapter.ts',
   'productDetailAdapterTypes.ts',
