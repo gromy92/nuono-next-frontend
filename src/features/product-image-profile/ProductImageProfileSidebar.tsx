@@ -2,6 +2,7 @@ import { CopyOutlined } from '@ant-design/icons'
 import { Button, Empty, Input, Select, Tag, Tooltip, Typography } from 'antd'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
+  imageSummaryStatusMeta,
   type ProductImageProfileMissingField,
   type ProductImageProfileReadinessStatus,
   type ProductImageSummaryStatus
@@ -44,16 +45,6 @@ type ProductImageProfileSidebarProps = {
 const readinessMeta: Record<ProductImageProfileReadinessStatus, { color: string; label: string }> = {
   COMPLETE: { color: 'success', label: '资料完整' },
   INCOMPLETE: { color: 'warning', label: '待补充' }
-}
-
-export const imageSummaryStatusMeta: Record<ProductImageSummaryStatus, { color: string; label: string }> = {
-  NOT_REQUESTED: { color: 'default', label: '未申请' },
-  CANDIDATE: { color: 'blue', label: '候选' },
-  GENERATING: { color: 'processing', label: '制作中' },
-  PENDING_CONFIRMATION: { color: 'warning', label: '待确认' },
-  PUBLISHING: { color: 'processing', label: '发布中' },
-  ONLINE: { color: 'success', label: '已上线' },
-  ACTION_REQUIRED: { color: 'error', label: '需处理' }
 }
 
 const missingFieldLabel: Record<ProductImageProfileMissingField, string> = {
