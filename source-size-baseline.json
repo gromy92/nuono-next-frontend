@@ -6,7 +6,6 @@
     {"path":"scripts/master_data_replica_smoke.mjs","ceiling":555},
     {"path":"scripts/official_warehouse_stock_tabs_smoke.mjs","ceiling":651},
     {"path":"scripts/product_management_10_page_acceptance.mjs","ceiling":684},
-    {"path":"scripts/profit_pending_page_smoke.mjs","ceiling":437},
     {"path":"tests/e2e/ali1688-collection.spec.ts","ceiling":303},
     {"path":"tests/e2e/ali1688-historical-orders.spec.ts","ceiling":2408},
     {"path":"tests/e2e/ali1688-sku-purchase-history.spec.ts","ceiling":545},
