@@ -1,12 +1,9 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { Form, message } from 'antd'
 import dayjs from 'dayjs'
 import {
   deleteInTransitGoodsLine,
   deleteInTransitLogisticsNode,
-  fetchInTransitBatchFreightCosts,
-  fetchInTransitGoodsLines,
-  fetchInTransitLogisticsNodes,
   saveInTransitBatch,
   saveInTransitGoodsLine,
   saveInTransitLogisticsNode
@@ -14,7 +11,6 @@ import {
 import type {
   InTransitBatch,
   InTransitBatchFilters,
-  InTransitBatchFreightCost,
   InTransitGoodsLine,
   InTransitLogisticsNode,
   SaveInTransitBatchRequest,
@@ -22,30 +18,22 @@ import type {
   SaveInTransitLogisticsNodeRequest
 } from './types'
 import { formatNodeDateTime, normalizeNodeDateTime } from './InTransitGoodsPage.utils'
-import { createLatestRequestGuard } from './latestRequestGuard'
+import { useInTransitBatchResources } from './useInTransitBatchResources'
 
 export function useInTransitBatchEditor(
   filters: InTransitBatchFilters,
   load: (filters: InTransitBatchFilters) => Promise<void>
 ) {
-  const linesRequestGuard = useRef(createLatestRequestGuard())
-  const nodesRequestGuard = useRef(createLatestRequestGuard())
-  const freightRequestGuard = useRef(createLatestRequestGuard())
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingBatch, setEditingBatch] = useState<InTransitBatch | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [lines, setLines] = useState<InTransitGoodsLine[]>([])
-  const [loadingLines, setLoadingLines] = useState(false)
   const [lineEditorOpen, setLineEditorOpen] = useState(false)
   const [editingLine, setEditingLine] = useState<InTransitGoodsLine | null>(null)
   const [submittingLine, setSubmittingLine] = useState(false)
-  const [nodes, setNodes] = useState<InTransitLogisticsNode[]>([])
-  const [loadingNodes, setLoadingNodes] = useState(false)
   const [nodeEditorOpen, setNodeEditorOpen] = useState(false)
   const [editingNode, setEditingNode] = useState<InTransitLogisticsNode | null>(null)
   const [submittingNode, setSubmittingNode] = useState(false)
-  const [batchFreightCosts, setBatchFreightCosts] = useState<InTransitBatchFreightCost>({ bills: [], components: [] })
-  const [loadingBatchFreightCosts, setLoadingBatchFreightCosts] = useState(false)
+  const batchResources = useInTransitBatchResources()
   const [form] = Form.useForm<SaveInTransitBatchRequest & { dateRange?: [dayjs.Dayjs, dayjs.Dayjs] }>()
   const [lineForm] = Form.useForm<SaveInTransitGoodsLineRequest>()
   const [nodeForm] = Form.useForm<SaveInTransitLogisticsNodeRequest>()
@@ -53,13 +41,11 @@ export function useInTransitBatchEditor(
 
   const openCreate = () => {
     setEditingBatch(null)
-    setLines([])
-    setNodes([])
+    batchResources.resetBatchResources()
     setLineEditorOpen(false)
     setNodeEditorOpen(false)
     setEditingLine(null)
     setEditingNode(null)
-    setBatchFreightCosts({ bills: [], components: [] })
     lineForm.resetFields()
     nodeForm.resetFields()
     form.resetFields()
@@ -75,9 +61,7 @@ export function useInTransitBatchEditor(
     setEditingNode(null)
     lineForm.resetFields()
     nodeForm.resetFields()
-    setLines([])
-    setNodes([])
-    setBatchFreightCosts({ bills: [], components: [] })
+    batchResources.resetBatchResources()
     form.resetFields()
     form.setFieldsValue({
       batchId: row.batchId,
@@ -93,9 +77,9 @@ export function useInTransitBatchEditor(
       batchReferenceNo: row.batchReferenceNo ?? undefined,
       batchStatus: row.batchStatus ?? 'draft'
     })
-    void loadLines(row.batchId)
-    void loadNodes(row.batchId)
-    void loadBatchFreightCosts(row.batchId)
+    void batchResources.loadLines(row.batchId)
+    void batchResources.loadNodes(row.batchId)
+    void batchResources.loadBatchFreightCosts(row.batchId)
     setDrawerOpen(true)
   }
 
@@ -176,7 +160,7 @@ export function useInTransitBatchEditor(
       setLineEditorOpen(false)
       setEditingLine(null)
       lineForm.resetFields()
-      await loadLines(editingBatch.batchId)
+      await batchResources.loadLines(editingBatch.batchId)
       await load(filters)
     } catch (error) {
       message.error(error instanceof Error ? error.message : '商品明细保存失败')
@@ -192,7 +176,7 @@ export function useInTransitBatchEditor(
     setSubmittingLine(true)
     try {
       const nextLines = await deleteInTransitGoodsLine(editingBatch.batchId, row.lineId)
-      setLines(nextLines.items ?? [])
+      batchResources.replaceLines(nextLines.items ?? [])
       await load(filters)
     } catch (error) {
       message.error(error instanceof Error ? error.message : '商品明细删除失败')
@@ -241,7 +225,7 @@ export function useInTransitBatchEditor(
       setNodeEditorOpen(false)
       setEditingNode(null)
       nodeForm.resetFields()
-      await loadNodes(editingBatch.batchId)
+      await batchResources.loadNodes(editingBatch.batchId)
       await load(filters)
     } catch (error) {
       message.error(error instanceof Error ? error.message : '物流节点保存失败')
@@ -257,7 +241,7 @@ export function useInTransitBatchEditor(
     setSubmittingNode(true)
     try {
       const nextNodes = await deleteInTransitLogisticsNode(editingBatch.batchId, node.nodeId)
-      setNodes(nextNodes.items ?? [])
+      batchResources.replaceNodes(nextNodes.items ?? [])
       if (editingNode?.nodeId === node.nodeId) {
         setEditingNode(null)
         setNodeEditorOpen(false)
@@ -271,82 +255,22 @@ export function useInTransitBatchEditor(
     }
   }
 
-  const loadLines = async (batchId: number) => {
-    const requestToken = linesRequestGuard.current.begin()
-    setLoadingLines(true)
-    try {
-      const nextLines = await fetchInTransitGoodsLines(batchId)
-      if (linesRequestGuard.current.isCurrent(requestToken)) {
-        setLines(nextLines.items ?? [])
-      }
-    } catch (error) {
-      if (linesRequestGuard.current.isCurrent(requestToken)) {
-        message.error(error instanceof Error ? error.message : '商品明细加载失败')
-        setLines([])
-      }
-    } finally {
-      if (linesRequestGuard.current.isCurrent(requestToken)) {
-        setLoadingLines(false)
-      }
-    }
-  }
-
-  const loadNodes = async (batchId: number) => {
-    const requestToken = nodesRequestGuard.current.begin()
-    setLoadingNodes(true)
-    try {
-      const nextNodes = await fetchInTransitLogisticsNodes(batchId)
-      if (nodesRequestGuard.current.isCurrent(requestToken)) {
-        setNodes(nextNodes.items ?? [])
-      }
-    } catch (error) {
-      if (nodesRequestGuard.current.isCurrent(requestToken)) {
-        message.error(error instanceof Error ? error.message : '物流节点加载失败')
-        setNodes([])
-      }
-    } finally {
-      if (nodesRequestGuard.current.isCurrent(requestToken)) {
-        setLoadingNodes(false)
-      }
-    }
-  }
-
-  const loadBatchFreightCosts = async (batchId: number) => {
-    const requestToken = freightRequestGuard.current.begin()
-    setLoadingBatchFreightCosts(true)
-    try {
-      const nextFreightCosts = await fetchInTransitBatchFreightCosts(batchId)
-      if (freightRequestGuard.current.isCurrent(requestToken)) {
-        setBatchFreightCosts({ bills: nextFreightCosts.bills ?? [], components: nextFreightCosts.components ?? [] })
-      }
-    } catch (error) {
-      if (freightRequestGuard.current.isCurrent(requestToken)) {
-        message.error(error instanceof Error ? error.message : '实际运费加载失败')
-        setBatchFreightCosts({ bills: [], components: [] })
-      }
-    } finally {
-      if (freightRequestGuard.current.isCurrent(requestToken)) {
-        setLoadingBatchFreightCosts(false)
-      }
-    }
-  }
-
   return {
     drawerOpen,
     editingBatch,
     submitting,
-    lines,
-    loadingLines,
+    lines: batchResources.lines,
+    loadingLines: batchResources.loadingLines,
     lineEditorOpen,
     editingLine,
     submittingLine,
-    nodes,
-    loadingNodes,
+    nodes: batchResources.nodes,
+    loadingNodes: batchResources.loadingNodes,
     nodeEditorOpen,
     editingNode,
     submittingNode,
-    batchFreightCosts,
-    loadingBatchFreightCosts,
+    batchFreightCosts: batchResources.batchFreightCosts,
+    loadingBatchFreightCosts: batchResources.loadingBatchFreightCosts,
     batchOperationLocked,
     form,
     lineForm,
