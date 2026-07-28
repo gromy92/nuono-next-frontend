@@ -1,3 +1,4 @@
+
 /* Dashboard tab styles kept separate from the detail maintenance list. */
 .competitor-analysis-dashboard-tab {
   display: grid;
@@ -278,4 +279,3 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
-

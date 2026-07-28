@@ -1,3 +1,5 @@
+
+.competitor-analysis-keyword-board {
   display: grid;
   gap: 10px;
   min-width: 0;
@@ -271,4 +273,3 @@
   border-color: #bfbfbf;
   color: #595959;
 }
-
