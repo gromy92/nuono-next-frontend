@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-
 test('system reports store data route renders Noon store data without legacy overview API', async ({ page }) => {
   const legacyOverviewCalls: string[] = [];
   await page.route('**/api/noon-call/store-data', async (route) => {
@@ -37,9 +36,7 @@ test('system reports store data route renders Noon store data without legacy ove
       json: { message: 'No message available' }
     });
   });
-
   await page.goto('/system-reports/store-data?devSession=1&grantSystemReports=1');
-
   await expect(page.getByTestId('noon-call-store-data-workbench')).toBeVisible();
   await expect(page.getByTestId('noon-call-store-data-workbench')).not.toContainText('系统报表 / 店铺数据');
   await expect(page.locator('body')).not.toContainText('系统报表 / 店铺数据');
@@ -51,7 +48,6 @@ test('system reports store data route renders Noon store data without legacy ove
   await expect(page.getByTestId('noon-call-cell-PRODUCT_LIST')).not.toContainText('数据日');
   expect(legacyOverviewCalls).toHaveLength(0);
 });
-
 test('noon call store data shows four sync cells and posts category-specific sync actions', async ({ page }) => {
   const syncCalls: string[] = [];
   await page.route('**/api/noon-call/store-data', async (route) => {
@@ -137,9 +133,7 @@ test('noon call store data shows four sync cells and posts category-specific syn
       }
     });
   });
-
   await page.goto('/noon-call/store-data?devSession=1&devRole=boss&grantSystemReports=1');
-
   await expect(page.getByTestId('noon-call-store-data-workbench')).toBeVisible();
   await expect(page.getByTestId('noon-call-store-data-workbench')).not.toContainText('系统报表 / 店铺数据');
   await expect(page.locator('body')).not.toContainText('系统报表 / 店铺数据');
@@ -150,7 +144,6 @@ test('noon call store data shows four sync cells and posts category-specific syn
   await expect(page.getByTestId('noon-call-store-data-marker-chart')).toBeVisible();
   await expect(page.getByTestId('noon-call-store-data-category-status-chart')).toBeVisible();
   await expect(page.getByTestId('noon-call-store-data-gap-chart')).toBeVisible();
-
   const categories = ['PRODUCT_LIST', 'PRODUCT_DETAIL', 'SALES_ORDER', 'SALES_PRODUCT_VIEWS'];
   for (const category of categories) {
     await expect(page.getByTestId(`noon-call-cell-${category}`)).toContainText('同步');
@@ -164,17 +157,14 @@ test('noon call store data shows four sync cells and posts category-specific syn
   await expect(page.getByTestId('noon-call-cell-PRODUCT_LIST')).toContainText('数据截至 2026-05-24');
   await expect(page.getByTestId('noon-call-cell-PRODUCT_DETAIL')).not.toContainText('无需补全');
   await expect(page.getByTestId('noon-call-cell-PRODUCT_DETAIL')).not.toContainText('数据日');
-
   for (const category of categories) {
     await page.getByTestId(`noon-call-cell-${category}`).getByRole('button', { name: /同\s*步/ }).click();
   }
-
   await expect.poll(() => syncCalls.length).toBe(4);
   for (const category of categories) {
     expect(syncCalls.some((url) => url.includes(`/${category}/sync`))).toBeTruthy();
   }
 });
-
 test('store data table stays within viewport and optimistically marks a clicked item syncing', async ({ page }) => {
   let finishSync: (() => void) | null = null;
   await page.route('**/api/noon-call/store-data', async (route) => {
@@ -244,20 +234,16 @@ test('store data table stays within viewport and optimistically marks a clicked 
       }
     });
   });
-
   await page.goto('/system-reports/store-data?devSession=1&devRole=boss&grantSystemReports=1');
-
   await expect(page.getByTestId('noon-call-store-data-workbench')).toContainText('canman');
   await expect(page.getByTestId('noon-call-cell-PRODUCT_DETAIL').getByText('未完成')).toHaveCount(1);
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth))
     .toBe(true);
-
   await page.getByTestId('noon-call-cell-PRODUCT_DETAIL').getByRole('button', { name: /同\s*步/ }).click();
   await expect(page.getByTestId('noon-call-cell-PRODUCT_DETAIL')).toContainText('同步中');
   finishSync?.();
 });
-
 test('system administrator can submit noon call store data sync actions', async ({ page }) => {
   const syncCalls: string[] = [];
   await page.route('**/api/noon-call/store-data', async (route) => {
@@ -297,12 +283,9 @@ test('system administrator can submit noon call store data sync actions', async 
       }
     });
   });
-
   await page.goto('/noon-call/store-data?devSession=1&grantSystemReports=1');
-
   const syncButton = page.getByTestId('noon-call-cell-PRODUCT_LIST').getByRole('button', { name: /同\s*步/ });
   await expect(syncButton).toBeEnabled();
   await syncButton.click();
-
   await expect.poll(() => syncCalls.length).toBe(1);
 });

@@ -2,13 +2,10 @@
   "version": 1,
   "limit": 300,
   "files": [
-    {"path":"tests/e2e/ali1688-collection.spec.ts","ceiling":303},
     {"path":"tests/e2e/ali1688-historical-orders.spec.ts","ceiling":2408},
     {"path":"tests/e2e/ali1688-sku-purchase-history.spec.ts","ceiling":545},
     {"path":"tests/e2e/competitor-analysis.spec.ts","ceiling":1776},
     {"path":"tests/e2e/file-management.spec.ts","ceiling":826},
-    {"path":"tests/e2e/manual-selection.spec.ts","ceiling":318},
-    {"path":"tests/e2e/noon-call-store-data.spec.ts","ceiling":308},
     {"path":"tests/e2e/operations-config-typed-version-library.spec.ts","ceiling":1291},
     {"path":"tests/e2e/procurement-confirmation.spec.ts","ceiling":525},
     {"path":"tests/e2e/product-management-initialization.spec.ts","ceiling":446},

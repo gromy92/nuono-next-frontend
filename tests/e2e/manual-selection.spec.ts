@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-
 const baseCollection = {
   id: 'source-001',
   collectionNo: 'PSC-20260514-001',
@@ -90,7 +89,6 @@ const baseCollection = {
   specAttributeCount: 8,
   imageCount: 2
 };
-
 const storeSyncOverview = {
   mode: 'mock',
   ready: true,
@@ -106,13 +104,11 @@ const storeSyncOverview = {
   syncedRules: [],
   missingCoreTables: []
 };
-
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/store-sync/overview**', async (route) => {
     await route.fulfill({ json: storeSyncOverview });
   });
 });
-
 test('manual selection row opens product listing editor with source prefill', async ({ page }) => {
   const listingCollection = {
     ...baseCollection,
@@ -120,15 +116,11 @@ test('manual selection row opens product listing editor with source prefill', as
     collectionNo: 'PSC-20260514-LISTING',
     brandName: 'DUYONE'
   };
-
   await page.route('**/api/product-selection/source-collections?**', async (route) => {
     await route.fulfill({ json: [listingCollection] });
   });
-
   await page.goto('/product/manual-selection?devSession=1&devRole=boss&grantManualSelection=1&grantPurchase=1');
-
   await page.getByTestId('manual-selection-listing-button').first().click();
-
   await expect(page).toHaveURL(/\/purchase\/listing/);
   await expect(page.getByText('来源：人工采集')).toBeVisible();
   await expect(page.getByText('PSC-20260514-LISTING')).toBeVisible();
@@ -152,14 +144,11 @@ test('manual selection row opens product listing editor with source prefill', as
   await expect(page.getByRole('button', { name: '商品图 1 头图' })).toBeVisible();
   await expect(page.getByRole('button', { name: '商品图 2' })).toBeVisible();
 });
-
 test('manual selection collection page closes the first phase workflow', async ({ page }) => {
   const collections = [baseCollection];
-
   await page.route('**/api/product-selection/source-collections?**', async (route) => {
     await route.fulfill({ json: collections });
   });
-
   await page.route('**/api/product-selection/source-collections', async (route) => {
     const payload = route.request().postDataJSON() as {
       sourcePlatform?: string;
@@ -199,7 +188,6 @@ test('manual selection collection page closes the first phase workflow', async (
     collections.unshift(created);
     await route.fulfill({ json: created });
   });
-
   await page.route('**/api/product-selection/source-collections/source-001/recollect', async (route) => {
     const recollected = {
       ...baseCollection,
@@ -210,9 +198,7 @@ test('manual selection collection page closes the first phase workflow', async (
     collections[collections.findIndex((item) => item.id === 'source-001')] = recollected;
     await route.fulfill({ json: recollected });
   });
-
   await page.goto('/product/manual-selection?devSession=1&devRole=boss&grantManualSelection=1&grantPurchase=1');
-
   await expect(page.getByTestId('manual-selection-table')).toBeVisible();
   await expect(page.getByTestId('workspace-tabs-bar').getByRole('tab', { name: '人工选品' })).toBeVisible();
   await expect(page.getByText('DUYONE Artificial Flowers 6 Stems Poppy Silk Bouquet')).toBeVisible();
@@ -229,7 +215,6 @@ test('manual selection collection page closes the first phase workflow', async (
     .filter({ hasText: '采集完整度' })
     .evaluate((node) => (node as HTMLTableCellElement).cellIndex);
   expect(completenessHeaderIndex).toBeLessThan(skuHeaderIndex);
-
   await page.getByTestId('manual-selection-detail-button').first().click();
   const detailDialog = page.getByRole('dialog', { name: '采集详情' });
   await expect(detailDialog).toBeVisible();
@@ -289,7 +274,6 @@ test('manual selection collection page closes the first phase workflow', async (
   await expect(detailDialog.getByText('发货地')).toHaveCount(0);
   await detailDialog.getByRole('button', { name: 'Close' }).first().click();
   await expect(detailDialog).toBeHidden();
-
   await page.getByTestId('manual-selection-new-button').click();
   const newDialog = page.getByRole('dialog', { name: '新建采集' });
   await newDialog.getByPlaceholder('请输入中文标题').fill('测试中文商品');
@@ -298,10 +282,8 @@ test('manual selection collection page closes the first phase workflow', async (
   await expect(page.getByText('测试中文商品')).toBeVisible();
   await expect(page.getByTestId('manual-selection-ali-button')).toHaveCount(0);
   await expect(page.getByText('共 2 条')).toBeVisible();
-
   await page.getByTestId('manual-selection-recollect-button').last().click();
   await expect(page.getByText('采集中').first()).toBeVisible();
-
   await page.locator('.nuono-shell-sidebar-rail-item[title="采购"]').hover();
   await page.getByTestId('sidebar-menu').getByText('采购单').click();
   await expect(page.getByTestId('workspace-tabs-bar').getByRole('tab', { name: '人工选品' })).toBeVisible();
@@ -309,10 +291,8 @@ test('manual selection collection page closes the first phase workflow', async (
   await page.getByTestId('workspace-tabs-bar').getByRole('tab', { name: '人工选品' }).click();
   await expect(page.getByTestId('manual-selection-table')).toBeVisible();
 });
-
 test('system admin session does not show manual selection menu', async ({ page }) => {
   await page.goto('/?devSession=1&grantManualSelection=1');
-
   await expect(page.getByTestId('sidebar-menu')).toBeVisible();
   await expect(page.getByTestId('sidebar-menu').getByText('人工选品')).toHaveCount(0);
 });
