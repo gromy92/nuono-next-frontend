@@ -1,7 +1,5 @@
-import {
-  PURCHASE_LISTING_PATH,
-  withWorkspaceStoreDevQuery
-} from '../../app-shell/WorkspaceRouting'
+import { PURCHASE_LISTING_PATH } from '../../route-catalog/routePaths'
+import { withWorkspaceStoreDevQuery } from '../../route-catalog/workspaceDevQuery'
 import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot'
 import { textInputValue } from './common'
 

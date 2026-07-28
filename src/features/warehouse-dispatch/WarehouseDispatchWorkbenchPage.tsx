@@ -1,6 +1,7 @@
 import { Tabs } from 'antd'
 import { useMemo, useState } from 'react'
-import { PRODUCT_SPECS_PATH, withCurrentWorkspaceDevQuery } from '../app-shell/WorkspaceRouting'
+import { PRODUCT_SPECS_PATH } from '../route-catalog/routePaths'
+import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery'
 import { buildProductBaselineStoreCodes } from './readyDomain'
 import { useProductBaselines } from './useProductBaselines'
 import { useReadyWorkspace } from './useReadyWorkspace'

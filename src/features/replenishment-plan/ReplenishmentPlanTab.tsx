@@ -4,7 +4,8 @@ import type { ColumnsType } from 'antd/es/table'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Key } from 'react'
 import { normalizeError } from '../../shared/api'
-import { PURCHASE_IN_TRANSIT_GOODS_PATH, withCurrentWorkspaceDevQuery } from '../app-shell/WorkspaceRouting'
+import { PURCHASE_IN_TRANSIT_GOODS_PATH } from '../route-catalog/routePaths'
+import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery'
 import type { AuthSession } from '../auth/session'
 import { ProductBaselineIdentity } from '../product-baseline'
 import { addPurchaseOrderItems, loadPurchaseOrders } from '../purchase-order/api'
@@ -43,7 +44,6 @@ const BLOCKING_WARNING_LABELS: Record<string, string> = {
   forecast_fact_expired: '预测事实已过期',
   inbound_site_unresolved: '在途目的站点无法确认'
 }
-
 type ReplenishmentPlanTabProps = {
   session?: AuthSession | null
   purchaseOrdersRevision?: number

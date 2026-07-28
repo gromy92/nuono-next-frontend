@@ -20,7 +20,7 @@ import {
 } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import { firstFormValidationMessage } from '../../shared/api';
-import { FormToolbarLayout } from '../app-shell/FormToolbarLayout';
+import { FormToolbarLayout } from '../../shared/ui/FormToolbarLayout';
 import {
   bindingStatusColor,
   bindingStatusLabel,

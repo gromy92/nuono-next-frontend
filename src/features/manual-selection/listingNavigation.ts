@@ -1,4 +1,5 @@
-import { PURCHASE_LISTING_PATH, withCurrentWorkspaceDevQuery } from '../app-shell/WorkspaceRouting'
+import { PURCHASE_LISTING_PATH } from '../route-catalog/routePaths'
+import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery'
 import {
   openProductListingTargetInNewTab,
   reserveProductListingTargetInNewTab,

@@ -1,7 +1,5 @@
-import {
-  PRODUCT_WORKSPACE_PATH,
-  withWorkspaceStoreDevQuery
-} from '../app-shell/WorkspaceRouting'
+import { PRODUCT_WORKSPACE_PATH } from '../route-catalog/routePaths'
+import { withWorkspaceStoreDevQuery } from '../route-catalog/workspaceDevQuery'
 import {
   PRODUCT_LISTING_PUBLISHED_NOTICE,
   saveProductListingReturnNotice,
