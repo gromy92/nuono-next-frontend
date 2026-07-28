@@ -41,7 +41,7 @@ const sourcePrefill = read('src/features/product-listing/sourcePrefill.ts')
 const adapter = read('src/features/product-listing/productDetailAdapter.ts')
 const api = read('src/features/product-listing/api.ts')
 const types = read('src/features/product-listing/types.ts')
-const officialTabsTypes = read('src/features/product-management/components/ProductDetailOfficialTabs.types.ts')
+const officialTabsTypes = read('src/features/product-editor/productDetailEditorTypes.ts')
 const offerTab = read('src/features/product-management/components/ProductOfferTab.tsx')
 const metadataValues = sliceBetween(
   adapter,

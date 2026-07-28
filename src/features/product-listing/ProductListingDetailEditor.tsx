@@ -314,18 +314,11 @@ export function ProductListingDetailEditor({
         defaultActiveKey="offer"
         productSiteDomain={domains.site}
         productSharedDomainDirtyCount={0}
-        productActionSubmitting={false}
         currentProductSummarySurface={summary}
         productSnapshotView={snapshot}
         activeProductSiteOffer={activeSiteOffer}
-        activeSiteDirty
-        activeSiteOfferCode={draft.storeCode}
         productWarehouseStockRows={[]}
         hideOfferStockSection
-        siteOfferColumns={[]}
-        productPlatformSignals={{}}
-        productPlatformRejectionReasons={[]}
-        productPlatformAffectingAttributes={[]}
         productContentDomain={domains.content}
         productContentProgressDone={contentProgress.done} productContentProgressTotal={contentProgress.total}
         productCompetitorMaterials={competitorMaterials}
@@ -335,12 +328,7 @@ export function ProductListingDetailEditor({
         productImageRoleAssignments={draft.imageRoleAssignments}
         productImageAssetMetadata={draft.imageAssetMetadata}
         productAttributesDomain={domains.attributes}
-        productRequiredAttributeCount={0}
-        productFilledRequiredAttributeCount={0}
         productGroupingDomain={domains.grouping}
-        productGroupMembers={[]}
-        productCandidateGroups={[]}
-        productListSourceItems={[]}
         productInsightMetrics={[]}
         productLeadImage={imageUrls[0]}
         allowEmptyImages
@@ -350,16 +338,12 @@ export function ProductListingDetailEditor({
         offerPresentation="listing-create"
         barcodeValidationIssue={barcodeValidationIssue}
         onBarcodeDraftChange={handleBarcodeDraftChange}
-        previewProductAction={() => undefined}
         updateSiteOfferField={updateSiteOfferField}
-        setActiveSiteOfferCode={() => undefined}
         updateProductSectionField={updateProductSectionField}
         updateProductMultilineField={updateProductMultilineField}
         openCurrentProductGallery={openCurrentProductGallery}
-        addProductVariant={() => undefined}
         updateProductVariant={updateProductVariant}
         removeProductVariant={() => undefined}
-        updateProductAxes={() => undefined}
         updateProductAttributeField={updateProductAttributeField}
     />
   )

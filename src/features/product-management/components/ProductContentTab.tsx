@@ -2,10 +2,10 @@ import { Space } from 'antd';
 import { ProductAttributesPanel } from './ProductAttributesPanel';
 import { ProductBasicContentPanel } from './ProductBasicContentPanel';
 import { ProductClassificationEditor } from './ProductClassificationEditor';
-import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
+import type { ProductContentEditorProps } from '../../product-editor/productDetailEditorTypes';
 import { ProductImagesPanel } from './ProductImagesPanel';
 
-export function ProductContentTab(props: ProductDetailOfficialTabsProps) {
+export function ProductContentTab(props: ProductContentEditorProps) {
   const {
     productContentDomain,
     productContentProgressDone,

@@ -1,12 +1,12 @@
 import { Divider, Space } from 'antd';
 import { ProductDetailSection } from './ProductDetailSection';
-import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
+import type { ProductOfferEditorProps } from '../../product-editor/productDetailEditorTypes';
 import { ProductOfferMetaSection } from './ProductOfferMetaSection';
 import { ProductOfferPricingSection } from './ProductOfferPricingSection';
 import { ProductOfferStockSection } from './ProductOfferStockSection';
 import { ProductOfferVisibilitySection } from './ProductOfferVisibilitySection';
 
-export function ProductOfferTab(props: ProductDetailOfficialTabsProps) {
+export function ProductOfferTab(props: ProductOfferEditorProps) {
   const {
     productSnapshotView,
     activeProductSiteOffer,

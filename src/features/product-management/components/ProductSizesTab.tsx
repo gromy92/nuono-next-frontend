@@ -1,9 +1,9 @@
 import { Space, Table } from 'antd';
 import { createProductSizeColumns } from '../productDetailColumns';
 import { ProductDetailSection } from './ProductDetailSection';
-import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
+import type { ProductSizesEditorProps } from '../../product-editor/productDetailEditorTypes';
 
-export function ProductSizesTab(props: ProductDetailOfficialTabsProps) {
+export function ProductSizesTab(props: ProductSizesEditorProps) {
   const {
     productSnapshotView,
     productGroupingDomain,

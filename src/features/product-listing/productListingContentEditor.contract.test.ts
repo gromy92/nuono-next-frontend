@@ -20,7 +20,7 @@ const translationHelperSource = readFileSync(
   'utf8'
 )
 const officialTabsTypeSource = readFileSync(
-  new URL('../product-management/components/ProductDetailOfficialTabs.types.ts', import.meta.url),
+  new URL('../product-editor/productDetailEditorTypes.ts', import.meta.url),
   'utf8'
 )
 

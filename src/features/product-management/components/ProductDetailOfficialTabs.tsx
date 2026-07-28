@@ -4,7 +4,7 @@ import {
   productFieldDomainStatusMeta,
   type ProductFieldDomainSurface
 } from '../../product-editor/productFieldDomain';
-import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
+import type { ProductDetailEditorHostProps } from '../../product-editor/productDetailEditorTypes';
 import { ProductContentTab } from './ProductContentTab';
 import { ProductInsightsTab } from './ProductInsightsTab';
 import { ProductOfferTab } from './ProductOfferTab';
@@ -34,7 +34,7 @@ function ProductDomainStatusBadge({ domain }: { domain?: ProductFieldDomainSurfa
   );
 }
 
-export function ProductDetailOfficialTabs(props: ProductDetailOfficialTabsProps) {
+export function ProductDetailOfficialTabs(props: ProductDetailEditorHostProps) {
   const {
     defaultActiveKey,
     productSiteDomain,

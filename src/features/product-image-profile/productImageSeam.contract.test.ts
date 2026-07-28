@@ -14,7 +14,7 @@ assert.equal(
 const callers = [
   'src/features/product-listing/productDetailAdapter.ts',
   'src/features/product-listing/types.ts',
-  'src/features/product-management/components/ProductDetailOfficialTabs.types.ts',
+  'src/features/product-editor/productDetailEditorTypes.ts',
   'src/features/product-management/components/ProductImageManagerDrawer.tsx',
   'src/features/product-management/components/ProductImagesPanel.tsx',
   'src/features/product-management/components/productImageManagerState.ts'

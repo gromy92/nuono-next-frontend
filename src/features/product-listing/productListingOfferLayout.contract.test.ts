@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 
 const editorSource = readFileSync(new URL('./ProductListingDetailEditor.tsx', import.meta.url), 'utf8')
 const tabsTypesSource = readFileSync(
-  new URL('../product-management/components/ProductDetailOfficialTabs.types.ts', import.meta.url),
+  new URL('../product-editor/productDetailEditorTypes.ts', import.meta.url),
   'utf8'
 )
 const offerTabSource = readFileSync(new URL('../product-management/components/ProductOfferTab.tsx', import.meta.url), 'utf8')

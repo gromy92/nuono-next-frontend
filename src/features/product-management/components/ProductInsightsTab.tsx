@@ -1,6 +1,6 @@
 import { Col, Empty, Row, Select, Space, Tag, Typography } from 'antd';
 import { formatSnapshotValue } from '../utils';
-import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
+import type { ProductInsightsEditorProps } from '../../product-editor/productDetailEditorTypes';
 import { ProductBaselineIdentity, productSummaryTitle } from '../../product-baseline';
 
 const { Text } = Typography;
@@ -10,7 +10,7 @@ function hasMetricValue(value: string | number) {
   return Boolean(normalized && normalized !== '-' && normalized.toLowerCase() !== 'n/a');
 }
 
-export function ProductInsightsTab(props: ProductDetailOfficialTabsProps) {
+export function ProductInsightsTab(props: ProductInsightsEditorProps) {
   const {
     currentProductSummarySurface,
     productSnapshotView,
