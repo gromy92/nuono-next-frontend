@@ -24,10 +24,15 @@ const warehouseDispatch = [
   'receiptDomain.ts'
 ].map((fileName) => readFileSync(join(featuresDir, 'warehouse-dispatch', fileName), 'utf8')).join('\n')
 const warehouseDispatchApi = readFileSync(join(featuresDir, 'warehouse-dispatch/api.ts'), 'utf8')
-const ali1688SkuPurchaseHistory = readFileSync(
-  join(featuresDir, 'ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage.tsx'),
+const ali1688SkuPurchaseHistory = [
+  'Ali1688SkuPurchaseHistoryPage.tsx',
+  'components/ProductPurchaseCells.tsx',
+  'components/SkuPurchaseHistoryWorkbench.tsx',
+  'model/purchaseBatchSources.ts'
+].map((fileName) => readFileSync(
+  join(featuresDir, 'ali1688-sku-purchase-history', fileName),
   'utf8'
-)
+)).join('\n')
 const ali1688HistoricalOrders = [
   'Ali1688HistoricalOrdersPage.tsx',
   'components/Ali1688ProductLinkEditor.tsx',
