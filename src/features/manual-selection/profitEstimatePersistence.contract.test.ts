@@ -7,10 +7,13 @@ const apiSource = fs.readFileSync(
   path.resolve('src/features/selection-analysis/api.ts'),
   'utf8'
 )
-const modalSource = fs.readFileSync(
-  path.join(featureDir, 'components/ManualSelectionProfitEstimateModal.tsx'),
-  'utf8'
-)
+const modalSource = [
+  'components/ManualSelectionProfitEstimateModal.tsx',
+  'components/useManualSelectionProfitEstimateData.ts',
+  'components/manualSelectionProfitEstimateModel.tsx',
+  'components/ManualSelectionProfitEstimateForm.tsx',
+  'components/ManualSelectionProfitEstimateResults.tsx'
+].map((fileName) => fs.readFileSync(path.join(featureDir, fileName), 'utf8')).join('\n')
 
 assert(
   apiSource.includes('/profit-estimate')

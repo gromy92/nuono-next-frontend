@@ -37,10 +37,11 @@ assert.equal(rows[2].categoryPath, '暂无类目链接')
 assert.equal(rows[2].productUrl, 'https://www.noon.com/saudi-en/product/Z123/p/')
 
 const featureDir = path.resolve('src/features/manual-selection')
-const modalSource = fs.readFileSync(
-  path.join(featureDir, 'components/ManualSelectionProfitEstimateModal.tsx'),
-  'utf8'
-)
+const modalSource = [
+  'components/ManualSelectionProfitEstimateModal.tsx',
+  'components/ManualSelectionProfitEstimateForm.tsx',
+  'components/ManualSelectionCompetitorCategoryModal.tsx'
+].map((fileName) => fs.readFileSync(path.join(featureDir, fileName), 'utf8')).join('\n')
 
 assert(
   modalSource.includes('查看竞品类目') &&

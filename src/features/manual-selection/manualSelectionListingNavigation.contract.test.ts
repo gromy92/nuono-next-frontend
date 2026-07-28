@@ -48,11 +48,14 @@ const project: ManualSelectionAnalysisProjectView = {
   ]
 }
 
-const pageSource = readFileSync(new URL('./ManualSelectionPage.tsx', import.meta.url), 'utf8')
-if (!/buildManualSelectionGroupListingTarget\(project,\s*props\.storeCode\)/.test(pageSource)) {
+const pageSource = [
+  './ManualSelectionPage.tsx',
+  './hooks/useManualSelectionGroupActions.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
+if (!/buildManualSelectionGroupListingTarget\(project,\s*storeCode\)/.test(pageSource)) {
   throw new Error('formal manual-selection page must pass its store to the listing target')
 }
-if (!/openManualSelectionGroupListingInNewTab\(project,\s*props\.storeCode\)/.test(pageSource)) {
+if (!/openManualSelectionGroupListingInNewTab\(project,\s*storeCode\)/.test(pageSource)) {
   throw new Error('formal manual-selection popup must use the same source store')
 }
 

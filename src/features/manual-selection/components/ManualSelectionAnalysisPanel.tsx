@@ -1,43 +1,31 @@
-import {
-  BulbOutlined,
-  CalculatorOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  ReloadOutlined,
-  RocketOutlined
-} from '@ant-design/icons'
-import { Button, Empty, Image, Input, InputNumber, Modal, Popconfirm, Space, Table, Tag, Typography } from 'antd'
+import { BulbOutlined, CalculatorOutlined, EditOutlined, RocketOutlined } from '@ant-design/icons'
+import { Button, Empty, Image, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useState } from 'react'
 import type { ProductSelectionSourceCollection } from '../../source-collection/types'
 import { MANUAL_SELECTION_IMAGE_FALLBACK } from '../constants'
+import { ManualSelectionAnalysisCollectionOverview } from './ManualSelectionAnalysisCollectionOverview'
+import {
+  ManualSelectionAnalysisEditors,
+  type Ali1688EditorState,
+  type GroupNameEditorState
+} from './ManualSelectionAnalysisEditors'
+import {
+  ali1688CandidateCount,
+  collectionStatusColor,
+  projectCollectionStatusRows,
+  projectCompetitorCount,
+  recommendedCandidateCount,
+  sourceImageUrl
+} from './manualSelectionAnalysisPresentation'
 import type {
   ManualSelectionAli1688ProcurementInfo,
   ManualSelectionAnalysisProjectView,
   ManualSelectionCompetitor
 } from '../types'
-import {
-  formatManualSelectionCompleteness,
-  formatManualSelectionPriceSummary,
-  manualSelectionCollectionSourceLabel,
-  manualSelectionImageCandidates,
-  manualSelectionStatusText,
-} from '../utils'
+import { manualSelectionCollectionSourceLabel } from '../utils'
 
 const { Text } = Typography
-
-type Ali1688EditorState = {
-  groupId: string
-  groupName: string
-  purchaseUrl: string
-  purchasePrice?: number
-}
-
-type GroupNameEditorState = {
-  groupId: string
-  groupName: string
-  draftName: string
-}
 
 type ManualSelectionAnalysisPanelProps = {
   analyzingCollectionIds: string[]
@@ -55,181 +43,6 @@ type ManualSelectionAnalysisPanelProps = {
   onOpenListing: (project: ManualSelectionAnalysisProjectView) => void
   onOpenProfitEstimate: (project: ManualSelectionAnalysisProjectView) => void
   onRecollectCompetitor: (project: ManualSelectionAnalysisProjectView, competitor: ManualSelectionCompetitor) => void
-}
-
-function ali1688CandidateCount(record: ProductSelectionSourceCollection) {
-  return record.ali1688Collection?.candidateCount || record.ali1688Collection?.candidates?.length || 0
-}
-
-function recommendedCandidateCount(record: ProductSelectionSourceCollection) {
-  return record.ali1688Collection?.recommendedCount
-    ?? (record.ali1688Collection?.candidates || []).filter((candidate) => candidate.level === 'recommended').length
-}
-
-function sourceImageUrl(record: ProductSelectionSourceCollection) {
-  return manualSelectionImageCandidates(record)[0] || MANUAL_SELECTION_IMAGE_FALLBACK
-}
-
-function collectionOverviewText(record: ProductSelectionSourceCollection) {
-  const priceSummary = formatManualSelectionPriceSummary(record) || '未采集'
-  const completeness = formatManualSelectionCompleteness(record).basics.replace('基础信息：', '')
-  return `单价 ${priceSummary} 完整度 ${completeness} 平台 ${record.sourcePlatform || '-'} ${manualSelectionCollectionSourceLabel(record)}`
-}
-
-function competitorHost(competitor: ManualSelectionCompetitor) {
-  if (competitor.fetchedSourceHost) {
-    return competitor.fetchedSourceHost
-  }
-  if (!competitor.url) {
-    return ''
-  }
-  try {
-    return new URL(competitor.url).host
-  } catch {
-    return ''
-  }
-}
-
-function competitorPlatformLabel(competitor: ManualSelectionCompetitor) {
-  const host = competitorHost(competitor).toLowerCase()
-  if (host.includes('noon')) {
-    return 'Noon'
-  }
-  if (host.includes('amazon')) {
-    return 'Amazon'
-  }
-  return host.replace(/^www\./, '') || '链接'
-}
-
-function competitorPlatformTone(competitor: ManualSelectionCompetitor) {
-  const platform = competitorPlatformLabel(competitor).toLowerCase()
-  if (platform.includes('noon')) {
-    return 'is-noon'
-  }
-  if (platform.includes('amazon')) {
-    return 'is-amazon'
-  }
-  return 'is-link'
-}
-
-function competitorStatusLabel(status?: ManualSelectionCompetitor['fetchStatus']) {
-  if (status === 'success') {
-    return ''
-  }
-  if (status === 'failed') {
-    return '失败'
-  }
-  if (status === 'fetching') {
-    return '拉取中'
-  }
-  return '未拉取'
-}
-
-function competitorStatusTone(status?: ManualSelectionCompetitor['fetchStatus']) {
-  if (status === 'success') {
-    return 'is-success'
-  }
-  if (status === 'failed') {
-    return 'is-failed'
-  }
-  if (status === 'fetching') {
-    return 'is-fetching'
-  }
-  return 'is-pending'
-}
-
-function competitorPriceSummary(competitor: ManualSelectionCompetitor) {
-  const priceSummary = competitor.fetchedPriceSummary?.trim()
-  if (!priceSummary) {
-    return '未采集'
-  }
-  return formatManualSelectionPriceSummary({
-    id: competitor.id || '',
-    collectionNo: '',
-    sourceType: 'marketplace-url',
-    sourcePlatform: competitorPlatformLabel(competitor),
-    sourceUrl: competitor.url || '',
-    pageUrl: competitor.url || '',
-    sourceTitle: competitor.fetchedTitle || '',
-    sourceImageUrl: '',
-    imageUrls: [],
-    priceSummary,
-    specHints: [],
-    status: 'success',
-    statusText: '采集成功',
-    collectedAt: '',
-    collectedBy: '',
-    collectedFieldCount: 0,
-    imageCount: 0
-  } as ProductSelectionSourceCollection) || priceSummary
-}
-
-function competitorCompletenessSummary(competitor: ManualSelectionCompetitor) {
-  return competitor.fetchedCompleteness || (competitor.fetchStatus === 'success' ? '已拉取' : '未采集')
-}
-
-function competitorCollectionSourceSummary(competitor: ManualSelectionCompetitor) {
-  return competitor.fetchedCollectionSource || '手动链接'
-}
-
-function competitorOverviewText(competitor: ManualSelectionCompetitor) {
-  const platform = competitorPlatformLabel(competitor)
-  return `单价 ${competitorPriceSummary(competitor)} / 完整度 ${competitorCompletenessSummary(competitor)} / 平台 ${platform} / 来源 ${competitorCollectionSourceSummary(competitor)}`
-}
-
-function projectCompetitorCount(project: ManualSelectionAnalysisProjectView) {
-  return project.records.length + (project.competitors?.length || 0)
-}
-
-function projectCollectionStatusRows(project: ManualSelectionAnalysisProjectView) {
-  const records = project.records || []
-  const statusLabel = collectionStatusSummaryLabel(records)
-  return uniqueTexts([
-    statusLabel,
-    ...records.map(collectionSourceTypeLabel),
-    ...records.map(manualSelectionCollectionSourceLabel)
-  ].filter(Boolean))
-}
-
-function collectionStatusSummaryLabel(records: ProductSelectionSourceCollection[]) {
-  if (records.some((record) => record.status === 'failed')) {
-    return '失败'
-  }
-  if (records.some((record) => record.status === 'running')) {
-    return '采集中'
-  }
-  if (records.length && records.every((record) => record.status === 'success')) {
-    return '成功'
-  }
-  return records[0] ? manualSelectionStatusText(records[0].status) : '未采集'
-}
-
-function collectionSourceTypeLabel(record: ProductSelectionSourceCollection) {
-  const normalized = (record.sourceType || '').toLowerCase()
-  if (normalized.includes('marketplace') || normalized.includes('url')) {
-    return '浏览器'
-  }
-  if (normalized.includes('plugin') || normalized.includes('extension')) {
-    return '插件'
-  }
-  return record.sourceType || ''
-}
-
-function collectionStatusColor(label: string) {
-  if (label === '成功') {
-    return 'green'
-  }
-  if (label === '失败') {
-    return 'red'
-  }
-  if (label === '采集中') {
-    return 'processing'
-  }
-  return 'default'
-}
-
-function uniqueTexts(values: string[]) {
-  return values.filter((value, index, list) => value && list.indexOf(value) === index)
 }
 
 export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanelProps) {
@@ -330,122 +143,14 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
       key: 'collectionOverview',
       width: 690,
       render: (_, project) => (
-        <div
-            className="manual-selection-analysis-collection-overview"
-            data-testid="manual-selection-analysis-collection-overview"
-          >
-          {project.records.map((record) => (
-              <button
-                key={record.id}
-                type="button"
-                className="manual-selection-analysis-competitor-overview-row"
-                title={collectionOverviewText(record)}
-                onClick={() => onOpenCompetitorDetail(project, { kind: 'collection', id: record.id })}
-              >
-                <span className="manual-selection-analysis-competitor-platform is-collected">
-                  {record.sourcePlatform || '平台'}
-                </span>
-                <span className="manual-selection-analysis-competitor-status is-success">
-                  {manualSelectionCollectionSourceLabel(record)}
-                </span>
-                <span className="manual-selection-analysis-competitor-summary">
-                  {collectionOverviewText(record)}
-                </span>
-              </button>
-            ))}
-            {project.competitors?.map((competitor, index) => {
-              const focusId = competitor.id || competitor.url || String(index)
-              const isFailed = competitor.fetchStatus === 'failed'
-              const isSuccess = competitor.fetchStatus === 'success'
-              const recollecting = Boolean(competitor.id && recollectingCompetitorIds.includes(`${project.projectId}:${competitor.id}`))
-              const deleting = Boolean(competitor.id && deletingCompetitorIds.includes(`${project.projectId}:${competitor.id}`))
-              return (
-                <div
-                  key={focusId}
-                  className="manual-selection-analysis-competitor-overview-row has-action"
-                >
-                  <button
-                    type="button"
-                    className={`manual-selection-analysis-competitor-overview-main${isFailed ? ' has-status' : ''}`}
-                    title={competitorOverviewText(competitor)}
-                    onClick={() => onOpenCompetitorDetail(project, {
-                      kind: 'link',
-                      id: focusId
-                    })}
-                  >
-                    <span className={`manual-selection-analysis-competitor-platform ${competitorPlatformTone(competitor)}`}>
-                      {competitorPlatformLabel(competitor)}
-                    </span>
-                    {isFailed ? (
-                      <span className={`manual-selection-analysis-competitor-status ${competitorStatusTone(competitor.fetchStatus)}`}>
-                        {competitorStatusLabel(competitor.fetchStatus)}
-                      </span>
-                    ) : null}
-                    <span className="manual-selection-analysis-competitor-summary">
-                      <span className="manual-selection-analysis-competitor-field">
-                        <b>单价</b>
-                        <span className={`manual-selection-analysis-competitor-value${isSuccess ? ' is-success' : ''}`}>
-                          {competitorPriceSummary(competitor)}
-                        </span>
-                      </span>
-                      <span className="manual-selection-analysis-competitor-field">
-                        <b>完整度</b>
-                        <span className={`manual-selection-analysis-competitor-value${isSuccess ? ' is-success' : ''}`}>
-                          {competitorCompletenessSummary(competitor)}
-                        </span>
-                      </span>
-                      <span className="manual-selection-analysis-competitor-field">
-                        <b>平台</b>
-                        <span className={`manual-selection-analysis-competitor-value${isSuccess ? ' is-success' : ''}`}>
-                          {competitorPlatformLabel(competitor)}
-                        </span>
-                      </span>
-                      <span className="manual-selection-analysis-competitor-field">
-                        <b>来源</b>
-                        <span className={`manual-selection-analysis-competitor-value${isSuccess ? ' is-success' : ''}`}>
-                          {competitorCollectionSourceSummary(competitor)}
-                        </span>
-                      </span>
-                    </span>
-                  </button>
-                  <span className="manual-selection-analysis-competitor-actions">
-                    {isFailed ? (
-                      <Button
-                        size="small"
-                        icon={<ReloadOutlined />}
-                        loading={recollecting}
-                        disabled={!competitor.id || deleting}
-                        className="manual-selection-analysis-competitor-recollect"
-                        onClick={() => onRecollectCompetitor(project, competitor)}
-                      >
-                        重新采集
-                      </Button>
-                    ) : null}
-                    <Popconfirm
-                      title="删除竞品"
-                      description="确认删除这条竞品吗？"
-                      okText="删除"
-                      cancelText="取消"
-                      okButtonProps={{ danger: true }}
-                      onConfirm={() => onDeleteCompetitor(project, competitor)}
-                    >
-                      <Button
-                        danger
-                        size="small"
-                        type="text"
-                        icon={<DeleteOutlined />}
-                        loading={deleting}
-                        disabled={!competitor.id || recollecting}
-                        className="manual-selection-analysis-competitor-delete"
-                        aria-label="删除竞品"
-                      />
-                    </Popconfirm>
-                  </span>
-                </div>
-              )
-            })}
-            {!project.records.length && !project.competitors?.length ? <Text type="secondary">暂无采集</Text> : null}
-        </div>
+        <ManualSelectionAnalysisCollectionOverview
+          project={project}
+          deletingCompetitorIds={deletingCompetitorIds}
+          recollectingCompetitorIds={recollectingCompetitorIds}
+          onDeleteCompetitor={onDeleteCompetitor}
+          onOpenCompetitorDetail={onOpenCompetitorDetail}
+          onRecollectCompetitor={onRecollectCompetitor}
+        />
       )
     },
     {
@@ -535,38 +240,6 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
     }
   ]
 
-  const handleSaveGroupName = async () => {
-    if (!groupNameEditor) {
-      return
-    }
-    const nextName = groupNameEditor.draftName.trim()
-    if (!nextName) {
-      setGroupNameError('组名不能为空')
-      return
-    }
-    setGroupNameSaving(true)
-    setGroupNameError('')
-    try {
-      await onChangeGroupName(groupNameEditor.groupId, nextName)
-      setGroupNameEditor(null)
-    } catch (error) {
-      setGroupNameError(error instanceof Error ? error.message : '保存组名失败')
-    } finally {
-      setGroupNameSaving(false)
-    }
-  }
-
-  const handleSaveAli1688Editor = () => {
-    if (!ali1688Editor) {
-      return
-    }
-    onChangeGroupProcurementInfo(ali1688Editor.groupId, {
-      purchaseUrl: ali1688Editor.purchaseUrl,
-      purchasePrice: ali1688Editor.purchasePrice
-    })
-    setAli1688Editor(null)
-  }
-
   return (
     <div className="manual-selection-analysis">
       <div className="manual-selection-analysis-metrics">
@@ -608,85 +281,18 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
         <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无选品分析商品" />
       )}
 
-      <Modal
-        title="编辑组名"
-        open={Boolean(groupNameEditor)}
-        width={480}
-        okText="保存"
-        cancelText="取消"
-        confirmLoading={groupNameSaving}
-        onCancel={() => {
-          if (!groupNameSaving) {
-            setGroupNameEditor(null)
-            setGroupNameError('')
-          }
-        }}
-        onOk={() => void handleSaveGroupName()}
-        destroyOnClose
-      >
-        {groupNameEditor ? (
-          <div className="manual-selection-group-name-editor">
-            <label htmlFor="manual-selection-group-name-input">组名</label>
-            <Input
-              id="manual-selection-group-name-input"
-              allowClear
-              maxLength={200}
-              value={groupNameEditor.draftName}
-              onChange={(event) => {
-                setGroupNameError('')
-                setGroupNameEditor((current) => current
-                  ? { ...current, draftName: event.target.value }
-                  : current)
-              }}
-              onPressEnter={() => void handleSaveGroupName()}
-            />
-            {groupNameError ? (
-              <Text type="danger">{groupNameError}</Text>
-            ) : null}
-          </div>
-        ) : null}
-      </Modal>
-
-      <Modal
-        title="编辑1688信息"
-        open={Boolean(ali1688Editor)}
-        width={520}
-        okText="保存"
-        cancelText="取消"
-        onCancel={() => setAli1688Editor(null)}
-        onOk={handleSaveAli1688Editor}
-        destroyOnClose
-      >
-        {ali1688Editor ? (
-          <div className="manual-selection-analysis-ali1688-editor">
-            <label>
-              <span>采购链接</span>
-              <Input
-                allowClear
-                placeholder="https://detail.1688.com/offer/..."
-                value={ali1688Editor.purchaseUrl}
-                onChange={(event) => setAli1688Editor((current) => current
-                  ? { ...current, purchaseUrl: event.target.value }
-                  : current)}
-              />
-            </label>
-            <label>
-              <span>采购单价</span>
-              <InputNumber
-                min={0}
-                precision={2}
-                addonAfter="RMB"
-                placeholder="单价"
-                value={ali1688Editor.purchasePrice}
-                style={{ width: '100%' }}
-                onChange={(value) => setAli1688Editor((current) => current
-                  ? { ...current, purchasePrice: typeof value === 'number' ? value : undefined }
-                  : current)}
-              />
-            </label>
-          </div>
-        ) : null}
-      </Modal>
+      <ManualSelectionAnalysisEditors
+        ali1688Editor={ali1688Editor}
+        setAli1688Editor={setAli1688Editor}
+        groupNameEditor={groupNameEditor}
+        setGroupNameEditor={setGroupNameEditor}
+        groupNameSaving={groupNameSaving}
+        setGroupNameSaving={setGroupNameSaving}
+        groupNameError={groupNameError}
+        setGroupNameError={setGroupNameError}
+        onChangeGroupProcurementInfo={onChangeGroupProcurementInfo}
+        onChangeGroupName={onChangeGroupName}
+      />
     </div>
   )
 }
