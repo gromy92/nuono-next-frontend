@@ -16,11 +16,11 @@ import {
   normalizeStringList,
   pickAttributeValue,
   productHistoryEntryMeta,
-  productSyncStatusMeta,
   siteOfferEditableFieldsEqual,
   siteOfferCode,
   textInputValue
 } from '../utils';
+import { productSyncStatusMeta } from '../../product-baseline';
 import type {
   ProductDetailTabRequest,
   ProductListRowPayload,

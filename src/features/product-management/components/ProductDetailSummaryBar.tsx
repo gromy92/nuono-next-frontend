@@ -2,8 +2,9 @@ import { ExportOutlined } from '@ant-design/icons';
 import { Button } from 'antd';
 import type { ReactNode } from 'react';
 import type { ProductMasterSnapshotPayload, ProductSummarySurface } from '../types';
-import { buildNoonCatalogProductUrl, buildNoonProductUrl } from '../utils';
-import { ProductBaselineHeader } from './ProductBaselineDisplay';
+import { buildNoonCatalogProductUrl } from '../utils';
+import { buildNoonProductUrl } from '../../product-baseline';
+import { ProductBaselineHeader } from './ProductBaselineHeader';
 
 type ProductDetailSummaryBarProps = {
   summary?: ProductSummarySurface | null;

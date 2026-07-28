@@ -4,7 +4,6 @@ import { Button, Dropdown, message, Popconfirm, Popover, Space, Switch, Tag, Too
 import { MOCK_PRODUCT_LIST_UI_STATES } from '../mockData';
 import type { ProductListRowPayload, ProductListUiState, ProductOperationStageCode } from '../types';
 import {
-  buildProductSummarySurfaceFromListItem,
   formatDateTimeParts,
   getProductListRowIdentityKey,
   hasProductBlockingIssues,
@@ -13,9 +12,9 @@ import {
   productDetailBaselineStatusMeta,
   productListIssueTags,
   productIssueTagLabel,
-  productSummaryPrimaryLiveStatus,
-  productSyncStatusMeta
+  productSummaryPrimaryLiveStatus
 } from '../utils';
+import { buildProductSummarySurfaceFromListItem, productSyncStatusMeta } from '../../product-baseline';
 import {
   PRODUCT_OPERATION_STAGE_SELECT_OPTIONS,
   normalizeProductOperationStageCode,

@@ -4,11 +4,11 @@ import type { FormInstance } from 'antd';
 import { openProductWorkbenchSnapshot } from '../api';
 import { findMockProductItem } from '../mockData';
 import {
-  buildProductSummarySurfaceFromListItem,
   buildProductWorkbenchContext,
   cloneSnapshotPayload,
   findProductByIdentity
 } from '../utils';
+import { buildProductSummarySurfaceFromListItem } from '../../product-baseline';
 import type {
   ProductListRowPayload,
   ProductListUiState,

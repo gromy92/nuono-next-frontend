@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ProductListRowPayload, ProductListSummaryPayload } from './types';
-import { buildProductSummarySurfaceFromListItem, mergeProductListItemWithSummary } from './utils/summary';
+import { buildProductSummarySurfaceFromListItem } from '../product-baseline';
+import { mergeProductListItemWithSummary } from './utils/summary';
 
 const productManagementDir = dirname(fileURLToPath(import.meta.url));
 

@@ -15,7 +15,7 @@ import {
   nowSyncTime,
   textInputValue
 } from './common';
-import { productSyncStatusMeta } from './status';
+import { productSyncStatusMeta } from '../../product-baseline';
 
 const ACTIVE_PUBLISH_TASK_STATUSES = new Set([
   'queued',

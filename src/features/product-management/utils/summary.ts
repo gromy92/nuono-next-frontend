@@ -1,6 +1,12 @@
 import type { ProductListSummaryPayload, ProductSummarySurface, ProductWorkbenchState, StoreInitializationPayload } from '../types';
+import {
+  buildProductSummarySurfaceFromListItem,
+  mergeGalleryImageUrls,
+  productSummaryPrimarySite,
+  productSummaryTitle
+} from '../../product-baseline';
 import { barcodeFromKeyAttributes } from './barcode';
-import { mergeGalleryImageUrls, normalizeProductSyncStatus, textInputValue } from './common';
+import { normalizeProductSyncStatus, textInputValue } from './common';
 import { getProductCurrentZCode, isSameStableProductIdentity } from './productIdentity';
 
 function hasOwnField<T extends object>(value: T, field: PropertyKey) {
@@ -120,63 +126,6 @@ export function mergeSampleProductWithSummary(
       : current.operationStageCode,
     operationStageUpdatedAt: summary.operationStageUpdatedAt ?? current.operationStageUpdatedAt,
     operationStageUpdatedBy: summary.operationStageUpdatedBy ?? current.operationStageUpdatedBy
-  };
-}
-
-export function buildProductSummarySurfaceFromListItem(
-  item: StoreInitializationPayload['productItems'][number]
-): ProductSummarySurface {
-  return {
-    skuParent: item.skuParent,
-    currentZCode: item.currentZCode ?? item.skuParent,
-    productMasterId: item.productMasterId,
-    productVariantId: item.productVariantId,
-    productSiteOfferId: item.productSiteOfferId,
-    productSourceType: item.productSourceType,
-    partnerSku: item.partnerSku,
-    pskuCode: item.pskuCode,
-    offerCode: item.offerCode,
-    storeCode: item.referenceStoreCode,
-    title: item.title,
-    titleCn: item.titleCn,
-    brand: item.brand,
-    imageUrl: item.imageUrl,
-    galleryImages: mergeGalleryImageUrls(item.galleryImages, item.imageUrl),
-    barcode: item.barcode,
-    currency: item.currency,
-    referencePrice: item.referencePrice,
-    originalPrice: item.originalPrice,
-    salePrice: item.salePrice,
-    productFulltype: item.productFulltype,
-    skuGroup: item.skuGroup,
-    groupRef: item.groupRef,
-    groupRefCanonical: item.groupRefCanonical,
-    liveStatus: item.liveStatus,
-    statusCode: item.statusCode,
-    isActive: item.isActive,
-    maintenanceEnabled: item.maintenanceEnabled,
-    listingStartedAt: item.listingStartedAt,
-    listingStartedSource: item.listingStartedSource,
-    operationStageCode: item.operationStageCode,
-    operationStageUpdatedAt: item.operationStageUpdatedAt,
-    operationStageUpdatedBy: item.operationStageUpdatedBy,
-    syncStatus: item.syncStatus,
-    lastSyncedAt: item.lastSyncedAt,
-    lastDraftSavedAt: item.lastDraftSavedAt,
-    detailBaselineStatus: item.detailBaselineStatus,
-    detailBaselineMessage: item.detailBaselineMessage,
-    detailBaselineSyncedAt: item.detailBaselineSyncedAt,
-    variantCount: item.variantCount,
-    siteOfferCount: item.siteOfferCount,
-    siteLabels: item.siteLabels,
-    liveStatuses: item.liveStatuses,
-    totalFbnStock: item.totalFbnStock,
-    totalSupermallStock: item.totalSupermallStock,
-    totalFbpStock: item.totalFbpStock,
-    viewsCount: item.viewsCount,
-    unitsSold: item.unitsSold,
-    salesAmount: item.salesAmount,
-    salesCurrency: item.salesCurrency
   };
 }
 
@@ -391,16 +340,8 @@ export function buildProductSummarySurfaceFromWorkbench(
   };
 }
 
-export function productSummaryPrimarySite(summary: ProductSummarySurface) {
-  return summary.siteLabels[0] || summary.storeCode || '-';
-}
-
 export function productSummaryPriceLine(summary: ProductSummarySurface) {
   return summary.referencePrice ? `${summary.currency || ''} ${summary.referencePrice}`.trim() : '-';
-}
-
-export function productSummaryTitle(summary: ProductSummarySurface) {
-  return summary.title || summary.partnerSku || getProductCurrentZCode(summary);
 }
 
 export function productSummaryIdentityLine(summary: ProductSummarySurface) {

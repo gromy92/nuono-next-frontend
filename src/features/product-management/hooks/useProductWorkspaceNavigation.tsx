@@ -3,7 +3,8 @@ import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { FormInstance } from 'antd';
 import { findMockProductItem } from '../mockData';
 import { isSameProductDetailRequest } from '../workspaceHelpers';
-import { buildProductSummarySurfaceFromListItem, buildProductWorkbenchContext, findProductByIdentity } from '../utils';
+import { buildProductWorkbenchContext, findProductByIdentity } from '../utils';
+import { buildProductSummarySurfaceFromListItem } from '../../product-baseline';
 import type {
   ProductDetailTabMode,
   ProductDetailTabRequest,
@@ -20,7 +21,6 @@ import type { AuthSession } from '../../auth/session';
 import { useProductDetailTabLifecycle } from './useProductDetailTabLifecycle';
 import { useProductDetailSwitchConfirm } from './useProductDetailSwitchConfirm';
 import { useProductWorkspaceReset } from './useProductWorkspaceReset';
-
 type ProductQuickOpenSample = {
   skuParent: string;
   currentZCode?: string;

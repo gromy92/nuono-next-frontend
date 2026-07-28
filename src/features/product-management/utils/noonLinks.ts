@@ -1,37 +1,5 @@
-import type { ProductMasterSnapshotPayload, ProductSummarySurface } from '../types';
+import type { ProductMasterSnapshotPayload } from '../types';
 import { textInputValue } from './common';
-import { productSummaryPrimarySite, productSummaryTitle } from './summary';
-
-function noonLocaleFromSite(site: string) {
-  const normalized = site.trim().toUpperCase();
-  if (normalized === 'SA' || normalized === 'KSA' || /(?:^|[-_])N?SA$/.test(normalized)) {
-    return 'saudi-en';
-  }
-  if (normalized === 'AE' || normalized === 'UAE' || /(?:^|[-_])N?AE$/.test(normalized)) {
-    return 'uae-en';
-  }
-  return 'uae-en';
-}
-
-function noonSlugFromTitle(title: string) {
-  const slug = title
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return slug || 'product';
-}
-
-export function buildNoonProductUrl(summary: ProductSummarySurface) {
-  const skuParent = textInputValue(summary.skuParent).trim();
-  if (!skuParent) {
-    return undefined;
-  }
-  const locale = noonLocaleFromSite(productSummaryPrimarySite(summary));
-  const slug = noonSlugFromTitle(productSummaryTitle(summary));
-  return `https://www.noon.com/${locale}/${slug}/${encodeURIComponent(skuParent)}/p/`;
-}
 
 function firstTextValue(...values: unknown[]) {
   for (const value of values) {

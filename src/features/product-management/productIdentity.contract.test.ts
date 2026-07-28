@@ -228,14 +228,14 @@ assert.equal(
 );
 
 const baselineDisplaySource = readFileSync(
-  new URL('./components/ProductBaselineDisplay.tsx', import.meta.url),
+  new URL('../product-baseline/ProductBaselineListCell.tsx', import.meta.url),
   'utf8'
 );
 
 assert.equal(
   baselineDisplaySource.includes('summary.partnerSku || summary.pskuCode'),
   false,
-  'ProductBaselineDisplay must not display external pskuCode as business PSKU fallback'
+  'ProductBaselineListCell must not display external pskuCode as business PSKU fallback'
 );
 
 const productDeleteRow = {

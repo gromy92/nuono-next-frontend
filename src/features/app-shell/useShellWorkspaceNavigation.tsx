@@ -5,7 +5,7 @@ import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
 import type { ProductSummarySurface } from '../product-domain/productSummaryTypes';
 import type { ProductDetailTabRequest, ProductWorkspaceTabKey } from '../product-management/types';
-import { productSummaryPrimarySite, productSyncStatusMeta } from '../product-management/utils';
+import { productSummaryPrimarySite, productSyncStatusMeta } from '../product-baseline';
 import type { SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
 import {

@@ -2,18 +2,20 @@ import { Button, List, Space, Tag, Typography } from 'antd';
 import type { ProductSummarySurface } from '../types';
 import {
   formatDateTimeParts,
-  isProductNotListedSource,
   isLiveStatusActive,
-  productListingStartedSourceLabel,
   productLiveStatusLabel,
   productSummaryIdentityLine,
   productSummaryPriceLine,
-  productSummaryPrimaryLiveStatus,
+  productSummaryPrimaryLiveStatus
+} from '../utils';
+import {
+  isProductNotListedSource,
+  ProductBaselineIdentity,
+  productListingStartedSourceLabel,
   productSummaryPrimarySite,
   productSummaryTitle,
   productSyncStatusMeta
-} from '../utils';
-import { ProductBaselineIdentity } from '../../product-baseline';
+} from '../../product-baseline';
 
 const { Text } = Typography;
 

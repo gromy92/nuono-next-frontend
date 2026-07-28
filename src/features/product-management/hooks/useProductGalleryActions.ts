@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { openProductWorkbenchSnapshot } from '../api';
-import { getProductCurrentZCode, mergeGalleryImageUrls, productSummaryTitle } from '../utils';
+import { getProductCurrentZCode } from '../utils';
+import { mergeGalleryImageUrls, productSummaryTitle } from '../../product-baseline';
 import type {
   ProductListSummaryPayload,
   ProductMasterSnapshotPayload,

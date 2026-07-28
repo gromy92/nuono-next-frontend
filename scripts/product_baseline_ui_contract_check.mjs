@@ -83,32 +83,32 @@ assert.match(
   'Shared ProductImageThumb should append a jpg extension when Noon pzsku image keys have no extension'
 );
 
-const baselineComponentPath = 'src/features/product-management/components/ProductBaselineDisplay.tsx';
+const baselineListCellPath = 'src/features/product-baseline/ProductBaselineListCell.tsx';
 assert.equal(
-  existsSync(file(baselineComponentPath)),
+  existsSync(file(baselineListCellPath)),
   true,
-  'ProductBaselineDisplay component file should exist'
+  'Shared ProductBaselineListCell module should exist'
 );
 
-const baselineComponent = read(baselineComponentPath);
-for (const exportName of ['ProductBaselineListCell', 'ProductBaselineHeader']) {
-  assert.match(
-    baselineComponent,
-    new RegExp(`export function ${exportName}\\b`),
-    `${exportName} should be exported from ProductBaselineDisplay`
-  );
-}
+const baselineListCell = read(baselineListCellPath);
 assert.match(
-  baselineComponent,
-  /from ['"]\.\.\/\.\.\/product-baseline['"]/,
-  'Product management baseline display should consume the shared product baseline module'
+  baselineListCell,
+  /export function ProductBaselineListCell\b/,
+  'ProductBaselineListCell should be exported from the shared product baseline module'
 );
 assert.doesNotMatch(
-  baselineComponent,
+  baselineListCell,
   /height\s*=\s*84/,
   'ProductImageThumb should not default to a square 84x84 thumbnail'
 );
 
+const baselineHeaderPath = 'src/features/product-management/components/ProductBaselineHeader.tsx';
+assert.equal(existsSync(file(baselineHeaderPath)), true, 'Product management baseline header should exist');
+assert.match(
+  read(baselineHeaderPath),
+  /export function ProductBaselineHeader\b/,
+  'ProductBaselineHeader should remain a product-management implementation'
+);
 const productListCells = read('src/features/product-management/components/ProductListIdentityCells.tsx');
 assert.match(
   productListCells,

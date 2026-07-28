@@ -1,6 +1,5 @@
 import type { ProductLastPublishTaskPayload, ProductListRowPayload } from '../types';
-import { isProductNotListedSource } from './common';
-import { normalizeProductSourceType } from './productSourceType';
+import { isProductNotListedSource, normalizeProductSourceType } from '../../product-baseline';
 
 export type ProductRebuildActionState = {
   disabled: boolean;

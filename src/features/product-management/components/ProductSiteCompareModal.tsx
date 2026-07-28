@@ -4,11 +4,10 @@ import type { ProductManagementWorkspace } from '../workspaceTypes';
 import {
   closedProductSiteCompareModalState,
   formatSnapshotValue,
-  productSummaryTitle,
   siteOfferCode
 } from '../utils';
 import { createProductSiteCompareColumns } from './ProductSiteCompareModal.helpers';
-import { ProductBaselineIdentity } from '../../product-baseline';
+import { ProductBaselineIdentity, productSummaryTitle } from '../../product-baseline';
 
 type ProductSiteCompareModalProps = {
   workspace: ProductManagementWorkspace;

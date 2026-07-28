@@ -1,7 +1,7 @@
 import { Input, Space, Tag, Typography } from 'antd';
 import type { ProductListRowPayload } from '../types';
 import { formatSnapshotValue, normalizeNoonImageUrl } from '../utils';
-import { ProductImageThumb } from '../components/ProductBaselineDisplay';
+import { ProductImageThumb } from '../../product-baseline';
 import type { ProductGroupRow } from './productGroupRows';
 
 const { Text } = Typography;

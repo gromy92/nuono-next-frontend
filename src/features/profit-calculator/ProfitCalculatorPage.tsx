@@ -4,13 +4,13 @@ import { useState, type Key } from 'react';
 import { ReloadOutlined } from '@ant-design/icons';
 import type { AuthSessionStore } from '../auth/session';
 import type { ProductListRowPayload } from '../product-domain/productListTypes';
-import { ProductBaselineListCell } from '../product-management/components/ProductBaselineDisplay';
-import type { OrderFinanceOrderGroup, OrderFinanceTransactionLine } from '../order-finance/types';
 import {
   buildNoonProductUrl,
   buildProductSummarySurfaceFromListItem,
-  mergeGalleryImageUrls
-} from '../product-management/utils';
+  mergeGalleryImageUrls,
+  ProductBaselineListCell
+} from '../product-baseline';
+import type { OrderFinanceOrderGroup, OrderFinanceTransactionLine } from '../order-finance/types';
 import {
   formatMoney,
   type ActualCommissionSnapshot,

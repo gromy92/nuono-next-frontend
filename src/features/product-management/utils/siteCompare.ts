@@ -3,10 +3,8 @@ import type {
   ProductSiteCompareModalState,
   ProductWorkbenchPayload
 } from '../types';
-import {
-  buildProductSummarySurfaceFromListItem,
-  buildProductSummarySurfaceFromWorkbench
-} from './summary';
+import { buildProductSummarySurfaceFromWorkbench } from './summary';
+import { buildProductSummarySurfaceFromListItem } from '../../product-baseline';
 import {
   cloneRecordList,
   siteOfferCode,

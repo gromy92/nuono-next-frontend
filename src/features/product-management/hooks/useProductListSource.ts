@@ -2,13 +2,13 @@ import { useMemo } from 'react';
 import { EMPTY_PRODUCT_ITEMS, MOCK_PRODUCT_ITEMS, mockSampleProducts } from '../mockData';
 import { shouldEnableProductMockFallback, storeInitializationStatusMeta } from '../workspaceHelpers';
 import {
-  buildProductSummarySurfaceFromListItem,
   buildProductSummarySurfaceFromSample,
   getProductIdentityLookupKeys,
   isProductInitializationFailureStatus,
   isProductListDatasetReady,
   resolveProductInitializationStatus
 } from '../utils';
+import { buildProductSummarySurfaceFromListItem } from '../../product-baseline';
 import type { ProductListDatasetState, StoreInitializationState } from '../types';
 
 type UseProductListSourceParams = {

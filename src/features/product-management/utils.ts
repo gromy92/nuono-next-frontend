@@ -4,7 +4,6 @@ export * from './utils/fieldDomain';
 export * from './utils/noonLinks';
 export * from './utils/operationStage';
 export * from './utils/productIdentity';
-export * from './utils/productSourceType';
 export * from './utils/productMasterSnapshotFactory';
 export * from './utils/productListFilters';
 export * from './utils/siteCompare';

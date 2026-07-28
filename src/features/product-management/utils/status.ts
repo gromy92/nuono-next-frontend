@@ -75,19 +75,6 @@ export function resolveProductInitializationMessage(
   return undefined;
 }
 
-export function productSyncStatusMeta(status: 'synced' | 'draft' | 'conflict' | 'failed') {
-  if (status === 'draft') {
-    return { label: '本地草稿', color: 'processing' as const };
-  }
-  if (status === 'conflict') {
-    return { label: '本地草稿', color: 'processing' as const };
-  }
-  if (status === 'failed') {
-    return { label: '同步失败', color: 'error' as const };
-  }
-  return { label: '已同步', color: 'success' as const };
-}
-
 export function productDetailBaselineStatusMeta(status: unknown) {
   const normalized = String(status ?? '').trim().toLowerCase();
   if (normalized === 'ready') {

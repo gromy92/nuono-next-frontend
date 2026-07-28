@@ -5,13 +5,12 @@ import { fetchProductHistory } from '../api';
 import { MOCK_PRODUCT_LIST_UI_STATES } from '../mockData';
 import { buildProductHistoryFallback } from '../workspaceHelpers';
 import {
-  buildProductSummarySurfaceFromListItem,
   buildProductSummarySurfaceFromListSummary,
   getProductCurrentZCode,
   getProductListRowIdentityKey,
-  productHistoryEntryMeta,
-  productSummaryTitle
+  productHistoryEntryMeta
 } from '../utils';
+import { buildProductSummarySurfaceFromListItem, productSummaryTitle } from '../../product-baseline';
 import type {
   ProductListSummaryPayload,
   ProductListUiState,

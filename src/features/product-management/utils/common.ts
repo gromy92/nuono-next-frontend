@@ -58,42 +58,6 @@ export function formatDateTimeParts(value?: string) {
   };
 }
 
-export function productListingStartedSourceLabel(source?: string): string {
-  const normalized = String(source ?? '').trim().toLowerCase();
-  if (normalized.startsWith('product_rebuild_inherited')) {
-    const inheritedSource = normalized.includes(':') ? normalized.split(':').slice(1).join(':') : '';
-    const inheritedLabel: string = productListingStartedSourceLabel(inheritedSource);
-    return inheritedLabel ? `重建继承 · ${inheritedLabel}` : '重建继承';
-  }
-  if (normalized === 'not_listed') {
-    return '未上架';
-  }
-  if (normalized === 'data_missing') {
-    return '数据缺失';
-  }
-  if (normalized === 'pv') {
-    return 'PV';
-  }
-  if (normalized === 'inventory') {
-    return '库存';
-  }
-  if (normalized === 'sales') {
-    return '销量';
-  }
-  if (normalized === 'purchase') {
-    return '采购';
-  }
-  if (normalized === 'fallback_current_time') {
-    return '未上架';
-  }
-  return source || '';
-}
-
-export function isProductNotListedSource(source?: string) {
-  const normalized = String(source ?? '').trim().toLowerCase();
-  return normalized === 'not_listed' || normalized === 'fallback_current_time';
-}
-
 export function snapshotPayloadCore(payload: ProductMasterSnapshotPayload | ProductWorkbenchPayload): ProductMasterSnapshotPayload {
   return createProductMasterSnapshotPayload(payload);
 }
@@ -147,36 +111,6 @@ export function normalizeSnapshotTextList(value: unknown) {
   }
   const normalized = String(value).trim();
   return normalized ? [normalized] : [];
-}
-
-function galleryImageDedupeKey(value: string) {
-  const normalized = value.trim().toLowerCase();
-  const uuidMatch = normalized.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-  if (uuidMatch) {
-    return uuidMatch[0].toLowerCase();
-  }
-
-  return normalized.replace(/[?#].*$/, '');
-}
-
-export function mergeGalleryImageUrls(...values: unknown[]) {
-  const seen = new Set<string>();
-  const result: string[] = [];
-
-  values.forEach((value) => {
-    const candidates = Array.isArray(value) ? value : value ? [value] : [];
-    candidates.forEach((item) => {
-      const normalized = normalizeNoonImageUrl(item);
-      const dedupeKey = normalized ? galleryImageDedupeKey(normalized) : '';
-      if (!normalized || seen.has(dedupeKey)) {
-        return;
-      }
-      seen.add(dedupeKey);
-      result.push(normalized);
-    });
-  });
-
-  return result;
 }
 
 export function textInputValue(value: unknown) {

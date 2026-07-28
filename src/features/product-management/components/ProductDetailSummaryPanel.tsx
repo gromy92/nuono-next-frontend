@@ -5,11 +5,11 @@ import {
   isPublicDetailReadonlyWorkbench,
   getProductCurrentZCode,
   isLocalDraftNoonCode,
-  isProductNotListedSource,
   isProductPublishTaskActive,
   isProductPublishTaskNeedsAttention,
   textInputValue
 } from '../utils';
+import { isProductNotListedSource } from '../../product-baseline';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 import { buildProductDetailListingTarget } from '../utils/productDetailListingNavigation';
 import { ProductDetailSummaryBar } from './ProductDetailSummaryBar';

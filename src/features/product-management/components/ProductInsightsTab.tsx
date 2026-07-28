@@ -1,7 +1,7 @@
 import { Col, Empty, Row, Select, Space, Tag, Typography } from 'antd';
-import { formatSnapshotValue, productSummaryTitle } from '../utils';
+import { formatSnapshotValue } from '../utils';
 import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
-import { ProductBaselineIdentity } from '../../product-baseline';
+import { ProductBaselineIdentity, productSummaryTitle } from '../../product-baseline';
 
 const { Text } = Typography;
 

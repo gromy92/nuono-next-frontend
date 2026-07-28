@@ -6,11 +6,11 @@ import type { ProductListRowPayload, ProductOperationStageCode } from '../types'
 import {
   buildNoonProductUrl,
   buildProductSummarySurfaceFromListItem,
-  mergeGalleryImageUrls
-} from '../utils';
+  mergeGalleryImageUrls,
+  ProductBaselineListCell
+} from '../../product-baseline';
 import { productKeywordSiteCodeFromScope } from '../utils/productKeywordSiteScope';
 import { productRebuildActionState } from '../utils/productRebuildActionState';
-import { ProductBaselineListCell } from './ProductBaselineDisplay';
 import { OperationStageCell } from './ProductListOperationalCells';
 
 const { Text } = Typography;

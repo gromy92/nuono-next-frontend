@@ -1,10 +1,10 @@
 import { MOCK_PRODUCT_LIST_UI_STATES } from './mockData';
 import {
   cloneSnapshotPayload,
-  mergeGalleryImageUrls,
   nowSyncTime,
   textInputValue
 } from './utils';
+import { mergeGalleryImageUrls } from '../product-baseline';
 import type { ProductListUiState, ProductMasterSnapshotPayload, ProductWorkbenchPayload, StoreInitializationPayload } from './types';
 
 export function createMockProductWorkbenchPayload(item: StoreInitializationPayload['productItems'][number]): ProductWorkbenchPayload {

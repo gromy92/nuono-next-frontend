@@ -4,10 +4,7 @@ import type { ProductSummarySurface } from '../types';
 import {
   normalizeSnapshotTextList,
   productSummaryIdentityLine,
-  productSummaryPriceLine,
-  productSummaryPrimarySite,
-  productSummaryTitle,
-  productSyncStatusMeta
+  productSummaryPriceLine
 } from '../utils';
 import {
   formatHistoryDateTime,
@@ -22,7 +19,12 @@ import {
   type ProductHistoryChange,
   type ProductHistoryItem
 } from './ProductHistoryModal.utils';
-import { ProductBaselineIdentity } from '../../product-baseline';
+import {
+  ProductBaselineIdentity,
+  productSummaryPrimarySite,
+  productSummaryTitle,
+  productSyncStatusMeta
+} from '../../product-baseline';
 
 const { Text } = Typography;
 

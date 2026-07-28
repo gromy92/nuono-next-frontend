@@ -1,16 +1,18 @@
 import { Alert, Col, Descriptions, Row, Space, Spin, Tag, Typography } from 'antd';
 import type { ProductSummarySurface } from '../types';
 import {
-  isProductNotListedSource,
-  productListingStartedSourceLabel,
   formatSnapshotValue,
   getProductCurrentZCode,
   productSummaryIdentityLine,
-  productSummaryPriceLine,
-  productSummaryTitle
+  productSummaryPriceLine
 } from '../utils';
 import { ProductSummaryPrimaryTags } from './ProductSummaryBlocks';
-import { ProductBaselineIdentity } from '../../product-baseline';
+import {
+  isProductNotListedSource,
+  ProductBaselineIdentity,
+  productListingStartedSourceLabel,
+  productSummaryTitle
+} from '../../product-baseline';
 
 const { Text } = Typography;
 
