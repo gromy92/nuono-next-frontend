@@ -9,7 +9,7 @@ import {
   testStoreSyncConnection
 } from '../store-sync/api';
 import type { StoreBindingProjectOption, StoreSyncOverviewState, StoreSyncStore } from '../store-sync/types';
-import type { LoadStoreSyncOptions } from '../app-shell/useStoreSyncController';
+import type { LoadStoreSyncOptions } from '../store-sync/useStoreSyncOverviewController';
 
 const { Text } = Typography;
 

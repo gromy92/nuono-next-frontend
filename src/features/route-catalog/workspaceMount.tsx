@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ComponentType, type FunctionComponent, type ReactNode } from 'react'
 import { Card, Spin } from 'antd'
 import type { AuthSession } from '../auth/session'
+import type { AppMenuKey } from './routeDefinitions'
 
 const DYNAMIC_IMPORT_RELOAD_KEY = 'nuono:dynamic-import-reload'
 
@@ -8,6 +9,7 @@ type WorkspaceModule<T extends ComponentType<any>> = { default: T }
 
 export type WorkspaceMountProps = {
   readonly active: boolean
+  readonly menuKey: AppMenuKey
   readonly session: AuthSession
 }
 

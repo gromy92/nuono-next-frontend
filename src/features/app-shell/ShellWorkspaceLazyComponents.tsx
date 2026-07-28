@@ -5,18 +5,3 @@ export const InTransitGoodsPage = lazyWorkspace(() =>
 export const RoleManagementWorkspace = lazyWorkspace(() =>
   import('../master-data/RoleManagementWorkspace').then((module) => ({ default: module.RoleManagementWorkspace }))
 );
-export const ProductManagementWorkspacePage = lazyWorkspace(() =>
-  import('../product-management/ProductManagementWorkspacePage').then((module) => ({
-    default: module.ProductManagementWorkspacePage
-  }))
-);
-export const ProductGroupManagementPage = lazyWorkspace(() =>
-  import('../product-management/groups/ProductGroupManagementPage').then((module) => ({
-    default: module.ProductGroupManagementPage
-  }))
-);
-export const ProductSpecsPage = lazyWorkspace(() =>
-  import('../product-specs/ProductSpecsPage').then((module) => ({
-    default: module.ProductSpecsPage
-  }))
-);

@@ -1,15 +1,32 @@
 import { useCallback, useState } from 'react';
-import { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
-import type { ProductDetailTabRequest, ProductWorkspaceTabKey } from '../product-management/types';
 import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
+import { StoreSyncProvider, useStoreSyncContext } from '../store-sync/StoreSyncContext';
+import {
+  useWorkspaceOwnedTabsController,
+  WorkspaceOwnedTabsProvider
+} from '../route-catalog/WorkspaceOwnedTabs';
 import { ShellFrame } from './ShellFrame';
-import { useStoreSyncController } from './useStoreSyncController';
 import { useShellWorkspaceNavigation } from './useShellWorkspaceNavigation';
 import { useShellAccountController } from './useShellAccountController';
 import { useShellSessionEffects, useShellSessionState } from './useShellSessionState';
-import { isProductWorkspaceMenu } from './WorkspaceMenuRegistry';
 
 export function AppShellRuntime() {
+  const sessionState = useShellSessionState();
+  return (
+    <StoreSyncProvider
+      permissionSession={sessionState.shellSession}
+      session={sessionState.session}
+    >
+      <AppShellRuntimeContent sessionState={sessionState} />
+    </StoreSyncProvider>
+  );
+}
+
+function AppShellRuntimeContent({
+  sessionState
+}: {
+  sessionState: ReturnType<typeof useShellSessionState>;
+}) {
   const {
     activeMenuKey,
     setActiveMenuKey,
@@ -22,12 +39,9 @@ export function AppShellRuntime() {
     syncWorkspacePathForMenuKey,
     usingProcurementRequirementDemoSession,
     visibleWorkspaceMenuItems
-  } = useShellSessionState();
-  const [productDetailTabRequest, setProductDetailTabRequest] = useState<ProductDetailTabRequest | null>(null);
+  } = sessionState;
   const [inTransitBoxDetailTabRequest, setInTransitBoxDetailTabRequest] =
     useState<InTransitBoxDetailTabRequest | null>(null);
-  const [activeProductWorkspaceTabKey, setActiveProductWorkspaceTabKey] =
-    useState<ProductWorkspaceTabKey>('product-manage');
   const [activeInTransitWorkspaceTabKey, setActiveInTransitWorkspaceTabKey] =
     useState<'purchase-in-transit-goods' | 'in-transit-box-detail'>('purchase-in-transit-goods');
   const {
@@ -41,29 +55,11 @@ export function AppShellRuntime() {
     setStoreSyncOwnerId,
     storeSyncOwnerId,
     storeSyncState
-  } = useStoreSyncController(session, shellSession);
-
-  const productWorkspace = useProductManagementWorkspace({
-    session,
-    enabled: isProductWorkspaceMenu(activeMenuKey),
-    activeOwnerId,
-    storeSyncState,
-    storeSyncOwnerId,
-    activeProductWorkspaceTabKey,
-    setActiveProductWorkspaceTabKey,
-    productDetailTabRequest,
-    setProductDetailTabRequest,
-    setActiveProductMenu: () => setActiveMenuKey('product-manage'),
-    syncProductWorkspacePath: () => syncWorkspacePathForMenuKey('product-manage')
+  } = useStoreSyncContext();
+  const ownedTabsController = useWorkspaceOwnedTabsController({
+    setActiveMenuKey,
+    syncWorkspacePathForMenuKey
   });
-
-  const {
-    setSelectedInitializationStoreCodeOverride,
-    productDetailSummarySurface,
-    goBackToProductManage,
-    requestCloseProductDetailTab,
-    resetProductWorkspace
-  } = productWorkspace;
 
   const {
     changePasswordForm,
@@ -85,12 +81,9 @@ export function AppShellRuntime() {
     userDropdownItems
   } = useShellAccountController({
     activeMenuKey,
-    resetProductWorkspace,
     resetStoreSync,
     session,
     setActiveMenuKey,
-    setActiveProductWorkspaceTabKey,
-    setSelectedInitializationStoreCodeOverride,
     setSession,
     setStoreSyncOwnerId,
     syncWorkspacePathForMenuKey
@@ -110,11 +103,6 @@ export function AppShellRuntime() {
     setSession
   });
 
-  const hasProductDetailTab = Boolean(productDetailTabRequest);
-  const resolvedProductWorkspaceTabKey: ProductWorkspaceTabKey =
-    activeProductWorkspaceTabKey === 'product-detail' && hasProductDetailTab ? 'product-detail' : 'product-manage';
-  const isProductDetailTab =
-    activeMenuKey === 'product-manage' && resolvedProductWorkspaceTabKey === 'product-detail';
   const hasInTransitBoxDetailTab = Boolean(inTransitBoxDetailTabRequest);
   const resolvedInTransitWorkspaceTabKey =
     activeInTransitWorkspaceTabKey === 'in-transit-box-detail' && hasInTransitBoxDetailTab
@@ -158,26 +146,21 @@ export function AppShellRuntime() {
     workspaceTabItems
   } = useShellWorkspaceNavigation({
     activeMenuKey,
-    goBackToProductManage,
-    hasProductDetailTab,
     hasInTransitBoxDetailTab,
     inTransitBoxDetailTabRequest,
-    productDetailSummarySurface,
-    productDetailTabRequest,
+    ownedTabsController,
     requestCloseInTransitBoxDetailTab,
-    requestCloseProductDetailTab,
     resolvedInTransitWorkspaceTabKey,
-    resolvedProductWorkspaceTabKey,
     sessionAllowedMenuKeySet,
     setActiveMenuKey,
     setActiveInTransitWorkspaceTabKey,
-    setActiveProductWorkspaceTabKey,
     syncWorkspacePathForMenuKey,
     visibleWorkspaceMenuItems
   });
 
   return (
-    <ShellFrame
+    <WorkspaceOwnedTabsProvider controller={ownedTabsController}>
+      <ShellFrame
       activeMenuKey={activeMenuKey}
       activeMenuPathLabel={activeMenuPathLabel}
       activeOwnerId={activeOwnerId}
@@ -198,7 +181,6 @@ export function AppShellRuntime() {
       handleWorkspaceTabEdit={handleWorkspaceTabEdit}
       inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}
       isInTransitBoxDetailTab={isInTransitBoxDetailTab}
-      isProductDetailTab={isProductDetailTab}
       inTransitWorkspaceTabKey={resolvedInTransitWorkspaceTabKey}
       loadStoreSync={loadStoreSync}
       loginError={loginError}
@@ -211,8 +193,6 @@ export function AppShellRuntime() {
       onCloseInTransitBoxDetailTab={requestCloseInTransitBoxDetailTab}
       onOpenInTransitBoxDetailTab={openInTransitBoxDetailTab}
       openedWorkspaceTabKeys={openedWorkspaceTabKeys}
-      productWorkspace={productWorkspace}
-      productWorkspaceTabKey={resolvedProductWorkspaceTabKey}
       roleManagementRefreshSignal={roleManagementRefreshSignal}
       setActiveMenuKey={setActiveMenuKey}
       setChangePasswordOpen={setChangePasswordOpen}
@@ -233,7 +213,8 @@ export function AppShellRuntime() {
       userRoleActiveTabKey={userRoleActiveTabKey}
       visibleWorkspaceMenuItems={visibleWorkspaceMenuItems}
       workspaceTabItems={workspaceTabItems}
-    />
+      />
+    </WorkspaceOwnedTabsProvider>
   );
 }
 

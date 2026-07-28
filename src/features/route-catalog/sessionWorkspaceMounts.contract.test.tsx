@@ -31,7 +31,7 @@ const session: AuthSession = {
 function mountedPageProps(menuKey: AppMenuKey) {
   const mount = workspaceMenuMount(menuKey)
   assert.ok(mount, `${menuKey} must declare a workspace mount Adapter`)
-  const element = mount({ active: true, session }) as ReactElement<{
+  const element = mount({ active: true, menuKey, session }) as ReactElement<{
     children: ReactElement<Record<string, unknown>>
   }>
   return element.props.children.props
@@ -67,10 +67,12 @@ assert.strictEqual(
 
 assert.deepEqual(mountedPageProps('purchase-order'), {
   active: true,
+  menuKey: 'purchase-order',
   session
 })
 
 assert.deepEqual(mountedPageProps('purchase-profit'), {
   active: true,
+  menuKey: 'purchase-profit',
   session
 })

@@ -2,6 +2,12 @@ import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from '
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
 import { createLazyWorkspaceMount } from './workspaceMount'
 
+const PRODUCT_WORKSPACE_MOUNT = createLazyWorkspaceMount(() =>
+  import('../product-management/ProductWorkspaceMount').then((module) => ({
+    default: module.ProductWorkspaceMount
+  }))
+)
+
 export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'product-manage': {
     key: 'product-manage',
@@ -10,7 +16,7 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'product',
     pathLabel: '商品 / 商品管理',
     tabLabel: '商品管理',
-    contentKind: 'product-management',
+    workspaceMount: PRODUCT_WORKSPACE_MOUNT,
     closable: true,
     sidebarOrder: 0,
     routeAliases: ['/product-manage']
@@ -22,7 +28,7 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'product',
     pathLabel: '商品 / 商品分组',
     tabLabel: '商品分组',
-    contentKind: 'product-groups',
+    workspaceMount: PRODUCT_WORKSPACE_MOUNT,
     closable: true,
     sidebarOrder: 1
   },
@@ -33,7 +39,7 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'product',
     pathLabel: '商品 / 商品规格',
     tabLabel: '商品规格',
-    contentKind: 'product-specs',
+    workspaceMount: PRODUCT_WORKSPACE_MOUNT,
     closable: true,
     sidebarOrder: 2
   },

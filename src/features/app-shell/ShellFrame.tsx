@@ -1,4 +1,4 @@
-import { lazy, Suspense, type Dispatch, type Key, type SetStateAction } from 'react';
+import { type Dispatch, type Key, type SetStateAction } from 'react';
 import {
   App as AntdApp,
   Col,
@@ -16,8 +16,6 @@ import { ReplicaLoginPage } from '../auth/ReplicaLoginPage';
 import type { AuthRoleView, AuthSession } from '../auth/session';
 import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
-import type { ProductWorkspaceTabKey } from '../product-management/types';
-import type { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
 import type { StoreSyncOverviewState } from '../store-sync/types';
 import { ShellHeader } from './ShellHeader';
 import { ShellSidebar } from './ShellSidebar';
@@ -26,25 +24,17 @@ import type { SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
 import { WorkspaceErrorBoundary } from './WorkspaceErrorBoundary';
 import { isProductWorkspaceMenu } from './WorkspaceMenuRegistry';
-import type { LoadStoreSyncOptions } from './useStoreSyncController';
+import type { LoadStoreSyncOptions } from '../store-sync/useStoreSyncOverviewController';
 import './shell-layout.css';
 
 const { Content } = Layout;
 const { Text } = Typography;
 const LEGACY_PASSWORD_PATTERN = /^[!-~]{6,14}$/;
 
-const ProductManagementWorkspaceModals = lazy(() =>
-  import('../product-management/ProductManagementWorkspaceModals').then((module) => ({
-    default: module.ProductManagementWorkspaceModals
-  }))
-);
-
 export type ChangePasswordFormValues = {
   password1: string;
   password2: string;
 };
-
-type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
 
 type ShellFrameProps = {
   activeMenuKey: AppMenuKey;
@@ -68,7 +58,6 @@ type ShellFrameProps = {
   inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
   inTransitWorkspaceTabKey: 'purchase-in-transit-goods' | 'in-transit-box-detail';
   isInTransitBoxDetailTab: boolean;
-  isProductDetailTab: boolean;
   loadStoreSync: (ownerUserId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   loginError: string | null;
   loginForm: FormInstance;
@@ -80,8 +69,6 @@ type ShellFrameProps = {
   onCloseInTransitBoxDetailTab: () => Promise<void> | void;
   onOpenInTransitBoxDetailTab: (request: InTransitBoxDetailTabRequest) => void;
   openedWorkspaceTabKeys: AppMenuKey[];
-  productWorkspace: ProductManagementWorkspace;
-  productWorkspaceTabKey: ProductWorkspaceTabKey;
   roleManagementRefreshSignal: number;
   setChangePasswordOpen: (open: boolean) => void;
   setLoginError: (message: string | null) => void;
@@ -126,7 +113,6 @@ export function ShellFrame({
   inTransitBoxDetailTabRequest,
   inTransitWorkspaceTabKey,
   isInTransitBoxDetailTab,
-  isProductDetailTab,
   loadStoreSync,
   loginError,
   loginForm,
@@ -138,8 +124,6 @@ export function ShellFrame({
   onCloseInTransitBoxDetailTab,
   onOpenInTransitBoxDetailTab,
   openedWorkspaceTabKeys,
-  productWorkspace,
-  productWorkspaceTabKey,
   roleManagementRefreshSignal,
   setChangePasswordOpen,
   setLoginError,
@@ -267,11 +251,9 @@ export function ShellFrame({
                             shellSession={shellSession}
                             onOpenInTransitBoxDetailTab={onOpenInTransitBoxDetailTab}
                             onCloseInTransitBoxDetailTab={onCloseInTransitBoxDetailTab}
-                            productWorkspace={productWorkspace}
                             activeOwnerId={activeOwnerId}
                             inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}
                             isInTransitBoxDetailTab={isInTransitBoxDetailTab}
-                            isProductDetailTab={isProductDetailTab}
                             inTransitWorkspaceTabKey={inTransitWorkspaceTabKey}
                             roleManagementTabKey={userRoleActiveTabKey}
                             canShowStoreManagement={canShowStoreManagement}
@@ -283,7 +265,6 @@ export function ShellFrame({
                             onStoreOwnerChange={setStoreSyncOwnerId}
                             onStoreRefresh={loadStoreSync}
                             openedWorkspaceTabKeys={openedWorkspaceTabKeys}
-                            productWorkspaceTabKey={productWorkspaceTabKey}
                             onRoleManagementDataChanged={notifyRoleManagementDataChanged}
                             onRoleManagementTabChange={(nextKey) => {
                               setUserRoleActiveTabKey(nextKey);
@@ -294,12 +275,6 @@ export function ShellFrame({
                         </WorkspaceErrorBoundary>
                       </Col>
                     </Row>
-
-                    {isProductWorkspaceMenu(activeMenuKey) ? (
-                      <Suspense fallback={null}>
-                        <ProductManagementWorkspaceModals workspace={productWorkspace} />
-                      </Suspense>
-                    ) : null}
 
                     <Modal
                       title="提示"

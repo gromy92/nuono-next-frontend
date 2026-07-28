@@ -3,11 +3,9 @@ import { Space, Tag } from 'antd';
 import type { TabsProps } from 'antd';
 import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
-import type { ProductSummarySurface } from '../product-domain/productSummaryTypes';
-import type { ProductDetailTabRequest, ProductWorkspaceTabKey } from '../product-management/types';
-import { productSummaryPrimarySite, productSyncStatusMeta } from '../product-baseline';
 import type { SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
+import type { WorkspaceOwnedTabsController } from '../route-catalog/WorkspaceOwnedTabs';
 import {
   isWorkspaceMenuKey,
   shouldShowWorkspaceMenuInTabs,
@@ -40,40 +38,28 @@ function shouldShowActiveMenuPathLabel(menuKey: AppMenuKey) {
 
 type UseShellWorkspaceNavigationParams = {
   activeMenuKey: AppMenuKey;
-  goBackToProductManage: () => void;
-  hasProductDetailTab: boolean;
   hasInTransitBoxDetailTab: boolean;
   inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
-  productDetailSummarySurface?: ProductSummarySurface | null;
-  productDetailTabRequest: ProductDetailTabRequest | null;
+  ownedTabsController: WorkspaceOwnedTabsController;
   requestCloseInTransitBoxDetailTab: () => Promise<void> | void;
-  requestCloseProductDetailTab: () => Promise<void> | void;
   resolvedInTransitWorkspaceTabKey: 'purchase-in-transit-goods' | 'in-transit-box-detail';
-  resolvedProductWorkspaceTabKey: ProductWorkspaceTabKey;
   sessionAllowedMenuKeySet: Set<AppMenuKey>;
   setActiveMenuKey: Dispatch<SetStateAction<AppMenuKey>>;
   setActiveInTransitWorkspaceTabKey: Dispatch<SetStateAction<'purchase-in-transit-goods' | 'in-transit-box-detail'>>;
-  setActiveProductWorkspaceTabKey: Dispatch<SetStateAction<ProductWorkspaceTabKey>>;
   syncWorkspacePathForMenuKey: (menuKey: AppMenuKey) => void;
   visibleWorkspaceMenuItems: SidebarMenuItem[];
 };
 
 export function useShellWorkspaceNavigation({
   activeMenuKey,
-  goBackToProductManage,
-  hasProductDetailTab,
   hasInTransitBoxDetailTab,
   inTransitBoxDetailTabRequest,
-  productDetailSummarySurface,
-  productDetailTabRequest,
+  ownedTabsController,
   requestCloseInTransitBoxDetailTab,
-  requestCloseProductDetailTab,
   resolvedInTransitWorkspaceTabKey,
-  resolvedProductWorkspaceTabKey,
   sessionAllowedMenuKeySet,
   setActiveMenuKey,
   setActiveInTransitWorkspaceTabKey,
-  setActiveProductWorkspaceTabKey,
   syncWorkspacePathForMenuKey,
   visibleWorkspaceMenuItems
 }: UseShellWorkspaceNavigationParams) {
@@ -83,9 +69,12 @@ export function useShellWorkspaceNavigation({
     'product-manage'
   ]);
 
+  const activeOwnedTab = ownedTabsController.tabs.find(
+    (tab) => tab.key === ownedTabsController.activeOwnedTabKey
+  );
   const activeMenuPathLabel = shouldShowActiveMenuPathLabel(activeMenuKey)
-    ? activeMenuKey === 'product-manage' && resolvedProductWorkspaceTabKey === 'product-detail'
-      ? '商品 / 商品详情'
+    ? activeOwnedTab?.parentMenuKey === activeMenuKey && activeOwnedTab.pathLabel
+      ? activeOwnedTab.pathLabel
       : workspaceMenuPathLabel(activeMenuKey)
     : null;
 
@@ -98,43 +87,9 @@ export function useShellWorkspaceNavigation({
         closable: workspaceMenuDefinition(key).closable
       }));
 
-    if (hasProductDetailTab) {
-      const detailSummary = productDetailSummarySurface;
-      const detailTitle = '商品详情';
-      const detailSite = detailSummary ? productSummaryPrimarySite(detailSummary) : '-';
-      const detailSyncMeta = detailSummary?.syncStatus ? productSyncStatusMeta(detailSummary.syncStatus) : null;
-      items.push({
-        key: 'product-detail',
-        label: (
-          <Space wrap={false} size={[6, 6]} style={{ maxWidth: 260 }}>
-            <span
-              style={{
-                display: 'inline-block',
-                maxWidth: 112,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                verticalAlign: 'bottom'
-              }}
-              title={detailTitle}
-            >
-              {detailTitle}
-            </span>
-            {detailSyncMeta ? (
-              <Tag color={detailSyncMeta.color} style={{ marginInlineEnd: 0 }}>
-                {detailSyncMeta.label}
-              </Tag>
-            ) : null}
-            {detailSite !== '-' ? (
-              <Tag color="default" style={{ marginInlineEnd: 0 }}>
-                {detailSite}
-              </Tag>
-            ) : null}
-          </Space>
-        ),
-        closable: true
-      });
-    }
+    ownedTabsController.tabs.forEach((tab) => {
+      items.push({ key: tab.key, label: tab.label, closable: tab.closable });
+    });
 
     if (hasInTransitBoxDetailTab) {
       const batchReferenceNo = inTransitBoxDetailTabRequest?.batchReferenceNo || '批次';
@@ -166,27 +121,24 @@ export function useShellWorkspaceNavigation({
 
     return items;
   }, [
-    activeMenuKey,
-    hasProductDetailTab,
     hasInTransitBoxDetailTab,
     inTransitBoxDetailTabRequest,
     openedWorkspaceTabKeys,
-    productDetailSummarySurface,
-    productDetailTabRequest,
+    ownedTabsController.tabs,
     sessionAllowedMenuKeySet,
   ]);
 
   const activeWorkspaceTabKey =
-    activeMenuKey === 'product-manage'
-      ? resolvedProductWorkspaceTabKey
+    activeOwnedTab?.parentMenuKey === activeMenuKey
+      ? activeOwnedTab.key
       : activeMenuKey === 'purchase-in-transit-goods'
         ? resolvedInTransitWorkspaceTabKey
         : normalizeWorkspaceTabMenuKey(activeMenuKey);
 
   const handleWorkspaceTabChange = useCallback(
     (key: string) => {
-      if (key === 'product-manage') {
-        goBackToProductManage();
+      if (ownedTabsController.tabs.some((tab) => tab.key === key)) {
+        ownedTabsController.activateOwnedTab(key);
         return;
       }
 
@@ -197,15 +149,7 @@ export function useShellWorkspaceNavigation({
         if (key === 'purchase-in-transit-goods') {
           setActiveInTransitWorkspaceTabKey('purchase-in-transit-goods');
         }
-        setActiveMenuKey(key);
-        syncWorkspacePathForMenuKey(key);
-        return;
-      }
-
-      if (key === 'product-detail' && hasProductDetailTab) {
-        setActiveMenuKey('product-manage');
-        setActiveProductWorkspaceTabKey('product-detail');
-        syncWorkspacePathForMenuKey('product-manage');
+        ownedTabsController.activateParentMenu(key);
         return;
       }
 
@@ -216,12 +160,10 @@ export function useShellWorkspaceNavigation({
       }
     },
     [
-      goBackToProductManage,
       hasInTransitBoxDetailTab,
-      hasProductDetailTab,
+      ownedTabsController,
       setActiveInTransitWorkspaceTabKey,
       setActiveMenuKey,
-      setActiveProductWorkspaceTabKey,
       syncWorkspacePathForMenuKey
     ]
   );
@@ -232,8 +174,8 @@ export function useShellWorkspaceNavigation({
         return;
       }
 
-      if (typeof targetKey === 'string' && targetKey === 'product-detail') {
-        void requestCloseProductDetailTab();
+      if (typeof targetKey === 'string' && ownedTabsController.tabs.some((tab) => tab.key === targetKey)) {
+        void ownedTabsController.requestCloseOwnedTab(targetKey);
         return;
       }
 
@@ -253,20 +195,17 @@ export function useShellWorkspaceNavigation({
       setOpenedWorkspaceTabKeys(nextOpenedWorkspaceTabKeys);
       if (targetKey === activeWorkspaceTabKey) {
         const nextActiveMenuKey = nextWorkspaceMenuKeyAfterClose(openedWorkspaceTabKeys, targetKey);
-        if (!nextActiveMenuKey || nextActiveMenuKey === 'product-manage') {
-          goBackToProductManage();
+        if (!nextActiveMenuKey) {
           return;
         }
-        setActiveMenuKey(nextActiveMenuKey);
-        syncWorkspacePathForMenuKey(nextActiveMenuKey);
+        ownedTabsController.activateParentMenu(nextActiveMenuKey);
       }
     },
     [
       activeWorkspaceTabKey,
-      goBackToProductManage,
       openedWorkspaceTabKeys,
+      ownedTabsController,
       requestCloseInTransitBoxDetailTab,
-      requestCloseProductDetailTab,
       setActiveMenuKey,
       syncWorkspacePathForMenuKey
     ]
@@ -335,13 +274,9 @@ export function useShellWorkspaceNavigation({
       if (nextKey === 'user-role') {
         setUserRoleActiveTabKey('user-role');
       }
-      setActiveMenuKey(nextKey);
-      if (nextKey === 'product-manage') {
-        setActiveProductWorkspaceTabKey('product-manage');
-      }
-      syncWorkspacePathForMenuKey(nextKey);
+      ownedTabsController.activateParentMenu(nextKey);
     },
-    [sessionAllowedMenuKeySet, setActiveMenuKey, setActiveProductWorkspaceTabKey, syncWorkspacePathForMenuKey]
+    [ownedTabsController, sessionAllowedMenuKeySet]
   );
 
   return {

@@ -61,7 +61,7 @@ export function useProductStoreInitialization({
     if (!session?.currentStore?.storeCode) {
       return;
     }
-    setSelectedInitializationStoreCodeOverride((currentValue) => currentValue || session.currentStore?.storeCode);
+    setSelectedInitializationStoreCodeOverride(session.currentStore.storeCode);
   }, [session?.currentStore?.storeCode, setSelectedInitializationStoreCodeOverride]);
 
   const loadStoreInitializationStatus = useCallback(

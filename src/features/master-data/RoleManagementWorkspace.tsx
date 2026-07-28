@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import type { TabsProps } from 'antd';
 import type { AuthSessionStore } from '../auth/session';
 import type { StoreSyncOverviewState } from '../store-sync/types';
-import type { LoadStoreSyncOptions } from '../app-shell/useStoreSyncController';
+import type { LoadStoreSyncOptions } from '../store-sync/useStoreSyncOverviewController';
 import { MasterDataBoard } from './MasterDataBoard';
 import { OrgTreeBoard } from './OrgTreeBoard';
 import { PermissionOverviewBoard } from './PermissionOverviewBoard';

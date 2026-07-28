@@ -3,7 +3,6 @@ import { Form, message } from 'antd';
 import type { MenuProps } from 'antd';
 import { LockOutlined, LogoutOutlined } from '@ant-design/icons';
 import type { AuthRoleView, AuthSession } from '../auth/session';
-import type { ProductWorkspaceTabKey } from '../product-management/types';
 import { currentAppPathname } from '../../runtimePaths';
 import type { ChangePasswordFormValues } from './ShellFrame';
 import { SESSION_STORAGE_KEY } from './ShellSessionStorage';
@@ -20,12 +19,9 @@ import {
 
 type UseShellAccountControllerParams = {
   activeMenuKey: AppMenuKey;
-  resetProductWorkspace: () => void;
   resetStoreSync: () => void;
   session: AuthSession | null;
   setActiveMenuKey: (key: AppMenuKey) => void;
-  setActiveProductWorkspaceTabKey: (key: ProductWorkspaceTabKey) => void;
-  setSelectedInitializationStoreCodeOverride: (storeCode?: string) => void;
   setSession: (session: AuthSession | null) => void;
   setStoreSyncOwnerId: (ownerId?: number) => void;
   syncWorkspacePathForMenuKey: (menuKey: AppMenuKey) => void;
@@ -33,12 +29,9 @@ type UseShellAccountControllerParams = {
 
 export function useShellAccountController({
   activeMenuKey,
-  resetProductWorkspace,
   resetStoreSync,
   session,
   setActiveMenuKey,
-  setActiveProductWorkspaceTabKey,
-  setSelectedInitializationStoreCodeOverride,
   setSession,
   setStoreSyncOwnerId,
   syncWorkspacePathForMenuKey
@@ -91,7 +84,6 @@ export function useShellAccountController({
       setSession(nextSession);
       if (nextMenuKey) {
         setActiveMenuKey(nextMenuKey);
-        setActiveProductWorkspaceTabKey('product-manage');
       }
       setStoreSyncOwnerId(nextSession.defaultOwnerUserId);
       if (typeof window !== 'undefined') {
@@ -112,7 +104,7 @@ export function useShellAccountController({
     } finally {
       setLoginSubmitting(false);
     }
-  }, [loginForm, setActiveMenuKey, setActiveProductWorkspaceTabKey, setSession, setStoreSyncOwnerId]);
+  }, [loginForm, setActiveMenuKey, setSession, setStoreSyncOwnerId]);
 
   const submitChangePassword = useCallback(async () => {
     if (!session) {
@@ -168,7 +160,6 @@ export function useShellAccountController({
   const handleSessionStoreChange = useCallback((nextSession: AuthSession) => {
     const normalizedNextSession = normalizeSessionRoleView(nextSession);
     setSession(normalizedNextSession);
-    setSelectedInitializationStoreCodeOverride(normalizedNextSession.currentStore?.storeCode);
     if (typeof window !== 'undefined') {
       try {
         window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(normalizedNextSession));
@@ -176,7 +167,7 @@ export function useShellAccountController({
         // Ignore localStorage write failures in local preview mode.
       }
     }
-  }, [setSelectedInitializationStoreCodeOverride, setSession]);
+  }, [setSession]);
 
   const handleRoleViewChange = useCallback((nextRoleView: AuthRoleView) => {
     if (!session || !canSwitchBossRoleView(session)) {
@@ -197,12 +188,9 @@ export function useShellAccountController({
     setSession(nextSession);
     if (nextMenuKey && nextMenuKey !== activeMenuKey) {
       setActiveMenuKey(nextMenuKey);
-      if (nextMenuKey === 'product-manage') {
-        setActiveProductWorkspaceTabKey('product-manage');
-      }
       syncWorkspacePathForMenuKey(nextMenuKey);
     }
-  }, [activeMenuKey, session, setActiveMenuKey, setActiveProductWorkspaceTabKey, setSession, syncWorkspacePathForMenuKey]);
+  }, [activeMenuKey, session, setActiveMenuKey, setSession, syncWorkspacePathForMenuKey]);
 
   const logout = useCallback(() => {
     void fetch('/api/auth/logout', { method: 'POST' }).catch(() => {
@@ -212,14 +200,12 @@ export function useShellAccountController({
     setActiveMenuKey('purchase-order');
     setLoginError(null);
     resetStoreSync();
-    resetProductWorkspace();
-    setActiveProductWorkspaceTabKey('product-manage');
     loginForm.resetFields();
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem(SESSION_STORAGE_KEY);
     }
     message.success('已退出当前登录');
-  }, [loginForm, resetProductWorkspace, resetStoreSync, setActiveMenuKey, setActiveProductWorkspaceTabKey, setSession]);
+  }, [loginForm, resetStoreSync, setActiveMenuKey, setSession]);
 
   const requestLogout = useCallback(() => {
     if (session) {

@@ -40,7 +40,7 @@ type ShellWorkspaceContentPaneProps = {
 function ShellWorkspaceContentPane({ active, menuKey, context }: ShellWorkspaceContentPaneProps) {
   const WorkspaceMount = workspaceMenuMount(menuKey)
   if (WorkspaceMount) {
-    return <WorkspaceMount active={active} session={context.shellSession} />
+    return <WorkspaceMount active={active} menuKey={menuKey} session={context.shellSession} />
   }
   return renderLegacyWorkspaceContent(menuKey, context)
 }
@@ -49,7 +49,6 @@ export function ShellWorkspaceContent({
   activeMenuKey,
   noMenuPermission,
   openedWorkspaceTabKeys,
-  productWorkspaceTabKey,
   inTransitWorkspaceTabKey,
   ...baseContext
 }: ShellWorkspaceContentProps) {
@@ -58,6 +57,19 @@ export function ShellWorkspaceContent({
     [activeMenuKey, openedWorkspaceTabKeys]
   )
   const activeWorkspaceMountKey = workspaceContentMountKeyForMenuKey(activeMenuKey)
+  const mountGroups = useMemo(() => {
+    const groups: Array<{ key: AppMenuKey; menuKeys: AppMenuKey[]; mount?: unknown }> = []
+    mountedWorkspaceMenuKeys.forEach((menuKey) => {
+      const mount = workspaceMenuMount(menuKey)
+      const existing = mount ? groups.find((group) => group.mount === mount) : undefined
+      if (existing) {
+        existing.menuKeys.push(menuKey)
+      } else {
+        groups.push({ key: menuKey, menuKeys: [menuKey], mount })
+      }
+    })
+    return groups
+  }, [mountedWorkspaceMenuKeys])
 
   if (noMenuPermission) {
     return (
@@ -74,17 +86,17 @@ export function ShellWorkspaceContent({
 
   return (
     <>
-      {mountedWorkspaceMenuKeys.map((menuKey) => {
-        const isActivePane = menuKey === activeWorkspaceMountKey
+      {mountGroups.map((group) => {
+        const isActivePane = group.menuKeys.includes(activeWorkspaceMountKey)
+        const menuKey = isActivePane ? activeMenuKey : group.key
         const context: ShellWorkspaceRenderContext = {
           ...baseContext,
-          isProductDetailTab: menuKey === 'product-manage' && productWorkspaceTabKey === 'product-detail',
           isInTransitBoxDetailTab:
             menuKey === 'purchase-in-transit-goods' && inTransitWorkspaceTabKey === 'in-transit-box-detail'
         }
         return (
           <div
-            key={menuKey}
+            key={group.key}
             className={`nuono-shell-workspace-pane${isActivePane ? '' : ' nuono-shell-workspace-pane-hidden'}`}
             data-workspace-menu-key={menuKey}
             aria-hidden={!isActivePane}

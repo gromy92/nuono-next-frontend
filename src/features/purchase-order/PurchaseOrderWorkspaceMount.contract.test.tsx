@@ -21,6 +21,7 @@ Object.defineProperty(globalThis, 'window', {
 try {
   const confirmation = PurchaseOrderWorkspaceMount({
     active: true,
+    menuKey: 'purchase-order',
     session
   }) as ReactElement
   assert.strictEqual(confirmation.type, ProcurementRequirementConfirmationPage)
@@ -28,6 +29,7 @@ try {
   location.pathname = '/purchase/order'
   const purchaseOrder = PurchaseOrderWorkspaceMount({
     active: true,
+    menuKey: 'purchase-order',
     session
   }) as ReactElement
   assert.strictEqual(purchaseOrder.type, PurchaseOrderPage)

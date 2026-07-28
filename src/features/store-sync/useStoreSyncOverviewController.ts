@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchStoreSyncOverview } from '../store-sync/api';
-import type { StoreSyncOverviewState } from '../store-sync/types';
+import { fetchStoreSyncOverview } from './api';
+import type { StoreSyncOverviewState } from './types';
 import type { AuthSession } from '../auth/session';
-import { isBossManagementSession, isSystemAdminSession } from './WorkspaceRouting';
+import {
+  isBossManagementSession,
+  isSystemAdminSession
+} from '../route-catalog/sessionAccessPolicy';
 
 export type LoadStoreSyncOptions = {
   force?: boolean;
   preserveConnectionFeedback?: boolean;
 };
 
-export function useStoreSyncController(session: AuthSession | null, shellSession: AuthSession | null) {
+export function useStoreSyncOverviewController(session: AuthSession | null, permissionSession: AuthSession | null) {
   const [storeSyncState, setStoreSyncState] = useState<StoreSyncOverviewState>({
     status: 'loading'
   });
@@ -90,8 +93,8 @@ export function useStoreSyncController(session: AuthSession | null, shellSession
 
   return {
     activeOwnerId,
-    canManageStoreBinding: isSystemAdminSession(shellSession) || isBossManagementSession(shellSession),
-    canSelectStoreOwner: isSystemAdminSession(shellSession),
+    canManageStoreBinding: isSystemAdminSession(permissionSession) || isBossManagementSession(permissionSession),
+    canSelectStoreOwner: isSystemAdminSession(permissionSession),
     loadStoreSync,
     notifyRoleManagementDataChanged,
     resetStoreSync,

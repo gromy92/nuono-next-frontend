@@ -129,15 +129,12 @@ assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 29)
 const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.workspaceMount === 'function'
 )
-assert.equal(mountedDefinitions.length, 29)
+assert.equal(mountedDefinitions.length, 32)
 assert.deepEqual(
   Object.values(WORKSPACE_MENU_DEFINITIONS)
     .filter((definition) => typeof definition.contentKind === 'string')
     .map((definition) => definition.key),
   [
-    'product-manage',
-    'product-groups',
-    'product-specs',
     'purchase-in-transit-goods',
     'user-store-noon',
     'user-role'
@@ -159,7 +156,13 @@ assert.strictEqual(
   workspaceMenuMount('system-file-management'),
   'Catalog must return a stable module-level mount Adapter'
 )
-assert.equal(workspaceMenuMount('product-manage'), null)
+assert.equal(typeof workspaceMenuMount('product-manage'), 'function')
+assert.strictEqual(
+  workspaceMenuMount('product-manage'),
+  workspaceMenuMount('product-groups'),
+  'Product routes must share one state-owning mount Adapter'
+)
+assert.strictEqual(workspaceMenuMount('product-manage'), workspaceMenuMount('product-specs'))
 assert.equal(typeof workspaceMenuMount('purchase-order'), 'function')
 assert.equal(typeof workspaceMenuMount('operations-competitor-analysis'), 'function')
 assert.deepEqual(routeCatalogIntegrityIssues(), [])

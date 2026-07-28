@@ -77,7 +77,7 @@ try {
   }
   assert.equal(Object.isFrozen(mount), true, 'a mount Adapter must be frozen at creation')
   assert.equal(loaderCalls, 0, 'creating a mount Adapter must not execute its loader')
-  const mountElement = mount({ active: true, session }) as ReactElement<{
+  const mountElement = mount({ active: true, menuKey: 'product-manage', session }) as ReactElement<{
     children: ReactElement<{ session: AuthSession }>
   }>
   assert.strictEqual(mountElement.type, LazyWorkspaceBoundary)
@@ -97,7 +97,7 @@ try {
       operatorName: currentSession.realName || currentSession.accountNo
     })
   )
-  const mappedElement = mappedMount({ active: true, session }) as ReactElement<{
+  const mappedElement = mappedMount({ active: true, menuKey: 'product-manage', session }) as ReactElement<{
     children: ReactElement<{ operatorName: string }>
   }>
   assert.equal(
