@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "source-size:check": "node scripts/check_source_size.mjs",
     "source-size:test": "node --test scripts/source_size_policy.test.mjs",
+    "route-catalog:check": "node --import tsx --import ./scripts/register_test_loaders.mjs src/features/route-catalog/RouteCatalog.contract.test.ts",
     "dependencies:check": "node scripts/check_feature_dependencies.mjs",
     "contract:test": "node scripts/run_contract_tests.mjs",
     "layout:overflow-smoke": "node scripts/layout_overflow_smoke.mjs",
