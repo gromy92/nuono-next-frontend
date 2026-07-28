@@ -1,0 +1,231 @@
+
+.purchase-thumb-preview {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.purchase-thumb-preview-empty {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.purchase-product-popover-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.purchase-product-popover-title.ant-typography {
+  margin: 0;
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.purchase-product-popover-subtitle.ant-typography {
+  margin: 0;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 15px;
+}
+
+.purchase-product-popover-fields {
+  display: grid;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.purchase-product-popover-field {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 6px;
+  align-items: start;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.purchase-product-popover-field span {
+  color: #94a3b8;
+}
+
+.purchase-product-popover-field strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #334155;
+  font-weight: 600;
+}
+
+.purchase-item-copy,
+.purchase-sku-cell,
+.purchase-collection-cell {
+  gap: 2px;
+}
+
+.purchase-item-title-row,
+.purchase-item-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.purchase-item-title-row .purchase-item-title {
+  flex: 1 1 auto;
+}
+
+.purchase-item-title-row .ant-btn {
+  flex: 0 0 auto;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding-inline: 0;
+}
+
+.purchase-item-title-row .ant-tag {
+  flex: 0 0 auto;
+  margin-inline-end: 0;
+}
+
+.purchase-item-title.ant-typography {
+  min-width: 0;
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.purchase-item-issue-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.purchase-item-issue-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.purchase-item-issue-list .ant-tag {
+  margin-inline-end: 0;
+  padding-inline: 4px;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.purchase-item-issue-button:hover .ant-tag {
+  box-shadow: 0 0 0 1px currentcolor;
+}
+
+.purchase-item-psku.ant-typography {
+  flex: 0 0 auto;
+  color: #475569;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.purchase-item-en-title.ant-typography {
+  flex: 0 1 50%;
+  min-width: 0;
+  max-width: 50%;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.purchase-site-list {
+  gap: 4px;
+}
+
+.purchase-ali1688-history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+
+.purchase-ali1688-history-chip {
+  display: inline-grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
+  max-width: 100%;
+  min-height: 22px;
+  padding: 2px 6px;
+  cursor: pointer;
+  color: #334155;
+  font-size: 12px;
+  line-height: 16px;
+  background: #f8fafc;
+  border: 1px solid #dbe4ef;
+  border-radius: 6px;
+}
+
+.purchase-ali1688-history-chip:hover,
+.purchase-ali1688-history-chip:focus-visible {
+  border-color: #1677ff;
+  background: #eff6ff;
+  outline: none;
+}
+
+.purchase-ali1688-history-chip strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.purchase-ali1688-history-chip em {
+  min-width: 0;
+  overflow: hidden;
+  color: #64748b;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purchase-ali1688-history-status.ant-typography {
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.purchase-ali1688-history-popover {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+}
+
+.purchase-ali1688-history-popover-summary,
+.purchase-ali1688-history-popover-batch,
+.purchase-ali1688-history-source {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.purchase-ali1688-history-source {
+  padding-top: 6px;
+  border-top: 1px solid #eef2f7;
+}
+
+.purchase-site-chip {
+  gap: 4px;
+  min-height: 22px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+}

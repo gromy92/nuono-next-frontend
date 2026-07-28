@@ -13,7 +13,23 @@ const formsSource = readFileSync(resolve(root, 'src/features/purchase-order/comp
 const itemCommandSource = readFileSync(resolve(root, 'src/features/purchase-order/model/purchaseOrderItemCommandModel.ts'), 'utf8');
 const storeModelSource = readFileSync(resolve(root, 'src/features/purchase-order/model/purchaseOrderStoreModel.tsx'), 'utf8');
 const uiMetaSource = readFileSync(resolve(root, 'src/features/purchase-order/model/purchaseOrderUiMeta.tsx'), 'utf8');
-const purchaseOrderFeatureSource = [pageSource, itemCommandSource, storeModelSource, uiMetaSource].join('\n');
+const itemMutationsSource = readFileSync(resolve(root, 'src/features/purchase-order/hooks/usePurchaseOrderItemMutations.ts'), 'utf8');
+const orderMutationsSource = readFileSync(resolve(root, 'src/features/purchase-order/hooks/usePurchaseOrderMutations.ts'), 'utf8');
+const shippingMergeSource = readFileSync(resolve(root, 'src/features/purchase-order/hooks/usePurchaseOrderShippingMerge.ts'), 'utf8');
+const createItemModalsSource = readFileSync(resolve(root, 'src/features/purchase-order/components/PurchaseOrderCreateItemModals.tsx'), 'utf8');
+const sidebarSource = readFileSync(resolve(root, 'src/features/purchase-order/components/PurchaseOrderSidebar.tsx'), 'utf8');
+const purchaseOrderFeatureSource = [
+  pageSource,
+  formsSource,
+  itemCommandSource,
+  storeModelSource,
+  uiMetaSource,
+  itemMutationsSource,
+  orderMutationsSource,
+  shippingMergeSource,
+  createItemModalsSource,
+  sidebarSource
+].join('\n');
 const shippingOrderFeatureDir = resolve(root, 'src/features/warehouse-dispatch/warehouse-order');
 const shippingOrderPageSource = readdirSync(shippingOrderFeatureDir)
   .filter((name) => /\.(?:ts|tsx)$/.test(name) && !name.endsWith('.test.ts') && !name.endsWith('.test.tsx'))
@@ -51,20 +67,20 @@ assert.match(shippingOrderPageSource, /exportShippingOrderLogisticsQuoteReport/)
 assert.match(shippingOrderPageSource, /loadShippingOrderLogisticsQuoteOptions/);
 assert.match(shippingOrderPageSource, /importShippingOrderLogisticsQuoteReport/);
 assert.match(shippingOrderPageSource, /submitShippingOrder/);
-assert.match(pageSource, /createShippingOrder/);
-assert.match(pageSource, /shippingMergeMode/);
-assert.match(pageSource, /selectedShippingMergeOrderIds/);
-assert.match(pageSource, /handleCreateShippingOrderFromSelection/);
-assert.match(pageSource, /采购单封存后才可合并为仓库单/);
-assert.match(pageSource, /已选 \{/);
-assert.match(pageSource, /Checkbox/);
+assert.match(purchaseOrderFeatureSource, /createShippingOrder/);
+assert.match(purchaseOrderFeatureSource, /shippingMergeMode/);
+assert.match(purchaseOrderFeatureSource, /selectedShippingMergeOrderIds/);
+assert.match(purchaseOrderFeatureSource, /handleCreateShippingOrderFromSelection/);
+assert.match(purchaseOrderFeatureSource, /采购单封存后才可合并为仓库单/);
+assert.match(purchaseOrderFeatureSource, /已选 \{/);
+assert.match(purchaseOrderFeatureSource, /Checkbox/);
 assert.match(apiSource, /loadPurchaseOrderLogisticsQuoteOptions/);
 assert.match(apiSource, /logistics-quote-options/);
 assert.match(pskuRowsBlock, /name=\{\[field\.name,\s*'fulfillmentType'\]\}/);
 assert.doesNotMatch(siteQuantityBlock, /fulfillmentType/);
 assert.doesNotMatch(siteQuantityBlock, /newProduct|新品/);
 assert.match(itemCommandSource, /fulfillmentType:\s*normalizeFulfillmentType\(row\?\.fulfillmentType\)/);
-assert.match(pageSource, /fulfillmentType:\s*normalizeFulfillmentType\(values\.fulfillmentType\)/);
+assert.match(purchaseOrderFeatureSource, /fulfillmentType:\s*normalizeFulfillmentType\(values\.fulfillmentType\)/);
 assert.match(itemCommandSource, /function duplicatePskuSiteMessage/);
 assert.match(itemCommandSource, /不能重复添加相同商品相同站点/);
 assert.match(createStoreOptionsBlock, /storeGroupOptionLabel\(store\)/);

@@ -6,9 +6,24 @@ import { fileURLToPath } from 'node:url'
 const purchaseOrderDir = dirname(fileURLToPath(import.meta.url))
 const pageSource = readFileSync(join(purchaseOrderDir, 'PurchaseOrderPage.tsx'), 'utf8')
 const formsSource = readFileSync(join(purchaseOrderDir, 'components/PurchaseOrderForms.tsx'), 'utf8')
+const createItemModalsSource = readFileSync(join(purchaseOrderDir, 'components/PurchaseOrderCreateItemModals.tsx'), 'utf8')
+const sidebarSource = readFileSync(join(purchaseOrderDir, 'components/PurchaseOrderSidebar.tsx'), 'utf8')
+const workbenchSource = readFileSync(join(purchaseOrderDir, 'components/PurchaseOrderWorkbench.tsx'), 'utf8')
+const itemMutationsSource = readFileSync(join(purchaseOrderDir, 'hooks/usePurchaseOrderItemMutations.ts'), 'utf8')
+const orderMutationsSource = readFileSync(join(purchaseOrderDir, 'hooks/usePurchaseOrderMutations.ts'), 'utf8')
 const storeModelSource = readFileSync(join(purchaseOrderDir, 'model/purchaseOrderStoreModel.tsx'), 'utf8')
 const uiMetaSource = readFileSync(join(purchaseOrderDir, 'model/purchaseOrderUiMeta.tsx'), 'utf8')
-const purchaseOrderFeatureSource = [pageSource, formsSource, storeModelSource, uiMetaSource].join('\n')
+const purchaseOrderFeatureSource = [
+  pageSource,
+  formsSource,
+  createItemModalsSource,
+  sidebarSource,
+  workbenchSource,
+  itemMutationsSource,
+  orderMutationsSource,
+  storeModelSource,
+  uiMetaSource
+].join('\n')
 const apiSource = readFileSync(join(purchaseOrderDir, 'api.ts'), 'utf8')
 
 assert.doesNotMatch(
@@ -120,19 +135,19 @@ assert.match(
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /多选合并为仓库单/,
   'multi-select merge entry must use warehouse-order wording'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /formatOrderQuantitySummary\(selectedOrderSummary\)/,
   'top order summary must show PSKU count and total quantity through the compact formatter'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /formatAllocationQuantitySummary\(allocation\)/,
   'site transport summary must show per-site transport PSKU count and total quantity'
 )

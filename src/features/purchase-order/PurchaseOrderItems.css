@@ -1,0 +1,234 @@
+
+.purchase-site-chip span,
+.purchase-site-chip strong {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.purchase-collection-line {
+  height: 18px;
+  gap: 5px;
+}
+
+.purchase-collection-line .ant-typography,
+.purchase-progress-meta.ant-typography {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.purchase-collection-line .ant-tag {
+  padding-inline: 5px;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.purchase-collection-progress-line {
+  gap: 6px;
+}
+
+.purchase-collection-progress-line .ant-progress {
+  flex: 0 0 72px;
+  width: 72px;
+  min-width: 72px;
+  line-height: 1;
+}
+
+.purchase-collection-progress-line .ant-progress-inner {
+  height: 4px !important;
+}
+
+.purchase-progress-meta {
+  flex-basis: 86px;
+  min-width: 60px;
+}
+
+.purchase-item-actions {
+  flex-wrap: nowrap;
+  gap: 4px;
+  min-width: 116px;
+}
+
+.purchase-item-actions .ant-btn {
+  min-width: 0;
+  height: 24px;
+  padding-inline: 6px;
+  font-size: 12px;
+}
+
+.purchase-collect-link.ant-btn {
+  min-width: 0;
+  padding-inline: 2px;
+}
+
+.purchase-logistics-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.purchase-logistics-plan-summary .ant-descriptions-item-label,
+.purchase-logistics-plan-summary .ant-descriptions-item-content {
+  padding-bottom: 4px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.purchase-logistics-sites,
+.purchase-logistics-line-sites,
+.purchase-logistics-line-missing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.purchase-logistics-recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.purchase-logistics-section-title,
+.purchase-logistics-recommendation-head,
+.purchase-logistics-recommendation-title,
+.purchase-logistics-recommendation-notes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.purchase-logistics-section-title,
+.purchase-logistics-recommendation-head {
+  justify-content: space-between;
+}
+
+.purchase-logistics-recommendation-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.purchase-logistics-recommendation {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #dbe4ee;
+  border-radius: 6px;
+  background: #fbfdff;
+}
+
+.purchase-logistics-recommendation-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.purchase-logistics-recommendation-meta span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.purchase-logistics-cost-components {
+  display: grid;
+  gap: 4px;
+}
+
+.purchase-logistics-cost-component {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) auto;
+  gap: 2px 8px;
+  align-items: start;
+  min-width: 0;
+  padding: 5px 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.purchase-logistics-cost-component strong {
+  color: #0f172a;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.purchase-logistics-cost-component small {
+  grid-column: 1 / -1;
+  min-width: 0;
+  color: #64748b;
+  line-height: 16px;
+}
+
+.purchase-logistics-cost-component.is-recurring strong {
+  color: #b45309;
+}
+
+.purchase-logistics-excluded-costs {
+  margin: 0;
+  padding-left: 18px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.purchase-logistics-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: min(52vh, 520px);
+  overflow: auto;
+}
+
+.purchase-logistics-line {
+  display: grid;
+  grid-template-columns: minmax(200px, 1.1fr) minmax(260px, 1.35fr) minmax(90px, 0.45fr) minmax(160px, 0.7fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 58px;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.purchase-logistics-line-main {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.purchase-logistics-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.purchase-logistics-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.purchase-logistics-line-specs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 8px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 16px;
+}

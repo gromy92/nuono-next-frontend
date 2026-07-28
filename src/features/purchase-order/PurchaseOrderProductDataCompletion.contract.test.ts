@@ -5,11 +5,21 @@ const pageSource = readFileSync(new URL('./PurchaseOrderPage.tsx', import.meta.u
 const productDataModelSource = readFileSync(new URL('./model/productDataCompletionModel.ts', import.meta.url), 'utf8')
 const issueModelSource = readFileSync(new URL('./model/purchaseOrderIssueModel.ts', import.meta.url), 'utf8')
 const uiMetaSource = readFileSync(new URL('./model/purchaseOrderUiMeta.tsx', import.meta.url), 'utf8')
+const productDataHookSource = readFileSync(new URL('./hooks/usePurchaseOrderProductDataCompletion.ts', import.meta.url), 'utf8')
+const shippingMergeHookSource = readFileSync(new URL('./hooks/usePurchaseOrderShippingMerge.ts', import.meta.url), 'utf8')
+const orderMutationsSource = readFileSync(new URL('./hooks/usePurchaseOrderMutations.ts', import.meta.url), 'utf8')
+const productDataModalSource = readFileSync(new URL('./components/PurchaseOrderProductDataModal.tsx', import.meta.url), 'utf8')
+const workbenchSource = readFileSync(new URL('./components/PurchaseOrderWorkbench.tsx', import.meta.url), 'utf8')
 const purchaseOrderFeatureSource = [
   pageSource,
   productDataModelSource,
   issueModelSource,
-  uiMetaSource
+  uiMetaSource,
+  productDataHookSource,
+  shippingMergeHookSource,
+  orderMutationsSource,
+  productDataModalSource,
+  workbenchSource
 ].join('\n')
 const typesSource = readFileSync(new URL('./types.ts', import.meta.url), 'utf8')
 

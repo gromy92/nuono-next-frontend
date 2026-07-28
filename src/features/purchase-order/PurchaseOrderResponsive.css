@@ -1,0 +1,209 @@
+
+.purchase-logistics-line-specs span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1320px) {
+  .purchase-item-card {
+    grid-template-columns: minmax(0, 1fr) minmax(112px, 0.3fr) 132px auto;
+  }
+
+  .purchase-item-actions {
+    justify-content: flex-start;
+  }
+
+  .purchase-order-detail-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .purchase-order-detail-actions {
+    flex-wrap: wrap;
+  }
+
+  .purchase-logistics-line {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .purchase-logistics-recommendation-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+.purchase-psku-entry-row {
+  grid-template-columns: minmax(220px, 1fr) 126px 116px 126px 92px 40px;
+}
+
+.purchase-edit-item-header {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) 220px;
+  gap: 12px;
+  align-items: start;
+}
+
+.purchase-single-psku-row,
+.purchase-site-quantity-row {
+  display: grid;
+  gap: 8px;
+  align-items: start;
+}
+
+.purchase-single-psku-row {
+  grid-template-columns: minmax(170px, 1fr) minmax(116px, 0.58fr) minmax(104px, 0.48fr) 96px;
+}
+
+.purchase-site-quantity-row {
+  grid-template-columns: minmax(170px, 1fr) 150px 110px 40px;
+}
+
+.purchase-site-quantity-row .ant-input-number,
+.purchase-psku-entry-row .ant-input-number {
+  width: 100%;
+}
+
+.purchase-product-data-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.purchase-product-data-summary {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.purchase-product-data-summary-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.purchase-product-data-summary-copy .ant-typography:first-child {
+  white-space: normal;
+  word-break: break-all;
+}
+
+.purchase-product-data-summary-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.purchase-product-data-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.purchase-product-data-section.is-focused {
+  border-color: #dc2626;
+  box-shadow: inset 3px 0 0 #dc2626;
+}
+
+.purchase-product-data-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.purchase-product-data-sourcing-grid,
+.purchase-product-data-spec-grid,
+.purchase-product-data-logistics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.purchase-product-data-sourcing-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.purchase-product-data-form .ant-form-item {
+  margin-bottom: 0;
+}
+
+.purchase-product-option {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.purchase-product-option-thumb {
+  display: block;
+  width: 34px;
+  height: 34px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  background: #f8fafc;
+}
+
+.purchase-product-option-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.purchase-product-option-psku.ant-typography {
+  margin: 0;
+  color: #0f172a;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.purchase-product-option-title.ant-typography {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.purchase-product-option-sites {
+  color: #64748b;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .purchase-order-layout {
+    gap: 8px;
+  }
+
+  .purchase-order-sidebar {
+    max-height: none;
+  }
+
+  .purchase-item-card {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-psku-entry-row,
+  .purchase-single-psku-row,
+  .purchase-site-quantity-row {
+    grid-template-columns: 1fr;
+  }
+
+  .purchase-product-data-sourcing-grid,
+  .purchase-product-data-spec-grid,
+  .purchase-product-data-logistics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

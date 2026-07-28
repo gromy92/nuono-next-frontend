@@ -1,0 +1,231 @@
+
+button.purchase-order-summary-chip {
+  cursor: pointer;
+}
+
+.purchase-order-summary-chip.is-active,
+button.purchase-order-summary-chip:hover {
+  border-color: #1677ff;
+  background: #eff6ff;
+  color: #0958d9;
+}
+
+.purchase-order-detail-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.purchase-order-detail-actions .ant-btn {
+  height: 26px;
+  padding-inline: 8px;
+  font-size: 12px;
+}
+
+.purchase-order-inspection-panel {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.purchase-order-filter-bar,
+.purchase-order-issue-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.purchase-order-filter-bar {
+  flex: 0 0 auto;
+}
+
+.purchase-order-issue-summary {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.purchase-order-filter-bar .ant-btn {
+  height: 24px;
+  padding-inline: 7px;
+  font-size: 12px;
+}
+
+.purchase-order-active-filter.ant-typography,
+.purchase-order-issue-summary span {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.purchase-order-issue-action {
+  height: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.purchase-order-issue-action.is-blocking {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.purchase-order-issue-action:hover {
+  text-decoration: underline;
+}
+
+.purchase-order-issue-summary .ant-tag {
+  margin-inline-end: 0;
+}
+
+.purchase-order-card-top .ant-tag {
+  flex: 0 0 auto;
+  margin-inline-end: 0;
+  padding-inline: 5px;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.purchase-order-status-tag.ant-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  min-width: 20px;
+  padding-inline: 0;
+}
+
+.purchase-order-status-tag.ant-tag .anticon {
+  margin-inline-end: 0;
+}
+
+.purchase-order-card-icon-button {
+  flex: 0 0 auto;
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0;
+  font-size: 12px;
+}
+
+.purchase-order-card-tools {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+
+.purchase-order-card .ant-typography {
+  margin: 0;
+}
+
+.purchase-order-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 2px;
+  overflow: hidden;
+  color: #64748b;
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.purchase-order-card-meta span {
+  min-width: 0;
+}
+
+.purchase-order-card .ant-progress {
+  display: block;
+  margin-top: 2px;
+  line-height: 1;
+}
+
+.purchase-order-card .ant-progress-inner {
+  height: 4px !important;
+}
+
+.purchase-item-list {
+  gap: 6px;
+}
+
+.purchase-item-card {
+  grid-template-columns: minmax(260px, 1.45fr) minmax(116px, 0.42fr) 132px auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 68px;
+  padding: 7px 8px;
+  border-radius: 6px;
+}
+
+.purchase-item-main {
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.purchase-thumb {
+  width: 54px;
+  height: 54px;
+  border-radius: 6px;
+}
+
+.purchase-thumb-tooltip.ant-tooltip {
+  max-width: none;
+}
+
+.purchase-thumb-tooltip .ant-tooltip-content,
+.purchase-thumb-tooltip .ant-tooltip-inner {
+  width: max-content;
+  max-width: none;
+}
+
+.purchase-thumb-tooltip .ant-tooltip-inner {
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+}
+
+.purchase-thumb-tooltip .ant-tooltip-arrow::before {
+  background: #fff;
+}
+
+.purchase-product-popover {
+  display: grid;
+  grid-template-columns: 180px minmax(200px, 260px);
+  gap: 8px;
+  max-width: min(456px, 70vw);
+  padding: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+}
+
+.purchase-thumb-preview-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 180px;
+  max-width: 30vw;
+  height: 202px;
+  max-height: 48vh;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #f8fafc;
+}
