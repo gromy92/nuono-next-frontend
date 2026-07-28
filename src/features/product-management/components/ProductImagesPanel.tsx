@@ -7,11 +7,11 @@ import { textInputValue } from '../utils';
 import { ProductDetailSection } from './ProductDetailSection';
 import { ProductImageAssetPreview } from './ProductImageAssetPreview';
 import { ProductImageManagerDrawer } from './ProductImageManagerDrawer';
-import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../types/productImageRole';
+import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../../product-image-profile/productImageRole';
 import {
   NOON_IMAGE_TARGET_ASPECT_RATIO,
   type NoonImageAssetMetadata
-} from '../utils/noonImageRequirements';
+} from '../../product-image-profile/noonListingImageRequirements';
 
 const { Text } = Typography;
 

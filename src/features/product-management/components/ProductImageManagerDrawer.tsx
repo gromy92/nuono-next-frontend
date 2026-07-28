@@ -17,14 +17,14 @@ import {
   type ProductImageManagerState
 } from './productImageManagerState';
 import { ProductImageAssetPreview } from './ProductImageAssetPreview';
-import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../types/productImageRole';
+import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../../product-image-profile/productImageRole';
 import {
   evaluateNoonImageDimensions,
   NOON_IMAGE_TARGET_ASPECT_RATIO,
   noonImageMetadataFromDimensions,
   normalizeNoonImageAssetMetadata,
   selectNoonImageAdaptTarget, type NoonImageAssetMetadata, type NoonImageDimensions
-} from '../utils/noonImageRequirements';
+} from '../../product-image-profile/noonListingImageRequirements';
 import { isProductImageAssetUrl, resolveProductImageDisplayUrl } from '../utils/productImageAssetDisplay';
 
 const { Text } = Typography;

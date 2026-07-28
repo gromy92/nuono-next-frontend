@@ -1,3 +1,10 @@
+/**
+ * Noon listing-canvas adaptation rules used by product drafts and image editing.
+ *
+ * These rules target a 0.73 listing ratio. They are intentionally distinct from
+ * `noonImageDimensionCompliance`, which checks the provider's broader minimum
+ * technical threshold (including a minimum 0.5 aspect ratio).
+ */
 export const NOON_IMAGE_MIN_WIDTH = 660
 export const NOON_IMAGE_TARGET_ASPECT_RATIO = 0.73
 export const NOON_IMAGE_ASPECT_RATIO_TOLERANCE = 0.02

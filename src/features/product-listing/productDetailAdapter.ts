@@ -10,8 +10,8 @@ import type { ProductCompetitorContentMaterial } from '../product-domain/product
 import type {
   ProductImageRoleAssignment,
   ProductImageUsageRole
-} from '../product-management/types/productImageRole'
-import { normalizeNoonImageAssetMetadata } from '../product-management/utils/noonImageRequirements'
+} from '../product-image-profile/productImageRole'
+import { normalizeNoonImageAssetMetadata } from '../product-image-profile/noonListingImageRequirements'
 import type { ProductListingDraftPayload } from './types'
 import {
   collectProductListingDraftCompletenessIssues,

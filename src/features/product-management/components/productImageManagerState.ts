@@ -1,7 +1,7 @@
 import type {
   ProductImageRoleAssignment,
   ProductImageUsageRole
-} from '../types/productImageRole'
+} from '../../product-image-profile/productImageRole'
 
 export type ProductImageManagerImage = {
   imageUrl: string

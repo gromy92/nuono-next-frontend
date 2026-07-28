@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict'
 
-const requirements = await import('./noonImageRequirements').catch(() => null)
+const requirements = await import('./noonListingImageRequirements').catch(() => null)
 
-assert(requirements, 'expected Noon image requirement utilities to exist')
+assert(requirements, 'expected Noon listing image requirement utilities to exist')
 
 const {
   evaluateNoonImageDimensions,
   normalizeNoonImageAssetMetadata,
   selectNoonImageAdaptTarget
-} = requirements as typeof import('./noonImageRequirements')
+} = requirements as typeof import('./noonListingImageRequirements')
 
 assert.deepEqual(
   selectNoonImageAdaptTarget({ width: 660, height: 904 }),
@@ -31,6 +31,11 @@ assert.deepEqual(
 assert.equal(evaluateNoonImageDimensions({ width: 660, height: 904 }).status, 'ready')
 assert.equal(evaluateNoonImageDimensions({ width: 640, height: 904 }).status, 'blocked')
 assert.equal(evaluateNoonImageDimensions({ width: 660, height: 760 }).code, 'aspect_ratio_mismatch')
+assert.equal(
+  evaluateNoonImageDimensions({ width: 660, height: 1320 }).code,
+  'aspect_ratio_mismatch',
+  'listing canvas rules must remain stricter than the separate 0.5 minimum technical compliance rule'
+)
 
 assert.deepEqual(
   normalizeNoonImageAssetMetadata(

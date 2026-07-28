@@ -8,8 +8,8 @@ import type {
   ProductSummarySurface
 } from '../types';
 import type { ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent';
-import type { ProductImageRoleAssignment } from '../types/productImageRole';
-import type { NoonImageAssetMetadata } from '../utils/noonImageRequirements';
+import type { NoonImageAssetMetadata } from '../../product-image-profile/noonListingImageRequirements';
+import type { ProductImageRoleAssignment } from '../../product-image-profile/productImageRole';
 
 export type ProductFieldValidationIssue = {
   fieldKey: string;
