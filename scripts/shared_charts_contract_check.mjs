@@ -45,7 +45,12 @@ const competitorProductTable = read('src/features/competitor-analysis/productLis
 const competitorProductListSeam = [competitorPage, competitorProductTable].join('\n')
 const competitorDashboard = read('src/features/competitor-analysis/CompetitorDashboardTab.tsx')
 const competitorPriceChangeTab = read('src/features/competitor-analysis/CompetitorPriceChangeTab.tsx')
-const competitorDashboardPriorityPanels = read('src/features/competitor-analysis/CompetitorDashboardPriorityPanels.tsx')
+const competitorDashboardPriorityPanels = [
+  read('src/features/competitor-analysis/CompetitorDashboardPriorityPanels.tsx'),
+  read('src/features/competitor-analysis/CompetitorAttributeChangePanel.tsx'),
+  read('src/features/competitor-analysis/CompetitorRankChangePanel.tsx'),
+  read('src/features/competitor-analysis/competitorAttributeChangeModel.ts')
+].join('\n')
 const competitorDashboardCommon = read('src/features/competitor-analysis/CompetitorDashboardCommon.tsx')
 const competitorRankDetailModal = read('src/features/competitor-analysis/CompetitorRankChangeDetailModal.tsx')
 const competitorDashboardCharts = read('src/features/competitor-analysis/dashboardCharts.ts')

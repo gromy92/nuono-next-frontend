@@ -12,7 +12,6 @@
     {"path":"src/features/app-shell/ShellFrame.tsx","ceiling":302},
     {"path":"src/features/app-shell/ShellSessionStorage.ts","ceiling":514},
     {"path":"src/features/auth/ReplicaLoginPage.tsx","ceiling":390},
-    {"path":"src/features/competitor-analysis/CompetitorDashboardPriorityPanels.tsx","ceiling":580},
     {"path":"src/features/competitor-analysis/CompetitorDashboardTab.tsx","ceiling":367},
     {"path":"src/features/competitor-analysis/dashboardCharts.ts","ceiling":390},
     {"path":"src/features/in-transit-goods/useInTransitBatchEditor.ts","ceiling":371},
