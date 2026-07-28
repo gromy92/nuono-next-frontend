@@ -1,4 +1,8 @@
-import type { ProductFieldDomainSurface, ProductWorkbenchFieldSurface, ProductWorkbenchState } from '../types';
+import type { ProductWorkbenchState } from '../types';
+import type {
+  ProductFieldDomainSurface,
+  ProductWorkbenchFieldSurface
+} from '../../product-editor/productFieldDomain';
 import {
   areSnapshotPartsEqual,
   formatSnapshotValue,

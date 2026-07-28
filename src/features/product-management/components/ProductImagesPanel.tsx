@@ -2,7 +2,7 @@ import { EditOutlined } from '@ant-design/icons';
 import { App as AntdApp, Button, Space, Typography } from 'antd';
 import { useState } from 'react';
 import { importProductImageAsset, uploadProductImageAsset } from '../api';
-import type { ProductFieldDomainSurface } from '../types';
+import type { ProductFieldDomainSurface } from '../../product-editor/productFieldDomain';
 import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import { textInputValue } from '../utils';
 import { ProductDetailSection } from './ProductDetailSection';

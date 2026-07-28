@@ -1,7 +1,4 @@
-import type {
-  ProductFieldDomainSurface,
-  ProductFieldDomainKey
-} from '../product-management/types'
+import type { ProductFieldDomainKey, ProductFieldDomainSurface } from '../product-editor/productFieldDomain'
 import { PRODUCT_DETAILED_ATTRIBUTE_GROUPS } from '../product-domain/productDetailedAttributeCatalog'
 import { createProductMasterSnapshotPayload, type ProductMasterSnapshotPayload } from '../product-domain/productMasterSnapshot'
 import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent'

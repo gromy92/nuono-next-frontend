@@ -80,7 +80,7 @@
     {"path":"src/features/product-baseline/ProductBaselineDisplay.tsx","ceiling":335},
     {"path":"src/features/product-image-profile/aiCopyText.ts","ceiling":349},
     {"path":"src/features/product-image-profile/ProductImageProfilePage.tsx","ceiling":334},
-    {"path":"src/features/product-listing/productDetailAdapter.ts","ceiling":641},
+    {"path":"src/features/product-listing/productDetailAdapter.ts","ceiling":638},
     {"path":"src/features/product-listing/ProductListingDetailEditor.tsx","ceiling":450},
     {"path":"src/features/product-listing/ProductListingPage.tsx","ceiling":875},
     {"path":"src/features/product-listing/sourcePrefill.ts","ceiling":431},

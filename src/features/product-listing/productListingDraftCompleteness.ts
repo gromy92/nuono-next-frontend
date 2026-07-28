@@ -1,5 +1,5 @@
 import { collectProductOfferPricingValidationIssues } from '../product-domain/productOfferPricing'
-import type { ProductFieldDomainKey } from '../product-management/types'
+import type { ProductFieldDomainKey } from '../product-editor/productFieldDomain'
 import type { ProductListingEditorDraft } from './productDetailAdapter'
 
 export type ProductListingDraftCompletenessIssue = {

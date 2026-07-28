@@ -2,7 +2,7 @@ import { LinkOutlined } from '@ant-design/icons';
 import { AutoComplete, Button, Modal, Space, Table, Tag, Typography } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchProductClassificationOptions, type ProductClassificationOptionPayload } from '../../product-domain/productClassificationApi';
-import type { ProductFieldDomainSurface } from '../types';
+import type { ProductFieldDomainSurface } from '../../product-editor/productFieldDomain';
 import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import { preferredCompetitorCategoryLabel, type ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent';
 import { textInputValue } from '../utils';

@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import type { ColumnsType } from 'antd/es/table';
 import type {
-  ProductFieldDomainSurface,
   ProductListRowPayload,
   ProductWorkbenchActionOptions,
   ProductSummarySurface
 } from '../types';
+import type { ProductFieldDomainSurface } from '../../product-editor/productFieldDomain';
 import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import type { ProductCompetitorContentMaterial } from '../../product-domain/productCompetitorContent';
 import type { NoonImageAssetMetadata } from '../../product-image-profile/noonListingImageRequirements';

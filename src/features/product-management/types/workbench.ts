@@ -97,31 +97,6 @@ export type ProductWorkbenchState = {
   pendingKeyContentHistoryVisibleAfter?: string;
 };
 
-export type ProductFieldDomainKey = 'main' | 'content' | 'grouping' | 'attributes' | 'site';
-
-export type ProductFieldDomainStatus = 'synced' | 'draft' | 'attention' | 'blocked';
-
-export type ProductFieldDomainSurface = {
-  key: ProductFieldDomainKey;
-  label: string;
-  scopeLabel: string;
-  status: ProductFieldDomainStatus;
-  dirty: boolean;
-  note: string;
-  metrics: Array<{ label: string; value: string | number }>;
-  issues: string[];
-  blockingIssueCount: number;
-};
-
-export type ProductWorkbenchFieldSurface = {
-  domains: ProductFieldDomainSurface[];
-  changedDomainKeys: ProductFieldDomainKey[];
-  changedDomainLabels: string[];
-  publishCurrentScopeLabel: string;
-  publishCurrentIssues: string[];
-  currentSiteCode?: string;
-};
-
 export type ProductWorkbenchContext = {
   mode: 'mock' | 'real';
   source: 'list-row' | 'quick-open' | 'init-carrier' | 'manual-open' | 'route-open' | 'unknown';

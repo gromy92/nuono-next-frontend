@@ -1,5 +1,4 @@
 import type {
-  ProductFieldDomainStatus,
   ProductListDatasetState,
   ProductListRowPayload,
   ProductSummarySurface,
@@ -190,30 +189,4 @@ export function isProductIssueBlocking(issue: unknown) {
 
 export function hasProductBlockingIssues(issues: unknown[]) {
   return issues.some(isProductIssueBlocking);
-}
-
-export function productFieldDomainStatusMeta(status: ProductFieldDomainStatus) {
-  switch (status) {
-    case 'draft':
-      return {
-        color: 'processing' as const,
-        label: '本地已改'
-      };
-    case 'attention':
-      return {
-        color: 'warning' as const,
-        label: '仍需补齐'
-      };
-    case 'blocked':
-      return {
-        color: 'error' as const,
-        label: '当前不可发布'
-      };
-    case 'synced':
-    default:
-      return {
-        color: 'success' as const,
-        label: '已跟随基线'
-      };
-  }
 }

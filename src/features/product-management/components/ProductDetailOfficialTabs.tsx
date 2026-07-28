@@ -1,7 +1,9 @@
 import { Space, Tabs, Tag, Tooltip } from 'antd';
 import { FEATURE_PRODUCT_INSIGHTS_ENABLED } from '../config';
-import { productFieldDomainStatusMeta } from '../utils';
-import type { ProductFieldDomainSurface } from '../types';
+import {
+  productFieldDomainStatusMeta,
+  type ProductFieldDomainSurface
+} from '../../product-editor/productFieldDomain';
 import type { ProductDetailOfficialTabsProps } from './ProductDetailOfficialTabs.types';
 import { ProductContentTab } from './ProductContentTab';
 import { ProductInsightsTab } from './ProductInsightsTab';

@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import { Space, Tag, Typography } from 'antd';
-import type { ProductFieldDomainSurface } from '../types';
-import { productFieldDomainStatusMeta } from '../utils';
+import {
+  productFieldDomainStatusMeta,
+  type ProductFieldDomainSurface
+} from '../../product-editor/productFieldDomain';
 
 const { Text } = Typography;
 
