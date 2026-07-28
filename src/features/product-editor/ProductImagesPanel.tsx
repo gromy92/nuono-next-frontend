@@ -1,18 +1,21 @@
 import { EditOutlined } from '@ant-design/icons';
 import { App as AntdApp, Button, Space, Typography } from 'antd';
 import { useState } from 'react';
-import { importProductImageAsset, uploadProductImageAsset } from '../api';
-import type { ProductFieldDomainSurface } from '../../product-editor/productFieldDomain';
-import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
-import { textInputValue } from '../utils';
-import { ProductDetailSection } from '../../product-editor/ProductDetailSection';
+import type { ProductMasterSnapshotPayload } from '../product-domain/productMasterSnapshot';
+import {
+  importProductImageAsset,
+  uploadProductImageAsset
+} from '../product-image-profile/productImageAssetApi';
+import type { ProductFieldDomainSurface } from './productFieldDomain';
+import { productEditorTextValue } from './productEditorValues';
+import { ProductDetailSection } from './ProductDetailSection';
 import { ProductImageAssetPreview } from './ProductImageAssetPreview';
 import { ProductImageManagerDrawer } from './ProductImageManagerDrawer';
-import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../../product-image-profile/productImageRole';
+import type { ProductImageRoleAssignment, ProductImageUsageRole } from '../product-image-profile/productImageRole';
 import {
   NOON_IMAGE_TARGET_ASPECT_RATIO,
   type NoonImageAssetMetadata
-} from '../../product-image-profile/noonListingImageRequirements';
+} from '../product-image-profile/noonListingImageRequirements';
 
 const { Text } = Typography;
 
@@ -174,8 +177,8 @@ function imageAssetContext(productSnapshotView?: ProductMasterSnapshotPayload) {
   const ownerUserId = Number(productSnapshotView?.storeContext.ownerUserId);
   return {
     ownerUserId: Number.isFinite(ownerUserId) ? ownerUserId : undefined,
-    storeCode: textInputValue(productSnapshotView?.storeContext.storeCode),
-    skuParent: textInputValue(productSnapshotView?.identity.skuParent)
+    storeCode: productEditorTextValue(productSnapshotView?.storeContext.storeCode),
+    skuParent: productEditorTextValue(productSnapshotView?.identity.skuParent)
   };
 }
 

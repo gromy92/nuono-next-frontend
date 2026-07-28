@@ -1,6 +1,9 @@
 import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
-import { isProductImageAssetUrl, resolveProductImageDisplayUrl } from '../utils/productImageAssetDisplay';
+import {
+  isProductImageAssetUrl,
+  resolveProductImageDisplayUrl
+} from '../product-image-profile/productImageAssetDisplay';
 
 type ProductImageAssetPreviewProps = {
   src: string;

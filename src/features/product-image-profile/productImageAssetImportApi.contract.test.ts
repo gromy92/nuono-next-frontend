@@ -4,17 +4,17 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const featureDir = dirname(fileURLToPath(import.meta.url))
-const apiSource = readFileSync(join(featureDir, 'api.ts'), 'utf8')
+const apiSource = readFileSync(join(featureDir, 'productImageAssetApi.ts'), 'utf8')
 
 assert.match(
   apiSource,
-  /export async function importProductImageAsset\(imageUrl: string/,
+  /export async function importProductImageAsset\(\s*imageUrl: string/,
   '商品图 API 必须提供外部图片转存函数'
 )
 
 assert.match(
   apiSource,
-  /apiFetch\('\/api\/product-master\/image-assets\/import'/,
+  /apiRequestJson<ProductImageAssetUploadResponse>\(\s*'\/api\/product-master\/image-assets\/import'/,
   '外部图片转存必须调用后端 import endpoint'
 )
 
@@ -38,6 +38,6 @@ assert.match(
 
 assert.match(
   apiSource,
-  /readBackendError\(response,\s*'转存图片失败'\)/,
-  '外部图片转存失败必须透出后端错误'
+  /'转存图片失败'/,
+  '外部图片转存失败必须通过统一 transport 提供明确错误'
 )

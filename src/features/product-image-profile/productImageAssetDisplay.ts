@@ -1,4 +1,4 @@
-import { apiFetch } from '../../../shared/api';
+import { apiFetch } from '../../shared/api';
 
 const PRODUCT_IMAGE_ASSET_PREFIX = '/api/product-master/image-assets/';
 

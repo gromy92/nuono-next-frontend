@@ -3,7 +3,7 @@ import { ProductAttributesPanel } from '../../product-editor/ProductAttributesPa
 import { ProductBasicContentPanel } from './ProductBasicContentPanel';
 import { ProductClassificationEditor } from '../../product-editor/ProductClassificationEditor';
 import type { ProductContentEditorProps } from '../../product-editor/productDetailEditorTypes';
-import { ProductImagesPanel } from './ProductImagesPanel';
+import { ProductImagesPanel } from '../../product-editor/ProductImagesPanel';
 
 export function ProductContentTab(props: ProductContentEditorProps) {
   const {

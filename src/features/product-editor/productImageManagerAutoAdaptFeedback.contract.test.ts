@@ -4,7 +4,14 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const componentDir = dirname(fileURLToPath(import.meta.url))
-const drawerSource = readFileSync(join(componentDir, 'ProductImageManagerDrawer.tsx'), 'utf8')
+const drawerSource = [
+  'ProductImageManagerDrawer.tsx',
+  'ProductImageManagerList.tsx',
+  'ProductImageStatusTag.tsx',
+  'productImageBrowserProcessing.ts',
+  'runProductImageAutoAdapt.ts',
+  'useProductImageManagerController.ts'
+].map((fileName) => readFileSync(join(componentDir, fileName), 'utf8')).join('\n')
 const panelSource = readFileSync(join(componentDir, 'ProductImagesPanel.tsx'), 'utf8')
 
 assert.match(
@@ -39,13 +46,13 @@ assert.match(
 
 assert.match(
   drawerSource,
-  /props\.messageApi\.loading\(\{\s*key:\s*adaptMessageKey/,
+  /messageApi\.loading\(\{\s*key:\s*messageKey/,
   '自动适配点击后必须立刻展示持续 loading 提示'
 )
 
 assert.match(
   drawerSource,
-  /setAutoAdaptFeedback\(\{\s*imageUrl,\s*content:\s*'正在自动适配商品图\.\.\.',\s*type:\s*'info'\s*\}\)/,
+  /onFeedback\(\{\s*imageUrl,\s*content:\s*'正在自动适配商品图\.\.\.',\s*type:\s*'info'\s*\}\)/,
   '自动适配点击后必须在当前图片行直接展示处理状态'
 )
 
@@ -57,7 +64,7 @@ assert.match(
 
 assert.match(
   drawerSource,
-  /shouldImportRemoteImage\(imageUrl\).*props\.onImportRemoteImage/s,
+  /shouldImportProductImage\(imageUrl\).*props\.onImportRemoteImage/s,
   '外部 http(s) 图片必须先转存为本地商品图资产再自动适配'
 )
 

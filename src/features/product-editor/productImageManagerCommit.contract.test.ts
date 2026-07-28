@@ -10,7 +10,7 @@ function source(path: string) {
 }
 
 const panelSource = source('./ProductImagesPanel.tsx')
-const drawerSource = source('./ProductImageManagerDrawer.tsx')
+const drawerSource = source('./useProductImageManagerController.ts')
 
 assert.match(
   panelSource,
@@ -26,7 +26,7 @@ assert.match(
 
 assert.match(
   drawerSource,
-  /onSave\(nextImages, activeImageRoleAssignments\(draftState\), nextImageAssetMetadata\)/,
+  /onSave\(nextImages, activeImageRoleAssignments\(draftState\), nextMetadata\)/,
   '图片管理保存时必须同时写回图片 URL、用途和 Noon 图片尺寸元数据'
 )
 
