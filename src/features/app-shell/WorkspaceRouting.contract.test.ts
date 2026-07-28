@@ -7,7 +7,6 @@ import {
   BOSS_OPERATOR_MENU_KEYS,
   WORKSPACE_MENU_DEFINITIONS,
   WORKSPACE_SECTION_DEFINITIONS,
-  workspaceMenuContentKind,
   workspaceMenuMount,
   workspaceMenuPath
 } from './WorkspaceMenuRegistry'
@@ -18,7 +17,7 @@ import {
 } from './WorkspaceRouting'
 
 assert.equal(workspaceMenuPath('official-warehouse'), '/warehouse/official-warehouse')
-assert.equal(workspaceMenuContentKind('official-warehouse'), 'official-warehouse')
+assert.equal(typeof workspaceMenuMount('official-warehouse'), 'function')
 assert.equal(OPERATIONS_PRODUCT_KEYWORDS_PATH, '/operations/product-keywords')
 assert.equal(workspaceMenuPath('operations-product-keywords'), OPERATIONS_PRODUCT_KEYWORDS_PATH)
 assert.equal(typeof workspaceMenuMount('operations-product-keywords'), 'function')
@@ -96,7 +95,7 @@ assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-listing'), t
 assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-pre-order-profit'), false)
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/listing'), 'purchase-listing')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/pre-order-profit'), null)
-assert.equal(legacyCommerceWorkspaceSource.includes('ProductListingPage'), true)
+assert.equal(legacyCommerceWorkspaceSource.includes('ProductListingPage'), false)
 assert.equal(legacyCommerceWorkspaceSource.includes('PreOrderProfitPage'), false)
 assert.equal(
   fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
@@ -108,7 +107,7 @@ assert.equal(
   fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
     '../product-listing/'
   ),
-  true
+  false
 )
 
 const warehouseSection = WORKSPACE_SECTION_DEFINITIONS.find((section) => section.key === 'warehouse')

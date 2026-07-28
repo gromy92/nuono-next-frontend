@@ -129,20 +129,22 @@ assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 29)
 const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.workspaceMount === 'function'
 )
-assert.deepEqual(mountedDefinitions.map((definition) => definition.key), [
-  'operations-competitor-analysis',
-  'operations-skin-management',
-  'operations-noon-ads',
-  'operations-product-keywords',
-  'data-sales-analysis',
-  'data-order-analysis',
-  'noon-call-store-data',
-  'system-report-noon-data-completeness',
-  'system-report-noon-data-gaps',
-  'operations-config-versions',
-  'data-activity-config',
-  'system-file-management'
-])
+assert.equal(mountedDefinitions.length, 27)
+assert.deepEqual(
+  Object.values(WORKSPACE_MENU_DEFINITIONS)
+    .filter((definition) => typeof definition.contentKind === 'string')
+    .map((definition) => definition.key),
+  [
+    'product-manage',
+    'product-groups',
+    'product-specs',
+    'purchase-order',
+    'purchase-profit',
+    'purchase-in-transit-goods',
+    'user-store-noon',
+    'user-role'
+  ]
+)
 for (const definition of Object.values(WORKSPACE_MENU_DEFINITIONS)) {
   assert.notEqual(
     typeof definition.contentKind === 'string',

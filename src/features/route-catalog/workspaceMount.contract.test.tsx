@@ -87,6 +87,24 @@ try {
     'the mount Interface must pass the authenticated session to the lazy workspace'
   )
   assert.equal(loaderCalls, 0, 'creating the lazy React element must not execute its loader')
+
+  const DerivedWorkspace = ({ operatorName }: { operatorName: string }) => (
+    <span>{operatorName}</span>
+  )
+  const mappedMount = createLazyWorkspaceMount(
+    async () => ({ default: DerivedWorkspace }),
+    ({ session: currentSession }) => ({
+      operatorName: currentSession.realName || currentSession.accountNo
+    })
+  )
+  const mappedElement = mappedMount({ session }) as ReactElement<{
+    children: ReactElement<{ operatorName: string }>
+  }>
+  assert.equal(
+    mappedElement.props.children.props.operatorName,
+    'workspace-mount-contract',
+    'a mount Adapter may deterministically derive page props from the session Interface'
+  )
 } finally {
   if (previousWindowDescriptor) {
     Object.defineProperty(globalThis, 'window', previousWindowDescriptor)

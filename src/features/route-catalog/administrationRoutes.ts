@@ -24,7 +24,18 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'user',
     pathLabel: '用户 / 账号管理',
     tabLabel: '账号管理',
-    contentKind: 'user-account',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../master-data/MasterDataBoard').then((module) => ({
+          default: module.MasterDataBoard
+        })),
+      ({ session }) => ({
+        mode: 'user-account' as const,
+        operatorUserId: session.userId,
+        operatorRoleLevel: session.level,
+        operatorStores: session.userStores ?? []
+      })
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -59,7 +70,18 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'system',
     pathLabel: '系统管理 / 菜单维护',
     tabLabel: '菜单维护',
-    contentKind: 'system-menu',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../master-data/MasterDataBoard').then((module) => ({
+          default: module.MasterDataBoard
+        })),
+      ({ session }) => ({
+        mode: 'system-menu' as const,
+        operatorUserId: session.userId,
+        operatorRoleLevel: session.level,
+        operatorStores: session.userStores ?? []
+      })
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -70,7 +92,18 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'system',
     pathLabel: '系统管理 / 角色管理',
     tabLabel: '角色管理',
-    contentKind: 'system-role',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../master-data/MasterDataBoard').then((module) => ({
+          default: module.MasterDataBoard
+        })),
+      ({ session }) => ({
+        mode: 'system-role' as const,
+        operatorUserId: session.userId,
+        operatorRoleLevel: session.level,
+        operatorStores: session.userStores ?? []
+      })
+    ),
     closable: true,
     sidebarOrder: 2
   }

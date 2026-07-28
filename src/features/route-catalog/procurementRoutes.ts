@@ -1,5 +1,6 @@
 import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from './types'
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
+import { createLazyWorkspaceMount } from './workspaceMount'
 
 export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'purchase-ali1688-collection': {
@@ -9,7 +10,20 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 1688查询展示',
     tabLabel: '1688查询展示',
-    contentKind: 'purchase-ali1688-collection',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../ali1688-collection/Ali1688CollectionPage').then((module) => ({
+          default: module.Ali1688CollectionPage
+        })),
+      ({ session }) => ({
+        storeName:
+          session.currentStore?.projectName ||
+          session.currentStore?.projectCode ||
+          'xingyao',
+        storeCode: session.currentStore?.storeCode,
+        operatorName: session.realName || session.accountNo
+      })
+    ),
     closable: true,
     sidebarOrder: 4
   },
@@ -20,7 +34,20 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 1688 历史订单',
     tabLabel: '1688 历史订单',
-    contentKind: 'purchase-ali1688-historical-orders',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../ali1688-historical-orders/Ali1688HistoricalOrdersPage').then((module) => ({
+          default: module.Ali1688HistoricalOrdersPage
+        })),
+      ({ session }) => ({
+        storeName: session.currentStore?.projectName || session.currentStore?.projectCode,
+        storeCode: session.currentStore?.projectCode || session.currentStore?.storeCode,
+        siteCode: session.currentStore?.site,
+        ownerUserId: session.defaultOwnerUserId ?? session.userId,
+        operatorRoleName: session.roleName,
+        availableStores: session.userStores
+      })
+    ),
     closable: true,
     sidebarOrder: 2
   },
@@ -31,7 +58,17 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / SKU 采购历史',
     tabLabel: 'SKU 采购历史',
-    contentKind: 'purchase-ali1688-sku-purchase-history',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage').then((module) => ({
+          default: module.Ali1688SkuPurchaseHistoryPage
+        })),
+      ({ session }) => ({
+        storeCode: session.currentStore?.projectCode || session.currentStore?.storeCode,
+        siteCode: session.currentStore?.site,
+        availableStores: session.userStores
+      })
+    ),
     closable: true,
     sidebarOrder: 3
   },
@@ -42,7 +79,15 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 商品上架',
     tabLabel: '商品上架',
-    contentKind: 'product-listing',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../product-listing/ProductListingPage').then((module) => ({
+          default: module.ProductListingPage
+        })),
+      ({ session }) => ({
+        storeCode: session.currentStore?.storeCode
+      })
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -75,7 +120,11 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'logistics',
     pathLabel: '物流 / 货代管理',
     tabLabel: '货代管理',
-    contentKind: 'purchase-logistics-quote',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../logistics-quote/LogisticsQuoteBoard').then((module) => ({
+        default: module.LogisticsQuoteBoard
+      }))
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -86,7 +135,11 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'logistics',
     pathLabel: '物流 / 商品物流价格',
     tabLabel: '商品物流价格',
-    contentKind: 'purchase-product-logistics-costs',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../product-logistics-costs/ProductLogisticsCostsPage').then((module) => ({
+        default: module.ProductLogisticsCostsPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 1
   },

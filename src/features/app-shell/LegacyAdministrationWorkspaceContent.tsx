@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import type { WorkspaceContentKind } from '../route-catalog/RouteCatalog'
 import { LazyWorkspaceBoundary } from '../route-catalog/workspaceMount'
-import { MasterDataBoard, RoleManagementWorkspace } from './ShellWorkspaceLazyComponents'
+import { RoleManagementWorkspace } from './ShellWorkspaceLazyComponents'
 import type {
   LegacyWorkspaceRenderResult,
   ShellWorkspaceRenderContext
@@ -31,18 +31,6 @@ export function renderLegacyAdministrationWorkspace(
     storeSyncState
   } = context
 
-  if (activeContentKind === 'user-account') {
-    return handled(
-      <LazyWorkspaceBoundary>
-        <MasterDataBoard
-          mode="user-account"
-          operatorUserId={shellSession.userId}
-          operatorRoleLevel={shellSession.level}
-          operatorStores={shellSession.userStores ?? []}
-        />
-      </LazyWorkspaceBoundary>
-    )
-  }
   if (activeContentKind === 'user-administration') {
     return handled(
       <LazyWorkspaceBoundary>
@@ -62,18 +50,6 @@ export function renderLegacyAdministrationWorkspace(
           onStoreRefresh={onStoreRefresh}
           onDataChanged={onRoleManagementDataChanged}
           onActiveKeyChange={onRoleManagementTabChange}
-        />
-      </LazyWorkspaceBoundary>
-    )
-  }
-  if (activeContentKind === 'system-menu' || activeContentKind === 'system-role') {
-    return handled(
-      <LazyWorkspaceBoundary>
-        <MasterDataBoard
-          mode={activeContentKind}
-          operatorUserId={shellSession.userId}
-          operatorRoleLevel={shellSession.level}
-          operatorStores={shellSession.userStores ?? []}
         />
       </LazyWorkspaceBoundary>
     )

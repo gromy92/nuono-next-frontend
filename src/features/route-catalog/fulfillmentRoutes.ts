@@ -1,5 +1,6 @@
 import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from './types'
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
+import { createLazyWorkspaceMount } from './workspaceMount'
 
 export const FULFILLMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'warehouse-logistics-bill': {
@@ -9,7 +10,11 @@ export const FULFILLMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'warehouse',
     pathLabel: '仓储 / 物流账单',
     tabLabel: '物流账单',
-    contentKind: 'warehouse-logistics-bill',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../warehouse-logistics-bill/WarehouseLogisticsBillPage').then((module) => ({
+        default: module.WarehouseLogisticsBillPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -20,7 +25,11 @@ export const FULFILLMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'warehouse',
     pathLabel: '仓储 / 仓库发运',
     tabLabel: '仓库发运',
-    contentKind: 'warehouse-dispatch',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../warehouse-dispatch/WarehouseDispatchWorkbenchPage').then((module) => ({
+        default: module.WarehouseDispatchWorkbenchPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 1,
     routeAliases: ['/warehouse/shipping-orders']
@@ -32,7 +41,11 @@ export const FULFILLMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'warehouse',
     pathLabel: '仓储 / Noon官方仓',
     tabLabel: 'Noon官方仓',
-    contentKind: 'official-warehouse',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../official-warehouse/OfficialWarehouseWorkbenchPage').then((module) => ({
+        default: module.OfficialWarehouseWorkbenchPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 2,
     routeAliases: ['/warehouse/fbn', '/storage/warehouse', '/warehouse/official-warehouse-stock']
