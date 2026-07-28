@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import { useProfitCalculatorWorkspace } from '../profit-calculator/useProfitCalculatorWorkspace';
 import { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
 import type { ProductDetailTabRequest, ProductWorkspaceTabKey } from '../product-management/types';
 import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
@@ -20,7 +19,6 @@ export function AppShellRuntime() {
     sessionAllowedMenuKeys,
     sessionAllowedMenuKeySet,
     shellSession,
-    shouldRenderProcurementRequirementConfirmation,
     syncWorkspacePathForMenuKey,
     usingProcurementRequirementDemoSession,
     visibleWorkspaceMenuItems
@@ -45,13 +43,6 @@ export function AppShellRuntime() {
     storeSyncState
   } = useStoreSyncController(session, shellSession);
 
-  const openProfitWorkspace = useCallback(() => {
-    setActiveMenuKey('purchase-profit');
-  }, []);
-
-  const { profitBoard, openProfitCalculatorPrefilled } = useProfitCalculatorWorkspace(openProfitWorkspace, shellSession, {
-    enabled: activeMenuKey === 'purchase-profit'
-  });
   const productWorkspace = useProductManagementWorkspace({
     session,
     enabled: isProductWorkspaceMenu(activeMenuKey),
@@ -181,7 +172,6 @@ export function AppShellRuntime() {
     setActiveMenuKey,
     setActiveInTransitWorkspaceTabKey,
     setActiveProductWorkspaceTabKey,
-    shouldRenderProcurementRequirementConfirmation,
     syncWorkspacePathForMenuKey,
     visibleWorkspaceMenuItems
   });
@@ -220,11 +210,9 @@ export function AppShellRuntime() {
       notifyRoleManagementDataChanged={notifyRoleManagementDataChanged}
       onCloseInTransitBoxDetailTab={requestCloseInTransitBoxDetailTab}
       onOpenInTransitBoxDetailTab={openInTransitBoxDetailTab}
-      onOpenProfitCalculatorPrefilled={openProfitCalculatorPrefilled}
       openedWorkspaceTabKeys={openedWorkspaceTabKeys}
       productWorkspace={productWorkspace}
       productWorkspaceTabKey={resolvedProductWorkspaceTabKey}
-      profitBoard={profitBoard}
       roleManagementRefreshSignal={roleManagementRefreshSignal}
       setActiveMenuKey={setActiveMenuKey}
       setChangePasswordOpen={setChangePasswordOpen}
@@ -234,7 +222,6 @@ export function AppShellRuntime() {
       setStoreSyncOwnerId={setStoreSyncOwnerId}
       setUserRoleActiveTabKey={setUserRoleActiveTabKey}
       shellSession={shellSession}
-      shouldRenderProcurementRequirementConfirmation={shouldRenderProcurementRequirementConfirmation}
       shouldRenderWorkspaceTabs={shouldRenderWorkspaceTabs}
       sidebarOpenKeys={sidebarOpenKeys}
       storeSyncOwnerId={storeSyncOwnerId}

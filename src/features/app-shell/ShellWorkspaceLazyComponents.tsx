@@ -20,13 +20,3 @@ export const ProductSpecsPage = lazyWorkspace(() =>
     default: module.ProductSpecsPage
   }))
 );
-export const PurchaseOrderPage = lazyWorkspace(() =>
-  import('../purchase-order/PurchaseOrderPage').then((module) => ({
-    default: module.PurchaseOrderPage
-  }))
-);
-export const ProcurementRequirementConfirmationPage = lazyWorkspace(() =>
-  import('../procurement-confirmation/ProcurementRequirementConfirmationPage').then((module) => ({
-    default: module.ProcurementRequirementConfirmationPage
-  }))
-);

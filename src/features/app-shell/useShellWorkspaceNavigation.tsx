@@ -54,7 +54,6 @@ type UseShellWorkspaceNavigationParams = {
   setActiveMenuKey: Dispatch<SetStateAction<AppMenuKey>>;
   setActiveInTransitWorkspaceTabKey: Dispatch<SetStateAction<'purchase-in-transit-goods' | 'in-transit-box-detail'>>;
   setActiveProductWorkspaceTabKey: Dispatch<SetStateAction<ProductWorkspaceTabKey>>;
-  shouldRenderProcurementRequirementConfirmation: boolean;
   syncWorkspacePathForMenuKey: (menuKey: AppMenuKey) => void;
   visibleWorkspaceMenuItems: SidebarMenuItem[];
 };
@@ -75,7 +74,6 @@ export function useShellWorkspaceNavigation({
   setActiveMenuKey,
   setActiveInTransitWorkspaceTabKey,
   setActiveProductWorkspaceTabKey,
-  shouldRenderProcurementRequirementConfirmation,
   syncWorkspacePathForMenuKey,
   visibleWorkspaceMenuItems
 }: UseShellWorkspaceNavigationParams) {
@@ -176,7 +174,6 @@ export function useShellWorkspaceNavigation({
     productDetailSummarySurface,
     productDetailTabRequest,
     sessionAllowedMenuKeySet,
-    shouldRenderProcurementRequirementConfirmation
   ]);
 
   const activeWorkspaceTabKey =

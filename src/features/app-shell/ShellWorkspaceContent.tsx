@@ -32,14 +32,15 @@ function workspaceContentMountKeyForMenuKey(menuKey: AppMenuKey) {
 }
 
 type ShellWorkspaceContentPaneProps = {
+  active: boolean
   menuKey: AppMenuKey
   context: ShellWorkspaceRenderContext
 }
 
-function ShellWorkspaceContentPane({ menuKey, context }: ShellWorkspaceContentPaneProps) {
+function ShellWorkspaceContentPane({ active, menuKey, context }: ShellWorkspaceContentPaneProps) {
   const WorkspaceMount = workspaceMenuMount(menuKey)
   if (WorkspaceMount) {
-    return <WorkspaceMount session={context.shellSession} />
+    return <WorkspaceMount active={active} session={context.shellSession} />
   }
   return renderLegacyWorkspaceContent(menuKey, context)
 }
@@ -88,7 +89,7 @@ export function ShellWorkspaceContent({
             data-workspace-menu-key={menuKey}
             aria-hidden={!isActivePane}
           >
-            <ShellWorkspaceContentPane menuKey={menuKey} context={context} />
+            <ShellWorkspaceContentPane active={isActivePane} menuKey={menuKey} context={context} />
           </div>
         )
       })}

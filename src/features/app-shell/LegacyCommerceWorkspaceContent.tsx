@@ -3,11 +3,9 @@ import type { WorkspaceContentKind } from '../route-catalog/RouteCatalog'
 import { LazyWorkspaceBoundary } from '../route-catalog/workspaceMount'
 import {
   InTransitGoodsPage,
-  ProcurementRequirementConfirmationPage,
   ProductGroupManagementPage,
   ProductManagementWorkspacePage,
-  ProductSpecsPage,
-  PurchaseOrderPage
+  ProductSpecsPage
 } from './ShellWorkspaceLazyComponents'
 import type {
   LegacyWorkspaceRenderResult,
@@ -30,22 +28,9 @@ export function renderLegacyCommerceWorkspace(
     onCloseInTransitBoxDetailTab,
     onOpenInTransitBoxDetailTab,
     productWorkspace,
-    profitBoard,
-    shellSession,
-    shouldRenderProcurementRequirementConfirmation
+    shellSession
   } = context
 
-  if (activeContentKind === 'purchase-order') {
-    return handled(
-      <LazyWorkspaceBoundary>
-        {shouldRenderProcurementRequirementConfirmation ? (
-          <ProcurementRequirementConfirmationPage embedded session={shellSession} />
-        ) : (
-          <PurchaseOrderPage session={shellSession} />
-        )}
-      </LazyWorkspaceBoundary>
-    )
-  }
   if (activeContentKind === 'product-groups') {
     return handled(
       <LazyWorkspaceBoundary>
@@ -71,9 +56,6 @@ export function renderLegacyCommerceWorkspace(
         />
       </LazyWorkspaceBoundary>
     )
-  }
-  if (activeContentKind === 'purchase-profit') {
-    return handled(profitBoard)
   }
   if (activeContentKind === 'product-management') {
     return handled(

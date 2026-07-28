@@ -31,7 +31,7 @@ const session: AuthSession = {
 function mountedPageProps(menuKey: AppMenuKey) {
   const mount = workspaceMenuMount(menuKey)
   assert.ok(mount, `${menuKey} must declare a workspace mount Adapter`)
-  const element = mount({ session }) as ReactElement<{
+  const element = mount({ active: true, session }) as ReactElement<{
     children: ReactElement<Record<string, unknown>>
   }>
   return element.props.children.props
@@ -64,3 +64,13 @@ assert.strictEqual(
   session,
   'session-native pages must receive the same authenticated session'
 )
+
+assert.deepEqual(mountedPageProps('purchase-order'), {
+  active: true,
+  session
+})
+
+assert.deepEqual(mountedPageProps('purchase-profit'), {
+  active: true,
+  session
+})

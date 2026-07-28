@@ -98,7 +98,11 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 补货采购',
     tabLabel: '补货采购',
-    contentKind: 'purchase-order',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../purchase-order/PurchaseOrderWorkspaceMount').then((module) => ({
+        default: module.PurchaseOrderWorkspaceMount
+      }))
+    ),
     closable: true,
     sidebarOrder: 5
   },
@@ -109,7 +113,11 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 利润计算',
     tabLabel: '利润计算',
-    contentKind: 'purchase-profit',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../profit-calculator/ProfitCalculatorWorkspaceMount').then((module) => ({
+        default: module.ProfitCalculatorWorkspaceMount
+      }))
+    ),
     closable: true,
     sidebarOrder: 1
   },

@@ -1,4 +1,4 @@
-import { lazy, Suspense, type Dispatch, type Key, type ReactNode, type SetStateAction } from 'react';
+import { lazy, Suspense, type Dispatch, type Key, type SetStateAction } from 'react';
 import {
   App as AntdApp,
   Col,
@@ -18,7 +18,6 @@ import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
 import type { ProductWorkspaceTabKey } from '../product-management/types';
 import type { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
-import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProfitCalculatorWorkspace';
 import type { StoreSyncOverviewState } from '../store-sync/types';
 import { ShellHeader } from './ShellHeader';
 import { ShellSidebar } from './ShellSidebar';
@@ -80,11 +79,9 @@ type ShellFrameProps = {
   notifyRoleManagementDataChanged: (source?: 'store-management') => void;
   onCloseInTransitBoxDetailTab: () => Promise<void> | void;
   onOpenInTransitBoxDetailTab: (request: InTransitBoxDetailTabRequest) => void;
-  onOpenProfitCalculatorPrefilled: OpenProfitCalculatorPrefilled;
   openedWorkspaceTabKeys: AppMenuKey[];
   productWorkspace: ProductManagementWorkspace;
   productWorkspaceTabKey: ProductWorkspaceTabKey;
-  profitBoard: ReactNode;
   roleManagementRefreshSignal: number;
   setChangePasswordOpen: (open: boolean) => void;
   setLoginError: (message: string | null) => void;
@@ -94,7 +91,6 @@ type ShellFrameProps = {
   setUserRoleActiveTabKey: (key: RoleManagementWorkspaceTabKey) => void;
   setActiveMenuKey: (key: AppMenuKey) => void;
   shellSession: AuthSession | null;
-  shouldRenderProcurementRequirementConfirmation: boolean;
   shouldRenderWorkspaceTabs: boolean;
   sidebarOpenKeys: string[];
   storeSyncOwnerId?: number;
@@ -141,11 +137,9 @@ export function ShellFrame({
   notifyRoleManagementDataChanged,
   onCloseInTransitBoxDetailTab,
   onOpenInTransitBoxDetailTab,
-  onOpenProfitCalculatorPrefilled,
   openedWorkspaceTabKeys,
   productWorkspace,
   productWorkspaceTabKey,
-  profitBoard,
   roleManagementRefreshSignal,
   setChangePasswordOpen,
   setLoginError,
@@ -155,7 +149,6 @@ export function ShellFrame({
   setUserRoleActiveTabKey,
   setActiveMenuKey,
   shellSession,
-  shouldRenderProcurementRequirementConfirmation,
   shouldRenderWorkspaceTabs,
   sidebarOpenKeys,
   storeSyncOwnerId,
@@ -271,12 +264,9 @@ export function ShellFrame({
                           <ShellWorkspaceContent
                             activeMenuKey={activeMenuKey}
                             noMenuPermission={noMenuPermission}
-                            shouldRenderProcurementRequirementConfirmation={shouldRenderProcurementRequirementConfirmation}
                             shellSession={shellSession}
-                            onOpenProfitCalculatorPrefilled={onOpenProfitCalculatorPrefilled}
                             onOpenInTransitBoxDetailTab={onOpenInTransitBoxDetailTab}
                             onCloseInTransitBoxDetailTab={onCloseInTransitBoxDetailTab}
-                            profitBoard={profitBoard}
                             productWorkspace={productWorkspace}
                             activeOwnerId={activeOwnerId}
                             inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}

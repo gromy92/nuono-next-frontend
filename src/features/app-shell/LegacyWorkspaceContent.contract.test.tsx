@@ -10,9 +10,6 @@ const context = {
     bindingStatus: 'BOUND'
   },
   productWorkspace: {},
-  profitBoard: null,
-  shouldRenderProcurementRequirementConfirmation: false,
-  onOpenProfitCalculatorPrefilled: () => undefined,
   onOpenInTransitBoxDetailTab: () => undefined,
   onCloseInTransitBoxDetailTab: () => undefined,
   inTransitBoxDetailTabRequest: null,
@@ -33,7 +30,7 @@ const context = {
 const legacyDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.contentKind === 'string'
 )
-assert.equal(legacyDefinitions.length, 8)
+assert.equal(legacyDefinitions.length, 6)
 for (const definition of legacyDefinitions) {
   assert.doesNotThrow(
     () => renderLegacyWorkspaceContent(definition.key, context),

@@ -4,7 +4,6 @@ import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types'
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace'
 import type { ProductWorkspaceTabKey } from '../product-management/types'
 import type { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace'
-import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProfitCalculatorWorkspace'
 import type { StoreSyncOverviewState } from '../store-sync/types'
 import type { AppMenuKey } from './WorkspaceRouting'
 import type { LoadStoreSyncOptions } from './useStoreSyncController'
@@ -12,12 +11,9 @@ import type { LoadStoreSyncOptions } from './useStoreSyncController'
 type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>
 
 export type ShellWorkspaceRenderContext = {
-  shouldRenderProcurementRequirementConfirmation: boolean
   shellSession: AuthSession
-  onOpenProfitCalculatorPrefilled: OpenProfitCalculatorPrefilled
   onOpenInTransitBoxDetailTab: (request: InTransitBoxDetailTabRequest) => void
   onCloseInTransitBoxDetailTab: () => Promise<void> | void
-  profitBoard: ReactNode
   productWorkspace: ProductManagementWorkspace
   activeOwnerId?: number
   inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null

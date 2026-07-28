@@ -63,8 +63,8 @@ assert.equal(
 )
 assert.match(
   shellWorkspaceContentSource,
-  /<WorkspaceMount session=\{context\.shellSession\} \/>/,
-  'the Shell must pass the authenticated session through the workspace mount Interface'
+  /<WorkspaceMount active=\{active\} session=\{context\.shellSession\} \/>/,
+  'the Shell must pass lifecycle and authentication through the workspace mount Interface'
 )
 assert.equal(
   fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/LegacyOperationsWorkspaceContent.tsx')),

@@ -10,9 +10,9 @@ import type { WorkspaceMountStrategy } from './types'
 const knownMenuKey: AppMenuKey = 'purchase-order'
 assert.equal(knownMenuKey, 'purchase-order')
 
-const legacyStrategy: WorkspaceMountStrategy = { contentKind: 'purchase-order' }
+const legacyStrategy: WorkspaceMountStrategy = { contentKind: 'product-management' }
 const mountedStrategy: WorkspaceMountStrategy = { workspaceMount: () => null }
-assert.equal(legacyStrategy.contentKind, 'purchase-order')
+assert.equal(legacyStrategy.contentKind, 'product-management')
 assert.equal(typeof mountedStrategy.workspaceMount, 'function')
 
 if (false) {
@@ -24,7 +24,7 @@ if (false) {
   assert.ok(missingStrategy)
   // @ts-expect-error A route definition cannot declare both mount strategies.
   const conflictingStrategy: WorkspaceMountStrategy = {
-    contentKind: 'purchase-order',
+    contentKind: 'product-management',
     workspaceMount: () => null
   }
   assert.ok(conflictingStrategy)

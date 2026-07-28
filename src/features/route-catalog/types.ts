@@ -22,8 +22,6 @@ export type WorkspaceContentKind =
   | 'product-management'
   | 'product-groups'
   | 'product-specs'
-  | 'purchase-order'
-  | 'purchase-profit'
   | 'purchase-in-transit-goods'
   | 'user-administration'
 

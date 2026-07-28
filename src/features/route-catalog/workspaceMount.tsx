@@ -7,6 +7,7 @@ const DYNAMIC_IMPORT_RELOAD_KEY = 'nuono:dynamic-import-reload'
 type WorkspaceModule<T extends ComponentType<any>> = { default: T }
 
 export type WorkspaceMountProps = {
+  readonly active: boolean
   readonly session: AuthSession
 }
 
