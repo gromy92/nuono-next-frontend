@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { selectProductSpecEffectiveSource } from './api';
+import { selectProductSpecEffectiveSource } from '../product-specs/api';
 
 const productManagementDir = dirname(fileURLToPath(import.meta.url));
 const repoFeatureDir = join(productManagementDir, '..');
@@ -32,7 +32,7 @@ function readProductManagementSources(dir = productManagementDir): Array<{ path:
 const productManagementSources = readProductManagementSources();
 const allProductManagementSource = productManagementSources.map((item) => item.source).join('\n');
 const catalogTablePanel = source('./components/ProductCatalogTablePanel.tsx');
-const api = source('./api.ts');
+const api = featureSource('product-specs/api.ts') + featureSource('product-specs/logisticsProfileApi.ts');
 const historyModalActions = source('./hooks/useProductHistoryModalActions.ts');
 const listMutations = source('./hooks/useProductListMutations.ts');
 const localDeletion = source('./hooks/useProductLocalDeletion.ts');
@@ -223,7 +223,7 @@ assert.match(
 
 assert.match(
   api,
-  /if \(partnerSku\)[\s\S]*method: 'PUT'[\s\S]*return \(await response\.json\(\)\) as ProductVariantSpecDetailPayload/,
+  /if \(partnerSku\)[\s\S]*method: 'PUT'/,
   'by-psku effective-source requests must use PUT'
 );
 

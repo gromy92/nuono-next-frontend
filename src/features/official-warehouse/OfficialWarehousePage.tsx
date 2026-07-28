@@ -34,7 +34,7 @@ import dayjs, { type Dayjs } from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Key } from 'react'
 import type { AuthSession } from '../auth/session'
-import { saveProductSpecSource } from '../product-management/api'
+import { saveProductSpecSource } from '../product-specs/api'
 import {
   cancelOfficialWarehouseAppointment,
   correctOfficialWarehouseAppointment,

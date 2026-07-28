@@ -1,7 +1,7 @@
 import { Button, Empty, InputNumber, Select, Space, Spin, Tag, Typography, message } from 'antd';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { fetchProductVariantSpecs, saveProductVariantSpec } from '../api';
-import type { ProductVariantSpecLogisticsValue, ProductVariantSpecPayload } from '../types';
+import { fetchProductVariantSpecs, saveProductVariantSpec } from '../../product-specs/api';
+import type { ProductVariantSpecLogisticsValue, ProductVariantSpecPayload } from '../../product-specs/types';
 import { formatSnapshotValue, textInputValue } from '../utils/common';
 import { getProductStableIdentityKey } from '../utils';
 

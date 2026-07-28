@@ -5,16 +5,16 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AuthSession, AuthSessionStore } from '../auth/session';
 import {
   fetchProductSpecsOverview,
-  saveProductLogisticsProfile,
   saveProductSpecSource,
   selectProductSpecEffectiveSource
-} from '../product-management/api';
+} from './api';
+import { saveProductLogisticsProfile } from './logisticsProfileApi';
 import type {
   ProductLogisticsProfilePayload,
   ProductVariantSpecPayload,
   ProductVariantSpecSourcePayload,
   ProductVariantSpecSourceType
-} from '../product-management/types';
+} from './types';
 import { getProductCurrentZCode, getProductStableIdentityKey } from '../product-domain/productIdentity';
 import { normalizeNoonImageUrl } from '../product-baseline';
 import { formatSnapshotValue } from '../product-management/utils/common';

@@ -39,18 +39,14 @@ import { withPublicBasePath } from '../../runtimePaths'
 import { firstFormValidationMessage, normalizeError } from '../../shared/api'
 import type { AuthSession } from '../auth/session'
 import { ReplenishmentPlanTab } from '../replenishment-plan/ReplenishmentPlanTab'
-import {
-  fetchProductLogisticsProfiles,
-  fetchProductSpecDetail,
-  saveProductSpecSource,
-  saveProductLogisticsProfile
-} from '../product-management/api'
+import { fetchProductSpecDetail, saveProductSpecSource } from '../product-specs/api'
+import { fetchProductLogisticsProfiles, saveProductLogisticsProfile } from '../product-specs/logisticsProfileApi'
 import type {
   ProductLogisticsProfilePayload,
   ProductVariantSpecDetailPayload,
   ProductVariantSpecPayload,
   ProductVariantSpecSourcePayload
-} from '../product-management/types'
+} from '../product-specs/types'
 import {
   addPurchaseOrderItems,
   createPurchaseOrder,
