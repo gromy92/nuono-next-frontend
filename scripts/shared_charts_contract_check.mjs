@@ -59,7 +59,13 @@ const competitorDashboardPriorityPanels = [
 ].join('\n')
 const competitorDashboardCommon = read('src/features/competitor-analysis/CompetitorDashboardCommon.tsx')
 const competitorRankDetailModal = read('src/features/competitor-analysis/CompetitorRankChangeDetailModal.tsx')
-const competitorDashboardCharts = read('src/features/competitor-analysis/dashboardCharts.ts')
+const competitorDashboardCharts = [
+  read('src/features/competitor-analysis/dashboardCharts.ts'),
+  read('src/features/competitor-analysis/dashboardChartShared.ts'),
+  read('src/features/competitor-analysis/rankChangeChartOption.ts'),
+  read('src/features/competitor-analysis/issueChartOptions.ts'),
+  read('src/features/competitor-analysis/productDashboardChartOptions.ts')
+].join('\n')
 const competitorDashboardShared = read('src/features/competitor-analysis/dashboardShared.ts')
 
 assertIncludes(panel, 'export type EChartPanelState', 'EChartPanel')
