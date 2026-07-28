@@ -32,7 +32,6 @@
     {"path":"src/features/product-management/hooks/useProductListMutations.ts","ceiling":336},
     {"path":"src/features/product-management/hooks/useProductStoreInitialization.ts","ceiling":305},
     {"path":"src/features/product-management/hooks/useProductWorkbenchDerivedState.ts","ceiling":304},
-    {"path":"src/features/product-management/hooks/useProductWorkspaceNavigation.tsx","ceiling":409},
     {"path":"src/features/product-management/productIdentity.contract.test.ts","ceiling":304},
     {"path":"src/features/product-management/productPskuModel.contract.test.ts","ceiling":316},
     {"path":"src/features/product-management/useProductManagementWorkspace.tsx","ceiling":408},

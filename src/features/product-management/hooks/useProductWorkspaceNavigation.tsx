@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { FormInstance } from 'antd';
 import { findMockProductItem } from '../mockData';
-import { isSameProductDetailRequest } from '../workspaceHelpers';
 import { buildProductWorkbenchContext } from '../utils/workbench';
 import { findProductByIdentity } from '../../product-domain/productIdentity';
 import { buildProductSummarySurfaceFromListItem } from '../../product-baseline';
@@ -22,14 +21,10 @@ import type { AuthSession } from '../../auth/session';
 import { useProductDetailTabLifecycle } from './useProductDetailTabLifecycle';
 import { useProductDetailSwitchConfirm } from './useProductDetailSwitchConfirm';
 import { useProductWorkspaceReset } from './useProductWorkspaceReset';
-type ProductQuickOpenSample = {
-  skuParent: string;
-  currentZCode?: string;
-  partnerSku?: string;
-  pskuCode?: string;
-  storeCode?: string;
-  referenceStoreCode?: string;
-};
+import {
+  useProductWorkbenchPageTabOpener,
+  type ProductQuickOpenSample
+} from './useProductWorkbenchPageTabOpener';
 type UseProductWorkspaceNavigationParams = {
   activeOwnerId?: number;
   activeProductWorkspaceTabKey: ProductWorkspaceTabKey;
@@ -110,130 +105,28 @@ export function useProductWorkspaceNavigation({
   syncProductWorkspacePath,
   usingMockProductList
 }: UseProductWorkspaceNavigationParams) {
-  const focusProductDetailTab = useCallback(() => {
-    setActiveProductMenu();
-    setActiveProductWorkspaceTabKey('product-detail');
-    syncProductWorkspacePath();
-    if (typeof window !== 'undefined') {
-      window.requestAnimationFrame(() => {
-        productWorkbenchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    }
-  }, [productWorkbenchRef, setActiveProductMenu, setActiveProductWorkspaceTabKey, syncProductWorkspacePath]);
-
   const { confirmProductDetailSwitch, productDetailSwitchConfirmModal } = useProductDetailSwitchConfirm();
-
-  const openProductWorkbenchInPageTab = useCallback(
-    async (sample: ProductQuickOpenSample, modeOverride?: ProductDetailTabMode) => {
-      const mode =
-        modeOverride ??
-        (usingMockProductList || findMockProductItem(sample.skuParent) ? 'mock' : 'real');
-
-      const nextRequest = {
-        skuParent: sample.skuParent,
-        currentZCode: sample.currentZCode || sample.skuParent,
-        partnerSku: sample.partnerSku,
-        pskuCode: sample.pskuCode,
-        storeCode: sample.storeCode || sample.referenceStoreCode || selectedInitializationStoreCode,
-        mode
-      } satisfies ProductDetailTabRequest;
-      const matchedListItem = findProductByIdentity(productListItemBySkuParent, nextRequest);
-      const nextContext = buildProductWorkbenchContext({
-        mode,
-        source: 'list-row',
-        storeCode: nextRequest.storeCode,
-        skuParent: nextRequest.skuParent,
-        currentZCode: nextRequest.currentZCode,
-        partnerSku: nextRequest.partnerSku,
-        pskuCode: nextRequest.pskuCode,
-        summaryPreview: matchedListItem ? buildProductSummarySurfaceFromListItem(matchedListItem) : null
-      });
-
-      if (isSameProductDetailRequest(productDetailTabRequest, nextRequest)) {
-        const currentRequestKey = productDetailTabRequest ? JSON.stringify(productDetailTabRequest) : '';
-        const nextRequestKey = JSON.stringify(nextRequest);
-        if (currentRequestKey !== nextRequestKey) {
-          productDetailTabHandledRef.current = null;
-          setProductWorkbenchSurfaceState({
-            status: 'loading',
-            context: nextContext,
-            message: '正在读取本地商品详情...'
-          });
-          productSnapshotForm.setFieldsValue({
-            storeCode: nextRequest.storeCode,
-            skuParent: nextRequest.skuParent,
-            currentZCode: nextRequest.currentZCode,
-            partnerSku: nextRequest.partnerSku,
-            pskuCode: nextRequest.pskuCode
-          });
-          setProductDetailTabRequest(nextRequest);
-        }
-        focusProductDetailTab();
-        return;
-      }
-
-      if (productDraftDirty) {
-        const confirmed = await confirmProductDetailSwitch('switch', sample.skuParent);
-        if (!confirmed) {
-          focusProductDetailTab();
-          return;
-        }
-      }
-
-      productDetailTabHandledRef.current = null;
-      setProductGalleryOpen(false);
-      setProductGalleryImages([]);
-      setProductGalleryTitle(undefined);
-      setProductGallerySubtitle(undefined);
-      if (mode === 'real' && !nextRequest.storeCode) {
-        setProductWorkbenchSurfaceState({
-          status: 'error',
-          context: nextContext,
-          message: '当前商品缺少逻辑店铺上下文，暂时不能打开详情工作台。'
-        });
-      } else {
-        setProductWorkbenchSurfaceState({
-          status: 'loading',
-          context: nextContext,
-          message: '正在读取本地商品详情...'
-        });
-      }
-      setActiveSiteOfferCode(undefined);
-      productSnapshotForm.setFieldsValue({
-        storeCode: nextRequest.storeCode,
-        skuParent: nextRequest.skuParent,
-        currentZCode: nextRequest.currentZCode,
-        partnerSku: nextRequest.partnerSku,
-        pskuCode: nextRequest.pskuCode
-      });
-      setProductDetailTabRequest(nextRequest);
-      setActiveProductMenu();
-      setActiveProductWorkspaceTabKey('product-detail');
-      syncProductWorkspacePath();
-    },
-    [
-      confirmProductDetailSwitch,
-      focusProductDetailTab,
-      productDetailTabHandledRef,
-      productDetailTabRequest,
-      productDraftDirty,
-      productListItemBySkuParent,
-      productSnapshotForm,
-      selectedInitializationStoreCode,
-      setActiveProductMenu,
-      setActiveProductWorkspaceTabKey,
-      setActiveSiteOfferCode,
-      setProductDetailTabRequest,
-      setProductGalleryImages,
-      setProductGalleryOpen,
-      setProductGallerySubtitle,
-      setProductGalleryTitle,
-      setProductWorkbenchSurfaceState,
-      syncProductWorkspacePath,
-      usingMockProductList
-    ]
-  );
-
+  const { focusProductDetailTab, openProductWorkbenchInPageTab } = useProductWorkbenchPageTabOpener({
+    confirmProductDetailSwitch,
+    productDetailTabHandledRef,
+    productDetailTabRequest,
+    productDraftDirty,
+    productListItemBySkuParent,
+    productSnapshotForm,
+    productWorkbenchRef,
+    selectedInitializationStoreCode,
+    setActiveProductMenu,
+    setActiveProductWorkspaceTabKey,
+    setActiveSiteOfferCode,
+    setProductDetailTabRequest,
+    setProductGalleryImages,
+    setProductGalleryOpen,
+    setProductGallerySubtitle,
+    setProductGalleryTitle,
+    setProductWorkbenchSurfaceState,
+    syncProductWorkspacePath,
+    usingMockProductList
+  });
   const openProductWorkbenchInCurrentPage = useCallback(
     async (sample: ProductQuickOpenSample, modeOverride?: ProductDetailTabMode) => {
       const mode =
@@ -333,13 +226,11 @@ export function useProductWorkspaceNavigation({
     setProductWorkbenchSurfaceState,
     submitProductSnapshot
   });
-
   const goBackToProductManage = useCallback(() => {
     setActiveProductMenu();
     setActiveProductWorkspaceTabKey('product-manage');
     syncProductWorkspacePath();
   }, [setActiveProductMenu, setActiveProductWorkspaceTabKey, syncProductWorkspacePath]);
-
   const closeProductDetailTab = useCallback(() => {
     productDetailTabHandledRef.current = null;
     setProductDetailTabRequest(null);
