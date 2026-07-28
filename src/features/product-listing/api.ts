@@ -56,14 +56,19 @@ export async function fetchActiveProductListingDraft(
 }
 
 export async function fetchProductListingDraft(draftId: number) {
-  const [draft, suggestions] = await Promise.all([
-    getJson<ProductListingDraftView>(`/api/product-listing/drafts/${draftId}`, '读取上架草稿失败'),
-    getJson<ProductListingKeywordSuggestionView>(
-      `/api/product-listing/drafts/${draftId}/keyword-suggestions`,
-      '读取 Listing 关键词建议失败'
-    )
-  ])
-  return mergeKeywordSuggestions(draft, suggestionLists(suggestions))
+  const draftRequest = getJson<ProductListingDraftView>(
+    `/api/product-listing/drafts/${draftId}`,
+    '读取上架草稿失败'
+  )
+  const suggestionsRequest = getJson<ProductListingKeywordSuggestionView>(
+    `/api/product-listing/drafts/${draftId}/keyword-suggestions`,
+    '读取 Listing 关键词建议失败'
+  )
+    .then(suggestionLists)
+    .catch(() => undefined)
+  const draft = await draftRequest
+  const suggestions = await suggestionsRequest
+  return suggestions ? mergeKeywordSuggestions(draft, suggestions) : draft
 }
 
 export function fetchProductListingWorkflow(draftId: number) {
