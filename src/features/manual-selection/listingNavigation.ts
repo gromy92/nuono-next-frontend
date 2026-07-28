@@ -7,6 +7,7 @@ import {
 import type { ManualSelectionAnalysisProjectView } from './types'
 
 export type ManualSelectionListingTabOpener = ProductListingTabOpener
+export type ManualSelectionListingNavigator = (targetUrl: string) => void
 
 export function buildManualSelectionGroupListingTarget(project: ManualSelectionAnalysisProjectView, storeCode?: string) {
   const sourceStoreCode =
@@ -19,6 +20,18 @@ export function buildManualSelectionGroupListingTarget(project: ManualSelectionA
     params.set('storeCode', sourceStoreCode)
   }
   return withCurrentWorkspaceDevQuery(`${PURCHASE_LISTING_PATH}?${params.toString()}`)
+}
+
+export function navigateManualSelectionGroupListingInCurrentTab(
+  project: ManualSelectionAnalysisProjectView,
+  storeCode?: string,
+  navigate: ManualSelectionListingNavigator = (targetUrl) => window.location.assign(targetUrl)
+) {
+  // Embedded browsers can return a WindowProxy even when no visible tab was
+  // created, so this entry uses deterministic same-tab navigation.
+  const targetUrl = buildManualSelectionGroupListingTarget(project, storeCode)
+  navigate(targetUrl)
+  return targetUrl
 }
 
 export function openManualSelectionGroupListingInNewTab(
