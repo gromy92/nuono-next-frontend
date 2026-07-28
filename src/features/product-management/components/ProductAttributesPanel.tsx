@@ -1,6 +1,7 @@
 import { Col, Empty, Progress, Row, Space, Tag, Typography } from 'antd';
 import { buildDetailedAttributeGroups, mergeDetailedAttributeField } from '../productAttributeTemplate';
-import type { ProductFieldDomainSurface, ProductMasterSnapshotPayload } from '../types';
+import type { ProductFieldDomainSurface } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import { formatSnapshotValue } from '../utils';
 import {
   arabicDisplayValue,

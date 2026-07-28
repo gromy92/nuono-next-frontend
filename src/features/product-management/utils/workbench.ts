@@ -10,12 +10,12 @@ import type {
 import {
   areSnapshotPartsEqual,
   cloneRecordList,
-  cloneSnapshotPayload,
   normalizeProductSyncStatus,
   nowSyncTime,
   textInputValue
 } from './common';
 import { productSyncStatusMeta } from '../../product-baseline';
+import { createProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 
 const ACTIVE_PUBLISH_TASK_STATUSES = new Set([
   'queued',
@@ -95,8 +95,8 @@ export function productPublishTaskStatusLabel(task?: ProductPublishTaskPayload) 
 }
 
 export function buildProductWorkbenchState(payload: ProductWorkbenchPayload): ProductWorkbenchState {
-  const baseline = cloneSnapshotPayload(payload.baselineSnapshot ?? payload);
-  const draft = cloneSnapshotPayload(payload.draftSnapshot ?? payload.baselineSnapshot ?? payload);
+  const baseline = createProductMasterSnapshotPayload(payload.baselineSnapshot ?? payload);
+  const draft = createProductMasterSnapshotPayload(payload.draftSnapshot ?? payload.baselineSnapshot ?? payload);
   const fetchedAtCandidates = [
     payload.lastSyncedAt,
     typeof draft.storeContext.fetchedAt === 'string' ? draft.storeContext.fetchedAt : undefined,
@@ -173,12 +173,12 @@ export function buildProductWorkbenchPayloadFromState(
   workbench: ProductWorkbenchState,
   overrides?: Partial<ProductWorkbenchPayload>
 ): ProductWorkbenchPayload {
-  const nextDraft = cloneSnapshotPayload(workbench.draft);
+  const nextDraft = createProductMasterSnapshotPayload(workbench.draft);
   return {
     ...payload,
     ...nextDraft,
-    baselineSnapshot: cloneSnapshotPayload(workbench.baseline),
-    draftSnapshot: cloneSnapshotPayload(workbench.draft),
+    baselineSnapshot: createProductMasterSnapshotPayload(workbench.baseline),
+    draftSnapshot: createProductMasterSnapshotPayload(workbench.draft),
     syncStatus: workbench.syncStatus,
     lastSyncedAt: workbench.lastSyncedAt,
     note: workbench.note,

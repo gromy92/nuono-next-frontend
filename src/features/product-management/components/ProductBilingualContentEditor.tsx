@@ -4,7 +4,7 @@ import { type Dispatch, type SetStateAction, useEffect, useMemo, useRef, useStat
 import { fetchProductKeywordProduct, saveProductKeywordEditorChanges } from '../../product-keywords/api';
 import { translateProductContentText } from '../api';
 import { mergeProductCompetitorContent } from '../productCompetitorContentApi';
-import type { ProductMasterSnapshotPayload } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import type {
   ProductCompetitorContentFieldType,
   ProductCompetitorContentMaterial

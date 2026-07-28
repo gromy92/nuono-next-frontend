@@ -1,7 +1,6 @@
 import dayjs from 'dayjs';
-import type { ProductMasterSnapshotPayload, ProductSyncStatus, ProductWorkbenchPayload } from '../types';
+import type { ProductSyncStatus } from '../types';
 import { normalizeNoonImageUrl } from '../../product-baseline';
-import { createProductMasterSnapshotPayload } from './productMasterSnapshotFactory';
 export { normalizeNoonImageUrl };
 
 export function parseOptionalNumber(value: unknown) {
@@ -56,14 +55,6 @@ export function formatDateTimeParts(value?: string) {
     date: parsed.format('YYYY-MM-DD'),
     time: parsed.format('HH:mm:ss')
   };
-}
-
-export function snapshotPayloadCore(payload: ProductMasterSnapshotPayload | ProductWorkbenchPayload): ProductMasterSnapshotPayload {
-  return createProductMasterSnapshotPayload(payload);
-}
-
-export function cloneSnapshotPayload(payload: ProductMasterSnapshotPayload | ProductWorkbenchPayload) {
-  return snapshotPayloadCore(payload);
 }
 
 export function cloneRecord(record: Record<string, unknown>) {

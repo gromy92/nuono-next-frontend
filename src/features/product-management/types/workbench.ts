@@ -1,5 +1,6 @@
 import type { ProductSyncStatus } from './common';
 import type { ProductListSummaryPayload, ProductSummarySurface } from './list';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 
 export type ProductWorkbenchAction = 'save' | 'publish-current' | 'pull' | 'rollback-draft';
 
@@ -50,27 +51,6 @@ export type ProductPublishTaskPayload = {
   finishedAt?: string;
   pollAfterMillis?: number;
   workbench?: ProductWorkbenchPayload;
-};
-
-export type ProductMasterSnapshotPayload = {
-  mode: string;
-  ready: boolean;
-  degraded?: boolean;
-  message?: string;
-  warnings: string[];
-  missingCoreTables: string[];
-  missingOperationalKeys?: string[];
-  storeContext: Record<string, unknown>;
-  identity: Record<string, unknown>;
-  taxonomy: Record<string, unknown>;
-  content: Record<string, unknown>;
-  platformSignals: Record<string, unknown>;
-  keyAttributes: Array<Record<string, unknown>>;
-  group: Record<string, unknown>;
-  variants: Array<Record<string, unknown>>;
-  pricing: Record<string, unknown>;
-  stock: Record<string, unknown>;
-  siteOffers: Array<Record<string, unknown>>;
 };
 
 export type ProductVariantSpecModalState = {

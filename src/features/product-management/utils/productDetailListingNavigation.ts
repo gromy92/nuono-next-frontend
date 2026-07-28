@@ -2,7 +2,7 @@ import {
   PURCHASE_LISTING_PATH,
   withWorkspaceStoreDevQuery
 } from '../../app-shell/WorkspaceRouting'
-import type { ProductMasterSnapshotPayload } from '../types'
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot'
 import { textInputValue } from './common'
 
 function positiveInteger(value: unknown) {

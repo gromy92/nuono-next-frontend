@@ -1,4 +1,4 @@
-import type { ProductMasterSnapshotPayload } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import { areSnapshotPartsEqual, textInputValue } from './common';
 
 export const NOON_WRITABLE_SITE_OFFER_FIELDS = [

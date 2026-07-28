@@ -4,7 +4,6 @@ import type { FormInstance } from 'antd';
 import { executeProductWorkbenchAction } from '../api';
 import {
   buildLocalProductRecentAction,
-  cloneSnapshotPayload,
   isPublicDetailReadonlyWorkbench,
   isProductPublishTaskActive,
   prependRecentAction,
@@ -12,13 +11,16 @@ import {
 } from '../utils';
 import type {
   ProductListUiState,
-  ProductMasterSnapshotPayload,
   ProductWorkbenchAction,
   ProductWorkbenchActionOptions,
   ProductWorkbenchPayload,
   ProductWorkbenchState,
   ProductWorkbenchSurfaceState
 } from '../types';
+import {
+  createProductMasterSnapshotPayload,
+  type ProductMasterSnapshotPayload
+} from '../../product-domain/productMasterSnapshot';
 import type { ReadyProductWorkbenchSurfaceUpdater } from './useProductWorkbenchSurfaceActions';
 
 type UseProductWorkbenchActionSubmitterParams = {
@@ -131,7 +133,7 @@ export function useProductWorkbenchActionSubmitter({
           currentSiteCode,
           syncMergePolicy: options?.syncMergePolicy,
           publishConflictResolution: options?.publishConflictResolution,
-          snapshot: cloneSnapshotPayload(productWorkbenchState.draft)
+          snapshot: createProductMasterSnapshotPayload(productWorkbenchState.draft)
         });
         const nextWorkbenchState = applyProductWorkbenchResponse(payload);
         if (action === 'publish-current' && payload.publishConflict?.fields?.length) {

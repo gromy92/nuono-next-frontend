@@ -1,6 +1,7 @@
 import { EyeOutlined } from '@ant-design/icons';
 import { Space, Switch, Tag, Typography } from 'antd';
-import type { ProductMasterSnapshotPayload, ProductSummarySurface } from '../types';
+import type { ProductSummarySurface } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import { isLiveStatusActive, siteOfferCode } from '../utils';
 
 const { Text } = Typography;

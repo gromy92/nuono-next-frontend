@@ -5,7 +5,7 @@ import {
   textInputValue
 } from './common';
 import { isLiveStatusActive } from './status';
-import type { ProductMasterSnapshotPayload } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 
 export function buildProductSiteSummary(
   snapshotView: ProductMasterSnapshotPayload | undefined,

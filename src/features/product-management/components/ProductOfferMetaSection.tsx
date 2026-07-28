@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 import { Button, Col, Input, Row, Select, Space, Tag, Tooltip, Typography, message } from 'antd';
-import type { ProductMasterSnapshotPayload, ProductSummarySurface } from '../types';
+import type { ProductSummarySurface } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import { siteOfferCode, textInputValue } from '../utils';
 import './ProductOfferMetaSection.css';
 

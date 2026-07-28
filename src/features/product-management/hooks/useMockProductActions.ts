@@ -4,12 +4,12 @@ import { buildMockPublishState, validateProductDraft } from '../workspaceHelpers
 import {
   areSnapshotPartsEqual,
   buildLocalProductRecentAction,
-  cloneSnapshotPayload,
   getProductStableIdentityKey,
   nowSyncTime,
   prependRecentAction,
   siteOfferCode
 } from '../utils';
+import { createProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import type { ProductListUiState, ProductWorkbenchState } from '../types';
 import type { ReadyProductWorkbenchSurfaceUpdater } from './useProductWorkbenchSurfaceActions';
 
@@ -83,14 +83,14 @@ export function useMockProductActions({
       }
 
       if (action === 'pull') {
-        const refreshedBaseline = cloneSnapshotPayload(productWorkbenchState.baseline);
+        const refreshedBaseline = createProductMasterSnapshotPayload(productWorkbenchState.baseline);
         refreshedBaseline.storeContext = {
           ...refreshedBaseline.storeContext,
           fetchedAt
         };
         const nextState: ProductWorkbenchState = {
           baseline: refreshedBaseline,
-          draft: cloneSnapshotPayload(refreshedBaseline),
+          draft: createProductMasterSnapshotPayload(refreshedBaseline),
           syncStatus: 'synced',
           lastSyncedAt: fetchedAt,
           note: '已按 Noon 当前版本刷新基线。',
@@ -128,7 +128,7 @@ export function useMockProductActions({
       if (action === 'rollback-draft') {
         const nextState: ProductWorkbenchState = {
           ...productWorkbenchState,
-          draft: cloneSnapshotPayload(productWorkbenchState.baseline),
+          draft: createProductMasterSnapshotPayload(productWorkbenchState.baseline),
           syncStatus: 'synced',
           note: '已回滚本地草稿，当前工作台恢复到最近本地商品基线。'
         };

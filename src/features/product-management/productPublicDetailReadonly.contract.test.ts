@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isPublicDetailReadonlyWorkbench } from './utils/workbench';
-import type { ProductMasterSnapshotPayload, ProductWorkbenchState } from './types';
+import type { ProductWorkbenchState } from './types';
+import type { ProductMasterSnapshotPayload } from '../product-domain/productMasterSnapshot';
 
 const productManagementDir = dirname(fileURLToPath(import.meta.url));
 

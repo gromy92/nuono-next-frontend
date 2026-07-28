@@ -1,7 +1,7 @@
 import { ExportOutlined } from '@ant-design/icons';
 import { Button, Space, Table, Typography } from 'antd';
 import { warehouseStockColumns } from '../productDetailColumns';
-import type { ProductMasterSnapshotPayload } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import { textInputValue } from '../utils';
 
 const { Text } = Typography;

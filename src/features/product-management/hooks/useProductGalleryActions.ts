@@ -4,10 +4,10 @@ import { getProductCurrentZCode } from '../utils';
 import { mergeGalleryImageUrls, productSummaryTitle } from '../../product-baseline';
 import type {
   ProductListSummaryPayload,
-  ProductMasterSnapshotPayload,
   ProductSummarySurface,
   StoreInitializationPayload
 } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 
 type UseProductGalleryActionsParams = {
   activeOwnerId?: number;

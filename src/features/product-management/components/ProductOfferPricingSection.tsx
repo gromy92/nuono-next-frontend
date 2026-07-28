@@ -1,5 +1,5 @@
 import { Button, Col, Descriptions, Input, Row, Space, Typography } from 'antd';
-import type { ProductMasterSnapshotPayload } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import { collectProductOfferPricingValidationIssues } from '../../product-domain/productOfferPricing';
 import { formatSnapshotValue, siteOfferCode, textInputValue } from '../utils';
 import './ProductOfferPricingSection.css';

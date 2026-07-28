@@ -5,20 +5,22 @@ import { openProductWorkbenchSnapshot } from '../api';
 import { findMockProductItem } from '../mockData';
 import {
   buildProductWorkbenchContext,
-  cloneSnapshotPayload,
   findProductByIdentity
 } from '../utils';
 import { buildProductSummarySurfaceFromListItem } from '../../product-baseline';
 import type {
   ProductListRowPayload,
   ProductListUiState,
-  ProductMasterSnapshotPayload,
   ProductWorkbenchAction,
   ProductWorkbenchContext,
   ProductWorkbenchPayload,
   ProductWorkbenchState,
   ProductWorkbenchSurfaceState
 } from '../types';
+import {
+  createProductMasterSnapshotPayload,
+  type ProductMasterSnapshotPayload
+} from '../../product-domain/productMasterSnapshot';
 import { useProductWorkbenchActionSubmitter } from './useProductWorkbenchActionSubmitter';
 import type { ReadyProductWorkbenchSurfaceUpdater } from './useProductWorkbenchSurfaceActions';
 
@@ -71,12 +73,12 @@ type SubmitProductSnapshotOptions = {
 };
 
 function discardPersistedDraft(payload: ProductWorkbenchPayload): ProductWorkbenchPayload {
-  const baselineSnapshot = cloneSnapshotPayload(payload.baselineSnapshot ?? payload);
+  const baselineSnapshot = createProductMasterSnapshotPayload(payload.baselineSnapshot ?? payload);
   return {
     ...payload,
     ...baselineSnapshot,
-    baselineSnapshot: cloneSnapshotPayload(baselineSnapshot),
-    draftSnapshot: cloneSnapshotPayload(baselineSnapshot),
+    baselineSnapshot: createProductMasterSnapshotPayload(baselineSnapshot),
+    draftSnapshot: createProductMasterSnapshotPayload(baselineSnapshot),
     syncStatus: 'synced',
     note: payload.publishTask
       ? payload.note

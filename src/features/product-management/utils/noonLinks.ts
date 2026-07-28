@@ -1,4 +1,4 @@
-import type { ProductMasterSnapshotPayload } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 import { textInputValue } from './common';
 
 function firstTextValue(...values: unknown[]) {

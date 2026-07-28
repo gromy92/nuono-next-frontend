@@ -1,4 +1,23 @@
-import type { ProductMasterSnapshotPayload } from '../types'
+export type ProductMasterSnapshotPayload = {
+  mode: string
+  ready: boolean
+  degraded?: boolean
+  message?: string
+  warnings: string[]
+  missingCoreTables: string[]
+  missingOperationalKeys?: string[]
+  storeContext: Record<string, unknown>
+  identity: Record<string, unknown>
+  taxonomy: Record<string, unknown>
+  content: Record<string, unknown>
+  platformSignals: Record<string, unknown>
+  keyAttributes: Array<Record<string, unknown>>
+  group: Record<string, unknown>
+  variants: Array<Record<string, unknown>>
+  pricing: Record<string, unknown>
+  stock: Record<string, unknown>
+  siteOffers: Array<Record<string, unknown>>
+}
 
 export function createProductMasterSnapshotPayload(
   payload: Partial<ProductMasterSnapshotPayload> = {}

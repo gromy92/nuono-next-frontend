@@ -2,11 +2,11 @@ import type {
   ProductHistoryPayload,
   ProductOperationStageCode,
   ProductListDatasetPayload,
-  ProductMasterSnapshotPayload,
   ProductPublishTaskPayload,
   ProductWorkbenchPayload,
   StoreInitializationPayload
 } from './types';
+import type { ProductMasterSnapshotPayload } from '../product-domain/productMasterSnapshot';
 import { apiFetch } from '../../shared/api';
 
 export type ProductStoreInitializationStatusRequest = {

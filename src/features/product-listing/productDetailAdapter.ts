@@ -1,12 +1,11 @@
 import type {
   ProductFieldDomainSurface,
-  ProductFieldDomainKey,
-  ProductMasterSnapshotPayload,
-  ProductSummarySurface
+  ProductFieldDomainKey
 } from '../product-management/types'
 import { PRODUCT_DETAILED_ATTRIBUTE_GROUPS } from '../product-domain/productDetailedAttributeCatalog'
-import { createProductMasterSnapshotPayload } from '../product-management/utils'
+import { createProductMasterSnapshotPayload, type ProductMasterSnapshotPayload } from '../product-domain/productMasterSnapshot'
 import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent'
+import type { ProductSummarySurface } from '../product-domain/productSummaryTypes'
 import type {
   ProductImageRoleAssignment,
   ProductImageUsageRole
