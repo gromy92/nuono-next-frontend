@@ -48,11 +48,11 @@ assert.deepEqual(productSyncStatusMeta('conflict'), {
 });
 
 const source = (path: string) => readFileSync(resolve(path), 'utf8');
-const shellNavigation = source('src/features/app-shell/useShellWorkspaceNavigation.tsx');
+const productWorkspaceNavigation = source('src/features/product-management/hooks/useProductWorkspaceNavigation.tsx');
 const profitCalculator = source('src/features/profit-calculator/ProfitCalculatorPage.tsx');
 
-assert.match(shellNavigation, /from ['"]\.\.\/product-baseline['"]/);
-assert.doesNotMatch(shellNavigation, /product-management\/utils/);
+assert.match(productWorkspaceNavigation, /from ['"]\.\.\/\.\.\/product-baseline['"]/);
+assert.doesNotMatch(productWorkspaceNavigation, /product-management\/utils/);
 assert.match(profitCalculator, /from ['"]\.\.\/product-baseline['"]/);
 assert.doesNotMatch(profitCalculator, /product-management\/(?:components|utils)/);
 assert.equal(

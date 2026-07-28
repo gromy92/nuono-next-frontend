@@ -3,8 +3,16 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const root = process.cwd()
-const pageSource = readFileSync(join(root, 'src/features/competitor-analysis/CompetitorAnalysisPage.tsx'), 'utf8')
-const apiSource = readFileSync(join(root, 'src/features/competitor-analysis/api.ts'), 'utf8')
+const pageSource = [
+  readFileSync(join(root, 'src/features/competitor-analysis/CompetitorAnalysisPage.tsx'), 'utf8'),
+  readFileSync(join(root, 'src/features/competitor-analysis/CompetitorAnalysisOverlays.tsx'), 'utf8'),
+  readFileSync(join(root, 'src/features/competitor-analysis/productDetail/ProductMaintenancePanels.tsx'), 'utf8'),
+  readFileSync(join(root, 'src/features/competitor-analysis/productDetail/useCompetitorKeywordActions.ts'), 'utf8')
+].join('\n')
+const apiSource = [
+  readFileSync(join(root, 'src/features/competitor-analysis/api.ts'), 'utf8'),
+  readFileSync(join(root, 'src/features/competitor-analysis/api/watchProductMapper.ts'), 'utf8')
+].join('\n')
 const typesSource = readFileSync(join(root, 'src/features/competitor-analysis/types.ts'), 'utf8')
 
 assert.match(typesSource, /keywordNorm\?: string/)
