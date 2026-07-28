@@ -1,63 +1,3 @@
-.competitor-analysis-page {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-  overflow-x: hidden;
-  padding: 0 20px 12px;
-  width: 100%;
-}
-
-.competitor-analysis-main-tabs > .ant-tabs-nav {
-  margin: 0 0 4px;
-  min-height: 28px;
-}
-
-.competitor-analysis-main-tabs > .ant-tabs-nav .ant-tabs-tab {
-  margin: 0 28px 0 0;
-  padding: 2px 0 5px;
-}
-
-.competitor-analysis-main-tabs > .ant-tabs-nav .ant-tabs-tab-btn {
-  line-height: 22px;
-}
-
-.competitor-analysis-main-tabs > .ant-tabs-nav .ant-tabs-ink-bar {
-  height: 2px;
-}
-
-.competitor-analysis-main-tabs > .ant-tabs-content-holder {
-  min-width: 0;
-  padding-top: 0;
-}
-
-.competitor-analysis-toolbar {
-  align-items: flex-start;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-}
-
-.competitor-analysis-row-actions {
-  align-items: center;
-  display: inline-flex;
-  flex-direction: row;
-  gap: 4px;
-  justify-content: flex-end;
-  width: 136px;
-}
-
-.competitor-analysis-row-actions .ant-btn {
-  flex: 0 0 auto;
-  min-width: 24px;
-  padding: 0;
-  width: 24px;
-}
-
-.competitor-analysis-detail {
-  display: grid;
-  gap: 12px;
-}
-
 .competitor-analysis-search-card .ant-card-body {
   display: grid;
   gap: 8px;
@@ -94,12 +34,6 @@
   white-space: nowrap;
 }
 
-.competitor-analysis-product-title-stack {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
 .competitor-analysis-product-title-en {
   color: rgba(0, 0, 0, 0.55);
   font-weight: 400;
@@ -113,6 +47,51 @@
 
 .competitor-analysis-inline-form .ant-input {
   min-width: 0;
+}
+
+.competitor-analysis-create-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1fr);
+}
+
+.competitor-analysis-create-grid .ant-select {
+  width: 100%;
+}
+
+.competitor-analysis-list-card {
+  min-width: 0;
+}
+
+.competitor-analysis-list-card .ant-card-body {
+  min-width: 0;
+}
+
+.competitor-analysis-product-table {
+  min-width: 0;
+}
+
+.competitor-analysis-product-table .ant-table,
+.competitor-analysis-product-table .ant-table-container,
+.competitor-analysis-product-table .ant-table-content {
+  min-width: 0;
+  overflow-x: visible;
+}
+
+.competitor-analysis-product-table .ant-table-cell {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.competitor-analysis-product-table .ant-table-thead > tr > th {
+  white-space: nowrap;
+}
+
+.competitor-analysis-product-option-label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 0;
 }
 
 .competitor-analysis-keyword-maintenance-list {
@@ -157,21 +136,15 @@
 }
 
 .competitor-analysis-keyword-inline-list {
+  align-items: flex-start;
   background: transparent;
   border: 0;
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   min-width: 0;
   padding: 0;
   text-align: left;
-  width: 100%;
-}
-
-.competitor-analysis-keyword-row {
-  align-items: center;
-  display: flex;
-  gap: 6px;
-  min-width: 0;
   width: 100%;
 }
 
@@ -189,7 +162,6 @@
   border-radius: 4px;
   color: #0958d9;
   display: inline-flex;
-  flex: 1 1 auto;
   font-size: 12px;
   gap: 4px;
   line-height: 18px;
@@ -208,18 +180,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.competitor-analysis-keyword-rank-tag {
-  flex: 0 0 auto;
-  line-height: 18px;
-  margin-inline-end: 0;
-}
-
-.competitor-analysis-keyword-other-tag {
-  justify-self: start;
-  line-height: 18px;
-  margin-inline-end: 0;
 }
 
 .competitor-analysis-keyword-monitor-count {
@@ -253,6 +213,18 @@
   text-align: center;
 }
 
+.competitor-analysis-product-thumb-placeholder {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+}
+
+.competitor-analysis-product-actions {
+  max-width: 100%;
+}
+
 .competitor-analysis-keyword-toolbar {
   align-items: flex-start;
   display: flex;
@@ -274,3 +246,5 @@
   min-width: 22px;
   padding: 0 6px;
 }
+
+.competitor-analysis-keyword-board {

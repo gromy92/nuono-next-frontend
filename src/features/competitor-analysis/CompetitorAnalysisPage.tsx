@@ -81,7 +81,7 @@ import type {
   CompetitorProductChangeGroup,
   CompetitorWatchProduct
 } from './types'
-import './CompetitorAnalysisPage.css'
+import './styles/index.css'
 
 const { Link, Text } = Typography
 type CompetitorAnalysisPageProps = {
