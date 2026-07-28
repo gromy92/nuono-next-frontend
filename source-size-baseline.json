@@ -2,7 +2,6 @@
   "version": 1,
   "limit": 300,
   "files": [
-    {"path":"tests/e2e/ali1688-historical-orders.spec.ts","ceiling":2408},
-    {"path":"tests/e2e/competitor-analysis.spec.ts","ceiling":1776}
+    {"path":"tests/e2e/ali1688-historical-orders.spec.ts","ceiling":2408}
   ]
 }
