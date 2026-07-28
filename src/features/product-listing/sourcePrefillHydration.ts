@@ -1,11 +1,11 @@
 import {
   loadManualSelectionGroup,
   loadManualSelectionGroupProfitEstimate
-} from '../manual-selection/api'
+} from '../selection-analysis/api'
 import type {
   ManualSelectionGroupProfitEstimateSnapshot,
   ManualSelectionGroupView
-} from '../manual-selection/types'
+} from '../selection-analysis/types'
 import {
   fetchActiveProductListingDraft,
   fetchProductListingDraft

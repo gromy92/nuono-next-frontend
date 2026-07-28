@@ -6,7 +6,6 @@ import {
   analyzeManualSelectionCollection,
   createManualSelectionGroup,
   deleteManualSelectionGroupCompetitor,
-  loadManualSelectionGroupProfitEstimate,
   loadManualSelectionGroups,
   recollectManualSelectionGroupCompetitor,
   saveManualSelectionAnalysisItemProcurement,

@@ -4,7 +4,7 @@ import type {
   ManualSelectionAnalysisProjectView,
   ManualSelectionGroupView,
   ManualSelectionGroupProfitEstimateSnapshot
-} from '../manual-selection/types'
+} from '../selection-analysis/types'
 import type { ProductListingEditorDraft } from './productDetailAdapter'
 import type { ProductListingDraftView } from './types'
 

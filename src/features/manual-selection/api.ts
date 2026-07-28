@@ -12,7 +12,6 @@ import type {
   ManualSelectionAli1688ProcurementInfo,
   ManualSelectionAnalysisItemView,
   ManualSelectionCompetitor,
-  ManualSelectionGroupProfitEstimateSnapshot,
   ManualSelectionGroupView
 } from './types'
 
@@ -87,12 +86,6 @@ export function loadManualSelectionGroups(
   }
   return parseManualSelectionResponse<ManualSelectionGroupView[]>(
     apiFetch(`/api/product-selection/groups?${params.toString()}`)
-  )
-}
-
-export function loadManualSelectionGroup(groupId: string): Promise<ManualSelectionGroupView> {
-  return parseManualSelectionResponse<ManualSelectionGroupView>(
-    apiFetch(`/api/product-selection/groups/${encodeURIComponent(groupId)}`)
   )
 }
 
@@ -181,34 +174,6 @@ export function saveManualSelectionGroupProcurement(
         ali1688PurchaseUrl: values.purchaseUrl || '',
         purchasePrice: values.purchasePrice
       })
-    })
-  )
-}
-
-export function loadManualSelectionGroupProfitEstimate(
-  groupId: string
-): Promise<ManualSelectionGroupProfitEstimateSnapshot> {
-  return parseManualSelectionResponse<ManualSelectionGroupProfitEstimateSnapshot>(
-    apiFetch(`/api/product-selection/groups/${encodeURIComponent(groupId)}/profit-estimate`)
-  )
-}
-
-export function saveManualSelectionGroupProfitEstimate(
-  groupId: string,
-  values: {
-    currencyCode?: string
-    profitAmount?: number
-    profitMargin?: number
-    snapshot?: Record<string, unknown>
-  }
-): Promise<ManualSelectionGroupProfitEstimateSnapshot> {
-  return parseManualSelectionResponse<ManualSelectionGroupProfitEstimateSnapshot>(
-    apiFetch(`/api/product-selection/groups/${encodeURIComponent(groupId)}/profit-estimate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(values)
     })
   )
 }

@@ -7,7 +7,6 @@ const root = process.cwd()
 const featuresRoot = join(root, 'src/features')
 const auditOnly = process.argv.includes('--audit')
 const allowedFeatureCycles = new Set([
-  'manual-selection|product-listing',
   'procurement|profit-calculator',
   'purchase-order|replenishment-plan'
 ])

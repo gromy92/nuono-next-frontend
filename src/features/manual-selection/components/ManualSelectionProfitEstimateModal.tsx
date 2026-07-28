@@ -10,12 +10,8 @@ import {
   profitScenarioColor,
   type ProfitCalculationPayload
 } from '../../profit-calculator/domain'
-import {
-  loadManualSelectionGroupProfitEstimate,
-  loadManualSelectionSystemCategories,
-  saveManualSelectionGroupProcurement,
-  saveManualSelectionGroupProfitEstimate
-} from '../api'
+import { loadManualSelectionSystemCategories, saveManualSelectionGroupProcurement } from '../api'
+import { loadManualSelectionGroupProfitEstimate, saveManualSelectionGroupProfitEstimate } from '../../selection-analysis/api'
 import {
   chooseSystemCategoryOption,
   systemCategoryDisplayLabel,
@@ -40,7 +36,8 @@ import {
   logisticsSelectionEvidence,
   resolvePersistedLogisticsSelections
 } from '../profitEstimateLogisticsSelection'
-import type { ManualSelectionGroupProfitEstimateSnapshot, ManualSelectionProfitEstimateSeed } from '../types'
+import type { ManualSelectionGroupProfitEstimateSnapshot } from '../../selection-analysis/types'
+import type { ManualSelectionProfitEstimateSeed } from '../types'
 import { ManualSelectionProfitLogisticsFields, profitQuoteOptionLabel } from './ManualSelectionProfitLogisticsFields'
 
 const { Text } = Typography
