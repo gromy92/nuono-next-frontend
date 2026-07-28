@@ -11,7 +11,6 @@
     {"path":"src/features/official-warehouse/domain.contract.test.ts","ceiling":319},
     {"path":"src/features/official-warehouse/printFbnTransferPdf.ts","ceiling":406},
     {"path":"src/features/official-warehouse/statisticsDomain.contract.test.ts","ceiling":504},
-    {"path":"src/features/procurement-confirmation/hooks/useProcurementRequirementActions.ts","ceiling":374},
     {"path":"src/features/product-management/productIdentity.contract.test.ts","ceiling":304},
     {"path":"src/features/product-management/productPskuModel.contract.test.ts","ceiling":316},
     {"path":"tests/e2e/ali1688-collection.spec.ts","ceiling":303},
