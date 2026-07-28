@@ -13,7 +13,11 @@ function source(path: string) {
 
 const apiSource = source('src/features/product-keywords/api.ts')
 const typesSource = source('src/features/product-keywords/types.ts')
-const sessionSource = source('src/features/app-shell/ShellSessionStorage.ts')
+const sessionSource = [
+  source('src/features/app-shell/ShellSessionStorage.ts'),
+  source('src/features/app-shell/ShellDevSession.ts'),
+  source('src/features/app-shell/ShellDevMenuGrants.ts')
+].join('\n')
 
 assert.match(apiSource, /\/api\/product-keywords/)
 assert.match(apiSource, /fetchProductKeywords/)
@@ -47,6 +51,8 @@ assert.deepEqual(
   ['operations-product-keywords']
 )
 assert.match(sessionSource, /OPERATIONS_PRODUCT_KEYWORDS_PATH/)
-assert.match(sessionSource, /search\.get\('grantProductKeywords'\)/)
-assert.match(sessionSource, /menuId:\s*9804/)
-assert.match(sessionSource, /menuName:\s*'关键词数据'/)
+assert.match(
+  sessionSource,
+  /addPathGrant\(menus,\s*pathname,\s*search,\s*OPERATIONS_PRODUCT_KEYWORDS_PATH,\s*'grantProductKeywords'/
+)
+assert.match(sessionSource, /9804,\s*'关键词数据'/)
