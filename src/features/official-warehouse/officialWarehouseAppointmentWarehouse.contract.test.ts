@@ -2,18 +2,19 @@ import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { officialWarehousePageContractSource } from './officialWarehouseContractSources'
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
-const pageSource = readFileSync(join(currentDir, 'OfficialWarehousePage.tsx'), 'utf8')
+const pageSource = officialWarehousePageContractSource
 const apiSource = readFileSync(join(currentDir, 'api.ts'), 'utf8')
 
 const appointmentWarehouseOptionsSource = pageSource.slice(
   pageSource.indexOf('const appointmentWarehouseOptions = useMemo'),
-  pageSource.indexOf('const shippingBatchOptions = useMemo')
+  pageSource.indexOf('const manualCalendarDates = useMemo')
 )
 const openAppointmentSource = pageSource.slice(
-  pageSource.indexOf('function openAppointment'),
-  pageSource.indexOf('async function submitAppointment')
+  pageSource.indexOf('function resetForAppointment'),
+  pageSource.indexOf('return {', pageSource.indexOf('function resetForAppointment'))
 )
 const submitAppointmentSource = pageSource.slice(
   pageSource.indexOf('async function submitAppointment'),
@@ -38,7 +39,7 @@ const warehouseLabelSource = pageSource.slice(
 
 assert.match(
   appointmentWarehouseOptionsSource,
-  /optionWarehouses/,
+  /const options = needsFallback/,
   'appointment warehouse options should render the full Noon warehouse candidate list'
 )
 assert.doesNotMatch(

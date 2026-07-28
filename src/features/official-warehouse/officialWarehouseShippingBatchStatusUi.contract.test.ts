@@ -2,9 +2,10 @@ import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { officialWarehousePageContractSource } from './officialWarehouseContractSources'
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
-const pageSource = readFileSync(join(currentDir, 'OfficialWarehousePage.tsx'), 'utf8')
+const pageSource = officialWarehousePageContractSource
 const apiSource = readFileSync(join(currentDir, 'api.ts'), 'utf8')
 const preparationSource = readFileSync(join(currentDir, 'productMatchPreparation.ts'), 'utf8')
 const searchHookSource = readFileSync(join(currentDir, 'useShippingBatchSearch.ts'), 'utf8')

@@ -2,14 +2,18 @@ import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import {
+  officialWarehousePageContractSource,
+  officialWarehousePageStyleContractSource
+} from './officialWarehouseContractSources'
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
-const pageSource = readFileSync(join(currentDir, 'OfficialWarehousePage.tsx'), 'utf8')
-const styleSource = readFileSync(join(currentDir, 'OfficialWarehousePage.css'), 'utf8')
+const pageSource = officialWarehousePageContractSource
+const styleSource = officialWarehousePageStyleContractSource
 
 const candidateColumnsSource = pageSource.slice(
-  pageSource.indexOf('const candidateColumns'),
-  pageSource.indexOf('const lineColumns')
+  pageSource.indexOf('export function buildOfficialWarehouseCandidateColumns'),
+  pageSource.indexOf('export function buildOfficialWarehouseInboundColumns')
 )
 
 const candidateTableSource = pageSource.slice(
