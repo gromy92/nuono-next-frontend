@@ -8,7 +8,6 @@
     {"path":"tests/e2e/file-management.spec.ts","ceiling":826},
     {"path":"tests/e2e/operations-config-typed-version-library.spec.ts","ceiling":1291},
     {"path":"tests/e2e/procurement-confirmation.spec.ts","ceiling":525},
-    {"path":"tests/e2e/product-management-initialization.spec.ts","ceiling":446},
     {"path":"tests/e2e/sales-analytics.spec.ts","ceiling":633}
   ]
 }
