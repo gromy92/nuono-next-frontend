@@ -283,10 +283,10 @@ assert.match(
   'ProductDetailSummaryPanel must block publish-current for LOCAL-* draft identities'
 );
 
-const productListIdentityCellsSource = readFileSync(
-  new URL('./components/ProductListIdentityCells.tsx', import.meta.url),
-  'utf8'
-);
+const productListIdentityCellsSource = [
+  readFileSync(new URL('./components/ProductListIdentityCells.tsx', import.meta.url), 'utf8'),
+  readFileSync(new URL('./components/ProductListConfirmDescriptions.tsx', import.meta.url), 'utf8')
+].join('\n');
 
 assert.equal(
   productListIdentityCellsSource.includes('icon={<DeleteOutlined />}') &&
