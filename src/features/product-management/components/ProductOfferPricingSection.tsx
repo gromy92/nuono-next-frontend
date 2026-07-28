@@ -1,7 +1,7 @@
 import { Button, Col, Descriptions, Input, Row, Space, Typography } from 'antd';
 import type { ProductMasterSnapshotPayload } from '../types';
+import { collectProductOfferPricingValidationIssues } from '../../product-domain/productOfferPricing';
 import { formatSnapshotValue, siteOfferCode, textInputValue } from '../utils';
-import { collectOfferPricingValidationIssues } from '../utils/offerPricingValidation';
 import './ProductOfferPricingSection.css';
 const { Text } = Typography;
 const FIELD_LABEL_STYLE = { color: 'var(--pm-text-muted)', display: 'block', marginBottom: 6 } as const;
@@ -204,7 +204,7 @@ export function ProductOfferPricingSection(props: {
   const { productSnapshotView, activeProductSiteOffer, hidePricingSummary, horizontalPricingLayout, updateSiteOfferField } = props;
   const pricingSummary = resolvePricingSummary(productSnapshotView, activeProductSiteOffer);
   const saleWindowInputs = saleWindowInputValues(activeProductSiteOffer);
-  const pricingValidationIssues = collectOfferPricingValidationIssues(activeProductSiteOffer, '当前站点');
+  const pricingValidationIssues = collectProductOfferPricingValidationIssues(activeProductSiteOffer, '当前站点');
   const priceValidationIssue = pricingValidationIssues.find((issue) => issue.fieldKey === 'price');
   const salePriceValidationIssue = pricingValidationIssues.find((issue) => issue.fieldKey === 'salePrice');
   const updateField = (field: string, value: unknown) => {
