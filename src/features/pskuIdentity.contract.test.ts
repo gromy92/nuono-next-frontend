@@ -28,10 +28,14 @@ const ali1688SkuPurchaseHistory = readFileSync(
   join(featuresDir, 'ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage.tsx'),
   'utf8'
 )
-const ali1688HistoricalOrders = readFileSync(
-  join(featuresDir, 'ali1688-historical-orders/Ali1688HistoricalOrdersPage.tsx'),
+const ali1688HistoricalOrders = [
+  'Ali1688HistoricalOrdersPage.tsx',
+  'components/Ali1688ProductLinkEditor.tsx',
+  'presentation/productCells.tsx'
+].map((fileName) => readFileSync(
+  join(featuresDir, 'ali1688-historical-orders', fileName),
   'utf8'
-)
+)).join('\n')
 const profitCalculator = readFileSync(join(featuresDir, 'profit-calculator/useProfitCalculatorWorkspace.tsx'), 'utf8')
 const salesAnalyticsPage = readFileSync(join(featuresDir, 'sales-analytics/SalesAnalyticsPage.tsx'), 'utf8')
 const salesAnalyticsApi = readFileSync(join(featuresDir, 'sales-analytics/api.ts'), 'utf8')
