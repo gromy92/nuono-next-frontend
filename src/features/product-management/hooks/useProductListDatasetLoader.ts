@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { AuthSession } from '../../auth/session';
-import { fetchProductListDataset } from '../api';
+import { fetchProductListDataset } from '../../product-domain/productListApi';
 import type { ProductListDatasetState } from '../types';
 
 type UseProductListDatasetLoaderParams = {

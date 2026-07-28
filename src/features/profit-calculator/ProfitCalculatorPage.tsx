@@ -3,7 +3,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { useState, type Key } from 'react';
 import { ReloadOutlined } from '@ant-design/icons';
 import type { AuthSessionStore } from '../auth/session';
-import type { ProductListRowPayload } from '../product-management/types';
+import type { ProductListRowPayload } from '../product-domain/productListTypes';
 import { ProductBaselineListCell } from '../product-management/components/ProductBaselineDisplay';
 import type { OrderFinanceOrderGroup, OrderFinanceTransactionLine } from '../order-finance/types';
 import {

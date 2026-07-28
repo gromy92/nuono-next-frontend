@@ -21,8 +21,8 @@ import type {
   ProfitQuickSignalsPayload
 } from './domain';
 import type { AuthSession } from '../auth/session';
-import { fetchProductListDataset } from '../product-management/api';
-import type { ProductListDatasetPayload, ProductListRowPayload } from '../product-management/types';
+import { fetchProductListDataset } from '../product-domain/productListApi';
+import type { ProductListDatasetPayload, ProductListRowPayload } from '../product-domain/productListTypes';
 import type { ProcurementCandidate, ProcurementDemandItem } from '../procurement/types';
 
 const ProfitCalculatorPage = lazy(() =>

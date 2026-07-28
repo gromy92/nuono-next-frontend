@@ -1,4 +1,5 @@
-export type ProductSyncStatus = 'synced' | 'draft' | 'conflict' | 'failed';
+export type { ProductSyncStatus } from '../../product-domain/productListTypes';
+import type { ProductSyncStatus } from '../../product-domain/productListTypes';
 
 export type ProductListUiState = {
   syncStatus: ProductSyncStatus;

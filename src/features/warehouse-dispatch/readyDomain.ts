@@ -1,4 +1,4 @@
-import type { ProductListRowPayload } from '../product-management/types'
+import type { ProductListRowPayload } from '../product-domain/productListTypes'
 import { normalizeNoonImageUrl } from '../product-management/utils'
 import type { DispatchPlan, ReadyShipmentItem, WarehouseFulfillmentType, WarehouseTransportMode } from './types'
 import type {

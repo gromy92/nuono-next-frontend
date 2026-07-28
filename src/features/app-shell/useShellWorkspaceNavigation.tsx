@@ -3,7 +3,8 @@ import { Space, Tag } from 'antd';
 import type { TabsProps } from 'antd';
 import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
 import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
-import type { ProductDetailTabRequest, ProductSummarySurface, ProductWorkspaceTabKey } from '../product-management/types';
+import type { ProductSummarySurface } from '../product-domain/productSummaryTypes';
+import type { ProductDetailTabRequest, ProductWorkspaceTabKey } from '../product-management/types';
 import { productSummaryPrimarySite, productSyncStatusMeta } from '../product-management/utils';
 import type { SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
@@ -16,7 +17,6 @@ import {
   workspaceMenuTabLabel,
   workspaceTabKeyForMenuKey
 } from './WorkspaceMenuRegistry';
-
 function normalizeWorkspaceTabMenuKey(menuKey: AppMenuKey): AppMenuKey {
   return workspaceTabKeyForMenuKey(menuKey);
 }

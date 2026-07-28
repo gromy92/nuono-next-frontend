@@ -27,8 +27,6 @@ export type ProductStoreInitializationStatusRequest = {
 
 export type ProductStoreInitializationStartRequest = ProductStoreInitializationStatusRequest;
 
-export type ProductListDatasetRequest = ProductStoreInitializationStatusRequest;
-
 export type ProductWorkbenchOpenRequest = {
   ownerUserId: number;
   storeCode: string;
@@ -184,10 +182,6 @@ function productSpecDetailToVariantSpecPayload(detail: ProductVariantSpecDetailP
     effectiveSourceType: detail.effectiveSourceType || effectiveSpec.effectiveSourceType,
     sources: detail.sources ?? effectiveSpec.sources
   };
-}
-
-export async function fetchProductListDataset(request: ProductListDatasetRequest) {
-  return postJson<ProductListDatasetPayload>('/api/product-master/list', request, '商品接口当前不可用');
 }
 
 export async function deleteLocalProduct(request: ProductWorkbenchOpenRequest) {
