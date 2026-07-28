@@ -5,9 +5,10 @@ import { fileURLToPath } from 'node:url'
 
 const purchaseOrderDir = dirname(fileURLToPath(import.meta.url))
 const pageSource = readFileSync(join(purchaseOrderDir, 'PurchaseOrderPage.tsx'), 'utf8')
+const formsSource = readFileSync(join(purchaseOrderDir, 'components/PurchaseOrderForms.tsx'), 'utf8')
 const storeModelSource = readFileSync(join(purchaseOrderDir, 'model/purchaseOrderStoreModel.tsx'), 'utf8')
 const uiMetaSource = readFileSync(join(purchaseOrderDir, 'model/purchaseOrderUiMeta.tsx'), 'utf8')
-const purchaseOrderFeatureSource = [pageSource, storeModelSource, uiMetaSource].join('\n')
+const purchaseOrderFeatureSource = [pageSource, formsSource, storeModelSource, uiMetaSource].join('\n')
 const apiSource = readFileSync(join(purchaseOrderDir, 'api.ts'), 'utf8')
 
 assert.doesNotMatch(

@@ -9,6 +9,7 @@ const typesSource = [
 ].join('\n');
 const apiSource = readFileSync(resolve(root, 'src/features/purchase-order/api.ts'), 'utf8');
 const pageSource = readFileSync(resolve(root, 'src/features/purchase-order/PurchaseOrderPage.tsx'), 'utf8');
+const formsSource = readFileSync(resolve(root, 'src/features/purchase-order/components/PurchaseOrderForms.tsx'), 'utf8');
 const itemCommandSource = readFileSync(resolve(root, 'src/features/purchase-order/model/purchaseOrderItemCommandModel.ts'), 'utf8');
 const storeModelSource = readFileSync(resolve(root, 'src/features/purchase-order/model/purchaseOrderStoreModel.tsx'), 'utf8');
 const uiMetaSource = readFileSync(resolve(root, 'src/features/purchase-order/model/purchaseOrderUiMeta.tsx'), 'utf8');
@@ -18,13 +19,13 @@ const shippingOrderPageSource = readdirSync(shippingOrderFeatureDir)
   .filter((name) => /\.(?:ts|tsx)$/.test(name) && !name.endsWith('.test.ts') && !name.endsWith('.test.tsx'))
   .map((name) => readFileSync(resolve(shippingOrderFeatureDir, name), 'utf8'))
   .join('\n');
-const siteQuantityBlock = pageSource.slice(
-  pageSource.indexOf('function SiteQuantityFormList'),
-  pageSource.indexOf('function PskuRowsFormList')
+const siteQuantityBlock = formsSource.slice(
+  formsSource.indexOf('function SiteQuantityFormList'),
+  formsSource.indexOf('function PskuRowsFormList')
 );
-const pskuRowsBlock = pageSource.slice(
-  pageSource.indexOf('function PskuRowsFormList'),
-  pageSource.length
+const pskuRowsBlock = formsSource.slice(
+  formsSource.indexOf('function PskuRowsFormList'),
+  formsSource.length
 );
 const createStoreOptionsBlock = storeModelSource.slice(
   storeModelSource.indexOf('function buildCreateStoreOptions'),
