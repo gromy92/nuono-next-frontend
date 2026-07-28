@@ -5,7 +5,7 @@ const interfacePath = 'src/features/product-editor/productDetailEditorTypes.ts';
 const oldInterfacePath = 'src/features/product-management/components/ProductDetailOfficialTabs.types.ts';
 const interfaceSource = readFileSync(interfacePath, 'utf8');
 const officialTabsSource = readFileSync(
-  'src/features/product-management/components/ProductDetailOfficialTabs.tsx',
+  'src/features/product-editor/ProductDetailOfficialTabs.tsx',
   'utf8'
 );
 const panelSource = readFileSync(
@@ -39,7 +39,7 @@ assert.doesNotMatch(
   ['ProductSizesTab.tsx', 'ProductSizesEditorProps'],
   ['ProductInsightsTab.tsx', 'ProductInsightsEditorProps']
 ].forEach(([fileName, typeName]) => {
-  const source = readFileSync(`src/features/product-management/components/${fileName}`, 'utf8');
+  const source = readFileSync(`src/features/product-editor/${fileName}`, 'utf8');
   assert.match(source, new RegExp(`props: ${typeName}`), `${fileName} must consume its narrow Interface`);
   assert.doesNotMatch(source, /ProductDetailOfficialTabsProps/, `${fileName} must not consume the aggregate Interface`);
 });
@@ -50,8 +50,8 @@ assert.doesNotMatch(offerTabSource, /product-management|product-listing/, 'Offer
 
 assert.match(
   officialTabsSource,
-  /product-editor\/productDetailEditorTypes/,
-  'the tabs host must consume the product-editor Interface directly'
+  /from ['"]\.\/productDetailEditorTypes/,
+  'the tabs host must consume the local product-editor Interface directly'
 );
 assert.match(
   officialTabsSource,

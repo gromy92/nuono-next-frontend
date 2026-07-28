@@ -1,7 +1,10 @@
 import { Button, Input, Space, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
-import { formatSnapshotValue, textInputValue } from '../utils';
+import type { ProductMasterSnapshotPayload } from '../product-domain/productMasterSnapshot';
+import {
+  formatProductValue as formatSnapshotValue,
+  productTextInputValue as textInputValue
+} from '../product-domain/productValueFormatting';
 
 const { Text } = Typography;
 

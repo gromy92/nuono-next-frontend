@@ -17,7 +17,7 @@ import type {
 } from './types';
 import { getProductCurrentZCode, getProductStableIdentityKey } from '../product-domain/productIdentity';
 import { normalizeNoonImageUrl } from '../product-baseline';
-import { formatSnapshotValue } from '../product-management/utils/common';
+import { formatProductValue as formatSnapshotValue } from '../product-domain/productValueFormatting';
 const { Paragraph, Text } = Typography;
 
 type ProductSpecsPageProps = {

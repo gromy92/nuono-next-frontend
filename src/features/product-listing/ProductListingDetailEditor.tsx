@@ -1,7 +1,7 @@
 import { RobotOutlined } from '@ant-design/icons'
 import { Button, Input, Space, Tag, Typography } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ProductDetailOfficialTabs } from '../product-management/components/ProductDetailOfficialTabs'
+import { ProductDetailOfficialTabs } from '../product-editor/ProductDetailOfficialTabs'
 import { validateProductListingFields } from './api'
 import { ProductListingAiResultPreview } from './ProductListingAiResultPreview'
 import {

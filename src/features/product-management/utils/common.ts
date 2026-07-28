@@ -1,7 +1,15 @@
 import dayjs from 'dayjs';
 import type { ProductSyncStatus } from '../types';
 import { normalizeNoonImageUrl } from '../../product-baseline';
+import {
+  formatProductValue,
+  productTextInputValue
+} from '../../product-domain/productValueFormatting';
 export { normalizeNoonImageUrl };
+export {
+  formatProductValue as formatSnapshotValue,
+  productTextInputValue as textInputValue
+};
 
 export function parseOptionalNumber(value: unknown) {
   if (value === null || value === undefined || value === '') {
@@ -23,19 +31,6 @@ export function parseOptionalNumber(value: unknown) {
 
 export function aggregateFbnStock(record?: Record<string, unknown>) {
   return (parseOptionalNumber(record?.fbnStock) ?? 0) + (parseOptionalNumber(record?.supermallStock) ?? 0);
-}
-
-export function formatSnapshotValue(value: unknown): string {
-  if (value === null || value === undefined || value === '') {
-    return '-';
-  }
-  if (Array.isArray(value)) {
-    return value.map((item) => formatSnapshotValue(item)).join(' / ');
-  }
-  if (typeof value === 'object') {
-    return JSON.stringify(value);
-  }
-  return String(value);
 }
 
 export function formatDateTimeParts(value?: string) {
@@ -102,13 +97,6 @@ export function normalizeSnapshotTextList(value: unknown) {
   }
   const normalized = String(value).trim();
   return normalized ? [normalized] : [];
-}
-
-export function textInputValue(value: unknown) {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  return String(value);
 }
 
 export function siteOfferCode(record: Record<string, unknown>) {

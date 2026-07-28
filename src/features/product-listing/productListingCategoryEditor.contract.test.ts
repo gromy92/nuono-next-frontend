@@ -16,7 +16,7 @@ const competitorCategoryModalSource = readFileSync(
 )
 const classificationUiSource = `${classificationEditorSource}\n${classificationFieldsSource}\n${competitorCategoryModalSource}`
 const contentTabSource = readFileSync(
-  new URL('../product-management/components/ProductContentTab.tsx', import.meta.url),
+  new URL('../product-editor/ProductContentTab.tsx', import.meta.url),
   'utf8'
 )
 const competitorContentTypeSource = readFileSync(

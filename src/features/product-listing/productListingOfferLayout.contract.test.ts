@@ -8,11 +8,11 @@ const tabsTypesSource = readFileSync(
 )
 const offerTabSource = readFileSync(new URL('../product-editor/ProductOfferTab.tsx', import.meta.url), 'utf8')
 const contentTabSource = readFileSync(
-  new URL('../product-management/components/ProductContentTab.tsx', import.meta.url),
+  new URL('../product-editor/ProductContentTab.tsx', import.meta.url),
   'utf8'
 )
 const officialTabsSource = readFileSync(
-  new URL('../product-management/components/ProductDetailOfficialTabs.tsx', import.meta.url),
+  new URL('../product-editor/ProductDetailOfficialTabs.tsx', import.meta.url),
   'utf8'
 )
 const visibilitySource = readFileSync(

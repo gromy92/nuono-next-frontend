@@ -1,4 +1,4 @@
-import { ProductDetailOfficialTabs } from './ProductDetailOfficialTabs';
+import { ProductDetailOfficialTabs } from '../../product-editor/ProductDetailOfficialTabs';
 import { ProductOfferStockSection } from './ProductOfferStockSection';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 

@@ -1,9 +1,9 @@
 import { Space } from 'antd';
-import { ProductAttributesPanel } from '../../product-editor/ProductAttributesPanel';
-import { ProductBasicContentPanel } from '../../product-editor/ProductBasicContentPanel';
-import { ProductClassificationEditor } from '../../product-editor/ProductClassificationEditor';
-import type { ProductContentEditorProps } from '../../product-editor/productDetailEditorTypes';
-import { ProductImagesPanel } from '../../product-editor/ProductImagesPanel';
+import { ProductAttributesPanel } from './ProductAttributesPanel';
+import { ProductBasicContentPanel } from './ProductBasicContentPanel';
+import { ProductClassificationEditor } from './ProductClassificationEditor';
+import type { ProductContentEditorProps } from './productDetailEditorTypes';
+import { ProductImagesPanel } from './ProductImagesPanel';
 
 export function ProductContentTab(props: ProductContentEditorProps) {
   const {

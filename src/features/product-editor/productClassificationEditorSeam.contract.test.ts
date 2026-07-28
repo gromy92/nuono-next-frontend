@@ -31,7 +31,7 @@ editorFiles.forEach((fileName) => {
 const editorSource = readFileSync('src/features/product-editor/ProductClassificationEditor.tsx', 'utf8');
 const modalSource = readFileSync('src/features/product-editor/ProductCompetitorCategoryModal.tsx', 'utf8');
 const contentTabSource = readFileSync(
-  'src/features/product-management/components/ProductContentTab.tsx',
+  'src/features/product-editor/ProductContentTab.tsx',
   'utf8'
 );
 
@@ -47,6 +47,6 @@ assert.match(
 );
 assert.match(
   contentTabSource,
-  /product-editor\/ProductClassificationEditor/,
-  'the current Content host must consume the classification editor through product-editor'
+  /from ['"]\.\/ProductClassificationEditor/,
+  'the shared Content host must consume the local classification editor Interface'
 );

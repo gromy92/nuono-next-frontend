@@ -31,6 +31,7 @@ for (const path of modulePaths) {
 const removedPaths = [
   '../product-management/components/ProductBasicContentPanel.tsx',
   '../product-management/components/ProductBilingualContentEditor.tsx',
+  '../product-management/components/ProductContentTab.tsx',
   '../product-management/productCompetitorContentApi.ts'
 ];
 for (const path of removedPaths) {
@@ -38,12 +39,12 @@ for (const path of removedPaths) {
 }
 
 const contentHost = readFileSync(
-  new URL('../product-management/components/ProductContentTab.tsx', import.meta.url),
+  new URL('./ProductContentTab.tsx', import.meta.url),
   'utf8'
 );
 assert(
-  contentHost.includes("from '../../product-editor/ProductBasicContentPanel'"),
-  'Product content host should consume the shared editor Interface'
+  contentHost.includes("from './ProductBasicContentPanel'"),
+  'Product content host should consume the local shared editor Interface'
 );
 
 const transport = readFileSync(new URL('./productContentApi.ts', import.meta.url), 'utf8');

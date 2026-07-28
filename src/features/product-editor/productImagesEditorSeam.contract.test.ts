@@ -41,7 +41,7 @@ editorFiles.forEach((fileName) => {
 
 const panelSource = readFileSync('src/features/product-editor/ProductImagesPanel.tsx', 'utf8');
 const contentTabSource = readFileSync(
-  'src/features/product-management/components/ProductContentTab.tsx',
+  'src/features/product-editor/ProductContentTab.tsx',
   'utf8'
 );
 const assetApiSource = readFileSync(
@@ -56,8 +56,8 @@ assert.match(
 );
 assert.match(
   contentTabSource,
-  /product-editor\/ProductImagesPanel/,
-  'the current Content host must consume the image editor through product-editor'
+  /from ['"]\.\/ProductImagesPanel/,
+  'the shared Content host must consume the local image editor Interface'
 );
 assert.doesNotMatch(
   assetApiSource,

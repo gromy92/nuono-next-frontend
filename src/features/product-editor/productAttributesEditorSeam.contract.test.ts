@@ -34,7 +34,7 @@ editorFiles.forEach((fileName) => {
 });
 
 const contentTabSource = readFileSync(
-  'src/features/product-management/components/ProductContentTab.tsx',
+  'src/features/product-editor/ProductContentTab.tsx',
   'utf8'
 );
 const fieldIssuesSource = readFileSync(
@@ -48,8 +48,8 @@ const derivedStateSource = readFileSync(
 
 assert.match(
   contentTabSource,
-  /product-editor\/ProductAttributesPanel/,
-  'the current Content host must consume the attribute editor through product-editor'
+  /from ['"]\.\/ProductAttributesPanel/,
+  'the shared Content host must consume the local attribute editor Interface'
 );
 [fieldIssuesSource, derivedStateSource].forEach((source) => {
   assert.match(

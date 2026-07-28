@@ -1,14 +1,15 @@
 import { Space, Tabs, Tag, Tooltip } from 'antd';
-import { FEATURE_PRODUCT_INSIGHTS_ENABLED } from '../config';
 import {
   productFieldDomainStatusMeta,
   type ProductFieldDomainSurface
-} from '../../product-editor/productFieldDomain';
-import type { ProductDetailEditorHostProps } from '../../product-editor/productDetailEditorTypes';
-import { ProductOfferTab } from '../../product-editor/ProductOfferTab';
+} from './productFieldDomain';
+import type { ProductDetailEditorHostProps } from './productDetailEditorTypes';
+import { ProductOfferTab } from './ProductOfferTab';
 import { ProductContentTab } from './ProductContentTab';
 import { ProductInsightsTab } from './ProductInsightsTab';
 import { ProductSizesTab } from './ProductSizesTab';
+
+const PRODUCT_INSIGHTS_ENABLED = true;
 
 function ProductDetailTabLabel(props: { title: string; badge?: React.ReactNode }) {
   const { title, badge } = props;
@@ -79,7 +80,7 @@ export function ProductDetailOfficialTabs(props: ProductDetailEditorHostProps) {
       label: <ProductDetailTabLabel title="Sizes" />,
       children: <ProductSizesTab {...props} />
     });
-    if (FEATURE_PRODUCT_INSIGHTS_ENABLED) {
+    if (PRODUCT_INSIGHTS_ENABLED) {
       items.push({
         key: 'product-insights',
         label: <ProductDetailTabLabel title="Product Insights" />,
