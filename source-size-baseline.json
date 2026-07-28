@@ -23,7 +23,6 @@
     {"path":"src/features/official-warehouse/printFbnTransferPdf.ts","ceiling":406},
     {"path":"src/features/official-warehouse/statisticsDomain.contract.test.ts","ceiling":504},
     {"path":"src/features/official-warehouse/statisticsTypes.ts","ceiling":318},
-    {"path":"src/features/order-finance/OrderFinancePage.tsx","ceiling":829},
     {"path":"src/features/procurement-confirmation/components/RequirementDemandListCard.tsx","ceiling":449},
     {"path":"src/features/procurement-confirmation/hooks/useProcurementRequirementActions.ts","ceiling":374},
     {"path":"src/features/procurement-confirmation/mappers.ts","ceiling":510},
