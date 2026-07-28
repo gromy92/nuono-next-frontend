@@ -26,7 +26,6 @@ import {
   Alert,
   Select,
   Spin,
-  Tabs,
   Tag,
   Tooltip,
   Typography,
@@ -38,7 +37,6 @@ import type { KeyboardEvent, ReactNode } from 'react'
 import { withPublicBasePath } from '../../runtimePaths'
 import { firstFormValidationMessage, normalizeError } from '../../shared/api'
 import type { AuthSession } from '../auth/session'
-import { ReplenishmentPlanTab } from '../replenishment-plan/ReplenishmentPlanTab'
 import { fetchProductSpecDetail, saveProductSpecSource } from '../product-specs/api'
 import { fetchProductLogisticsProfiles, saveProductLogisticsProfile } from '../product-specs/logisticsProfileApi'
 import type {
@@ -84,6 +82,8 @@ import './PurchaseOrderPage.css'
 const { Text } = Typography
 type PurchaseOrderPageProps = {
   session?: AuthSession | null
+  purchaseOrdersRevision?: number
+  onPurchaseOrdersChanged?: () => void
 }
 
 type CreateOrderFormValues = {
@@ -275,18 +275,6 @@ const FULFILLMENT_TYPE_OPTIONS: Array<{ label: string; value: PurchaseOrderFulfi
 ]
 
 const DEFAULT_FULFILLMENT_TYPE: PurchaseOrderFulfillmentType = 'WAREHOUSE_RECEIPT'
-const PURCHASE_ORDER_TAB_QUERY_KEY = 'tab'
-
-type PurchaseOrderTabKey = 'purchase-orders' | 'replenishment-plan'
-
-function initialPurchaseOrderTab(): PurchaseOrderTabKey {
-  if (typeof window === 'undefined') {
-    return 'replenishment-plan'
-  }
-  const requestedTab = new URLSearchParams(window.location.search).get(PURCHASE_ORDER_TAB_QUERY_KEY)
-  return requestedTab === 'purchase-orders' ? 'purchase-orders' : 'replenishment-plan'
-}
-
 const PRODUCT_DATA_PRODUCT_SPEC_FIELDS: ProductDataSpecField[] = [
   { key: 'productLengthCm', label: '长/cm', min: 0.01, precision: 2 },
   { key: 'productWidthCm', label: '宽/cm', min: 0.01, precision: 2 },
@@ -373,16 +361,18 @@ const PRODUCT_DATA_LOGISTICS_FIELDS: ProductDataLogisticsField[] = [
   }
 ]
 
-export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
+export function PurchaseOrderPage({
+  session,
+  purchaseOrdersRevision,
+  onPurchaseOrdersChanged
+}: PurchaseOrderPageProps) {
   const { modal, message: appMessage } = AntdApp.useApp()
   const [createOrderForm] = Form.useForm<CreateOrderFormValues>()
   const [editOrderForm] = Form.useForm<UpdateOrderFormValues>()
   const [addItemsForm] = Form.useForm<AddItemsFormValues>()
   const [editItemForm] = Form.useForm<UpdateItemFormValues>()
-  const [activeTab, setActiveTab] = useState<PurchaseOrderTabKey>(() => initialPurchaseOrderTab())
   const [productDataCompletionForm] = Form.useForm<ProductDataCompletionFormValues>()
   const [orders, setOrders] = useState<PurchaseOrder[]>([])
-  const [purchaseOrdersRevision, setPurchaseOrdersRevision] = useState(0)
   const [selectedOrderId, setSelectedOrderId] = useState<string>()
   const [keyword, setKeyword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -478,25 +468,10 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
 
   useEffect(() => {
     void loadOrders()
-  }, [loadOrders])
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-    const params = new URLSearchParams(window.location.search)
-    if (activeTab === 'purchase-orders') {
-      params.set(PURCHASE_ORDER_TAB_QUERY_KEY, 'purchase-orders')
-    } else {
-      params.delete(PURCHASE_ORDER_TAB_QUERY_KEY)
-    }
-    const queryString = params.toString()
-    const nextUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ''}${window.location.hash}`
-    window.history.replaceState({}, '', nextUrl)
-  }, [activeTab])
+  }, [loadOrders, purchaseOrdersRevision])
 
   function notifyPurchaseOrdersChanged() {
-    setPurchaseOrdersRevision((current) => current + 1)
+    onPurchaseOrdersChanged?.()
   }
 
   useEffect(() => {
@@ -1293,27 +1268,8 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
 
   return (
     <div className="purchase-order-page" data-testid="purchase-order-page">
-      <Tabs
-        activeKey={activeTab}
-        onChange={(key) => setActiveTab(key as PurchaseOrderTabKey)}
-        items={[
-          {
-            key: 'replenishment-plan',
-            label: '补货计划',
-            children: (
-              <ReplenishmentPlanTab
-                session={session || null}
-                purchaseOrdersRevision={purchaseOrdersRevision}
-                onPurchaseOrdersChanged={loadOrders}
-              />
-            )
-          },
-          {
-            key: 'purchase-orders',
-            label: '采购单',
-            children: (
-              <Spin spinning={loading}>
-                <div className="purchase-order-layout">
+      <Spin spinning={loading}>
+        <div className="purchase-order-layout">
           <aside className="purchase-order-sidebar">
             <div className="purchase-order-sidebar-tools">
               <Input
@@ -1632,12 +1588,8 @@ export function PurchaseOrderPage({ session }: PurchaseOrderPageProps) {
               )}
             </section>
           </main>
-                </div>
-              </Spin>
-            )
-          }
-        ]}
-      />
+        </div>
+      </Spin>
 
       <Modal
         title="新建采购单"

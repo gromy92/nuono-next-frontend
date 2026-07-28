@@ -6,9 +6,7 @@ import ts from 'typescript'
 const root = process.cwd()
 const featuresRoot = join(root, 'src/features')
 const auditOnly = process.argv.includes('--audit')
-const allowedFeatureCycles = new Set([
-  'purchase-order|replenishment-plan'
-])
+const allowedFeatureCycles = new Set()
 
 function productionSourceFiles(directory) {
   return readdirSync(directory, { withFileTypes: true })

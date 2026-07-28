@@ -99,8 +99,8 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     pathLabel: '采购 / 补货采购',
     tabLabel: '补货采购',
     workspaceMount: createLazyWorkspaceMount(() =>
-      import('../purchase-order/PurchaseOrderWorkspaceMount').then((module) => ({
-        default: module.PurchaseOrderWorkspaceMount
+      import('../procurement-workspace/ProcurementWorkspaceMount').then((module) => ({
+        default: module.ProcurementWorkspaceMount
       }))
     ),
     closable: true,
