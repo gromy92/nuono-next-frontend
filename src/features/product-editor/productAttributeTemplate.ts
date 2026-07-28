@@ -5,8 +5,7 @@ import {
   type ProductDetailedAttributeKind,
   type ProductDetailedAttributeOption
 } from '../product-domain/productDetailedAttributeCatalog';
-import { textInputValue } from './utils/common';
-
+import { productEditorTextValue } from './productEditorValues';
 const VALID_FIELD_KINDS = new Set<ProductDetailedAttributeKind>(['text', 'textarea', 'select', 'dimension']);
 const OFFER_ONLY_ATTRIBUTE_CODES = new Set(['barcode', 'barcodes', 'ean', 'gtin', 'upc']);
 const DUPLICATE_CLASSIFICATION_GROUP_KEYS = new Set(['classification', 'classfication']);
@@ -75,7 +74,7 @@ function isDuplicateBasicContentField(code: string) {
 }
 
 function normalizeKey(value: unknown) {
-  return textInputValue(value).trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return productEditorTextValue(value).trim().toLowerCase().replace(/[\s-]+/g, '_');
 }
 
 function isHiddenSellerAttributeCode(code: string) {
@@ -105,7 +104,7 @@ function fieldLabel(label: string, labelZh?: string) {
 
 function firstText(...values: unknown[]) {
   for (const value of values) {
-    const text = textInputValue(value).trim();
+    const text = productEditorTextValue(value).trim();
     if (text) {
       return text;
     }
@@ -122,7 +121,7 @@ function objectRecord(value: unknown): Record<string, unknown> | undefined {
 
 function optionFromValue(value: unknown): ProductDetailedAttributeOption | undefined {
   if (typeof value === 'string' || typeof value === 'number') {
-    const text = textInputValue(value).trim();
+    const text = productEditorTextValue(value).trim();
     return text ? { value: text, en: text } : undefined;
   }
 
@@ -178,7 +177,7 @@ function unitOptionsFromRecord(record: Record<string, unknown>) {
       rawUnits
         .map((item) => {
           if (typeof item === 'string' || typeof item === 'number') {
-            return textInputValue(item).trim();
+            return productEditorTextValue(item).trim();
           }
           const unitRecord = objectRecord(item);
           return unitRecord ? firstText(unitRecord.value, unitRecord.en, unitRecord.label, unitRecord.code) : '';

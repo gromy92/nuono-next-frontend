@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { englishDisplayValue } from './ProductAttributeFieldControl';
-import type { ProductDetailedAttributeField } from '../../product-domain/productDetailedAttributeCatalog';
+import type { ProductDetailedAttributeField } from '../product-domain/productDetailedAttributeCatalog';
 
 const baseMaterialField: ProductDetailedAttributeField = {
   code: 'base_material',

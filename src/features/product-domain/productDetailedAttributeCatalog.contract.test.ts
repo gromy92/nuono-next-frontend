@@ -44,8 +44,8 @@ assert.equal(
 
 const callers = [
   'src/features/product-listing/productDetailAdapter.ts',
-  'src/features/product-management/components/ProductAttributeFieldControl.tsx',
-  'src/features/product-management/productAttributeTemplate.ts'
+  'src/features/product-editor/ProductAttributeFieldControl.tsx',
+  'src/features/product-editor/productAttributeTemplate.ts'
 ]
 
 callers.forEach((filePath) => {

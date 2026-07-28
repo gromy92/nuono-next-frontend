@@ -1,8 +1,8 @@
 import { Col, Empty, Progress, Row, Space, Tag, Typography } from 'antd';
-import { buildDetailedAttributeGroups, mergeDetailedAttributeField } from '../productAttributeTemplate';
-import type { ProductFieldDomainSurface } from '../../product-editor/productFieldDomain';
-import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
-import { formatSnapshotValue } from '../utils';
+import type { ProductMasterSnapshotPayload } from '../product-domain/productMasterSnapshot';
+import { buildDetailedAttributeGroups, mergeDetailedAttributeField } from './productAttributeTemplate';
+import type { ProductFieldDomainSurface } from './productFieldDomain';
+import { formatProductEditorValue } from './productEditorValues';
 import {
   arabicDisplayValue,
   attributeCode,
@@ -15,7 +15,7 @@ import {
   ProductAttributeValueInput,
   writableAttributeField
 } from './ProductAttributeFieldControl';
-import { ProductDetailSection } from '../../product-editor/ProductDetailSection';
+import { ProductDetailSection } from './ProductDetailSection';
 
 const { Text } = Typography;
 
@@ -108,7 +108,7 @@ export function ProductAttributesPanel(props: {
                   ))}
                 </Space>
               ) : (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={formatSnapshotValue(group.title)} />
+                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={formatProductEditorValue(group.title)} />
               )}
             </div>
           );

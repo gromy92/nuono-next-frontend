@@ -3,14 +3,12 @@ import {
   PRODUCT_DETAILED_ATTRIBUTE_VALUE_LABELS,
   type ProductDetailedAttributeField,
   type ProductDetailedAttributeGroup
-} from '../../product-domain/productDetailedAttributeCatalog';
-import { textInputValue } from '../utils';
-
-const LENGTH_UNIT_OPTIONS = ['mm', 'cm', 'm', 'in', 'ft'].map((unit) => ({ value: unit, label: unit }));
-const WEIGHT_UNIT_OPTIONS = ['g', 'KG', 'lb', 'lbs'].map((unit) => ({ value: unit, label: unit }));
+} from '../product-domain/productDetailedAttributeCatalog';
+import { productAttributeUnitOptions } from './productAttributeUnits';
+import { productEditorTextValue } from './productEditorValues';
 
 export function attributeCode(record: Record<string, unknown>) {
-  return textInputValue(record.code).trim();
+  return productEditorTextValue(record.code).trim();
 }
 
 function optionKey(value: string) {
@@ -27,12 +25,12 @@ function humanizeOption(value: string) {
 
 function englishChineseLabel(en: string, zh?: string) {
   const english = en.trim();
-  const chinese = textInputValue(zh).trim();
+  const chinese = productEditorTextValue(zh).trim();
   return english && chinese ? `${english}（${chinese}）` : english;
 }
 
 function optionChineseLabel(value: string, explicitZh?: string) {
-  return textInputValue(explicitZh).trim() || PRODUCT_DETAILED_ATTRIBUTE_VALUE_LABELS[optionKey(value)]?.zh;
+  return productEditorTextValue(explicitZh).trim() || PRODUCT_DETAILED_ATTRIBUTE_VALUE_LABELS[optionKey(value)]?.zh;
 }
 
 function optionEnglishDisplayLabel(field: ProductDetailedAttributeField, option: NonNullable<ProductDetailedAttributeField['options']>[number]) {
@@ -69,8 +67,8 @@ function dictionaryLabel(value: string, field: ProductDetailedAttributeField, la
 }
 
 function rawEnglishValue(record: Record<string, unknown>, field: ProductDetailedAttributeField) {
-  const commonValue = textInputValue(record.commonValue).trim();
-  const englishValue = textInputValue(record.enValue).trim();
+  const commonValue = productEditorTextValue(record.commonValue).trim();
+  const englishValue = productEditorTextValue(record.enValue).trim();
   if (field.kind === 'select' || field.kind === 'dimension') {
     return commonValue || englishValue;
   }
@@ -103,11 +101,11 @@ export function arabicDisplayValue(record: Record<string, unknown>, field: Produ
       return mappedValue;
     }
   }
-  const directValue = textInputValue(record.arValue).trim();
+  const directValue = productEditorTextValue(record.arValue).trim();
   if (directValue) {
     return directValue;
   }
-  return textInputValue(record.commonValue).trim();
+  return productEditorTextValue(record.commonValue).trim();
 }
 
 export function attributeFilled(record: Record<string, unknown>, field: ProductDetailedAttributeField) {
@@ -160,9 +158,9 @@ export function writableAttributeField(
   record: Record<string, unknown>,
   field: ProductDetailedAttributeField
 ): 'commonValue' | 'enValue' {
-  const commonValue = textInputValue(record.commonValue).trim();
-  const englishValue = textInputValue(record.enValue).trim();
-  const arabicValue = textInputValue(record.arValue).trim();
+  const commonValue = productEditorTextValue(record.commonValue).trim();
+  const englishValue = productEditorTextValue(record.enValue).trim();
+  const arabicValue = productEditorTextValue(record.arValue).trim();
   if (field.kind === 'select' || field.kind === 'dimension') {
     return 'commonValue';
   }
@@ -173,14 +171,7 @@ export function writableAttributeField(
 }
 
 export function dimensionUnitValue(record: Record<string, unknown>) {
-  return textInputValue(record.unit).trim();
-}
-
-function dimensionUnitOptions(field: ProductDetailedAttributeField) {
-  if (field.unitOptions?.length) {
-    return field.unitOptions.map((unit) => ({ value: unit, label: unit }));
-  }
-  return field.code.includes('weight') ? WEIGHT_UNIT_OPTIONS : LENGTH_UNIT_OPTIONS;
+  return productEditorTextValue(record.unit).trim();
 }
 
 function editablePlaceholder(field: ProductDetailedAttributeField) {
@@ -225,7 +216,7 @@ export function ProductAttributeValueInput(props: {
         <Select
           disabled={!editable}
           optionFilterProp="label"
-          options={dimensionUnitOptions(field)}
+          options={productAttributeUnitOptions(field)}
           placeholder="单位"
           showSearch
           style={{ width: 92 }}
@@ -294,7 +285,7 @@ export function ProductAttributeReadonlyValue(props: { field: ProductDetailedAtt
         <Input disabled placeholder={undefined} value={value} />
         <Select
           disabled
-          options={dimensionUnitOptions(field)}
+          options={productAttributeUnitOptions(field)}
           placeholder={undefined}
           style={{ width: 92 }}
           value={unit || undefined}

@@ -1,6 +1,6 @@
 import { parseOptionalNumber, textInputValue } from './common';
 import { collectProductOfferPricingValidationIssues } from '../../product-domain/productOfferPricing';
-import { isVisibleDetailedAttributeRecord } from '../productAttributeTemplate';
+import { isVisibleDetailedAttributeRecord } from '../../product-editor/productAttributeTemplate';
 
 export function pickAttributeValue(attribute: Record<string, unknown>) {
   return (
