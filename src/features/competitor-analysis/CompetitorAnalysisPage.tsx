@@ -22,7 +22,6 @@ import {
   CheckOutlined,
   ClockCircleOutlined,
   CloseOutlined,
-  EditOutlined,
   ExportOutlined,
   EyeOutlined,
   InfoCircleOutlined,
@@ -61,6 +60,16 @@ import { CompetitorDashboardTab } from './CompetitorDashboardTab'
 import { CompetitorPriceChangeTab } from './CompetitorPriceChangeTab'
 import { summarizeRanks } from './domain'
 import { buildRankReportSummary, type RankReportSummary } from './rankReportSummary'
+import { ProductKeywordLinks, ProductTitleStack } from './CompetitorProductListCells'
+import { buildNoonSearchUrl, noonMarketPath } from './competitorNoonLinks'
+import {
+  isAbortError,
+  mergeProductTitleFields,
+  normalizeProductKeywordNorm,
+  productListIdentityCodes,
+  productTitleLines
+} from './competitorProductListModel'
+import { loadReportRankHistory } from './competitorRankHistory'
 import { normalizeError } from '../../shared/api'
 import type {
   CompetitorCandidate,
@@ -1289,250 +1298,6 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
       ) : null}
     </div>
   )
-}
-
-function normalizeSearchText(value: string) {
-  return value.trim().toLowerCase()
-}
-
-function normalizeProductKeywordNorm(value: string) {
-  return value.trim().toLowerCase().replace(/\s+/g, ' ')
-}
-
-function isAbortError(error: unknown) {
-  return error instanceof DOMException && error.name === 'AbortError'
-}
-
-async function loadReportRankHistory(product: CompetitorWatchProduct, rangeDays = 15) {
-  const activeKeywords = product.keywords.filter((keyword) => keyword.status === 'active' && keyword.id)
-  if (!product.id || !activeKeywords.length) {
-    return { product, failedCount: 0 }
-  }
-
-  const results = await Promise.allSettled(
-    activeKeywords.map((keyword) =>
-      fetchCompetitorRankHistory(product.id, {
-        keywordId: keyword.id,
-        rangeDays
-      })
-    )
-  )
-  const rankPoints = results.flatMap((result) => result.status === 'fulfilled' ? result.value : [])
-  const failedCount = results.filter((result) => result.status === 'rejected').length
-  return {
-    product: rankPoints.length ? mergeReportRankPoints(product, rankPoints) : product,
-    failedCount
-  }
-}
-
-function mergeReportRankPoints(product: CompetitorWatchProduct, rankPoints: CompetitorRankPoint[]) {
-  const pointByKey = new Map<string, CompetitorRankPoint>()
-  ;[...product.rankPoints, ...rankPoints].forEach((point) => {
-    pointByKey.set(reportRankPointKey(point), point)
-  })
-  return {
-    ...product,
-    rankPoints: Array.from(pointByKey.values()).sort((left, right) => {
-      const dateCompare = left.factDate.localeCompare(right.factDate)
-      if (dateCompare !== 0) return dateCompare
-      const keywordCompare = left.keywordId.localeCompare(right.keywordId)
-      if (keywordCompare !== 0) return keywordCompare
-      return left.noonProductCode.localeCompare(right.noonProductCode)
-    })
-  }
-}
-
-function reportRankPointKey(point: CompetitorRankPoint) {
-  return [
-    point.keywordId,
-    normalizeNoonProductCode(point.noonProductCode),
-    point.factDate,
-    point.rankChannel || 'organic',
-    point.isSponsored ? 'ad' : 'natural',
-    point.isSelf ? 'self' : 'competitor'
-  ].join(':')
-}
-
-function mergeProductTitleFields(existing: CompetitorWatchProduct, incoming: CompetitorWatchProduct) {
-  return {
-    ...existing,
-    ...incoming,
-    title: incoming.title || existing.title,
-    titleCn: incoming.titleCn || existing.titleCn
-  }
-}
-
-function productTitleLines(product: CompetitorWatchProduct) {
-  const englishTitle = product.title?.trim() || ''
-  const chineseTitle = product.titleCn?.trim() || ''
-  const primary = chineseTitle || englishTitle || '未命名商品'
-  const secondary =
-    englishTitle && normalizeSearchText(englishTitle) !== normalizeSearchText(primary)
-      ? englishTitle
-      : ''
-  return {
-    primary,
-    secondary,
-    alt: chineseTitle || englishTitle || '商品图片'
-  }
-}
-
-function ProductTitleStack({ titleLines }: { titleLines: ReturnType<typeof productTitleLines> }) {
-  return (
-    <span className="competitor-analysis-product-title-stack">
-      <span className="competitor-analysis-product-title-cn">{titleLines.primary}</span>
-      {titleLines.secondary ? (
-        <Tooltip placement="topLeft" title={titleLines.secondary}>
-          <span className="competitor-analysis-product-title-en">{titleLines.secondary}</span>
-        </Tooltip>
-      ) : null}
-    </span>
-  )
-}
-
-function productListIdentityCodes(product: CompetitorWatchProduct) {
-  const psku = product.partnerSku || ''
-  return [
-    { value: psku || '-', copyText: psku || undefined },
-    ...(product.selfNoonProductCode
-      ? [
-          {
-            value: product.selfNoonProductCode,
-            copyText: product.selfNoonProductCode
-          }
-        ]
-      : [])
-  ]
-}
-
-function ProductKeywordLinks({
-  product,
-  onEdit
-}: {
-  product: CompetitorWatchProduct
-  onEdit: () => void
-}) {
-  const activeKeywords = product.keywords
-    .filter((keyword) => keyword.status === 'active' && keyword.keyword.trim())
-    .slice()
-    .sort((left, right) => left.displayOrder - right.displayOrder)
-  const visibleKeywords = activeKeywords.filter((keyword) => keyword.monitoredCount !== 0)
-  const hiddenKeywordCount = activeKeywords.length - visibleKeywords.length
-
-  return (
-    <div className="competitor-analysis-keyword-cell">
-      <div className="competitor-analysis-keyword-content">
-        <div className="competitor-analysis-keyword-inline-list">
-          {visibleKeywords.map((keyword) => {
-            const rankChange = keywordRankChangeDisplay(keyword)
-            return (
-              <div className="competitor-analysis-keyword-row" key={keyword.id}>
-                <a
-                  className="competitor-analysis-keyword-link"
-                  href={buildNoonSearchUrl(keyword.keyword, product.siteCode, product.id, keyword.id)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <SearchOutlined />
-                  <span className="competitor-analysis-keyword-text">{keyword.keyword}</span>
-                </a>
-                <Tooltip title={rankChange.title}>
-                  <Tag
-                    className="competitor-analysis-keyword-rank-tag"
-                    color={rankChange.color}
-                  >
-                    {rankChange.label}
-                  </Tag>
-                </Tooltip>
-              </div>
-            )
-          })}
-          {hiddenKeywordCount ? (
-            <Tag className="competitor-analysis-keyword-other-tag">其他 {hiddenKeywordCount} 个</Tag>
-          ) : null}
-          {!visibleKeywords.length && !hiddenKeywordCount ? (
-            <Text type="secondary">-</Text>
-          ) : null}
-        </div>
-      </div>
-      <Tooltip title="编辑关键词">
-        <Button
-          aria-label="编辑关键词"
-          className="competitor-analysis-keyword-edit-button"
-          icon={<EditOutlined />}
-          size="small"
-          type="text"
-          onClick={onEdit}
-        />
-      </Tooltip>
-    </div>
-  )
-}
-
-function keywordRankChangeDisplay(keyword: CompetitorKeyword) {
-  const change = keyword.selfRankChange
-  const previousRankStatus = change?.previousRankStatus
-  const rankStatus = change?.rankStatus
-  if (!change || !previousRankStatus || !rankStatus) {
-    return {
-      label: '无数据',
-      color: 'default' as const,
-      title: '昨天到今天暂无可比本品排名'
-    }
-  }
-
-  const title = `${change.previousDate || '昨天'} ${keywordRankValue(previousRankStatus, change.previousRankNo)} -> ${
-    change.currentDate || '今天'
-  } ${keywordRankValue(rankStatus, change.rankNo)}`
-
-  if (previousRankStatus !== 'ranked' && rankStatus === 'ranked') {
-    return { label: '进榜', color: 'green' as const, title }
-  }
-  if (previousRankStatus === 'ranked' && rankStatus !== 'ranked') {
-    return { label: '出榜', color: 'red' as const, title }
-  }
-  if (previousRankStatus !== 'ranked' && rankStatus !== 'ranked') {
-    return { label: '未进榜', color: 'default' as const, title }
-  }
-
-  const rankDelta = change.rankDelta
-  if (typeof rankDelta === 'number' && Number.isFinite(rankDelta)) {
-    if (rankDelta > 0) {
-      return { label: `升${rankDelta}名`, color: 'green' as const, title }
-    }
-    if (rankDelta < 0) {
-      return { label: `降${Math.abs(rankDelta)}名`, color: 'red' as const, title }
-    }
-  }
-  return { label: '持平', color: 'default' as const, title }
-}
-
-function keywordRankValue(status: NonNullable<CompetitorKeyword['selfRankChange']>['rankStatus'], rankNo?: number) {
-  if (status === 'ranked') {
-    return rankNo ? `第${rankNo}名` : '已进榜'
-  }
-  return '未进榜'
-}
-
-function buildNoonSearchUrl(keyword: string, siteCode: string, watchProductId?: string, keywordId?: string) {
-  const searchUrl = `https://www.noon.com/${noonMarketPath(siteCode)}/search/?q=${encodeURIComponent(keyword)}`
-  const fragment = new URLSearchParams()
-  if (watchProductId) {
-    fragment.set('nuonoWatchProductId', watchProductId)
-  }
-  if (keywordId && /^\d+$/.test(keywordId)) {
-    fragment.set('nuonoKeywordId', keywordId)
-  }
-  fragment.set('nuonoKeyword', keyword)
-  const fragmentText = fragment.toString()
-  return fragmentText ? `${searchUrl}#${fragmentText}` : searchUrl
-}
-
-function noonMarketPath(siteCode: string) {
-  const normalized = siteCode.trim().toUpperCase()
-  if (normalized === 'SA') return 'saudi-en'
-  if (normalized === 'EG') return 'egypt-en'
-  return 'uae-en'
 }
 
 function ProductChangeModal({

@@ -23,7 +23,7 @@
     {"path":"src/features/auth/ReplicaLoginPage.tsx","ceiling":390},
     {"path":"src/features/competitor-analysis/api.ts","ceiling":1225},
     {"path":"src/features/competitor-analysis/CompetitorAnalysisPage.css","ceiling":3601},
-    {"path":"src/features/competitor-analysis/CompetitorAnalysisPage.tsx","ceiling":3963},
+    {"path":"src/features/competitor-analysis/CompetitorAnalysisPage.tsx","ceiling":3728},
     {"path":"src/features/competitor-analysis/CompetitorDashboardPriorityPanels.tsx","ceiling":580},
     {"path":"src/features/competitor-analysis/CompetitorDashboardTab.tsx","ceiling":367},
     {"path":"src/features/competitor-analysis/dashboardCharts.ts","ceiling":390},
