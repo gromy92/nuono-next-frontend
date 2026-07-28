@@ -21,7 +21,6 @@
     {"path":"src/features/official-warehouse/statisticsTypes.ts","ceiling":318},
     {"path":"src/features/procurement-confirmation/components/RequirementDemandListCard.tsx","ceiling":449},
     {"path":"src/features/procurement-confirmation/hooks/useProcurementRequirementActions.ts","ceiling":374},
-    {"path":"src/features/procurement-confirmation/mappers.ts","ceiling":510},
     {"path":"src/features/procurement-confirmation/mockData.ts","ceiling":497},
     {"path":"src/features/procurement/autoInquiry.ts","ceiling":319},
     {"path":"src/features/procurement/ProcurementAcceptanceBoard.tsx","ceiling":314},
