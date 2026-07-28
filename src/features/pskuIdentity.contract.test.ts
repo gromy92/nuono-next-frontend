@@ -41,7 +41,12 @@ const ali1688HistoricalOrders = [
   join(featuresDir, 'ali1688-historical-orders', fileName),
   'utf8'
 )).join('\n')
-const profitCalculator = readFileSync(join(featuresDir, 'profit-calculator/useProfitCalculatorWorkspace.tsx'), 'utf8')
+const profitCalculator = [
+  'useProfitCalculatorWorkspace.tsx',
+  'profitWorkspaceModel.ts',
+  'hooks/useProfitProductData.ts',
+  'hooks/useProfitCalculationActions.ts'
+].map((fileName) => readFileSync(join(featuresDir, 'profit-calculator', fileName), 'utf8')).join('\n')
 const salesAnalyticsPage = readFileSync(join(featuresDir, 'sales-analytics/SalesAnalyticsPage.tsx'), 'utf8')
 const salesAnalyticsApi = readFileSync(join(featuresDir, 'sales-analytics/api.ts'), 'utf8')
 
