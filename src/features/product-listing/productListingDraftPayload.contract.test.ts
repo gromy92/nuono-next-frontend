@@ -121,6 +121,27 @@ assert.equal('fbp' in payload, false)
 assert.equal('warehouseId' in payload, false)
 assert.equal('warehouseCode' in payload, false)
 assert.equal('quantity' in payload, false)
+
+const missingWarrantyDraft = normalizeProductListingEditorDraft({
+  ...draft,
+  idWarranty: null
+})
+assert.equal(
+  missingWarrantyDraft.idWarranty,
+  0,
+  'an empty warranty must normalize to the explicit Noon "No warranty" option'
+)
+assert.equal(
+  productListingEditorDraftToPayload(missingWarrantyDraft).idWarranty,
+  0,
+  'saving an untouched warranty control must persist idWarranty=0'
+)
+assert.equal(
+  productListingEditorDraftToPayload({ ...draft, idWarranty: undefined }).idWarranty,
+  0,
+  'the API payload boundary must not omit the default Noon warranty'
+)
+
 assert.deepEqual(payload.competitorMaterials, [
   {
     id: 'noon-zsku-1',

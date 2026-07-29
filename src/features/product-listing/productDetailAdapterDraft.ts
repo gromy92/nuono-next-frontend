@@ -14,6 +14,8 @@ import {
   text
 } from './productDetailAdapterNormalization'
 
+const NOON_NO_WARRANTY_ID = 0
+
 export function createProductListingEditorDraft(storeCode?: string): ProductListingEditorDraft {
   return normalizeProductListingEditorDraft({
     storeCode: storeCode || '',
@@ -41,6 +43,7 @@ export function normalizeProductListingEditorDraft(
     keyAttributes: normalizeProductListingKeyAttributes(draft.keyAttributes, draft.barcode),
     listingKeywordSuggestionsEn: normalizeKeywordSuggestions(draft.listingKeywordSuggestionsEn),
     listingKeywordSuggestionsAr: normalizeKeywordSuggestions(draft.listingKeywordSuggestionsAr),
+    idWarranty: optionalInteger(draft.idWarranty) ?? NOON_NO_WARRANTY_ID,
     isActive: true
   } as ProductListingEditorDraft & Record<string, unknown>
   delete normalized.fbp
@@ -116,7 +119,7 @@ export function productListingEditorDraftToPayload(
     supplyEvidenceType: optionalText(draft.supplyEvidenceType),
     supplyEvidenceRefId: optionalInteger(draft.supplyEvidenceRefId),
     optionalPurchaseOrderId: optionalInteger(draft.optionalPurchaseOrderId),
-    idWarranty: optionalInteger(draft.idWarranty),
+    idWarranty: optionalInteger(draft.idWarranty) ?? NOON_NO_WARRANTY_ID,
     isActive: true,
     offerNote: optionalText(draft.offerNote),
     barcode: optionalText(draft.barcode),
