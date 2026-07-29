@@ -4,7 +4,9 @@ import process from 'node:process'
 import ts from 'typescript'
 
 const root = process.cwd()
-const featuresRoot = join(root, 'src/features')
+const featuresRoot = process.env.FEATURE_DEPENDENCY_ROOT
+  ? resolve(root, process.env.FEATURE_DEPENDENCY_ROOT)
+  : join(root, 'src/features')
 const auditOnly = process.argv.includes('--audit')
 const allowedFeatureCycles = new Set()
 
@@ -18,7 +20,7 @@ function productionSourceFiles(directory) {
     .filter((path) => !/\.d\.ts$|(?:\.test|\.spec|\.contract(?:\.fixtures)?)\.(?:ts|tsx)$/u.test(path))
 }
 
-function staticImports(filePath) {
+function sourceImports(filePath) {
   const source = ts.createSourceFile(
     filePath,
     readFileSync(filePath, 'utf8'),
@@ -27,18 +29,33 @@ function staticImports(filePath) {
     extname(filePath) === '.tsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS
   )
   const imports = []
-  source.statements.forEach((statement) => {
-    if (!ts.isImportDeclaration(statement) && !ts.isExportDeclaration(statement)) {
-      return
+  function visit(node) {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node))
+      && node.moduleSpecifier
+      && ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      imports.push({
+        specifier: node.moduleSpecifier.text,
+        runtime: !isTypeOnlyDeclaration(node),
+        dynamic: false
+      })
     }
-    if (!statement.moduleSpecifier || !ts.isStringLiteral(statement.moduleSpecifier)) {
-      return
+    if (
+      ts.isCallExpression(node)
+      && node.expression.kind === ts.SyntaxKind.ImportKeyword
+      && node.arguments.length === 1
+      && ts.isStringLiteral(node.arguments[0])
+    ) {
+      imports.push({
+        specifier: node.arguments[0].text,
+        runtime: true,
+        dynamic: true
+      })
     }
-    imports.push({
-      specifier: statement.moduleSpecifier.text,
-      runtime: !isTypeOnlyDeclaration(statement)
-    })
-  })
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
   return imports
 }
 
@@ -131,23 +148,38 @@ function cycleKey(component) {
   return [...component].sort().join('|')
 }
 
+function isRouteLoaderAdapterEdge(sourceFeature, targetFeature, imported) {
+  return (
+    imported.dynamic
+    && sourceFeature === 'route-catalog'
+    && targetFeature !== 'route-catalog'
+  )
+}
+
 const files = productionSourceFiles(featuresRoot)
 const knownFiles = new Set(files)
 const runtimeEdges = new Map(files.map((file) => [file, new Set()]))
 const featureEdges = new Map()
 const appShellReverseDependencies = []
+const routeLoaderAdapterEdges = []
 
 for (const file of files) {
   const sourceFeature = featureName(file)
   if (!featureEdges.has(sourceFeature)) {
     featureEdges.set(sourceFeature, new Set())
   }
-  for (const imported of staticImports(file)) {
+  for (const imported of sourceImports(file)) {
     const target = resolveRelativeImport(file, imported.specifier)
     if (!target || !knownFiles.has(target)) {
       continue
     }
     const targetFeature = featureName(target)
+    if (isRouteLoaderAdapterEdge(sourceFeature, targetFeature, imported)) {
+      routeLoaderAdapterEdges.push(
+        `${relative(root, file)} -> ${relative(root, target)}`
+      )
+      continue
+    }
     if (imported.runtime) {
       runtimeEdges.get(file).add(target)
     }
@@ -184,7 +216,8 @@ appShellReverseDependencies.sort().forEach((dependency) => {
 
 console.log(
   `Feature dependency policy: ${files.length} production files, `
-    + `${runtimeCycles.length} runtime cycles, ${featureCycles.length} feature cycles.`
+    + `${runtimeCycles.length} runtime cycles, ${featureCycles.length} feature cycles, `
+    + `${routeLoaderAdapterEdges.length} route loader adapter edges.`
 )
 if (featureCycles.length) {
   console.log(`Feature SCCs: ${featureCycles.map(cycleKey).sort().join(', ')}`)

@@ -3,7 +3,7 @@ import { Alert, Button, Card, Empty, Input, Select, Space, Table, Typography } f
 import { useProfitColumns } from '../hooks/useProfitColumns'
 import { useProfitDetailState } from '../hooks/useProfitDetailState'
 import type { ProfitCalculatorPageProps } from '../profitPageTypes'
-import { profitRowKey } from '../useProfitCalculatorWorkspace'
+import { profitRowKey } from '../profitWorkspaceModel'
 import { CommissionDetailModal, OutboundFeeDetailModal } from './ProfitDetailModals'
 
 const { Text } = Typography

@@ -15,7 +15,7 @@ import type {
   OutboundFeeDetailState,
   ProfitCalculatorPageProps
 } from '../profitPageTypes'
-import { profitRowKey } from '../useProfitCalculatorWorkspace'
+import { profitRowKey } from '../profitWorkspaceModel'
 
 export function useProfitDetailState({
   ownerUserId,

@@ -5,7 +5,7 @@ import { CommissionCell, OutboundFeeCell } from '../components/FeeComparisonCell
 import { ProductIdentityCell, ProfitPlaceholderCell } from '../components/ProductIdentityCell'
 import { displayPrice, displayText } from '../profitPageDomain'
 import type { ProfitCalculatorPageProps } from '../profitPageTypes'
-import { profitRowKey } from '../useProfitCalculatorWorkspace'
+import { profitRowKey } from '../profitWorkspaceModel'
 
 const { Text } = Typography
 

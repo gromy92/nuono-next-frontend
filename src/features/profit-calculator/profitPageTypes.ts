@@ -3,7 +3,7 @@ import type { AuthSessionStore } from '../auth/session'
 import type { ProductListRowPayload } from '../product-domain/productListTypes'
 import type { OrderFinanceOrderGroup } from '../order-finance/types'
 import type { OfficialOutboundFeeCalculationResult } from './domain'
-import type { ProfitActualCommissionMap, ProfitActualOutboundFeeMap, ProfitCommissionMap, ProfitListFilters, ProfitOutboundFeeMap, ProfitProductListState } from './useProfitCalculatorWorkspace'
+import type { ProfitActualCommissionMap, ProfitActualOutboundFeeMap, ProfitCommissionMap, ProfitListFilters, ProfitOutboundFeeMap, ProfitProductListState } from './profitWorkspaceModel'
 
 export type ProfitCalculatorPageProps = {
   ownerUserId?: number;
@@ -63,4 +63,3 @@ export type CommissionDetailState = {
   historyGroups: OrderFinanceOrderGroup[];
   historyError?: string;
 };
-
