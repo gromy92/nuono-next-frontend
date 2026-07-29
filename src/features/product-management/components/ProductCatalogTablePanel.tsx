@@ -1,11 +1,11 @@
 import { Alert, Space, Spin, Table, Tag, Typography } from 'antd';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductCatalogTableWorkspace } from '../workspaceTypes';
 import { getProductListRowIdentityKey } from '../../product-domain/productIdentity';
 
 const { Text } = Typography;
 
 type ProductCatalogTablePanelProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductCatalogTableWorkspace;
 };
 
 export function ProductCatalogTablePanel({ workspace }: ProductCatalogTablePanelProps) {

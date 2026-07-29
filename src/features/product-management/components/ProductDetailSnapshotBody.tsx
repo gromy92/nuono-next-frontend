@@ -4,12 +4,12 @@ import { ProductDetailOfficialTabsPanel } from './ProductDetailOfficialTabsPanel
 import { ProductDetailPreviewPanel } from './ProductDetailPreviewPanel';
 import { ProductDetailSummaryPanel } from './ProductDetailSummaryPanel';
 import { ProductPublishConflictAlert } from './ProductPublishConflictAlert';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductDetailWorkspace } from '../workspaceTypes';
 
 const { Text } = Typography;
 
 type ProductDetailSnapshotBodyProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductDetailWorkspace;
 };
 
 function isSummaryLevelDraftWarning(warning: string) {
@@ -26,10 +26,10 @@ function getWarningAlertTitle(warnings: string[]) {
 }
 
 export function ProductDetailSnapshotBody({ workspace }: ProductDetailSnapshotBodyProps) {
-  const { productSnapshotState, productWorkbenchSurfaceState } = workspace;
+  const { productSnapshotState, productWorkbenchSurfaceState } = workspace.state;
 
   if (productSnapshotState.status === 'idle') {
-    return <ProductDetailIdleState workspace={workspace} />;
+    return <ProductDetailIdleState workspace={workspace.idle} />;
   }
 
   if (productSnapshotState.status === 'loading') {
@@ -134,9 +134,12 @@ export function ProductDetailSnapshotBody({ workspace }: ProductDetailSnapshotBo
         </Space>
       ) : null}
 
-      <ProductDetailSummaryPanel workspace={workspace} />
-      <ProductPublishConflictAlert workspace={workspace} />
-      <ProductDetailOfficialTabsPanel workspace={workspace} />
+      <ProductDetailSummaryPanel
+        workspace={workspace.summary}
+        publishSyncWorkspace={workspace.publishSync}
+      />
+      <ProductPublishConflictAlert workspace={workspace.conflict} />
+      <ProductDetailOfficialTabsPanel workspace={workspace.officialTabs} />
     </Space>
   );
 }

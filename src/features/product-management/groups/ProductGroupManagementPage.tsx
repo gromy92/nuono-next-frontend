@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ProductListRowPayload, ProductSyncStatus } from '../types';
 import { isProductPublishTaskActive } from '../utils/workbench';
 import { textInputValue } from '../utils/common';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductGroupWorkspace, ProductSnapshotFormWorkspace } from '../workspaceTypes';
 import { buildProductGroupRows, countUngroupedProductRows, type ProductGroupRow } from './productGroupRows';
 import { ProductSnapshotHiddenForm } from '../components/ProductSnapshotHiddenForm';
 import {
@@ -14,7 +14,8 @@ import {
 import { ProductGroupSplitView } from './ProductGroupSplitView';
 
 type ProductGroupManagementPageProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductGroupWorkspace;
+  snapshotForm: ProductSnapshotFormWorkspace;
   activeOwnerId?: number;
 };
 
@@ -70,7 +71,7 @@ function groupKeyFromSnapshot(group: Record<string, unknown> | undefined) {
 }
 
 export function ProductGroupManagementPage(props: ProductGroupManagementPageProps) {
-  const { workspace, activeOwnerId } = props;
+  const { workspace, snapshotForm, activeOwnerId } = props;
   const [groupKeyword, setGroupKeyword] = useState('');
   const [productKeyword, setProductKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<GroupStatusFilter>('all');
@@ -257,7 +258,7 @@ export function ProductGroupManagementPage(props: ProductGroupManagementPageProp
 
   return (
     <>
-      <ProductSnapshotHiddenForm workspace={workspace} />
+      <ProductSnapshotHiddenForm workspace={snapshotForm} />
       <ProductGroupSplitView
         groups={rowsWithLocalDraftStatus}
         filteredGroups={filteredRows}

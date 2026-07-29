@@ -18,6 +18,7 @@ import { useProductPublishTaskPolling } from './hooks/useProductPublishTaskPolli
 import { useProductVariantSpecModalOpener } from './hooks/useProductVariantSpecModalOpener';
 import type { UseProductManagementWorkspaceParams } from './workspaceContracts';
 import { storeInitializationStepColor } from './workspaceHelpers';
+import { createProductManagementWorkspaceSurfaces } from './workspaceSurfaces';
 
 export function useProductManagementWorkspace({
   session, enabled = true, activeOwnerId,
@@ -275,7 +276,7 @@ export function useProductManagementWorkspace({
     usingMockProductList
   });
 
-  return {
+  const runtimeWorkspace = {
     ...workspaceState, ...productListDatasetLoader,
     ...storeInitialization, ...listSource,
     ...workbenchDerived, ...listFilters,
@@ -287,4 +288,5 @@ export function useProductManagementWorkspace({
     productListColumns,
     storeInitializationStepColor
   };
+  return createProductManagementWorkspaceSurfaces(runtimeWorkspace);
 }

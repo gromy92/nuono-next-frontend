@@ -7,7 +7,7 @@ import {
   isProductPublishTaskNeedsAttention,
   productPublishTaskStatusLabel
 } from '../utils/workbench';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductGroupWorkspace } from '../workspaceTypes';
 import type { ProductGroupRow } from './productGroupRows';
 import type { ProductGroupMemberListItem } from './ProductGroupMemberList';
 import { useProductGroupCurrentMemberUnlink } from './useProductGroupCurrentMemberUnlink';
@@ -17,7 +17,7 @@ const { Text } = Typography;
 type ProductGroupDetailPanelProps = {
   group: ProductGroupRow | null;
   activeOwnerId?: number;
-  workspace: ProductManagementWorkspace;
+  workspace: ProductGroupWorkspace;
 };
 
 export function ProductGroupDetailPanel(props: ProductGroupDetailPanelProps) {

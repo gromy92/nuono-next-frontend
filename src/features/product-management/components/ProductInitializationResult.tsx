@@ -1,10 +1,10 @@
 import { Alert, Col, List, Row, Space, Spin, Table, Tag, Typography } from 'antd';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductCatalogAccessWorkspace } from '../workspaceTypes';
 
 const { Text } = Typography;
 
 type ProductInitializationResultProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductCatalogAccessWorkspace;
 };
 
 export function ProductInitializationResult({ workspace }: ProductInitializationResultProps) {

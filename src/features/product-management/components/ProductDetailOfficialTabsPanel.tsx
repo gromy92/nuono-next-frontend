@@ -1,9 +1,9 @@
 import { ProductDetailOfficialTabs } from '../../product-editor/ProductDetailOfficialTabs';
 import { ProductOfferStockSection } from './ProductOfferStockSection';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductDetailOfficialTabsWorkspace } from '../workspaceTypes';
 
 type ProductDetailOfficialTabsPanelProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductDetailOfficialTabsWorkspace;
 };
 
 export function ProductDetailOfficialTabsPanel({ workspace }: ProductDetailOfficialTabsPanelProps) {

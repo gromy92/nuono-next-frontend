@@ -1,7 +1,7 @@
 import { ReloadOutlined } from '@ant-design/icons';
 import { Alert, Button, Input, Segmented, Space, Typography } from 'antd';
 import type { ProductListRowPayload } from '../types';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductGroupWorkspace } from '../workspaceTypes';
 import { ProductGroupDetailPanel } from './ProductGroupDetailPanel';
 import { ProductGroupListPane } from './ProductGroupListPane';
 import type { ProductGroupMemberListItem } from './ProductGroupMemberList';
@@ -25,7 +25,7 @@ type ProductGroupSplitViewProps = {
   loading: boolean;
   errorMessage?: string;
   activeOwnerId?: number;
-  workspace: ProductManagementWorkspace;
+  workspace: ProductGroupWorkspace;
   onGroupKeywordChange: (value: string) => void;
   onProductKeywordChange: (value: string) => void;
   onStatusFilterChange: (value: GroupStatusFilter) => void;

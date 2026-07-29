@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Alert, Empty, Modal, Segmented, Space, Spin, Tag, Typography } from 'antd';
 import { ProductKeywordHistorySection } from '../../product-keywords/ProductKeywordHistorySection';
-import { useProductManagementWorkspace } from '../useProductManagementWorkspace';
+import type { ProductHistoryModalWorkspace } from '../workspaceTypes';
 import { productKeywordSiteCodeFromScope } from '../utils/productKeywordSiteScope';
 import {
   ProductHistoryAuditList,
@@ -16,10 +16,8 @@ import {
 
 const { Text } = Typography;
 
-type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
-
 type ProductHistoryModalProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductHistoryModalWorkspace;
 };
 
 export function ProductHistoryModal({ workspace }: ProductHistoryModalProps) {

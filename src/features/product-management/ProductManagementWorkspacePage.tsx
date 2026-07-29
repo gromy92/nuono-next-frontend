@@ -2,32 +2,41 @@ import { Row } from 'antd';
 import { ProductCatalogListView } from './components/ProductCatalogListView';
 import { ProductDetailWorkbenchView } from './components/ProductDetailWorkbenchView';
 import { ProductSnapshotHiddenForm } from './components/ProductSnapshotHiddenForm';
-import { useProductManagementWorkspace } from './useProductManagementWorkspace';
-
-type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
+import type {
+  ProductCatalogWorkspace,
+  ProductDetailWorkspace,
+  ProductSnapshotFormWorkspace,
+  ProductWorkspaceOverlays
+} from './workspaceTypes';
 
 type ProductManagementWorkspacePageProps = {
-  workspace: ProductManagementWorkspace;
+  catalog: ProductCatalogWorkspace;
+  detail: ProductDetailWorkspace;
+  overlays: ProductWorkspaceOverlays;
+  snapshotForm: ProductSnapshotFormWorkspace;
   activeOwnerId?: number;
   isProductDetailTab: boolean;
 };
 
 export function ProductManagementWorkspacePage({
-  workspace,
+  catalog,
+  detail,
+  overlays,
+  snapshotForm,
   activeOwnerId,
   isProductDetailTab
 }: ProductManagementWorkspacePageProps) {
   return (
     <>
-      <div style={{ display: 'contents' }}>{workspace.productDetailSwitchConfirmModal}</div>
-      <div style={{ display: 'contents' }}>{workspace.productLocalDeletionConfirmModal}</div>
+      <div style={{ display: 'contents' }}>{overlays.productDetailSwitchConfirmModal}</div>
+      <div style={{ display: 'contents' }}>{overlays.productLocalDeletionConfirmModal}</div>
       <Row gutter={[16, 16]} align="top">
-        <ProductSnapshotHiddenForm workspace={workspace} />
+        <ProductSnapshotHiddenForm workspace={snapshotForm} />
         {!isProductDetailTab ? (
-          <ProductCatalogListView workspace={workspace} activeOwnerId={activeOwnerId} />
+          <ProductCatalogListView workspace={catalog} activeOwnerId={activeOwnerId} />
         ) : null}
         {isProductDetailTab ? (
-          <ProductDetailWorkbenchView workspace={workspace} />
+          <ProductDetailWorkbenchView workspace={detail} />
         ) : null}
       </Row>
     </>

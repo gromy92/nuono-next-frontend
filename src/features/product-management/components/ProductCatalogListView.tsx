@@ -1,9 +1,9 @@
 import { Col } from 'antd';
 import { ProductCatalogSurface } from './ProductCatalogSurface';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductCatalogWorkspace } from '../workspaceTypes';
 
 type ProductCatalogListViewProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductCatalogWorkspace;
   activeOwnerId?: number;
 };
 

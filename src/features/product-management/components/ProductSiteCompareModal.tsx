@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 import { Alert, Modal, Space, Spin, Table } from 'antd';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductSiteCompareModalWorkspace } from '../workspaceTypes';
 import { closedProductSiteCompareModalState } from '../utils/siteCompare';
 import { formatSnapshotValue } from '../utils/common';
 import { createProductSiteCompareColumns } from './ProductSiteCompareModal.helpers';
 import { ProductBaselineIdentity, productSummaryTitle } from '../../product-baseline';
 
 type ProductSiteCompareModalProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductSiteCompareModalWorkspace;
 };
 
 export function ProductSiteCompareModal({ workspace }: ProductSiteCompareModalProps) {

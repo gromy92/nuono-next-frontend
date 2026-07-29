@@ -3,7 +3,7 @@ import { message } from 'antd';
 import { memberRecordKey } from './ProductGroupOfficialPanel.helpers';
 import type { ProductGroupMemberCardView } from './productGroupMemberTypes';
 import { textInputValue } from '../utils/common';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductGroupWorkspace } from '../workspaceTypes';
 
 type PendingCurrentMemberUnlink = {
   targetSkuParent: string;
@@ -11,7 +11,7 @@ type PendingCurrentMemberUnlink = {
 };
 
 type UseProductGroupCurrentMemberUnlinkParams = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductGroupWorkspace;
 };
 
 export function useProductGroupCurrentMemberUnlink({

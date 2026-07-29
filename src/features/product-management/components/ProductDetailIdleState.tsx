@@ -1,11 +1,11 @@
 import { Empty, List, Space, Tag, Typography } from 'antd';
 import { ProductSummaryEntry } from './ProductSummaryBlocks';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductDetailIdleWorkspace } from '../workspaceTypes';
 
 const { Text } = Typography;
 
 type ProductDetailIdleStateProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductDetailIdleWorkspace;
 };
 
 export function ProductDetailIdleState({ workspace }: ProductDetailIdleStateProps) {

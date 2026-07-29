@@ -10,11 +10,11 @@ import { useCallback } from 'react';
 import { FormToolbarLayout } from '../../../shared/ui/FormToolbarLayout';
 import type { ProductListFilters } from '../types';
 import { PRODUCT_OPERATION_STAGE_FILTER_OPTIONS } from '../utils/operationStage';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductCatalogFilterWorkspace } from '../workspaceTypes';
 import { ProductListingDraftDrawer } from './ProductListingDraftDrawer';
 
 type ProductCatalogFilterBarProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductCatalogFilterWorkspace;
   activeOwnerId?: number;
 };
 

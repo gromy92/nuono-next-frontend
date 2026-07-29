@@ -1,10 +1,10 @@
 import { Col, List, Row, Space, Tag, Typography } from 'antd';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductCatalogAccessWorkspace } from '../workspaceTypes';
 
 const { Paragraph, Text } = Typography;
 
 type ProductInitializationScopePreviewProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductCatalogAccessWorkspace;
 };
 
 export function ProductInitializationScopePreview({ workspace }: ProductInitializationScopePreviewProps) {
