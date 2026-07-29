@@ -30,10 +30,6 @@ const automaticReauthenticationSource = readFileSync(
   new URL('./useProductListingAutomaticReauthentication.ts', import.meta.url),
   'utf8'
 )
-const reviewReopenSource = readFileSync(
-  new URL('./productListingReviewReopen.ts', import.meta.url),
-  'utf8'
-)
 const reviewReopenControllerSource = readFileSync(
   new URL('./useProductListingReviewReopen.ts', import.meta.url),
   'utf8'

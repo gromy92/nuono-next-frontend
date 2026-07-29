@@ -1,4 +1,3 @@
-import type { AuthSessionStore } from '../auth/session'
 import type {
   OrderFinanceOrderGroup,
   OrderFinanceQuery,
@@ -130,4 +129,3 @@ export function maxDate(left?: string | null, right?: string | null) {
   if (!right) return left
   return left >= right ? left : right
 }
-

@@ -173,4 +173,3 @@ test('toolbar keeps action buttons in the right action group', async ({ page }) 
   expect(supplierBox!.width).toBeLessThanOrEqual(190);
   await expect(page.locator('.ali1688-historical-orders-actions').getByRole('button', { name: '批量分配/关联' })).toBeVisible();
 });
-

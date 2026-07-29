@@ -27,7 +27,7 @@ export function ProductManagementWorkspacePage({
           <ProductCatalogListView workspace={workspace} activeOwnerId={activeOwnerId} />
         ) : null}
         {isProductDetailTab ? (
-          <ProductDetailWorkbenchView workspace={workspace} isProductDetailTab={isProductDetailTab} />
+          <ProductDetailWorkbenchView workspace={workspace} />
         ) : null}
       </Row>
     </>

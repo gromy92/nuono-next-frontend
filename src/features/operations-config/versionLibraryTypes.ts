@@ -48,4 +48,3 @@ export const CALENDAR_ITEM_PRESETS: CalendarItemPreset[] = [
   { groupName: '业务日历', itemName: '开学季模式', valueType: '日期范围', resultShape: null },
   { groupName: '业务日历', itemName: '夏季模式', valueType: '日期范围', resultShape: null }
 ]
-

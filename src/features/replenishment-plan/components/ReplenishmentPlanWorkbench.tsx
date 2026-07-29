@@ -1,6 +1,5 @@
 import { ReloadOutlined, ShoppingCartOutlined } from '@ant-design/icons'
 import { Alert, Button, Empty, Input, InputNumber, Modal, Select, Space, Spin, Table, Typography } from 'antd'
-import type { Key } from 'react'
 import type { PurchaseDraftQuantity, PurchaseDraftRow } from '../purchaseDrafts'
 import type { ReplenishmentPlanItem } from '../types'
 import { BATCH_PURCHASE_OPENING_KEY, type PurchaseDraftTransportKey, type SuggestionFilter } from '../pageTypes'
@@ -20,8 +19,8 @@ export function ReplenishmentPlanWorkbench({ state }: {
     selectedRowKeys, selectedPurchaseRows, ordersLoading, openingPurchaseKey, purchaseModalOpen,
     purchaseDrafts, setPurchaseDrafts, selectedOrderId, setSelectedOrderId, submitting,
     previewImage, setPreviewImage, purchaseDuplicateNotice, filteredRows, suggestionSummary,
-    missingEtaSummary, blockedRows, pastEtaReviewCount, editableOrders, purchasePlanningOrders,
-    purchaseProgressSummary, selectedPurchaseOrder, refreshReplenishmentPlan, openPurchaseModal,
+    missingEtaSummary, blockedRows, pastEtaReviewCount, editableOrders,
+    purchaseProgressSummary, refreshReplenishmentPlan, openPurchaseModal,
     closePurchaseModal, submitPurchaseDrafts, handleSelectedRowsChange
   } = state
   const renderSuggestionFilterButton = (

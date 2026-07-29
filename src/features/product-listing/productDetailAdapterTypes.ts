@@ -45,4 +45,3 @@ export type ProductListingMetadataFormValues = Pick<
   | 'sourceRefId'
   | 'psku'
 >
-

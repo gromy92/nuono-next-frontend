@@ -96,4 +96,3 @@ test('procurement role sees product link state as read-only', async ({ page }) =
   await expect(row.getByRole('button', { name: '改关联' })).not.toBeVisible();
   await expect(row.getByRole('button', { name: '解除关联' })).not.toBeVisible();
 });
-

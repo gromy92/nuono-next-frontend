@@ -248,4 +248,3 @@ export type ProfitFormValues = {
   fbpDirectShipFee: number;
   fulfillmentFee: number;
 };
-

@@ -14,9 +14,9 @@ import { siteCodeFromStoreCode } from '../pageTypes'
 import {
   editablePurchaseOrders, matchesSuggestionFilter, purchaseDraftLines, purchaseOpeningKey,
   purchaseOrderTransportQuantities, purchaseOrderTransportSources, purchasePlanningScopeOrders,
-  replacePurchaseOrder, summarizeBlockingReasons, summarizeSuggestions
+  replacePurchaseOrder, summarizeSuggestions
 } from '../replenishmentDomain'
-import { formatDate, todayIsoDate } from '../replenishmentFormatting'
+import { todayIsoDate } from '../replenishmentFormatting'
 
 export function useReplenishmentPlanController({
   session, purchaseOrdersRevision, onPurchaseOrdersChanged

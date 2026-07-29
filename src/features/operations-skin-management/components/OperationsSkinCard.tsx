@@ -95,4 +95,3 @@ export function OperationsSkinCard({ row, statusUpdating, deleting, onEdit, onTo
     </article>
   )
 }
-

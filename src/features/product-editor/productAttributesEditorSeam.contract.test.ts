@@ -4,7 +4,9 @@ import { existsSync, readFileSync } from 'node:fs';
 const editorFiles = [
   'ProductAttributesPanel.tsx',
   'ProductAttributeFieldControl.tsx',
+  'productAttributeTemplateConfig.ts',
   'productAttributeTemplate.ts',
+  'productAttributeValueModel.ts',
   'productAttributeUnits.ts'
 ];
 

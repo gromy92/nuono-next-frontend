@@ -1,5 +1,4 @@
 import type {
-  ProfitCalculationPayload,
   ProfitFormValues,
   ProfitQuickSignalsPayload,
   ProfitQuickSignalStatus

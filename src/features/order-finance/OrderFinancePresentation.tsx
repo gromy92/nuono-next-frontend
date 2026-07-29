@@ -2,7 +2,7 @@ import { Card, Space, Statistic, Tag, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import type { AuthSessionStore } from '../auth/session'
 import type { OrderFinanceQuery, OrderFinanceSkuSummaryRow, OrderFinanceSkuSummaryView } from './types'
-import { formatMoney, formatNumber, statusColor } from './orderFinanceModel'
+import { formatNumber, statusColor } from './orderFinanceModel'
 
 const { Text } = Typography
 

@@ -84,4 +84,3 @@ export type MockDetail = {
     factTime: string
   }>
 }
-

@@ -1,5 +1,5 @@
 import type { AuthSession } from '../auth/session'
-import type { ProductVariantSpecPayload, ProductVariantSpecSourcePayload, ProductVariantSpecSourceType } from './types'
+import type { ProductVariantSpecSourcePayload, ProductVariantSpecSourceType } from './types'
 
 export type ProductSpecsPageProps = {
   session: AuthSession;

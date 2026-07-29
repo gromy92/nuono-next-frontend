@@ -37,7 +37,7 @@ export function useProductManagementWorkspace({
     productWorkbenchSurfaceState, selectedInitializationStoreCodeOverride,
     selectedProductRowKeys, setActiveSiteOfferCode,
     setProductActionSubmitting, setProductGalleryImages,
-    setProductGalleryIndex, setProductGalleryOpen,
+    setProductGalleryOpen,
     setProductGallerySubtitle, setProductGalleryTitle,
     setProductListDatasetState, setProductListDraftFilters,
     setProductListFilters, setProductListUiStates,
@@ -125,7 +125,6 @@ export function useProductManagementWorkspace({
     storeInitializationState,
     usingMockProductList
   });
-
   const listMutations = useProductListMutations({
     setProductListDatasetState,
     setProductListUiStates,
@@ -133,7 +132,6 @@ export function useProductManagementWorkspace({
     usingMockProductList
   });
   const { applyProductListSummary, updateProductListLiveStatus, updateProductListUiState } = listMutations;
-
   const workbenchSurfaceActions = useProductWorkbenchSurfaceActions({
     applyProductListSummary,
     productListItemBySkuParent,
@@ -144,13 +142,11 @@ export function useProductManagementWorkspace({
   });
   const { applyProductWorkbenchResponse, openMockProductWorkbench, updateReadyProductWorkbenchSurface } =
     workbenchSurfaceActions;
-
   const publishTaskActions = useProductPublishTaskActions({
     activeOwnerId,
     applyProductWorkbenchResponse,
     updateReadyProductWorkbenchSurface
   });
-
   const mockActions = useMockProductActions({
     activeSiteOfferCode,
     productWorkbenchState,
@@ -158,7 +154,6 @@ export function useProductManagementWorkspace({
     updateReadyProductWorkbenchSurface
   });
   const { applyMockProductAction } = mockActions;
-
   const mediaAndHistoryActions = useProductMediaAndHistoryActions({
     activeOwnerId,
     applyProductListSummary,
@@ -175,20 +170,17 @@ export function useProductManagementWorkspace({
     workspaceState
   });
   const { openProductListGallery, openProductHistoryModal, openProductSiteCompareModal } = mediaAndHistoryActions;
-
   const openProductVariantSpecModal = useProductVariantSpecModalOpener({
     activeOwnerId,
     defaultOwnerUserId: session?.defaultOwnerUserId,
     selectedInitializationStoreCode,
     setProductVariantSpecModalState
   });
-
   const draftMutations = useProductDraftMutations({
     activeSiteOfferCode,
     dirtySiteOfferCodes,
     updateReadyProductWorkbenchSurface
   });
-
   const workbenchApiActions = useProductWorkbenchApiActions({
     activeOwnerId,
     activeProductSiteOffer,
@@ -212,7 +204,6 @@ export function useProductManagementWorkspace({
     usingMockProductList
   });
   const { submitProductSnapshot } = workbenchApiActions;
-
   useProductPublishTaskPolling({
     activeOwnerId,
     applyProductWorkbenchResponse,
@@ -220,7 +211,6 @@ export function useProductManagementWorkspace({
     productWorkbenchSurfaceState,
     updateReadyProductWorkbenchSurface
   });
-
   const navigation = useProductWorkspaceNavigation({
     activeOwnerId,
     activeProductWorkspaceTabKey,

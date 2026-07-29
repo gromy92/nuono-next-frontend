@@ -4,10 +4,7 @@ import {
   updateShippingOrderLineQuote,
   updateShippingOrderLineQuotes
 } from '../../purchase-order/api';
-import type {
-  PurchaseOrderLogisticsQuoteForwarderOption,
-  ShippingOrderLine
-} from '../../purchase-order/types';
+import type { ShippingOrderLine } from '../../purchase-order/types';
 import { isYiteQuoteForwarder } from './warehouseShippingOrderDomain';
 import {
   defaultQuoteBillingUnit,

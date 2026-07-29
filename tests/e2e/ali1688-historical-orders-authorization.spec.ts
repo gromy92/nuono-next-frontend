@@ -251,4 +251,3 @@ test('missing fields are explicit and sensitive values never render', async ({ p
   await expect(drawer.getByText('已隐藏').first()).toBeVisible();
   await expect(drawer.getByText('13800138000')).not.toBeVisible();
 });
-

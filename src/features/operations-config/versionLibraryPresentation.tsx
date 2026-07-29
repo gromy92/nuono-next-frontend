@@ -2,7 +2,6 @@ import { Button, Tag, Tooltip } from 'antd'
 import type { OperationConfigDefaultVersionItem, OperationConfigVersionRow } from './types'
 import {
   calendarPresetFor,
-  calendarScopeText,
   formatCalendarScope,
   parseCalendarScope
 } from './calendarConfigDomain'

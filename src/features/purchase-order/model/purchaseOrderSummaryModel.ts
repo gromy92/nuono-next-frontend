@@ -84,7 +84,6 @@ export function buildItemFilterOptions(
 export function buildActiveItemFilter(
   filterKey: string,
   order: PurchaseOrder,
-  issueSummary: PurchaseOrderIssueSummary,
   options: PurchaseItemFilterOption[]
 ): PurchaseItemFilterOption {
   const matchedOption = options.find((option) => option.key === filterKey)

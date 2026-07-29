@@ -10,7 +10,6 @@ const { Text } = Typography;
 
 type ProductDetailSnapshotBodyProps = {
   workspace: ProductManagementWorkspace;
-  isProductDetailTab: boolean;
 };
 
 function isSummaryLevelDraftWarning(warning: string) {
@@ -26,7 +25,7 @@ function getWarningAlertTitle(warnings: string[]) {
   return hasPublishWarning ? '发布前校验提醒' : '商品详情提醒';
 }
 
-export function ProductDetailSnapshotBody({ workspace, isProductDetailTab }: ProductDetailSnapshotBodyProps) {
+export function ProductDetailSnapshotBody({ workspace }: ProductDetailSnapshotBodyProps) {
   const { productSnapshotState, productWorkbenchSurfaceState } = workspace;
 
   if (productSnapshotState.status === 'idle') {
@@ -135,7 +134,7 @@ export function ProductDetailSnapshotBody({ workspace, isProductDetailTab }: Pro
         </Space>
       ) : null}
 
-      <ProductDetailSummaryPanel workspace={workspace} isProductDetailTab={isProductDetailTab} />
+      <ProductDetailSummaryPanel workspace={workspace} />
       <ProductPublishConflictAlert workspace={workspace} />
       <ProductDetailOfficialTabsPanel workspace={workspace} />
     </Space>

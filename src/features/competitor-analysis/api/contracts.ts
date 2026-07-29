@@ -68,4 +68,3 @@ export type CompetitorTask = {
   finishedAt?: string
   updatedAt?: string
 }
-

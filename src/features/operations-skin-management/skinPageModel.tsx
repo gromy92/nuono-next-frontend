@@ -1,6 +1,5 @@
 import { Tag } from 'antd'
 import type { AuthSession } from '../auth/session'
-import type { OperationsSkinGalleryRow } from './skinGalleryRows'
 import {
   HERO_MAIN_COMPONENT_SLOTS,
   SUITE_IMAGE_COMPONENT_SLOT_GROUPS,
@@ -209,4 +208,3 @@ export function buildSaveRequest(storeCode: string, values: SkinFormValues): Ope
 export function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback
 }
-

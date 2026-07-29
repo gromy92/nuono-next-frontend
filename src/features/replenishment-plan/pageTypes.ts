@@ -48,4 +48,3 @@ export function siteCodeFromStoreCode(storeCode?: string) {
   if (normalized.endsWith('-EG')) return 'EG'
   return ''
 }
-

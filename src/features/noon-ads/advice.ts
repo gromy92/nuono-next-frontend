@@ -31,7 +31,6 @@ const LOW_EFFICIENCY_MIN_SPEND = 50
 const LOW_EFFICIENCY_MAX_ROAS = 3
 const STRUCTURE_RISK_MIN_SPEND = 50
 const STRUCTURE_RISK_MIN_ZERO_ORDER_SHARE = 0.75
-const TREND_MIN_SPEND = 5
 
 export function buildNoonAdvertisingAdviceGroups(
   dashboard: NoonAdvertisingDashboardView,

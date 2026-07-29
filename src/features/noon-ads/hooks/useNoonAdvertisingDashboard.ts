@@ -24,7 +24,6 @@ import {
 import {
   advertisingIdentityKeyOf,
   campaignExportColumns,
-  displaySkuOf,
   downloadNoonAdsRowsAsExcel,
   formatNumber,
   productMatchesFilter,

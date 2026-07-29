@@ -183,4 +183,3 @@ export function collectionStatusColor(label: string) {
 export function uniqueTexts(values: string[]) {
   return values.filter((value, index, list) => value && list.indexOf(value) === index)
 }
-

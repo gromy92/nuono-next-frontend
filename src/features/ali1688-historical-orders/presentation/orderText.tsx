@@ -1,5 +1,4 @@
-import { Tag, Tooltip, Typography } from 'antd'
-import type { ReactNode } from 'react'
+import { Tooltip, Typography } from 'antd'
 import type { Ali1688HistoricalOrderItem } from '../types'
 
 const { Text } = Typography

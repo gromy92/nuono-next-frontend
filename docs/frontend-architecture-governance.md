@@ -43,6 +43,21 @@ Run the dependency gate with:
 pnpm dependencies:check
 ```
 
+## Interface hygiene
+
+Module Interfaces must expose only data and actions consumed across their Seam.
+Page-level model bags must be split into responsibility-led view models instead
+of using `any` to couple every child to an entire controller.
+
+- Remove unused imports, locals, parameters, and pass-through props instead of
+  retaining speculative interfaces.
+- Prefer narrow typed view models for overview, demand, decision, comparison,
+  candidate, and backfill responsibilities.
+- The TypeScript configuration enables `noUnusedLocals` and
+  `noUnusedParameters`; `pnpm typecheck` is the enforcement gate.
+- Use the deletion test: if a Module has no runtime, type, contract, or route
+  consumer, remove it rather than preserving an unowned Adapter.
+
 ## Module size and locality
 
 Every scanned source, style, contract, script, and E2E file has a 300-line

@@ -13,7 +13,6 @@ import {
   getReadyPurchaseBatchPoints,
   purchaseBatchLatestOrderTime,
   purchaseBatchOrderNos,
-  purchaseBatchPriceQuality,
   purchaseBatchSupplierNames,
   purchaseBatchUnitPrice
 } from '../model/purchaseBatchMetrics'

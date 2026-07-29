@@ -169,4 +169,3 @@ export function linkCompetitorDetailRows(competitor: ManualSelectionCompetitor) 
 export function linkCompetitorTitle(competitor: ManualSelectionCompetitor) {
   return competitor.fetchedTitle || competitor.url || '未命名竞品'
 }
-

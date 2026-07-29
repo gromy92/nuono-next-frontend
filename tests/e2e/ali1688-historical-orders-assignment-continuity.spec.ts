@@ -215,4 +215,3 @@ test('assign and continue keeps product search and discontinued action after una
   await expect(dialog.getByRole('button', { name: '确认关联' })).toBeVisible();
   await expect(dialog.getByText('canman AE 锁心本')).toBeVisible();
 });
-

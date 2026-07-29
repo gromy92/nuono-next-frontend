@@ -1,4 +1,4 @@
-import { Drawer, Space, Table, Tag, Typography } from 'antd'
+import { Drawer, Space, Table, Tag } from 'antd'
 import type { EChartsCoreOption } from 'echarts/core'
 import { useMemo } from 'react'
 import { EChartPanel } from '../../../shared/charts'
@@ -17,9 +17,6 @@ import {
   purchaseBatchUnitPrice,
   priceQualityTag
 } from '../model/purchaseBatchMetrics'
-import { PurchaseSummaryCell } from './ProductPurchaseCells'
-
-const { Text } = Typography
 
 export function TrendDetailDrawer({
   record,

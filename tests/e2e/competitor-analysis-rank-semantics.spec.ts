@@ -232,4 +232,3 @@ test('removing a selected competitor hides it even when stale rank facts remain'
   await expect(page.getByText('已选竞品 (0)')).toBeVisible()
   await expect(selectedCard).toBeHidden()
 })
-

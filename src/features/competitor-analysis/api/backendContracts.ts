@@ -267,4 +267,3 @@ export type BackendCompetitorDashboard = {
   competitorRankChanges?: BackendDashboardRankChangeItem[]
   competitorAttributeChanges?: BackendDashboardAttributeChangeItem[]
 }
-

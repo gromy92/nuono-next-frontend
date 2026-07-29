@@ -91,4 +91,3 @@ export function ProductThumb({ src, alt, variantId }: { src?: string; alt: strin
     </span>
   );
 }
-

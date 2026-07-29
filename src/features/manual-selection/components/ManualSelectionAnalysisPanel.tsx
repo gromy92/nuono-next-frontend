@@ -23,7 +23,6 @@ import type {
   ManualSelectionAnalysisProjectView,
   ManualSelectionCompetitor
 } from '../types'
-import { manualSelectionCollectionSourceLabel } from '../utils'
 
 const { Text } = Typography
 

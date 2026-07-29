@@ -7,9 +7,7 @@ import type { OrderFinanceLineRecord, OrderFinanceOrderRecord } from './orderFin
 import {
   amountValue,
   formatMoney,
-  groupOrderFinanceOrders,
-  minDate,
-  maxDate,
+  groupOrderFinanceOrders
 } from './orderFinanceModel'
 
 const { Text } = Typography

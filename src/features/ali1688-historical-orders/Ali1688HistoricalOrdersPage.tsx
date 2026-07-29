@@ -1,6 +1,5 @@
-import { Button, message } from 'antd'
+import { Button } from 'antd'
 import { type ReactNode, useState } from 'react'
-import { loadAli1688HistoricalOrderDetail } from './api'
 import type { Ali1688HistoricalOrderDetail } from './types'
 import type {
   Ali1688HistoricalOrdersPageProps,
@@ -36,7 +35,7 @@ export function Ali1688HistoricalOrdersPage({
   const [selectedOrder, setSelectedOrder] =
     useState<Ali1688HistoricalOrderDetail | null>(null)
   const [selectedLineItemId, setSelectedLineItemId] = useState<string>()
-  const [detailLoading, setDetailLoading] = useState(false)
+  const detailLoading = false
   const selectedDetailItem = selectedOrder
     ? findSelectedDetailItem(selectedOrder, selectedLineItemId)
     : undefined
@@ -191,21 +190,4 @@ export function Ali1688HistoricalOrdersPage({
     return footerButtons
   }
 
-  async function openProductLineDetail(row: ProductLineRow) {
-    setSelectedLineItemId(row.item?.id)
-    setSelectedOrder(row.order)
-    assignmentRecordsState.resetAssignmentRecords()
-    if (row.item?.id) {
-      void assignmentRecordsState.loadAssignmentRecords(row.item.id)
-    }
-    if (!row.order.id) return
-    setDetailLoading(true)
-    try {
-      setSelectedOrder(await loadAli1688HistoricalOrderDetail(row.order.id))
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '读取 1688 历史订单详情失败')
-    } finally {
-      setDetailLoading(false)
-    }
-  }
 }

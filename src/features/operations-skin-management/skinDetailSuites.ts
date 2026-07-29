@@ -1,7 +1,6 @@
 import type { OperationsSkinGalleryRow } from './skinGalleryRows'
 import type { OperationsSkinComponentView } from './types'
 import {
-  DETAIL_IMAGE_COMPONENT_SLOTS,
   HERO_MAIN_COMPONENT_SLOTS,
   HERO_MAIN_TEMPLATE_ROLE,
   OPERATIONS_SKIN_COMPONENT_SLOTS,

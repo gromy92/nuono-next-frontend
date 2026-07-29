@@ -1,21 +1,16 @@
-import { DeleteOutlined, FileSearchOutlined, InfoCircleOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
-import { Button, Drawer, Empty, Form, Image, Input, Popover, Space, Tag, Typography } from 'antd'
+import { FileSearchOutlined } from '@ant-design/icons'
+import { Button, Drawer, Form, Image, Space, Tag, Typography } from 'antd'
 import { useEffect, useRef } from 'react'
 import { ManualSelectionCompetitorForm } from './ManualSelectionCompetitorForm'
 import { ManualSelectionCompetitorOverview } from './ManualSelectionCompetitorOverview'
 import {
-  ali1688CandidateCount,
-  basicInfoPopoverContent,
   collectedDetailRows,
-  competitorStatusCounts,
   fetchStatusColor,
   fetchStatusText,
-  formatFetchedAt,
   imageCount,
   linkCompetitorDetailRows,
   linkCompetitorTitle,
   normalizeCompetitors,
-  recommendedCandidateCount,
   sourceImageUrl
 } from './manualSelectionCompetitorPresentation'
 import type { ProductSelectionSourceCollection } from '../../source-collection/types'
@@ -25,15 +20,7 @@ import type {
   ManualSelectionCompetitor,
   ManualSelectionCompetitorFormValues
 } from '../types'
-import {
-  containsArabicText,
-  formatManualSelectionPriceSummary,
-  formatManualSelectionCompleteness,
-  manualSelectionArabicText,
-  manualSelectionCollectionSourceLabel,
-  manualSelectionImageCandidates,
-  manualSelectionStatusText
-} from '../utils'
+import { manualSelectionArabicText } from '../utils'
 
 const { Text } = Typography
 
@@ -65,7 +52,6 @@ export function ManualSelectionCompetitorModal(props: ManualSelectionCompetitorM
   } = props
   const [form] = Form.useForm<ManualSelectionCompetitorFormValues>()
   const focusTargetRefs = useRef<Record<string, HTMLDivElement | null>>({})
-  const statusCounts = competitorStatusCounts(competitors)
   const collectedCompetitors = project?.records || []
   const selectedCollectedCompetitor = focus?.kind === 'collection'
     ? collectedCompetitors.find((item) => item.id === focus.id)

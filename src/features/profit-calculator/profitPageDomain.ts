@@ -229,4 +229,3 @@ export function buildHistoryCommissionPeriods(lines: ActualOutboundFeeHistoryLin
 export function historyPeriodLabel(period: ActualOutboundFeeHistoryPeriod) {
   return period.startDate === period.endDate ? period.startDate : `${period.startDate} ~ ${period.endDate}`;
 }
-

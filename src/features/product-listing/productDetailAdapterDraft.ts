@@ -125,4 +125,3 @@ export function productListingEditorDraftToPayload(
     listingKeywordSuggestionsAr: normalizeKeywordSuggestions(draft.listingKeywordSuggestionsAr)
   }
 }
-

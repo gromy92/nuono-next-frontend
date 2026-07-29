@@ -141,4 +141,3 @@ test('server pagination renders the rows returned for the selected page', async 
   await expect(page.getByText('第二页第 1 条服务端货品')).toBeVisible();
   await expect(page.getByText('第一页服务端货品')).toHaveCount(0);
 });
-

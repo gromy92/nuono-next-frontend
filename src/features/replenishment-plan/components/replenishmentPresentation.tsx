@@ -1,10 +1,7 @@
-import { Space, Tag, Tooltip, Typography } from 'antd'
-import { PURCHASE_IN_TRANSIT_GOODS_PATH } from '../../route-catalog/routePaths'
-import { withCurrentWorkspaceDevQuery } from '../../route-catalog/workspaceDevQuery'
-import type { ReplenishmentPlanInboundBatch, ReplenishmentPlanItem, ReplenishmentPlanMissingEtaBatch, ReplenishmentQuantity } from '../types'
+import { Space, Tooltip, Typography } from 'antd'
+import type { ReplenishmentPlanInboundBatch, ReplenishmentPlanItem, ReplenishmentPlanMissingEtaBatch } from '../types'
 import type { PurchasePlanProgressSummary } from '../purchaseProgress'
-import { formatDate, formatEtaDistanceDays, formatMonthDay, formatQuantity, inboundBatchKey, isEtaReviewRequired, numericQuantity, purchaseOrderStatusLabel } from '../replenishmentFormatting'
-import type { PurchaseTransportSource } from '../pageTypes'
+import { formatEtaDistanceDays, formatMonthDay, formatQuantity, inboundBatchKey, isEtaReviewRequired, numericQuantity } from '../replenishmentFormatting'
 
 const { Text } = Typography
 
@@ -84,4 +81,3 @@ export function renderInboundBatchGroup(
     </div>
   )
 }
-

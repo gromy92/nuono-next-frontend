@@ -1,4 +1,4 @@
-import { Empty, Tag, Typography } from 'antd'
+import { Empty, Tag } from 'antd'
 import { ProductImageThumb } from '../../product-baseline'
 import type {
   NoonAdvertisingProductDiagnostic,
@@ -6,7 +6,6 @@ import type {
 } from '../types'
 import {
   advertisingIdentityKeyOf,
-  diagnosticLabelTagColor,
   displaySkuOf,
   formatDecimal,
   formatMoney,
@@ -17,8 +16,6 @@ import {
   productDiagnosisTagColor,
   secondarySkuOf
 } from '../presentation/formatters'
-
-const { Text } = Typography
 
 export function ProductNavigationList({
   products,

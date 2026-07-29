@@ -8,7 +8,6 @@ import type {
 import type { AssignmentTargetOption } from '../model/pageTypes'
 import {
   assignmentStatusLabel,
-  assignmentSummaryText,
   compactJoin,
   orderStatusText,
   parseAssignmentBreakdownTargets,

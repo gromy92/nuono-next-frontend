@@ -147,4 +147,3 @@ export function calendarScopeText(resultShape?: string | null) {
   }
   return scope.value ? `${calendarScopeLabel(scope.type)}：${scope.value}` : `${calendarScopeLabel(scope.type)}：未设置`
 }
-

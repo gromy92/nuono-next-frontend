@@ -20,7 +20,6 @@ import {
 } from '../model/assignmentTargets'
 import {
   canBatchLinkProductLines,
-  canLinkProductLine,
   isAssignableProductLine,
   isSelectableProductLine
 } from '../model/productLineEligibility'

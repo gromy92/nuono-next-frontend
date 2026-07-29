@@ -4,6 +4,10 @@ import { buildDetailedAttributeGroups, mergeDetailedAttributeField } from './pro
 import type { ProductFieldDomainSurface } from './productFieldDomain';
 import { formatProductEditorValue } from './productEditorValues';
 import {
+  ProductAttributeReadonlyValue,
+  ProductAttributeValueInput
+} from './ProductAttributeFieldControl';
+import {
   arabicDisplayValue,
   attributeCode,
   attributeFilled,
@@ -11,10 +15,8 @@ import {
   dimensionUnitValue,
   englishDisplayValue,
   groupRecords,
-  ProductAttributeReadonlyValue,
-  ProductAttributeValueInput,
   writableAttributeField
-} from './ProductAttributeFieldControl';
+} from './productAttributeValueModel';
 import { ProductDetailSection } from './ProductDetailSection';
 
 const { Text } = Typography;

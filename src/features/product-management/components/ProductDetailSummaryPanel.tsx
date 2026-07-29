@@ -21,10 +21,9 @@ const LISTING_DRAFT_MISSING_REASON =
 
 type ProductDetailSummaryPanelProps = {
   workspace: ProductManagementWorkspace;
-  isProductDetailTab: boolean;
 };
 
-export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: ProductDetailSummaryPanelProps) {
+export function ProductDetailSummaryPanel({ workspace }: ProductDetailSummaryPanelProps) {
   const {
     productSnapshotView,
     productDetailSummarySurface,

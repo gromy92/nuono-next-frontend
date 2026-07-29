@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { englishDisplayValue } from './ProductAttributeFieldControl';
+import { englishDisplayValue } from './productAttributeValueModel';
 import type { ProductDetailedAttributeField } from '../product-domain/productDetailedAttributeCatalog';
 
 const baseMaterialField: ProductDetailedAttributeField = {

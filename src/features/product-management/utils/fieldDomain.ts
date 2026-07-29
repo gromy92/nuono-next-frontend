@@ -39,10 +39,6 @@ export function buildProductFieldDomainSurface(
     draftSiteOffers.find((item) => siteOfferCode(item) === currentSiteCode) ??
     draftSiteOffers.find((item) => Boolean(item.reference)) ??
     draftSiteOffers[0];
-  const baselineCurrentSiteOffer = baselineSiteOffers.find(
-    (item) => siteOfferCode(item) === siteOfferCode(currentSiteOffer ?? {})
-  );
-
   const mainDraft = {
     brand: draft.identity.brand,
     family: draft.taxonomy.family,

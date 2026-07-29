@@ -5,12 +5,11 @@ import { resolve } from 'node:path';
 const rootDir = process.cwd();
 const file = (path) => resolve(rootDir, path);
 const read = (path) => readFileSync(file(path), 'utf8');
+const assertFileExists = (path, label) => assert.equal(existsSync(file(path)), true, label);
+const assertUsesSharedProductImage = (source, label) =>
+  assert.match(source, /Product(?:ImageThumb|BaselineIdentity)/, label);
 const sharedBaselinePath = 'src/features/product-baseline/ProductBaselineDisplay.tsx';
-assert.equal(
-  existsSync(file(sharedBaselinePath)),
-  true,
-  'Shared product baseline display module should exist outside product-management'
-);
+assertFileExists(sharedBaselinePath, 'Shared product baseline display module should exist outside product-management');
 
 const sharedBaselineComponent = [sharedBaselinePath, 'src/features/product-baseline/productImageUrl.ts',
   'src/features/product-baseline/ProductImageThumb.tsx', 'src/features/product-baseline/ProductBaselineIdentity.tsx',
@@ -85,11 +84,7 @@ assert.match(
 );
 
 const baselineListCellPath = 'src/features/product-baseline/ProductBaselineListCell.tsx';
-assert.equal(
-  existsSync(file(baselineListCellPath)),
-  true,
-  'Shared ProductBaselineListCell module should exist'
-);
+assertFileExists(baselineListCellPath, 'Shared ProductBaselineListCell module should exist');
 
 const baselineListCell = read(baselineListCellPath);
 assert.match(
@@ -148,9 +143,8 @@ assert.match(
 );
 
 const detailPreviewPanel = read('src/features/product-management/components/ProductDetailPreviewPanel.tsx');
-assert.match(
+assertUsesSharedProductImage(
   detailPreviewPanel,
-  /Product(?:ImageThumb|BaselineIdentity)/,
   'Product detail preview should use the shared product baseline image component'
 );
 assert.doesNotMatch(
@@ -160,9 +154,8 @@ assert.doesNotMatch(
 );
 
 const summaryBlocks = read('src/features/product-management/components/ProductSummaryBlocks.tsx');
-assert.match(
+assertUsesSharedProductImage(
   summaryBlocks,
-  sharedProductImageUsagePattern,
   'Product summary entries should use the shared product baseline image component'
 );
 assert.doesNotMatch(
@@ -172,9 +165,8 @@ assert.doesNotMatch(
 );
 
 const productInsightsTab = read('src/features/product-editor/ProductInsightsTab.tsx');
-assert.match(
+assertUsesSharedProductImage(
   productInsightsTab,
-  sharedProductImageUsagePattern,
   'Product insights should use the shared product baseline image component'
 );
 assert.doesNotMatch(

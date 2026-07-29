@@ -85,4 +85,3 @@ export function scenarioColumns(): ColumnsType<ProfitCalculationPayload['scenari
     }
   ]
 }
-

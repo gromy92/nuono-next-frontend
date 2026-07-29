@@ -1,5 +1,5 @@
 import { CopyOutlined, HistoryOutlined, PictureOutlined, SaveOutlined } from '@ant-design/icons'
-import { App, Button, Empty, Space, Tag, Typography } from 'antd'
+import { App, Button, Empty, Space, Tag } from 'antd'
 import { useState } from 'react'
 import type { AuthSession } from '../auth/session'
 import { ProductImageProfileSidebar } from './ProductImageProfileSidebar'
@@ -19,8 +19,6 @@ import { useProductImageProfileData } from './useProductImageProfileData'
 import { useProductImageSourceWorkflow } from './useProductImageSourceWorkflow'
 import { useProductImageSuiteWorkflow } from './useProductImageSuiteWorkflow'
 import './ProductImageProfilePage.css'
-
-const { Text } = Typography
 
 export function ProductImageProfilePage({ session }: { session: AuthSession; activeOwnerId?: number }) {
   const { message, modal } = App.useApp()

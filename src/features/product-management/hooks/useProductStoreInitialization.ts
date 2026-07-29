@@ -6,7 +6,7 @@ import { findProductStoreByCode, pickPreferredBoundStore, resolveProductApiStore
 import type { LoadProductListDatasetOptions } from './useProductListDatasetLoader';
 import { buildAuthorizedStoreOptions, resolvePreferredInitializationStoreCode, resolveSelectedInitializationStoreCode, toInitializationStoreOption, toProductStoreOption } from '../utils/storeInitialization';
 import type { StoreSyncOverviewState } from '../workspaceContracts';
-import type { ProductListDatasetState, StoreInitializationPayload, StoreInitializationState } from '../types';
+import type { ProductListDatasetState, StoreInitializationState } from '../types';
 type UseProductStoreInitializationParams = {
   activeOwnerId?: number;
   enableProductBootDataset: boolean;
@@ -119,7 +119,6 @@ export function useProductStoreInitialization({
   const selectedInitializationStoreCode = useMemo(
     () =>
       resolveSelectedInitializationStoreCode({
-        currentStoreCode: session?.currentStore?.storeCode,
         enableStoreSelection: enableProductBootStoreSelection,
         preferredStoreCode: preferredInitializationStoreCode,
         selectedStoreCodeOverride: selectedInitializationStoreCodeOverride,

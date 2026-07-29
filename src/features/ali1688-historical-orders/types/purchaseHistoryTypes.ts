@@ -131,4 +131,3 @@ export type Ali1688SkuPurchaseBatchSourceMatchSaveResult = {
   savedSourceCount: number
   replacedSourceCount: number
 }
-

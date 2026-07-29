@@ -6,7 +6,6 @@ import type { AuthSession } from '../auth/session'
 import { CompetitorDashboardTab } from './CompetitorDashboardTab'
 import { CompetitorPriceChangeTab } from './CompetitorPriceChangeTab'
 import { CompetitorAnalysisOverlays } from './CompetitorAnalysisOverlays'
-import { noonMarketPath } from './competitorNoonLinks'
 import { useCompetitorReport } from './rankReports/useCompetitorReport'
 import { useCompetitorMonitoringActions } from './monitoring/useCompetitorMonitoringActions'
 import type { HistoryRange } from './productDetail/ProductDetail'
@@ -16,10 +15,8 @@ import { CompetitorProductListTab } from './productList/CompetitorProductListTab
 import { productActionKey } from './productList/competitorProductIdentity'
 import { DEFAULT_PRODUCT_SORT_BY } from './productList/productListFilters'
 import { useCompetitorProductCatalog } from './productList/useCompetitorProductCatalog'
-import { normalizeError } from '../../shared/api'
 import type {
   CompetitorDashboardDrill,
-  CompetitorProductChangeField,
   CompetitorWatchProduct
 } from './types'
 import './styles/index.css'

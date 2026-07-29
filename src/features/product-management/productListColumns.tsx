@@ -105,7 +105,6 @@ export function createProductListColumns({
         <LiveStatusCell
           record={record}
           usingMockProductList={usingMockProductList}
-          productListUiStates={productListUiStates}
           updateProductListLiveStatus={updateProductListLiveStatus}
         />
       )

@@ -104,4 +104,3 @@ test('historical order product image border reflects product and store assignmen
   await expect(assignedStoreOnlyImage).not.toHaveClass(/ali1688-product-line-image--product-linked/);
   await expect(assignedStoreOnlyImage).toHaveCSS('border-color', 'rgb(37, 99, 235)');
 });
-

@@ -55,16 +55,14 @@ export function RankKeywordReportPanel({
                     本品自然{' '}
                     {formatSelfRankReportText(
                       latest.organicStatus,
-                      latest.organicRankNo,
-                      latest.scanDepth
+                      latest.organicRankNo
                     )}
                   </Tag>
                   <Tag color="blue">
                     本品广告{' '}
                     {formatSelfRankReportText(
                       latest.adStatus,
-                      latest.adRankNo,
-                      latest.scanDepth
+                      latest.adRankNo
                     )}
                   </Tag>
                   <Tag color="green">

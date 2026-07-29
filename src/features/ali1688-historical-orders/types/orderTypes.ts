@@ -269,4 +269,3 @@ export type Ali1688HistoricalOrderWorkbench = {
   orders: Ali1688HistoricalOrderRow[]
   pagination: Ali1688HistoricalOrderPagination
 }
-

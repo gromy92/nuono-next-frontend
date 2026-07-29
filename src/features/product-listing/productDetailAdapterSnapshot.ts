@@ -127,4 +127,3 @@ export function productListingEditorDraftToSummary(draft: ProductListingEditorDr
     liveStatuses: ['not_live']
   }
 }
-

@@ -1,4 +1,4 @@
-import { Avatar, Button, Space, Tag, Tooltip, Typography } from 'antd'
+import { Button, Space, Tag, Tooltip, Typography } from 'antd'
 import { DeleteOutlined, LinkOutlined } from '@ant-design/icons'
 import type {
   Ali1688HistoricalOrderItem,
@@ -11,15 +11,11 @@ import type {
 } from '../model/pageTypes'
 import {
   canOpenProductLinkActionForRows,
-  canLinkProductLine,
   isAssignableProductLine
 } from '../model/productLineEligibility'
 import { isStorelessFullLineAssignmentType } from '../model/assignmentTargets'
 import {
-  assignmentStatusLabel,
-  assignmentSummaryText,
-  compactJoin,
-  renderMissingFields
+  compactJoin
 } from './orderText'
 import {
   labeledValue,

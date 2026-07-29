@@ -81,4 +81,3 @@ export function LogisticsSelectField(props: {
     </label>
   );
 }
-

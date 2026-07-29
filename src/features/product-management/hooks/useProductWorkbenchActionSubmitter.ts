@@ -14,8 +14,7 @@ import type {
   ProductWorkbenchAction,
   ProductWorkbenchActionOptions,
   ProductWorkbenchPayload,
-  ProductWorkbenchState,
-  ProductWorkbenchSurfaceState
+  ProductWorkbenchState
 } from '../types';
 import {
   createProductMasterSnapshotPayload,

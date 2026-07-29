@@ -188,4 +188,3 @@ export function OperationsSkinPreview({ row }: OperationsSkinPreviewProps) {
     </div>
   )
 }
-

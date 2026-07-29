@@ -20,7 +20,7 @@ import {
   siteCodesFromPskuRows
 } from '../model/purchaseOrderStoreModel'
 import { isSubmittedOrder } from '../model/purchaseOrderSummaryModel'
-import { DEFAULT_SITE_CODES, PURCHASE_ORDER_SEAL_WARNING } from '../model/purchaseOrderUiMeta'
+import { PURCHASE_ORDER_SEAL_WARNING } from '../model/purchaseOrderUiMeta'
 import type {
   CreateOrderFormValues,
   PskuEntryFormValue,

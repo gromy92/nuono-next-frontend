@@ -1,4 +1,4 @@
-import { Button, List, Space, Tag, Typography } from 'antd';
+import { Button, List, Space, Tag } from 'antd';
 import type { ProductSummarySurface } from '../types';
 import { formatDateTimeParts } from '../utils/common';
 import { isLiveStatusActive, productLiveStatusLabel, productSummaryPrimaryLiveStatus } from '../utils/status';
@@ -11,8 +11,6 @@ import {
   productSummaryTitle,
   productSyncStatusMeta
 } from '../../product-baseline';
-
-const { Text } = Typography;
 
 export function ProductSummaryPrimaryTags({
   summary,

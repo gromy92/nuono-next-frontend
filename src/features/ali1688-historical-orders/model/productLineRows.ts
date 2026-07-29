@@ -1,5 +1,4 @@
 import type {
-  Ali1688HistoricalOrderItem,
   Ali1688HistoricalOrderQuery,
   Ali1688HistoricalOrderRow
 } from '../types'

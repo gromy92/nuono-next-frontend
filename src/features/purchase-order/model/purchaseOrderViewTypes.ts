@@ -154,4 +154,3 @@ import type {
   PurchaseSiteCode,
   PurchaseTransportMode
 } from '../types'
-

@@ -1,13 +1,9 @@
 import { strict as assert } from 'node:assert'
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import {
   officialWarehouseApiContractSource,
   officialWarehousePageContractSource
 } from './officialWarehouseContractSources'
 
-const currentDir = dirname(fileURLToPath(import.meta.url))
 const pageSource = officialWarehousePageContractSource
 const apiSource = officialWarehouseApiContractSource
 

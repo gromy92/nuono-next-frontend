@@ -53,9 +53,9 @@ export function usePurchaseOrderDataState({
   )
   const activeItemFilter = useMemo(
     () => selectedOrder
-      ? buildActiveItemFilter(itemFilterKey, selectedOrder, selectedOrderIssueSummary, itemFilterOptions)
+      ? buildActiveItemFilter(itemFilterKey, selectedOrder, itemFilterOptions)
       : itemFilterOptions[0],
-    [itemFilterKey, itemFilterOptions, selectedOrder, selectedOrderIssueSummary]
+    [itemFilterKey, itemFilterOptions, selectedOrder]
   )
   const orderSummaries = useMemo(() => {
     const entries = orders.map((order) => [order.id, summarizeOrder(order)] as const)

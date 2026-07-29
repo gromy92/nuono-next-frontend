@@ -215,4 +215,3 @@ export function SpecValue({ value, testId }: { value?: number; testId?: string }
     </Text>
   );
 }
-

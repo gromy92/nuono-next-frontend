@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { normalizeProductImageUrl } from '../product-baseline'
 import { buildNoonAdvertisingDashboardParams, buildNoonAdvertisingLatestReportWindowParams } from './api'
 import type {

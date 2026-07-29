@@ -158,4 +158,3 @@ export function CommissionDetailModal(props: {
     </Modal>
   );
 }
-

@@ -1,10 +1,8 @@
 import type { PurchaseOrder, SiteAllocation } from '../purchase-order/types'
-import { formatPurchaseDuplicateNotice } from './purchaseDuplicateNotice'
 import { PURCHASE_IN_TRANSIT_GOODS_PATH } from '../route-catalog/routePaths'
 import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery'
-import { summarizePurchasePlanProgress, type PurchasePlanProgressSummary } from './purchaseProgress'
 import { pskuSiteTransportKey, type PurchaseDraftRow } from './purchaseDrafts'
-import type { ReplenishmentPlanItem, ReplenishmentQuantity } from './types'
+import type { ReplenishmentPlanItem } from './types'
 import { BATCH_PURCHASE_OPENING_KEY, BLOCKING_WARNING_LABELS, SEA_ETA_UNCERTAIN_AIR_WINDOW_WARNING, type PurchaseDraftLine, type PurchaseTransportSource, type SuggestionFilter } from './pageTypes'
 import { numericQuantity } from './replenishmentFormatting'
 

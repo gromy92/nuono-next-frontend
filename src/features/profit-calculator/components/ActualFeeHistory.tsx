@@ -1,5 +1,5 @@
 import { Button, Card, Descriptions, Empty, Space, Tag, Tooltip, Typography } from 'antd'
-import { formatMoney, type ActualCommissionSnapshot, type OfficialCommissionCalculationResult } from '../domain'
+import { formatMoney, type OfficialCommissionCalculationResult } from '../domain'
 import { historyPeriodLabel, taxIncludedCommission, type ActualOutboundFeeHistoryPeriod } from '../profitPageDomain'
 
 const { Text } = Typography

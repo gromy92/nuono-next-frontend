@@ -3,7 +3,7 @@ import { getProductCurrentZCode, getProductStableIdentityKey } from '../product-
 import {
   logisticsFieldConfigs, productSpecFields,
   type EditableSourceType, type LogisticsAttributeFilter, type LogisticsProfileField,
-  type SpecNumberField, type SpecSourceDraft
+  type SpecSourceDraft
 } from './specPageConfig'
 import type { ProductLogisticsProfilePayload, ProductVariantSpecPayload, ProductVariantSpecSourcePayload, ProductVariantSpecSourceType } from './types'
 

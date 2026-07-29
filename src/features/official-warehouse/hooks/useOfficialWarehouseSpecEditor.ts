@@ -2,10 +2,7 @@ import { message } from 'antd'
 import { useState } from 'react'
 import { saveProductSpecSource } from '../../product-specs/api'
 import type { OfficialWarehouseProductCandidate } from '../api'
-import {
-  displayPsku,
-  officialWarehouseCandidateKey
-} from '../officialWarehouseCandidatePresentation'
+import { displayPsku } from '../officialWarehouseCandidatePresentation'
 import type { Ali1688SpecDraft } from '../officialWarehouseFormModel'
 
 export function useOfficialWarehouseSpecEditor({

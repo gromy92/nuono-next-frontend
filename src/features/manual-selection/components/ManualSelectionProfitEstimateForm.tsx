@@ -6,7 +6,6 @@ import type { LogisticsProviderOption } from '../profitEstimateLogisticsOptions'
 import type { ManualSelectionProfitEstimateSeed } from '../types'
 import { ManualSelectionProfitLogisticsFields } from './ManualSelectionProfitLogisticsFields'
 import {
-  categorySelectLabel,
   categorySelectOptionLabel,
   initialValues,
   siteLabel,
@@ -74,7 +73,6 @@ export function ManualSelectionProfitEstimateForm(props: Props) {
                   loading={categoryLoading}
                   optionFilterProp="searchText"
                   options={categoryOptions.map((option) => {
-                    const label = categorySelectLabel(option)
                     return {
                       label: categorySelectOptionLabel(option),
                       displayLabel: systemCategoryDisplayLabel(option),

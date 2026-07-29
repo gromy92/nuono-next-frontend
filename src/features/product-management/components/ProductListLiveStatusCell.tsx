@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Button, message, Popconfirm, Popover, Space, Switch, Tag, Tooltip, Typography } from 'antd';
-import { MOCK_PRODUCT_LIST_UI_STATES } from '../mockData';
-import type { ProductListRowPayload, ProductListUiState } from '../types';
+import type { ProductListRowPayload } from '../types';
 import { getProductListRowIdentityKey } from '../../product-domain/productIdentity';
 import {
   hasProductBlockingIssues,
@@ -54,23 +53,16 @@ function ProductIssuePopoverContent({ issues }: { issues: string[] }) {
 export function LiveStatusCell(props: {
   record: ProductListRowPayload;
   usingMockProductList: boolean;
-  productListUiStates: Record<string, ProductListUiState>;
   updateProductListLiveStatus: (skuParent: string | undefined, liveActive: boolean) => void;
 }) {
   const {
     record,
     usingMockProductList,
-    productListUiStates,
     updateProductListLiveStatus
   } = props;
   const [downConfirmOpen, setDownConfirmOpen] = useState(false);
   const summary = buildProductSummarySurfaceFromListItem(record);
   const primaryLiveStatus = productSummaryPrimaryLiveStatus(summary);
-  const rowUiState = usingMockProductList
-    ? productListUiStates[getProductListRowIdentityKey(record)] ??
-      productListUiStates[record.skuParent] ??
-      MOCK_PRODUCT_LIST_UI_STATES[record.skuParent]
-    : undefined;
   const liveActive = isLiveStatusActive(primaryLiveStatus);
   const issueTags = productListIssueTags(record);
   const hasIssues = issueTags.length > 0;

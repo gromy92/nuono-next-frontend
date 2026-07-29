@@ -127,4 +127,3 @@ export function defaultAnalysisProjectName(records: ProductSelectionSourceCollec
   }
   return `${firstTitle.slice(0, 48)} 等${records.length}个素材`
 }
-

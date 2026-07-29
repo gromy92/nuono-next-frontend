@@ -153,8 +153,7 @@ export function colorByProduct(productIndex: number) {
 
 export function formatSelfRankReportText(
   status: SelfRankReportStatus,
-  rankNo?: number,
-  scanDepth = DEFAULT_RANK_SCAN_DEPTH
+  rankNo?: number
 ) {
   if (status === 'ranked' && rankNo) {
     return `第 ${rankNo} 名`

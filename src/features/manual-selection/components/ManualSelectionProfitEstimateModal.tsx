@@ -41,7 +41,7 @@ export function ManualSelectionProfitEstimateModal(props: ManualSelectionProfitE
   const {
     calculation, setCalculation, loading, setLoading, saving, setSaving,
     saveFeedback, setSaveFeedback, error, setError, savedAt, setSavedAt,
-    categoryOptions, categoryLoading, categoryError, logisticsQuoteOptions,
+    categoryOptions, categoryLoading, categoryError,
     logisticsOptions, logisticsLoading, logisticsHydrated, logisticsError,
     setLogisticsError
   } = data
