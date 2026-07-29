@@ -29,7 +29,7 @@ mkdirSync(join(fixtureRoot, 'route-catalog'))
 writeFileSync(join(fixtureRoot, 'app-shell', 'Shell.ts'), 'export const shell = true\n')
 writeFileSync(
   join(fixtureRoot, 'business', 'Page.ts'),
-  "export const loadShell = () => import('../app-shell/Shell')\n"
+  "export const loadShell = () => import('../app-shell/Shell')\nexport const bypassTransport = () => fetch('/api/bypass')\n"
 )
 writeFileSync(
   join(fixtureRoot, 'route-catalog', 'routes.ts'),
@@ -49,5 +49,9 @@ assert.equal(dynamicImportResult.status, 1)
 assert.match(
   dynamicImportResult.stderr,
   /business feature depends on app-shell: .*business\/Page\.ts -> .*app-shell\/Shell\.ts/
+)
+assert.match(
+  dynamicImportResult.stderr,
+  /native fetch bypasses shared HTTP transport: .*business\/Page\.ts:2/
 )
 assert.match(dynamicImportResult.stdout, /1 route loader adapter edges/)

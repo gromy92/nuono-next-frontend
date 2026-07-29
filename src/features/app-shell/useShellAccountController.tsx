@@ -4,6 +4,7 @@ import type { MenuProps } from 'antd';
 import { LockOutlined, LogoutOutlined } from '@ant-design/icons';
 import type { AuthRoleView, AuthSession } from '../auth/session';
 import { currentAppPathname } from '../../runtimePaths';
+import { apiFetch } from '../../shared/api';
 import type { ChangePasswordFormValues } from './ShellFrame';
 import { SESSION_STORAGE_KEY } from './ShellSessionStorage';
 import {
@@ -50,7 +51,7 @@ export function useShellAccountController({
       const values = await loginForm.validateFields();
       setLoginSubmitting(true);
 
-      const response = await fetch('/api/auth/login', {
+      const response = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -120,7 +121,7 @@ export function useShellAccountController({
       }
 
       setChangePasswordSubmitting(true);
-      const response = await fetch('/api/auth/change-password', {
+      const response = await apiFetch('/api/auth/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -193,7 +194,7 @@ export function useShellAccountController({
   }, [activeMenuKey, session, setActiveMenuKey, setSession, syncWorkspacePathForMenuKey]);
 
   const logout = useCallback(() => {
-    void fetch('/api/auth/logout', { method: 'POST' }).catch(() => {
+    void apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => {
       // Cookie cleanup is best-effort; local state is still cleared below.
     });
     setSession(null);

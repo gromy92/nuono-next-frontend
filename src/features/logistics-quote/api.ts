@@ -13,17 +13,13 @@ import type {
   LogisticsQuoteSourceBundleCreateRequest,
   LogisticsQuoteWorkbenchResponse
 } from './types'
+import { apiRequestJson } from '../../shared/api'
 
-async function readJson<TResponse>(response: Response): Promise<TResponse> {
-  const payload = await response.json().catch(() => null)
-  if (!response.ok) {
-    const errorMessage =
-      payload && typeof payload.message === 'string' && payload.message
-        ? payload.message
-        : `Request failed: ${response.status}`
-    throw new Error(errorMessage)
-  }
-  return payload as TResponse
+const requestFailed = (status: number) => `Request failed: ${status}`
+const JSON_HEADERS = { 'Content-Type': 'application/json' }
+
+function requestJson<TResponse>(input: RequestInfo | URL, init?: RequestInit) {
+  return apiRequestJson<TResponse>(input, init, requestFailed)
 }
 
 export async function fetchLogisticsQuoteWorkbench(
@@ -41,8 +37,9 @@ export async function fetchLogisticsQuoteWorkbench(
   if (typeof fileId === 'number') {
     url.searchParams.set('fileId', String(fileId))
   }
-  const response = await fetch(url.pathname + url.search)
-  return readJson<LogisticsQuoteWorkbenchResponse>(response)
+  return requestJson<LogisticsQuoteWorkbenchResponse>(
+    url.pathname + url.search
+  )
 }
 
 export async function fetchLogisticsQuoteOperationPriceItems(params?: {
@@ -60,34 +57,35 @@ export async function fetchLogisticsQuoteOperationPriceItems(params?: {
   if (params?.priceStatus) {
     url.searchParams.set('priceStatus', params.priceStatus)
   }
-  const response = await fetch(url.pathname + url.search)
-  return readJson<LogisticsQuoteOperationPriceItemsResponse>(response)
+  return requestJson<LogisticsQuoteOperationPriceItemsResponse>(
+    url.pathname + url.search
+  )
 }
 
 export async function saveLogisticsQuoteOperationPriceAdjustment(
   request: LogisticsQuoteOperationPriceAdjustmentRequest
 ): Promise<LogisticsQuoteOperationPriceAdjustmentResponse> {
-  const response = await fetch('/api/logistics-quote/operations/price-adjustments', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  })
-  return readJson<LogisticsQuoteOperationPriceAdjustmentResponse>(response)
+  return requestJson<LogisticsQuoteOperationPriceAdjustmentResponse>(
+    '/api/logistics-quote/operations/price-adjustments',
+    {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(request)
+    }
+  )
 }
 
 export async function createLogisticsQuoteSourceBundle(
   request: LogisticsQuoteSourceBundleCreateRequest
 ): Promise<LogisticsQuoteWorkbenchResponse> {
-  const response = await fetch('/api/logistics-quote/source-bundles', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  })
-  return readJson<LogisticsQuoteWorkbenchResponse>(response)
+  return requestJson<LogisticsQuoteWorkbenchResponse>(
+    '/api/logistics-quote/source-bundles',
+    {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(request)
+    }
+  )
 }
 
 export async function updateLogisticsQuoteSourceBundleNote(
@@ -99,14 +97,14 @@ export async function updateLogisticsQuoteSourceBundleNote(
   if (typeof selectedFileId === 'number') {
     url.searchParams.set('selectedFileId', String(selectedFileId))
   }
-  const response = await fetch(url.pathname + url.search, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  })
-  return readJson<LogisticsQuoteWorkbenchResponse>(response)
+  return requestJson<LogisticsQuoteWorkbenchResponse>(
+    url.pathname + url.search,
+    {
+      method: 'PUT',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(request)
+    }
+  )
 }
 
 export async function appendLogisticsQuoteSourceBundleFile(
@@ -122,14 +120,14 @@ export async function appendLogisticsQuoteSourceBundleFile(
   if (typeof selectedFileId === 'number') {
     url.searchParams.set('selectedFileId', String(selectedFileId))
   }
-  const response = await fetch(url.pathname + url.search, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  })
-  return readJson<LogisticsQuoteWorkbenchResponse>(response)
+  return requestJson<LogisticsQuoteWorkbenchResponse>(
+    url.pathname + url.search,
+    {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(request)
+    }
+  )
 }
 
 export async function archiveLogisticsQuoteSourceBundleFile(
@@ -148,11 +146,13 @@ export async function archiveLogisticsQuoteSourceBundleFile(
 
   const formData = new FormData()
   formData.append('file', file)
-  const response = await fetch(url.pathname + url.search, {
-    method: 'POST',
-    body: formData
-  })
-  return readJson<LogisticsQuoteWorkbenchResponse>(response)
+  return requestJson<LogisticsQuoteWorkbenchResponse>(
+    url.pathname + url.search,
+    {
+      method: 'POST',
+      body: formData
+    }
+  )
 }
 
 export async function updateLogisticsQuoteSourceBundleFile(
@@ -168,14 +168,14 @@ export async function updateLogisticsQuoteSourceBundleFile(
   if (typeof selectedFileId === 'number') {
     url.searchParams.set('selectedFileId', String(selectedFileId))
   }
-  const response = await fetch(url.pathname + url.search, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  })
-  return readJson<LogisticsQuoteWorkbenchResponse>(response)
+  return requestJson<LogisticsQuoteWorkbenchResponse>(
+    url.pathname + url.search,
+    {
+      method: 'PUT',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(request)
+    }
+  )
 }
 
 export async function appendLogisticsQuoteSourceBundleNote(
@@ -187,14 +187,14 @@ export async function appendLogisticsQuoteSourceBundleNote(
   if (typeof selectedFileId === 'number') {
     url.searchParams.set('selectedFileId', String(selectedFileId))
   }
-  const response = await fetch(url.pathname + url.search, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  })
-  return readJson<LogisticsQuoteWorkbenchResponse>(response)
+  return requestJson<LogisticsQuoteWorkbenchResponse>(
+    url.pathname + url.search,
+    {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(request)
+    }
+  )
 }
 
 export async function saveLogisticsQuoteDraftFromNote(
@@ -206,14 +206,14 @@ export async function saveLogisticsQuoteDraftFromNote(
   if (typeof selectedFileId === 'number') {
     url.searchParams.set('selectedFileId', String(selectedFileId))
   }
-  const response = await fetch(url.pathname + url.search, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  })
-  return readJson<LogisticsQuoteWorkbenchResponse>(response)
+  return requestJson<LogisticsQuoteWorkbenchResponse>(
+    url.pathname + url.search,
+    {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(request)
+    }
+  )
 }
 
 export async function updateLogisticsQuoteSourceBundleAnalysisSummary(
@@ -229,25 +229,25 @@ export async function updateLogisticsQuoteSourceBundleAnalysisSummary(
   if (typeof selectedFileId === 'number') {
     url.searchParams.set('selectedFileId', String(selectedFileId))
   }
-  const response = await fetch(url.pathname + url.search, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  })
-  return readJson<LogisticsQuoteWorkbenchResponse>(response)
+  return requestJson<LogisticsQuoteWorkbenchResponse>(
+    url.pathname + url.search,
+    {
+      method: 'PUT',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(request)
+    }
+  )
 }
 
 export async function previewLogisticsQuoteNote(
   request: LogisticsQuoteNotePreviewRequest
 ): Promise<LogisticsQuoteNotePreviewResponse> {
-  const response = await fetch('/api/logistics-quote/note-preview', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  })
-  return readJson<LogisticsQuoteNotePreviewResponse>(response)
+  return requestJson<LogisticsQuoteNotePreviewResponse>(
+    '/api/logistics-quote/note-preview',
+    {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(request)
+    }
+  )
 }

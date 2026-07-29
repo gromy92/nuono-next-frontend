@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Form, message } from 'antd';
 import dayjs from 'dayjs';
 import type { AuthSession } from '../auth/session';
+import { apiRequestJson } from '../../shared/api';
 import {
   buildProcurementBackfillDraftCandidate,
   copyProcurementText,
@@ -136,7 +137,7 @@ export function useProcurementSourcing({
       }
 
       setProcurementBackfillSubmitting(true);
-      const response = await fetch('/api/procurement/backfill-candidates', {
+      const payload = await apiRequestJson<ProcurementCandidatePoolPayload>('/api/procurement/backfill-candidates', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -149,18 +150,6 @@ export function useProcurementSourcing({
         })
       });
 
-      if (!response.ok) {
-        let backendMessage = `后端返回 ${response.status}`;
-        try {
-          const errorPayload = (await response.json()) as { message?: string; error?: string };
-          backendMessage = errorPayload.message || errorPayload.error || backendMessage;
-        } catch {
-          // ignore json parse failure
-        }
-        throw new Error(backendMessage);
-      }
-
-      const payload = (await response.json()) as ProcurementCandidatePoolPayload;
       const refreshedDemandItem = payload.demandItems.find((item) => item.id === selectedProcurementItem.id);
       setProcurementState({ status: 'success', data: payload });
       setSelectedProcurementItemId(selectedProcurementItem.id);

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
 import type { AuthSession } from '../auth/session';
+import { apiRequestJson } from '../../shared/api';
 import {
   procurementAutoInquiryBusinessAction,
   procurementAutoInquiryBusinessKey,
@@ -52,19 +53,9 @@ export function useProcurementCandidateAutoInquiry({
           demandItemId: String(demandItem.id),
           candidateId: String(candidate.id)
         });
-        const response = await fetch(`/api/procurement/auto-inquiry/workbench?${params.toString()}`);
-        if (!response.ok) {
-          let backendMessage = `后端返回 ${response.status}`;
-          try {
-            const errorPayload = (await response.json()) as { message?: string; error?: string };
-            backendMessage = errorPayload.message || errorPayload.error || backendMessage;
-          } catch {
-            // ignore json parse failure
-          }
-          throw new Error(backendMessage);
-        }
-
-        const payload = (await response.json()) as ProcurementAutoInquiryWorkbenchPayload;
+        const payload = await apiRequestJson<ProcurementAutoInquiryWorkbenchPayload>(
+          `/api/procurement/auto-inquiry/workbench?${params.toString()}`
+        );
         setProcurementAutoInquiryBusinessStates((currentValue) => ({
           ...currentValue,
           [stateKey]: { status: 'success', data: payload }
@@ -97,32 +88,22 @@ export function useProcurementCandidateAutoInquiry({
       }));
 
       try {
-        const response = await fetch('/api/procurement/auto-inquiry/start', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            ownerUserId: effectiveOwnerUserId,
-            operatorUserId: session?.userId ?? effectiveOwnerUserId,
-            demandItemId: demandItem.id,
-            candidateId: candidate.id,
-            triggerDispatch: true
-          })
-        });
-
-        if (!response.ok) {
-          let backendMessage = `后端返回 ${response.status}`;
-          try {
-            const errorPayload = (await response.json()) as { message?: string; error?: string };
-            backendMessage = errorPayload.message || errorPayload.error || backendMessage;
-          } catch {
-            // ignore json parse failure
+        const payload = await apiRequestJson<ProcurementAutoInquiryWorkbenchPayload>(
+          '/api/procurement/auto-inquiry/start',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              ownerUserId: effectiveOwnerUserId,
+              operatorUserId: session?.userId ?? effectiveOwnerUserId,
+              demandItemId: demandItem.id,
+              candidateId: candidate.id,
+              triggerDispatch: true
+            })
           }
-          throw new Error(backendMessage);
-        }
-
-        const payload = (await response.json()) as ProcurementAutoInquiryWorkbenchPayload;
+        );
         setProcurementAutoInquiryBusinessStates((currentValue) => ({
           ...currentValue,
           [stateKey]: { status: 'success', data: payload }

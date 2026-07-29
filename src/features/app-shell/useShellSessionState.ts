@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { message } from 'antd';
 import type { AuthSession } from '../auth/session';
-import { currentAppPathname, SESSION_EXPIRED_EVENT, withPublicBasePath } from '../../runtimePaths';
+import { currentAppPathname, withPublicBasePath } from '../../runtimePaths';
+import { SESSION_EXPIRED_EVENT } from '../../shared/api';
 import { isProcurementRequirementConfirmationPath } from '../procurement-confirmation/route';
 import { filterLegacyMenuItemsByAllowedKeys, workspaceMenuItems } from './SidebarNavigation';
 import {

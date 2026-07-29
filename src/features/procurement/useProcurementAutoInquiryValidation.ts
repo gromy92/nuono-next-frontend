@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
 import dayjs from 'dayjs';
 import type { AuthSession } from '../auth/session';
+import { apiRequestJson } from '../../shared/api';
 import {
   PROCUREMENT_SEND_PHASE_VALIDATION_CASE,
   shouldShowProcurementAutoInquiryDevValidation
@@ -34,19 +35,9 @@ export function useProcurementAutoInquiryValidation(session: AuthSession | null)
         demandItemId: String(PROCUREMENT_SEND_PHASE_VALIDATION_CASE.demandItemId),
         candidateId: String(PROCUREMENT_SEND_PHASE_VALIDATION_CASE.candidateId)
       });
-      const response = await fetch(`/api/procurement/auto-inquiry/workbench?${params.toString()}`);
-      if (!response.ok) {
-        let backendMessage = `后端返回 ${response.status}`;
-        try {
-          const errorPayload = (await response.json()) as { message?: string; error?: string };
-          backendMessage = errorPayload.message || errorPayload.error || backendMessage;
-        } catch {
-          // ignore json parse failure
-        }
-        throw new Error(backendMessage);
-      }
-
-      const payload = (await response.json()) as ProcurementAutoInquiryWorkbenchPayload;
+      const payload = await apiRequestJson<ProcurementAutoInquiryWorkbenchPayload>(
+        `/api/procurement/auto-inquiry/workbench?${params.toString()}`
+      );
       setProcurementAutoInquiryState({ status: 'success', data: payload });
       setProcurementAutoInquiryFeedback({
         status: 'success',
@@ -69,32 +60,22 @@ export function useProcurementAutoInquiryValidation(session: AuthSession | null)
   const startProcurementAutoInquiryValidation = useCallback(async () => {
     setProcurementAutoInquiryStarting(true);
     try {
-      const response = await fetch('/api/procurement/auto-inquiry/start', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ownerUserId: PROCUREMENT_SEND_PHASE_VALIDATION_CASE.ownerUserId,
-          operatorUserId: session?.userId ?? PROCUREMENT_SEND_PHASE_VALIDATION_CASE.ownerUserId,
-          demandItemId: PROCUREMENT_SEND_PHASE_VALIDATION_CASE.demandItemId,
-          candidateId: PROCUREMENT_SEND_PHASE_VALIDATION_CASE.candidateId,
-          triggerDispatch: true
-        })
-      });
-
-      if (!response.ok) {
-        let backendMessage = `后端返回 ${response.status}`;
-        try {
-          const errorPayload = (await response.json()) as { message?: string; error?: string };
-          backendMessage = errorPayload.message || errorPayload.error || backendMessage;
-        } catch {
-          // ignore json parse failure
+      const payload = await apiRequestJson<ProcurementAutoInquiryWorkbenchPayload>(
+        '/api/procurement/auto-inquiry/start',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ownerUserId: PROCUREMENT_SEND_PHASE_VALIDATION_CASE.ownerUserId,
+            operatorUserId: session?.userId ?? PROCUREMENT_SEND_PHASE_VALIDATION_CASE.ownerUserId,
+            demandItemId: PROCUREMENT_SEND_PHASE_VALIDATION_CASE.demandItemId,
+            candidateId: PROCUREMENT_SEND_PHASE_VALIDATION_CASE.candidateId,
+            triggerDispatch: true
+          })
         }
-        throw new Error(backendMessage);
-      }
-
-      const payload = (await response.json()) as ProcurementAutoInquiryWorkbenchPayload;
+      );
       setProcurementAutoInquiryState({ status: 'success', data: payload });
       const feedbackMessage = procurementAutoInquiryValidationPassed(payload.latestTask)
         ? '系统已重新校验发送阶段，当前仍然是通过态。'

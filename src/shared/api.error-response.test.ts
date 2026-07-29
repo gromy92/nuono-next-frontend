@@ -43,6 +43,15 @@ test('legitimate JSON business errors keep their message', async () => {
   assert.equal(await readApiErrorMessage(response, '保存失败'), '该图片已经属于此分类');
 });
 
+test('RFC problem detail is used when message is absent', async () => {
+  const response = new Response(JSON.stringify({ detail: '采购确认数据已被其他人更新' }), {
+    status: 409,
+    headers: { 'content-type': 'application/problem+json' }
+  });
+
+  assert.equal(await readApiErrorMessage(response, '保存失败'), '采购确认数据已被其他人更新');
+});
+
 test('unexpected HTML on other error statuses does not reach the UI', async () => {
   const response = new Response('<html><body>upstream internal page</body></html>', {
     status: 500,
