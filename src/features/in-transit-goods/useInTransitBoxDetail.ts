@@ -9,7 +9,7 @@ import {
 import type { InTransitBatch, InTransitGoodsLine, InTransitProductMatchCandidate } from './types'
 import type { BoxDetailTabKey, InTransitGoodsPageProps } from './InTransitGoodsPage.models'
 import { buildBoxGroups, buildProductGroups } from './InTransitGoodsPage.selectors'
-import { createLatestRequestGuard } from './latestRequestGuard'
+import { createLatestRequestGate } from '../../shared/latestRequestGate'
 
 export function useInTransitBoxDetail({
   isBoxDetailTab,
@@ -23,14 +23,14 @@ export function useInTransitBoxDetail({
   const [loadingBoxLines, setLoadingBoxLines] = useState(false)
   const [rematchingProducts, setRematchingProducts] = useState(false)
   const [excludingProductCandidateId, setExcludingProductCandidateId] = useState<number | null>(null)
-  const requestGuard = useRef(createLatestRequestGuard())
+  const requestGuard = useRef(createLatestRequestGate<undefined>())
 
   useEffect(() => {
     if (!isBoxDetailTab || !boxDetailRequest?.batchId) {
       requestGuard.current.invalidate()
       return
     }
-    const requestToken = requestGuard.current.begin()
+    const requestToken = requestGuard.current.begin(undefined)
     setBoxDetailTab(boxDetailRequest.initialTab ?? 'box')
     setBoxLines([])
     setProductMatchCandidates([])
@@ -40,20 +40,20 @@ export function useInTransitBoxDetail({
       fetchInTransitProductMatchCandidates(boxDetailRequest.batchId)
     ])
       .then(([nextLines, candidates]) => {
-        if (requestGuard.current.isCurrent(requestToken)) {
+        if (requestGuard.current.isCurrent(requestToken, undefined)) {
           setBoxLines(nextLines.items ?? [])
           setProductMatchCandidates(candidates.items ?? [])
         }
       })
       .catch((error) => {
-        if (requestGuard.current.isCurrent(requestToken)) {
+        if (requestGuard.current.isCurrent(requestToken, undefined)) {
           message.error(error instanceof Error ? error.message : '箱子明细加载失败')
           setBoxLines([])
           setProductMatchCandidates([])
         }
       })
       .finally(() => {
-        if (requestGuard.current.isCurrent(requestToken)) {
+        if (requestGuard.current.isCurrent(requestToken, undefined)) {
           setLoadingBoxLines(false)
         }
       })

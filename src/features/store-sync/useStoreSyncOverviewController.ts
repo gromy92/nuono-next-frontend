@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { fetchStoreSyncOverview } from './api';
 import type { StoreSyncOverviewState } from './types';
 import type { AuthSession } from '../auth/session';
+import { createLatestRequestGate } from '../../shared/latestRequestGate';
 import {
   isBossManagementSession,
   isSystemAdminSession
@@ -12,6 +13,10 @@ export type LoadStoreSyncOptions = {
   preserveConnectionFeedback?: boolean;
 };
 
+function storeSyncScopeKey(session: AuthSession | null, ownerUserId?: number) {
+  return `${session?.userId ?? 'signed-out'}:${ownerUserId ?? 'no-owner'}`;
+}
+
 export function useStoreSyncOverviewController(session: AuthSession | null, permissionSession: AuthSession | null) {
   const [storeSyncState, setStoreSyncState] = useState<StoreSyncOverviewState>({
     status: 'loading'
@@ -20,6 +25,19 @@ export function useStoreSyncOverviewController(session: AuthSession | null, perm
   const [roleManagementRefreshSignal, setRoleManagementRefreshSignal] = useState(0);
   const loadedStoreSyncOwnerKeyRef = useRef<string | null>(null);
   const loadingStoreSyncOwnerKeyRef = useRef<string | null>(null);
+  const requestGateRef = useRef(createLatestRequestGate<string>());
+  const currentOwnerUserId = storeSyncOwnerId ?? session?.defaultOwnerUserId ?? session?.userId;
+  const currentScopeKey = storeSyncScopeKey(session, currentOwnerUserId);
+  const currentScopeKeyRef = useRef(currentScopeKey);
+
+  useLayoutEffect(() => {
+    currentScopeKeyRef.current = currentScopeKey;
+    requestGateRef.current.invalidate();
+    loadedStoreSyncOwnerKeyRef.current = null;
+    loadingStoreSyncOwnerKeyRef.current = null;
+    setStoreSyncState({ status: 'loading' });
+    return () => requestGateRef.current.invalidate();
+  }, [currentScopeKey]);
 
   useEffect(() => {
     if (!session?.userId) {
@@ -42,11 +60,18 @@ export function useStoreSyncOverviewController(session: AuthSession | null, perm
       return;
     }
 
+    const requestScopeKey = storeSyncScopeKey(session, effectiveOwnerUserId);
+    const requestIdentity = requestGateRef.current.begin(requestScopeKey);
+    const isCurrentRequest = () =>
+      requestGateRef.current.isCurrent(requestIdentity, currentScopeKeyRef.current);
     loadingStoreSyncOwnerKeyRef.current = ownerKey;
     setStoreSyncState({ status: 'loading' });
 
     try {
       const payload = await fetchStoreSyncOverview(effectiveOwnerUserId);
+      if (!isCurrentRequest()) {
+        return;
+      }
       loadedStoreSyncOwnerKeyRef.current = payload.selectedOwnerId ? String(payload.selectedOwnerId) : ownerKey;
       setStoreSyncState({ status: 'success', data: payload });
 
@@ -54,10 +79,13 @@ export function useStoreSyncOverviewController(session: AuthSession | null, perm
         setStoreSyncOwnerId(payload.selectedOwnerId);
       }
     } catch (error) {
+      if (!isCurrentRequest()) {
+        return;
+      }
       const errorMessage = error instanceof Error ? error.message : '店铺同步视图暂时不可用';
       setStoreSyncState({ status: 'error', message: errorMessage });
     } finally {
-      if (loadingStoreSyncOwnerKeyRef.current === ownerKey) {
+      if (isCurrentRequest() && loadingStoreSyncOwnerKeyRef.current === ownerKey) {
         loadingStoreSyncOwnerKeyRef.current = null;
       }
     }
@@ -85,6 +113,7 @@ export function useStoreSyncOverviewController(session: AuthSession | null, perm
   );
 
   const resetStoreSync = useCallback(() => {
+    requestGateRef.current.invalidate();
     loadedStoreSyncOwnerKeyRef.current = null;
     loadingStoreSyncOwnerKeyRef.current = null;
     setStoreSyncOwnerId(undefined);
