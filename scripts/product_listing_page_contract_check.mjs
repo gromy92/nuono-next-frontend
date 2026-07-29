@@ -35,14 +35,31 @@ function sliceBetween(source, startNeedle, endNeedle, label) {
   return source.slice(start, end)
 }
 
-const page = read('src/features/product-listing/ProductListingPage.tsx')
+const page = [
+  'ProductListingPage.tsx',
+  'useProductListingWorkflowState.ts',
+  'useProductListingWorkflowSynchronization.ts',
+  'useProductListingDraftPersistence.ts',
+  'useProductListingReviewActions.ts',
+  'useProductListingRecoveryActions.ts'
+].map((fileName) => read(`src/features/product-listing/${fileName}`)).join('\n')
 const detailEditor = read('src/features/product-listing/ProductListingDetailEditor.tsx')
-const sourcePrefill = read('src/features/product-listing/sourcePrefill.ts')
-const adapter = read('src/features/product-listing/productDetailAdapter.ts')
+const sourcePrefill = [
+  read('src/features/product-listing/sourcePrefill.ts'),
+  read('src/features/product-listing/sourcePrefillModel.ts')
+].join('\n')
+const adapter = [
+  'productDetailAdapter.ts',
+  'productDetailAdapterTypes.ts',
+  'productDetailAdapterDraft.ts',
+  'productDetailAdapterSnapshot.ts',
+  'productDetailAdapterDomains.ts',
+  'productDetailAdapterNormalization.ts'
+].map((fileName) => read(`src/features/product-listing/${fileName}`)).join('\n')
 const api = read('src/features/product-listing/api.ts')
 const types = read('src/features/product-listing/types.ts')
-const officialTabsTypes = read('src/features/product-management/components/ProductDetailOfficialTabs.types.ts')
-const offerTab = read('src/features/product-management/components/ProductOfferTab.tsx')
+const officialTabsTypes = read('src/features/product-editor/productDetailEditorTypes.ts')
+const offerTab = read('src/features/product-editor/ProductOfferTab.tsx')
 const metadataValues = sliceBetween(
   adapter,
   'export function productListingEditorDraftToMetadataValues',

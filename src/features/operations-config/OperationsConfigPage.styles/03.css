@@ -1,0 +1,186 @@
+.operation-config-calendar-scope-picker-list {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid #edf0f5;
+  border-radius: 6px;
+}
+
+.operation-config-calendar-scope-picker-option {
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  justify-content: flex-start;
+  padding: 10px 12px;
+  border-radius: 0;
+  text-align: left;
+  white-space: normal;
+}
+
+.operation-config-calendar-scope-picker-option + .operation-config-calendar-scope-picker-option {
+  border-top: 1px solid #f2f4f7;
+}
+
+.operation-config-calendar-scope-picker-option > span {
+  display: block;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.operation-config-calendar-scope-picker-empty {
+  padding: 24px;
+  text-align: center;
+}
+
+.operation-config-calendar-version-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.operation-config-lifecycle-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.operation-config-version-editor-header-main {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 8px;
+}
+
+.operation-config-version-editor-meta {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  grid-template-columns: minmax(180px, 260px) minmax(220px, 1fr);
+}
+
+.operation-config-version-editor-meta .ant-input {
+  width: 100%;
+}
+
+.operation-config-lifecycle-version-editor-row {
+  display: grid;
+  grid-template-columns: 116px minmax(260px, 1fr) 172px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.operation-config-lifecycle-readonly-cell,
+.operation-config-lifecycle-name-cell {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.operation-config-lifecycle-name-cell {
+  justify-content: flex-start;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.operation-config-lifecycle-name-cell span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.operation-config-lifecycle-readonly-cell .ant-tag {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-inline-end: 0;
+}
+
+.operation-config-calendar-date-range {
+  width: 100%;
+}
+
+.operation-config-calendar-factor-input {
+  width: 100%;
+}
+
+.operation-lifecycle-threshold-grid-header {
+  padding-bottom: 4px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+@media (max-width: 760px) {
+  .operations-config-header,
+  .operations-config-section-heading,
+  .operations-config-detail-panel,
+  .operations-config-scope-summary {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .operations-config-suite-actions {
+    width: 100%;
+  }
+
+  .operations-config-suite-actions .ant-space-item {
+    flex: 1;
+  }
+
+  .operations-config-suite-actions .ant-btn {
+    width: 100%;
+  }
+
+  .operations-config-suite-detail-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .operations-config-suite-default-version-head,
+  .operations-config-suite-default-version-meta {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .operations-config-boss-select,
+  .operations-config-store-select,
+  .operation-calendar-filter-grid,
+  .operation-calendar-target-type-select,
+  .operation-calendar-target-option-select,
+  .operation-calendar-recurring-input,
+  .operation-calendar-factor-purpose-select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .operation-calendar-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .operation-calendar-draft-form {
+    grid-template-columns: 1fr;
+  }
+
+  .operation-calendar-draft-actions {
+    justify-content: flex-start;
+  }
+
+  .operation-lifecycle-stage-sections {
+    grid-template-columns: 1fr;
+  }
+
+  .operation-lifecycle-threshold-grid {
+    grid-template-columns: minmax(120px, 1fr) 64px 112px;
+  }
+
+  .operation-config-calendar-editor-row,
+  .operation-config-calendar-version-editor-row,
+  .operation-config-lifecycle-version-editor-row {
+    grid-template-columns: 1fr;
+  }
+
+  .operation-config-version-editor-meta {
+    grid-template-columns: 1fr;
+  }
+}

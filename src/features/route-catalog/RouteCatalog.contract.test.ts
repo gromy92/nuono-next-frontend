@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import './sessionAccessPolicy.contract.test'
 import type { AuthSession } from '../auth/session'
 import {
   ALL_WORKSPACE_MENU_KEYS,
@@ -11,8 +12,6 @@ import {
   WORKSPACE_SECTION_DEFINITIONS,
   assertRouteCatalogIntegrity,
   routeCatalogIntegrityIssues,
-  shouldShowWorkspaceMenuInSidebar,
-  shouldShowWorkspaceMenuInTabs,
   workspaceMenuDefinition,
   workspaceMenuMount
 } from './RouteCatalog'
@@ -53,7 +52,6 @@ const EXPECTED_MENU_KEYS = [
   'system-report-noon-data-gaps',
   'operations-config-versions',
   'data-activity-config',
-  'operations-lifecycle-rules',
   'system-file-management',
   'user-account',
   'user-store-noon',
@@ -126,19 +124,16 @@ function assertDeepFrozen(value: unknown, path: string) {
 }
 
 assert.deepEqual(ALL_WORKSPACE_MENU_KEYS, EXPECTED_MENU_KEYS)
-assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 36)
+assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 35)
 assert.equal(WORKSPACE_SECTION_DEFINITIONS.length, 11)
-assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 26)
+assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 29)
 const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.workspaceMount === 'function'
 )
-assert.deepEqual(mountedDefinitions.map((definition) => definition.key), ['system-file-management'])
+assert.equal(mountedDefinitions.length, 35)
 for (const definition of Object.values(WORKSPACE_MENU_DEFINITIONS)) {
-  assert.notEqual(
-    typeof definition.contentKind === 'string',
-    typeof definition.workspaceMount === 'function',
-    `${definition.key} must declare exactly one workspace mount strategy`
-  )
+  assert.equal(typeof definition.workspaceMount, 'function', `${definition.key} must declare a workspace mount`)
+  assert.equal('contentKind' in definition, false, `${definition.key} must not use Legacy dispatch`)
 }
 const systemFileManagementDefinition = workspaceMenuDefinition('system-file-management')
 assert.equal('contentKind' in systemFileManagementDefinition, false)
@@ -149,7 +144,15 @@ assert.strictEqual(
   workspaceMenuMount('system-file-management'),
   'Catalog must return a stable module-level mount Adapter'
 )
-assert.equal(workspaceMenuMount('purchase-order'), null)
+assert.equal(typeof workspaceMenuMount('product-manage'), 'function')
+assert.strictEqual(
+  workspaceMenuMount('product-manage'),
+  workspaceMenuMount('product-groups'),
+  'Product routes must share one state-owning mount Adapter'
+)
+assert.strictEqual(workspaceMenuMount('product-manage'), workspaceMenuMount('product-specs'))
+assert.equal(typeof workspaceMenuMount('purchase-order'), 'function')
+assert.equal(typeof workspaceMenuMount('operations-competitor-analysis'), 'function')
 assert.deepEqual(routeCatalogIntegrityIssues(), [])
 assert.doesNotThrow(assertRouteCatalogIntegrity)
 assertDeepFrozen(ALL_WORKSPACE_MENU_KEYS, 'ALL_WORKSPACE_MENU_KEYS')
@@ -190,31 +193,48 @@ assert.equal(resolveWorkspaceMenuKeyFromLocation('/warehouse/shipping-orders/leg
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/WAREHOUSE/FBN/'), 'official-warehouse')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/system/ai-file-parse/jobs/1'), 'system-file-management')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/operation-config/holiday'), 'data-activity-config')
+assert.equal(resolveWorkspaceMenuKeyFromLocation('/operations/config/lifecycle-rules'), null)
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/unknown'), null)
-assert.equal(shouldShowWorkspaceMenuInSidebar('operations-lifecycle-rules'), false)
-assert.equal(shouldShowWorkspaceMenuInTabs('operations-lifecycle-rules'), false)
+
+const storeManagementDefinition = workspaceMenuDefinition('user-store-noon')
+assert.equal(storeManagementDefinition.tabLabel, '店铺管理')
+assert.strictEqual(
+  storeManagementDefinition.workspaceMount,
+  workspaceMenuDefinition('user-role').workspaceMount,
+  'role and store routes must share one state-owning mount Adapter'
+)
 
 assert.deepEqual(
   matchGrantedMenuToWorkspaceMenuKeys({ menuId: 1, menuName: '', urlPath: '/api/product-keywords/items' }),
   ['operations-product-keywords']
 )
-const warehouseKeys = [
-  'product-specs',
-  'warehouse-logistics-bill',
-  'warehouse-dispatch',
-  'official-warehouse'
-]
 assert.deepEqual(
   resolveSessionAllowedMenuKeys(
     session({ grantedMenus: [{ menuId: 2, menuName: '仓库发运', urlPath: '/warehouse/dispatch' }] })
   ),
-  warehouseKeys
+  ['warehouse-dispatch']
+)
+assert.deepEqual(
+  matchGrantedMenuToWorkspaceMenuKeys({
+    menuId: 3,
+    menuName: '物流账单',
+    urlPath: '/warehouse/logistics-bills'
+  }),
+  ['warehouse-logistics-bill']
+)
+assert.deepEqual(
+  matchGrantedMenuToWorkspaceMenuKeys({
+    menuId: 4,
+    menuName: 'Noon官方仓',
+    urlPath: '/warehouse/official-warehouse'
+  }),
+  ['official-warehouse']
 )
 assert.deepEqual(
   resolveSessionAllowedMenuKeys(
     session({
       grantedMenus: [
-        { menuId: 3, menuName: '生命周期配置', urlPath: '/operations/config/lifecycle-rules' }
+        { menuId: 5, menuName: '生命周期配置', urlPath: '/operations/config/lifecycle-rules' }
       ]
     })
   ),
@@ -255,14 +275,13 @@ const administrationRoutesSource = readFileSync(
   join(process.cwd(), 'src/features/route-catalog/administrationRoutes.ts'),
   'utf8'
 )
-const shellLazySource = readFileSync(
-  join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'),
-  'utf8'
-)
 const shellContentSource = readFileSync(
   join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
   'utf8'
 )
 assert.match(administrationRoutesSource, /import\('\.\.\/ai-file-parse\/AiFileParseBoard'\)/)
-assert.doesNotMatch(shellLazySource, /AiFileParseBoard|system-file-management/)
 assert.doesNotMatch(shellContentSource, /AiFileParseBoard|system-file-management/)
+assert.equal(
+  existsSync(join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx')),
+  false
+)

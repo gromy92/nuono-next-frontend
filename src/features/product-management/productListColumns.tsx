@@ -9,7 +9,7 @@ import {
   SellerStatusCell
 } from './components/ProductListColumnCells';
 import type { ProductListRowPayload, ProductListUiState, ProductOperationStageCode } from './types';
-import { getProductListRowIdentityKey } from './utils';
+import { getProductListRowIdentityKey } from '../product-domain/productIdentity';
 
 type ProductListColumnsParams = {
   deletingProductKey?: string;
@@ -105,7 +105,6 @@ export function createProductListColumns({
         <LiveStatusCell
           record={record}
           usingMockProductList={usingMockProductList}
-          productListUiStates={productListUiStates}
           updateProductListLiveStatus={updateProductListLiveStatus}
         />
       )

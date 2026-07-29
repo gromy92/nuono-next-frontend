@@ -1,7 +1,7 @@
 import { EditOutlined } from '@ant-design/icons'
 import { Button, Empty, Modal, Segmented, Select, Space, Table, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import type { ReadyShipmentItem, WarehouseSiteCode } from './types'
+import type { WarehouseSiteCode } from './types'
 import type { useReadyWorkspace } from './useReadyWorkspace'
 import {
   renderReadyFulfillmentCell,

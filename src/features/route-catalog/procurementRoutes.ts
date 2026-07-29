@@ -1,5 +1,6 @@
 import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from './types'
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
+import { createLazyWorkspaceMount } from './workspaceMount'
 
 export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'purchase-ali1688-collection': {
@@ -9,7 +10,20 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 1688查询展示',
     tabLabel: '1688查询展示',
-    contentKind: 'purchase-ali1688-collection',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../ali1688-collection/Ali1688CollectionPage').then((module) => ({
+          default: module.Ali1688CollectionPage
+        })),
+      ({ session }) => ({
+        storeName:
+          session.currentStore?.projectName ||
+          session.currentStore?.projectCode ||
+          'xingyao',
+        storeCode: session.currentStore?.storeCode,
+        operatorName: session.realName || session.accountNo
+      })
+    ),
     closable: true,
     sidebarOrder: 4
   },
@@ -20,7 +34,20 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 1688 历史订单',
     tabLabel: '1688 历史订单',
-    contentKind: 'purchase-ali1688-historical-orders',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../ali1688-historical-orders/Ali1688HistoricalOrdersPage').then((module) => ({
+          default: module.Ali1688HistoricalOrdersPage
+        })),
+      ({ session }) => ({
+        storeName: session.currentStore?.projectName || session.currentStore?.projectCode,
+        storeCode: session.currentStore?.projectCode || session.currentStore?.storeCode,
+        siteCode: session.currentStore?.site,
+        ownerUserId: session.defaultOwnerUserId ?? session.userId,
+        operatorRoleName: session.roleName,
+        availableStores: session.userStores
+      })
+    ),
     closable: true,
     sidebarOrder: 2
   },
@@ -31,7 +58,17 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / SKU 采购历史',
     tabLabel: 'SKU 采购历史',
-    contentKind: 'purchase-ali1688-sku-purchase-history',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage').then((module) => ({
+          default: module.Ali1688SkuPurchaseHistoryPage
+        })),
+      ({ session }) => ({
+        storeCode: session.currentStore?.projectCode || session.currentStore?.storeCode,
+        siteCode: session.currentStore?.site,
+        availableStores: session.userStores
+      })
+    ),
     closable: true,
     sidebarOrder: 3
   },
@@ -42,7 +79,15 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 商品上架',
     tabLabel: '商品上架',
-    contentKind: 'product-listing',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../product-listing/ProductListingPage').then((module) => ({
+          default: module.ProductListingPage
+        })),
+      ({ session }) => ({
+        storeCode: session.currentStore?.storeCode
+      })
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -53,7 +98,11 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 补货采购',
     tabLabel: '补货采购',
-    contentKind: 'purchase-order',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../procurement-workspace/ProcurementWorkspaceMount').then((module) => ({
+        default: module.ProcurementWorkspaceMount
+      }))
+    ),
     closable: true,
     sidebarOrder: 5
   },
@@ -64,7 +113,11 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 利润计算',
     tabLabel: '利润计算',
-    contentKind: 'purchase-profit',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../profit-calculator/ProfitCalculatorWorkspaceMount').then((module) => ({
+        default: module.ProfitCalculatorWorkspaceMount
+      }))
+    ),
     closable: true,
     sidebarOrder: 1
   },
@@ -75,7 +128,11 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'logistics',
     pathLabel: '物流 / 货代管理',
     tabLabel: '货代管理',
-    contentKind: 'purchase-logistics-quote',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../logistics-quote/LogisticsQuoteBoard').then((module) => ({
+        default: module.LogisticsQuoteBoard
+      }))
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -86,7 +143,11 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'logistics',
     pathLabel: '物流 / 商品物流价格',
     tabLabel: '商品物流价格',
-    contentKind: 'purchase-product-logistics-costs',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../product-logistics-costs/ProductLogisticsCostsPage').then((module) => ({
+        default: module.ProductLogisticsCostsPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 1
   },
@@ -97,7 +158,11 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'purchase',
     pathLabel: '采购 / 在途商品',
     tabLabel: '在途商品',
-    contentKind: 'purchase-in-transit-goods',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../in-transit-goods/InTransitGoodsWorkspaceMount').then((module) => ({
+        default: module.InTransitGoodsWorkspaceMount
+      }))
+    ),
     closable: true,
     sidebarOrder: 6
   }
@@ -133,9 +198,15 @@ export const PROCUREMENT_GRANT_RULES = freezeCatalogMetadata([
     menuNames: ['货代管理', '物流报价', '货代方案']
   },
   {
-    keys: ['purchase-in-transit-goods', 'purchase-product-logistics-costs'],
-    urlPaths: ['/purchase/in-transit-goods', '/purchase/product-logistics-costs'],
-    urlPathPrefixes: ['/api/in-transit-goods', '/api/product-logistics-costs'],
-    menuNames: ['在途商品', '在途物流', '在途物流信息', '商品物流价格', '商品物流成本']
+    keys: ['purchase-in-transit-goods'],
+    urlPaths: ['/purchase/in-transit-goods'],
+    urlPathPrefixes: ['/api/in-transit-goods'],
+    menuNames: ['在途商品', '在途物流', '在途物流信息']
+  },
+  {
+    keys: ['purchase-product-logistics-costs'],
+    urlPaths: ['/purchase/product-logistics-costs'],
+    urlPathPrefixes: ['/api/product-logistics-costs'],
+    menuNames: ['商品物流价格', '商品物流成本']
   }
 ] as const satisfies readonly WorkspaceGrantedMenuRuleBase[])

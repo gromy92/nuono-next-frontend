@@ -1,0 +1,218 @@
+.official-warehouse-page {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.official-warehouse-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.official-warehouse-toolbar-left,
+.official-warehouse-toolbar-right {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.official-warehouse-toolbar-left {
+  flex: 1 1 auto;
+}
+
+.official-warehouse-toolbar-right {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.official-warehouse-filter {
+  width: 118px;
+}
+
+.official-warehouse-filter-wide {
+  width: 184px;
+}
+
+.official-warehouse-search {
+  width: 260px;
+}
+
+.official-warehouse-list-status-filter {
+  width: 230px;
+}
+
+.official-warehouse-metrics {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.official-warehouse-metric {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.official-warehouse-metric-icon {
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 16px;
+}
+
+.official-warehouse-metric-value {
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 760;
+  line-height: 18px;
+}
+
+.official-warehouse-metric-label {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.official-warehouse-metric-amber {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.official-warehouse-metric-red {
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
+.official-warehouse-metric-blue {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.official-warehouse-metric-green {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.official-warehouse-metric-purple {
+  border-color: #ddd6fe;
+  background: #f5f3ff;
+}
+
+.official-warehouse-table-panel {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.official-warehouse-history-section {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.official-warehouse-history-modal-content {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.official-warehouse-section-header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.official-warehouse-status-filter {
+  width: 132px;
+}
+
+.official-warehouse-history-metrics {
+  padding-bottom: 2px;
+}
+
+.official-warehouse-identity,
+.official-warehouse-stack {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.official-warehouse-identity .ant-btn {
+  height: 20px;
+  justify-content: flex-start;
+  padding: 0;
+  font-weight: 700;
+}
+
+.official-warehouse-asn-copy {
+  display: inline-flex;
+  max-width: 146px;
+  align-items: center;
+  gap: 2px;
+  line-height: 20px;
+}
+
+.official-warehouse-identity .ant-tag,
+.official-warehouse-stack .ant-tag {
+  align-self: flex-start;
+  width: auto;
+  max-width: 100%;
+}
+
+.official-warehouse-actions {
+  max-width: 100%;
+}
+
+.official-warehouse-quantity {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 4px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.official-warehouse-quantity span {
+  padding: 2px 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+.official-warehouse-delivery-time {
+  color: #666;
+}

@@ -18,42 +18,6 @@ export type WorkspaceSectionKey =
 
 export type WorkspaceSectionIconKey = WorkspaceSectionKey
 
-export type WorkspaceContentKind =
-  | 'product-management'
-  | 'product-groups'
-  | 'product-specs'
-  | 'product-image-profile'
-  | 'product-image-match'
-  | 'product-manual-selection'
-  | 'purchase-ali1688-collection'
-  | 'purchase-ali1688-historical-orders'
-  | 'purchase-ali1688-sku-purchase-history'
-  | 'product-listing'
-  | 'purchase-order'
-  | 'purchase-profit'
-  | 'purchase-logistics-quote'
-  | 'purchase-product-logistics-costs'
-  | 'purchase-in-transit-goods'
-  | 'warehouse-logistics-bill'
-  | 'warehouse-dispatch'
-  | 'official-warehouse'
-  | 'operations-competitor-analysis'
-  | 'operations-skin-management'
-  | 'noon-ads'
-  | 'product-keywords'
-  | 'sales-analytics'
-  | 'order-finance'
-  | 'noon-call-store-data'
-  | 'system-report-noon-data-completeness'
-  | 'system-report-noon-data-gaps'
-  | 'operations-config-versions'
-  | 'operations-business-calendar'
-  | 'operations-lifecycle-rules'
-  | 'user-account'
-  | 'user-role'
-  | 'system-menu'
-  | 'system-role'
-
 type WorkspaceMenuDefinitionCommon<MenuKey extends string> = {
   readonly key: MenuKey
   readonly label: string
@@ -69,15 +33,9 @@ type WorkspaceMenuDefinitionCommon<MenuKey extends string> = {
   readonly visibleInWorkspaceTabs?: boolean
 }
 
-export type WorkspaceMountStrategy =
-  | {
-      readonly contentKind: WorkspaceContentKind
-      readonly workspaceMount?: never
-    }
-  | {
-      readonly workspaceMount: WorkspaceMountAdapter
-      readonly contentKind?: never
-    }
+export type WorkspaceMountStrategy = {
+  readonly workspaceMount: WorkspaceMountAdapter
+}
 
 export type WorkspaceMenuDefinitionBase<MenuKey extends string = string> =
   WorkspaceMenuDefinitionCommon<MenuKey> & WorkspaceMountStrategy

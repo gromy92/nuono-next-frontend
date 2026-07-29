@@ -1,12 +1,13 @@
 import { useCallback, useEffect } from 'react';
 import { openProductWorkbenchSnapshot } from '../api';
-import { getProductCurrentZCode, mergeGalleryImageUrls, productSummaryTitle } from '../utils';
+import { getProductCurrentZCode } from '../../product-domain/productIdentity';
+import { mergeGalleryImageUrls, productSummaryTitle } from '../../product-baseline';
 import type {
   ProductListSummaryPayload,
-  ProductMasterSnapshotPayload,
   ProductSummarySurface,
   StoreInitializationPayload
 } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 
 type UseProductGalleryActionsParams = {
   activeOwnerId?: number;

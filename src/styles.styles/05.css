@@ -1,0 +1,195 @@
+.nuono-org-person-card {
+  position: relative;
+  min-width: 0;
+  min-height: 92px;
+  padding: 10px 11px;
+  border: 1px solid #dbe4f0;
+  border-top: 3px solid #2563eb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 7px 16px rgba(15, 23, 42, 0.05);
+}
+
+.nuono-org-person-card-root {
+  min-height: 96px;
+  border-top-color: #6d28d9;
+  background: #fbfaff;
+}
+
+.nuono-org-person-card-lead {
+  min-height: 100%;
+  border-top-color: #ea580c;
+  background: #fffaf7;
+}
+
+.nuono-org-person-card-member {
+  min-height: 92px;
+}
+
+.nuono-org-person-card.is-compact {
+  min-height: 78px;
+  padding: 8px 9px;
+  box-shadow: none;
+}
+
+.nuono-org-person-card-admin {
+  border-top-color: #7c3aed;
+}
+
+.nuono-org-person-card-boss {
+  border-top-color: #6d28d9;
+}
+
+.nuono-org-person-card-lead.nuono-org-person-card-lead,
+.nuono-org-person-card-ops.nuono-org-person-card-lead {
+  border-top-color: #ea580c;
+}
+
+.nuono-org-person-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.nuono-org-node-content {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.nuono-org-node-content .ant-space-item {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.nuono-org-node-main-row {
+  display: flex;
+  max-width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.nuono-org-node-name {
+  display: block;
+  max-width: 92px;
+  min-width: 0;
+  overflow: hidden;
+  color: #111827;
+  font-size: 13px;
+  line-height: 18px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nuono-org-role-inline {
+  display: block;
+  flex: 0 0 auto;
+  max-width: 68px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nuono-org-role-tag {
+  height: 19px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 11px;
+  line-height: 17px;
+  margin-inline-end: 0;
+}
+
+.nuono-org-store-summary {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+}
+
+.nuono-org-store-trigger,
+.nuono-org-store-empty {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 14px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nuono-org-store-trigger {
+  padding: 0 6px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.nuono-org-store-empty {
+  color: #94a3b8;
+}
+
+.nuono-org-sub-count,
+.nuono-org-card-spacer {
+  display: block;
+  min-height: 16px;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.nuono-org-store-popover-shell .ant-popover-inner {
+  max-width: min(520px, 86vw);
+}
+
+.nuono-org-store-popover {
+  max-height: 280px;
+  overflow: auto;
+}
+
+.nuono-org-store-popover-item {
+  color: #475569;
+  font-size: 12px;
+  line-height: 20px;
+  word-break: break-word;
+}
+
+.nuono-org-children {
+  width: 100%;
+}
+
+.nuono-org-connector {
+  width: 1px;
+  height: 8px;
+  margin: 0 auto;
+  background: #cbd5e1;
+}
+
+.nuono-org-child-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  grid-auto-flow: row dense;
+  align-items: flex-start;
+  justify-items: center;
+  gap: 7px 7px;
+}

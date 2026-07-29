@@ -1,7 +1,7 @@
 import { message } from 'antd';
 import { useState } from 'react';
 import type { ProductListRowPayload } from '../types';
-import { textInputValue } from '../utils';
+import { textInputValue } from '../utils/common';
 import {
   memberDraftFromView,
   memberRecordFromDraft,

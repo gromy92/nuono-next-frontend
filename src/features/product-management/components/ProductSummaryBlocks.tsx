@@ -1,21 +1,16 @@
-import { Button, List, Space, Tag, Typography } from 'antd';
+import { Button, List, Space, Tag } from 'antd';
 import type { ProductSummarySurface } from '../types';
+import { formatDateTimeParts } from '../utils/common';
+import { isLiveStatusActive, productLiveStatusLabel, productSummaryPrimaryLiveStatus } from '../utils/status';
+import { productSummaryIdentityLine, productSummaryPriceLine } from '../utils/summary';
 import {
-  formatDateTimeParts,
   isProductNotListedSource,
-  isLiveStatusActive,
+  ProductBaselineIdentity,
   productListingStartedSourceLabel,
-  productLiveStatusLabel,
-  productSummaryIdentityLine,
-  productSummaryPriceLine,
-  productSummaryPrimaryLiveStatus,
   productSummaryPrimarySite,
   productSummaryTitle,
   productSyncStatusMeta
-} from '../utils';
-import { ProductBaselineIdentity } from '../../product-baseline';
-
-const { Text } = Typography;
+} from '../../product-baseline';
 
 export function ProductSummaryPrimaryTags({
   summary,

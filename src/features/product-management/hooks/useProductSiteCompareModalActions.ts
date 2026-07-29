@@ -4,9 +4,9 @@ import { openProductWorkbenchSnapshot } from '../api';
 import { createMockProductWorkbenchPayload } from '../workspaceHelpers';
 import {
   buildProductSiteCompareModalFromRecord,
-  buildProductSiteCompareModalFromWorkbench,
-  getProductCurrentZCode
-} from '../utils';
+  buildProductSiteCompareModalFromWorkbench
+} from '../utils/siteCompare';
+import { getProductCurrentZCode } from '../../product-domain/productIdentity';
 import type { ProductListRowPayload, ProductSiteCompareModalState } from '../types';
 
 type UseProductSiteCompareModalActionsParams = {

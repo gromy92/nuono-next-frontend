@@ -29,21 +29,44 @@ function assertNotIncludes(source, needle, label) {
 }
 
 const panel = read('src/shared/charts/EChartPanel.tsx')
-const options = read('src/shared/charts/options.ts')
+const options = [
+  read('src/shared/charts/options.ts'),
+  read('src/shared/charts/netUnitsLineOption.ts'),
+  read('src/shared/charts/salesPriceTrendOption.ts'),
+  read('src/shared/charts/distributionOptions.ts'),
+  read('src/shared/charts/chartOptionTypes.ts')
+].join('\n')
 const chartIndex = read('src/shared/charts/index.ts')
 const salesPage = read('src/features/sales-analytics/SalesAnalyticsPage.tsx')
+const salesTrendLineChart = read('src/features/sales-analytics/components/TrendLineChart.tsx')
+const salesProductForecastPanel = read('src/features/sales-analytics/components/ProductForecastPanel.tsx')
+const salesAnalyticsSeam = [salesPage, salesTrendLineChart, salesProductForecastPanel].join('\n')
 const storeReportPage = readOptional('src/features/system-reports/StoreDataReportPage.tsx')
 const noonCallStoreDataPage = read('src/features/system-reports/NoonCallStoreDataPage.tsx')
 const noonDataCompletenessPage = read('src/features/system-reports/NoonDataCompletenessPage.tsx')
 const noonDataGapPatrolPage = read('src/features/system-reports/NoonDataGapPatrolPage.tsx')
 const storeReportApi = read('src/features/system-reports/api.ts')
 const competitorPage = read('src/features/competitor-analysis/CompetitorAnalysisPage.tsx')
-const competitorDashboard = read('src/features/competitor-analysis/CompetitorDashboardTab.tsx')
+const competitorProductTable = read('src/features/competitor-analysis/productList/CompetitorProductTable.tsx')
+const competitorProductListSeam = [competitorPage, competitorProductTable].join('\n')
+const competitorDashboard = ['CompetitorDashboardTab.tsx', 'competitorDashboardModel.ts']
+  .map((path) => read(`src/features/competitor-analysis/${path}`)).join('\n')
 const competitorPriceChangeTab = read('src/features/competitor-analysis/CompetitorPriceChangeTab.tsx')
-const competitorDashboardPriorityPanels = read('src/features/competitor-analysis/CompetitorDashboardPriorityPanels.tsx')
+const competitorDashboardPriorityPanels = [
+  read('src/features/competitor-analysis/CompetitorDashboardPriorityPanels.tsx'),
+  read('src/features/competitor-analysis/CompetitorAttributeChangePanel.tsx'),
+  read('src/features/competitor-analysis/CompetitorRankChangePanel.tsx'),
+  read('src/features/competitor-analysis/competitorAttributeChangeModel.ts')
+].join('\n')
 const competitorDashboardCommon = read('src/features/competitor-analysis/CompetitorDashboardCommon.tsx')
 const competitorRankDetailModal = read('src/features/competitor-analysis/CompetitorRankChangeDetailModal.tsx')
-const competitorDashboardCharts = read('src/features/competitor-analysis/dashboardCharts.ts')
+const competitorDashboardCharts = [
+  read('src/features/competitor-analysis/dashboardCharts.ts'),
+  read('src/features/competitor-analysis/dashboardChartShared.ts'),
+  read('src/features/competitor-analysis/rankChangeChartOption.ts'),
+  read('src/features/competitor-analysis/issueChartOptions.ts'),
+  read('src/features/competitor-analysis/productDashboardChartOptions.ts')
+].join('\n')
 const competitorDashboardShared = read('src/features/competitor-analysis/dashboardShared.ts')
 
 assertIncludes(panel, 'export type EChartPanelState', 'EChartPanel')
@@ -70,15 +93,15 @@ assertIncludes(options, '币种', 'sales price chart tooltip')
 assertIncludes(chartIndex, "export { EChartPanel }", 'chart index')
 assertIncludes(chartIndex, 'buildSalesPriceTrendOption', 'chart index')
 
-assertIncludes(salesPage, "from '../../shared/charts'", 'SalesAnalyticsPage')
-assertIncludes(salesPage, 'buildNetUnitsLineOption', 'SalesAnalyticsPage')
-assertIncludes(salesPage, 'buildSalesPriceTrendOption', 'SalesAnalyticsPage')
-assertIncludes(salesPage, 'priceTrendState?.state === \'ready\'', 'SalesAnalyticsPage')
-assertIncludes(salesPage, 'testId="sales-trend-echart"', 'SalesAnalyticsPage')
-assertIncludes(salesPage, 'ariaLabel="商品日销量折线图"', 'SalesAnalyticsPage')
-assertNotIncludes(salesPage, "from 'echarts/", 'SalesAnalyticsPage')
-assertNotIncludes(salesPage, 'echarts.init', 'SalesAnalyticsPage')
-assertNotIncludes(salesPage, 'echarts.use', 'SalesAnalyticsPage')
+assertIncludes(salesAnalyticsSeam, "from '../../../shared/charts'", 'SalesAnalytics chart seam')
+assertIncludes(salesAnalyticsSeam, 'buildNetUnitsLineOption', 'SalesAnalytics chart seam')
+assertIncludes(salesAnalyticsSeam, 'buildSalesPriceTrendOption', 'SalesAnalytics chart seam')
+assertIncludes(salesAnalyticsSeam, 'priceTrendState?.state === \'ready\'', 'SalesAnalytics chart seam')
+assertIncludes(salesAnalyticsSeam, 'testId="sales-trend-echart"', 'SalesAnalytics chart seam')
+assertIncludes(salesAnalyticsSeam, 'ariaLabel="商品日销量折线图"', 'SalesAnalytics chart seam')
+assertNotIncludes(salesAnalyticsSeam, "from 'echarts/", 'SalesAnalytics chart seam')
+assertNotIncludes(salesAnalyticsSeam, 'echarts.init', 'SalesAnalytics chart seam')
+assertNotIncludes(salesAnalyticsSeam, 'echarts.use', 'SalesAnalytics chart seam')
 
 if (storeReportPage) {
   assertIncludes(storeReportPage, "from '../../shared/charts'", 'StoreDataReportPage')
@@ -152,9 +175,9 @@ assertNotIncludes(competitorDashboardShared, "'changedProduct'", 'competitor das
 assertIncludes(competitorDashboard, 'chartDays.detailChange', 'CompetitorDashboardTab uses independent price change days')
 assertIncludes(competitorPage, "label: '数据看板'", 'CompetitorAnalysisPage dashboard tab')
 assertIncludes(competitorPage, "label: '明细维护'", 'CompetitorAnalysisPage detail maintenance tab')
-assertIncludes(competitorPage, "title: '商品基线'", 'CompetitorAnalysisPage keeps production detail list baseline column')
-assertIncludes(competitorPage, "title: '候选/监控中'", 'CompetitorAnalysisPage keeps production detail candidate column')
-assertIncludes(competitorPage, "title: '近7日竞品变化'", 'CompetitorAnalysisPage keeps production detail change column')
-assertIncludes(competitorPage, "title: '排名摘要'", 'CompetitorAnalysisPage keeps production detail rank column')
+assertIncludes(competitorProductListSeam, "title: '商品基线'", 'Competitor product list keeps baseline column')
+assertIncludes(competitorProductListSeam, "title: '候选/监控中'", 'Competitor product list keeps candidate column')
+assertIncludes(competitorProductListSeam, "title: '近7日竞品变化'", 'Competitor product list keeps change column')
+assertIncludes(competitorProductListSeam, "title: '排名摘要'", 'Competitor product list keeps rank column')
 
 console.log('shared charts contract check passed')

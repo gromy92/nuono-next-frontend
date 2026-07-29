@@ -1,0 +1,181 @@
+@media (max-width: 900px) {
+  .nuono-responsive-record-table .ant-table-container,
+  .nuono-responsive-record-table .ant-table-content,
+  .nuono-responsive-record-table .ant-table-body {
+    overflow-x: visible !important;
+  }
+
+  .nuono-responsive-record-table table,
+  .nuono-responsive-record-table colgroup,
+  .nuono-responsive-record-table tbody {
+    display: block;
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  .nuono-responsive-record-table colgroup,
+  .nuono-responsive-record-table thead {
+    display: none;
+  }
+
+  .nuono-responsive-record-table .ant-table-tbody > tr.ant-table-row {
+    display: block;
+    margin-bottom: 10px;
+    padding: 8px 0;
+    border: 1px solid #edf0f7;
+    border-radius: 8px;
+    background: #ffffff;
+  }
+
+  .nuono-responsive-record-table .ant-table-tbody > tr.ant-table-row > td.ant-table-cell {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
+    align-items: start;
+    gap: 6px;
+    width: 100% !important;
+    padding: 5px 10px !important;
+    border-bottom: 0;
+    background: transparent !important;
+    word-break: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .nuono-responsive-record-table .ant-table-cell-fix-right,
+  .nuono-responsive-record-table .ant-table-cell-fix-left {
+    position: static !important;
+    right: auto !important;
+    left: auto !important;
+    box-shadow: none !important;
+  }
+
+  .nuono-responsive-record-table .ant-table-tbody > tr.ant-table-row > td.ant-table-cell::before {
+    content: attr(data-label);
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 22px;
+    white-space: nowrap;
+  }
+
+  .nuono-responsive-record-table .ant-table-tbody > tr.ant-table-expanded-row {
+    display: block;
+  }
+
+  .nuono-responsive-record-table .ant-table-tbody > tr.ant-table-expanded-row > td.ant-table-cell {
+    display: block;
+    width: 100% !important;
+    padding: 8px !important;
+  }
+
+  .nuono-responsive-record-table .ant-table-tbody > tr.ant-table-expanded-row > td.ant-table-cell::before {
+    display: none;
+  }
+
+  .nuono-responsive-record-table .nuono-store-assignment-cell,
+  .nuono-responsive-record-table .nuono-store-assignment-cell > .ant-space-item,
+  .nuono-responsive-record-table .nuono-store-summary-list {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .nuono-transfer-responsive .ant-transfer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .nuono-transfer-responsive .ant-transfer-list {
+    flex: 1 1 100%;
+    width: 100% !important;
+    min-width: 0;
+  }
+
+  .nuono-transfer-responsive .ant-transfer-operation {
+    width: 100%;
+    margin: 0;
+    justify-content: center;
+    flex-direction: row;
+  }
+}
+
+.nuono-legacy-user-manage {
+  width: 100%;
+}
+
+.nuono-legacy-user-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.nuono-legacy-account-table .ant-table {
+  border-radius: 0;
+}
+
+.nuono-legacy-account-table .ant-table-thead > tr > th,
+.nuono-legacy-store-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 500;
+}
+
+.nuono-legacy-account-table .ant-table-tbody > tr > td,
+.nuono-legacy-store-table .ant-table-tbody > tr > td {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.nuono-legacy-expanded-stores {
+  padding: 8px 0 8px 24px;
+}
+
+.nuono-legacy-expanded-title {
+  margin-bottom: 8px;
+  color: #1677ff;
+  font-weight: 500;
+}
+
+.product-specs-logistics-select .ant-select-arrow {
+  display: none;
+}
+
+.product-specs-logistics-select .ant-select-selector {
+  padding-inline-end: 8px !important;
+}
+
+.product-specs-logistics-select--confirmed .ant-select-selector,
+.product-specs-logistics-select--none .ant-select-selector {
+  background: #fffdf4 !important;
+  border-color: #fde68a !important;
+  box-shadow: 0 0 0 1px rgba(253, 230, 138, 0.12) !important;
+}
+
+.product-specs-logistics-select--included .ant-select-selector {
+  background: #fffdf4 !important;
+  border-color: #b45309 !important;
+  box-shadow: 0 0 0 1px rgba(180, 83, 9, 0.14) !important;
+}
+
+.product-specs-logistics-select--missing .ant-select-selector {
+  background: #fff7f7 !important;
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.16) !important;
+}
+
+.product-specs-logistics-select--missing .ant-select-selection-item {
+  color: #b91c1c !important;
+}
+
+.product-specs-logistics-select--none .ant-select-selection-item {
+  color: #6b7280 !important;
+}
+
+.product-specs-logistics-select--included .ant-select-selection-item {
+  color: #6b7280 !important;
+}
+
+.product-specs-logistics-select--saving .ant-select-selector {
+  opacity: 0.72;
+}

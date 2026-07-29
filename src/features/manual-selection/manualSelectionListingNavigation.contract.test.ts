@@ -49,8 +49,11 @@ const project: ManualSelectionAnalysisProjectView = {
   ]
 }
 
-const pageSource = readFileSync(new URL('./ManualSelectionPage.tsx', import.meta.url), 'utf8')
-if (!/navigateManualSelectionGroupListingInCurrentTab\(project,\s*props\.storeCode\)/.test(pageSource)) {
+const pageSource = [
+  './ManualSelectionPage.tsx',
+  './hooks/useManualSelectionGroupActions.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
+if (!/navigateManualSelectionGroupListingInCurrentTab\(project,\s*storeCode\)/.test(pageSource)) {
   throw new Error('formal manual-selection entry must navigate reliably with the same source store')
 }
 if (/if\s*\(\s*!openManualSelectionGroupListingInNewTab/.test(pageSource)) {

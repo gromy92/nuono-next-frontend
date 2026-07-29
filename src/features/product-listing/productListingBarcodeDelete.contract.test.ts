@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
 const offerMetaSource = readFileSync(
-  new URL('../product-management/components/ProductOfferMetaSection.tsx', import.meta.url),
+  new URL('../product-editor/ProductOfferMetaSection.tsx', import.meta.url),
   'utf8'
 )
 

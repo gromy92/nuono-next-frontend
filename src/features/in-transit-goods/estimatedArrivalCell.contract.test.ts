@@ -6,7 +6,11 @@ import { fileURLToPath } from 'node:url'
 const featureDir = dirname(fileURLToPath(import.meta.url))
 
 const columnsSource = readFileSync(join(featureDir, 'useInTransitBatchColumns.tsx'), 'utf8')
-const cssSource = readFileSync(join(featureDir, 'InTransitGoodsPage.css'), 'utf8')
+const cssSource = [
+  'InTransitGoodsPage.css',
+  'InTransitGoodsPage.styles/01.css',
+  'InTransitGoodsPage.styles/02.css'
+].map((fileName) => readFileSync(join(featureDir, fileName), 'utf8')).join('\n')
 
 assert.doesNotMatch(
   columnsSource,

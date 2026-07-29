@@ -2,7 +2,8 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 
 const controllerSource = readFileSync('src/features/app-shell/useShellAccountController.tsx', 'utf8');
-const loginPageSource = readFileSync('src/features/auth/ReplicaLoginPage.tsx', 'utf8');
+const loginPageSource = ['ReplicaLoginPage.tsx', 'ReplicaAuthContent.tsx']
+  .map((path) => readFileSync(`src/features/auth/${path}`, 'utf8')).join('\n');
 const shellFrameSource = readFileSync('src/features/app-shell/ShellFrame.tsx', 'utf8');
 const appRuntimeSource = readFileSync('src/features/app-shell/AppShellRuntime.tsx', 'utf8');
 const runtimePathsSource = readFileSync('src/runtimePaths.ts', 'utf8');

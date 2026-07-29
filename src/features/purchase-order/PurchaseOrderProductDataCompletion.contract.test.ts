@@ -2,58 +2,77 @@ import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 
 const pageSource = readFileSync(new URL('./PurchaseOrderPage.tsx', import.meta.url), 'utf8')
+const productDataModelSource = readFileSync(new URL('./model/productDataCompletionModel.ts', import.meta.url), 'utf8')
+const issueModelSource = readFileSync(new URL('./model/purchaseOrderIssueModel.ts', import.meta.url), 'utf8')
+const uiMetaSource = readFileSync(new URL('./model/purchaseOrderUiMeta.tsx', import.meta.url), 'utf8')
+const productDataHookSource = readFileSync(new URL('./hooks/usePurchaseOrderProductDataCompletion.ts', import.meta.url), 'utf8')
+const shippingMergeHookSource = readFileSync(new URL('./hooks/usePurchaseOrderShippingMerge.ts', import.meta.url), 'utf8')
+const orderMutationsSource = readFileSync(new URL('./hooks/usePurchaseOrderMutations.ts', import.meta.url), 'utf8')
+const productDataModalSource = readFileSync(new URL('./components/PurchaseOrderProductDataModal.tsx', import.meta.url), 'utf8')
+const workbenchSource = readFileSync(new URL('./components/PurchaseOrderWorkbench.tsx', import.meta.url), 'utf8')
+const purchaseOrderFeatureSource = [
+  pageSource,
+  productDataModelSource,
+  issueModelSource,
+  uiMetaSource,
+  productDataHookSource,
+  shippingMergeHookSource,
+  orderMutationsSource,
+  productDataModalSource,
+  workbenchSource
+].join('\n')
 const typesSource = readFileSync(new URL('./types.ts', import.meta.url), 'utf8')
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /updatePurchaseOrderItemSourcingRequirement/,
   'purchase order product-data completion must save sourcing specs through the purchase-order sourcing requirement API'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /saveProductSpecSource\(\{[\s\S]*sourceType: 'ali1688'/,
   'purchase order product-data completion must save product specs to the 1688 source'
 )
 
 assert.doesNotMatch(
-  pageSource,
+  purchaseOrderFeatureSource,
   /selectProductSpecEffectiveSource/,
   'saving pre-application procurement specs must not mutate the global effective source'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /productDataSpecValuesFromDetail[\s\S]*findProductDataSpecSource\(detail\.sources, 'ali1688'\)/,
   'purchase order product-data completion must load the editable Web spec from the 1688 source'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /saveProductLogisticsProfile/,
   'purchase order product-data completion must save logistics attributes through the canonical product profile API'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /cartonLengthCm: source\.cartonLengthCm \?\? undefined[\s\S]*cartonQuantity: source\.cartonQuantity \?\? undefined/,
   'nullable carton source values must stay empty when they are loaded into the completion form'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /appMessage\.error\(validationMessage \|\| normalizeError\(error, '保存商品资料失败'\)\)/,
   'product-data save failures must use the page message context so the operator sees the error'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /const \[productDataCompletionTarget, setProductDataCompletionTarget\]/,
   'purchase order page must keep one modal target for missing product data'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /title="补齐商品资料"[\s\S]*采购备注[\s\S]*1688 产品规格[\s\S]*箱规[\s\S]*商品属性/,
   'optional purchase notes, product specs, carton specs, and product attributes must be edited in one modal'
 )
@@ -66,80 +85,80 @@ assert.match(
 
 for (const requiredCartonField of ['cartonLengthCm', 'cartonWidthCm', 'cartonHeightCm', 'cartonWeightKg', 'cartonQuantity']) {
   assert.match(
-    pageSource,
+    purchaseOrderFeatureSource,
     new RegExp(`key: '${requiredCartonField}'`),
     `purchase order product-data completion must include ${requiredCartonField}`
   )
 }
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /sourceType: 'ali1688'[\s\S]*cartonSourceType: 'factory_carton'/,
   'purchase order carton specs must be saved to the 1688 factory-carton source'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /onIssueClick=\{\(issue\) => openProductDataCompletionModal\(selectedOrder, item, issue\)\}/,
   'clicking a product issue tag must open the unified product-data completion modal for that item'
 )
 
 assert.doesNotMatch(
-  pageSource,
+  purchaseOrderFeatureSource,
   /issues\.push\('规格缺失'\)/,
   'empty purchase-note text must not create a product specification issue'
 )
 
 assert.doesNotMatch(
-  pageSource,
+  purchaseOrderFeatureSource,
   /shouldRequireProductDataSourcing/,
   'purchase-note text must remain optional and must not participate in save validation'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /openFirstProductDataIssue\('产品规格缺失'\)/,
   'order-level 产品规格缺失 chip must route to the first missing product-spec item'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /openFirstProductDataIssue\('箱规缺失'\)/,
   'order-level 箱规缺失 chip must route to the first missing carton-spec item'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /openFirstProductDataIssue\('商品属性缺失'\)/,
   'order-level 商品属性缺失 chip must route to the first missing product-attribute item'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /箱规缺失仅提示，不阻塞本次封存/,
   'missing carton specs must be shown in the sealing confirmation without blocking sealing'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /PRODUCT_DATA_CARTON_SPEC_FIELDS\.map[\s\S]*validateProductDataNumberField\([\s\S]*field\.min,[\s\S]*false/,
   'carton fields must remain editable but optional in the unified modal'
 )
 
 assert.doesNotMatch(
-  pageSource,
+  purchaseOrderFeatureSource,
   /商品长宽高重和箱规/,
   'carton completeness must not be part of the product-spec blocking validation'
 )
 
 assert.match(
-  pageSource,
+  purchaseOrderFeatureSource,
   /loadAssignedShippingPurchaseOrderIds\(\)/,
   'shipping-order merge availability must use the dedicated assigned purchase-order endpoint'
 )
 
 assert.doesNotMatch(
-  pageSource,
+  purchaseOrderFeatureSource,
   /Promise\.all\(shippingOrders\.map/,
   'shipping-order merge availability must not scan a capped shipping-order list'
 )

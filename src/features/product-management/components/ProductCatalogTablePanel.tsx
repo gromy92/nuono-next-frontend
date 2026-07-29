@@ -1,6 +1,6 @@
 import { Alert, Space, Spin, Table, Tag, Typography } from 'antd';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
-import { getProductListRowIdentityKey } from '../utils';
+import { getProductListRowIdentityKey } from '../../product-domain/productIdentity';
 
 const { Text } = Typography;
 

@@ -1,5 +1,6 @@
 import type { ProductSummarySurface } from '../types';
-import { formatDateTimeParts, normalizeSnapshotTextList, textInputValue } from '../utils';
+import { formatDateTimeParts, normalizeSnapshotTextList } from '../utils/common';
+import { textInputValue } from '../utils/common';
 
 export const PRODUCT_HISTORY_FILTER_ALL = 'all';
 

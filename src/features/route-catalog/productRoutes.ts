@@ -1,5 +1,12 @@
 import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from './types'
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
+import { createLazyWorkspaceMount } from './workspaceMount'
+
+const PRODUCT_WORKSPACE_MOUNT = createLazyWorkspaceMount(() =>
+  import('../product-management/ProductWorkspaceMount').then((module) => ({
+    default: module.ProductWorkspaceMount
+  }))
+)
 
 export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'product-manage': {
@@ -9,7 +16,7 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'product',
     pathLabel: '商品 / 商品管理',
     tabLabel: '商品管理',
-    contentKind: 'product-management',
+    workspaceMount: PRODUCT_WORKSPACE_MOUNT,
     closable: true,
     sidebarOrder: 0,
     routeAliases: ['/product-manage']
@@ -21,7 +28,7 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'product',
     pathLabel: '商品 / 商品分组',
     tabLabel: '商品分组',
-    contentKind: 'product-groups',
+    workspaceMount: PRODUCT_WORKSPACE_MOUNT,
     closable: true,
     sidebarOrder: 1
   },
@@ -32,7 +39,7 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'product',
     pathLabel: '商品 / 商品规格',
     tabLabel: '商品规格',
-    contentKind: 'product-specs',
+    workspaceMount: PRODUCT_WORKSPACE_MOUNT,
     closable: true,
     sidebarOrder: 2
   },
@@ -43,7 +50,11 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'product',
     pathLabel: '商品 / 商品图',
     tabLabel: '商品图',
-    contentKind: 'product-image-profile',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../product-image-profile/ProductImageProfilePage').then((module) => ({
+        default: module.ProductImageProfilePage
+      }))
+    ),
     closable: true,
     sidebarOrder: 3
   },
@@ -54,7 +65,11 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'product',
     pathLabel: '商品 / 图片匹配',
     tabLabel: '图片匹配',
-    contentKind: 'product-image-match',
+    workspaceMount: createLazyWorkspaceMount(() =>
+      import('../image-match/ImageMatchPage').then((module) => ({
+        default: module.ImageMatchPage
+      }))
+    ),
     closable: true,
     sidebarOrder: 4
   },
@@ -65,7 +80,20 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'product',
     pathLabel: '商品 / 人工选品',
     tabLabel: '人工选品',
-    contentKind: 'product-manual-selection',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../manual-selection/ManualSelectionPage').then((module) => ({
+          default: module.ManualSelectionPage
+        })),
+      ({ session }) => ({
+        storeName:
+          session.currentStore?.projectName ||
+          session.currentStore?.projectCode ||
+          'xingyao',
+        storeCode: session.currentStore?.storeCode,
+        operatorName: session.realName || session.accountNo
+      })
+    ),
     closable: true,
     sidebarOrder: 5
   }

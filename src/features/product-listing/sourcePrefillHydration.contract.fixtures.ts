@@ -1,7 +1,7 @@
 import type {
   ManualSelectionGroupProfitEstimateSnapshot,
   ManualSelectionGroupView
-} from '../manual-selection/types'
+} from '../selection-analysis/types'
 import type { ProductSelectionSourceCollection } from '../source-collection/types'
 
 function sourceRecord(id: string): ProductSelectionSourceCollection {

@@ -1,8 +1,19 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-const pageSource = readFileSync(new URL('./ProductListingPage.tsx', import.meta.url), 'utf8')
-const adapterSource = readFileSync(new URL('./productDetailAdapter.ts', import.meta.url), 'utf8')
+const pageSource = [
+  './ProductListingPage.tsx',
+  './useProductListingDraftPersistence.ts',
+  './useProductListingReviewActions.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
+const adapterSource = [
+  './productDetailAdapter.ts',
+  './productDetailAdapterTypes.ts',
+  './productDetailAdapterDraft.ts',
+  './productDetailAdapterSnapshot.ts',
+  './productDetailAdapterDomains.ts',
+  './productDetailAdapterNormalization.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 const workflowIdentitySource = readFileSync(
   new URL('./productListingWorkflowIdentity.ts', import.meta.url),
   'utf8'
@@ -29,11 +40,12 @@ assert(
   'product listing payload should preserve sourceRefId from the editor draft'
 )
 assert(
-  pageSource.includes('...listingDraftRef.current') && pageSource.includes('...form.getFieldsValue()'),
+  pageSource.includes('...options.listingDraftRef.current') &&
+    pageSource.includes('...options.form.getFieldsValue()'),
   'product listing save should merge hidden metadata form values over the current editor draft'
 )
 assert(
-  pageSource.includes('productListingEditorDraftToPayload(currentDraft, currentDraftId)'),
+  pageSource.includes('productListingEditorDraftToPayload(currentDraft, options.currentDraftId)'),
   'product listing save should serialize the normalized editor draft payload'
 )
 assert(
@@ -44,7 +56,8 @@ assert(
 )
 assert(
   pageSource.includes('useProductListingDraftSaveFeedback()') &&
-    pageSource.includes('draftSaveNotice={draftSaveFeedback.notice}') &&
+    pageSource.includes('draftSaveNotice: feedback.notice') &&
+    pageSource.includes('draftSaveNotice={draftSaveNotice}') &&
     saveFeedbackSource.includes("setNotice({ type: 'info'") &&
     saveFeedbackSource.includes('message.loading({') &&
     saveFeedbackSource.includes("setNotice({ type: 'success'") &&
@@ -71,8 +84,8 @@ assert(
     workflowReadinessSource.includes('setLoadedScope({ draftId, storeCode })') &&
     workflowReadinessSource.includes('setLoadedScope(undefined)') &&
     pageSource.includes('workflowReadiness.locked') &&
-    pageSource.includes('!editSession.canEditAndSave') &&
-    pageSource.includes('!workflowPresentation.allowPrepare') &&
+    pageSource.includes('!options.canEditAndSave') &&
+    pageSource.includes('!options.allowPrepare') &&
     workflowReadinessSource.includes(
       '正在读取后端上架流程，保存与检查暂时锁定。'
     ),

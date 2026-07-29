@@ -9,13 +9,13 @@ import {
   productListIssueTags,
   resolveProductInitializationMessage,
   resolveProductInitializationStatus
-} from '../utils';
+} from '../utils/status';
 import {
   buildProductListShellHighlights,
   countProductListStatuses,
   filterAndSortProductListItems
 } from '../utils/productListFilters';
-import { getProductListRowIdentityKey } from '../utils';
+import { getProductListRowIdentityKey } from '../../product-domain/productIdentity';
 import type {
   ProductListDatasetState,
   ProductListFilters,

@@ -2,7 +2,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import { Button, Empty, Space, Tag, Tooltip, Typography } from 'antd';
 import { useMemo } from 'react';
 import type { ProductListRowPayload, ProductWorkbenchPayload } from '../types';
-import { formatSnapshotValue, textInputValue } from '../utils';
+import { formatSnapshotValue, textInputValue } from '../utils/common';
 import {
   groupAxes,
   attributeValue,

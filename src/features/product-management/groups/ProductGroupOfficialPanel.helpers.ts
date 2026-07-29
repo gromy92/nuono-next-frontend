@@ -1,5 +1,6 @@
 import type { ProductWorkbenchPayload } from '../types';
-import { normalizeNoonImageUrl, textInputValue } from '../utils';
+import { normalizeNoonImageUrl } from '../../product-baseline/normalizeNoonImageUrl';
+import { textInputValue } from '../utils/common';
 import type { ProductGroupMemberCardView } from './productGroupMemberTypes';
 import type { ProductGroupMemberDraft } from './ProductGroupMemberEditModal';
 

@@ -3,13 +3,12 @@ import { Button, message, Modal, Space, Tooltip, Typography } from 'antd';
 import { navigateProductListingTargetInCurrentTab } from '../../product-listing/listingTabNavigation';
 import {
   isPublicDetailReadonlyWorkbench,
-  getProductCurrentZCode,
-  isLocalDraftNoonCode,
-  isProductNotListedSource,
   isProductPublishTaskActive,
-  isProductPublishTaskNeedsAttention,
-  textInputValue
-} from '../utils';
+  isProductPublishTaskNeedsAttention
+} from '../utils/workbench';
+import { getProductCurrentZCode, isLocalDraftNoonCode } from '../../product-domain/productIdentity';
+import { textInputValue } from '../utils/common';
+import { isProductNotListedSource } from '../../product-baseline';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 import { buildProductDetailListingTarget } from '../utils/productDetailListingNavigation';
 import { ProductDetailSummaryBar } from './ProductDetailSummaryBar';
@@ -22,10 +21,9 @@ const LISTING_DRAFT_MISSING_REASON =
 
 type ProductDetailSummaryPanelProps = {
   workspace: ProductManagementWorkspace;
-  isProductDetailTab: boolean;
 };
 
-export function ProductDetailSummaryPanel({ workspace, isProductDetailTab }: ProductDetailSummaryPanelProps) {
+export function ProductDetailSummaryPanel({ workspace }: ProductDetailSummaryPanelProps) {
   const {
     productSnapshotView,
     productDetailSummarySurface,

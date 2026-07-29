@@ -1,22 +1,13 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import {
-  countProductListStatuses,
-  isProductListRowOnline,
-  getProductListRowIdentityKey,
-  mergeProductListItemWithSummary,
-  mergeSampleProductWithSummary,
-  productListSummaryAppliesToItem,
-  textInputValue
-} from '../utils';
+import { isProductListRowOnline } from '../utils/status';
+import { getProductListRowIdentityKey } from '../../product-domain/productIdentity';
 import type {
   ProductListDatasetState,
-  ProductListRowPayload,
-  ProductListSummaryPayload,
   ProductListUiState,
-  StoreInitializationPayload,
   StoreInitializationState
 } from '../types';
+import { useApplyProductListSummary } from './useApplyProductListSummary';
 
 type UseProductListMutationsParams = {
   setProductListDatasetState: Dispatch<SetStateAction<ProductListDatasetState>>;
@@ -32,27 +23,6 @@ function liveStatusValue(liveActive: boolean) {
 function replaceLiveStatuses(currentStatuses: string[] | undefined, liveActive: boolean) {
   const nextStatus = liveStatusValue(liveActive);
   return currentStatuses?.length ? currentStatuses.map(() => nextStatus) : [nextStatus];
-}
-
-function storeCodeMatches(summaryStoreCode?: string, targetStoreCode?: string) {
-  const summaryStore = textInputValue(summaryStoreCode);
-  const targetStore = textInputValue(targetStoreCode);
-  return !summaryStore || !targetStore || summaryStore === targetStore;
-}
-
-function summaryAppliesToListStore(summary: ProductListSummaryPayload, listStoreCode?: string) {
-  return storeCodeMatches(summary.storeCode, listStoreCode);
-}
-
-function summaryAppliesToListItem(item: ProductListRowPayload, summary: ProductListSummaryPayload) {
-  return productListSummaryAppliesToItem(item, summary) && storeCodeMatches(summary.storeCode, item.referenceStoreCode);
-}
-
-function summaryAppliesToSampleProduct(
-  item: StoreInitializationPayload['sampleProducts'][number],
-  summary: ProductListSummaryPayload
-) {
-  return productListSummaryAppliesToItem(item, summary) && storeCodeMatches(summary.storeCode, item.storeCode);
 }
 
 export function useProductListMutations({
@@ -165,163 +135,11 @@ export function useProductListMutations({
     [setProductListDatasetState, setStoreInitializationState, usingMockProductList]
   );
 
-  const applyProductListSummary = useCallback(
-    (summary?: ProductListSummaryPayload) => {
-      if (!(summary?.partnerSku || summary?.currentZCode || summary?.skuParent) || usingMockProductList) {
-        return;
-      }
-
-      setProductListDatasetState((currentValue) => {
-        if (currentValue.status !== 'success') {
-          return currentValue;
-        }
-        if (!summaryAppliesToListStore(summary, currentValue.data.storeCode)) {
-          return currentValue;
-        }
-
-        let itemChanged = false;
-        const nextItems = currentValue.data.items.map((item) => {
-          if (!summaryAppliesToListItem(item, summary)) {
-            return item;
-          }
-          itemChanged = true;
-          return mergeProductListItemWithSummary(item, summary);
-        });
-
-        if (!itemChanged) {
-          nextItems.unshift(
-            mergeProductListItemWithSummary(
-              {
-                skuParent: summary.currentZCode || summary.skuParent || '',
-                currentZCode: summary.currentZCode || summary.skuParent,
-                productMasterId: summary.productMasterId,
-                productVariantId: summary.productVariantId,
-                productSiteOfferId: summary.productSiteOfferId,
-                partnerSku: summary.partnerSku,
-                pskuCode: summary.pskuCode,
-                offerCode: summary.offerCode,
-                referenceStoreCode: summary.storeCode,
-                title: summary.title,
-                brand: summary.brand,
-                imageUrl: summary.imageUrl,
-                referencePrice: summary.referencePrice,
-                originalPrice: summary.originalPrice,
-                salePrice: summary.salePrice,
-                productFulltype: summary.productFulltype,
-                skuGroup: textInputValue(summary.skuGroup) || undefined,
-                groupRef: textInputValue(summary.groupRef) || undefined,
-                groupRefCanonical: textInputValue(summary.groupRefCanonical) || undefined,
-                isActive: summary.isActive,
-                maintenanceEnabled: summary.maintenanceEnabled,
-                syncStatus: summary.syncStatus,
-                listingStartedAt: summary.listingStartedAt,
-                listingStartedSource: summary.listingStartedSource,
-                lastSyncedAt: summary.lastSyncedAt,
-                lastDraftSavedAt: summary.lastDraftSavedAt,
-                variantCount: summary.variantCount,
-                siteOfferCount: summary.siteOfferCount,
-                historyMetaReady: summary.historyMetaReady,
-                pendingKeyContentHistoryCount: summary.pendingKeyContentHistoryCount,
-                visibleKeyContentHistoryCount: summary.visibleKeyContentHistoryCount,
-                pendingKeyContentHistoryVisibleAfter: summary.pendingKeyContentHistoryVisibleAfter,
-                siteLabels: summary.siteLabels ?? [],
-                liveStatuses: summary.liveStatuses ?? [],
-                issueTags: [],
-                totalFbnStock: summary.totalFbnStock,
-                totalSupermallStock: summary.totalSupermallStock,
-                totalFbpStock: summary.totalFbpStock
-              },
-              summary
-            )
-          );
-        }
-
-        const nextStatusCounts = countProductListStatuses(nextItems, {}, false);
-        const nextCounts = nextItems.reduce(
-          (accumulator, item) => {
-            if (isProductListRowOnline(item)) {
-              accumulator.liveCount += 1;
-            }
-            if (item.skuGroup || item.groupRef || item.groupRefCanonical) {
-              accumulator.groupedCount += 1;
-            }
-            if (!item.referencePrice) {
-              accumulator.pendingPriceCount += 1;
-            }
-            if (item.historyMetaReady) {
-              accumulator.historyReadyCount += 1;
-            }
-            return accumulator;
-          },
-          {
-            liveCount: 0,
-            groupedCount: 0,
-            pendingPriceCount: 0,
-            historyReadyCount: 0
-          }
-        );
-
-        return {
-          status: 'success',
-          data: {
-            ...currentValue.data,
-            items: nextItems,
-            totalItems: nextItems.length,
-            syncedCount: nextStatusCounts.synced,
-            draftCount: nextStatusCounts.draft,
-            conflictCount: nextStatusCounts.conflict,
-            failedCount: nextStatusCounts.failed,
-            liveCount: nextCounts.liveCount,
-            groupedCount: nextCounts.groupedCount,
-            pendingPriceCount: nextCounts.pendingPriceCount,
-            historyReadyCount: nextCounts.historyReadyCount,
-            lastDatasetSyncedAt: summary.lastSyncedAt ?? currentValue.data.lastDatasetSyncedAt
-          }
-        };
-      });
-
-      setStoreInitializationState((currentValue) => {
-        if (currentValue.status !== 'success') {
-          return currentValue;
-        }
-        if (!summaryAppliesToListStore(summary, currentValue.data.storeCode)) {
-          return currentValue;
-        }
-
-        let productItemChanged = false;
-        const nextProductItems = currentValue.data.productItems.map((item) => {
-          if (!summaryAppliesToListItem(item, summary)) {
-            return item;
-          }
-          productItemChanged = true;
-          return mergeProductListItemWithSummary(item, summary);
-        });
-
-        let sampleProductChanged = false;
-        const nextSampleProducts = currentValue.data.sampleProducts.map((item) => {
-          if (!summaryAppliesToSampleProduct(item, summary)) {
-            return item;
-          }
-          sampleProductChanged = true;
-          return mergeSampleProductWithSummary(item, summary);
-        });
-
-        if (!productItemChanged && !sampleProductChanged) {
-          return currentValue;
-        }
-
-        return {
-          status: 'success',
-          data: {
-            ...currentValue.data,
-            productItems: nextProductItems,
-            sampleProducts: nextSampleProducts
-          }
-        };
-      });
-    },
-    [setProductListDatasetState, setStoreInitializationState, usingMockProductList]
-  );
+  const applyProductListSummary = useApplyProductListSummary({
+    setProductListDatasetState,
+    setStoreInitializationState,
+    usingMockProductList
+  });
 
   return {
     updateProductListUiState,

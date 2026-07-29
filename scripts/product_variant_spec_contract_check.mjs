@@ -23,15 +23,22 @@ function assertNotIncludes(source, needle, label) {
   }
 }
 
-const sizesTab = read('src/features/product-management/components/ProductSizesTab.tsx')
-const specTable = read('src/features/product-management/components/ProductVariantSpecTable.tsx')
-const productApi = read('src/features/product-management/api.ts')
+const sizesTab = read('src/features/product-editor/ProductSizesTab.tsx')
+const specTable = [
+  read('src/features/product-management/components/ProductVariantSpecTable.tsx'),
+  read('src/features/product-management/components/ProductVariantSpecEditor.tsx'),
+  read('src/features/product-management/components/productVariantSpecModel.ts')
+].join('\n')
+const productApi = [
+  read('src/features/product-specs/api.ts'),
+  read('src/features/product-specs/transport.ts')
+].join('\n')
 const listCells = read('src/features/product-management/components/ProductListIdentityCells.tsx')
 const workspace = read('src/features/product-management/useProductManagementWorkspace.tsx')
 const modals = read('src/features/product-management/ProductManagementWorkspaceModals.tsx')
 const specModal = read('src/features/product-management/components/ProductVariantSpecModal.tsx')
-const workbenchTypes = read('src/features/product-management/types/workbench.ts')
-const listTypes = read('src/features/product-management/types/list.ts')
+const workbenchTypes = read('src/features/product-specs/types.ts')
+const listTypes = read('src/features/product-domain/productListTypes.ts')
 
 assertNotIncludes(sizesTab, 'ProductVariantSpecTable', 'ProductSizesTab')
 assertNotIncludes(sizesTab, '规格 / 箱规', 'ProductSizesTab')
@@ -66,8 +73,9 @@ assertIncludes(productApi, '/api/product-variant-specs', 'product management API
 assertIncludes(productApi, 'export async function fetchProductVariantSpecs', 'product management API')
 assertIncludes(productApi, 'export async function saveProductVariantSpec', 'product management API')
 assertIncludes(productApi, "import { apiFetch } from '../../shared/api'", 'product management API auth headers')
-assertIncludes(productApi, 'const response = await apiFetch(`/api/product-variant-specs?', 'product management API auth headers')
-assertIncludes(productApi, 'const response = await apiFetch(url, {', 'product management API auth headers')
+assertIncludes(productApi, 'productSpecRequestJson<ProductVariantSpecListPayload>', 'product management API transport')
+assertIncludes(productApi, 'productSpecPostJson<ProductVariantSpecPayload>', 'product management API transport')
+assertIncludes(productApi, 'const response = await apiFetch(input, init)', 'product management API auth headers')
 assertNotIncludes(productApi, '/api/product-master/variant-specs', 'product management API')
 assertNotIncludes(productApi, 'variant-specs/publish', 'product management API')
 

@@ -10,7 +10,6 @@ type SourceFilesCardProps = {
   bundle: LogisticsQuoteBundleDetailDto
   workbenchMode: string
   currentSelectedNoteId: number | null
-  currentSelectedFileId: number | null
   editableFile: LogisticsQuoteSourceFileDto | null
   fileEditDraft: FileEditDraft
   fileEditState: AsyncActionState
@@ -30,7 +29,6 @@ export function SourceFilesCard({
   bundle,
   workbenchMode,
   currentSelectedNoteId,
-  currentSelectedFileId,
   editableFile,
   fileEditDraft,
   fileEditState,

@@ -1,20 +1,11 @@
 import { CopyOutlined, HistoryOutlined, PictureOutlined, SaveOutlined } from '@ant-design/icons'
-import { App, Button, Empty, Space, Tag, Typography } from 'antd'
+import { App, Button, Empty, Space, Tag } from 'antd'
 import { useState } from 'react'
 import type { AuthSession } from '../auth/session'
-import { groupProductImageAssetsByRole } from './assetRoleSections'
-import { ProductImageProfileSidebar, imageSummaryStatusMeta } from './ProductImageProfileSidebar'
+import { ProductImageProfileSidebar } from './ProductImageProfileSidebar'
 import { ProductListThumb } from './ProductImageAssetPreview'
-import {
-  activeAssets,
-  isSelectableAsset,
-  profileCompleteness,
-  samePhysicalAsset,
-  uniquePhysicalAssets
-} from './productImageAssetModel'
-import { imageRoleOptions } from './productImageProfileConstants'
 import type { ProductImageProfileTabKey, ProfileAsset } from './productImageProfileTypes'
-import { summarizeImageStatus } from './profileSummaryStatus'
+import { buildProductImageProfileSelection } from './productImageProfileSelection'
 import { ProductImageAiDialogs } from './ProductImageAiDialogs'
 import { ProductImageAssetCard } from './ProductImageAssetCard'
 import { ProductImageAssetDialogs } from './ProductImageAssetDialogs'
@@ -29,14 +20,7 @@ import { useProductImageSourceWorkflow } from './useProductImageSourceWorkflow'
 import { useProductImageSuiteWorkflow } from './useProductImageSuiteWorkflow'
 import './ProductImageProfilePage.css'
 
-const { Text } = Typography
-
-type ProductImageProfilePageProps = {
-  session: AuthSession
-  activeOwnerId?: number
-}
-
-export function ProductImageProfilePage({ session }: ProductImageProfilePageProps) {
+export function ProductImageProfilePage({ session }: { session: AuthSession; activeOwnerId?: number }) {
   const { message, modal } = App.useApp()
   const {
     aiCopyText, aiPromptSections, filteredProfiles, filteredSidebarItems, imageStatusFilter,
@@ -102,31 +86,11 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
     return <Empty description={loading ? '商品图资料加载中' : loadError || '暂无商品图档案'} />
   }
 
-  const selectedCompleteness = profileCompleteness(selectedProfile)
-  const selectedImageStatus = imageSummaryStatusMeta[
-    selectedProfile.imageStatus ?? summarizeImageStatus(selectedProfile.suites.map((suite) => suite.suiteStatus))
-  ]
-  const selectedProfileAssets = activeAssets(selectedProfile)
-  const selectedProfileAssetGroups = groupProductImageAssetsByRole(selectedProfileAssets)
-  const selectableAssets = selectedProfileAssets.filter(isSelectableAsset)
-  const selectedAssets = selectableAssets.filter((asset) => selectedAssetIds.has(asset.id))
-  const allAssetsSelected = selectableAssets.length > 0 && selectedAssets.length === selectableAssets.length
-  const selectedProfileReady = Boolean(selectedProfile.detailLoaded || !selectedProfile.backendId)
-  const selectedAssetCount = selectedProfile.detailLoaded
-    ? uniquePhysicalAssets(selectedProfileAssets).length
-    : selectedProfile.assetCount ?? selectedProfileAssets.length
-  const selectedAssetUsageCount = selectedProfile.detailLoaded ? selectedProfileAssets.length : selectedAssetCount
-  const selectedSuiteCount = selectedProfile.detailLoaded
-    ? selectedProfile.suites.length
-    : selectedProfile.suiteCount ?? selectedProfile.suites.length
-  const reuseUsedRoles = new Set(reuseAsset
-    ? selectedProfileAssets.filter((asset) => samePhysicalAsset(asset, reuseAsset)).map((asset) => asset.imageRole)
-    : [])
-  const availableReuseRoleOptions = imageRoleOptions.filter((option) => !reuseUsedRoles.has(option.value))
+  const selection = buildProductImageProfileSelection({ profile: selectedProfile, reuseAsset, selectedAssetIds })
 
   const renderAssetCard = (asset: ProfileAsset) => (
     <ProductImageAssetCard
-      allAssets={selectedProfileAssets}
+      allAssets={selection.assets}
       asset={asset}
       changingRole={changingAssetRoleId === asset.id}
       key={asset.id}
@@ -183,17 +147,17 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
               <div className="product-image-profile-psku">{selectedProfile.pskuCode}</div>
             </div>
             <Space wrap>
-              <Tag color={selectedCompleteness.color}>{selectedCompleteness.label}</Tag>
-              <Tag color={selectedImageStatus.color}>图片：{selectedImageStatus.label}</Tag>
+              <Tag color={selection.completeness.color}>{selection.completeness.label}</Tag>
+              <Tag color={selection.imageStatus.color}>图片：{selection.imageStatus.label}</Tag>
               <Tag icon={<PictureOutlined />}>
-                基础图 {selectedAssetCount}{selectedAssetUsageCount > selectedAssetCount ? ` / ${selectedAssetUsageCount} 用途` : ''}
+                基础图 {selection.assetCount}{selection.assetUsageCount > selection.assetCount ? ` / ${selection.assetUsageCount} 用途` : ''}
               </Tag>
-              <Tag icon={<HistoryOutlined />}>AI 套图 {selectedSuiteCount}</Tag>
-              <Button disabled={!selectedProfileReady} icon={<CopyOutlined />} onClick={() => setAiCopyModalOpen(true)}>
+              <Tag icon={<HistoryOutlined />}>AI 套图 {selection.suiteCount}</Tag>
+              <Button disabled={!selection.profileReady} icon={<CopyOutlined />} onClick={() => setAiCopyModalOpen(true)}>
                 AI 指令预览
               </Button>
               <Button
-                disabled={!selectedProfileReady}
+                disabled={!selection.profileReady}
                 icon={<SaveOutlined />}
                 loading={saving || selectedDetailLoading}
                 type="primary"
@@ -208,13 +172,13 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
             activeKey={activeProfileTab}
             onChange={setActiveProfileTab}
             assets={{
-              allAssetsSelected,
-              assetGroups: selectedProfileAssetGroups,
-              assets: selectedProfileAssets,
-              profileReady: selectedProfileReady,
+              allAssetsSelected: selection.allAssetsSelected,
+              assetGroups: selection.assetGroups,
+              assets: selection.assets,
+              profileReady: selection.profileReady,
               removing: removingAssets,
-              selectableAssets,
-              selectedAssets,
+              selectableAssets: selection.selectableAssets,
+              selectedAssets: selection.selectedAssets,
               onClearSelection: clearAssetSelection,
               onOpenImport: () => setAssetImportOpen(true),
               onRemoveAssets: (assets) => void removeAssets(assets),
@@ -232,7 +196,7 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
                 heroSellingPoints: selectedProfile.heroSellingPoints,
                 packageAttributesText: selectedProfile.packageList.attributesText ?? ''
               },
-              profileReady: selectedProfileReady,
+              profileReady: selection.profileReady,
               onChangeFacts: updateProductImageFacts,
               onCopyAll: copyAiCopyText,
               onCopySection: copyAiPromptSection,
@@ -266,7 +230,7 @@ export function ProductImageProfilePage({ session }: ProductImageProfilePageProp
         assetImportOpen={assetImportOpen}
         assetImportTab={assetImportTab}
         assetUrlText={assetUrlText}
-        availableReuseRoleOptions={availableReuseRoleOptions}
+        availableReuseRoleOptions={selection.availableReuseRoleOptions}
         collectingSourceLink={collectingSourceLink}
         importingAssetUrls={importingAssetUrls}
         previewAsset={previewAsset}

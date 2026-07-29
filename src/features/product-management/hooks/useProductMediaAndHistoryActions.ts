@@ -5,10 +5,10 @@ import { useProductWorkspaceState } from './useProductWorkspaceState';
 import type {
   ProductListSummaryPayload,
   ProductListUiState,
-  ProductMasterSnapshotPayload,
   ProductSummarySurface,
   ProductWorkbenchState
 } from '../types';
+import type { ProductMasterSnapshotPayload } from '../../product-domain/productMasterSnapshot';
 
 type ProductWorkspaceState = ReturnType<typeof useProductWorkspaceState>;
 

@@ -1,0 +1,65 @@
+@media (max-width: 760px) {
+  .official-warehouse-spec-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.official-warehouse-code-line {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+@media (max-width: 1280px) {
+  .official-warehouse-toolbar {
+    flex-direction: column;
+  }
+
+  .official-warehouse-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .official-warehouse-toolbar-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .official-warehouse-filter,
+  .official-warehouse-filter-wide,
+  .official-warehouse-list-status-filter,
+  .official-warehouse-search,
+  .official-warehouse-status-filter {
+    width: 100%;
+  }
+
+  .official-warehouse-appointment-form {
+    grid-template-columns: 1fr;
+  }
+
+  .official-warehouse-manual-picker {
+    margin: -12px -24px;
+    padding: 20px 16px 24px;
+  }
+
+  .official-warehouse-date-row {
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    gap: 8px;
+  }
+
+  .official-warehouse-date-pills {
+    grid-template-columns: repeat(5, minmax(42px, 1fr));
+    gap: 6px;
+  }
+
+  .official-warehouse-date-pill {
+    width: 46px;
+    height: 46px;
+  }
+
+  .official-warehouse-slot-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,4 +1,4 @@
-import type { ProductListRowPayload } from '../product-management/types';
+import type { ProductListRowPayload } from '../product-domain/productListTypes';
 
 export type ProductLogisticsCostRow = {
   id: number;

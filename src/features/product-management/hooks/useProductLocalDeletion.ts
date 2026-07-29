@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react';
 import { message } from 'antd';
 import { deleteLocalProduct, rebuildLocalProduct } from '../api';
 import type { ProductListDatasetState, ProductListRowPayload } from '../types';
-import { getProductCurrentZCode, getProductListRowIdentityKey, normalizeProductSourceType } from '../utils';
+import { getProductCurrentZCode, getProductListRowIdentityKey } from '../../product-domain/productIdentity';
+import { normalizeProductSourceType } from '../../product-baseline';
 
 type UseProductLocalDeletionParams = {
   activeOwnerId?: number;

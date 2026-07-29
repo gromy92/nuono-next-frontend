@@ -1,6 +1,5 @@
-import { apiFetch, parseApiResponse, readApiErrorMessage } from '../../shared/api'
+import { apiFetch, parseApiResponse } from '../../shared/api'
 import type {
-  ProductImageAiExtractionSuggestionView,
   ProductImageAssetMetadataQuery,
   ProductImageAssetMetadataView,
   ProductImageAssetRemoveItem,

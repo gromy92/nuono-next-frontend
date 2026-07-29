@@ -49,7 +49,7 @@ assert.match(tabSource, /const \[purchaseDuplicateNotice,\s*setPurchaseDuplicate
 assert.doesNotMatch(tabSource, /duplicateTransportWarning|setDuplicateTransportWarning|没有可新增的运输方式/, 'duplicate purchase feedback must no longer block the add flow with a separate modal')
 assert.match(tabSource, /replenishment-plan-purchase-duplicate-alert[\s\S]*type=['"]error['"][\s\S]*purchaseDuplicateNotice/, 'duplicate purchase feedback must render as a red alert at the top of the add-purchase modal')
 assert.doesNotMatch(tabSource, /Modal\.warning/, 'duplicate transport feedback must not use AntD static Modal.warning because it can fail to render in this app context')
-assert.match(tabSource, /import \{ formatPurchaseDuplicateNotice \} from ['"]\.\/purchaseDuplicateNotice['"]/, 'ReplenishmentPlanTab must use the shared duplicate purchase notice helper')
+assert.match(tabSource, /import \{ formatPurchaseDuplicateNotice \} from ['"]\.\.?\/purchaseDuplicateNotice['"]/, 'ReplenishmentPlanTab must use the shared duplicate purchase notice helper')
 assert.match(purchaseDuplicateNoticeSource, /function formatPurchaseDuplicateNotice\(drafts: PurchaseDraftRow\[\],\s*orders: PurchaseOrder\[\]\)[\s\S]*已加入采购单[\s\S]*可继续重复加入/, 'duplicate notice must explain where the product was already added while explicitly allowing repeated add')
 assert.match(purchaseDuplicateNoticeSource, /formatPurchaseDuplicateNotice[\s\S]*formatPurchaseTransportSource\(source\)/, 'duplicate notice must include purchase order title, number, status, and quantity source text')
 assert.match(purchaseDuplicateNoticeSource, /purchaseDraftNoticeLines\(drafts\)/, 'duplicate notice must inspect draft transports independently from positive submit quantities')

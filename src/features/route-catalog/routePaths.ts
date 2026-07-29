@@ -34,7 +34,6 @@ export const SYSTEM_REPORT_NOON_DATA_COMPLETENESS_PATH = workspaceMenuPath('syst
 export const SYSTEM_REPORT_NOON_DATA_GAPS_PATH = workspaceMenuPath('system-report-noon-data-gaps')
 export const OPERATIONS_CONFIG_VERSIONS_PATH = workspaceMenuPath('operations-config-versions')
 export const DATA_ACTIVITY_CONFIG_PATH = workspaceMenuPath('data-activity-config')
-export const OPERATIONS_LIFECYCLE_RULES_PATH = workspaceMenuPath('operations-lifecycle-rules')
 export const SYSTEM_FILE_MANAGEMENT_PATH = workspaceMenuPath('system-file-management')
 export const USER_ACCOUNT_PATH = workspaceMenuPath('user-account')
 export const USER_STORE_NOON_PATH = workspaceMenuPath('user-store-noon')

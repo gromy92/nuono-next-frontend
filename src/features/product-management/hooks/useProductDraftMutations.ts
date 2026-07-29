@@ -1,19 +1,16 @@
 import { useCallback } from 'react';
 import { createSiteOfferColumns } from '../productDetailColumns';
-import {
-  cloneRecord,
-  cloneRecordList,
-  cloneSnapshotPayload,
-  siteOfferCode,
-  splitMultilineValue,
-  textInputValue
-} from '../utils';
+import { cloneRecord, cloneRecordList, siteOfferCode, splitMultilineValue } from '../utils/common';
+import { textInputValue } from '../utils/common';
 import type {
-  ProductMasterSnapshotPayload,
   ProductWorkbenchPayload,
   ProductWorkbenchState,
   ProductWorkbenchSurfaceReadyState
 } from '../types';
+import {
+  createProductMasterSnapshotPayload,
+  type ProductMasterSnapshotPayload
+} from '../../product-domain/productMasterSnapshot';
 
 type ReadyWorkbenchUpdater = (
   updater: (current: ProductWorkbenchSurfaceReadyState) => {
@@ -37,7 +34,7 @@ export function useProductDraftMutations({
   const updateProductDraft = useCallback(
     (updater: (draft: ProductMasterSnapshotPayload) => void) => {
       updateReadyProductWorkbenchSurface((currentValue) => {
-        const nextDraft = cloneSnapshotPayload(currentValue.workbench.draft);
+        const nextDraft = createProductMasterSnapshotPayload(currentValue.workbench.draft);
         updater(nextDraft);
         return {
           workbench: {
@@ -56,7 +53,7 @@ export function useProductDraftMutations({
         if (options?.onlyQuickOpen && currentValue.context.source !== 'quick-open') {
           return null;
         }
-        const nextDraft = cloneSnapshotPayload(currentValue.workbench.baseline);
+        const nextDraft = createProductMasterSnapshotPayload(currentValue.workbench.baseline);
         const nextWorkbench: ProductWorkbenchState = {
           ...currentValue.workbench,
           draft: nextDraft,

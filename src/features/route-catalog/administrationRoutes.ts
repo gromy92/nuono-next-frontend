@@ -2,6 +2,12 @@ import type { WorkspaceGrantedMenuRuleBase, WorkspaceMenuDefinitionBase } from '
 import { freezeCatalogMetadata } from './freezeCatalogMetadata'
 import { createLazyWorkspaceMount } from './workspaceMount'
 
+const USER_ADMINISTRATION_WORKSPACE_MOUNT = createLazyWorkspaceMount(() =>
+  import('../master-data/UserAdministrationWorkspaceMount').then((module) => ({
+    default: module.UserAdministrationWorkspaceMount
+  }))
+)
+
 export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'system-file-management': {
     key: 'system-file-management',
@@ -24,7 +30,18 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'user',
     pathLabel: '用户 / 账号管理',
     tabLabel: '账号管理',
-    contentKind: 'user-account',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../master-data/MasterDataBoard').then((module) => ({
+          default: module.MasterDataBoard
+        })),
+      ({ session }) => ({
+        mode: 'user-account' as const,
+        operatorUserId: session.userId,
+        operatorRoleLevel: session.level,
+        operatorStores: session.userStores ?? []
+      })
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -34,8 +51,8 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     path: '/user/store-binding',
     sectionKey: 'user',
     pathLabel: '用户 / 店铺管理',
-    tabLabel: '角色分配',
-    contentKind: 'user-role',
+    tabLabel: '店铺管理',
+    workspaceMount: USER_ADMINISTRATION_WORKSPACE_MOUNT,
     closable: true,
     tabKey: 'user-role',
     visibleInSidebar: false,
@@ -48,7 +65,7 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'user',
     pathLabel: '用户 / 角色分配',
     tabLabel: '角色分配',
-    contentKind: 'user-role',
+    workspaceMount: USER_ADMINISTRATION_WORKSPACE_MOUNT,
     closable: true,
     sidebarOrder: 1
   },
@@ -59,7 +76,18 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'system',
     pathLabel: '系统管理 / 菜单维护',
     tabLabel: '菜单维护',
-    contentKind: 'system-menu',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../master-data/MasterDataBoard').then((module) => ({
+          default: module.MasterDataBoard
+        })),
+      ({ session }) => ({
+        mode: 'system-menu' as const,
+        operatorUserId: session.userId,
+        operatorRoleLevel: session.level,
+        operatorStores: session.userStores ?? []
+      })
+    ),
     closable: true,
     sidebarOrder: 0
   },
@@ -70,15 +98,26 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     sectionKey: 'system',
     pathLabel: '系统管理 / 角色管理',
     tabLabel: '角色管理',
-    contentKind: 'system-role',
+    workspaceMount: createLazyWorkspaceMount(
+      () =>
+        import('../master-data/MasterDataBoard').then((module) => ({
+          default: module.MasterDataBoard
+        })),
+      ({ session }) => ({
+        mode: 'system-role' as const,
+        operatorUserId: session.userId,
+        operatorRoleLevel: session.level,
+        operatorStores: session.userStores ?? []
+      })
+    ),
     closable: true,
     sidebarOrder: 2
   }
 } as const satisfies Record<string, WorkspaceMenuDefinitionBase>)
 
 export const ADMINISTRATION_IDENTITY_GRANT_RULES = freezeCatalogMetadata([
-  { keys: ['user-account', 'user-store-noon'], urlPaths: ['/api/user/manage'], menuNames: ['用户管理'] },
-  { keys: ['user-role', 'user-store-noon'], urlPaths: ['/api/user/role'], menuNames: ['角色分配'] },
+  { keys: ['user-account'], urlPaths: ['/api/user/manage'], menuNames: ['用户管理'] },
+  { keys: ['user-role'], urlPaths: ['/api/user/role'], menuNames: ['角色分配'] },
   { keys: ['system-role'], urlPaths: ['/system/role'], menuNames: ['角色维护', '角色管理'] },
   { keys: ['system-menu'], urlPaths: ['/system/menu'], menuNames: ['菜单维护'] }
 ] as const satisfies readonly WorkspaceGrantedMenuRuleBase[])

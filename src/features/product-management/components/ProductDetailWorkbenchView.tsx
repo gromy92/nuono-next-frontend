@@ -6,10 +6,9 @@ import type { ProductManagementWorkspace } from '../workspaceTypes';
 
 type ProductDetailWorkbenchViewProps = {
   workspace: ProductManagementWorkspace;
-  isProductDetailTab: boolean;
 };
 
-export function ProductDetailWorkbenchView({ workspace, isProductDetailTab }: ProductDetailWorkbenchViewProps) {
+export function ProductDetailWorkbenchView({ workspace }: ProductDetailWorkbenchViewProps) {
   const {
     activeProductSiteOffer,
     currentProductSummarySurface,
@@ -38,7 +37,7 @@ export function ProductDetailWorkbenchView({ workspace, isProductDetailTab }: Pr
               siteCode={currentSiteCode}
               partnerSku={currentPartnerSku}
             />
-            <ProductDetailSnapshotBody workspace={workspace} isProductDetailTab={isProductDetailTab} />
+            <ProductDetailSnapshotBody workspace={workspace} />
           </Space>
         </Card>
       </div>

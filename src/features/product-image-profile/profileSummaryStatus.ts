@@ -16,6 +16,16 @@ export type ProductImageSummaryStatus =
   | 'ONLINE'
   | 'ACTION_REQUIRED'
 
+export const imageSummaryStatusMeta: Record<ProductImageSummaryStatus, { color: string; label: string }> = {
+  NOT_REQUESTED: { color: 'default', label: '未申请' },
+  CANDIDATE: { color: 'blue', label: '候选' },
+  GENERATING: { color: 'processing', label: '制作中' },
+  PENDING_CONFIRMATION: { color: 'warning', label: '待确认' },
+  PUBLISHING: { color: 'processing', label: '发布中' },
+  ONLINE: { color: 'success', label: '已上线' },
+  ACTION_REQUIRED: { color: 'error', label: '需处理' }
+}
+
 export function summarizeImageStatus(statuses: readonly string[]): ProductImageSummaryStatus {
   const activeStatuses = statuses.filter((status) => status !== 'HISTORICAL' && status !== 'DISCARDED')
   if (activeStatuses.includes('FAILED')) return 'ACTION_REQUIRED'

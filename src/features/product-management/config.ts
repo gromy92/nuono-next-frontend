@@ -10,5 +10,3 @@ export const defaultProductListFilters: ProductListFilters = {
   stockFilter: 'all',
   operationStageFilter: 'all'
 };
-
-export const FEATURE_PRODUCT_INSIGHTS_ENABLED = true;

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ProductListRowPayload, ProductSyncStatus } from '../types';
-import { isProductPublishTaskActive, textInputValue } from '../utils';
+import { isProductPublishTaskActive } from '../utils/workbench';
+import { textInputValue } from '../utils/common';
 import type { ProductManagementWorkspace } from '../workspaceTypes';
 import { buildProductGroupRows, countUngroupedProductRows, type ProductGroupRow } from './productGroupRows';
 import { ProductSnapshotHiddenForm } from '../components/ProductSnapshotHiddenForm';

@@ -1,0 +1,272 @@
+
+.competitor-analysis-dashboard-two-up {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.competitor-analysis-dashboard-current-panel {
+  align-self: start;
+  position: sticky;
+  top: 12px;
+}
+
+.competitor-analysis-dashboard-current-item {
+  align-items: flex-start;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 48px minmax(0, 1fr);
+  min-width: 0;
+  padding: 10px;
+  text-align: left;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.competitor-analysis-dashboard-current-item:hover,
+.competitor-analysis-dashboard-current-item:focus-visible {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.competitor-analysis-dashboard-current-thumb {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  display: flex;
+  height: 48px;
+  justify-content: center;
+  overflow: hidden;
+  width: 48px;
+}
+
+.competitor-analysis-dashboard-current-thumb img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.competitor-analysis-dashboard-current-thumb img[src^="data:image/gif"] {
+  display: none;
+}
+
+.competitor-analysis-dashboard-current-body {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.competitor-analysis-dashboard-current-title-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.competitor-analysis-dashboard-current-title {
+  color: #334155;
+  display: block;
+  font-size: 12px;
+}
+
+.competitor-analysis-dashboard-current-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.competitor-analysis-dashboard-current-stats span {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  color: #475569;
+  font-size: 12px;
+  line-height: 1.2;
+  padding: 3px 8px;
+}
+
+.competitor-analysis-dashboard-current-empty {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.competitor-analysis-rank-change-list,
+.competitor-analysis-attribute-change-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.competitor-analysis-rank-change-item,
+.competitor-analysis-attribute-change-item {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 62px;
+  min-width: 0;
+  padding: 10px;
+  text-align: left;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.competitor-analysis-rank-change-item:hover,
+.competitor-analysis-rank-change-item:focus-visible,
+.competitor-analysis-attribute-change-item:hover,
+.competitor-analysis-attribute-change-item:focus-visible {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.competitor-analysis-rank-change-main {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.competitor-analysis-rank-change-title-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.competitor-analysis-rank-change-value {
+  align-items: center;
+  color: #64748b;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 13px;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.competitor-analysis-rank-change-value strong {
+  color: #111827;
+  font-size: 16px;
+}
+
+.competitor-analysis-dashboard-empty {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 220px;
+}
+
+.competitor-analysis-price-change-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.competitor-analysis-detail-change-tables {
+  align-items: start;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.competitor-analysis-detail-change-table {
+  align-content: start;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px;
+}
+
+.competitor-analysis-detail-change-table-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.competitor-analysis-detail-change-table-header strong {
+  color: #111827;
+  font-size: 14px;
+}
+
+.competitor-analysis-detail-change-table-header span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.competitor-analysis-detail-change-table-empty {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 180px;
+}
+
+.competitor-analysis-price-change-item {
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+  padding: 8px 10px;
+}
+
+.competitor-analysis-price-change-item-priority {
+  background: #fffafa;
+  border-color: #ef4444;
+  box-shadow: inset 3px 0 0 #ef4444;
+}
+
+.competitor-analysis-price-change-product {
+  align-items: start;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 50px minmax(0, 1fr);
+  min-width: 0;
+}
+
+.competitor-analysis-price-change-media {
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+  min-width: 0;
+  width: 50px;
+}
+
+.competitor-analysis-price-change-thumb {
+  align-items: center;
+  aspect-ratio: 1;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  color: #94a3b8;
+  display: flex;
+  font-size: 11px;
+  justify-content: center;
+  overflow: hidden;
+  width: 50px;
+}
+
+.competitor-analysis-price-change-thumb img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}

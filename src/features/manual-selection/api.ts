@@ -4,6 +4,7 @@ import {
   recollectSourceCollection
 } from '../source-collection/api'
 import { apiFetch, readApiErrorMessage } from '../../shared/api'
+import { fetchProductClassificationOptions } from '../product-domain/productClassificationApi'
 import type { ProductSelectionSourceCollection } from '../source-collection/types'
 import type { ManualSelectionSystemCategoryOption } from './profitCategoryMatching'
 import type {
@@ -11,7 +12,6 @@ import type {
   ManualSelectionAli1688ProcurementInfo,
   ManualSelectionAnalysisItemView,
   ManualSelectionCompetitor,
-  ManualSelectionGroupProfitEstimateSnapshot,
   ManualSelectionGroupView
 } from './types'
 
@@ -86,12 +86,6 @@ export function loadManualSelectionGroups(
   }
   return parseManualSelectionResponse<ManualSelectionGroupView[]>(
     apiFetch(`/api/product-selection/groups?${params.toString()}`)
-  )
-}
-
-export function loadManualSelectionGroup(groupId: string): Promise<ManualSelectionGroupView> {
-  return parseManualSelectionResponse<ManualSelectionGroupView>(
-    apiFetch(`/api/product-selection/groups/${encodeURIComponent(groupId)}`)
   )
 }
 
@@ -184,34 +178,6 @@ export function saveManualSelectionGroupProcurement(
   )
 }
 
-export function loadManualSelectionGroupProfitEstimate(
-  groupId: string
-): Promise<ManualSelectionGroupProfitEstimateSnapshot> {
-  return parseManualSelectionResponse<ManualSelectionGroupProfitEstimateSnapshot>(
-    apiFetch(`/api/product-selection/groups/${encodeURIComponent(groupId)}/profit-estimate`)
-  )
-}
-
-export function saveManualSelectionGroupProfitEstimate(
-  groupId: string,
-  values: {
-    currencyCode?: string
-    profitAmount?: number
-    profitMargin?: number
-    snapshot?: Record<string, unknown>
-  }
-): Promise<ManualSelectionGroupProfitEstimateSnapshot> {
-  return parseManualSelectionResponse<ManualSelectionGroupProfitEstimateSnapshot>(
-    apiFetch(`/api/product-selection/groups/${encodeURIComponent(groupId)}/profit-estimate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(values)
-    })
-  )
-}
-
 export function saveManualSelectionGroupCompetitors(
   groupId: string,
   competitors: ManualSelectionCompetitor[]
@@ -277,20 +243,19 @@ export function loadManualSelectionSystemCategories(
   storeCode: string | undefined,
   options: { query?: string; limit?: number; includeGlobalFulltypes?: boolean } = {}
 ): Promise<ManualSelectionSystemCategoryOption[]> {
-  return parseManualSelectionResponse<{ fulltypes?: ManualSelectionSystemCategoryOption[] }>(
-    apiFetch('/api/product-master/classification-options', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        storeCode,
-        fulltypeQuery: options.query || '',
-        limit: options.limit || 80,
-        includeGlobalFulltypes: options.includeGlobalFulltypes === true
-      })
-    })
-  ).then((payload) => payload.fulltypes || [])
+  return fetchProductClassificationOptions({
+    storeCode,
+    fulltypeQuery: options.query || '',
+    limit: options.limit || 80,
+    includeGlobalFulltypes: options.includeGlobalFulltypes === true
+  }).then((payload) =>
+    (payload.fulltypes || [])
+      .map((option) => ({
+        ...option,
+        value: option.value || option.label || ''
+      }))
+      .filter((option) => option.value)
+  )
 }
 
 export function saveManualSelectionAnalysisItemProcurement(

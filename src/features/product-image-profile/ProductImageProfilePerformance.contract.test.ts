@@ -18,7 +18,7 @@ const pageSource = readFeatureSource(
   'ProductImageSystemImage.tsx',
   'useProductImageProfileData.ts'
 )
-const sidebarSource = fs.readFileSync(path.join(process.cwd(), 'src/features/product-image-profile/ProductImageProfileSidebar.tsx'), 'utf8')
+const sidebarSource = readFeatureSource('ProductImageProfileSidebar.tsx', 'profileSummaryStatus.ts')
 
 assert.equal(
   apiSource.includes('ProductImageProfileSummaryView'),

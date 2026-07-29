@@ -1,0 +1,124 @@
+.replenishment-plan-suggestion-tag.is-added {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #6b7280;
+}
+
+.replenishment-plan-suggestion-tag.is-partial {
+  border-color: #fdba74;
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.replenishment-plan-suggestion-tag.is-blocked {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.replenishment-plan-suggestion-tag.is-sea-eta-risk {
+  background: #fff1f0;
+  border-color: #ff7875;
+  color: #a8071a;
+}
+
+.replenishment-plan-suggestion-tag.is-sea-eta-risk .replenishment-plan-suggestion-status {
+  background: #fff1f0;
+  color: #a8071a;
+}
+
+.replenishment-plan-suggestion-status {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
+.replenishment-plan-suggestion-status.is-added {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.replenishment-plan-suggestion-status.is-pending {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.replenishment-plan-suggestion-status.is-none {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.replenishment-plan-draft-quantity-prefix {
+  font-size: 12px;
+  line-height: 17px;
+  white-space: nowrap;
+}
+
+.replenishment-plan-draft-transport-cell {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.replenishment-plan-window-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.replenishment-plan-window-line {
+  display: grid;
+  grid-template-columns: 32px 84px 32px max-content;
+  column-gap: 6px;
+  align-items: baseline;
+  width: 100%;
+  min-width: 0;
+}
+
+.replenishment-plan-window-line .ant-typography {
+  font-size: 12px;
+}
+
+.replenishment-plan-window-value {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.replenishment-plan-risk {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.replenishment-plan-risk-muted {
+  font-size: 12px;
+}
+
+.replenishment-plan-row-actions {
+  width: 100%;
+}
+
+.replenishment-plan-row-actions .ant-btn {
+  padding-inline: 8px;
+  height: 24px;
+}
+
+@media (max-width: 1280px) {
+  .replenishment-plan-tab .ant-table-thead > tr > th,
+  .replenishment-plan-tab .ant-table-tbody > tr > td {
+    padding-inline: 8px;
+  }
+
+  .replenishment-plan-inbound-summary,
+  .replenishment-plan-inbound-batch {
+    grid-template-columns: minmax(96px, 1fr) 38px minmax(80px, max-content);
+    column-gap: 6px;
+  }
+}

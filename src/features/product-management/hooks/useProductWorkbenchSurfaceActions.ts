@@ -5,15 +5,15 @@ import { findMockProductItem } from '../mockData';
 import { createMockProductWorkbenchPayload } from '../workspaceHelpers';
 import {
   buildProductSummarySurfaceFromSample,
-  buildProductSummarySurfaceFromWorkbench,
+  buildProductSummarySurfaceFromWorkbench
+} from '../utils/summary';
+import {
   buildProductWorkbenchContext,
   buildProductWorkbenchPayloadFromState,
-  buildProductWorkbenchState,
-  cloneRecordList,
-  findProductByIdentity,
-  getProductStableIdentityKey,
-  nowSyncTime
-} from '../utils';
+  buildProductWorkbenchState
+} from '../utils/workbench';
+import { cloneRecordList, nowSyncTime } from '../utils/common';
+import { findProductByIdentity, getProductStableIdentityKey } from '../../product-domain/productIdentity';
 import type {
   ProductListRowPayload,
   ProductListSummaryPayload,

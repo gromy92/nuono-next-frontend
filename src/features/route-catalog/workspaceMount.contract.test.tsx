@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert'
 import type { ReactElement } from 'react'
+import type { AuthSession } from '../auth/session'
 import {
   LazyWorkspaceBoundary,
   createLazyWorkspaceMount,
@@ -62,15 +63,48 @@ try {
   assert.equal(reloadCount, 1, 'an unrelated failure must propagate without reloading')
 
   let loaderCalls = 0
+  const TestSessionWorkspace = ({ session }: { session: AuthSession }) => (
+    <span>{session.accountNo}</span>
+  )
   const mount = createLazyWorkspaceMount(async () => {
     loaderCalls += 1
-    return { default: TestWorkspace }
+    return { default: TestSessionWorkspace }
   })
+  const session: AuthSession = {
+    userId: 307,
+    accountNo: 'workspace-mount-contract',
+    bindingStatus: 'BOUND'
+  }
   assert.equal(Object.isFrozen(mount), true, 'a mount Adapter must be frozen at creation')
   assert.equal(loaderCalls, 0, 'creating a mount Adapter must not execute its loader')
-  const mountElement = (mount as () => ReactElement)()
+  const mountElement = mount({ active: true, menuKey: 'product-manage', session }) as ReactElement<{
+    children: ReactElement<{ session: AuthSession }>
+  }>
   assert.strictEqual(mountElement.type, LazyWorkspaceBoundary)
+  assert.strictEqual(
+    mountElement.props.children.props.session,
+    session,
+    'the mount Interface must pass the authenticated session to the lazy workspace'
+  )
   assert.equal(loaderCalls, 0, 'creating the lazy React element must not execute its loader')
+
+  const DerivedWorkspace = ({ operatorName }: { operatorName: string }) => (
+    <span>{operatorName}</span>
+  )
+  const mappedMount = createLazyWorkspaceMount(
+    async () => ({ default: DerivedWorkspace }),
+    ({ session: currentSession }) => ({
+      operatorName: currentSession.realName || currentSession.accountNo
+    })
+  )
+  const mappedElement = mappedMount({ active: true, menuKey: 'product-manage', session }) as ReactElement<{
+    children: ReactElement<{ operatorName: string }>
+  }>
+  assert.equal(
+    mappedElement.props.children.props.operatorName,
+    'workspace-mount-contract',
+    'a mount Adapter may deterministically derive page props from the session Interface'
+  )
 } finally {
   if (previousWindowDescriptor) {
     Object.defineProperty(globalThis, 'window', previousWindowDescriptor)

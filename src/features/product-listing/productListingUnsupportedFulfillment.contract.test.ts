@@ -28,12 +28,13 @@ for (const field of ['fbp', 'warehouseId', 'warehouseCode', 'quantity']) {
 
 const editorSource = readFileSync(new URL('./ProductListingDetailEditor.tsx', import.meta.url), 'utf8')
 const offerTabSource = readFileSync(
-  new URL('../product-management/components/ProductOfferTab.tsx', import.meta.url),
+  new URL('../product-editor/ProductOfferTab.tsx', import.meta.url),
   'utf8'
 )
 
 assert(
-  editorSource.includes('hideOfferStockSection') &&
-    offerTabSource.includes('!hideOfferStockSection'),
-  'the listing editor must hide inventory and fulfillment controls that Noon listing does not write'
+  !editorSource.includes('offerStockSection=') &&
+    offerTabSource.includes('{offerStockSection ? (') &&
+    offerTabSource.includes('{offerStockSection}'),
+  'the listing editor must omit the management-owned inventory slot that Noon listing does not write'
 )

@@ -7,7 +7,7 @@ import {
 } from '@ant-design/icons';
 import { Button, Input, Select, Tooltip } from 'antd';
 import { useCallback } from 'react';
-import { FormToolbarLayout } from '../../app-shell/FormToolbarLayout';
+import { FormToolbarLayout } from '../../../shared/ui/FormToolbarLayout';
 import type { ProductListFilters } from '../types';
 import { PRODUCT_OPERATION_STAGE_FILTER_OPTIONS } from '../utils/operationStage';
 import type { ProductManagementWorkspace } from '../workspaceTypes';

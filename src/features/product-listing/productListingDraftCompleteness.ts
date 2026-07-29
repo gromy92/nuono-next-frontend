@@ -1,6 +1,5 @@
-import { parseOptionalNumber } from '../product-management/utils/common'
-import { collectOfferPricingValidationIssues } from '../product-management/utils/offerPricingValidation'
-import type { ProductFieldDomainKey } from '../product-management/types'
+import { collectProductOfferPricingValidationIssues } from '../product-domain/productOfferPricing'
+import type { ProductFieldDomainKey } from '../product-editor/productFieldDomain'
 import type { ProductListingEditorDraft } from './productDetailAdapter'
 
 export type ProductListingDraftCompletenessIssue = {
@@ -47,7 +46,7 @@ export function collectProductListingDraftCompletenessIssues(
   const requirementIssues = REQUIRED_REQUIREMENTS
     .map((requirement) => validateRequirement(draft, requirement))
     .filter((issue): issue is ProductListingDraftCompletenessIssue => Boolean(issue))
-  const pricingIssues = collectOfferPricingValidationIssues(draft, '当前站点').map((item) => ({
+  const pricingIssues = collectProductOfferPricingValidationIssues(draft, '当前站点').map((item) => ({
     fieldKey: item.fieldKey,
     domainKey: 'site' as const,
     severity: 'error' as const,
@@ -118,4 +117,19 @@ function text(value: unknown) {
     return ''
   }
   return String(value).trim()
+}
+
+function parseOptionalNumber(value: unknown) {
+  if (value === null || value === undefined || value === '') {
+    return null
+  }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+  const normalized = String(value).replace(/,/g, '').trim()
+  if (!normalized) {
+    return null
+  }
+  const parsed = Number(normalized)
+  return Number.isFinite(parsed) ? parsed : null
 }

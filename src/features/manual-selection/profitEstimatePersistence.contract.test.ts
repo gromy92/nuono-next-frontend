@@ -3,18 +3,27 @@ import path from 'node:path'
 import assert from 'node:assert/strict'
 
 const featureDir = path.resolve('src/features/manual-selection')
-const apiSource = fs.readFileSync(path.join(featureDir, 'api.ts'), 'utf8')
-const modalSource = fs.readFileSync(
-  path.join(featureDir, 'components/ManualSelectionProfitEstimateModal.tsx'),
+const apiSource = fs.readFileSync(
+  path.resolve('src/features/selection-analysis/api.ts'),
   'utf8'
 )
-const pageSource = fs.readFileSync(path.join(featureDir, 'ManualSelectionPage.tsx'), 'utf8')
+const modalSource = [
+  'components/ManualSelectionProfitEstimateModal.tsx',
+  'components/useManualSelectionProfitEstimateData.ts',
+  'components/manualSelectionProfitEstimateModel.tsx',
+  'components/ManualSelectionProfitEstimateForm.tsx',
+  'components/ManualSelectionProfitEstimateResults.tsx'
+].map((fileName) => fs.readFileSync(path.join(featureDir, fileName), 'utf8')).join('\n')
+const groupActionsSource = fs.readFileSync(
+  path.join(featureDir, 'hooks/useManualSelectionGroupActions.ts'),
+  'utf8'
+)
 
 assert(
   apiSource.includes('/profit-estimate')
     && apiSource.includes('loadManualSelectionGroupProfitEstimate')
     && apiSource.includes('saveManualSelectionGroupProfitEstimate'),
-  'manual selection API should expose group-level profit estimate persistence'
+  'selection analysis API should own group-level profit estimate persistence'
 )
 
 assert(
@@ -48,6 +57,6 @@ assert(
 )
 
 assert(
-  /const handleProfitEstimateSaved = async \(\) => \{\s*setProfitEstimateSeed\(null\)/.test(pageSource),
+  /const handleProfitEstimateSaved = async \(\) => \{\s*setProfitEstimateSeed\(null\)/.test(groupActionsSource),
   'saving a profit estimate should close the current modal before refreshing group data'
 )

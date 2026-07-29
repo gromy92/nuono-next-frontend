@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import process from 'node:process';
-
 const baseUrl = stripTrailingSlash(
   process.env.COMPETITOR_ANALYSIS_API_BASE_URL || process.env.E2E_API_BASE_URL || 'http://127.0.0.1:18080'
 );
@@ -9,7 +8,6 @@ const siteCode = process.env.COMPETITOR_ANALYSIS_SITE_CODE || 'SA';
 const pageSize = boundedNumber(process.env.COMPETITOR_ANALYSIS_PAGE_SIZE, 100, 1, 100);
 const minTotal = boundedNumber(process.env.COMPETITOR_ANALYSIS_MIN_TOTAL, 1, 0, Number.MAX_SAFE_INTEGER);
 const requireChanges = process.env.COMPETITOR_ANALYSIS_REQUIRE_CHANGES !== 'false';
-
 const sortChecks = [
   { sortBy: 'candidateCountDesc', field: 'pendingCandidateCount', direction: 'desc', label: '候选数↓' },
   { sortBy: 'candidateCountAsc', field: 'pendingCandidateCount', direction: 'asc', label: '候选数↑' },
@@ -18,7 +16,6 @@ const sortChecks = [
   { sortBy: 'recent7dChangeCountDesc', field: 'recent7dCompetitorChangeCount', direction: 'desc', label: '7日变化次数↓' },
   { sortBy: 'recent7dChangeCountAsc', field: 'recent7dCompetitorChangeCount', direction: 'asc', label: '7日变化次数↑' }
 ];
-
 async function main() {
   const baselineList = await listBaselines({ sortBy: 'candidateCountDesc', pageSize });
   assert(Array.isArray(baselineList.items), 'product-baselines.items 必须是数组');
@@ -28,7 +25,6 @@ async function main() {
   );
   assert(baselineList.items.length > 0, 'product-baselines 当前页必须返回商品');
   baselineList.items.forEach(assertListItemData);
-
   const sortSummaries = [];
   for (const check of sortChecks) {
     const list = await listBaselines({ sortBy: check.sortBy, pageSize: Math.min(pageSize, 20) });
@@ -40,7 +36,6 @@ async function main() {
       values: list.items.slice(0, 5).map((item) => Number(item[check.field] ?? 0))
     });
   }
-
   const confirmedZero = await listBaselines({ confirmedCompetitorCountZero: true, pageSize: 10 });
   confirmedZero.items.forEach((item) => {
     assert.equal(Number(item.confirmedCompetitorCount ?? 0), 0, '监控为0筛选返回了非 0 监控商品');
@@ -49,10 +44,8 @@ async function main() {
   pendingZero.items.forEach((item) => {
     assert.equal(Number(item.pendingCandidateCount ?? 0), 0, '候选为0筛选返回了非 0 候选商品');
   });
-
   const detail = await findDetailWithRankAndCandidates(baselineList.items);
   assertDetailData(detail);
-
   const keywordId = chooseRankKeywordId(detail);
   const rankHistory = await requestJson(`/api/competitor-analysis/watch-products/${detail.watchProduct.id}/rank-history?${new URLSearchParams({
     keywordId: String(keywordId),
@@ -61,14 +54,12 @@ async function main() {
   assert(Array.isArray(rankHistory.items), 'rank-history.items 必须是数组');
   assert(rankHistory.items.length > 0, 'rank-history 必须返回至少一条排名事实');
   rankHistory.items.forEach(assertRankPointData);
-
   const changeProbe = await findProductChangesWithRows();
   assert(Array.isArray(changeProbe.changes.items), 'product-changes.items 必须是数组');
   if (requireChanges) {
     assert(changeProbe.changes.items.length > 0, 'product-changes 必须返回至少一组变化；如只想验证空态，设置 COMPETITOR_ANALYSIS_REQUIRE_CHANGES=false');
     changeProbe.changes.items.forEach(assertChangeGroupData);
   }
-
   console.log(JSON.stringify({
     ok: true,
     baseUrl,
@@ -84,7 +75,6 @@ async function main() {
     sortSummaries
   }, null, 2));
 }
-
 async function listBaselines(params = {}) {
   const query = new URLSearchParams({
     storeCode,
@@ -98,7 +88,6 @@ async function listBaselines(params = {}) {
   }
   return requestJson(`/api/competitor-analysis/product-baselines?${query}`);
 }
-
 async function findDetailWithRankAndCandidates(items) {
   let fallbackDetail = null;
   for (const item of items) {
@@ -115,7 +104,6 @@ async function findDetailWithRankAndCandidates(items) {
   assert(fallbackDetail, '当前列表没有可读取详情的已监控商品');
   return fallbackDetail;
 }
-
 async function findProductChangesWithRows() {
   const changedList = await listBaselines({ sortBy: 'recent7dChangeCountDesc', pageSize: Math.min(pageSize, 100) });
   for (const item of changedList.items) {
@@ -127,7 +115,6 @@ async function findProductChangesWithRows() {
   }
   return { watchProductId: changedList.items.find((item) => item.id)?.id ?? null, changes: { items: [] } };
 }
-
 async function requestJson(path, options = {}) {
   const { method = 'GET', body, expectedStatus = 200, timeoutMs = 15000 } = options;
   const response = await fetch(`${baseUrl}${path}`, {
@@ -149,7 +136,6 @@ async function requestJson(path, options = {}) {
   assert.equal(response.status, expectedStatus, `${method} ${path} 返回 ${response.status}: ${text.slice(0, 500)}${authHint}`);
   return payload;
 }
-
 function requestHeaders(body) {
   const headers = {};
   if (body) {
@@ -172,7 +158,6 @@ function requestHeaders(body) {
   }
   return headers;
 }
-
 function assertListItemData(item) {
   assert(item, '列表商品不能为空');
   assertString(item.storeCode, '列表商品 storeCode');
@@ -194,7 +179,6 @@ function assertListItemData(item) {
   assertNumber(item.recent7dChangedCompetitorCount, '列表商品 recent7dChangedCompetitorCount');
   assertNumber(item.recent7dCompetitorChangeCount, '列表商品 recent7dCompetitorChangeCount');
 }
-
 function assertDetailData(detail) {
   assert(detail?.watchProduct, '详情必须返回 watchProduct');
   const product = detail.watchProduct;
@@ -222,7 +206,6 @@ function assertDetailData(detail) {
   });
   detail.latestRankPoints.forEach(assertRankPointData);
 }
-
 function assertRankPointData(point) {
   assertNumber(point.keywordId, '排名 keywordId');
   assertString(point.keyword || point.noonProductCode, '排名 keyword/noonProductCode');
@@ -236,7 +219,6 @@ function assertRankPointData(point) {
     assertNumber(point.scanDepth, '排名 scanDepth');
   }
 }
-
 function assertChangeGroupData(group) {
   assertString(group.factDate, '变化 factDate');
   assertNoonCode(group.noonProductCode, '变化 noonProductCode');
@@ -249,7 +231,6 @@ function assertChangeGroupData(group) {
     assertString(change.changeType, '变化 changeType');
   });
 }
-
 function chooseRankKeywordId(detail) {
   const rankedPoint = detail.latestRankPoints.find((point) => point.keywordId);
   if (rankedPoint?.keywordId) {
@@ -257,7 +238,6 @@ function chooseRankKeywordId(detail) {
   }
   return detail.keywords[0].id;
 }
-
 function assertMonotonic(items, field, direction, label) {
   for (let index = 1; index < items.length; index += 1) {
     const previous = Number(items[index - 1]?.[field] ?? 0);
@@ -269,41 +249,33 @@ function assertMonotonic(items, field, direction, label) {
     }
   }
 }
-
 function assertString(value, label) {
   assert.equal(typeof value, 'string', `${label} 必须是字符串`);
   assert(value.trim().length > 0, `${label} 不能为空`);
 }
-
 function assertNumber(value, label) {
   assert.equal(typeof value, 'number', `${label} 必须是数字`);
   assert(Number.isFinite(value), `${label} 必须是有限数字`);
 }
-
 function assertNoonCode(value, label) {
   assertString(value, label);
   assert(isNoonCode(value), `${label} 必须是 Noon Z/N 码，实际 ${value}`);
 }
-
 function assertAnyNoonCode(values, label) {
   const validValue = values.find(isNoonCode);
   assert(validValue, `${label} 必须包含 Noon Z/N 码，实际 ${values.filter(Boolean).join(' / ') || '-'}`);
 }
-
 function isNoonCode(value) {
   return typeof value === 'string' && /^[ZN][A-Z0-9]{4,79}(?:-\d+)?$/i.test(value.trim());
 }
-
 function boundedNumber(rawValue, fallback, min, max) {
   const parsed = Number(rawValue ?? fallback);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(min, Math.min(max, parsed));
 }
-
 function stripTrailingSlash(value) {
   return String(value || '').replace(/\/+$/, '');
 }
-
 function isLoopbackBaseUrl(value) {
   try {
     const url = new URL(value);
@@ -312,5 +284,4 @@ function isLoopbackBaseUrl(value) {
     return false;
   }
 }
-
 await main();

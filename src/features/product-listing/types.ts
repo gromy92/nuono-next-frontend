@@ -1,6 +1,6 @@
-import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
-import type { ProductImageRoleAssignment } from '../product-management/types/productImageRole'
-import type { NoonImageAssetMetadata } from '../product-management/utils/noonImageRequirements'
+import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent'
+import type { NoonImageAssetMetadata } from '../product-image-profile/noonListingImageRequirements'
+import type { ProductImageRoleAssignment } from '../product-image-profile/productImageRole'
 
 export type ProductListingValidationIssue = {
   fieldKey: string

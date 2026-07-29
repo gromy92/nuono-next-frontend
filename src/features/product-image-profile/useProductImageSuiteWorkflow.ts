@@ -16,41 +16,10 @@ import {
   buildReviewRejectPayload
 } from './productImageReviewFeedback'
 import type {
-  ProductImageProfile,
-  ProductImageProfileTabKey,
   ProductImageSuite,
   ProductImageSuiteAsset
 } from './productImageProfileTypes'
-
-type Feedback = {
-  error: (content: string) => void
-  success: (content: string) => void
-  warning: (content: string) => void
-}
-
-type ConfirmModal = {
-  confirm: (options: {
-    cancelText: string
-    content: string
-    okText: string
-    onOk: () => void
-    title: string
-  }) => void
-}
-
-type SuiteWorkflowOptions = {
-  feedback: Feedback
-  modal: ConfirmModal
-  onMissingProfile: (tab: ProductImageProfileTabKey) => void
-  patchSelectedProfile: (updater: (profile: ProductImageProfile) => ProductImageProfile) => void
-  persistProfile: (profile: ProductImageProfile, showSuccess?: boolean) => Promise<ProductImageProfile | undefined>
-  replaceSelectedProfile: (currentId: string, nextProfile: ProductImageProfile) => void
-  requestOwnerId: number
-  selectedProfile?: ProductImageProfile
-  selectedSkinId?: number
-  storeCode: string
-  validSkinCount: number
-}
+import type { ProductImageSuiteWorkflowOptions } from './productImageSuiteWorkflowContracts'
 
 export function useProductImageSuiteWorkflow({
   feedback,
@@ -64,7 +33,7 @@ export function useProductImageSuiteWorkflow({
   selectedSkinId,
   storeCode,
   validSkinCount
-}: SuiteWorkflowOptions) {
+}: ProductImageSuiteWorkflowOptions) {
   const [creatingSuiteDraft, setCreatingSuiteDraft] = useState(false)
   const [reviewingSuite, setReviewingSuite] = useState<ProductImageSuite | null>(null)
   const [reviewAssetFeedback, setReviewAssetFeedback] = useState('')

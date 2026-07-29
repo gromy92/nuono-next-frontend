@@ -1,3 +1,14 @@
+import type { Dayjs } from 'dayjs';
+
+export type MasterDataBoardMode = 'user-account' | 'user-role' | 'system-role' | 'system-menu';
+
+export type MasterDataMessageApi = {
+  success: (content: string) => void;
+  error: (content: string) => void;
+  warning: (content: string) => void;
+  info: (content: string) => void;
+};
+
 export type MasterDataUser = {
   id: number;
   accountNo: string;
@@ -170,6 +181,55 @@ export type MasterDataUserDetail = {
     whApLimit?: number;
     chatgptTranslateLimit?: number;
   }>;
+};
+
+export type MasterDataUserDetailState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: MasterDataUserDetail }
+  | { status: 'error'; message: string };
+
+export type MasterDataUserFormValues = {
+  accountNo: string;
+  realName?: string;
+  phone?: string;
+  email?: string;
+  password?: string;
+  accountType?: string;
+  companyName?: string;
+  roleId?: number;
+  expiredTime?: Dayjs;
+  storeGroupKeys?: string[];
+};
+
+export type MasterDataRoleFormValues = {
+  id?: number;
+  name: string;
+  code?: string;
+  description?: string;
+  parentId?: number;
+  level?: number;
+  menuIds?: number[];
+};
+
+export type MasterDataMenuFormValues = {
+  id?: number;
+  name: string;
+  parentId?: number;
+  urlPath?: string;
+};
+
+export type MasterDataQuotaFormValues = {
+  listLimit?: number;
+  collectLimit?: number;
+  whApLimit?: number;
+  chatgptTranslateLimit?: number;
+};
+
+export type MasterDataPaymentFormValues = {
+  amount: number;
+  paymentDate: Dayjs;
+  remark?: string;
 };
 
 export type MasterDataOrgNode = {

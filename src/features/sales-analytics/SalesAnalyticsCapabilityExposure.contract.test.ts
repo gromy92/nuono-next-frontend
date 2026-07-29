@@ -2,18 +2,24 @@ import { strict as assert } from 'node:assert'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-const pageSource = readFileSync(
-  join(process.cwd(), 'src/features/sales-analytics/SalesAnalyticsPage.tsx'),
+const featureSource = [
+  'SalesAnalyticsPage.tsx',
+  'components/SalesAnalyticsWorkbench.tsx',
+  'components/ProductDetailDialog.tsx',
+  'presentation/productColumns.tsx',
+  'presentation/statusPresentation.tsx'
+].map((fileName) => readFileSync(
+  join(process.cwd(), 'src/features/sales-analytics', fileName),
   'utf8'
-)
+)).join('\n')
 
 assert.doesNotMatch(
-  pageSource,
+  featureSource,
   /sales-lifecycle-filter|lifecycleFilterOptions|lifecycleColor|lifecycleQualityLabel/,
   '已退役的商品生命周期不得继续作为销量分析的筛选、标签或健康度暴露'
 )
 assert.doesNotMatch(
-  pageSource,
+  featureSource,
   /productColumnHelp\.inTransit|key:\s*'inTransit'|在途\s*—|未接入字段/,
   '底层数据未接入的在途字段不得作为正式列或占位指标暴露'
 )

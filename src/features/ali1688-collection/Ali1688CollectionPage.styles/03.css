@@ -1,0 +1,73 @@
+.ali1688-score-track {
+  overflow: hidden;
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.ali1688-score-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #2563eb;
+}
+
+.ali1688-score-row strong {
+  color: #0f172a;
+  font-size: 12px;
+  text-align: right;
+}
+
+.ali1688-candidate-actions {
+  margin-top: auto;
+}
+
+@media (max-width: 1180px) {
+  .ali1688-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .ali1688-task-queue {
+    max-height: none;
+    min-height: auto;
+  }
+
+  .ali1688-candidate-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ali1688-pending-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .ali1688-candidate-grid,
+  .ali1688-pending-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ali1688-search,
+  .ali1688-source-select {
+    width: 100%;
+  }
+
+  .ali1688-toolbar,
+  .ali1688-section-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ali1688-task-actions,
+  .ali1688-section-head .ant-btn {
+    width: 100%;
+  }
+
+  .ali1688-task-actions {
+    justify-content: stretch;
+  }
+
+  .ali1688-toolbar > .ant-btn {
+    margin-left: 0;
+  }
+}

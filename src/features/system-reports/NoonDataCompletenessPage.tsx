@@ -1,21 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Alert, Button, Drawer, Input, Select, Space, Table, Typography, message } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
+import { Alert, Button, Drawer, Input, Select, Space, Table, message } from 'antd'
 import { FilterOutlined, ReloadOutlined } from '@ant-design/icons'
 import type { AuthSession } from '../auth/session'
 import { EChartPanel, buildDistributionPieOption } from '../../shared/charts'
 import { fetchNoonDataCompletenessOverview, fetchNoonDataGapPatrol } from './api'
 import {
-  CategoryTag,
   NoonDataDistributionStrip,
   NoonDataEmpty,
   NoonDataMetricGrid,
   NoonDataReportHeader,
-  NoonDataReportSection,
-  StatusTag,
-  formatDate,
-  formatDateTime
+  NoonDataReportSection
 } from './NoonDataReportBlocks'
+import {
+  buildNoonDataCompletenessColumns,
+  NOON_DATA_CATEGORY_OPTIONS,
+  NOON_DATA_GAP_COLUMNS,
+  NOON_DATA_HISTORY_STATUS_OPTIONS,
+  NOON_DATA_LATEST_STATUS_OPTIONS
+} from './noonDataCompletenessTable'
 import type {
   NoonDataCompletenessFilters,
   NoonDataCompletenessOverview,
@@ -23,8 +25,6 @@ import type {
   NoonDataGapPatrol,
   NoonDataGapRow
 } from './types'
-
-const { Text } = Typography
 
 type NoonDataCompletenessPageProps = {
   session: AuthSession
@@ -39,35 +39,6 @@ type GapLoadState =
   | { status: 'idle' | 'loading'; data?: NoonDataGapPatrol; message?: string }
   | { status: 'success'; data: NoonDataGapPatrol; message?: string }
   | { status: 'error'; data?: NoonDataGapPatrol; message: string }
-
-const CATEGORY_OPTIONS = [
-  { label: '全部类别', value: '' },
-  { label: '商品列表', value: 'PRODUCT_LIST' },
-  { label: '商品详情', value: 'PRODUCT_DETAIL' },
-  { label: '销售订单', value: 'SALES_ORDER' },
-  { label: 'Product Views 销量/PV', value: 'SALES_PRODUCT_VIEWS' }
-]
-
-const LATEST_STATUS_OPTIONS = [
-  { label: '全部最新状态', value: '' },
-  { label: '就绪', value: 'READY' },
-  { label: '未完成', value: 'INCOMPLETE' },
-  { label: '待确认', value: 'PENDING_CONFIRMATION' },
-  { label: '失败', value: 'FAILED' },
-  { label: '已暂停', value: 'PAUSED' },
-  { label: '未接入', value: 'NOT_INTEGRATED' }
-]
-
-const HISTORY_STATUS_OPTIONS = [
-  { label: '全部历史状态', value: '' },
-  { label: '无需补全', value: 'NOT_REQUIRED' },
-  { label: '未完成', value: 'INCOMPLETE' },
-  { label: '已完成', value: 'COMPLETE' },
-  { label: '确认空', value: 'CONFIRMED_EMPTY' },
-  { label: '超出保留期', value: 'PROVIDER_RETENTION_LIMIT' },
-  { label: '失败', value: 'FAILED' },
-  { label: '未接入', value: 'NOT_INTEGRATED' }
-]
 
 export function NoonDataCompletenessPage({ session: _session }: NoonDataCompletenessPageProps) {
   const [state, setState] = useState<LoadState>({ status: 'idle' })
@@ -130,121 +101,7 @@ export function NoonDataCompletenessPage({ session: _session }: NoonDataComplete
   const categoryChartState = state.status === 'loading' ? 'loading' : categoryDistribution.length > 0 ? 'ready' : 'empty'
   const latestStatusChartState = state.status === 'loading' ? 'loading' : latestStatusDistribution.length > 0 ? 'ready' : 'empty'
   const historyStatusChartState = state.status === 'loading' ? 'loading' : historyStatusDistribution.length > 0 ? 'ready' : 'empty'
-  const columns = useMemo<ColumnsType<NoonDataCompletenessRow>>(
-    () => [
-      {
-        title: '店铺',
-        dataIndex: 'storeCode',
-        key: 'storeCode',
-        render: (_value, row) => (
-          <Space direction="vertical" size={0}>
-            <Text strong>{row.storeCode || '-'}</Text>
-            <Text type="secondary">{row.siteCode || '-'}</Text>
-          </Space>
-        )
-      },
-      {
-        title: '类别',
-        dataIndex: 'category',
-        key: 'category',
-        render: (value) => <CategoryTag value={value} />
-      },
-      {
-        title: '最新状态',
-        dataIndex: 'latestStatus',
-        key: 'latestStatus',
-        render: (value) => <StatusTag value={value} />
-      },
-      {
-        title: '历史补全',
-        dataIndex: 'historyStatus',
-        key: 'historyStatus',
-        render: (value) => <StatusTag value={value} />
-      },
-      {
-        title: '最新数据日',
-        dataIndex: 'latestDataDate',
-        key: 'latestDataDate',
-        render: formatDate
-      },
-      {
-        title: '历史覆盖',
-        key: 'historyRange',
-        render: (_value, row) => `${formatDate(row.historyCoveredFrom)} - ${formatDate(row.historyCoveredTo)}`
-      },
-      {
-        title: '巡检',
-        key: 'patrol',
-        render: (_value, row) => (
-          <Space direction="vertical" size={0}>
-            <Text>{row.patrolEnabled ? '已开启' : '未开启'}</Text>
-            <Text type={row.activeGapCount ? 'danger' : 'secondary'}>{row.activeGapCount ?? 0} 个缺口</Text>
-          </Space>
-        )
-      },
-      {
-        title: '下次巡检',
-        dataIndex: 'nextPatrolAt',
-        key: 'nextPatrolAt',
-        render: formatDateTime
-      },
-      {
-        title: '缺口',
-        key: 'gaps',
-        fixed: 'right',
-        width: 96,
-        render: (_value, row) => (
-          <Button size="small" onClick={() => openDrilldown(row)}>
-            查看缺口
-          </Button>
-        )
-      }
-    ],
-    []
-  )
-
-  const gapColumns = useMemo<ColumnsType<NoonDataGapRow>>(
-    () => [
-      {
-        title: '窗口',
-        dataIndex: 'windowType',
-        key: 'windowType',
-        width: 160
-      },
-      {
-        title: '日期范围',
-        key: 'dateRange',
-        width: 190,
-        render: (_value, row) => `${formatDate(row.dateFrom)} - ${formatDate(row.dateTo)}`
-      },
-      {
-        title: '状态',
-        dataIndex: 'status',
-        key: 'status',
-        width: 120,
-        render: (value) => <StatusTag value={value} />
-      },
-      {
-        title: '失败类型',
-        dataIndex: 'failureType',
-        key: 'failureType',
-        width: 190,
-        render: (value) => value || '-'
-      },
-      {
-        title: '证据',
-        key: 'evidence',
-        render: (_value, row) => (
-          <Space direction="vertical" size={0}>
-            <Text>task {row.linkedPullTaskId ?? '-'}</Text>
-            <Text type="secondary">batch {row.linkedSourceBatchId ?? '-'}</Text>
-            <Text type="secondary">{row.diagnosticSummary || '-'}</Text>
-          </Space>
-        )
-      }
-    ],
-    []
-  )
+  const columns = useMemo(() => buildNoonDataCompletenessColumns(openDrilldown), [])
 
   const applyFilters = () => {
     load(filters)
@@ -286,21 +143,21 @@ export function NoonDataCompletenessPage({ session: _session }: NoonDataComplete
           <Select
             aria-label="数据类别"
             value={filters.category ?? ''}
-            options={CATEGORY_OPTIONS}
+            options={NOON_DATA_CATEGORY_OPTIONS}
             onChange={(value) => setFilters((current) => ({ ...current, category: value || null }))}
             style={{ width: 190 }}
           />
           <Select
             aria-label="最新状态"
             value={filters.latestStatus ?? ''}
-            options={LATEST_STATUS_OPTIONS}
+            options={NOON_DATA_LATEST_STATUS_OPTIONS}
             onChange={(value) => setFilters((current) => ({ ...current, latestStatus: value || null }))}
             style={{ width: 150 }}
           />
           <Select
             aria-label="历史状态"
             value={filters.historyStatus ?? ''}
-            options={HISTORY_STATUS_OPTIONS}
+            options={NOON_DATA_HISTORY_STATUS_OPTIONS}
             onChange={(value) => setFilters((current) => ({ ...current, historyStatus: value || null }))}
             style={{ width: 150 }}
           />
@@ -350,7 +207,7 @@ export function NoonDataCompletenessPage({ session: _session }: NoonDataComplete
           <Table<NoonDataGapRow>
             size="small"
             rowKey={(row) => String(row.id ?? `${row.category}-${row.windowType}-${row.dateFrom}-${row.dateTo}`)}
-            columns={gapColumns}
+            columns={NOON_DATA_GAP_COLUMNS}
             dataSource={gapState.data?.rows ?? []}
             loading={gapState.status === 'loading'}
             pagination={{ pageSize: 8, showSizeChanger: false }}

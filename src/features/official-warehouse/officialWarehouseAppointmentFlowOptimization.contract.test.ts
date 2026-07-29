@@ -1,11 +1,11 @@
 import { strict as assert } from 'node:assert'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
+import {
+  officialWarehouseApiContractSource,
+  officialWarehousePageContractSource
+} from './officialWarehouseContractSources'
 
-const currentDir = dirname(fileURLToPath(import.meta.url))
-const pageSource = readFileSync(join(currentDir, 'OfficialWarehousePage.tsx'), 'utf8')
-const apiSource = readFileSync(join(currentDir, 'api.ts'), 'utf8')
+const pageSource = officialWarehousePageContractSource
+const apiSource = officialWarehouseApiContractSource
 
 assert.match(apiSource, /partnerSkus\?: string\[\]/, 'candidate API should accept exact batch PSKU search')
 assert.match(apiSource, /validateOfficialWarehouseAsn/, 'frontend should call the read-only ASN validation endpoint')
@@ -29,8 +29,8 @@ assert.match(pageSource, /sourceType:\s*'ali1688'/, 'missing dimensions should s
 assert.match(pageSource, /填写规格/, 'missing spec candidates should expose an inline maintenance action')
 
 const candidateColumnsSource = pageSource.slice(
-  pageSource.indexOf('const candidateColumns'),
-  pageSource.indexOf('const lineColumns')
+  pageSource.indexOf('export function buildOfficialWarehouseCandidateColumns'),
+  pageSource.indexOf('export function buildOfficialWarehouseInboundColumns')
 )
 const productColumnSource = candidateColumnsSource.slice(
   candidateColumnsSource.indexOf("title: '商品'"),

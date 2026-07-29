@@ -1,7 +1,7 @@
 import { Empty, Space, Typography } from 'antd';
 import type { ProductListRowPayload } from '../types';
-import { formatSnapshotValue, normalizeNoonImageUrl } from '../utils';
-import { ProductImageThumb } from '../components/ProductBaselineDisplay';
+import { normalizeNoonImageUrl } from '../../product-baseline/normalizeNoonImageUrl';
+import { ProductImageThumb } from '../../product-baseline';
 import { ProductGroupMemberList, type ProductGroupMemberListItem } from './ProductGroupMemberList';
 
 const { Text } = Typography;

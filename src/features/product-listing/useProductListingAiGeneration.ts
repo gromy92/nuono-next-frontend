@@ -1,6 +1,6 @@
 import { message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent'
 import { generateProductListingAiListing } from './api'
 import { aiListingDraftPatch, hasListingAiInput } from './productListingAiDraft'
 import {

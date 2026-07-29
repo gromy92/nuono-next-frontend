@@ -1,0 +1,91 @@
+@media (max-width: 1200px) {
+  .noon-ads-metric-grid {
+    grid-template-columns: repeat(3, minmax(140px, 1fr));
+  }
+
+  .noon-ads-advice-grid {
+    grid-template-columns: repeat(2, minmax(210px, 1fr));
+  }
+
+  .noon-ads-product-kpis {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+  }
+
+  .noon-ads-product-diagnosis-evidence {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+  }
+
+  .noon-ads-product-dossier {
+    flex-direction: column;
+  }
+
+  .noon-ads-product-dossier-facts {
+    min-width: 0;
+  }
+
+}
+
+@media (max-width: 760px) {
+  .noon-ads-tab-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .noon-ads-product-search {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .noon-ads-product-search > .ant-typography {
+    margin-left: 0;
+  }
+
+  .noon-ads-product-search .ant-input-affix-wrapper {
+    max-width: none;
+    width: 100%;
+  }
+
+  .noon-ads-product-search .ant-segmented {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .noon-ads-tab-controls .ant-picker {
+    width: 100%;
+  }
+
+  .noon-ads-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .noon-ads-advice-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .noon-ads-product-section-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .noon-ads-table-actions,
+  .noon-ads-product-section-actions {
+    justify-content: flex-start;
+  }
+
+  .noon-ads-product-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .noon-ads-product-diagnosis-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .noon-ads-product-diagnosis-evidence {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .noon-ads-product-dossier-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

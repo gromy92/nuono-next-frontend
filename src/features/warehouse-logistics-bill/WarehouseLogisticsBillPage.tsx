@@ -21,7 +21,7 @@ type WarehouseLogisticsBillPageProps = {
   session?: AuthSession | null
 }
 
-export function WarehouseLogisticsBillPage({ session }: WarehouseLogisticsBillPageProps) {
+export function WarehouseLogisticsBillPage(_props: WarehouseLogisticsBillPageProps) {
   const [bills, setBills] = useState<LogisticsBill[]>([])
   const [keyword, setKeyword] = useState('')
   const [loading, setLoading] = useState(false)

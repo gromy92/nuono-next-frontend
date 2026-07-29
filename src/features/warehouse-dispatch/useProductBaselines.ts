@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchProductListDataset } from '../product-management/api'
+import { fetchProductListDataset } from '../product-domain/productListApi'
 import { buildProductBaselineMap } from './readyDomain'
 import type { ProductBaselineSummary } from './workbenchModels'
 

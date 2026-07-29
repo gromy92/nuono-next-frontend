@@ -1,11 +1,22 @@
-import { useEffect } from 'react';
-import type { ProfitQuickSignalsPayload } from '../profit-calculator/domain';
+import { type Dispatch, type SetStateAction, useEffect } from 'react';
+import type {
+  ProcurementProfitSignalsState,
+  ProfitQuickSignalsPayload
+} from '../profit-calculator/domain';
+import type { buildProcurementQuickSignalsRequest } from './profitSignals';
+import type { ProcurementDemandItem } from './types';
+
+type Options = {
+  selectedProcurementItem?: ProcurementDemandItem;
+  selectedProcurementQuickSignalsRequest: ReturnType<typeof buildProcurementQuickSignalsRequest>;
+  setProcurementProfitSignalsState: Dispatch<SetStateAction<ProcurementProfitSignalsState>>;
+};
 
 export function useProcurementProfitSignals({
   selectedProcurementItem,
   selectedProcurementQuickSignalsRequest,
   setProcurementProfitSignalsState
-}: any) {
+}: Options) {
   useEffect(() => {
     if (!selectedProcurementItem?.id || !selectedProcurementQuickSignalsRequest?.candidates.length) {
       setProcurementProfitSignalsState({ status: 'idle' });

@@ -1,26 +1,19 @@
-import { useEffect, useMemo } from 'react';
-import type { Dispatch, RefObject, SetStateAction } from 'react';
-import { isVisibleDetailedAttributeRecord } from '../productAttributeTemplate';
+import { useEffect, useMemo, type Dispatch, type RefObject, type SetStateAction } from 'react';
+import { isVisibleDetailedAttributeRecord } from '../../product-editor/productAttributeTemplate';
 import { productSharedSnapshot } from '../workspaceHelpers';
+import { areSnapshotPartsEqual, normalizeSnapshotTextList, normalizeStringList, siteOfferEditableFieldsEqual, siteOfferCode } from '../utils/common';
 import {
-  areSnapshotPartsEqual,
   buildProductInsightMetrics,
   buildProductSiteSummary,
-  buildProductFieldDomainSurface,
-  buildProductSummarySurfaceFromWorkbench,
   buildProductWarehouseStockRows,
-  countProductContentProgress,
-  findProductByIdentity,
-  getProductStableIdentityKey,
-  normalizeSnapshotTextList,
-  normalizeStringList,
-  pickAttributeValue,
-  productHistoryEntryMeta,
-  productSyncStatusMeta,
-  siteOfferEditableFieldsEqual,
-  siteOfferCode,
-  textInputValue
-} from '../utils';
+  countProductContentProgress
+} from '../utils/workbenchDerived';
+import { buildProductFieldDomainSurface } from '../utils/fieldDomain';
+import { buildProductSummarySurfaceFromWorkbench } from '../utils/summary';
+import { findProductByIdentity, getProductStableIdentityKey } from '../../product-domain/productIdentity';
+import { pickAttributeValue } from '../utils/fieldDomainIssues';
+import { productHistoryEntryMeta } from '../utils/workbench';
+import { productSyncStatusMeta } from '../../product-baseline';
 import type {
   ProductDetailTabRequest,
   ProductListRowPayload,

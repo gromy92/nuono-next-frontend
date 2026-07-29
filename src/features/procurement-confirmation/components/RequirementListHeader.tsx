@@ -1,5 +1,5 @@
 import { Card, Input, Space, Tag, Typography } from 'antd';
-import { FormToolbarLayout } from '../../app-shell/FormToolbarLayout';
+import { FormToolbarLayout } from '../../../shared/ui/FormToolbarLayout';
 import type { ProcurementRequirementRecord } from '../types';
 
 const { Search } = Input;

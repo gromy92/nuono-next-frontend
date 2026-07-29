@@ -12,6 +12,11 @@ function normalizeGrantedMenuName(menuName?: string | null) {
   return (menuName || '').trim()
 }
 
+function isSameOrChildGrantedPath(path: string, prefix: string) {
+  const normalizedPrefix = normalizeWorkspacePath(prefix)
+  return path === normalizedPrefix || path.startsWith(`${normalizedPrefix}/`)
+}
+
 export function matchGrantedMenuToWorkspaceMenuKeys(
   menu: NonNullable<AuthSession['grantedMenus']>[number]
 ) {
@@ -22,7 +27,7 @@ export function matchGrantedMenuToWorkspaceMenuKeys(
       (urlPath) => normalizeWorkspacePath(urlPath) === normalizedPath
     )
     const hasPathPrefixMatch = rule.urlPathPrefixes?.some((urlPathPrefix) =>
-      normalizedPath.startsWith(normalizeWorkspacePath(urlPathPrefix))
+      isSameOrChildGrantedPath(normalizedPath, urlPathPrefix)
     )
     const hasNameMatch = rule.menuNames?.includes(normalizedName)
     return hasPathMatch || hasPathPrefixMatch || hasNameMatch ? rule.keys : []
@@ -84,7 +89,11 @@ export function resolveSessionAllowedMenuKeys(session: AuthSession | null) {
   }
 
   const grantedMenus = session.grantedMenus ?? []
-  if (!grantedMenus.length && !isBossSession(session)) {
+  if (
+    !grantedMenus.length
+    && !isBossSession(session)
+    && !isSystemAdminSession(session)
+  ) {
     return [] as AppMenuKey[]
   }
 

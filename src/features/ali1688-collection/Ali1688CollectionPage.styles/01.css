@@ -1,0 +1,237 @@
+.ali1688-workbench {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.ali1688-toolbar,
+.ali1688-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ali1688-toolbar {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ali1688-search {
+  width: 280px;
+}
+
+.ali1688-source-select {
+  width: 150px;
+}
+
+.ali1688-task-filter {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.ali1688-toolbar > .ant-btn {
+  margin-left: auto;
+}
+
+.ali1688-workspace {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.ali1688-task-queue,
+.ali1688-detail {
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ali1688-task-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 260px);
+  min-height: 520px;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.ali1688-task-card {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.ali1688-task-card:hover,
+.ali1688-task-card.is-active {
+  border-color: #2563eb;
+  background: #f8fbff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.ali1688-task-card-head,
+.ali1688-task-progress > div,
+.ali1688-task-mini-metrics,
+.ali1688-candidate-topline,
+.ali1688-candidate-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ali1688-task-source {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ali1688-task-title.ant-typography {
+  margin: 10px 0 8px;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.ali1688-task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.ali1688-task-meta span:not(:last-child)::after {
+  content: "/";
+  margin-left: 6px;
+  color: #cbd5e1;
+}
+
+.ali1688-task-progress {
+  margin-top: 12px;
+}
+
+.ali1688-task-progress span,
+.ali1688-task-mini-metrics {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.ali1688-task-progress strong {
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.ali1688-task-mini-metrics {
+  margin-top: 8px;
+}
+
+.ali1688-detail {
+  min-height: 520px;
+  padding: 16px;
+}
+
+.ali1688-image-placeholder {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #f1f5f9;
+}
+
+.ali1688-image-placeholder {
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ali1688-candidate-section {
+  margin-top: 0;
+}
+
+.ali1688-section-head {
+  margin-bottom: 12px;
+}
+
+.ali1688-section-head h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.ali1688-task-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ali1688-section-head span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.ali1688-candidate-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ali1688-pending-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ali1688-pending-slot {
+  min-width: 0;
+  padding: 10px;
+  border: 1px dashed #bfdbfe;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.ali1688-pending-slot-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.ali1688-pending-slot-head span {
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ali1688-pending-slot strong,
+.ali1688-pending-slot .ant-typography {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ali1688-pending-slot strong {
+  color: #0f172a;
+  font-size: 13px;
+}

@@ -1,0 +1,218 @@
+
+.competitor-analysis-rank-report-panel {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.competitor-analysis-rank-insight-strip {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.competitor-analysis-rank-insight-item {
+  align-items: center;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 7px 10px;
+}
+
+.competitor-analysis-rank-insight-item .ant-typography:last-child {
+  flex: 0 1 auto;
+  font-size: 14px;
+  min-width: 0;
+  text-align: right;
+}
+
+.competitor-analysis-rank-insight-item-strong {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+}
+
+.competitor-analysis-rank-insight-item-muted {
+  color: #8c8c8c;
+}
+
+.competitor-analysis-rank-empty-panel {
+  align-items: center;
+  background: #fafafa;
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-height: 96px;
+  padding: 18px;
+  text-align: center;
+}
+
+.competitor-analysis-race-card-title {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.competitor-analysis-rank-zone-legend {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.competitor-analysis-rank-zone {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  padding: 0 6px;
+}
+
+.competitor-analysis-rank-zone-top10 {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #237804;
+}
+
+.competitor-analysis-rank-zone-top20 {
+  background: #f6ffed;
+  border-color: #d9f7be;
+  color: #3f6600;
+}
+
+.competitor-analysis-rank-zone-top50 {
+  background: #fffbe6;
+  border-color: #ffe58f;
+  color: #ad6800;
+}
+
+.competitor-analysis-rank-zone-top100 {
+  background: #fafafa;
+  border-color: #d9d9d9;
+  color: #595959;
+}
+
+.competitor-analysis-rank-heatmap-card .ant-card-body {
+  padding: 10px 12px 12px;
+}
+
+.competitor-analysis-rank-heatmap {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.competitor-analysis-rank-heatmap-corner,
+.competitor-analysis-rank-heatmap-date {
+  color: #8c8c8c;
+  font-size: 12px;
+  line-height: 18px;
+  min-width: 0;
+  padding: 0 4px;
+}
+
+.competitor-analysis-rank-heatmap-date {
+  text-align: center;
+}
+
+.competitor-analysis-rank-heatmap-product {
+  align-items: center;
+  border: 1px solid #f0f0f0;
+  border-radius: 5px;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 6px;
+}
+
+.competitor-analysis-rank-heatmap-product .ant-typography {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.competitor-analysis-competitor-link-button {
+  flex: 0 0 auto;
+  height: 20px;
+  min-width: 20px;
+  padding: 0;
+  width: 20px;
+}
+
+.competitor-analysis-rank-heatmap-product-self {
+  background: #f0f7ff;
+  border-color: #91caff;
+}
+
+.competitor-analysis-rank-heatmap-product > span:first-child {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 8px;
+  width: 8px;
+}
+
+.competitor-analysis-rank-heatmap-cell {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  min-height: 30px;
+  min-width: 0;
+  padding: 3px 4px;
+}
+
+.competitor-analysis-rank-heatmap-cell span {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.competitor-analysis-rank-heatmap-cell em {
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  font-size: 9px;
+  font-style: normal;
+  line-height: 12px;
+  padding: 0 2px;
+}
+
+.competitor-analysis-rank-heatmap-cell-top10 {
+  background: #d9f7be;
+  border-color: #95de64;
+  color: #135200;
+}
+
+.competitor-analysis-rank-heatmap-cell-top20 {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #237804;
+}
+
+.competitor-analysis-rank-heatmap-cell-top50 {
+  background: #fff7e6;
+  border-color: #ffd591;
+  color: #ad4e00;
+}
+
+.competitor-analysis-rank-heatmap-cell-top100 {
+  background: #fafafa;
+  border-color: #d9d9d9;
+  color: #595959;
+}
+
+.competitor-analysis-rank-heatmap-cell-missing {
+  background: #fff;
+  border-color: #f0f0f0;
+  color: #bfbfbf;
+}

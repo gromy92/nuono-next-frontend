@@ -16,13 +16,11 @@ export function resolvePreferredInitializationStoreCode(
 }
 
 export function resolveSelectedInitializationStoreCode({
-  currentStoreCode,
   enableStoreSelection,
   preferredStoreCode,
   selectedStoreCodeOverride,
   storeSyncState
 }: {
-  currentStoreCode?: string;
   enableStoreSelection: boolean;
   preferredStoreCode?: string;
   selectedStoreCodeOverride?: string;

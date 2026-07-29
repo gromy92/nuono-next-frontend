@@ -1,7 +1,12 @@
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 
-const storeBoardSource = readFileSync('src/features/master-data/StoreManagementBoard.tsx', 'utf8');
+const storeBoardSource = [
+  'src/features/master-data/StoreManagementBoard.tsx',
+  'src/features/master-data/StoreManagementView.tsx',
+  'src/features/master-data/useStoreManagementColumns.tsx',
+  'src/features/master-data/storeManagementPresentation.tsx'
+].map((path) => readFileSync(path, 'utf8')).join('\n');
 const storeApiSource = readFileSync('src/features/store-sync/api.ts', 'utf8');
 const storeTypesSource = readFileSync('src/features/store-sync/types.ts', 'utf8');
 

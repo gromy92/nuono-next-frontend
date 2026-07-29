@@ -1,6 +1,6 @@
 import { parseOptionalNumber, textInputValue } from './common';
-import { collectOfferPricingValidationIssues } from './offerPricingValidation';
-import { isVisibleDetailedAttributeRecord } from '../productAttributeTemplate';
+import { collectProductOfferPricingValidationIssues } from '../../product-domain/productOfferPricing';
+import { isVisibleDetailedAttributeRecord } from '../../product-editor/productAttributeTemplate';
 
 export function pickAttributeValue(attribute: Record<string, unknown>) {
   return (
@@ -53,7 +53,7 @@ export function collectSiteOfferValidationIssues(offer: Record<string, unknown> 
   if (price === null || price <= 0) {
     issues.push(`${label} 缺少有效售价。`);
   }
-  issues.push(...collectOfferPricingValidationIssues(offer, label).map((issue) => issue.message));
+  issues.push(...collectProductOfferPricingValidationIssues(offer, label).map((issue) => issue.message));
 
   return issues;
 }

@@ -1,12 +1,19 @@
 import { lazy, Suspense, type ComponentType, type FunctionComponent, type ReactNode } from 'react'
 import { Card, Spin } from 'antd'
+import type { AuthSession } from '../auth/session'
+import type { AppMenuKey } from './routeDefinitions'
 
 const DYNAMIC_IMPORT_RELOAD_KEY = 'nuono:dynamic-import-reload'
 
 type WorkspaceModule<T extends ComponentType<any>> = { default: T }
-type ZeroProps = Record<never, never>
 
-export type WorkspaceMountAdapter = FunctionComponent<ZeroProps>
+export type WorkspaceMountProps = {
+  readonly active: boolean
+  readonly menuKey: AppMenuKey
+  readonly session: AuthSession
+}
+
+export type WorkspaceMountAdapter = FunctionComponent<WorkspaceMountProps>
 
 function isDynamicImportLoadFailure(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || '')
@@ -57,13 +64,22 @@ export function LazyWorkspaceBoundary({ children }: { children: ReactNode }) {
 
 export function createLazyWorkspaceMount(
   loader: () => Promise<WorkspaceModule<WorkspaceMountAdapter>>
+): WorkspaceMountAdapter
+export function createLazyWorkspaceMount<PageProps extends object>(
+  loader: () => Promise<WorkspaceModule<ComponentType<PageProps>>>,
+  mapProps: (props: WorkspaceMountProps) => PageProps
+): WorkspaceMountAdapter
+export function createLazyWorkspaceMount(
+  loader: () => Promise<WorkspaceModule<ComponentType<any>>>,
+  mapProps?: (props: WorkspaceMountProps) => object
 ): WorkspaceMountAdapter {
   const LazyWorkspace = lazyWorkspace(loader)
 
-  const mountAdapter: WorkspaceMountAdapter = function LazyWorkspaceMountAdapter() {
+  const mountAdapter: WorkspaceMountAdapter = function LazyWorkspaceMountAdapter(props) {
+    const pageProps = mapProps ? mapProps(props) : props
     return (
       <LazyWorkspaceBoundary>
-        <LazyWorkspace />
+        <LazyWorkspace {...pageProps} />
       </LazyWorkspaceBoundary>
     )
   }

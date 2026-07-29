@@ -6,14 +6,19 @@ import { fileURLToPath } from 'node:url'
 const featuresDir = dirname(fileURLToPath(import.meta.url))
 
 const officialWarehousePage = readFileSync(join(featuresDir, 'official-warehouse/OfficialWarehousePage.tsx'), 'utf8')
-const officialWarehouseStatistics = readFileSync(
-  join(featuresDir, 'official-warehouse/OfficialWarehouseStatisticsPanel.tsx'),
-  'utf8'
-)
-const officialWarehouseStatisticsDomain = readFileSync(
-  join(featuresDir, 'official-warehouse/statisticsDomain.ts'),
-  'utf8'
-)
+const officialWarehouseStatistics = [
+  'OfficialWarehouseStatisticsPanel.tsx',
+  'OfficialWarehouseStatisticsTables.tsx',
+  'ProductStockSourcePreview.tsx',
+  'useOfficialWarehouseStatistics.ts'
+].map((fileName) => readFileSync(join(featuresDir, 'official-warehouse', fileName), 'utf8')).join('\n')
+const officialWarehouseStatisticsDomain = [
+  'statisticsDomain.ts',
+  'stockStatisticsDomain.ts',
+  'productStockSourceInference.ts',
+  'productStockSourceChain.ts',
+  'inboundStatisticsDomain.ts'
+].map((fileName) => readFileSync(join(featuresDir, 'official-warehouse', fileName), 'utf8')).join('\n')
 const officialWarehouseStatisticsApi = readFileSync(
   join(featuresDir, 'official-warehouse/statisticsApi.ts'),
   'utf8'
@@ -24,15 +29,29 @@ const warehouseDispatch = [
   'receiptDomain.ts'
 ].map((fileName) => readFileSync(join(featuresDir, 'warehouse-dispatch', fileName), 'utf8')).join('\n')
 const warehouseDispatchApi = readFileSync(join(featuresDir, 'warehouse-dispatch/api.ts'), 'utf8')
-const ali1688SkuPurchaseHistory = readFileSync(
-  join(featuresDir, 'ali1688-sku-purchase-history/Ali1688SkuPurchaseHistoryPage.tsx'),
+const ali1688SkuPurchaseHistory = [
+  'Ali1688SkuPurchaseHistoryPage.tsx',
+  'components/ProductPurchaseCells.tsx',
+  'components/SkuPurchaseHistoryWorkbench.tsx',
+  'model/purchaseBatchSources.ts'
+].map((fileName) => readFileSync(
+  join(featuresDir, 'ali1688-sku-purchase-history', fileName),
   'utf8'
-)
-const ali1688HistoricalOrders = readFileSync(
-  join(featuresDir, 'ali1688-historical-orders/Ali1688HistoricalOrdersPage.tsx'),
+)).join('\n')
+const ali1688HistoricalOrders = [
+  'Ali1688HistoricalOrdersPage.tsx',
+  'components/Ali1688ProductLinkEditor.tsx',
+  'presentation/productCells.tsx'
+].map((fileName) => readFileSync(
+  join(featuresDir, 'ali1688-historical-orders', fileName),
   'utf8'
-)
-const profitCalculator = readFileSync(join(featuresDir, 'profit-calculator/useProfitCalculatorWorkspace.tsx'), 'utf8')
+)).join('\n')
+const profitCalculator = [
+  'useProfitCalculatorWorkspace.tsx',
+  'profitWorkspaceModel.ts',
+  'hooks/useProfitProductData.ts',
+  'hooks/useProfitCalculationActions.ts'
+].map((fileName) => readFileSync(join(featuresDir, 'profit-calculator', fileName), 'utf8')).join('\n')
 const salesAnalyticsPage = readFileSync(join(featuresDir, 'sales-analytics/SalesAnalyticsPage.tsx'), 'utf8')
 const salesAnalyticsApi = readFileSync(join(featuresDir, 'sales-analytics/api.ts'), 'utf8')
 

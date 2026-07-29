@@ -1,11 +1,11 @@
 import {
   loadManualSelectionGroup,
   loadManualSelectionGroupProfitEstimate
-} from '../manual-selection/api'
+} from '../selection-analysis/api'
 import type {
   ManualSelectionGroupProfitEstimateSnapshot,
   ManualSelectionGroupView
-} from '../manual-selection/types'
+} from '../selection-analysis/types'
 import {
   fetchActiveProductListingDraft,
   fetchProductListingDraft
@@ -16,7 +16,7 @@ import {
   type ProductListingSourcePrefill
 } from './sourcePrefill'
 import type { ProductListingDraftView } from './types'
-import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent'
 
 type SourcePrefillHydrationLoaders = {
   loadManualSelectionGroup?: (groupId: string) => Promise<ManualSelectionGroupView>

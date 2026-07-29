@@ -1,0 +1,247 @@
+
+.competitor-analysis-price-change-thumb .ant-image {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.competitor-analysis-price-change-thumb .ant-image-mask {
+  font-size: 12px;
+}
+
+.competitor-analysis-price-change-image-meta {
+  color: #111827;
+  display: grid;
+  font-size: 11px;
+  font-weight: 700;
+  gap: 1px;
+  line-height: 1.18;
+  max-width: 50px;
+  text-align: center;
+}
+
+.competitor-analysis-price-change-image-meta span {
+  overflow-wrap: anywhere;
+}
+
+.competitor-analysis-price-change-product-text,
+.competitor-analysis-price-change-meta {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.competitor-analysis-price-change-heading {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  height: 20px;
+  line-height: 20px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.competitor-analysis-price-change-product-text span,
+.competitor-analysis-price-change-meta span {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.competitor-analysis-price-change-eyebrow {
+  color: #64748b;
+  flex: 0 0 auto;
+}
+
+.competitor-analysis-price-change-code {
+  color: #64748b;
+  flex: 1 1 auto;
+  font-size: 12px;
+  line-height: 1.25;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.competitor-analysis-price-change-code {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+a.competitor-analysis-price-change-code:hover {
+  color: #1677ff;
+}
+
+.competitor-analysis-price-change-primary {
+  align-items: baseline;
+  color: #111827;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 16px;
+  font-weight: 700;
+  gap: 4px 6px;
+  line-height: 1.18;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.competitor-analysis-price-change-primary .ant-tag {
+  flex: 0 0 auto;
+  font-size: 11px;
+  line-height: 18px;
+  margin-inline-end: 0;
+}
+
+.competitor-analysis-price-change-direction {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.competitor-analysis-price-change-direction .ant-tag {
+  flex: 0 0 auto;
+  margin-inline-end: 0;
+}
+
+.competitor-analysis-price-change-direction strong {
+  color: #111827;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.competitor-analysis-price-change-line {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow: visible;
+  position: relative;
+  white-space: nowrap;
+}
+
+.competitor-analysis-price-change-line[data-tooltip]:hover::after {
+  background: rgba(17, 24, 39, 0.96);
+  border-radius: 6px;
+  bottom: calc(100% + 6px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.24);
+  color: #fff;
+  content: attr(data-tooltip);
+  font-size: 12px;
+  left: 0;
+  line-height: 1.45;
+  max-width: min(520px, 70vw);
+  min-width: 260px;
+  overflow-wrap: anywhere;
+  padding: 8px 10px;
+  position: absolute;
+  white-space: normal;
+  z-index: 20;
+}
+
+.competitor-analysis-price-change-line .ant-tag {
+  flex: 0 0 auto;
+  margin-inline-end: 0;
+}
+
+.competitor-analysis-price-change-line .ant-tooltip-open,
+.competitor-analysis-price-change-line-text,
+.competitor-analysis-price-change-line-link {
+  display: inline-block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.competitor-analysis-price-change-line-text {
+  color: inherit;
+}
+
+.competitor-analysis-price-change-line-link {
+  color: #2563eb;
+}
+
+.competitor-analysis-price-change-line-link:hover {
+  color: #1677ff;
+}
+
+.competitor-analysis-price-change-line-tooltip .ant-tooltip-inner {
+  max-width: 520px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.competitor-analysis-price-change-action {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.competitor-analysis-price-change-action .competitor-analysis-price-change-action-button {
+  color: #475569;
+  height: 20px;
+  line-height: 18px;
+  padding: 0 5px;
+}
+
+.competitor-analysis-price-change-action .competitor-analysis-price-change-action-button:hover {
+  color: #2563eb;
+}
+
+.competitor-analysis-dashboard-coverage-list {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.competitor-analysis-dashboard-coverage-item {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 72px auto;
+  min-height: 64px;
+  min-width: 0;
+  padding: 9px 10px;
+  text-align: left;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.competitor-analysis-dashboard-coverage-item:hover,
+.competitor-analysis-dashboard-coverage-item:focus-visible {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.competitor-analysis-dashboard-coverage-main {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.competitor-analysis-dashboard-coverage-meter {
+  background: #eef2ff;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+  width: 72px;
+}
+
+.competitor-analysis-dashboard-coverage-meter span {
+  background: #2563eb;
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}

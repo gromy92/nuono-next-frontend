@@ -3,7 +3,6 @@ import type { AuthSession } from '../auth/session';
 import { RequirementDetailPage } from './components/detail/RequirementDetailPage';
 import { RequirementListPage } from './components/RequirementListPage';
 import { ScenarioState } from './components/ScenarioState';
-import { PROCUREMENT_REQUIREMENT_CONFIRMATION_BASE_PATH } from './constants';
 import { useProcurementConfirmationPage } from './hooks/useProcurementConfirmationPage';
 import { navigateRequirementRoute } from './route';
 

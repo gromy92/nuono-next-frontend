@@ -7,7 +7,7 @@ import {
   BOSS_OPERATOR_MENU_KEYS,
   WORKSPACE_MENU_DEFINITIONS,
   WORKSPACE_SECTION_DEFINITIONS,
-  workspaceMenuContentKind,
+  workspaceMenuMount,
   workspaceMenuPath
 } from './WorkspaceMenuRegistry'
 import {
@@ -17,10 +17,10 @@ import {
 } from './WorkspaceRouting'
 
 assert.equal(workspaceMenuPath('official-warehouse'), '/warehouse/official-warehouse')
-assert.equal(workspaceMenuContentKind('official-warehouse'), 'official-warehouse')
+assert.equal(typeof workspaceMenuMount('official-warehouse'), 'function')
 assert.equal(OPERATIONS_PRODUCT_KEYWORDS_PATH, '/operations/product-keywords')
 assert.equal(workspaceMenuPath('operations-product-keywords'), OPERATIONS_PRODUCT_KEYWORDS_PATH)
-assert.equal(workspaceMenuContentKind('operations-product-keywords'), 'product-keywords')
+assert.equal(typeof workspaceMenuMount('operations-product-keywords'), 'function')
 assert.equal(fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8').includes('<title>诺诺管家</title>'), true)
 assert.equal(
   fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8').includes('href="%BASE_URL%favicon.png"'),
@@ -35,10 +35,6 @@ assert.equal(
 const shellFrameSource = fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellFrame.tsx'), 'utf8')
 const shellWorkspaceContentSource = fs.readFileSync(
   path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
-  'utf8'
-)
-const legacyCommerceWorkspaceSource = fs.readFileSync(
-  path.join(process.cwd(), 'src/features/app-shell/LegacyCommerceWorkspaceContent.tsx'),
   'utf8'
 )
 const shellWorkspaceNavigationSource = fs.readFileSync(
@@ -60,6 +56,21 @@ assert.equal(
   shellWorkspaceContentSource.includes('nuono-shell-workspace-pane-hidden'),
   true,
   'workspace content must hide inactive opened panes instead of unmounting them'
+)
+assert.match(
+  shellWorkspaceContentSource,
+  /<WorkspaceMount active=\{active\} menuKey=\{menuKey\} session=\{context\.shellSession\} \/>/,
+  'the Shell must pass lifecycle, route identity and authentication through the workspace mount Interface'
+)
+assert.equal(
+  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/LegacyOperationsWorkspaceContent.tsx')),
+  false,
+  'operations and report routes must not retain a second Legacy renderer registry'
+)
+assert.equal(
+  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/LegacyWorkspaceContent.tsx')),
+  false,
+  'all routes must use catalog-owned mount Adapters'
 )
 assert.deepEqual(
   workspaceContentMountKeys('user-store-noon', ['user-role']),
@@ -85,19 +96,15 @@ assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-listing'), t
 assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-pre-order-profit'), false)
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/listing'), 'purchase-listing')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/pre-order-profit'), null)
-assert.equal(legacyCommerceWorkspaceSource.includes('ProductListingPage'), true)
-assert.equal(legacyCommerceWorkspaceSource.includes('PreOrderProfitPage'), false)
 assert.equal(
-  fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
-    '../pre-order-profit/'
-  ),
-  false
+  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/LegacyCommerceWorkspaceContent.tsx')),
+  false,
+  'commerce routes must not retain a Legacy renderer registry'
 )
 assert.equal(
-  fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx'), 'utf8').includes(
-    '../product-listing/'
-  ),
-  true
+  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx')),
+  false,
+  'route-owned mount Adapters replace the former global lazy component registry'
 )
 
 const warehouseSection = WORKSPACE_SECTION_DEFINITIONS.find((section) => section.key === 'warehouse')

@@ -1,0 +1,85 @@
+.order-finance-order-summary-action {
+  font-size: 12px;
+}
+
+.order-finance-detail-loading {
+  padding: 24px 0;
+  text-align: center;
+}
+
+.order-finance-detail-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.order-finance-detail-summary span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--order-finance-border);
+  border-radius: 999px;
+  background: #f8fbff;
+  color: var(--order-finance-text-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.order-finance-fee-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.order-finance-fee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border: 1px solid var(--order-finance-border);
+  border-radius: 999px;
+  background: #fbfcfe;
+  font-size: 12px;
+}
+
+.order-finance-order-line-breakdown {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 120px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--order-finance-border);
+}
+
+.order-finance-order-line-breakdown:last-child {
+  border-bottom: 0;
+}
+
+.order-finance-order-line-type {
+  display: flex;
+  align-items: center;
+}
+
+.order-finance-order-line-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  margin-top: 2px;
+  border-top: 1px solid var(--order-finance-border);
+}
+
+@media (max-width: 768px) {
+  .order-finance-page .ant-card .ant-card-body {
+    padding: 14px;
+  }
+
+  .order-finance-page h4.ant-typography {
+    font-size: 17px;
+  }
+
+  .order-finance-page .ant-statistic-content {
+    font-size: 19px;
+  }
+}

@@ -1,7 +1,7 @@
 import { RobotOutlined } from '@ant-design/icons'
 import { Button, Input, Space, Tag, Typography } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { ProductDetailOfficialTabs } from '../product-management/components/ProductDetailOfficialTabs'
+import { ProductDetailOfficialTabs } from '../product-editor/ProductDetailOfficialTabs'
 import { validateProductListingFields } from './api'
 import { ProductListingAiResultPreview } from './ProductListingAiResultPreview'
 import {
@@ -12,12 +12,13 @@ import {
   productListingEditorDraftToSnapshot,
   productListingEditorDraftToSummary,
   normalizeProductListingEditorDraft,
-  updateProductListingKeyAttributeField,
   type ProductListingEditorDraft
 } from './productDetailAdapter'
-import type { ProductCompetitorContentMaterial } from '../product-management/types/competitorContent'
+import type { ProductCompetitorContentMaterial } from '../product-domain/productCompetitorContent'
 import type { ProductListingValidationIssue } from './types'
 import { useProductListingAiGeneration } from './useProductListingAiGeneration'
+import { createProductListingDetailFieldHandlers } from './createProductListingDetailFieldHandlers'
+import { listingEditorText } from './productListingDetailValueAdapters'
 
 const { Text } = Typography
 const EMPTY_COMPETITOR_MATERIALS: ProductCompetitorContentMaterial[] = []
@@ -53,7 +54,7 @@ export function ProductListingDetailEditor({
     () => (Array.isArray(snapshot.content.images) ? snapshot.content.images.map(String).filter(Boolean) : []),
     [snapshot.content.images]
   )
-  const barcodeForValidation = text(barcodeDraftForValidation).trim() || text(draft.barcode).trim()
+  const barcodeForValidation = listingEditorText(barcodeDraftForValidation).trim() || listingEditorText(draft.barcode).trim()
   const pskuValidationIssue = useMemo(
     () =>
       fieldValidationIssues.find(
@@ -70,8 +71,8 @@ export function ProductListingDetailEditor({
   )
 
   useEffect(() => {
-    const storeCode = text(draft.storeCode).trim()
-    const psku = text(draft.psku).trim()
+    const storeCode = listingEditorText(draft.storeCode).trim()
+    const psku = listingEditorText(draft.psku).trim()
     if (!storeCode || (!psku && !barcodeForValidation)) {
       setFieldValidationIssues([])
       return
@@ -107,137 +108,20 @@ export function ProductListingDetailEditor({
     setBarcodeDraftForValidation(value)
   }, [])
 
-  const patchDraft = (patch: Partial<ProductListingEditorDraft>) => {
-    onDraftChange((currentDraft) => normalizeProductListingEditorDraft({ ...currentDraft, ...patch }))
-  }
+  const {
+    openCurrentProductGallery,
+    patchDraft,
+    updateProductAttributeField,
+    updateProductMultilineField,
+    updateProductSectionField,
+    updateProductVariant,
+    updateSiteOfferField
+  } = createProductListingDetailFieldHandlers({ imageUrls, onDraftChange })
   const ai = useProductListingAiGeneration({
     draft,
     competitorMaterials: listingCompetitorMaterials,
     onPatchDraft: patchDraft
   })
-
-  const updateProductSectionField = (
-    section: 'identity' | 'taxonomy' | 'content' | 'group',
-    field: string,
-    value: unknown
-  ) => {
-    if (section === 'identity') {
-      if (field === 'brand') {
-        patchDraft({ productBrand: text(value) })
-      } else if (field === 'brandCode') {
-        patchDraft({ productBrandCode: text(value) })
-      } else if (field === 'barcode') {
-        patchDraft({ barcode: text(value) })
-      } else if (field === 'barcodes' && Array.isArray(value)) {
-        patchDraft({ barcode: text(value[0]) })
-      } else if (field === 'partnerSku' || field === 'pskuCode' || field === 'skuParent') {
-        patchDraft({ psku: text(value) })
-      }
-      return
-    }
-
-    if (section === 'taxonomy') {
-      if (field === 'productFulltype') {
-        patchDraft({ productFullType: text(value) })
-      } else if (field === 'family') {
-        patchDraft({ family: text(value) })
-      } else if (field === 'productType') {
-        patchDraft({ productType: text(value) })
-      } else if (field === 'productSubtype') {
-        patchDraft({ productSubType: text(value) })
-      }
-      return
-    }
-
-    if (section === 'content') {
-      if (field === 'titleCn') {
-        patchDraft({ productTitleCn: text(value) })
-      } else if (field === 'titleEn') {
-        patchDraft({ productTitleEn: text(value) })
-      } else if (field === 'titleAr') {
-        patchDraft({ productTitleAr: text(value) })
-      } else if (field === 'descriptionCn' || field === 'descriptionZh') {
-        patchDraft({ productDescriptionCn: text(value) })
-      } else if (field === 'descriptionEn') {
-        patchDraft({ productDescriptionEn: text(value) })
-      } else if (field === 'descriptionAr') {
-        patchDraft({ productDescriptionAr: text(value) })
-      } else if (field === 'highlightsZh') {
-        patchDraft({ productHighlightsCn: stringList(value) })
-      } else if (field === 'highlightsEn') {
-        patchDraft({ productHighlightsEn: stringList(value) })
-      } else if (field === 'highlightsAr') {
-        patchDraft({ productHighlightsAr: stringList(value) })
-      } else if (field === 'images') {
-        patchDraft({ imageUrls: stringList(value) })
-      } else if (field === 'imageRoleAssignments') {
-        patchDraft({ imageRoleAssignments: imageRoleAssignmentList(value) })
-      } else if (field === 'imageAssetMetadata') {
-        patchDraft({ imageAssetMetadata: imageAssetMetadataList(value) })
-      }
-    }
-  }
-
-  const updateProductMultilineField = (field: 'highlightsEn' | 'highlightsAr' | 'images', value: string) => {
-    if (field === 'images') {
-      patchDraft({ imageUrls: multilineList(value) })
-    } else if (field === 'highlightsEn') {
-      patchDraft({ productHighlightsEn: multilineList(value) })
-    } else {
-      patchDraft({ productHighlightsAr: multilineList(value) })
-    }
-  }
-
-  const updateSiteOfferField = (_storeCode: string, field: string, value: unknown) => {
-    if (field === 'price') {
-      patchDraft({ price: text(value) })
-    } else if (field === 'priceMin') {
-      patchDraft({ priceMin: text(value) })
-    } else if (field === 'priceMax') {
-      patchDraft({ priceMax: text(value) })
-    } else if (field === 'salePrice') {
-      patchDraft({ salePrice: text(value) })
-    } else if (field === 'saleStart') {
-      patchDraft({ saleStart: text(value) })
-    } else if (field === 'saleEnd') {
-      patchDraft({ saleEnd: text(value) })
-    } else if (field === 'idWarranty') {
-      patchDraft({ idWarranty: text(value) })
-    } else if (field === 'offerNote') {
-      patchDraft({ offerNote: text(value) })
-    }
-  }
-
-  const updateProductVariant = (index: number, field: 'childSku' | 'sizeEn' | 'sizeAr', value: string) => {
-    if (index !== 0) {
-      return
-    }
-    if (field === 'sizeEn') {
-      patchDraft({ sizeEn: value })
-    } else if (field === 'sizeAr') {
-      patchDraft({ sizeAr: value })
-    }
-  }
-
-  const updateProductAttributeField = (code: string, field: string, value: string) => {
-    if (['barcode', 'barcodes', 'ean', 'gtin', 'upc'].includes(code.toLowerCase())) {
-      patchDraft({ barcode: value })
-      return
-    }
-    onDraftChange((currentDraft) =>
-      normalizeProductListingEditorDraft({
-        ...currentDraft,
-        keyAttributes: updateProductListingKeyAttributeField(currentDraft.keyAttributes, code, field, value)
-      })
-    )
-  }
-
-  const openCurrentProductGallery = (index: number) => {
-    const imageUrl = imageUrls[index]
-    if (imageUrl) {
-      window.open(imageUrl, '_blank', 'noopener,noreferrer')
-    }
-  }
 
   const listingPskuEditor = (
     <div
@@ -314,18 +198,9 @@ export function ProductListingDetailEditor({
         defaultActiveKey="offer"
         productSiteDomain={domains.site}
         productSharedDomainDirtyCount={0}
-        productActionSubmitting={false}
         currentProductSummarySurface={summary}
         productSnapshotView={snapshot}
         activeProductSiteOffer={activeSiteOffer}
-        activeSiteDirty
-        activeSiteOfferCode={draft.storeCode}
-        productWarehouseStockRows={[]}
-        hideOfferStockSection
-        siteOfferColumns={[]}
-        productPlatformSignals={{}}
-        productPlatformRejectionReasons={[]}
-        productPlatformAffectingAttributes={[]}
         productContentDomain={domains.content}
         productContentProgressDone={contentProgress.done} productContentProgressTotal={contentProgress.total}
         productCompetitorMaterials={competitorMaterials}
@@ -335,12 +210,7 @@ export function ProductListingDetailEditor({
         productImageRoleAssignments={draft.imageRoleAssignments}
         productImageAssetMetadata={draft.imageAssetMetadata}
         productAttributesDomain={domains.attributes}
-        productRequiredAttributeCount={0}
-        productFilledRequiredAttributeCount={0}
         productGroupingDomain={domains.grouping}
-        productGroupMembers={[]}
-        productCandidateGroups={[]}
-        productListSourceItems={[]}
         productInsightMetrics={[]}
         productLeadImage={imageUrls[0]}
         allowEmptyImages
@@ -350,101 +220,13 @@ export function ProductListingDetailEditor({
         offerPresentation="listing-create"
         barcodeValidationIssue={barcodeValidationIssue}
         onBarcodeDraftChange={handleBarcodeDraftChange}
-        previewProductAction={() => undefined}
         updateSiteOfferField={updateSiteOfferField}
-        setActiveSiteOfferCode={() => undefined}
         updateProductSectionField={updateProductSectionField}
         updateProductMultilineField={updateProductMultilineField}
         openCurrentProductGallery={openCurrentProductGallery}
-        addProductVariant={() => undefined}
         updateProductVariant={updateProductVariant}
         removeProductVariant={() => undefined}
-        updateProductAxes={() => undefined}
         updateProductAttributeField={updateProductAttributeField}
     />
   )
-}
-
-function text(value: unknown) {
-  if (value === null || value === undefined) {
-    return ''
-  }
-  return String(value)
-}
-
-function stringList(value: unknown) {
-  if (Array.isArray(value)) {
-    return value.map((item) => text(item).trim()).filter(Boolean)
-  }
-  return []
-}
-
-function multilineList(value: string) {
-  return value
-    .split(/\n+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-}
-
-function imageRoleAssignmentList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  return value
-    .map((item) => {
-      if (!item || typeof item !== 'object' || Array.isArray(item)) {
-        return null
-      }
-      const record = item as Record<string, unknown>
-      const imageUrl = text(record.imageUrl).trim()
-      const imageRole = text(record.imageRole).trim()
-      const sortOrderValue = Number(record.sortOrder)
-      if (!imageUrl || !['MAIN', 'SIZE', 'DETAIL', 'SCENE', 'PACKAGE'].includes(imageRole)) {
-        return null
-      }
-      return {
-        imageUrl,
-        imageRole: imageRole as 'MAIN' | 'SIZE' | 'DETAIL' | 'SCENE' | 'PACKAGE',
-        sortOrder: Number.isFinite(sortOrderValue) ? Math.trunc(sortOrderValue) : undefined
-      }
-    })
-    .filter((item): item is NonNullable<typeof item> => Boolean(item))
-}
-
-function imageAssetMetadataList(value: unknown) {
-  if (!Array.isArray(value)) {
-    return []
-  }
-  return value
-    .map((item) => {
-      if (!item || typeof item !== 'object' || Array.isArray(item)) {
-        return null
-      }
-      const record = item as Record<string, unknown>
-      const imageUrl = text(record.imageUrl).trim()
-      const width = positiveNumber(record.width)
-      const height = positiveNumber(record.height)
-      if (!imageUrl || !width || !height) {
-        return null
-      }
-      return {
-        imageUrl,
-        width,
-        height,
-        aspectRatio: positiveNumber(record.aspectRatio),
-        noonReady: Boolean(record.noonReady),
-        sourceWidth: positiveNumber(record.sourceWidth),
-        sourceHeight: positiveNumber(record.sourceHeight),
-        adapted: Boolean(record.adapted),
-        adaptationTargetWidth: positiveNumber(record.adaptationTargetWidth),
-        adaptationTargetHeight: positiveNumber(record.adaptationTargetHeight),
-        sourceTooSmall: Boolean(record.sourceTooSmall)
-      }
-    })
-    .filter((item): item is NonNullable<typeof item> => Boolean(item))
-}
-
-function positiveNumber(value: unknown) {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
 }

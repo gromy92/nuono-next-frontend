@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Key } from 'react';
 import type { TablePaginationConfig } from 'antd/es/table';
 import type { AuthSession } from '../auth/session';
-import { fetchProductListDataset } from '../product-management/api';
-import type { ProductListRowPayload } from '../product-management/types';
+import { fetchProductListDataset } from '../product-domain/productListApi';
+import type { ProductListRowPayload } from '../product-domain/productListTypes';
 import { fetchCosts, fetchRateCards } from './productLogisticsCostApi';
 import type {
   CostDataStatus,

@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ProductListRowPayload, ProductListSummaryPayload } from './types';
-import { buildProductSummarySurfaceFromListItem, mergeProductListItemWithSummary } from './utils/summary';
+import { buildProductSummarySurfaceFromListItem } from '../product-baseline';
+import { mergeProductListItemWithSummary } from './utils/summary';
 
 const productManagementDir = dirname(fileURLToPath(import.meta.url));
 
@@ -13,8 +14,14 @@ function source(path: string) {
 
 const apiSource = source('./api.ts');
 const columnsSource = source('./productListColumns.tsx');
-const operationalCellsSource = source('./components/ProductListOperationalCells.tsx');
-const listTypesSource = source('./types/list.ts');
+const operationalCellsSource = [
+  source('./components/ProductListOperationalCells.tsx'),
+  source('./components/ProductListLiveStatusCell.tsx')
+].join('\n');
+const listTypesSource = readFileSync(
+  join(productManagementDir, '../product-domain/productListTypes.ts'),
+  'utf8'
+);
 
 assert.doesNotMatch(
   apiSource,

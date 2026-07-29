@@ -4,13 +4,13 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
-const panelSource = readFileSync(join(currentDir, 'OfficialWarehouseStatisticsPanel.tsx'), 'utf8')
-const styleSource = readFileSync(join(currentDir, 'OfficialWarehouseStatisticsPanel.css'), 'utf8')
-
-const currentStockDetailSource = panelSource.slice(
-  panelSource.indexOf('function CurrentStockDetail'),
-  panelSource.indexOf('function appointmentStatusLabel')
-)
+const currentStockDetailSource = readFileSync(join(currentDir, 'OfficialWarehouseStockCells.tsx'), 'utf8')
+const styleSource = [
+  'OfficialWarehouseStatisticsPanel.css',
+  'OfficialWarehouseStatisticsPanel.styles/01.css',
+  'OfficialWarehouseStatisticsPanel.styles/02.css',
+  'OfficialWarehouseStatisticsPanel.styles/03.css'
+].map((fileName) => readFileSync(join(currentDir, fileName), 'utf8')).join('\n')
 
 assert.match(
   currentStockDetailSource,

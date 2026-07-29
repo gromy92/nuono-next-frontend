@@ -79,10 +79,10 @@ assert.deepEqual(
   ['FAIL-001', 'REJECT-001', 'SYNC-FAIL-001']
 )
 
-const mutationSource = readFileSync(
-  new URL('./hooks/useProductListMutations.ts', import.meta.url),
-  'utf8'
-)
+const mutationSource = [
+  './hooks/useProductListMutations.ts',
+  './hooks/useApplyProductListSummary.ts'
+].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
 assert.match(
   mutationSource,
   /countProductListStatuses\(nextItems,\s*\{\},\s*false\)/,

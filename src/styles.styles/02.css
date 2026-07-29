@@ -1,0 +1,234 @@
+.nuono-shell-sidebar-rail-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: #2b2f42;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: default;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease;
+}
+
+.nuono-shell-sidebar-rail-item:hover {
+  color: #5e3cde;
+  background: #f1efff;
+}
+
+.nuono-shell-sidebar-rail-item-active {
+  color: #5e3cde;
+  background: #f1efff;
+}
+
+.nuono-shell-sidebar-popover {
+  position: absolute;
+  top: 0;
+  left: 48px;
+  z-index: 3001;
+  display: flex;
+  flex-direction: column;
+  width: 232px;
+  height: 100vh;
+  min-height: 0;
+  background: linear-gradient(180deg, #fcfdff 0%, #f6f7fd 100%);
+  border-right: 1px solid #e8ebf3;
+  box-shadow: 12px 0 28px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-10px);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+}
+
+.nuono-shell-sidebar-rail:hover .nuono-shell-sidebar-popover {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.nuono-shell-sidebar-popover-logo {
+  flex: 0 0 64px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 16px;
+  border-bottom: 1px solid #eceff7;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.nuono-shell-sidebar-popover-logo img {
+  width: 100%;
+  height: 40px;
+  object-fit: contain;
+}
+
+.nuono-shell-sidebar-popover-menu {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 14px 10px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.nuono-shell-sidebar-popover-menu .ant-menu {
+  border-inline-end: none !important;
+  background: transparent;
+  color: #2b2f42;
+  font-size: 15px;
+}
+
+.nuono-role-management-tabs .ant-tabs-nav {
+  margin-bottom: 14px;
+  overflow-x: auto;
+}
+
+.nuono-role-management-shell > .ant-card-body {
+  padding: 18px 22px 20px !important;
+}
+
+.nuono-role-management-tabs .ant-tabs-nav-wrap {
+  overflow: visible;
+}
+
+.nuono-role-management-tabs .ant-tabs-nav-list {
+  flex-wrap: wrap;
+  row-gap: 4px;
+  transform: none !important;
+}
+
+.nuono-role-management-tabs .ant-tabs-nav-operations {
+  display: none !important;
+}
+
+.nuono-fit-table .ant-table-content,
+.nuono-fit-table .ant-table-body {
+  overflow-x: auto !important;
+}
+
+.nuono-fit-table table {
+  width: 100% !important;
+  min-width: 100% !important;
+  table-layout: fixed !important;
+}
+
+.nuono-fit-table col {
+  min-width: unset !important;
+}
+
+.nuono-fit-table .ant-table-cell {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.nuono-fit-table .ant-table-cell .ant-btn-link {
+  padding-inline: 4px;
+}
+
+.nuono-legacy-account-table table {
+  width: 1080px !important;
+  min-width: 1080px !important;
+}
+
+.nuono-system-role-table table {
+  width: 1330px !important;
+  min-width: 1330px !important;
+}
+
+.nuono-system-menu-table table {
+  width: 1500px !important;
+  min-width: 1500px !important;
+}
+
+.nuono-fit-table .ant-table-cell-fix-right,
+.nuono-role-assignment-table .ant-table-cell-fix-right,
+.nuono-store-management-table .ant-table-cell-fix-right {
+  z-index: 4;
+  background: #ffffff !important;
+}
+
+.nuono-fit-table .ant-table-thead > tr > th.ant-table-cell-fix-right,
+.nuono-role-assignment-table .ant-table-thead > tr > th.ant-table-cell-fix-right,
+.nuono-store-management-table .ant-table-thead > tr > th.ant-table-cell-fix-right {
+  background: #fafafa !important;
+}
+
+.nuono-fit-table .ant-table-tbody > tr:hover > td.ant-table-cell-fix-right,
+.nuono-role-assignment-table .ant-table-tbody > tr:hover > td.ant-table-cell-fix-right,
+.nuono-store-management-table .ant-table-tbody > tr:hover > td.ant-table-cell-fix-right {
+  background: #ffffff !important;
+}
+
+.nuono-fit-table .ant-table-cell-fix-right-first::after,
+.nuono-role-assignment-table .ant-table-cell-fix-right-first::after,
+.nuono-store-management-table .ant-table-cell-fix-right-first::after {
+  box-shadow: inset -10px 0 8px -8px rgba(15, 23, 42, 0.18) !important;
+}
+
+.nuono-store-management-table .ant-table-content,
+.nuono-store-management-table .ant-table-body {
+  overflow-x: auto !important;
+}
+
+.nuono-store-management-table table {
+  width: 100% !important;
+  min-width: 1542px !important;
+  table-layout: fixed !important;
+}
+
+.nuono-store-management-table .ant-table-cell {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.nuono-store-management-table .ant-table-thead > tr > th {
+  padding: 7px 8px !important;
+  color: #172033;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.nuono-store-management-table .ant-table-tbody > tr > td {
+  padding: 6px 8px !important;
+  color: #1f2937;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.nuono-store-management-table .ant-table-cell .ant-btn-link {
+  padding-inline: 2px;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.nuono-store-compact-text {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nuono-store-compact-text-strong {
+  color: #111827;
+  font-weight: 650;
+}
+
+.nuono-store-manager-tags {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 3px 4px;
+  overflow: visible;
+}

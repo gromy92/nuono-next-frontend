@@ -1,11 +1,12 @@
 import { MOCK_PRODUCT_LIST_UI_STATES } from './mockData';
+import { nowSyncTime } from './utils/common';
+import { textInputValue } from './utils/common';
+import { mergeGalleryImageUrls } from '../product-baseline';
+import type { ProductListUiState, ProductWorkbenchPayload, StoreInitializationPayload } from './types';
 import {
-  cloneSnapshotPayload,
-  mergeGalleryImageUrls,
-  nowSyncTime,
-  textInputValue
-} from './utils';
-import type { ProductListUiState, ProductMasterSnapshotPayload, ProductWorkbenchPayload, StoreInitializationPayload } from './types';
+  createProductMasterSnapshotPayload,
+  type ProductMasterSnapshotPayload
+} from '../product-domain/productMasterSnapshot';
 
 export function createMockProductWorkbenchPayload(item: StoreInitializationPayload['productItems'][number]): ProductWorkbenchPayload {
   const uiState = MOCK_PRODUCT_LIST_UI_STATES[item.skuParent];
@@ -136,8 +137,8 @@ export function createMockProductWorkbenchPayload(item: StoreInitializationPaylo
     ]
   };
 
-  const baselineSnapshot = cloneSnapshotPayload(snapshot);
-  const draftSnapshot = cloneSnapshotPayload(snapshot);
+  const baselineSnapshot = createProductMasterSnapshotPayload(snapshot);
+  const draftSnapshot = createProductMasterSnapshotPayload(snapshot);
   if (uiState?.syncStatus === 'draft') {
     draftSnapshot.content = {
       ...draftSnapshot.content,

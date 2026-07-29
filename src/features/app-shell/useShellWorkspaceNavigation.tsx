@@ -1,12 +1,8 @@
-import { type Dispatch, type Key, type ReactNode, type SetStateAction, useCallback, useEffect, useMemo, useState } from 'react';
-import { Space, Tag } from 'antd';
+import { type Key, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import type { TabsProps } from 'antd';
-import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
-import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
-import type { ProductDetailTabRequest, ProductSummarySurface, ProductWorkspaceTabKey } from '../product-management/types';
-import { productSummaryPrimarySite, productSyncStatusMeta } from '../product-management/utils';
 import type { SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
+import type { WorkspaceOwnedTabsController } from '../route-catalog/WorkspaceOwnedTabs';
 import {
   isWorkspaceMenuKey,
   shouldShowWorkspaceMenuInTabs,
@@ -16,7 +12,6 @@ import {
   workspaceMenuTabLabel,
   workspaceTabKeyForMenuKey
 } from './WorkspaceMenuRegistry';
-
 function normalizeWorkspaceTabMenuKey(menuKey: AppMenuKey): AppMenuKey {
   return workspaceTabKeyForMenuKey(menuKey);
 }
@@ -40,54 +35,27 @@ function shouldShowActiveMenuPathLabel(menuKey: AppMenuKey) {
 
 type UseShellWorkspaceNavigationParams = {
   activeMenuKey: AppMenuKey;
-  goBackToProductManage: () => void;
-  hasProductDetailTab: boolean;
-  hasInTransitBoxDetailTab: boolean;
-  inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
-  productDetailSummarySurface?: ProductSummarySurface | null;
-  productDetailTabRequest: ProductDetailTabRequest | null;
-  requestCloseInTransitBoxDetailTab: () => Promise<void> | void;
-  requestCloseProductDetailTab: () => Promise<void> | void;
-  resolvedInTransitWorkspaceTabKey: 'purchase-in-transit-goods' | 'in-transit-box-detail';
-  resolvedProductWorkspaceTabKey: ProductWorkspaceTabKey;
+  ownedTabsController: WorkspaceOwnedTabsController;
   sessionAllowedMenuKeySet: Set<AppMenuKey>;
-  setActiveMenuKey: Dispatch<SetStateAction<AppMenuKey>>;
-  setActiveInTransitWorkspaceTabKey: Dispatch<SetStateAction<'purchase-in-transit-goods' | 'in-transit-box-detail'>>;
-  setActiveProductWorkspaceTabKey: Dispatch<SetStateAction<ProductWorkspaceTabKey>>;
-  shouldRenderProcurementRequirementConfirmation: boolean;
-  syncWorkspacePathForMenuKey: (menuKey: AppMenuKey) => void;
   visibleWorkspaceMenuItems: SidebarMenuItem[];
 };
 
 export function useShellWorkspaceNavigation({
   activeMenuKey,
-  goBackToProductManage,
-  hasProductDetailTab,
-  hasInTransitBoxDetailTab,
-  inTransitBoxDetailTabRequest,
-  productDetailSummarySurface,
-  productDetailTabRequest,
-  requestCloseInTransitBoxDetailTab,
-  requestCloseProductDetailTab,
-  resolvedInTransitWorkspaceTabKey,
-  resolvedProductWorkspaceTabKey,
+  ownedTabsController,
   sessionAllowedMenuKeySet,
-  setActiveMenuKey,
-  setActiveInTransitWorkspaceTabKey,
-  setActiveProductWorkspaceTabKey,
-  shouldRenderProcurementRequirementConfirmation,
-  syncWorkspacePathForMenuKey,
   visibleWorkspaceMenuItems
 }: UseShellWorkspaceNavigationParams) {
-  const [userRoleActiveTabKey, setUserRoleActiveTabKey] =
-    useState<RoleManagementWorkspaceTabKey>('user-role');
   const [openedWorkspaceTabKeys, setOpenedWorkspaceTabKeys] = useState<AppMenuKey[]>([
     'product-manage'
   ]);
 
+  const activeOwnedTab = ownedTabsController.tabs.find(
+    (tab) => tab.key === ownedTabsController.activeOwnedTabKey
+  );
   const activeMenuPathLabel = shouldShowActiveMenuPathLabel(activeMenuKey)
-    ? activeMenuKey === 'product-manage' && resolvedProductWorkspaceTabKey === 'product-detail'
-      ? '商品 / 商品详情'
+    ? activeOwnedTab?.parentMenuKey === activeMenuKey && activeOwnedTab.pathLabel
+      ? activeOwnedTab.pathLabel
       : workspaceMenuPathLabel(activeMenuKey)
     : null;
 
@@ -100,133 +68,35 @@ export function useShellWorkspaceNavigation({
         closable: workspaceMenuDefinition(key).closable
       }));
 
-    if (hasProductDetailTab) {
-      const detailSummary = productDetailSummarySurface;
-      const detailTitle = '商品详情';
-      const detailSite = detailSummary ? productSummaryPrimarySite(detailSummary) : '-';
-      const detailSyncMeta = detailSummary?.syncStatus ? productSyncStatusMeta(detailSummary.syncStatus) : null;
-      items.push({
-        key: 'product-detail',
-        label: (
-          <Space wrap={false} size={[6, 6]} style={{ maxWidth: 260 }}>
-            <span
-              style={{
-                display: 'inline-block',
-                maxWidth: 112,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                verticalAlign: 'bottom'
-              }}
-              title={detailTitle}
-            >
-              {detailTitle}
-            </span>
-            {detailSyncMeta ? (
-              <Tag color={detailSyncMeta.color} style={{ marginInlineEnd: 0 }}>
-                {detailSyncMeta.label}
-              </Tag>
-            ) : null}
-            {detailSite !== '-' ? (
-              <Tag color="default" style={{ marginInlineEnd: 0 }}>
-                {detailSite}
-              </Tag>
-            ) : null}
-          </Space>
-        ),
-        closable: true
-      });
-    }
-
-    if (hasInTransitBoxDetailTab) {
-      const batchReferenceNo = inTransitBoxDetailTabRequest?.batchReferenceNo || '批次';
-      items.push({
-        key: 'in-transit-box-detail',
-        label: (
-          <Space wrap={false} size={[6, 6]} style={{ maxWidth: 260 }}>
-            <span
-              style={{
-                display: 'inline-block',
-                maxWidth: 120,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                verticalAlign: 'bottom'
-              }}
-              title={batchReferenceNo}
-            >
-              商品明细
-            </span>
-            <Tag color="default" style={{ marginInlineEnd: 0 }}>
-              {batchReferenceNo}
-            </Tag>
-          </Space>
-        ),
-        closable: true
-      });
-    }
+    ownedTabsController.tabs.forEach((tab) => {
+      items.push({ key: tab.key, label: tab.label, closable: tab.closable });
+    });
 
     return items;
   }, [
-    activeMenuKey,
-    hasProductDetailTab,
-    hasInTransitBoxDetailTab,
-    inTransitBoxDetailTabRequest,
     openedWorkspaceTabKeys,
-    productDetailSummarySurface,
-    productDetailTabRequest,
+    ownedTabsController.tabs,
     sessionAllowedMenuKeySet,
-    shouldRenderProcurementRequirementConfirmation
   ]);
 
   const activeWorkspaceTabKey =
-    activeMenuKey === 'product-manage'
-      ? resolvedProductWorkspaceTabKey
-      : activeMenuKey === 'purchase-in-transit-goods'
-        ? resolvedInTransitWorkspaceTabKey
-        : normalizeWorkspaceTabMenuKey(activeMenuKey);
+    activeOwnedTab?.parentMenuKey === activeMenuKey
+      ? activeOwnedTab.key
+      : normalizeWorkspaceTabMenuKey(activeMenuKey);
 
   const handleWorkspaceTabChange = useCallback(
     (key: string) => {
-      if (key === 'product-manage') {
-        goBackToProductManage();
+      if (ownedTabsController.tabs.some((tab) => tab.key === key)) {
+        ownedTabsController.activateOwnedTab(key);
         return;
       }
 
       if (isWorkspaceMenuKey(key) && shouldShowWorkspaceMenuInTabs(key)) {
-        if (key === 'user-role') {
-          setUserRoleActiveTabKey('user-role');
-        }
-        if (key === 'purchase-in-transit-goods') {
-          setActiveInTransitWorkspaceTabKey('purchase-in-transit-goods');
-        }
-        setActiveMenuKey(key);
-        syncWorkspacePathForMenuKey(key);
+        ownedTabsController.activateParentMenu(key);
         return;
-      }
-
-      if (key === 'product-detail' && hasProductDetailTab) {
-        setActiveMenuKey('product-manage');
-        setActiveProductWorkspaceTabKey('product-detail');
-        syncWorkspacePathForMenuKey('product-manage');
-        return;
-      }
-
-      if (key === 'in-transit-box-detail' && hasInTransitBoxDetailTab) {
-        setActiveMenuKey('purchase-in-transit-goods');
-        setActiveInTransitWorkspaceTabKey('in-transit-box-detail');
-        syncWorkspacePathForMenuKey('purchase-in-transit-goods');
       }
     },
-    [
-      goBackToProductManage,
-      hasInTransitBoxDetailTab,
-      hasProductDetailTab,
-      setActiveInTransitWorkspaceTabKey,
-      setActiveMenuKey,
-      setActiveProductWorkspaceTabKey,
-      syncWorkspacePathForMenuKey
-    ]
+    [ownedTabsController]
   );
 
   const handleWorkspaceTabEdit = useCallback<NonNullable<TabsProps['onEdit']>>(
@@ -235,13 +105,8 @@ export function useShellWorkspaceNavigation({
         return;
       }
 
-      if (typeof targetKey === 'string' && targetKey === 'product-detail') {
-        void requestCloseProductDetailTab();
-        return;
-      }
-
-      if (typeof targetKey === 'string' && targetKey === 'in-transit-box-detail') {
-        void requestCloseInTransitBoxDetailTab();
+      if (typeof targetKey === 'string' && ownedTabsController.tabs.some((tab) => tab.key === targetKey)) {
+        void ownedTabsController.requestCloseOwnedTab(targetKey);
         return;
       }
 
@@ -256,22 +121,16 @@ export function useShellWorkspaceNavigation({
       setOpenedWorkspaceTabKeys(nextOpenedWorkspaceTabKeys);
       if (targetKey === activeWorkspaceTabKey) {
         const nextActiveMenuKey = nextWorkspaceMenuKeyAfterClose(openedWorkspaceTabKeys, targetKey);
-        if (!nextActiveMenuKey || nextActiveMenuKey === 'product-manage') {
-          goBackToProductManage();
+        if (!nextActiveMenuKey) {
           return;
         }
-        setActiveMenuKey(nextActiveMenuKey);
-        syncWorkspacePathForMenuKey(nextActiveMenuKey);
+        ownedTabsController.activateParentMenu(nextActiveMenuKey);
       }
     },
     [
       activeWorkspaceTabKey,
-      goBackToProductManage,
       openedWorkspaceTabKeys,
-      requestCloseInTransitBoxDetailTab,
-      requestCloseProductDetailTab,
-      setActiveMenuKey,
-      syncWorkspacePathForMenuKey
+      ownedTabsController
     ]
   );
 
@@ -314,18 +173,6 @@ export function useShellWorkspaceNavigation({
     );
   }, [sessionAllowedMenuKeySet]);
 
-  useEffect(() => {
-    if (activeMenuKey === 'user-store-noon') {
-      setUserRoleActiveTabKey('user-store-noon');
-      return;
-    }
-    if (activeMenuKey === 'user-role') {
-      setUserRoleActiveTabKey((currentValue) =>
-        currentValue === 'user-role-org' || currentValue === 'user-role-overview' ? currentValue : 'user-role'
-      );
-    }
-  }, [activeMenuKey]);
-
   const handleSidebarMenuClick = useCallback(
     ({ key }: { key: Key }) => {
       if (typeof key !== 'string') {
@@ -335,16 +182,9 @@ export function useShellWorkspaceNavigation({
       if (!sessionAllowedMenuKeySet.has(nextKey)) {
         return;
       }
-      if (nextKey === 'user-role') {
-        setUserRoleActiveTabKey('user-role');
-      }
-      setActiveMenuKey(nextKey);
-      if (nextKey === 'product-manage') {
-        setActiveProductWorkspaceTabKey('product-manage');
-      }
-      syncWorkspacePathForMenuKey(nextKey);
+      ownedTabsController.activateParentMenu(nextKey);
     },
-    [sessionAllowedMenuKeySet, setActiveMenuKey, setActiveProductWorkspaceTabKey, syncWorkspacePathForMenuKey]
+    [ownedTabsController, sessionAllowedMenuKeySet]
   );
 
   return {
@@ -357,10 +197,8 @@ export function useShellWorkspaceNavigation({
     handleWorkspaceTabEdit,
     openedWorkspaceTabKeys,
     setSidebarOpenKeys,
-    setUserRoleActiveTabKey,
     shouldRenderWorkspaceTabs,
     sidebarOpenKeys,
-    userRoleActiveTabKey,
     workspaceTabItems
   };
 }

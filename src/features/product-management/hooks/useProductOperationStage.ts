@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { message } from 'antd';
 import { updateProductOperationStage } from '../api';
 import type { ProductListDatasetState, ProductListRowPayload, ProductOperationStageCode } from '../types';
-import { getProductCurrentZCode, getProductListRowIdentityKey } from '../utils';
+import { getProductCurrentZCode, getProductListRowIdentityKey } from '../../product-domain/productIdentity';
 import { normalizeProductOperationStageCode, productOperationStageMeta } from '../utils/operationStage';
 
 type UseProductOperationStageParams = {

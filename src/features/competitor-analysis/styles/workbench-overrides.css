@@ -1,0 +1,239 @@
+
+.competitor-analysis-search-card .ant-card-body {
+  display: grid;
+  gap: 8px;
+}
+
+.competitor-analysis-list-card .ant-card-body {
+  padding-top: 4px;
+}
+
+.competitor-analysis-search-grid {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns:
+    minmax(220px, 1fr)
+    minmax(180px, 0.8fr)
+    minmax(220px, 1fr)
+    auto
+    auto;
+}
+
+.competitor-analysis-zero-filter-select {
+  min-width: 210px;
+}
+
+.competitor-analysis-product-title-cn,
+.competitor-analysis-product-title-en {
+  display: inline-block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.competitor-analysis-product-title-en {
+  color: rgba(0, 0, 0, 0.55);
+  font-weight: 400;
+}
+
+.competitor-analysis-inline-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.competitor-analysis-inline-form .ant-input {
+  min-width: 0;
+}
+
+.competitor-analysis-create-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1fr);
+}
+
+.competitor-analysis-create-grid .ant-select {
+  width: 100%;
+}
+
+.competitor-analysis-list-card {
+  min-width: 0;
+}
+
+.competitor-analysis-list-card .ant-card-body {
+  min-width: 0;
+}
+
+.competitor-analysis-product-table {
+  min-width: 0;
+}
+
+.competitor-analysis-product-table .ant-table,
+.competitor-analysis-product-table .ant-table-container,
+.competitor-analysis-product-table .ant-table-content {
+  min-width: 0;
+  overflow-x: visible;
+}
+
+.competitor-analysis-product-table .ant-table-cell {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+
+.competitor-analysis-product-table .ant-table-thead > tr > th {
+  white-space: nowrap;
+}
+
+.competitor-analysis-product-option-label {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 0;
+}
+
+.competitor-analysis-keyword-maintenance-list {
+  display: grid;
+  gap: 8px;
+}
+
+.competitor-analysis-keyword-maintenance-item {
+  align-items: center;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 8px;
+}
+
+.competitor-analysis-table .ant-table-cell-fix-right {
+  background: #fff;
+  z-index: 4;
+}
+
+.competitor-analysis-table .ant-table-cell-fix-right-last,
+.competitor-analysis-table .ant-table-cell-fix-right-first {
+  box-shadow: -8px 0 10px -10px rgba(0, 0, 0, 0.32);
+}
+
+.competitor-analysis-keyword-cell {
+  align-items: flex-start;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  min-width: 0;
+  width: 100%;
+}
+
+.competitor-analysis-keyword-content {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.competitor-analysis-keyword-inline-list {
+  align-items: flex-start;
+  background: transparent;
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.competitor-analysis-keyword-edit-button {
+  height: 22px;
+  min-width: 22px;
+  padding: 0;
+  width: 22px;
+}
+
+.competitor-analysis-keyword-link {
+  align-items: center;
+  background: #e6f4ff;
+  border: 1px solid #91caff;
+  border-radius: 4px;
+  color: #0958d9;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 4px;
+  line-height: 18px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 1px 6px;
+}
+
+.competitor-analysis-keyword-link:hover {
+  background: #bae0ff;
+  color: #003eb3;
+}
+
+.competitor-analysis-keyword-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.competitor-analysis-count-stack {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-width: 0;
+}
+
+.competitor-analysis-count-row {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  min-width: 0;
+}
+
+.competitor-analysis-count-row .ant-tag {
+  margin-inline-end: 0;
+  min-width: 34px;
+  text-align: center;
+}
+
+.competitor-analysis-product-thumb-placeholder {
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+}
+
+.competitor-analysis-product-actions {
+  max-width: 100%;
+}
+
+.competitor-analysis-keyword-toolbar {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.competitor-analysis-keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.competitor-analysis-keyword-count {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  font-size: 12px;
+  margin-left: 6px;
+  min-width: 22px;
+  padding: 0 6px;
+}

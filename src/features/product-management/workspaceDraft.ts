@@ -2,16 +2,18 @@ import {
   areSnapshotPartsEqual,
   cloneRecord,
   cloneRecordList,
-  cloneSnapshotPayload,
-  collectSiteOfferValidationIssues,
-  collectUnsupportedProductPublishIssues,
-  formatSnapshotValue,
   nowSyncTime,
   siteOfferCode,
-  siteOfferEditableFieldsEqual,
-  textInputValue
-} from './utils';
-import type { ProductMasterSnapshotPayload, ProductWorkbenchState } from './types';
+  siteOfferEditableFieldsEqual
+} from './utils/common';
+import { collectSiteOfferValidationIssues } from './utils/fieldDomainIssues';
+import { collectUnsupportedProductPublishIssues } from './utils/writeCoverage';
+import { formatSnapshotValue, textInputValue } from './utils/common';
+import type { ProductWorkbenchState } from './types';
+import {
+  createProductMasterSnapshotPayload,
+  type ProductMasterSnapshotPayload
+} from '../product-domain/productMasterSnapshot';
 
 export function productSharedSnapshot(payload: ProductMasterSnapshotPayload) {
   return {
@@ -80,8 +82,8 @@ export function buildMockPublishState(
   currentValue: ProductWorkbenchState,
   currentSiteCode?: string
 ) {
-  const nextBaseline = cloneSnapshotPayload(currentValue.baseline);
-  const nextDraft = cloneSnapshotPayload(currentValue.draft);
+  const nextBaseline = createProductMasterSnapshotPayload(currentValue.baseline);
+  const nextDraft = createProductMasterSnapshotPayload(currentValue.draft);
 
   nextBaseline.identity = cloneRecord(nextDraft.identity);
   nextBaseline.taxonomy = cloneRecord(nextDraft.taxonomy);

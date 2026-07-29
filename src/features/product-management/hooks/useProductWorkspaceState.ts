@@ -10,7 +10,7 @@ import type {
   ProductWorkbenchSurfaceState,
   StoreInitializationState
 } from '../types';
-import { closedProductSiteCompareModalState } from '../utils';
+import { closedProductSiteCompareModalState } from '../utils/siteCompare';
 
 export function useProductWorkspaceState() {
   const [storeInitializationForm] = Form.useForm();

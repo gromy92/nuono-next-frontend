@@ -1,25 +1,9 @@
-import { lazy, Suspense, type Dispatch, type Key, type ReactNode, type SetStateAction } from 'react';
-import {
-  App as AntdApp,
-  Col,
-  ConfigProvider,
-  Form,
-  Input,
-  Layout,
-  Modal,
-  Row,
-  Typography
-} from 'antd';
+import { type Dispatch, type Key, type SetStateAction } from 'react';
+import { App as AntdApp, Col, ConfigProvider, Form, Input, Layout, Modal, Row, Typography } from 'antd';
 import type { FormInstance, MenuProps, TabsProps } from 'antd';
 import { WorkspaceTabsBar, type WorkspaceTabItem } from './WorkspaceTabsBar';
 import { ReplicaLoginPage } from '../auth/ReplicaLoginPage';
 import type { AuthRoleView, AuthSession } from '../auth/session';
-import type { InTransitBoxDetailTabRequest } from '../in-transit-goods/types';
-import type { RoleManagementWorkspaceTabKey } from '../master-data/RoleManagementWorkspace';
-import type { ProductWorkspaceTabKey } from '../product-management/types';
-import type { useProductManagementWorkspace } from '../product-management/useProductManagementWorkspace';
-import type { OpenProfitCalculatorPrefilled } from '../profit-calculator/useProfitCalculatorWorkspace';
-import type { StoreSyncOverviewState } from '../store-sync/types';
 import { ShellHeader } from './ShellHeader';
 import { ShellSidebar } from './ShellSidebar';
 import { ShellWorkspaceContent } from './ShellWorkspaceContent';
@@ -27,36 +11,23 @@ import type { SidebarMenuItem } from './SidebarNavigation';
 import type { AppMenuKey } from './WorkspaceRouting';
 import { WorkspaceErrorBoundary } from './WorkspaceErrorBoundary';
 import { isProductWorkspaceMenu } from './WorkspaceMenuRegistry';
-import type { LoadStoreSyncOptions } from './useStoreSyncController';
 import './shell-layout.css';
 
 const { Content } = Layout;
 const { Text } = Typography;
 const LEGACY_PASSWORD_PATTERN = /^[!-~]{6,14}$/;
 
-const ProductManagementWorkspaceModals = lazy(() =>
-  import('../product-management/ProductManagementWorkspaceModals').then((module) => ({
-    default: module.ProductManagementWorkspaceModals
-  }))
-);
-
 export type ChangePasswordFormValues = {
   password1: string;
   password2: string;
 };
 
-type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
-
 type ShellFrameProps = {
   activeMenuKey: AppMenuKey;
   activeMenuPathLabel: string | null;
-  activeOwnerId?: number;
   activeSidebarOpenKeys: string[];
   activeSidebarRootKey?: string;
   activeWorkspaceTabKey: string;
-  canManageStoreBinding: boolean;
-  canSelectStoreOwner: boolean;
-  canShowStoreManagement: boolean;
   changePasswordForm: FormInstance<ChangePasswordFormValues>;
   changePasswordOpen: boolean;
   changePasswordSubmitting: boolean;
@@ -66,44 +37,23 @@ type ShellFrameProps = {
   handleUserDropdownClick: ({ key }: { key: string }) => void;
   handleWorkspaceTabChange: (key: string) => void;
   handleWorkspaceTabEdit: NonNullable<TabsProps['onEdit']>;
-  inTransitBoxDetailTabRequest: InTransitBoxDetailTabRequest | null;
-  inTransitWorkspaceTabKey: 'purchase-in-transit-goods' | 'in-transit-box-detail';
-  isInTransitBoxDetailTab: boolean;
-  isProductDetailTab: boolean;
-  loadStoreSync: (ownerUserId?: number, options?: LoadStoreSyncOptions) => Promise<void> | void;
   loginError: string | null;
   loginForm: FormInstance;
   loginSubmitting: boolean;
   logout: () => void;
   logoutConfirmOpen: boolean;
   noMenuPermission: boolean;
-  notifyRoleManagementDataChanged: (source?: 'store-management') => void;
-  onCloseInTransitBoxDetailTab: () => Promise<void> | void;
-  onOpenInTransitBoxDetailTab: (request: InTransitBoxDetailTabRequest) => void;
-  onOpenProfitCalculatorPrefilled: OpenProfitCalculatorPrefilled;
   openedWorkspaceTabKeys: AppMenuKey[];
-  productWorkspace: ProductManagementWorkspace;
-  productWorkspaceTabKey: ProductWorkspaceTabKey;
-  profitBoard: ReactNode;
-  roleManagementRefreshSignal: number;
   setChangePasswordOpen: (open: boolean) => void;
   setLoginError: (message: string | null) => void;
   setLogoutConfirmOpen: (open: boolean) => void;
   setSidebarOpenKeys: Dispatch<SetStateAction<string[]>>;
-  setStoreSyncOwnerId: Dispatch<SetStateAction<number | undefined>>;
-  setUserRoleActiveTabKey: (key: RoleManagementWorkspaceTabKey) => void;
-  setActiveMenuKey: (key: AppMenuKey) => void;
   shellSession: AuthSession | null;
-  shouldRenderProcurementRequirementConfirmation: boolean;
   shouldRenderWorkspaceTabs: boolean;
   sidebarOpenKeys: string[];
-  storeSyncOwnerId?: number;
-  storeSyncState: StoreSyncOverviewState;
   submitChangePassword: () => void;
   submitLogin: () => void;
-  syncWorkspacePathForMenuKey: (menuKey: AppMenuKey) => void;
   userDropdownItems: MenuProps['items'];
-  userRoleActiveTabKey: RoleManagementWorkspaceTabKey;
   visibleWorkspaceMenuItems: SidebarMenuItem[];
   workspaceTabItems: WorkspaceTabItem[];
 };
@@ -111,13 +61,9 @@ type ShellFrameProps = {
 export function ShellFrame({
   activeMenuKey,
   activeMenuPathLabel,
-  activeOwnerId,
   activeSidebarOpenKeys,
   activeSidebarRootKey,
   activeWorkspaceTabKey,
-  canManageStoreBinding,
-  canSelectStoreOwner,
-  canShowStoreManagement,
   changePasswordForm,
   changePasswordOpen,
   changePasswordSubmitting,
@@ -127,44 +73,23 @@ export function ShellFrame({
   handleUserDropdownClick,
   handleWorkspaceTabChange,
   handleWorkspaceTabEdit,
-  inTransitBoxDetailTabRequest,
-  inTransitWorkspaceTabKey,
-  isInTransitBoxDetailTab,
-  isProductDetailTab,
-  loadStoreSync,
   loginError,
   loginForm,
   loginSubmitting,
   logout,
   logoutConfirmOpen,
   noMenuPermission,
-  notifyRoleManagementDataChanged,
-  onCloseInTransitBoxDetailTab,
-  onOpenInTransitBoxDetailTab,
-  onOpenProfitCalculatorPrefilled,
   openedWorkspaceTabKeys,
-  productWorkspace,
-  productWorkspaceTabKey,
-  profitBoard,
-  roleManagementRefreshSignal,
   setChangePasswordOpen,
   setLoginError,
   setLogoutConfirmOpen,
   setSidebarOpenKeys,
-  setStoreSyncOwnerId,
-  setUserRoleActiveTabKey,
-  setActiveMenuKey,
   shellSession,
-  shouldRenderProcurementRequirementConfirmation,
   shouldRenderWorkspaceTabs,
   sidebarOpenKeys,
-  storeSyncOwnerId,
-  storeSyncState,
   submitChangePassword,
   submitLogin,
-  syncWorkspacePathForMenuKey,
   userDropdownItems,
-  userRoleActiveTabKey,
   visibleWorkspaceMenuItems,
   workspaceTabItems
 }: ShellFrameProps) {
@@ -271,45 +196,12 @@ export function ShellFrame({
                           <ShellWorkspaceContent
                             activeMenuKey={activeMenuKey}
                             noMenuPermission={noMenuPermission}
-                            shouldRenderProcurementRequirementConfirmation={shouldRenderProcurementRequirementConfirmation}
                             shellSession={shellSession}
-                            onOpenProfitCalculatorPrefilled={onOpenProfitCalculatorPrefilled}
-                            onOpenInTransitBoxDetailTab={onOpenInTransitBoxDetailTab}
-                            onCloseInTransitBoxDetailTab={onCloseInTransitBoxDetailTab}
-                            profitBoard={profitBoard}
-                            productWorkspace={productWorkspace}
-                            activeOwnerId={activeOwnerId}
-                            inTransitBoxDetailTabRequest={inTransitBoxDetailTabRequest}
-                            isInTransitBoxDetailTab={isInTransitBoxDetailTab}
-                            isProductDetailTab={isProductDetailTab}
-                            inTransitWorkspaceTabKey={inTransitWorkspaceTabKey}
-                            roleManagementTabKey={userRoleActiveTabKey}
-                            canShowStoreManagement={canShowStoreManagement}
-                            roleManagementRefreshSignal={roleManagementRefreshSignal}
-                            storeSyncState={storeSyncState}
-                            storeSyncOwnerId={storeSyncOwnerId}
-                            canSelectStoreOwner={canSelectStoreOwner}
-                            canManageStoreBinding={canManageStoreBinding}
-                            onStoreOwnerChange={setStoreSyncOwnerId}
-                            onStoreRefresh={loadStoreSync}
                             openedWorkspaceTabKeys={openedWorkspaceTabKeys}
-                            productWorkspaceTabKey={productWorkspaceTabKey}
-                            onRoleManagementDataChanged={notifyRoleManagementDataChanged}
-                            onRoleManagementTabChange={(nextKey) => {
-                              setUserRoleActiveTabKey(nextKey);
-                              setActiveMenuKey(nextKey === 'user-store-noon' ? 'user-store-noon' : 'user-role');
-                              syncWorkspacePathForMenuKey(nextKey === 'user-store-noon' ? 'user-store-noon' : 'user-role');
-                            }}
                           />
                         </WorkspaceErrorBoundary>
                       </Col>
                     </Row>
-
-                    {isProductWorkspaceMenu(activeMenuKey) ? (
-                      <Suspense fallback={null}>
-                        <ProductManagementWorkspaceModals workspace={productWorkspace} />
-                      </Suspense>
-                    ) : null}
 
                     <Modal
                       title="提示"
