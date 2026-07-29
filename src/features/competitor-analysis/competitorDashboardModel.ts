@@ -67,7 +67,7 @@ export function buildDashboardMetrics(
     },
     {
       key: 'competitor-attribute-change',
-      label: '竞品详情变化',
+      label: '竞品列表变化',
       value: competitorAttributeChanges,
       help: detailDashboard?.competitorAttributeSnapshotCount
         ? `${detailDashboard.competitorAttributeSnapshotCount} 个快照`

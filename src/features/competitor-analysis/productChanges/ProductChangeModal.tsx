@@ -38,10 +38,10 @@ export function ProductChangeModal({
     ?? 0
   const titleLines = productTitleLines(product)
   const emptyDescription = baselineSummary?.snapshotCompetitorCount
-    ? `已抓取 ${baselineSummary.snapshotCompetitorCount}/${baselineSummary.monitoredCompetitorCount || baselineSummary.snapshotCompetitorCount} 个监控竞品基线，最新 ${formatSnapshotDate(baselineSummary.latestSnapshotDate)}，暂无字段变化`
+    ? `已抓取 ${baselineSummary.snapshotCompetitorCount}/${baselineSummary.monitoredCompetitorCount || baselineSummary.snapshotCompetitorCount} 个监控竞品列表基线，最新 ${formatSnapshotDate(baselineSummary.latestSnapshotDate)}，暂无字段变化`
     : monitoredCount
       ? `当前有 ${monitoredCount} 个监控竞品，暂无字段变化`
-      : '暂无商品详情变化'
+      : '暂无商品列表信息变化'
 
   return (
     <div className="competitor-analysis-product-change-modal" data-testid="competitor-product-change-modal">
@@ -63,7 +63,7 @@ export function ProductChangeModal({
           tags={
             <>
               <Tag style={{ marginInlineEnd: 0 }}>{product.siteCode || '-'}</Tag>
-              <Tag color="cyan" style={{ marginInlineEnd: 0 }}>商品详情变化</Tag>
+              <Tag color="cyan" style={{ marginInlineEnd: 0 }}>商品列表变化</Tag>
             </>
           }
         />
@@ -98,7 +98,7 @@ export function ProductChangeSummaryLine({
   return (
     <div className="competitor-analysis-product-change-summary-line">
       <SummaryItem label="监控竞品" value={`${monitoredCompetitorCount} 个`} />
-      <SummaryItem label="详情基线" value={`${baselineSummary?.snapshotCompetitorCount ?? 0} 个`} />
+      <SummaryItem label="列表基线" value={`${baselineSummary?.snapshotCompetitorCount ?? 0} 个`} />
       <SummaryItem label="变化日期" value={`${summary.changedDays} 天`} />
       <SummaryItem label="变化字段" value={`${summary.fieldChanges} 项`} />
       <SummaryItem label="价格变化" value={`${summary.priceChanges} 次`} />

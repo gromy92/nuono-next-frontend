@@ -1,7 +1,6 @@
 import {
   CheckOutlined,
-  CloseOutlined,
-  StarFilled
+  CloseOutlined
 } from '@ant-design/icons'
 import { Button, Checkbox, Space, Tag, Tooltip, Typography } from 'antd'
 import {
@@ -98,7 +97,7 @@ export function CandidateCard({
         </div>
         <img src={candidate.imageUrl} alt="" />
         <span className="competitor-analysis-candidate-placeholder">
-          {candidate.brand.slice(0, 2).toUpperCase()}
+          {candidate.noonProductCode.slice(0, 2).toUpperCase()}
         </span>
       </div>
 
@@ -108,33 +107,30 @@ export function CandidateCard({
         </Text>
         <Text
           className="competitor-analysis-candidate-title"
-          ellipsis={{ tooltip: candidate.title }}
+          ellipsis={{ tooltip: candidate.titleEn || '英文标题暂缺' }}
         >
-          {candidate.title}
+          {candidate.titleEn || '英文标题暂缺'}
+        </Text>
+        <Text
+          className="competitor-analysis-candidate-title competitor-analysis-candidate-title-ar"
+          dir={candidate.titleAr ? 'rtl' : undefined}
+          ellipsis={{ tooltip: candidate.titleAr || '阿语标题暂缺' }}
+        >
+          {candidate.titleAr || '阿语标题暂缺'}
         </Text>
         <div className="competitor-analysis-candidate-meta">
-          <Text type="secondary" className="competitor-analysis-candidate-brand">
-            {candidate.brand}
-          </Text>
           <Tag color={candidate.sourceType === 'manual_add' ? 'cyan' : 'geekblue'}>
             {candidate.sourceType === 'manual_add' ? '人工' : '搜索'}
           </Tag>
-          <Space size={4} className="competitor-analysis-candidate-rating">
-            {candidate.rating ? (
-              <>
-                <StarFilled />
-                <Text>{candidate.rating}</Text>
-                <Text type="secondary">({candidate.reviewCount || 0})</Text>
-              </>
-            ) : (
-              <Text type="secondary">暂无评分</Text>
-            )}
-          </Space>
+          {candidate.tags.map((tag) => (
+            <Tag key={tag}>{tag}</Tag>
+          ))}
         </div>
 
         <div className="competitor-analysis-candidate-commerce">
           <Text strong className="competitor-analysis-candidate-price">
-            {candidate.priceAmount ? (
+            {candidate.priceAmount !== undefined
+              && candidate.priceAmount !== null ? (
               <>
                 <span>{candidate.priceAmount}</span>
                 {candidate.currencyCode ? (

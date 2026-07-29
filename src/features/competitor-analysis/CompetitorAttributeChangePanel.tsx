@@ -34,23 +34,23 @@ export function CompetitorAttributeChangePanel({
   const totalChangeCount = splitItems.priceItems.length + splitItems.titleItems.length
   const dateLabel = formatDashboardDate(changeDate) || dashboardDaysSummary(days)
   const emptyText = snapshotCount > 0
-    ? `${dateLabel}：未发现竞品详情变化`
-    : `${dateLabel}：没有抓取到竞品详情快照，不能判断详情变化`
+    ? `${dateLabel}：未发现竞品列表信息变化`
+    : `${dateLabel}：没有抓取到竞品列表快照，不能判断列表信息变化`
   const summary = totalChangeCount
     ? `${dashboardDaysSummary(days)} · 价格 ${splitItems.priceItems.length} 条 / 标题 ${splitItems.titleItems.length} 条`
     : snapshotCount > 0
-      ? `${dashboardDaysSummary(days)} · ${snapshotCount} 个详情快照，未发现详情变化`
-      : `${dashboardDaysSummary(days)} · 未抓取详情快照`
+      ? `${dashboardDaysSummary(days)} · ${snapshotCount} 个列表快照，未发现列表信息变化`
+      : `${dashboardDaysSummary(days)} · 未抓取列表快照`
 
   return (
     <section className="competitor-analysis-dashboard-panel">
       <PanelHeader
-        title="最近详情变化的竞品"
-        explanation="列出所选时间范围内出现价格或标题变化的竞品，方便快速判断竞品动作。"
+        title="最近列表信息变化的竞品"
+        explanation="列出所选时间范围内出现列表价格或标题变化的竞品，方便快速判断竞品动作。"
         summary={summary}
         action={
           <Space size={6} wrap>
-            <ChartDaysSelector value={days} onChange={onDaysChange} ariaLabel="最近详情变化的竞品时间范围" />
+            <ChartDaysSelector value={days} onChange={onDaysChange} ariaLabel="最近列表信息变化的竞品时间范围" />
           </Space>
         }
       />
@@ -73,7 +73,7 @@ export function CompetitorAttributeChangePanel({
         </div>
       ) : (
         <div className="competitor-analysis-dashboard-empty">
-          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={loading ? '加载详情变化...' : emptyText} />
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={loading ? '加载列表信息变化...' : emptyText} />
         </div>
       )}
     </section>

@@ -29,7 +29,7 @@ type RankState =
   | { status: 'not_in_scan_depth' }
   | { status: 'missing' }
 
-const DEFAULT_RANK_SCAN_DEPTH = 100
+const DEFAULT_RANK_SCAN_DEPTH = 200
 
 export function buildRankReportSummary(report: {
   points: RankReportSummaryPoint[]
@@ -141,7 +141,7 @@ function bestRankValue(...values: Array<number | undefined>) {
 function formatNoRankDataText(scanDepth = DEFAULT_RANK_SCAN_DEPTH) {
   const depth =
     Number.isFinite(scanDepth) && scanDepth > 0
-      ? Math.max(DEFAULT_RANK_SCAN_DEPTH, scanDepth)
+      ? scanDepth
       : DEFAULT_RANK_SCAN_DEPTH
   return depth > 0 ? '最近无排名数据' : '最近无排名数据'
 }

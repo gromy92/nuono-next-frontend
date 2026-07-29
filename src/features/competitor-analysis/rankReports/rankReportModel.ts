@@ -197,5 +197,5 @@ function rankBand(rankNo?: number): RankHeatmapCell['band'] {
   if (rankNo <= 10) return 'top10'
   if (rankNo <= 20) return 'top20'
   if (rankNo <= 50) return 'top50'
-  return 'top100'
+  return 'top200'
 }

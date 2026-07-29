@@ -73,7 +73,7 @@ export function RankKeywordReportPanel({
                   <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top10">前10</span>
                   <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top20">11-20</span>
                   <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top50">21-50</span>
-                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top100">51-100</span>
+                  <span className="competitor-analysis-rank-zone competitor-analysis-rank-zone-top200">51-200</span>
                 </div>
               </div>
             }

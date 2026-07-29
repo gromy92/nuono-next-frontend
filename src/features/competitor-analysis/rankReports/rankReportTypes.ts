@@ -56,7 +56,7 @@ export type RankHeatmapCell = {
   rankNo?: number
   adRankNo?: number
   scanDepth: number
-  band: 'top10' | 'top20' | 'top50' | 'top100' | 'missing'
+  band: 'top10' | 'top20' | 'top50' | 'top200' | 'missing'
 }
 
 export type RankHeatmapRow = {

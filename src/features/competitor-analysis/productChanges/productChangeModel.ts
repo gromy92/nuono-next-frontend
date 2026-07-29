@@ -153,7 +153,21 @@ export function formatProductChangeValue(value: unknown): string {
 }
 
 function displayProductChanges(changes: CompetitorProductChangeField[]) {
-  return changes.filter((change) => !isSameResolvedMainImageChange(change))
+  return changes.filter((change) =>
+    isListFieldChange(change)
+      && !isSameResolvedMainImageChange(change)
+  )
+}
+
+function isListFieldChange(change: CompetitorProductChangeField) {
+  return [
+    'title',
+    'titleAr',
+    'tags',
+    'price',
+    'currency',
+    'mainImage'
+  ].includes(productChangeFieldKey(change.fieldKey))
 }
 
 function isSameResolvedMainImageChange(change: CompetitorProductChangeField) {
@@ -167,7 +181,7 @@ function compareProductChangeFields(
   left: CompetitorProductChangeField,
   right: CompetitorProductChangeField
 ) {
-  const order = ['mainImage', 'price', 'brand', 'rating', 'reviewCount']
+  const order = ['mainImage', 'price', 'currency', 'title', 'titleAr', 'tags']
   const leftOrder = order.indexOf(productChangeFieldKey(left.fieldKey))
   const rightOrder = order.indexOf(productChangeFieldKey(right.fieldKey))
   const normalizedLeftOrder = leftOrder >= 0 ? leftOrder : order.length

@@ -166,7 +166,7 @@ function currentSelfPriceText(priceChange?: ProductPriceChangeSummary) {
 
 function selfRankText(item: CompetitorDashboardAttributeChangeItem) {
   if (item.selfLatestRankStatus === 'ranked' && item.selfLatestRankNo) return `第 ${item.selfLatestRankNo} 名`
-  if (item.selfLatestRankStatus === 'not_in_scan_depth') return `未进前${item.selfLatestScanDepth || 100}`
+  if (item.selfLatestRankStatus === 'not_in_scan_depth') return `未进前${item.selfLatestScanDepth || 200}`
   if (item.selfLatestRankStatus === 'not_in_top_20') return '未进前20'
   return '暂无排名'
 }

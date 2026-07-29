@@ -216,7 +216,7 @@ export function CompetitorAnalysisPage({ session }: CompetitorAnalysisPageProps)
           },
           {
             key: 'priceChanges',
-            label: '详情变化',
+            label: '列表变化',
             children: (
               <CompetitorPriceChangeTab
                 storeCode={dashboardStoreCode}

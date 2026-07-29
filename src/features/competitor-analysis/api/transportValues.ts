@@ -9,7 +9,7 @@ import type {
   SearchRunStatus
 } from '../types'
 
-const DEFAULT_RANK_SCAN_DEPTH = 100
+const DEFAULT_RANK_SCAN_DEPTH = 200
 const EMPTY_IMAGE =
   'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='
 
@@ -72,10 +72,10 @@ export function normalizeRankStatus(value: unknown): RankStatus {
   return 'not_in_scan_depth'
 }
 
-export function normalizeRankScanDepth(value: unknown, rankStatus: RankStatus) {
+export function normalizeRankScanDepth(value: unknown) {
   const numericValue = typeof value === 'number' ? value : Number(value)
   const normalized = Number.isFinite(numericValue) && numericValue > 0 ? numericValue : DEFAULT_RANK_SCAN_DEPTH
-  return rankStatus === 'ranked' ? normalized : Math.max(DEFAULT_RANK_SCAN_DEPTH, normalized)
+  return normalized
 }
 
 export function normalizeRankChannel(value: unknown, sponsoredFallback?: unknown): 'organic' | 'sponsored' {
@@ -133,7 +133,7 @@ export function dashboardIssueLabel(value: unknown) {
   if (issueType === 'PENDING_CANDIDATE') return '待确认候选'
   if (issueType === 'MONITORING_SHORTAGE') return '监控不足'
   if (issueType === 'RANK_ANOMALY') return '排名异常'
-  if (issueType === 'COMPETITOR_CHANGE') return '竞品详情变化'
+  if (issueType === 'COMPETITOR_CHANGE') return '竞品列表变化'
   return '待处理'
 }
 

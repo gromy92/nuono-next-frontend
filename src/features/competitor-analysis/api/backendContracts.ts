@@ -93,6 +93,9 @@ export type BackendCandidate = {
   codeType?: string
   canonicalUrl?: string
   titleSnapshot?: string
+  titleEnSnapshot?: string
+  titleArSnapshot?: string
+  tagsSnapshotJson?: unknown
   brandSnapshot?: string
   imageUrlSnapshot?: string
   priceAmountSnapshot?: number

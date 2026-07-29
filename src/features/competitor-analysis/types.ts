@@ -45,12 +45,12 @@ export type CompetitorCandidate = {
   codeType: NoonProductCodeType
   canonicalUrl: string
   title: string
-  brand: string
+  titleEn?: string
+  titleAr?: string
+  tags: string[]
   imageUrl: string
   priceAmount?: number
   currencyCode?: string
-  rating?: number
-  reviewCount?: number
   isSponsored?: boolean
   ownedByCurrentStore?: boolean
   latestRankNo?: number

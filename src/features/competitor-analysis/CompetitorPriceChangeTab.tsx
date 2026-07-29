@@ -43,7 +43,7 @@ export function CompetitorPriceChangeTab({
       .catch((error) => {
         if (!isAbortError(error)) {
           setDashboard(undefined)
-          setErrorText(normalizeError(error, '读取竞品详情变化失败'))
+          setErrorText(normalizeError(error, '读取竞品列表变化失败'))
         }
       })
       .finally(() => {
