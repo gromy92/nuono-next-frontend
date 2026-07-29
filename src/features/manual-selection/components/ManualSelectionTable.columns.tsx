@@ -17,8 +17,10 @@ const { Text } = Typography
 type ManualSelectionTableColumnOptions = {
   analysisCollectionIds: string[]
   analysisProjectByCollectionId: Record<string, ManualSelectionAnalysisProjectInfo>
+  deletingCollectionIds: string[]
   recollecting: boolean
   onAddToAnalysis: (record: ProductSelectionSourceCollection) => void
+  onDelete: (record: ProductSelectionSourceCollection) => void
   onOpenDetail: (record: ProductSelectionSourceCollection) => void
   onRecollect: (record: ProductSelectionSourceCollection) => void
 }
@@ -90,6 +92,7 @@ export function buildManualSelectionTableColumns(
         <ActionCell
           isInAnalysis={analysisIdSet.has(record.id)}
           analysisProject={options.analysisProjectByCollectionId[record.id]}
+          deleting={options.deletingCollectionIds.includes(record.id)}
           record={record}
           {...options}
         />

@@ -6,6 +6,10 @@ import {
 import { apiFetch, readApiErrorMessage } from '../../shared/api'
 import type { ProductSelectionSourceCollection } from '../source-collection/types'
 import type { ManualSelectionSystemCategoryOption } from './profitCategoryMatching'
+import {
+  shouldDeleteSourceCollections,
+  type ManualSelectionGroupDeleteMode
+} from './manualSelectionDeleteOptions'
 import type {
   ManualSelectionAiAnalysisResult,
   ManualSelectionAli1688ProcurementInfo,
@@ -145,6 +149,32 @@ export function addManualSelectionGroupMaterials(
       body: JSON.stringify({
         sourceCollectionIds
       })
+    })
+  )
+}
+
+export async function deleteManualSelectionCollection(
+  sourceCollectionId: string,
+  storeCode?: string
+): Promise<void> {
+  const params = requiredDeleteStoreParams(storeCode)
+  await parseManualSelectionEmptyResponse(
+    apiFetch(`/api/product-selection/source-collections/${encodeURIComponent(sourceCollectionId)}?${params.toString()}`, {
+      method: 'DELETE'
+    })
+  )
+}
+
+export async function deleteManualSelectionGroup(
+  groupId: string,
+  mode: ManualSelectionGroupDeleteMode,
+  storeCode?: string
+): Promise<void> {
+  const params = requiredDeleteStoreParams(storeCode)
+  params.set('deleteSourceCollections', String(shouldDeleteSourceCollections(mode)))
+  await parseManualSelectionEmptyResponse(
+    apiFetch(`/api/product-selection/groups/${encodeURIComponent(groupId)}?${params.toString()}`, {
+      method: 'DELETE'
     })
   )
 }
@@ -320,4 +350,19 @@ async function parseManualSelectionResponse<TResponse>(
   }
   const payload = await response.json().catch(() => null)
   return payload as TResponse
+}
+
+async function parseManualSelectionEmptyResponse(responsePromise: Promise<Response>): Promise<void> {
+  const response = await responsePromise
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, `Request failed: ${response.status}`))
+  }
+}
+
+function requiredDeleteStoreParams(storeCode?: string) {
+  const normalizedStoreCode = storeCode?.trim()
+  if (!normalizedStoreCode) {
+    throw new Error('缺少当前店铺编码，不能删除。')
+  }
+  return new URLSearchParams({ storeCode: normalizedStoreCode })
 }
