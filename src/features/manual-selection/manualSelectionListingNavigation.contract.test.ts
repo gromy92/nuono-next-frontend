@@ -1,5 +1,6 @@
 import {
   buildManualSelectionGroupListingTarget,
+  navigateManualSelectionGroupListingInCurrentTab,
   openManualSelectionGroupListingInNewTab,
   reserveManualSelectionGroupListingTab
 } from './listingNavigation'
@@ -52,11 +53,11 @@ const pageSource = [
   './ManualSelectionPage.tsx',
   './hooks/useManualSelectionGroupActions.ts'
 ].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
-if (!/buildManualSelectionGroupListingTarget\(project,\s*storeCode\)/.test(pageSource)) {
-  throw new Error('formal manual-selection page must pass its store to the listing target')
+if (!/navigateManualSelectionGroupListingInCurrentTab\(project,\s*storeCode\)/.test(pageSource)) {
+  throw new Error('formal manual-selection entry must navigate reliably with the same source store')
 }
-if (!/openManualSelectionGroupListingInNewTab\(project,\s*storeCode\)/.test(pageSource)) {
-  throw new Error('formal manual-selection popup must use the same source store')
+if (/if\s*\(\s*!openManualSelectionGroupListingInNewTab/.test(pageSource)) {
+  throw new Error('formal manual-selection entry must not rely on popup return values for fallback')
 }
 
 installWindowSearch('?devSession=1&devAccount=xingyao&devStore=STR245027-NSA&devSite=SA&manualSelectionTab=analysis')
@@ -123,6 +124,18 @@ if (
 }
 
 installWindowSearch('?devSession=1&devAccount=xingyao&devStore=STR245027-NSA&devSite=SA&manualSelectionTab=analysis')
+let assignedUrl = ''
+const assignedTarget = navigateManualSelectionGroupListingInCurrentTab({
+  ...project,
+  records: project.records.map((record) => ({ ...record, storeCode: '' }))
+}, 'STR-FALLBACK-NSA', (url) => {
+  assignedUrl = url
+})
+
+if (assignedTarget !== fallbackStoreTarget || assignedUrl !== fallbackStoreTarget) {
+  throw new Error('expected the formal listing entry to assign the complete target in the current tab')
+}
+
 let openedUrl = ''
 let openedTarget = ''
 let openedFeatures = ''

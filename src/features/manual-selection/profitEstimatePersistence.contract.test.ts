@@ -14,6 +14,10 @@ const modalSource = [
   'components/ManualSelectionProfitEstimateForm.tsx',
   'components/ManualSelectionProfitEstimateResults.tsx'
 ].map((fileName) => fs.readFileSync(path.join(featureDir, fileName), 'utf8')).join('\n')
+const groupActionsSource = fs.readFileSync(
+  path.join(featureDir, 'hooks/useManualSelectionGroupActions.ts'),
+  'utf8'
+)
 
 assert(
   apiSource.includes('/profit-estimate')
@@ -50,4 +54,9 @@ assert(
     && !modalSource.includes('airQuote?.unitPrice || PROFIT_FORM_DEFAULTS.airFreightUnitPrice')
     && !modalSource.includes('seaQuote?.unitPrice || PROFIT_FORM_DEFAULTS.oceanFreightUnitPrice'),
   'profit requests must never substitute default freight prices for missing provider quotes'
+)
+
+assert(
+  /const handleProfitEstimateSaved = async \(\) => \{\s*setProfitEstimateSeed\(null\)/.test(groupActionsSource),
+  'saving a profit estimate should close the current modal before refreshing group data'
 )

@@ -12,7 +12,10 @@ import {
 import { shouldAwaitProductListingConfirmationWorkflow } from './productListingConfirmationRefresh'
 import type { DangerousProductListingRecoveryAction } from './productListingAmbiguousOutcome'
 import { applyProductListingWorkflowRefresh } from './productListingWorkflowClientState'
-import { resolveProductListingWorkflowEditSession } from './productListingWorkflowEditSession'
+import {
+  resolveProductListingWorkflowActionPlacement,
+  resolveProductListingWorkflowEditSession
+} from './productListingWorkflowEditSession'
 import {
   canApplyProductListingWorkflowResponse,
   productListingWorkflowIdentity,
@@ -51,6 +54,10 @@ export function useProductListingWorkflowState({ storeCode, form }: Options) {
   const workflowRequestSequenceRef = useRef(0)
   const workflowPresentation = useMemo(() => presentProductListingWorkflow(workflow), [workflow])
   const editSession = useMemo(() => resolveProductListingWorkflowEditSession(workflow), [workflow])
+  const actionPlacement = useMemo(
+    () => resolveProductListingWorkflowActionPlacement(workflow),
+    [workflow]
+  )
   const currentDraftId = listingDraft.draftId ?? workflow.draft?.draftId
   const workflowReadiness = useProductListingWorkflowReadiness(currentDraftId, listingDraft.storeCode)
 
@@ -151,7 +158,7 @@ export function useProductListingWorkflowState({ storeCode, form }: Options) {
     confirmationAwaitingWorkflow, setConfirmationAwaitingWorkflow,
     dangerousActionAwaitingWorkflow, setDangerousActionAwaitingWorkflow,
     workflowIntegrityError, listingDraftRef, workflowIdentityRef,
-    workflowRequestSequenceRef, workflowPresentation, editSession,
+    workflowRequestSequenceRef, workflowPresentation, editSession, actionPlacement,
     currentDraftId, workflowReadiness, updateEditorDraft, applySourcePrefill,
     applyWorkflow, identityMatches, refreshWorkflow
   }

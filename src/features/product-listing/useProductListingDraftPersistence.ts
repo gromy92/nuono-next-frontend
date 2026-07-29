@@ -1,7 +1,6 @@
 import { message } from 'antd'
 import type { FormInstance } from 'antd'
 import type { MutableRefObject } from 'react'
-import { normalizeError } from '../../shared/api'
 import { saveProductListingDraft } from './api'
 import {
   normalizeProductListingEditorDraft,
@@ -9,11 +8,10 @@ import {
   type ProductListingEditorDraft,
   type ProductListingMetadataFormValues
 } from './productDetailAdapter'
-import type { ProductListingNotice } from './ProductListingPageStatus'
+import { saveProductListingDraftWithWorkflowRefresh } from './productListingDraftPersistence'
 import type { ProductListingDraftView, ProductListingWorkflowView } from './types'
 import type { ProductListingWorkflowIdentity } from './productListingWorkflowIdentity'
-
-const PRODUCT_LISTING_DRAFT_SAVE_MESSAGE_KEY = 'product-listing-draft-save'
+import { useProductListingDraftSaveFeedback } from './useProductListingDraftSaveFeedback'
 
 type Options = {
   form: FormInstance<ProductListingMetadataFormValues>
@@ -32,10 +30,10 @@ type Options = {
     expected?: ProductListingWorkflowIdentity
   ) => Promise<ProductListingWorkflowView | undefined>
   setSaving: (saving: boolean) => void
-  setDraftSaveNotice: (notice: ProductListingNotice) => void
 }
 
 export function useProductListingDraftPersistence(options: Options) {
+  const feedback = useProductListingDraftSaveFeedback()
   const currentListingDraftFromForm = () => normalizeProductListingEditorDraft({
     ...options.listingDraftRef.current,
     ...options.form.getFieldsValue()
@@ -60,7 +58,7 @@ export function useProductListingDraftPersistence(options: Options) {
       )
       return undefined
     }
-    showStart(saveOptions?.silent)
+    feedback.start(saveOptions?.silent)
     options.setSaving(true)
     try {
       const currentDraft = saveOptions?.draftOverride
@@ -70,43 +68,35 @@ export function useProductListingDraftPersistence(options: Options) {
           )
         : currentListingDraftFromForm()
       options.updateEditorDraft(currentDraft)
-      const saved = await saveProductListingDraft(
-        productListingEditorDraftToPayload(currentDraft, options.currentDraftId)
+      const refreshWorkflow = options.refreshWorkflow
+      const saveResult = await saveProductListingDraftWithWorkflowRefresh(
+        productListingEditorDraftToPayload(currentDraft, options.currentDraftId),
+        {
+          saveDraft: saveProductListingDraft,
+          refreshWorkflow: savedDraftId => refreshWorkflow(savedDraftId),
+          onSaved: saved => {
+            options.updateEditorDraft(editorDraftFromSaved(currentDraft, saved))
+            feedback.success(saved, saveOptions?.silent)
+          }
+        }
       )
-      options.updateEditorDraft(editorDraftFromSaved(currentDraft, saved))
-      const workflow = await options.refreshWorkflow(saved.draftId)
-      showSuccess(saved, saveOptions?.silent)
-      return { saved, workflow }
+      if (!saveResult.workflow) {
+        feedback.workflowRefreshFailure(saveOptions?.silent)
+      }
+      return saveResult
     } catch (error) {
-      showFailure(error, saveOptions?.silent)
+      feedback.failure(error, saveOptions?.silent)
       return undefined
     } finally {
       options.setSaving(false)
     }
   }
 
-  const showStart = (silent?: boolean) => {
-    if (silent) return
-    options.setDraftSaveNotice({ type: 'info', message: '正在保存上架草稿...' })
-    message.loading({ key: PRODUCT_LISTING_DRAFT_SAVE_MESSAGE_KEY, content: '正在保存上架草稿...', duration: 0 })
+  return {
+    currentListingDraftFromForm,
+    saveDraftFromForm,
+    draftSaveNotice: feedback.notice
   }
-  const showSuccess = (saved: ProductListingDraftView, silent?: boolean) => {
-    if (silent) return
-    const text = saved.draftNo ? `上架草稿已保存：${saved.draftNo}` : '上架草稿已保存'
-    options.setDraftSaveNotice({ type: 'success', message: text })
-    message.success({ key: PRODUCT_LISTING_DRAFT_SAVE_MESSAGE_KEY, content: text })
-  }
-  const showFailure = (error: unknown, silent?: boolean) => {
-    const text = normalizeError(error, '保存上架草稿失败')
-    if (!silent) {
-      options.setDraftSaveNotice({ type: 'error', message: text })
-      message.error({ key: PRODUCT_LISTING_DRAFT_SAVE_MESSAGE_KEY, content: text })
-    } else {
-      message.error(text)
-    }
-  }
-
-  return { currentListingDraftFromForm, saveDraftFromForm }
 }
 
 function editorDraftFromSaved(

@@ -6,6 +6,7 @@ import type {
   ManualSelectionGroupProfitEstimateSnapshot
 } from '../selection-analysis/types'
 import type { ProductListingEditorDraft } from './productDetailAdapter'
+import { readProductListingSourcePrefillFromSession, saveProductListingSourcePrefillToSession } from './productListingSourcePrefillStorage'
 import type { ProductListingDraftView } from './types'
 import {
   finitePositiveNumber,
@@ -24,8 +25,6 @@ import {
   uniqueTexts,
   type ManualSelectionListingCompetitor
 } from './sourcePrefillModel'
-
-const PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY = 'nuono:product-listing:source-prefill'
 
 export type ProductListingSourcePrefill = {
   source: 'manual-selection' | 'listing-draft'
@@ -48,12 +47,12 @@ export function saveManualSelectionGroupListingPrefill(
   profitEstimate?: ManualSelectionGroupProfitEstimateSnapshot | null
 ) {
   const prefill = buildManualSelectionGroupListingPrefill(project, storeCode, competitors, profitEstimate)
-  window.sessionStorage.setItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY, JSON.stringify(prefill))
+  saveProductListingSourcePrefillToSession(prefill)
 }
 
 export function saveProductListingDraftRecoveryPrefill(draftView: ProductListingDraftView) {
   const prefill = buildProductListingDraftRecoveryPrefill(draftView)
-  window.sessionStorage.setItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY, JSON.stringify(prefill))
+  saveProductListingSourcePrefillToSession(prefill)
 }
 
 export function readProductListingSourcePrefill() {
@@ -77,7 +76,7 @@ export function readProductListingSourcePrefill() {
     return listingDraftLocatorPrefill(search)
   }
 
-  const rawValue = window.sessionStorage.getItem(PRODUCT_LISTING_SOURCE_PREFILL_STORAGE_KEY)
+  const rawValue = readProductListingSourcePrefillFromSession()
   if (!rawValue) {
     return sourceLocatorPrefill(search)
   }
@@ -151,7 +150,8 @@ function listingDraftLocatorPrefill(search: URLSearchParams): ProductListingSour
     sourceDraftId,
     pendingServerHydration: true,
     draft: {
-      ...(Number.isFinite(draftId) && draftId > 0 ? { draftId } : {})
+      ...(Number.isFinite(draftId) && draftId > 0 ? { draftId } : {}),
+      storeCode: text(search.get('storeCode') || '')
     }
   }
 }

@@ -14,6 +14,7 @@ type ProductListingPageStatusProps = {
   reauthenticationNotice?: ProductListingReauthenticationNotice
   dangerousActionAwaiting: boolean
   reopenAwaiting: boolean
+  confirmNotCreatedAwaiting: boolean
 }
 
 export function ProductListingPageStatus({
@@ -22,7 +23,8 @@ export function ProductListingPageStatus({
   sourceHydrationError,
   reauthenticationNotice,
   dangerousActionAwaiting,
-  reopenAwaiting
+  reopenAwaiting,
+  confirmNotCreatedAwaiting
 }: ProductListingPageStatusProps) {
   return (
     <>
@@ -73,6 +75,14 @@ export function ProductListingPageStatus({
           showIcon
           data-testid="product-listing-reopen-awaiting"
           message="解除旧上架检查的结果仍在确认中，系统已锁定重复操作并持续刷新后端流程。"
+        />
+      ) : null}
+      {confirmNotCreatedAwaiting ? (
+        <Alert
+          type="warning"
+          showIcon
+          data-testid="product-listing-confirm-not-created-awaiting"
+          message="确认未创建的结果仍在核对中，系统已锁定重复操作并持续刷新后端流程。"
         />
       ) : null}
     </>

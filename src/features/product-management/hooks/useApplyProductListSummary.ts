@@ -6,7 +6,8 @@ import {
   mergeSampleProductWithSummary,
   productListSummaryAppliesToItem
 } from '../utils/summary';
-import { normalizeProductSyncStatus, textInputValue } from '../utils/common';
+import { textInputValue } from '../utils/common';
+import { countProductListStatuses } from '../utils/productListFilters';
 import type {
   ProductListDatasetState,
   ProductListRowPayload,
@@ -118,10 +119,9 @@ export function useApplyProductListSummary({
           );
         }
 
+        const nextStatusCounts = countProductListStatuses(nextItems, {}, false);
         const nextCounts = nextItems.reduce(
           (accumulator, item) => {
-            const syncStatus = normalizeProductSyncStatus(item.syncStatus) ?? 'synced';
-            accumulator[syncStatus] += 1;
             if (isProductListRowOnline(item)) {
               accumulator.liveCount += 1;
             }
@@ -137,10 +137,6 @@ export function useApplyProductListSummary({
             return accumulator;
           },
           {
-            synced: 0,
-            draft: 0,
-            conflict: 0,
-            failed: 0,
             liveCount: 0,
             groupedCount: 0,
             pendingPriceCount: 0,
@@ -154,10 +150,10 @@ export function useApplyProductListSummary({
             ...currentValue.data,
             items: nextItems,
             totalItems: nextItems.length,
-            syncedCount: nextCounts.synced,
-            draftCount: nextCounts.draft,
-            conflictCount: nextCounts.conflict,
-            failedCount: nextCounts.failed,
+            syncedCount: nextStatusCounts.synced,
+            draftCount: nextStatusCounts.draft,
+            conflictCount: nextStatusCounts.conflict,
+            failedCount: nextStatusCounts.failed,
             liveCount: nextCounts.liveCount,
             groupedCount: nextCounts.groupedCount,
             pendingPriceCount: nextCounts.pendingPriceCount,

@@ -10,8 +10,7 @@ import {
   loadManualSelectionGroups
 } from '../api'
 import {
-  buildManualSelectionGroupListingTarget,
-  openManualSelectionGroupListingInNewTab
+  navigateManualSelectionGroupListingInCurrentTab
 } from '../listingNavigation'
 import { isGroupEndpointMissingError } from '../manualSelectionGroupRepository'
 import {
@@ -61,11 +60,8 @@ export function useManualSelectionGroupActions(options: Options) {
       message.warning('选品组缺少组编号，无法进入上架')
       return
     }
-    const target = buildManualSelectionGroupListingTarget(project, storeCode)
     saveManualSelectionGroupListingPrefill(project, storeCode, project.competitors || [], null)
-    if (!openManualSelectionGroupListingInNewTab(project, storeCode)) {
-      window.location.assign(target)
-    }
+    navigateManualSelectionGroupListingInCurrentTab(project, storeCode)
   }
   const handleOpenProfitEstimate = async (project: ManualSelectionAnalysisProjectView) => {
     try {
@@ -81,6 +77,7 @@ export function useManualSelectionGroupActions(options: Options) {
     }
   }
   const handleProfitEstimateSaved = async () => {
+    setProfitEstimateSeed(null)
     try {
       setAnalysisGroups((await loadManualSelectionGroups(storeName, storeCode)).map(normalizeManualSelectionGroup))
     } catch (error) {

@@ -28,6 +28,7 @@ type ProductListingCreateOutcomePollingParams = {
   workflow: ProductListingWorkflowView
   draftId?: number
   storeCode?: string
+  restartVersion: number
   commandInFlightRef: MutableRefObject<boolean>
   identityIsCurrent: (expected: ProductListingWorkflowIdentity) => boolean
   refreshWorkflow: (
@@ -105,7 +106,8 @@ export function useProductListingCreateOutcomePolling(
     target,
     params.draftId,
     params.storeCode,
-    taskId
+    taskId,
+    params.restartVersion
   ])
 
   async function verify(session: PollingSession) {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button, message, Modal, Space, Tooltip, Typography } from 'antd';
-import { openProductListingTargetInNewTab } from '../../product-listing/listingTabNavigation';
+import { navigateProductListingTargetInCurrentTab } from '../../product-listing/listingTabNavigation';
 import {
   isPublicDetailReadonlyWorkbench,
   isProductPublishTaskActive,
@@ -98,9 +98,7 @@ export function ProductDetailSummaryPanel({ workspace }: ProductDetailSummaryPan
         message.warning(LISTING_DRAFT_MISSING_REASON);
         return;
       }
-      if (!openProductListingTargetInNewTab(listingDraftTarget)) {
-        message.warning('浏览器拦截了上架草稿新标签页，请允许弹窗后重试');
-      }
+      navigateProductListingTargetInCurrentTab(listingDraftTarget);
       return;
     }
     if (publishTaskNeedsAttention && publishTaskId) {

@@ -1,6 +1,7 @@
 import { PURCHASE_LISTING_PATH } from '../route-catalog/routePaths'
 import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery'
 import {
+  navigateProductListingTargetInCurrentTab,
   openProductListingTargetInNewTab,
   reserveProductListingTargetInNewTab,
   type ProductListingTabOpener
@@ -8,6 +9,7 @@ import {
 import type { ManualSelectionAnalysisProjectView } from './types'
 
 export type ManualSelectionListingTabOpener = ProductListingTabOpener
+export type ManualSelectionListingNavigator = (targetUrl: string) => void
 
 export function buildManualSelectionGroupListingTarget(project: ManualSelectionAnalysisProjectView, storeCode?: string) {
   const sourceStoreCode =
@@ -20,6 +22,15 @@ export function buildManualSelectionGroupListingTarget(project: ManualSelectionA
     params.set('storeCode', sourceStoreCode)
   }
   return withCurrentWorkspaceDevQuery(`${PURCHASE_LISTING_PATH}?${params.toString()}`)
+}
+
+export function navigateManualSelectionGroupListingInCurrentTab(
+  project: ManualSelectionAnalysisProjectView,
+  storeCode?: string,
+  navigate: ManualSelectionListingNavigator = (targetUrl) => window.location.assign(targetUrl)
+) {
+  const targetUrl = buildManualSelectionGroupListingTarget(project, storeCode)
+  return navigateProductListingTargetInCurrentTab(targetUrl, navigate)
 }
 
 export function openManualSelectionGroupListingInNewTab(

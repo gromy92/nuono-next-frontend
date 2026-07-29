@@ -2,7 +2,7 @@ import { Card, Form, Input, Space } from 'antd'
 import { useRef, useState } from 'react'
 import { ProductListingDetailEditor } from './ProductListingDetailEditor'
 import { ProductListingReviewModal } from './ProductListingReviewModal'
-import { ProductListingPageStatus, ProductListingSaveDraftButton, type ProductListingNotice } from './ProductListingPageStatus'
+import { ProductListingPageStatus, ProductListingSaveDraftButton } from './ProductListingPageStatus'
 import { ProductListingWorkflowPanel } from './ProductListingWorkflowPanel'
 import { ProductListingWorkflowActionButton } from './ProductListingWorkflowActionButton'
 import { reopenProductListingReview } from './api'
@@ -31,7 +31,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     confirmationAwaitingWorkflow, setConfirmationAwaitingWorkflow,
     dangerousActionAwaitingWorkflow, setDangerousActionAwaitingWorkflow,
     workflowIntegrityError, listingDraftRef, workflowIdentityRef, workflowRequestSequenceRef,
-    workflowPresentation, editSession, currentDraftId, workflowReadiness,
+    workflowPresentation, editSession, actionPlacement, currentDraftId, workflowReadiness,
     updateEditorDraft, applySourcePrefill, applyWorkflow,
     identityMatches, refreshWorkflow
   } = workflowState
@@ -42,7 +42,6 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
   const [listingReviewOpen, setListingReviewOpen] = useState(false)
   const [listingReviewChanges, setListingReviewChanges] = useState<ProductListingChangeSummaryItem[]>([])
   const [listingPreparationError, setListingPreparationError] = useState('')
-  const [draftSaveNotice, setDraftSaveNotice] = useState<ProductListingNotice>()
   const confirmCommandInFlightRef = useRef(false)
   const recoveryCommandInFlightRef = useRef(false)
   const {
@@ -128,8 +127,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     identityMatches,
     markLoadError: workflowReadiness.markLoadError
   })
-
-  const { currentListingDraftFromForm, saveDraftFromForm } =
+  const { currentListingDraftFromForm, saveDraftFromForm, draftSaveNotice } =
     useProductListingDraftPersistence({
       form,
       storeCode,
@@ -143,8 +141,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
       canEditAndSave: editSession.canEditAndSave,
       updateEditorDraft,
       refreshWorkflow,
-      setSaving,
-      setDraftSaveNotice
+      setSaving
     })
 
   const {
@@ -217,6 +214,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         reauthenticationNotice={reauthentication.notice}
         dangerousActionAwaiting={Boolean(dangerousActionAwaitingWorkflow)}
         reopenAwaiting={reviewReopen.awaiting}
+        confirmNotCreatedAwaiting={confirmNotCreated.awaiting}
       />
 
       <Form
@@ -241,9 +239,11 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
               <Space>
                 <ProductListingSaveDraftButton saving={saving}
                   disabled={!editSession.canEditAndSave || busy} onSave={() => void saveDraftFromForm()} />
-                <ProductListingWorkflowActionButton workflow={workflow} busy={operationBusy}
-                  disabled={Boolean(workflowActionBlockedMessage)} onlyAction="REVIEW_DRAFT"
-                  onAction={action => void handleWorkflowAction(action)} />
+                {actionPlacement.showReviewActionInEditor ? (
+                  <ProductListingWorkflowActionButton workflow={workflow} busy={operationBusy}
+                    disabled={Boolean(workflowActionBlockedMessage)} onlyAction="REVIEW_DRAFT"
+                    onAction={action => void handleWorkflowAction(action)} />
+                ) : null}
               </Space>
             }
             competitorMaterials={sourcePrefill?.competitorMaterials ?? listingDraft.competitorMaterials}
@@ -268,7 +268,7 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         busy={operationBusy}
         actionDisabled={Boolean(workflowActionBlockedMessage)}
         actionBlockedMessage={workflowActionBlockedMessage}
-        hidePrimaryAction={workflowPresentation.action?.kind === 'REVIEW_DRAFT'}
+        hidePrimaryAction={actionPlacement.hideWorkflowPanelAction}
         canConfirmNotCreated={confirmNotCreated.canConfirm}
         notCreatedLookupAttemptCount={confirmNotCreated.lookupAttemptCount}
         onAction={action => void handleWorkflowAction(action)}

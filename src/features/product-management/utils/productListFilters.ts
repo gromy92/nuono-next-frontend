@@ -27,6 +27,18 @@ export function resolveProductListRowSyncStatus(
   return rowUiState?.syncStatus ?? item.syncStatus ?? MOCK_PRODUCT_LIST_UI_STATES[item.skuParent]?.syncStatus ?? 'synced';
 }
 
+export function resolveProductListRowManagementStatus(
+  item: ProductListRowPayload,
+  uiStates: Record<string, ProductListUiState>,
+  usingMockProductList: boolean
+) {
+  const listingStatus = String(item.listingPublishTask?.status ?? '').trim().toLowerCase();
+  if (listingStatus === 'failed' || listingStatus === 'rejected') {
+    return 'failed' as const;
+  }
+  return resolveProductListRowSyncStatus(item, uiStates, usingMockProductList);
+}
+
 export function filterAndSortProductListItems({
   filters,
   sortKey,
@@ -38,7 +50,7 @@ export function filterAndSortProductListItems({
   const titleQuery = filters.titleQuery.trim().toLowerCase();
   const brandQuery = filters.brandQuery.trim().toLowerCase();
   const filteredItems = sourceItems.filter((item) => {
-    const rowSyncStatus = resolveProductListRowSyncStatus(item, uiStates, usingMockProductList);
+    const rowSyncStatus = resolveProductListRowManagementStatus(item, uiStates, usingMockProductList);
     const matchesSku =
       !skuQuery ||
       [item.skuParent, item.partnerSku, item.pskuCode, item.offerCode, item.barcode]
@@ -112,7 +124,7 @@ export function countProductListStatuses(
   };
 
   sourceItems.forEach((item) => {
-    counts[resolveProductListRowSyncStatus(item, uiStates, usingMockProductList)] += 1;
+    counts[resolveProductListRowManagementStatus(item, uiStates, usingMockProductList)] += 1;
   });
 
   return counts;

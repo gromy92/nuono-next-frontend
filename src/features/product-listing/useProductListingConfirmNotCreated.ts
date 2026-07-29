@@ -2,10 +2,13 @@ import { App } from 'antd'
 import { useEffect, useRef, useState, type MutableRefObject } from 'react'
 import { normalizeError } from '../../shared/api'
 import { confirmProductListingNotCreated } from './api'
+import { productListingNotCreatedConfirmationConfig } from './productListingConfirmNotCreated'
 import {
-  productListingNotCreatedConfirmationConfig,
-  isProductListingConfirmNotCreatedSuccess
-} from './productListingConfirmNotCreated'
+  advanceProductListingConfirmNotCreatedStableRead,
+  prepareProductListingConfirmNotCreated,
+  reconcileProductListingConfirmNotCreated,
+  type ProductListingConfirmNotCreatedSource
+} from './productListingConfirmNotCreatedCommand'
 import type {
   ProductListingCreateOutcomeVerificationView,
   ProductListingWorkflowView
@@ -19,6 +22,11 @@ type ConfirmNotCreatedOffer = {
   expectedIdentity: ProductListingWorkflowIdentity
 }
 
+type AwaitingConfirmNotCreated = {
+  source: ProductListingConfirmNotCreatedSource
+  expectedIdentity: ProductListingWorkflowIdentity
+}
+
 type ProductListingConfirmNotCreatedParams = {
   workflow: ProductListingWorkflowView
   commandInFlightRef: MutableRefObject<boolean>
@@ -26,7 +34,7 @@ type ProductListingConfirmNotCreatedParams = {
   refreshWorkflow: (
     draftId: number,
     expectedIdentity: ProductListingWorkflowIdentity
-  ) => Promise<unknown>
+  ) => Promise<ProductListingWorkflowView | undefined>
   applyWorkflow: (workflow: ProductListingWorkflowView) => boolean
 }
 
@@ -37,8 +45,13 @@ export function useProductListingConfirmNotCreated(
   callbacksRef.current = params
   const [offer, setOffer] = useState<ConfirmNotCreatedOffer>()
   const offerRef = useRef<ConfirmNotCreatedOffer | undefined>(undefined)
+  const [awaiting, setAwaiting] = useState<AwaitingConfirmNotCreated>()
+  const [readOnlyPollRestartVersion, setReadOnlyPollRestartVersion] =
+    useState(0)
   const [busy, setBusy] = useState(false)
   const { message, modal } = App.useApp()
+  const messageRef = useRef(message)
+  messageRef.current = message
   const taskId = params.workflow.realRunTask?.taskId
 
   useEffect(() => {
@@ -61,6 +74,86 @@ export function useProductListingConfirmNotCreated(
     params.workflow.writeCertainty,
     taskId
   ])
+
+  useEffect(() => {
+    if (!awaiting) {
+      return
+    }
+    const resolution = reconcileProductListingConfirmNotCreated(
+      awaiting.source,
+      params.workflow
+    )
+    if (resolution === 'waiting') {
+      return
+    }
+    callbacksRef.current.commandInFlightRef.current = false
+    offerRef.current = undefined
+    setOffer(undefined)
+    setAwaiting(undefined)
+    if (resolution === 'ready') {
+      message.success('已确认 Noon 未创建商品，可以修改后重新检查上架。')
+    } else {
+      message.warning('后端上架流程已经变化，请按最新动作继续。')
+    }
+  }, [awaiting, message, params.workflow])
+
+  useEffect(() => {
+    if (!awaiting) {
+      return
+    }
+    let cancelled = false
+    let timeoutId: number | undefined
+    let stableReadCount = 0
+    const poll = async () => {
+      try {
+        const nextWorkflow = await callbacksRef.current.refreshWorkflow(
+          awaiting.source.draftId,
+          awaiting.expectedIdentity
+        )
+        if (cancelled) {
+          return
+        }
+        if (nextWorkflow) {
+          const convergence =
+            advanceProductListingConfirmNotCreatedStableRead(
+              awaiting.source,
+              nextWorkflow,
+              stableReadCount
+            )
+          stableReadCount = convergence.stableReadCount
+          if (convergence.decision === 'release') {
+            callbacksRef.current.commandInFlightRef.current = false
+            offerRef.current = undefined
+            setOffer(undefined)
+            setAwaiting(undefined)
+            setReadOnlyPollRestartVersion(current => current + 1)
+            messageRef.current.warning(
+              '已连续读取到稳定的后端权威状态，本页已解除确认锁定；系统未重复确认，将重新执行只读核对。'
+            )
+            return
+          }
+          if (
+            convergence.decision === 'ready' ||
+            convergence.decision === 'changed'
+          ) {
+            return
+          }
+        }
+      } catch {
+        // Keep the command locked and retry read-only workflow convergence.
+      }
+      if (!cancelled) {
+        timeoutId = window.setTimeout(() => void poll(), 2500)
+      }
+    }
+    timeoutId = window.setTimeout(() => void poll(), 1500)
+    return () => {
+      cancelled = true
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId)
+      }
+    }
+  }, [awaiting])
 
   function observeVerification(
     verification: ProductListingCreateOutcomeVerificationView,
@@ -94,6 +187,7 @@ export function useProductListingConfirmNotCreated(
     workflow: params.workflow,
     draftId: params.workflow.draft?.draftId,
     storeCode: params.workflow.draft?.storeCode,
+    restartVersion: readOnlyPollRestartVersion,
     commandInFlightRef: params.commandInFlightRef,
     identityIsCurrent: params.identityIsCurrent,
     refreshWorkflow: params.refreshWorkflow,
@@ -104,6 +198,7 @@ export function useProductListingConfirmNotCreated(
     const current = callbacksRef.current
     if (
       !offer ||
+      awaiting ||
       busy ||
       current.commandInFlightRef.current ||
       current.workflow.phase !== 'ACTION_REQUIRED' ||
@@ -123,9 +218,13 @@ export function useProductListingConfirmNotCreated(
 
   async function execute(currentOffer: ConfirmNotCreatedOffer) {
     const current = callbacksRef.current
+    const draftId = currentOffer.expectedIdentity.draftId
+    const storeCode = currentOffer.expectedIdentity.storeCode
     if (
       current.commandInFlightRef.current ||
       offerRef.current?.taskId !== currentOffer.taskId ||
+      !draftId ||
+      !storeCode ||
       current.workflow.phase !== 'ACTION_REQUIRED' ||
       current.workflow.writeCertainty !== 'UNKNOWN' ||
       current.workflow.nextAction !== 'CHECK_CREATE_RESULT' ||
@@ -137,34 +236,52 @@ export function useProductListingConfirmNotCreated(
     }
     current.commandInFlightRef.current = true
     setBusy(true)
+    let keepCommandLocked = false
+    const source: ProductListingConfirmNotCreatedSource = {
+      taskId: currentOffer.taskId,
+      draftId,
+      storeCode
+    }
     try {
-      const nextWorkflow = await confirmProductListingNotCreated(
-        currentOffer.taskId
-      )
-      if (!callbacksRef.current.identityIsCurrent(currentOffer.expectedIdentity)) {
-        message.warning('确认结果已过期，未应用到当前草稿。')
-        return
-      }
-      if (
-        !isProductListingConfirmNotCreatedSuccess(nextWorkflow) ||
-        !callbacksRef.current.applyWorkflow(nextWorkflow)
+      const preparation = await prepareProductListingConfirmNotCreated({
+        confirm: () => confirmProductListingNotCreated(currentOffer.taskId),
+        identityIsCurrent: () =>
+          callbacksRef.current.identityIsCurrent(currentOffer.expectedIdentity),
+        applyWorkflow: callbacksRef.current.applyWorkflow
+      })
+      if (preparation.status === 'ready') {
+        offerRef.current = undefined
+        setOffer(undefined)
+        message.success('已确认 Noon 未创建商品，可以修改后重新检查上架。')
+      } else if (
+        preparation.status === 'ambiguous_locked' ||
+        preparation.status === 'awaiting_workflow'
       ) {
-        message.error('后端未返回可编辑的上架流程，页面仍保持锁定。')
-        return
+        keepCommandLocked = true
+        offerRef.current = undefined
+        setOffer(undefined)
+        setAwaiting({ source, expectedIdentity: currentOffer.expectedIdentity })
+        message.warning(
+          '确认命令结果仍在核对中，已锁定重复操作并持续刷新后端上架流程。'
+        )
+      } else if (preparation.status === 'stale') {
+        message.warning('确认结果已过期，未应用到当前草稿。')
+      } else {
+        message.error(
+          normalizeError(preparation.error, '确认 Noon 未创建商品失败')
+        )
       }
-      offerRef.current = undefined
-      setOffer(undefined)
-      message.success('已确认 Noon 未创建商品，可以修改后重新检查上架。')
-    } catch (error) {
-      message.error(normalizeError(error, '确认 Noon 未创建商品失败'))
     } finally {
-      callbacksRef.current.commandInFlightRef.current = false
+      if (!keepCommandLocked) {
+        callbacksRef.current.commandInFlightRef.current = false
+      }
       setBusy(false)
     }
   }
 
   return {
-    busy: busy || createOutcomePolling.busy,
+    awaiting: Boolean(awaiting),
+    busy: busy || Boolean(awaiting) || createOutcomePolling.busy,
     canConfirm: Boolean(offer),
     lookupAttemptCount: offer?.lookupAttemptCount,
     observeVerification,

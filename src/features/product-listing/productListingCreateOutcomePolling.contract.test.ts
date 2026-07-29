@@ -25,9 +25,11 @@ assert.ok(
   'unknown create outcomes must be checked automatically, resume only after a formal reference is found, and never auto-confirm absence'
 )
 assert.ok(
-  confirmNotCreatedSource.includes('useProductListingCreateOutcomePolling({') &&
+    confirmNotCreatedSource.includes('useProductListingCreateOutcomePolling({') &&
     confirmNotCreatedSource.includes('observeVerification') &&
-    confirmNotCreatedSource.includes('busy || createOutcomePolling.busy') &&
+    confirmNotCreatedSource.includes('busy || Boolean(awaiting) || createOutcomePolling.busy') &&
+    confirmNotCreatedSource.includes('restartVersion: readOnlyPollRestartVersion') &&
+    hookSource.includes('params.restartVersion') &&
     pageSource.includes('confirmNotCreated.busy'),
   'the existing unknown-outcome recovery controller must own automatic reconciliation and expose its busy state to the page'
 )

@@ -36,6 +36,12 @@ assert.match(
   '继续编辑草稿时必须跳转到 listing-draft 来源的上架页'
 )
 
+assert.match(
+  drawerSource,
+  /storeCode:\s*draft\.storeCode/,
+  '上架记录恢复 URL 必须显式携带草稿店铺，不能依赖当前页面店铺上下文'
+)
+
 assert.doesNotMatch(
   drawerSource,
   /<Table<ProductListingDraftView>/,

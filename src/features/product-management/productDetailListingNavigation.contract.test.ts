@@ -60,6 +60,7 @@ try {
   )
   assert.equal(productionParams.get('listingDraftId'), '10068')
   assert.equal(productionParams.get('listingSource'), 'listing-draft')
+  assert.equal(productionParams.get('storeCode'), 'STR245027-NSA')
   assert.equal(productionParams.has('devSession'), false)
 } finally {
   Object.defineProperty(globalThis, 'window', {

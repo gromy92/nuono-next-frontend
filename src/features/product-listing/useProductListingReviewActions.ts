@@ -94,8 +94,14 @@ export function useProductListingReviewActions(options: Options) {
     options.setPreparing(true)
     try {
       const result = await options.saveDraftFromForm({ silent: true, draftOverride: currentDraft })
-      if (!result?.saved.draftId || !result.workflow) {
+      if (!result?.saved.draftId) {
         options.setListingPreparationError('自动保存草稿失败，请处理页面提示后重试。')
+        return
+      }
+      if (!result.workflow) {
+        options.setListingPreparationError(
+          '草稿已保存，但暂时无法读取最新上架状态，请刷新页面后重试。'
+        )
         return
       }
       if (!presentProductListingWorkflow(result.workflow).allowPrepare) {

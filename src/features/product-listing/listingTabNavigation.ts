@@ -9,6 +9,18 @@ export type ProductListingTabReservation = {
   close: () => void
 }
 
+export type ProductListingCurrentTabNavigator = (targetUrl: string) => void
+
+export function navigateProductListingTargetInCurrentTab(
+  targetUrl: string,
+  navigate: ProductListingCurrentTabNavigator = (url) => window.location.assign(url)
+) {
+  // Embedded browsers can expose a WindowProxy without creating a visible
+  // tab. Recovery entries therefore use deterministic same-tab navigation.
+  navigate(targetUrl)
+  return targetUrl
+}
+
 export function reserveProductListingTargetInNewTab(
   targetUrl: string,
   opener: ProductListingTabOpener = (url, target, features) => window.open(url, target, features)
