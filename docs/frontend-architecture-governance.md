@@ -49,9 +49,14 @@ pnpm dependencies:check
 Base-path rewriting, session and role headers, and session-expiry notification
 belong to its private `apiTransportRuntime.ts` Implementation.
 
-- Feature Modules prefer `apiRequestJson` or `apiRequestNoContent` for ordinary
-  responses. Use `apiFetch` only when a caller must consume the `Response`
-  directly, such as auth-specific handling or blob/text bodies.
+- Feature Modules prefer `apiRequestDecoded` for nested domain responses and
+  write-operation results. The decoder owns the `unknown -> T` transition at
+  the HTTP-to-domain Seam; malformed success payloads must fail there instead
+  of being normalized into a real empty state.
+- `apiRequestJson` remains the migration Interface for existing shallow
+  responses, and `apiRequestNoContent` owns empty success responses. Use
+  `apiFetch` only when a caller must consume the `Response` directly, such as
+  auth-specific handling or blob/text bodies.
 - Feature Modules must not call native `fetch` or patch `window.fetch`.
 - Callers may supply request headers and abort signals; the transport
   Implementation preserves them and does not attach session context to
