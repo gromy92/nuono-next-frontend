@@ -48,16 +48,27 @@ type InvalidDefinitionKey = {
 type DeclaredTabKey<Definition> = Definition extends { readonly tabKey: infer TabKey }
   ? TabKey
   : never
+type DeclaredAccessKey<Definition> = Definition extends { readonly accessKey: infer AccessKey }
+  ? AccessKey
+  : never
 type InvalidTabKey = Exclude<
   DeclaredTabKey<(typeof routeDefinitionInputs)[AppMenuKey]>,
+  AppMenuKey
+>
+type InvalidAccessKey = Exclude<
+  DeclaredAccessKey<(typeof routeDefinitionInputs)[AppMenuKey]>,
   AppMenuKey
 >
 type AssertNever<Value extends never> = Value
 type DefinitionKeyIntegrity = AssertNever<InvalidDefinitionKey>
 type TabKeyIntegrity = AssertNever<InvalidTabKey>
+type AccessKeyIntegrity = AssertNever<InvalidAccessKey>
 
 export const WORKSPACE_MENU_DEFINITIONS: Readonly<
   Record<AppMenuKey, WorkspaceMenuDefinition>
 > = routeDefinitionInputs
 
-export type RouteDefinitionCompileTimeIntegrity = DefinitionKeyIntegrity | TabKeyIntegrity
+export type RouteDefinitionCompileTimeIntegrity =
+  | DefinitionKeyIntegrity
+  | TabKeyIntegrity
+  | AccessKeyIntegrity

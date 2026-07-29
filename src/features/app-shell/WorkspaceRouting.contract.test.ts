@@ -9,12 +9,12 @@ import {
   WORKSPACE_SECTION_DEFINITIONS,
   workspaceMenuMount,
   workspaceMenuPath
-} from './WorkspaceMenuRegistry'
+} from '../route-catalog/RouteCatalog'
 import {
   OPERATIONS_PRODUCT_KEYWORDS_PATH,
-  resolveWorkspaceMenuKeyFromLocation,
-  withCurrentWorkspaceDevQuery
-} from './WorkspaceRouting'
+  resolveWorkspaceMenuKeyFromLocation
+} from '../route-catalog/routePaths'
+import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery'
 
 assert.equal(workspaceMenuPath('official-warehouse'), '/warehouse/official-warehouse')
 assert.equal(typeof workspaceMenuMount('official-warehouse'), 'function')

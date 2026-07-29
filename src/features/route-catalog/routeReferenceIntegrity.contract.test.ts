@@ -7,6 +7,7 @@ assert.deepEqual(
     {
       first: {
         key: 'wrong-key',
+        accessKey: 'missing-access',
         tabKey: 'missing-tab',
         sectionKey: 'one',
         workspaceMount: validMount
@@ -18,6 +19,7 @@ assert.deepEqual(
   [
     'route key mismatch: first != wrong-key',
     'unknown tab key for first: missing-tab',
+    'unknown access key for first: missing-access',
     'cross-section grant rule first, second, missing-grant: one, two',
     'unknown grant target: missing-grant'
   ]

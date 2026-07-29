@@ -3,7 +3,10 @@ import { Button, Dropdown, Layout, Segmented, Space, Tag, Typography } from 'ant
 import type { MenuProps } from 'antd';
 import { GlobalStoreSwitch } from '../auth/GlobalStoreSwitch';
 import type { AuthRoleView, AuthSession } from '../auth/session';
-import { activeRoleView, canSwitchBossRoleView } from './WorkspaceRouting';
+import {
+  activeRoleView,
+  canSwitchBossRoleView
+} from '../route-catalog/sessionAccessPolicy';
 import { shellRoleAvatarText, shellRoleColorMap, shellRoleDisplayName } from './shellHeaderRole';
 import {
   shellHeaderChevronStyle,

@@ -29,7 +29,7 @@ import {
   WAREHOUSE_DISPATCH_PATH,
   WAREHOUSE_LOGISTICS_BILL_PATH,
   WAREHOUSE_SHIPPING_ORDER_LEGACY_PATH
-} from './WorkspaceRouting'
+} from '../route-catalog/routePaths'
 import type { DevRoleContext } from './ShellDevSessionFixtures'
 
 type GrantedMenu = NonNullable<AuthSession['grantedMenus']>[number]

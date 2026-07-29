@@ -1,6 +1,6 @@
 import { currentAppPathname } from '../../runtimePaths'
 import type { AuthSession } from '../auth/session'
-import { normalizeSessionRoleView } from './WorkspaceRouting'
+import { normalizeSessionRoleView } from '../route-catalog/sessionAccessPolicy'
 import { readDevSessionOverride } from './ShellDevSession'
 
 export const SESSION_STORAGE_KEY = 'nuono-next-session'

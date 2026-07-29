@@ -1,17 +1,21 @@
 import { type Key, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import type { TabsProps } from 'antd';
 import type { SidebarMenuItem } from './SidebarNavigation';
-import type { AppMenuKey } from './WorkspaceRouting';
 import type { WorkspaceOwnedTabsController } from '../route-catalog/WorkspaceOwnedTabs';
+import {
+  activeWorkspacePathLabel,
+  activeWorkspaceSidebarOpenKeys,
+  initialWorkspaceTabKeys,
+  visibleWorkspaceTabKeys
+} from '../route-catalog/navigationProjection';
 import {
   isWorkspaceMenuKey,
   shouldShowWorkspaceMenuInTabs,
   workspaceMenuDefinition,
-  workspaceMenuPathLabel,
-  workspaceMenuSectionKey,
   workspaceMenuTabLabel,
-  workspaceTabKeyForMenuKey
-} from './WorkspaceMenuRegistry';
+  workspaceTabKeyForMenuKey,
+  type AppMenuKey
+} from '../route-catalog/RouteCatalog';
 function normalizeWorkspaceTabMenuKey(menuKey: AppMenuKey): AppMenuKey {
   return workspaceTabKeyForMenuKey(menuKey);
 }
@@ -29,10 +33,6 @@ function nextWorkspaceMenuKeyAfterClose(keys: AppMenuKey[], targetKey: AppMenuKe
   return remainingKeys[Math.min(Math.max(targetIndex, 0), remainingKeys.length - 1)];
 }
 
-function shouldShowActiveMenuPathLabel(menuKey: AppMenuKey) {
-  return menuKey !== 'noon-call-store-data' && menuKey !== 'system-report-noon-data-gaps';
-}
-
 type UseShellWorkspaceNavigationParams = {
   activeMenuKey: AppMenuKey;
   ownedTabsController: WorkspaceOwnedTabsController;
@@ -46,22 +46,18 @@ export function useShellWorkspaceNavigation({
   sessionAllowedMenuKeySet,
   visibleWorkspaceMenuItems
 }: UseShellWorkspaceNavigationParams) {
-  const [openedWorkspaceTabKeys, setOpenedWorkspaceTabKeys] = useState<AppMenuKey[]>([
-    'product-manage'
-  ]);
+  const [openedWorkspaceTabKeys, setOpenedWorkspaceTabKeys] = useState<AppMenuKey[]>(
+    () => initialWorkspaceTabKeys(activeMenuKey, sessionAllowedMenuKeySet)
+  );
 
   const activeOwnedTab = ownedTabsController.tabs.find(
     (tab) => tab.key === ownedTabsController.activeOwnedTabKey
   );
-  const activeMenuPathLabel = shouldShowActiveMenuPathLabel(activeMenuKey)
-    ? activeOwnedTab?.parentMenuKey === activeMenuKey && activeOwnedTab.pathLabel
-      ? activeOwnedTab.pathLabel
-      : workspaceMenuPathLabel(activeMenuKey)
-    : null;
+  const activeMenuPathLabel = activeWorkspacePathLabel(activeMenuKey, activeOwnedTab);
 
   const workspaceTabItems = useMemo(() => {
-    const items: Array<{ key: string; label: ReactNode; closable: boolean }> = openedWorkspaceTabKeys
-      .filter((key) => shouldShowWorkspaceMenuInTabs(key) && (key === 'product-manage' || sessionAllowedMenuKeySet.has(key)))
+    const items: Array<{ key: string; label: ReactNode; closable: boolean }> =
+      visibleWorkspaceTabKeys(openedWorkspaceTabKeys, sessionAllowedMenuKeySet)
       .map((key) => ({
         key,
         label: workspaceMenuTabLabel(key),
@@ -134,13 +130,10 @@ export function useShellWorkspaceNavigation({
     ]
   );
 
-  const activeSidebarOpenKeys = useMemo(() => {
-    const activeSectionKey = workspaceMenuSectionKey(activeMenuKey);
-    if (activeSectionKey === 'user') {
-      return sessionAllowedMenuKeySet.has('system-role') ? ['user', 'system'] : ['user'];
-    }
-    return activeSectionKey ? [activeSectionKey] : [];
-  }, [activeMenuKey, sessionAllowedMenuKeySet]);
+  const activeSidebarOpenKeys = useMemo(
+    () => activeWorkspaceSidebarOpenKeys(activeMenuKey),
+    [activeMenuKey]
+  );
   const shouldRenderWorkspaceTabs = shouldShowWorkspaceMenuInTabs(normalizeWorkspaceTabMenuKey(activeMenuKey));
   const [sidebarOpenKeys, setSidebarOpenKeys] = useState<string[]>(activeSidebarOpenKeys);
   const activeSidebarRootKey = activeSidebarOpenKeys[0];
@@ -158,7 +151,7 @@ export function useShellWorkspaceNavigation({
     const nextKey = normalizeWorkspaceTabMenuKey(activeMenuKey);
     if (
       !shouldShowWorkspaceMenuInTabs(nextKey) ||
-      (nextKey !== 'product-manage' && !sessionAllowedMenuKeySet.has(nextKey))
+      !sessionAllowedMenuKeySet.has(nextKey)
     ) {
       return;
     }

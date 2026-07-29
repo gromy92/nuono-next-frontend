@@ -8,9 +8,11 @@ import { ShellHeader } from './ShellHeader';
 import { ShellSidebar } from './ShellSidebar';
 import { ShellWorkspaceContent } from './ShellWorkspaceContent';
 import type { SidebarMenuItem } from './SidebarNavigation';
-import type { AppMenuKey } from './WorkspaceRouting';
 import { WorkspaceErrorBoundary } from './WorkspaceErrorBoundary';
-import { isProductWorkspaceMenu } from './WorkspaceMenuRegistry';
+import {
+  workspaceMenuContentDensity,
+  type AppMenuKey
+} from '../route-catalog/RouteCatalog';
 import './shell-layout.css';
 
 const { Content } = Layout;
@@ -175,7 +177,11 @@ export function ShellFrame({
                 />
                 <Content
                   className="nuono-shell-content"
-                  style={{ padding: isProductWorkspaceMenu(activeMenuKey) ? '10px 10px 20px' : '16px 16px 24px' }}
+                  style={{
+                    padding: workspaceMenuContentDensity(activeMenuKey) === 'compact'
+                      ? '10px 10px 20px'
+                      : '16px 16px 24px'
+                  }}
                 >
                   <div className="nuono-shell-content-inner">
                     {shouldRenderWorkspaceTabs ? (

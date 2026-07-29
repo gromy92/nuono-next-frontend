@@ -31,6 +31,9 @@ for (const [recordKey, definition] of Object.entries(WORKSPACE_MENU_DEFINITIONS)
   if (definition.tabKey) {
     assert.equal(knownKeys.has(definition.tabKey), true)
   }
+  if (definition.accessKey) {
+    assert.equal(knownKeys.has(definition.accessKey), true)
+  }
 }
 
 const baseTypesSource = readFileSync(

@@ -3,9 +3,9 @@ import { Alert, Card } from 'antd'
 import { workspaceMenuMount } from '../route-catalog/RouteCatalog'
 import {
   shouldShowWorkspaceMenuInTabs,
-  workspaceTabKeyForMenuKey
-} from './WorkspaceMenuRegistry'
-import type { AppMenuKey } from './WorkspaceRouting'
+  workspaceTabKeyForMenuKey,
+  type AppMenuKey
+} from '../route-catalog/RouteCatalog'
 import type {
   ShellWorkspaceContentProps,
   ShellWorkspaceRenderContext

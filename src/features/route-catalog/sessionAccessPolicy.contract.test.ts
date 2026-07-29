@@ -22,6 +22,22 @@ assert.deepEqual(
 )
 
 assert.deepEqual(
+  resolveSessionAllowedMenuKeys({
+    ...systemAdmin,
+    userId: 2,
+    accountNo: 'buyer',
+    roleId: 5,
+    roleName: '采购',
+    level: 5,
+    grantedMenus: [
+      { menuId: 25, menuName: '角色分配', urlPath: '/api/user/role' }
+    ]
+  }),
+  ['user-store-noon', 'user-role'],
+  'catalog access ownership exposes the hidden shared-tab route with its granted parent'
+)
+
+assert.deepEqual(
   matchGrantedMenuToWorkspaceMenuKeys({
     menuId: 1,
     menuName: 'unmatched',
