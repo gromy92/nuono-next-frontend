@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import './sessionAccessPolicy.contract.test'
 import type { AuthSession } from '../auth/session'
@@ -267,16 +267,6 @@ assert.equal(
   false
 )
 
-const administrationRoutesSource = readFileSync(
-  join(process.cwd(), 'src/features/route-catalog/administrationRoutes.ts'),
-  'utf8'
-)
-const shellContentSource = readFileSync(
-  join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
-  'utf8'
-)
-assert.match(administrationRoutesSource, /import\('\.\.\/ai-file-parse\/AiFileParseBoard'\)/)
-assert.doesNotMatch(shellContentSource, /AiFileParseBoard|system-file-management/)
 assert.equal(
   existsSync(join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx')),
   false

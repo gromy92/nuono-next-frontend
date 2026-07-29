@@ -25,6 +25,37 @@ export function workspaceContentMountKeys(
   return keys
 }
 
+export function workspaceContentMountGroups(
+  activeMenuKey: AppMenuKey,
+  openedWorkspaceTabKeys: AppMenuKey[]
+) {
+  const activeWorkspaceMountKey = workspaceContentMountKeyForMenuKey(activeMenuKey)
+  const groups: Array<{
+    key: AppMenuKey
+    menuKeys: AppMenuKey[]
+    mount: ReturnType<typeof workspaceMenuMount>
+  }> = []
+
+  workspaceContentMountKeys(activeMenuKey, openedWorkspaceTabKeys).forEach((menuKey) => {
+    const mount = workspaceMenuMount(menuKey)
+    const existing = groups.find((group) => group.mount === mount)
+    if (existing) {
+      existing.menuKeys.push(menuKey)
+    } else {
+      groups.push({ key: menuKey, menuKeys: [menuKey], mount })
+    }
+  })
+
+  return groups.map((group) => {
+    const active = group.menuKeys.includes(activeWorkspaceMountKey)
+    return {
+      ...group,
+      active,
+      menuKey: active ? activeMenuKey : group.key
+    }
+  })
+}
+
 function workspaceContentMountKeyForMenuKey(menuKey: AppMenuKey) {
   const tabKey = workspaceTabKeyForMenuKey(menuKey)
   return shouldShowWorkspaceMenuInTabs(tabKey) ? tabKey : menuKey
@@ -50,24 +81,9 @@ export function ShellWorkspaceContent({
   openedWorkspaceTabKeys,
   ...baseContext
 }: ShellWorkspaceContentProps) {
-  const mountedWorkspaceMenuKeys = useMemo(
-    () => workspaceContentMountKeys(activeMenuKey, openedWorkspaceTabKeys),
-    [activeMenuKey, openedWorkspaceTabKeys]
-  )
-  const activeWorkspaceMountKey = workspaceContentMountKeyForMenuKey(activeMenuKey)
   const mountGroups = useMemo(() => {
-    const groups: Array<{ key: AppMenuKey; menuKeys: AppMenuKey[]; mount?: unknown }> = []
-    mountedWorkspaceMenuKeys.forEach((menuKey) => {
-      const mount = workspaceMenuMount(menuKey)
-      const existing = mount ? groups.find((group) => group.mount === mount) : undefined
-      if (existing) {
-        existing.menuKeys.push(menuKey)
-      } else {
-        groups.push({ key: menuKey, menuKeys: [menuKey], mount })
-      }
-    })
-    return groups
-  }, [mountedWorkspaceMenuKeys])
+    return workspaceContentMountGroups(activeMenuKey, openedWorkspaceTabKeys)
+  }, [activeMenuKey, openedWorkspaceTabKeys])
 
   if (noMenuPermission) {
     return (
@@ -85,16 +101,18 @@ export function ShellWorkspaceContent({
   return (
     <>
       {mountGroups.map((group) => {
-        const isActivePane = group.menuKeys.includes(activeWorkspaceMountKey)
-        const menuKey = isActivePane ? activeMenuKey : group.key
         return (
           <div
             key={group.key}
-            className={`nuono-shell-workspace-pane${isActivePane ? '' : ' nuono-shell-workspace-pane-hidden'}`}
-            data-workspace-menu-key={menuKey}
-            aria-hidden={!isActivePane}
+            className={`nuono-shell-workspace-pane${group.active ? '' : ' nuono-shell-workspace-pane-hidden'}`}
+            data-workspace-menu-key={group.menuKey}
+            aria-hidden={!group.active}
           >
-            <ShellWorkspaceContentPane active={isActivePane} menuKey={menuKey} context={baseContext} />
+            <ShellWorkspaceContentPane
+              active={group.active}
+              menuKey={group.menuKey}
+              context={baseContext}
+            />
           </div>
         )
       })}

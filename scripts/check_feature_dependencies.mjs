@@ -14,7 +14,7 @@ const transportAuditRoot = process.env.FEATURE_DEPENDENCY_ROOT
 const transportImplementation = join(sourceRoot, 'shared/apiTransportRuntime.ts')
 const auditOnly = process.argv.includes('--audit')
 const allowedFeatureCycles = new Set()
-
+const appShellAllowedFeatureDependencies = new Set(['auth', 'procurement-confirmation', 'route-catalog', 'store-sync'])
 function productionSourceFiles(directory) {
   return readdirSync(directory, { withFileTypes: true })
     .flatMap((entry) => {
@@ -24,7 +24,6 @@ function productionSourceFiles(directory) {
     .filter((path) => /\.(?:ts|tsx)$/u.test(path))
     .filter((path) => !/\.d\.ts$|(?:\.test|\.spec|\.contract(?:\.fixtures)?)\.(?:ts|tsx)$/u.test(path))
 }
-
 function sourceImports(filePath) {
   const source = ts.createSourceFile(
     filePath,
@@ -200,8 +199,10 @@ const knownFiles = new Set(files)
 const runtimeEdges = new Map(files.map((file) => [file, new Set()]))
 const featureEdges = new Map()
 const appShellReverseDependencies = []
+const appShellOwnershipViolations = []
 const routeLoaderAdapterEdges = []
 const orderOwnershipViolations = []
+const productUtilityBarrel = join(featuresRoot, 'product-management', 'utils.ts')
 
 for (const file of files) {
   const sourceFeature = featureName(file)
@@ -225,6 +226,11 @@ for (const file of files) {
     }
     if (sourceFeature !== targetFeature) {
       featureEdges.get(sourceFeature).add(targetFeature)
+      if (sourceFeature === 'app-shell' && !appShellAllowedFeatureDependencies.has(targetFeature)) {
+        appShellOwnershipViolations.push(
+          `${relative(root, file)} -> ${relative(root, target)}`
+        )
+      }
       if (targetFeature === 'app-shell' && sourceFeature !== 'app-shell') {
         appShellReverseDependencies.push(
           `${relative(root, file)} -> ${relative(root, target)}`
@@ -261,6 +267,12 @@ unexpectedFeatureCycles.forEach((component) => {
 appShellReverseDependencies.sort().forEach((dependency) => {
   issues.push(`business feature depends on app-shell: ${dependency}`)
 })
+appShellOwnershipViolations.sort().forEach((dependency) => {
+  issues.push(`app-shell depends on business implementation: ${dependency}`)
+})
+if (existsSync(productUtilityBarrel)) {
+  issues.push(`shallow product-management utility barrel exists: ${relative(root, productUtilityBarrel)}`)
+}
 orderOwnershipViolations.sort().forEach((dependency) => {
   issues.push(`warehouse implementation depends on purchase-order owner: ${dependency}`)
 })

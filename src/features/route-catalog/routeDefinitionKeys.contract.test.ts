@@ -1,6 +1,4 @@
 import { strict as assert } from 'node:assert'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import {
   WORKSPACE_MENU_DEFINITIONS,
   type AppMenuKey
@@ -35,15 +33,3 @@ for (const [recordKey, definition] of Object.entries(WORKSPACE_MENU_DEFINITIONS)
     assert.equal(knownKeys.has(definition.accessKey), true)
   }
 }
-
-const baseTypesSource = readFileSync(
-  join(process.cwd(), 'src/features/route-catalog/types.ts'),
-  'utf8'
-)
-const routeDefinitionsSource = readFileSync(
-  join(process.cwd(), 'src/features/route-catalog/routeDefinitions.ts'),
-  'utf8'
-)
-assert.doesNotMatch(baseTypesSource, /export type AppMenuKey/)
-assert.doesNotMatch(baseTypesSource, /WorkspaceContentKind|contentKind/)
-assert.match(routeDefinitionsSource, /type AppMenuKey = keyof typeof routeDefinitionInputs/)

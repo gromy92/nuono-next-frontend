@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { WORKSPACE_MENU_DEFINITIONS } from './RouteCatalog'
 
@@ -25,21 +25,3 @@ for (const fileName of removedLegacyFiles) {
     `${fileName} must stay deleted`
   )
 }
-
-const shellFrame = readFileSync(
-  join(process.cwd(), 'src/features/app-shell/ShellFrame.tsx'),
-  'utf8'
-)
-const shellRuntime = readFileSync(
-  join(process.cwd(), 'src/features/app-shell/AppShellRuntime.tsx'),
-  'utf8'
-)
-const shellContent = readFileSync(
-  join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
-  'utf8'
-)
-assert.doesNotMatch(
-  `${shellFrame}\n${shellRuntime}\n${shellContent}`,
-  /RoleManagementWorkspace|userRoleActiveTabKey|roleManagementRefreshSignal|renderLegacyWorkspaceContent/,
-  'the Shell must not own or dispatch user-administration details'
-)
