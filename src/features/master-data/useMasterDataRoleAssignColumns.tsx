@@ -1,18 +1,14 @@
-import { type HTMLAttributes, useCallback, useMemo } from 'react';
-import { Badge, Button, Empty, Select, Space, Table, Tag, Typography } from 'antd';
+import { type HTMLAttributes, useMemo } from 'react';
+import { Button, Select, Space, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import dayjs from 'dayjs';
 import {
-  accountTypeColor,
-  accountTypeLabel,
-  formatDateOnly,
   formatDateTime,
   isAllStoresRole,
-  roleLevelLabel,
   roleNameLabel
 } from './display';
 import { StoreSummaryInline } from './StoreSummaryInline';
-import type { MasterDataMenu, MasterDataRole, MasterDataUser } from './types';
+import type { MasterDataColumnModel } from './useMasterDataColumns';
+import type { MasterDataUser } from './types';
 
 const { Text } = Typography;
 
@@ -20,30 +16,32 @@ function responsiveCell(label: string) {
   return () => ({ title: undefined, 'data-label': label } as HTMLAttributes<HTMLElement>);
 }
 
+type RoleAssignColumnModel = Pick<
+  MasterDataColumnModel,
+  | 'assignableRoleOptions'
+  | 'assignableRoles'
+  | 'assigningUserId'
+  | 'handleAssignRole'
+  | 'openStoreAssignment'
+  | 'openUserModal'
+  | 'resettingUserId'
+  | 'confirmResetPassword'
+  | 'togglingUserId'
+  | 'confirmToggleStatus'
+>;
+
 export function useMasterDataRoleAssignColumns({
   assignableRoleOptions,
   assignableRoles,
   assigningUserId,
-  confirmDeleteMenu,
-  confirmDeleteRole,
   confirmResetPassword,
   confirmToggleStatus,
-  expandedMerchantDetail,
-  expandedMerchantId,
-  expandedMerchantLoading,
   handleAssignRole,
-  menuNameMap,
-  openMenuModal,
-  openPaymentModal,
-  openQuotaModal,
-  openRoleModal,
   openStoreAssignment,
   openUserModal,
   resettingUserId,
-  roles,
-  toggleMerchantStores,
   togglingUserId
-}: any) {
+}: RoleAssignColumnModel) {
   const roleAssignColumns = useMemo<ColumnsType<MasterDataUser>>(
     () => [
       {
@@ -67,7 +65,7 @@ export function useMasterDataRoleAssignColumns({
         width: 178,
         onCell: responsiveCell('分配角色'),
         render: (_: unknown, record) =>
-          assignableRoles.some((role: any) => role.id === record.roleId) ? (
+          assignableRoles.some((role) => role.id === record.roleId) ? (
             <Select
               data-testid="role-assign-select"
               value={record.roleId}

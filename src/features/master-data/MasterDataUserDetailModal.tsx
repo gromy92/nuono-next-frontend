@@ -2,43 +2,30 @@ import {
   Alert,
   Button,
   Card,
-  DatePicker,
   Descriptions,
   Empty,
-  Form,
-  Input,
-  InputNumber,
   Modal,
-  Select,
   Space,
   Spin,
   Table,
   Tag,
-  Transfer,
-  TreeSelect,
   Typography
 } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
-import { firstFormValidationMessage } from '../../shared/api';
-import { FormToolbarLayout } from '../../shared/ui/FormToolbarLayout';
 import {
   bindingStatusColor,
   bindingStatusLabel,
-  formatDateOnly,
-  isAllStoresRole,
   roleLevelLabel,
   roleNameLabel
 } from './display';
-import {
-  confirmDialogContent,
-  confirmDialogOkText,
-  confirmDialogTitle
-} from './MasterDataConfirmDialog';
+import type { MasterDataBoardModel } from './MasterDataBoard';
+import type { MasterDataUserDetail } from './types';
 
 const { Text } = Typography;
 
-export function MasterDataUserDetailModal({ model }: { model: any }) {
-  const { mode, loading, panelStyle, listRefreshing, refreshCurrentList, isMerchantAccountView, openUserModal, openRoleModal, openMenuModal, userKeyword, setUserKeyword, userTypeFilter, setUserTypeFilter, userStatusFilter, setUserStatusFilter, filteredUserRows, userManageColumns, teamManageColumns, expandedMerchantId, renderExpandedMerchantStores, roleAssignmentStats, roleAssignmentRows, roleAssignColumns, roles, roleColumns, filteredMenus, menuColumns, menuKeyword, setMenuKeyword, detailOpen, setDetailOpen, detailState, openQuotaModal, confirmSubmitting, confirmDialog, confirmOkDanger, confirmOkDisabled, setConfirmDialog, submitConfirmDialog, userSubmitting, userModalOpen, userModalKind, editingUser, userForm, submitUser, setUserSubmitError, messageApi, userSubmitError, assignableRoleOptions, storeTransferData, watchedRoleAllStores, allOperatorStoreGroupKeys, watchedStoreGroupKeys, setUserModalOpen, storeAssignmentSubmitting, storeAssignmentOpen, storeAssignmentUser, storeAssignmentLoading, setStoreAssignmentOpen, setStoreAssignmentCurrentGroups, setStoreAssignmentError, submitStoreAssignment, storeAssignmentError, storeAssignmentTransferData, storeAssignmentGroupKeys, setStoreAssignmentGroupKeys, quotaSubmitting, quotaModalOpen, quotaTargetStore, quotaTargetUser, setQuotaModalOpen, setQuotaTargetStore, submitQuota, quotaForm, paymentModalOpen, paymentTargetUser, setPaymentModalOpen, setPaymentRecords, paymentRecords, paymentModalLoading, setPaymentAddModalOpen, paymentAddModalOpen, paymentSubmitting, paymentForm, submitPayment, roleSubmitting, roleModalOpen, editingRole, setRoleModalOpen, submitRole, roleForm, roleTreeOptions, menuTreeData, menuSubmitting, menuModalOpen, editingMenu, setMenuModalOpen, submitMenu, menuForm } = model;
+type UserStoreLink = MasterDataUserDetail['storeLinks'][number];
+
+export function MasterDataUserDetailModal({ model }: { model: MasterDataBoardModel['userDetailModal'] }) {
+  const { isMerchantAccountView, detailOpen, setDetailOpen, detailState, openQuotaModal } = model;
   return (
     <>
       <Modal
@@ -87,7 +74,7 @@ export function MasterDataUserDetailModal({ model }: { model: any }) {
               style={{ background: '#fafaff', border: '1px solid #ece7ff', borderRadius: 12, boxShadow: 'none' }}
             >
               {detailState.data.storeLinks.length ? (
-                <Table<any>
+                <Table<UserStoreLink>
                   data-testid="user-store-link-table"
                   size="small"
                   rowKey="id"
@@ -97,12 +84,12 @@ export function MasterDataUserDetailModal({ model }: { model: any }) {
                     {
                       title: '逻辑店铺',
                       key: 'project',
-                      render: (_: unknown, record: any) => record.projectName || record.projectCode || record.storeCode
+                      render: (_: unknown, record) => record.projectName || record.projectCode || record.storeCode
                     },
                     {
                       title: '组织',
                       key: 'org',
-                      render: (_: unknown, record: any) => record.orgName || record.orgCode || '-'
+                      render: (_: unknown, record) => record.orgName || record.orgCode || '-'
                     },
                     {
                       title: '站点店铺',

@@ -1,49 +1,32 @@
-import { type HTMLAttributes, useCallback, useMemo } from 'react';
-import { Badge, Button, Empty, Select, Space, Table, Tag, Typography } from 'antd';
+import { useCallback, useMemo } from 'react';
+import { Button, Empty, Space, Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import dayjs from 'dayjs';
-import {
-  accountTypeColor,
-  accountTypeLabel,
-  formatDateOnly,
-  formatDateTime,
-  isAllStoresRole,
-  roleLevelLabel,
-  roleNameLabel
-} from './display';
-import { StoreSummaryInline } from './StoreSummaryInline';
-import type { MasterDataMenu, MasterDataRole, MasterDataUser } from './types';
+import type { MasterDataColumnModel } from './useMasterDataColumns';
+import type { MasterDataMenu, MasterDataUser, MasterDataUserDetail } from './types';
 
 const { Text } = Typography;
 
-function responsiveCell(label: string) {
-  return () => ({ title: undefined, 'data-label': label } as HTMLAttributes<HTMLElement>);
-}
+type MerchantStoreLink = MasterDataUserDetail['storeLinks'][number];
+type MenuColumnModel = Pick<
+  MasterDataColumnModel,
+  | 'confirmDeleteMenu'
+  | 'menuNameMap'
+  | 'openMenuModal'
+  | 'expandedMerchantDetail'
+  | 'expandedMerchantId'
+  | 'expandedMerchantLoading'
+  | 'openQuotaModal'
+>;
 
 export function useMasterDataMenuColumns({
-  assignableRoleOptions,
-  assignableRoles,
-  assigningUserId,
   confirmDeleteMenu,
-  confirmDeleteRole,
-  confirmResetPassword,
-  confirmToggleStatus,
   expandedMerchantDetail,
   expandedMerchantId,
   expandedMerchantLoading,
-  handleAssignRole,
   menuNameMap,
   openMenuModal,
-  openPaymentModal,
   openQuotaModal,
-  openRoleModal,
-  openStoreAssignment,
-  openUserModal,
-  resettingUserId,
-  roles,
-  toggleMerchantStores,
-  togglingUserId
-}: any) {
+}: MenuColumnModel) {
   const menuColumns = useMemo<ColumnsType<MasterDataMenu>>(
     () => [
       { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
@@ -85,14 +68,14 @@ export function useMasterDataMenuColumns({
   const renderExpandedMerchantStores = useCallback(
     (record: MasterDataUser) => {
       const detail = expandedMerchantDetail?.id === record.id ? expandedMerchantDetail : null;
-      const storeRows: any[] = detail?.storeLinks ?? [];
+      const storeRows: MerchantStoreLink[] = detail?.storeLinks ?? [];
 
       return (
         <div className="nuono-legacy-expanded-stores">
           <div className="nuono-legacy-expanded-title">
             {record.realName || record.companyName || record.accountNo} 的店铺
           </div>
-          <Table<any>
+          <Table<MerchantStoreLink>
             data-testid="merchant-store-table"
             className="nuono-legacy-store-table nuono-fit-table"
             tableLayout="fixed"

@@ -6,10 +6,11 @@ import { MasterDataSystemModes } from './MasterDataSystemModes';
 import { MasterDataUserDetailModal } from './MasterDataUserDetailModal';
 import { MasterDataUserEditorModals } from './MasterDataUserEditorModals';
 import { MasterDataUserModes } from './MasterDataUserModes';
+import type { MasterDataBoardModel } from './MasterDataBoard';
 
 const { Text } = Typography;
 
-export function MasterDataBoardView({ model }: { model: any }) {
+export function MasterDataBoardView({ model }: { model: MasterDataBoardModel }) {
   const { mode, loading, panelStyle } = model;
   if (loading) {
     return (
@@ -23,13 +24,13 @@ export function MasterDataBoardView({ model }: { model: any }) {
   }
   return (
     <Space data-testid={`master-data-board-${mode}`} direction="vertical" size={16} style={{ width: '100%' }}>
-      <MasterDataUserModes model={model} />
-      <MasterDataSystemModes model={model} />
-      <MasterDataUserDetailModal model={model} />
-      <MasterDataUserEditorModals model={model} />
-      <MasterDataStoreQuotaModals model={model} />
-      <MasterDataPaymentModals model={model} />
-      <MasterDataRoleMenuModals model={model} />
+      <MasterDataUserModes model={model.userModes} />
+      <MasterDataSystemModes model={model.systemModes} />
+      <MasterDataUserDetailModal model={model.userDetailModal} />
+      <MasterDataUserEditorModals model={model.userEditorModals} />
+      <MasterDataStoreQuotaModals model={model.storeQuotaModals} />
+      <MasterDataPaymentModals model={model.paymentModals} />
+      <MasterDataRoleMenuModals model={model.roleMenuModals} />
     </Space>
   );
 }

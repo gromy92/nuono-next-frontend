@@ -1,44 +1,30 @@
-import {
-  Alert,
-  Button,
-  Card,
-  DatePicker,
-  Descriptions,
-  Empty,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Space,
-  Spin,
-  Table,
-  Tag,
-  Transfer,
-  TreeSelect,
-  Typography
-} from 'antd';
+import { Alert, Button, Empty, Input, Select, Space, Table } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
-import { firstFormValidationMessage } from '../../shared/api';
 import { FormToolbarLayout } from '../../shared/ui/FormToolbarLayout';
-import {
-  bindingStatusColor,
-  bindingStatusLabel,
-  formatDateOnly,
-  isAllStoresRole,
-  roleLevelLabel,
-  roleNameLabel
-} from './display';
-import {
-  confirmDialogContent,
-  confirmDialogOkText,
-  confirmDialogTitle
-} from './MasterDataConfirmDialog';
+import type { MasterDataBoardModel } from './MasterDataBoard';
 
-const { Text } = Typography;
-
-export function MasterDataUserModes({ model }: { model: any }) {
-  const { mode, loading, panelStyle, listRefreshing, refreshCurrentList, isMerchantAccountView, openUserModal, openRoleModal, openMenuModal, userKeyword, setUserKeyword, userTypeFilter, setUserTypeFilter, userStatusFilter, setUserStatusFilter, filteredUserRows, userManageColumns, teamManageColumns, expandedMerchantId, renderExpandedMerchantStores, roleAssignmentStats, roleAssignmentRows, roleAssignColumns, roles, roleColumns, filteredMenus, menuColumns, menuKeyword, setMenuKeyword, detailOpen, setDetailOpen, detailState, openQuotaModal, confirmSubmitting, confirmDialog, confirmOkDanger, confirmOkDisabled, setConfirmDialog, submitConfirmDialog, userSubmitting, userModalOpen, userModalKind, editingUser, userForm, submitUser, setUserSubmitError, messageApi, userSubmitError, assignableRoleOptions, storeTransferData, watchedRoleAllStores, allOperatorStoreGroupKeys, watchedStoreGroupKeys, setUserModalOpen, storeAssignmentSubmitting, storeAssignmentOpen, storeAssignmentUser, storeAssignmentLoading, setStoreAssignmentOpen, setStoreAssignmentCurrentGroups, setStoreAssignmentError, submitStoreAssignment, storeAssignmentError, storeAssignmentTransferData, storeAssignmentGroupKeys, setStoreAssignmentGroupKeys, quotaSubmitting, quotaModalOpen, quotaTargetStore, quotaTargetUser, setQuotaModalOpen, setQuotaTargetStore, submitQuota, quotaForm, paymentModalOpen, paymentTargetUser, setPaymentModalOpen, setPaymentRecords, paymentRecords, paymentModalLoading, setPaymentAddModalOpen, paymentAddModalOpen, paymentSubmitting, paymentForm, submitPayment, roleSubmitting, roleModalOpen, editingRole, setRoleModalOpen, submitRole, roleForm, roleTreeOptions, menuTreeData, menuSubmitting, menuModalOpen, editingMenu, setMenuModalOpen, submitMenu, menuForm } = model;
+export function MasterDataUserModes({ model }: { model: MasterDataBoardModel['userModes'] }) {
+  const {
+    mode,
+    listRefreshing,
+    refreshCurrentList,
+    isMerchantAccountView,
+    openUserModal,
+    userKeyword,
+    setUserKeyword,
+    userTypeFilter,
+    setUserTypeFilter,
+    userStatusFilter,
+    setUserStatusFilter,
+    filteredUserRows,
+    userManageColumns,
+    teamManageColumns,
+    expandedMerchantId,
+    renderExpandedMerchantStores,
+    roleAssignmentStats,
+    roleAssignmentRows,
+    roleAssignColumns
+  } = model;
   return (
     <>
       {mode === 'user-account' ? (
@@ -175,7 +161,7 @@ export function MasterDataUserModes({ model }: { model: any }) {
               </div>
 
               <div className="nuono-masterdata-stat-strip nuono-store-management-stats nuono-role-assignment-stats" data-testid="role-assignment-stats">
-                {roleAssignmentStats.map((item: any) => (
+                {roleAssignmentStats.map((item) => (
                   <div key={item.label} className="nuono-masterdata-stat-item nuono-store-management-stat-item nuono-role-assignment-stat-item">
                     <span className="nuono-masterdata-stat-label">{item.label}</span>
                     <span className="nuono-masterdata-stat-value">{item.value}</span>

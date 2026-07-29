@@ -1,9 +1,10 @@
 import { Alert, Button, Form, Input, Modal, Select, Space, Spin, Table, Tag, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
+import type { StoreManagementBoardModel } from './StoreManagementBoard';
 
 const { Text } = Typography;
 
-export function StoreManagementView({ model }: { model: any }) {
+export function StoreManagementView({ model }: { model: StoreManagementBoardModel }) {
   const {
     state, ownerId, selectedOwnerId, canSelectOwner, canManageBinding, onOwnerChange,
     refresh, storeManagementStats, storeConnectionTestFeedback, columns,

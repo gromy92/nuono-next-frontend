@@ -3,7 +3,6 @@ import {
   App as AntdApp,
   Form
 } from 'antd';
-import dayjs from 'dayjs';
 import type { ConfirmDialogState } from './MasterDataConfirmDialog';
 import { MasterDataBoardView } from './MasterDataBoardView';
 import { useMasterDataBoardOptions } from './useMasterDataBoardOptions';
@@ -13,9 +12,13 @@ import { useMasterDataDataset } from './useMasterDataDataset';
 import { useMasterDataRoleMenuActions } from './useMasterDataRoleMenuActions';
 import { useMasterDataStoreFinanceActions } from './useMasterDataStoreFinanceActions';
 import { useMasterDataUserActions } from './useMasterDataUserActions';
-import type { MasterDataUserDetail } from './types';
-
-export type MasterDataBoardMode = 'user-account' | 'user-role' | 'system-role' | 'system-menu';
+import type {
+  MasterDataBoardMode,
+  MasterDataUserDetail,
+  MasterDataUserDetailState,
+  MasterDataUserFormValues
+} from './types';
+export type { MasterDataBoardMode } from './types';
 
 type Props = {
   mode: MasterDataBoardMode;
@@ -32,45 +35,33 @@ type Props = {
   onDataChanged?: () => void;
 };
 
-type UserDetailState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'success'; data: MasterDataUserDetail }
-  | { status: 'error'; message: string };
-
-type UserFormValues = {
-  accountNo: string;
-  realName?: string;
-  phone?: string;
-  email?: string;
-  password?: string;
-  accountType?: string;
-  companyName?: string;
-  roleId?: number;
-  expiredTime?: dayjs.Dayjs;
-  storeGroupKeys?: string[];
-};
-
-export function MasterDataBoard({ mode, operatorUserId, operatorRoleLevel, operatorStores = [], refreshSignal, onDataChanged }: Props) {
+function useMasterDataBoardModel({
+  mode,
+  operatorUserId,
+  operatorRoleLevel,
+  operatorStores = [],
+  refreshSignal,
+  onDataChanged
+}: Props) {
   const { message: messageApi } = AntdApp.useApp();
   const dataset = useMasterDataDataset({ mode, operatorUserId, operatorRoleLevel, refreshSignal, messageApi });
   const {
-    users, setUsers, roles, setRoles, menus, setMenus,
+    roles, menus,
     loading, listRefreshing, userKeyword, setUserKeyword,
-    userRoleFilter, setUserRoleFilter, userTypeFilter, setUserTypeFilter,
+    userTypeFilter, setUserTypeFilter,
     userStatusFilter, setUserStatusFilter, menuKeyword, setMenuKeyword,
     assigningUserId, setAssigningUserId, isMerchantAccountView, panelStyle,
-    resolveUserView, loadBoard, refreshCurrentList,
+    loadBoard, refreshCurrentList,
     filteredUserRows, filteredMenus, roleAssignmentRows, roleAssignmentStats
   } = dataset;
   const [detailOpen, setDetailOpen] = useState(false);
-  const [detailState, setDetailState] = useState<UserDetailState>({ status: 'idle' });
+  const [detailState, setDetailState] = useState<MasterDataUserDetailState>({ status: 'idle' });
   const [expandedMerchantId, setExpandedMerchantId] = useState<number | null>(null);
   const [expandedMerchantDetail, setExpandedMerchantDetail] = useState<MasterDataUserDetail | null>(null);
   const [expandedMerchantLoading, setExpandedMerchantLoading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogState | null>(null);
   const [confirmSubmitting, setConfirmSubmitting] = useState(false);
-  const [userForm] = Form.useForm<UserFormValues>();
+  const [userForm] = Form.useForm<MasterDataUserFormValues>();
   const watchedRoleId = Form.useWatch('roleId', userForm);
   const watchedStoreGroupKeys = (Form.useWatch('storeGroupKeys', userForm) as string[] | undefined) ?? [];
 
@@ -102,7 +93,7 @@ export function MasterDataBoard({ mode, operatorUserId, operatorRoleLevel, opera
   const {
     storeAssignmentOpen, setStoreAssignmentOpen, storeAssignmentLoading,
     storeAssignmentSubmitting, storeAssignmentUser, storeAssignmentGroupKeys,
-    setStoreAssignmentGroupKeys, storeAssignmentCurrentGroups,
+    setStoreAssignmentGroupKeys,
     setStoreAssignmentCurrentGroups, storeAssignmentError, setStoreAssignmentError,
     storeAssignmentTransferData, allOperatorStoreGroupKeys,
     openStoreAssignment, submitStoreAssignment,
@@ -114,8 +105,7 @@ export function MasterDataBoard({ mode, operatorUserId, operatorRoleLevel, opera
   } = storeFinanceActions;
 
   const roleMenuActions = useMasterDataRoleMenuActions({
-    operatorUserId, roles, menus, setRoles, setMenus,
-    menuNameMap, messageApi, onDataChanged, setConfirmDialog, loadBoard
+    operatorUserId, messageApi, onDataChanged, setConfirmDialog, loadBoard
   });
   const {
     roleModalOpen, setRoleModalOpen, editingRole, roleSubmitting, roleForm,
@@ -125,19 +115,19 @@ export function MasterDataBoard({ mode, operatorUserId, operatorRoleLevel, opera
   } = roleMenuActions;
 
   const userActions = useMasterDataUserActions({
-    mode, operatorUserId, roles, assignableRoles, merchantDefaultRoleId,
+    operatorUserId, merchantDefaultRoleId,
     expandStoreGroupKeys, watchedRoleAllStores, allOperatorStoreGroupKeys,
-    loadBoard, resolveUserView, setUsers, onDataChanged,
+    loadBoard, onDataChanged,
     setDetailState, setDetailOpen, setExpandedMerchantId,
     setExpandedMerchantDetail, setExpandedMerchantLoading,
     expandedMerchantId, messageApi, setConfirmDialog,
-    userForm, watchedStoreGroupKeys
+    userForm
   });
   const {
     userModalOpen, setUserModalOpen, userModalKind, editingUser,
     userSubmitting, userSubmitError, setUserSubmitError,
     togglingUserId, resettingUserId,
-    openUserDetail, toggleMerchantStores, openUserModal, submitUser,
+    toggleMerchantStores, openUserModal, submitUser,
     handleToggleStatus, handleResetPassword, confirmToggleStatus, confirmResetPassword
   } = userActions;
 
@@ -202,7 +192,73 @@ export function MasterDataBoard({ mode, operatorUserId, operatorRoleLevel, opera
     (confirmDialog?.type === 'toggle-user' && confirmDialog.user.status === 1);
   const confirmOkDisabled = confirmDialog?.type === 'delete-role' && confirmDialog.role.systemRole;
 
-  return (
-    <MasterDataBoardView model={{ mode, loading, panelStyle, listRefreshing, refreshCurrentList, isMerchantAccountView, openUserModal, openRoleModal, openMenuModal, userKeyword, setUserKeyword, userTypeFilter, setUserTypeFilter, userStatusFilter, setUserStatusFilter, filteredUserRows, userManageColumns, teamManageColumns, expandedMerchantId, renderExpandedMerchantStores, roleAssignmentStats, roleAssignmentRows, roleAssignColumns, roles, roleColumns, filteredMenus, menuColumns, menuKeyword, setMenuKeyword, detailOpen, setDetailOpen, detailState, openQuotaModal, confirmSubmitting, confirmDialog, confirmOkDanger, confirmOkDisabled, setConfirmDialog, submitConfirmDialog, userSubmitting, userModalOpen, userModalKind, editingUser, userForm, submitUser, setUserSubmitError, messageApi, userSubmitError, assignableRoleOptions, storeTransferData, watchedRoleAllStores, allOperatorStoreGroupKeys, watchedStoreGroupKeys, setUserModalOpen, storeAssignmentSubmitting, storeAssignmentOpen, storeAssignmentUser, storeAssignmentLoading, setStoreAssignmentOpen, setStoreAssignmentCurrentGroups, setStoreAssignmentError, submitStoreAssignment, storeAssignmentError, storeAssignmentTransferData, storeAssignmentGroupKeys, setStoreAssignmentGroupKeys, quotaSubmitting, quotaModalOpen, quotaTargetStore, quotaTargetUser, setQuotaModalOpen, setQuotaTargetStore, submitQuota, quotaForm, paymentModalOpen, paymentTargetUser, setPaymentModalOpen, setPaymentRecords, paymentRecords, paymentModalLoading, setPaymentAddModalOpen, paymentAddModalOpen, paymentSubmitting, paymentForm, submitPayment, roleSubmitting, roleModalOpen, editingRole, setRoleModalOpen, submitRole, roleForm, roleTreeOptions, menuTreeData, menuSubmitting, menuModalOpen, editingMenu, setMenuModalOpen, submitMenu, menuForm }} />
-  );
+  return {
+    mode, loading, panelStyle,
+    userModes: {
+      mode, listRefreshing, refreshCurrentList,
+      isMerchantAccountView, openUserModal,
+      userKeyword, setUserKeyword,
+      userTypeFilter, setUserTypeFilter,
+      userStatusFilter, setUserStatusFilter,
+      filteredUserRows, userManageColumns, teamManageColumns,
+      expandedMerchantId, renderExpandedMerchantStores,
+      roleAssignmentStats, roleAssignmentRows,
+      roleAssignColumns
+    },
+    systemModes: {
+      mode, panelStyle, listRefreshing, refreshCurrentList,
+      openRoleModal, openMenuModal,
+      roles, roleColumns,
+      filteredMenus, menuColumns,
+      menuKeyword, setMenuKeyword
+    },
+    userDetailModal: {
+      isMerchantAccountView, detailOpen, setDetailOpen,
+      detailState, openQuotaModal
+    },
+    userEditorModals: {
+      confirmSubmitting, confirmDialog,
+      confirmOkDanger, confirmOkDisabled,
+      setConfirmDialog, submitConfirmDialog,
+      userSubmitting, userModalOpen, userModalKind,
+      editingUser, userForm, submitUser,
+      setUserSubmitError, messageApi, userSubmitError,
+      assignableRoleOptions, storeTransferData,
+      watchedRoleAllStores, allOperatorStoreGroupKeys, watchedStoreGroupKeys,
+      setUserModalOpen
+    },
+    storeQuotaModals: {
+      setConfirmDialog, storeAssignmentSubmitting,
+      storeAssignmentOpen, storeAssignmentUser, storeAssignmentLoading,
+      setStoreAssignmentOpen, setStoreAssignmentCurrentGroups,
+      setStoreAssignmentError, submitStoreAssignment, storeAssignmentError,
+      storeAssignmentTransferData, storeAssignmentGroupKeys,
+      setStoreAssignmentGroupKeys, quotaSubmitting, quotaModalOpen,
+      quotaTargetStore, quotaTargetUser,
+      setQuotaModalOpen, setQuotaTargetStore, submitQuota,
+      quotaForm
+    },
+    paymentModals: {
+      paymentModalOpen, paymentTargetUser,
+      setPaymentModalOpen, setPaymentRecords,
+      paymentRecords, paymentModalLoading,
+      setPaymentAddModalOpen, paymentAddModalOpen,
+      paymentSubmitting, paymentForm,
+      submitPayment
+    },
+    roleMenuModals: {
+      roleSubmitting, roleModalOpen, editingRole,
+      setRoleModalOpen, submitRole, roleForm,
+      roleTreeOptions, menuTreeData,
+      menuSubmitting, menuModalOpen, editingMenu,
+      setMenuModalOpen, submitMenu,
+      menuForm
+    }
+  };
+}
+
+export type MasterDataBoardModel = ReturnType<typeof useMasterDataBoardModel>;
+
+export function MasterDataBoard(props: Props) {
+  return <MasterDataBoardView model={useMasterDataBoardModel(props)} />;
 }

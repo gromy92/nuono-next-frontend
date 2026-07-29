@@ -1,18 +1,15 @@
-import { type HTMLAttributes, useCallback, useMemo } from 'react';
-import { Badge, Button, Empty, Select, Space, Table, Tag, Typography } from 'antd';
+import { type HTMLAttributes, useMemo } from 'react';
+import { Badge, Button, Space, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import {
   accountTypeColor,
   accountTypeLabel,
   formatDateOnly,
-  formatDateTime,
-  isAllStoresRole,
-  roleLevelLabel,
-  roleNameLabel
+  formatDateTime
 } from './display';
-import { StoreSummaryInline } from './StoreSummaryInline';
-import type { MasterDataMenu, MasterDataRole, MasterDataUser } from './types';
+import type { MasterDataColumnModel } from './useMasterDataColumns';
+import type { MasterDataUser } from './types';
 
 const { Text } = Typography;
 
@@ -20,30 +17,24 @@ function responsiveCell(label: string) {
   return () => ({ title: undefined, 'data-label': label } as HTMLAttributes<HTMLElement>);
 }
 
+type UserManageColumnModel = Pick<
+  MasterDataColumnModel,
+  | 'openUserModal'
+  | 'toggleMerchantStores'
+  | 'expandedMerchantId'
+  | 'openPaymentModal'
+  | 'confirmToggleStatus'
+  | 'togglingUserId'
+>;
+
 export function useMasterDataUserManageColumns({
-  assignableRoleOptions,
-  assignableRoles,
-  assigningUserId,
-  confirmDeleteMenu,
-  confirmDeleteRole,
-  confirmResetPassword,
   confirmToggleStatus,
-  expandedMerchantDetail,
   expandedMerchantId,
-  expandedMerchantLoading,
-  handleAssignRole,
-  menuNameMap,
-  openMenuModal,
   openPaymentModal,
-  openQuotaModal,
-  openRoleModal,
-  openStoreAssignment,
   openUserModal,
-  resettingUserId,
-  roles,
   toggleMerchantStores,
   togglingUserId
-}: any) {
+}: UserManageColumnModel) {
   const userManageColumns = useMemo<ColumnsType<MasterDataUser>>(
     () => [
       {

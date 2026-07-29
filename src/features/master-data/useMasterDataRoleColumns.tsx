@@ -1,49 +1,23 @@
-import { type HTMLAttributes, useCallback, useMemo } from 'react';
-import { Badge, Button, Empty, Select, Space, Table, Tag, Typography } from 'antd';
+import { useMemo } from 'react';
+import { Button, Space, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import dayjs from 'dayjs';
-import {
-  accountTypeColor,
-  accountTypeLabel,
-  formatDateOnly,
-  formatDateTime,
-  isAllStoresRole,
-  roleLevelLabel,
-  roleNameLabel
-} from './display';
-import { StoreSummaryInline } from './StoreSummaryInline';
-import type { MasterDataMenu, MasterDataRole, MasterDataUser } from './types';
+import { roleLevelLabel, roleNameLabel } from './display';
+import type { MasterDataColumnModel } from './useMasterDataColumns';
+import type { MasterDataRole } from './types';
 
 const { Text } = Typography;
 
-function responsiveCell(label: string) {
-  return () => ({ title: undefined, 'data-label': label } as HTMLAttributes<HTMLElement>);
-}
+type RoleColumnModel = Pick<
+  MasterDataColumnModel,
+  'roles' | 'menuNameMap' | 'openRoleModal' | 'confirmDeleteRole'
+>;
 
 export function useMasterDataRoleColumns({
-  assignableRoleOptions,
-  assignableRoles,
-  assigningUserId,
-  confirmDeleteMenu,
   confirmDeleteRole,
-  confirmResetPassword,
-  confirmToggleStatus,
-  expandedMerchantDetail,
-  expandedMerchantId,
-  expandedMerchantLoading,
-  handleAssignRole,
   menuNameMap,
-  openMenuModal,
-  openPaymentModal,
-  openQuotaModal,
   openRoleModal,
-  openStoreAssignment,
-  openUserModal,
-  resettingUserId,
-  roles,
-  toggleMerchantStores,
-  togglingUserId
-}: any) {
+  roles
+}: RoleColumnModel) {
   const roleColumns = useMemo<ColumnsType<MasterDataRole>>(
     () => [
       { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
@@ -70,7 +44,7 @@ export function useMasterDataRoleColumns({
           if (!record.parentId) {
             return '—';
           }
-          return roles.find((item: any) => item.id === record.parentId)?.name || record.parentId;
+          return roles.find((item) => item.id === record.parentId)?.name || record.parentId;
         }
       },
       {

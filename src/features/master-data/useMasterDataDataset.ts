@@ -1,60 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  App as AntdApp,
-  Form
-} from 'antd';
 import dayjs from 'dayjs';
-import { firstFormValidationMessage, normalizeError } from '../../shared/api';
+import { normalizeError } from '../../shared/api';
 import {
-  isAllStoresRole,
-  roleNameLabel
-} from './display';
-import type { ConfirmDialogState } from './MasterDataConfirmDialog';
-import { MasterDataBoardView } from './MasterDataBoardView';
-import {
-  buildStoreTransferGroupsFromLinks,
-  buildStoreTransferGroupsFromSources,
-  expandStoreGroupKeys as expandStoreTransferGroupKeys,
-  mergeStoreTransferGroup,
-  toTransferData,
-  type StoreTransferGroup
-} from './storeTransfer';
-import {
-  addMasterDataPayment,
-  assignMasterDataStores,
-  assignMasterDataRole,
-  createMasterDataUser,
-  createMasterDataMenu,
-  createMasterDataRole,
-  deleteMasterDataMenu,
-  deleteMasterDataRole,
   fetchMasterDataMenus,
-  fetchMasterDataPayments,
   fetchMasterDataRoles,
-  fetchMasterDataUserDetail,
-  fetchMasterDataUsers,
-  resetMasterDataUserPassword,
-  toggleMasterDataUserStatus,
-  updateMasterDataQuota,
-  updateMasterDataStoreQuota,
-  updateMasterDataUser,
-  updateMasterDataMenu,
-  updateMasterDataRole
+  fetchMasterDataUsers
 } from './api';
-import { useMasterDataColumns } from './useMasterDataColumns';
 import type {
-  MasterDataAssignStoresPayload,
-  MasterDataAddPaymentPayload,
+  MasterDataBoardMode,
   MasterDataMenu,
-  MasterDataPaymentRecord,
+  MasterDataMessageApi,
   MasterDataRole,
-  MasterDataSaveMenuPayload,
-  MasterDataSaveRolePayload,
-  MasterDataSaveUserPayload,
-  MasterDataUpdateQuotaPayload,
-  MasterDataUser,
-  MasterDataUserDetail
+  MasterDataUser
 } from './types';
+
+type Options = {
+  mode: MasterDataBoardMode;
+  operatorUserId?: number;
+  operatorRoleLevel?: number;
+  refreshSignal?: number;
+  messageApi: MasterDataMessageApi;
+};
 
 export function useMasterDataDataset({
   mode,
@@ -62,7 +28,7 @@ export function useMasterDataDataset({
   operatorRoleLevel,
   refreshSignal,
   messageApi
-}: any) {
+}: Options) {
   const [users, setUsers] = useState<MasterDataUser[]>([]);
   const [roles, setRoles] = useState<MasterDataRole[]>([]);
   const [menus, setMenus] = useState<MasterDataMenu[]>([]);

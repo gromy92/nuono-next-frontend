@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react';
-import { Form } from 'antd';
+import { type Dispatch, type SetStateAction, useCallback, useState } from 'react';
+import type { FormInstance } from 'antd';
 import dayjs from 'dayjs';
 import { firstFormValidationMessage, normalizeError } from '../../shared/api';
+import type { ConfirmDialogState } from './MasterDataConfirmDialog';
 import {
   createMasterDataUser,
   fetchMasterDataUserDetail,
@@ -9,17 +10,43 @@ import {
   toggleMasterDataUserStatus,
   updateMasterDataUser
 } from './api';
-import type { MasterDataSaveUserPayload, MasterDataUser } from './types';
+import type {
+  MasterDataMessageApi,
+  MasterDataSaveUserPayload,
+  MasterDataUser,
+  MasterDataUserDetail,
+  MasterDataUserDetailState,
+  MasterDataUserFormValues
+} from './types';
+
+type Options = {
+  operatorUserId?: number;
+  merchantDefaultRoleId?: number;
+  expandStoreGroupKeys: (groupKeys?: string[]) => string[];
+  watchedRoleAllStores: boolean;
+  allOperatorStoreGroupKeys: string[];
+  loadBoard: () => Promise<void>;
+  onDataChanged?: () => void;
+  setDetailState: Dispatch<SetStateAction<MasterDataUserDetailState>>;
+  setDetailOpen: Dispatch<SetStateAction<boolean>>;
+  setExpandedMerchantId: Dispatch<SetStateAction<number | null>>;
+  setExpandedMerchantDetail: Dispatch<SetStateAction<MasterDataUserDetail | null>>;
+  setExpandedMerchantLoading: Dispatch<SetStateAction<boolean>>;
+  expandedMerchantId: number | null;
+  messageApi: MasterDataMessageApi;
+  setConfirmDialog: Dispatch<SetStateAction<ConfirmDialogState | null>>;
+  userForm: FormInstance<MasterDataUserFormValues>;
+};
 
 export function useMasterDataUserActions({
-  mode, operatorUserId, roles, assignableRoles, merchantDefaultRoleId,
+  operatorUserId, merchantDefaultRoleId,
   expandStoreGroupKeys, watchedRoleAllStores, allOperatorStoreGroupKeys,
-  loadBoard, resolveUserView, setUsers, onDataChanged,
+  loadBoard, onDataChanged,
   setDetailState, setDetailOpen, setExpandedMerchantId,
   setExpandedMerchantDetail, setExpandedMerchantLoading,
   expandedMerchantId, messageApi, setConfirmDialog,
-  userForm, watchedStoreGroupKeys
-}: any) {
+  userForm
+}: Options) {
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [userModalKind, setUserModalKind] = useState<'merchant' | 'member'>('member');
   const [editingUser, setEditingUser] = useState<MasterDataUser | null>(null);

@@ -1,74 +1,46 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  App as AntdApp,
-  Form
-} from 'antd';
-import dayjs from 'dayjs';
+import { useCallback, useState } from 'react';
+import { Form } from 'antd';
 import { firstFormValidationMessage, normalizeError } from '../../shared/api';
-import {
-  isAllStoresRole,
-  roleNameLabel
-} from './display';
 import type { ConfirmDialogState } from './MasterDataConfirmDialog';
-import { MasterDataBoardView } from './MasterDataBoardView';
 import {
-  buildStoreTransferGroupsFromLinks,
-  buildStoreTransferGroupsFromSources,
-  expandStoreGroupKeys as expandStoreTransferGroupKeys,
-  mergeStoreTransferGroup,
-  toTransferData,
-  type StoreTransferGroup
-} from './storeTransfer';
-import {
-  addMasterDataPayment,
-  assignMasterDataStores,
-  assignMasterDataRole,
-  createMasterDataUser,
   createMasterDataMenu,
   createMasterDataRole,
-  deleteMasterDataMenu,
-  deleteMasterDataRole,
-  fetchMasterDataMenus,
-  fetchMasterDataPayments,
-  fetchMasterDataRoles,
-  fetchMasterDataUserDetail,
-  fetchMasterDataUsers,
-  resetMasterDataUserPassword,
-  toggleMasterDataUserStatus,
-  updateMasterDataQuota,
-  updateMasterDataStoreQuota,
-  updateMasterDataUser,
   updateMasterDataMenu,
   updateMasterDataRole
 } from './api';
-import { useMasterDataColumns } from './useMasterDataColumns';
-import { useMasterDataDataset } from './useMasterDataDataset';
 import type {
-  MasterDataAssignStoresPayload,
-  MasterDataAddPaymentPayload,
   MasterDataMenu,
-  MasterDataPaymentRecord,
+  MasterDataMenuFormValues,
+  MasterDataMessageApi,
   MasterDataRole,
+  MasterDataRoleFormValues,
   MasterDataSaveMenuPayload,
-  MasterDataSaveRolePayload,
-  MasterDataSaveUserPayload,
-  MasterDataUpdateQuotaPayload,
-  MasterDataUser,
-  MasterDataUserDetail
+  MasterDataSaveRolePayload
 } from './types';
 
+type Options = {
+  operatorUserId?: number;
+  messageApi: MasterDataMessageApi;
+  onDataChanged?: () => void;
+  setConfirmDialog: (dialog: ConfirmDialogState | null) => void;
+  loadBoard: () => Promise<void>;
+};
+
 export function useMasterDataRoleMenuActions({
-  operatorUserId, roles, menus, setRoles, setMenus,
-  menuNameMap, messageApi, onDataChanged, setConfirmDialog, loadBoard
-}: any) {
+  operatorUserId,
+  messageApi,
+  onDataChanged,
+  setConfirmDialog,
+  loadBoard
+}: Options) {
   const [roleModalOpen, setRoleModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<MasterDataRole | null>(null);
   const [roleSubmitting, setRoleSubmitting] = useState(false);
   const [menuModalOpen, setMenuModalOpen] = useState(false);
   const [editingMenu, setEditingMenu] = useState<MasterDataMenu | null>(null);
   const [menuSubmitting, setMenuSubmitting] = useState(false);
-  const [roleForm] = Form.useForm<any>();
-  const [menuForm] = Form.useForm<any>();
+  const [roleForm] = Form.useForm<MasterDataRoleFormValues>();
+  const [menuForm] = Form.useForm<MasterDataMenuFormValues>();
 
   const openRoleModal = useCallback((role?: MasterDataRole) => {
     setEditingRole(role ?? null);

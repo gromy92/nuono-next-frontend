@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { type Dispatch, type SetStateAction, useCallback, useMemo, useState } from 'react';
 import { Form } from 'antd';
 import { firstFormValidationMessage, normalizeError } from '../../shared/api';
 import { isAllStoresRole } from './display';
@@ -20,17 +20,35 @@ import {
 import type {
   MasterDataAddPaymentPayload,
   MasterDataAssignStoresPayload,
+  MasterDataMessageApi,
   MasterDataPaymentRecord,
+  MasterDataPaymentFormValues,
+  MasterDataQuotaFormValues,
   MasterDataUpdateQuotaPayload,
   MasterDataUser,
-  MasterDataUserDetail
+  MasterDataUserDetail,
+  MasterDataUserDetailState
 } from './types';
+
+type MasterDataStoreLink = MasterDataUserDetail['storeLinks'][number];
+
+type Options = {
+  operatorUserId?: number;
+  groupedOperatorStores: StoreTransferGroup[];
+  loadBoard: () => Promise<void>;
+  detailState: MasterDataUserDetailState;
+  setDetailState: Dispatch<SetStateAction<MasterDataUserDetailState>>;
+  onDataChanged?: () => void;
+  expandedMerchantId: number | null;
+  setExpandedMerchantDetail: Dispatch<SetStateAction<MasterDataUserDetail | null>>;
+  messageApi: MasterDataMessageApi;
+};
 
 export function useMasterDataStoreFinanceActions({
   operatorUserId, groupedOperatorStores,
   loadBoard, detailState, setDetailState, onDataChanged,
   expandedMerchantId, setExpandedMerchantDetail, messageApi
-}: any) {
+}: Options) {
   const [storeAssignmentOpen, setStoreAssignmentOpen] = useState(false);
   const [storeAssignmentLoading, setStoreAssignmentLoading] = useState(false);
   const [storeAssignmentSubmitting, setStoreAssignmentSubmitting] = useState(false);
@@ -41,19 +59,19 @@ export function useMasterDataStoreFinanceActions({
   const [quotaModalOpen, setQuotaModalOpen] = useState(false);
   const [quotaSubmitting, setQuotaSubmitting] = useState(false);
   const [quotaTargetUser, setQuotaTargetUser] = useState<MasterDataUser | null>(null);
-  const [quotaTargetStore, setQuotaTargetStore] = useState<any>(null);
+  const [quotaTargetStore, setQuotaTargetStore] = useState<MasterDataStoreLink | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [paymentModalLoading, setPaymentModalLoading] = useState(false);
   const [paymentTargetUser, setPaymentTargetUser] = useState<MasterDataUser | null>(null);
   const [paymentRecords, setPaymentRecords] = useState<MasterDataPaymentRecord[]>([]);
   const [paymentAddModalOpen, setPaymentAddModalOpen] = useState(false);
   const [paymentSubmitting, setPaymentSubmitting] = useState(false);
-  const [quotaForm] = Form.useForm<any>();
-  const [paymentForm] = Form.useForm<any>();
+  const [quotaForm] = Form.useForm<MasterDataQuotaFormValues>();
+  const [paymentForm] = Form.useForm<MasterDataPaymentFormValues>();
 
   const storeAssignmentTransferGroups = useMemo(() => {
     const map = new Map<string, StoreTransferGroup>();
-    groupedOperatorStores.forEach((group: StoreTransferGroup) => mergeStoreTransferGroup(map, group));
+    groupedOperatorStores.forEach((group) => mergeStoreTransferGroup(map, group));
     storeAssignmentCurrentGroups.forEach((group) => mergeStoreTransferGroup(map, group));
     return Array.from(map.values()).sort((left, right) => left.label.localeCompare(right.label, 'zh-CN'));
   }, [groupedOperatorStores, storeAssignmentCurrentGroups]);
@@ -62,7 +80,7 @@ export function useMasterDataStoreFinanceActions({
     [storeAssignmentTransferGroups]
   );
   const allOperatorStoreGroupKeys = useMemo(
-    () => groupedOperatorStores.map((group: StoreTransferGroup) => group.key),
+    () => groupedOperatorStores.map((group) => group.key),
     [groupedOperatorStores]
   );
   const expandStoreAssignmentGroupKeys = useCallback(
@@ -126,7 +144,11 @@ export function useMasterDataStoreFinanceActions({
     }
   }, [detailState, expandStoreAssignmentGroupKeys, loadBoard, onDataChanged, operatorUserId, storeAssignmentGroupKeys, storeAssignmentUser]);
 
-  const openQuotaModal = useCallback((user: MasterDataUser, detail?: MasterDataUserDetail, store?: any) => {
+  const openQuotaModal = useCallback((
+    user: MasterDataUser,
+    detail?: MasterDataUserDetail,
+    store?: MasterDataStoreLink
+  ) => {
     setQuotaTargetUser(user);
     setQuotaTargetStore(store ?? null);
     quotaForm.resetFields();

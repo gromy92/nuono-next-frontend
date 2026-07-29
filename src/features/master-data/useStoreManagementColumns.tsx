@@ -1,6 +1,7 @@
 import { Button, Space, Tag, Typography } from 'antd';
+import type { FormInstance } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { useMemo } from 'react';
+import { type Dispatch, type SetStateAction, useMemo } from 'react';
 import { normalizeError } from '../../shared/api';
 import { testStoreSyncConnection } from '../store-sync/api';
 import type { StoreSyncStore } from '../store-sync/types';
@@ -9,8 +10,25 @@ import {
   renderStoreManagers,
   storeConnectionStatusColor
 } from './storeManagementPresentation';
+import type {
+  StoreBindFormValues,
+  StoreConnectionTestFeedback,
+  StoreManagementRefresh
+} from './StoreManagementBoard';
 
 const { Text } = Typography;
+
+type Options = {
+  bindingForm: FormInstance<StoreBindFormValues>;
+  canManageBinding: boolean;
+  ownerId?: number;
+  refresh: StoreManagementRefresh;
+  setBindingModalOpen: Dispatch<SetStateAction<boolean>>;
+  setBindingMode: Dispatch<SetStateAction<'bind' | 'rebind'>>;
+  setBindingStore: Dispatch<SetStateAction<StoreSyncStore | null>>;
+  setStoreConnectionTestFeedback: Dispatch<SetStateAction<StoreConnectionTestFeedback | undefined>>;
+  storeConnectionTestFeedback?: StoreConnectionTestFeedback;
+};
 
 export function useStoreManagementColumns({
   bindingForm,
@@ -22,7 +40,7 @@ export function useStoreManagementColumns({
   setBindingStore,
   setStoreConnectionTestFeedback,
   storeConnectionTestFeedback
-}: any) {
+}: Options) {
   const columns = useMemo<ColumnsType<StoreSyncStore>>(() => {
     const baseColumns: ColumnsType<StoreSyncStore> = [
       {

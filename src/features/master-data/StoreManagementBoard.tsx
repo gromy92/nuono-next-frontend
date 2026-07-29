@@ -1,35 +1,34 @@
-import { Alert, App as AntdApp, Button, Form, Input, Modal, Select, Space, Spin, Table, Tag, Typography } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
-import type { ColumnsType } from 'antd/es/table';
+import { App as AntdApp, Form } from 'antd';
 import { useMemo, useState } from 'react';
 import { firstFormValidationMessage, normalizeError } from '../../shared/api';
 import {
   bindStoreSyncStore,
-  createStoreSyncStore,
-  testStoreSyncConnection
+  createStoreSyncStore
 } from '../store-sync/api';
 import type { StoreBindingProjectOption, StoreSyncOverviewState, StoreSyncStore } from '../store-sync/types';
 import type { LoadStoreSyncOptions } from '../store-sync/useStoreSyncOverviewController';
 import { StoreManagementView } from './StoreManagementView';
 import { useStoreManagementColumns } from './useStoreManagementColumns';
 
-const { Text } = Typography;
-
-type StoreConnectionTestFeedback = {
+export type StoreConnectionTestFeedback = {
   storeCode: string;
   projectName?: string;
   status: 'loading' | 'success' | 'warning' | 'error';
   message: string;
 };
 
-type StoreCreateFormValues = {
+export type StoreCreateFormValues = {
   projectName?: string;
   projectCode?: string;
   storeCode?: string;
   site?: string;
 };
 
-type StoreBindFormValues = Record<string, never>;
+export type StoreBindFormValues = Record<string, never>;
+export type StoreManagementRefresh = (
+  nextOwnerId?: number,
+  options?: LoadStoreSyncOptions
+) => Promise<void>;
 
 type Props = {
   state: StoreSyncOverviewState;
@@ -43,7 +42,7 @@ type Props = {
 };
 
 
-export function StoreManagementBoard({
+function useStoreManagementBoardModel({
   state,
   ownerId,
   selectedOwnerId,
@@ -65,7 +64,7 @@ export function StoreManagementBoard({
   const [pendingCreateStoreProjects, setPendingCreateStoreProjects] = useState<StoreBindingProjectOption[]>([]);
   const [createStoreForm] = Form.useForm<StoreCreateFormValues>();
 
-  const refresh = async (nextOwnerId?: number, options?: LoadStoreSyncOptions) => {
+  const refresh: StoreManagementRefresh = async (nextOwnerId, options) => {
     if (!options?.preserveConnectionFeedback) {
       setStoreConnectionTestFeedback(undefined);
     }
@@ -171,7 +170,7 @@ export function StoreManagementBoard({
     setStoreConnectionTestFeedback, storeConnectionTestFeedback
   });
 
-  return <StoreManagementView model={{
+  return {
     state, ownerId, selectedOwnerId, canSelectOwner, canManageBinding, onOwnerChange,
     refresh, storeManagementStats, storeConnectionTestFeedback, columns,
     bindingMode, bindingModalOpen, bindingSubmitting, bindingStore, bindingForm,
@@ -179,5 +178,11 @@ export function StoreManagementBoard({
     createStoreModalOpen, createStoreSubmitting, createStoreForm,
     setCreateStoreModalOpen, pendingCreateStoreProjects, setPendingCreateStoreProjects,
     submitCreateStore, messageApi
-  }} />;
+  };
+}
+
+export type StoreManagementBoardModel = ReturnType<typeof useStoreManagementBoardModel>;
+
+export function StoreManagementBoard(props: Props) {
+  return <StoreManagementView model={useStoreManagementBoardModel(props)} />;
 }

@@ -1,44 +1,35 @@
 import {
-  Alert,
   Button,
-  Card,
   DatePicker,
-  Descriptions,
   Empty,
   Form,
   Input,
   InputNumber,
   Modal,
-  Select,
   Space,
-  Spin,
   Table,
-  Tag,
-  Transfer,
-  TreeSelect,
   Typography
 } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
-import { firstFormValidationMessage } from '../../shared/api';
 import { FormToolbarLayout } from '../../shared/ui/FormToolbarLayout';
-import {
-  bindingStatusColor,
-  bindingStatusLabel,
-  formatDateOnly,
-  isAllStoresRole,
-  roleLevelLabel,
-  roleNameLabel
-} from './display';
-import {
-  confirmDialogContent,
-  confirmDialogOkText,
-  confirmDialogTitle
-} from './MasterDataConfirmDialog';
+import { formatDateOnly } from './display';
+import type { MasterDataBoardModel } from './MasterDataBoard';
 
 const { Text } = Typography;
 
-export function MasterDataPaymentModals({ model }: { model: any }) {
-  const { mode, loading, panelStyle, listRefreshing, refreshCurrentList, isMerchantAccountView, openUserModal, openRoleModal, openMenuModal, userKeyword, setUserKeyword, userTypeFilter, setUserTypeFilter, userStatusFilter, setUserStatusFilter, filteredUserRows, userManageColumns, teamManageColumns, expandedMerchantId, renderExpandedMerchantStores, roleAssignmentStats, roleAssignmentRows, roleAssignColumns, roles, roleColumns, filteredMenus, menuColumns, menuKeyword, setMenuKeyword, detailOpen, setDetailOpen, detailState, openQuotaModal, confirmSubmitting, confirmDialog, confirmOkDanger, confirmOkDisabled, setConfirmDialog, submitConfirmDialog, userSubmitting, userModalOpen, userModalKind, editingUser, userForm, submitUser, setUserSubmitError, messageApi, userSubmitError, assignableRoleOptions, storeTransferData, watchedRoleAllStores, allOperatorStoreGroupKeys, watchedStoreGroupKeys, setUserModalOpen, storeAssignmentSubmitting, storeAssignmentOpen, storeAssignmentUser, storeAssignmentLoading, setStoreAssignmentOpen, setStoreAssignmentCurrentGroups, setStoreAssignmentError, submitStoreAssignment, storeAssignmentError, storeAssignmentTransferData, storeAssignmentGroupKeys, setStoreAssignmentGroupKeys, quotaSubmitting, quotaModalOpen, quotaTargetStore, quotaTargetUser, setQuotaModalOpen, setQuotaTargetStore, submitQuota, quotaForm, paymentModalOpen, paymentTargetUser, setPaymentModalOpen, setPaymentRecords, paymentRecords, paymentModalLoading, setPaymentAddModalOpen, paymentAddModalOpen, paymentSubmitting, paymentForm, submitPayment, roleSubmitting, roleModalOpen, editingRole, setRoleModalOpen, submitRole, roleForm, roleTreeOptions, menuTreeData, menuSubmitting, menuModalOpen, editingMenu, setMenuModalOpen, submitMenu, menuForm } = model;
+export function MasterDataPaymentModals({ model }: { model: MasterDataBoardModel['paymentModals'] }) {
+  const {
+    paymentModalOpen,
+    paymentTargetUser,
+    setPaymentModalOpen,
+    setPaymentRecords,
+    paymentRecords,
+    paymentModalLoading,
+    setPaymentAddModalOpen,
+    paymentAddModalOpen,
+    paymentSubmitting,
+    paymentForm,
+    submitPayment
+  } = model;
   return (
     <>
       <Modal
@@ -59,7 +50,7 @@ export function MasterDataPaymentModals({ model }: { model: any }) {
                 累计付费：
                 <Text strong style={{ color: '#1677ff', fontSize: 16 }}>
                   {' '}
-                  ¥{paymentRecords.reduce((sum: number, item: any) => sum + Number(item.amount || 0), 0).toFixed(2)}
+                  ¥{paymentRecords.reduce((sum, item) => sum + Number(item.amount || 0), 0).toFixed(2)}
                 </Text>
               </Text>
             }
