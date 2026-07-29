@@ -3,9 +3,15 @@ import {
   ApiError,
   SESSION_EXPIRED_EVENT,
   apiFetch,
+  apiRequestDecoded,
   apiRequestJson,
   apiRequestNoContent
 } from './api'
+import {
+  ApiResponseDecodeError,
+  requiredResponseBoolean,
+  responseRecord
+} from './responseDecoder'
 
 type FetchCall = {
   input: RequestInfo | URL
@@ -156,6 +162,27 @@ try {
 
   nextFetch = async () => new Response('{malformed', { status: 200 })
   await assert.rejects(apiRequestJson('/api/transport-malformed-success'), SyntaxError)
+
+  nextFetch = async () => Response.json({ ok: true })
+  assert.deepEqual(
+    await apiRequestDecoded('/api/transport-decoded', (value) => {
+      const record = responseRecord(value)
+      return { ok: requiredResponseBoolean(record, 'ok', '$') }
+    }),
+    { ok: true }
+  )
+
+  nextFetch = async () => Response.json({ ok: 'true' })
+  await assert.rejects(
+    apiRequestDecoded('/api/transport-invalid-shape', (value) => {
+      const record = responseRecord(value)
+      return { ok: requiredResponseBoolean(record, 'ok', '$') }
+    }),
+    (error) =>
+      error instanceof ApiResponseDecodeError
+      && error.path === '$.ok'
+      && error.message === '后端响应字段 $.ok 应为布尔值'
+  )
 
   const abortError = new DOMException('cancelled', 'AbortError')
   nextFetch = async () => Promise.reject(abortError)

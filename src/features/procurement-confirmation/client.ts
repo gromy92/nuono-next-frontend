@@ -1,9 +1,12 @@
 import type {
   ProcurementConfirmationCommand,
   RequirementConfirmationDetailResponse,
-  RequirementConfirmationListResponse
 } from './dto';
-import { apiRequestJson } from '../../shared/api';
+import { apiRequestDecoded } from '../../shared/api';
+import {
+  decodeRequirementConfirmationDetailResponse,
+  decodeRequirementConfirmationListResponse
+} from './procurementConfirmationResponseDecoder';
 
 function searchParamsFrom(params: Record<string, string | number | undefined | null>) {
   const searchParams = new URLSearchParams();
@@ -16,8 +19,8 @@ function searchParamsFrom(params: Record<string, string | number | undefined | n
   return query ? `?${query}` : '';
 }
 
-async function sendJson<TResponse>(url: string, body: unknown): Promise<TResponse> {
-  return apiRequestJson<TResponse>(url, {
+async function sendDetailJson(url: string, body: unknown): Promise<RequirementConfirmationDetailResponse> {
+  return apiRequestDecoded(url, decodeRequirementConfirmationDetailResponse, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -33,21 +36,23 @@ export async function fetchProcurementConfirmationList(params: {
   page?: number;
   pageSize?: number;
 }) {
-  return apiRequestJson<RequirementConfirmationListResponse>(
-    `/api/procurement/requirement-confirmation/demands${searchParamsFrom(params)}`
+  return apiRequestDecoded(
+    `/api/procurement/requirement-confirmation/demands${searchParamsFrom(params)}`,
+    decodeRequirementConfirmationListResponse
   );
 }
 
 export async function fetchProcurementConfirmationDetail(demandItemId: string, ownerUserId?: number) {
-  return apiRequestJson<RequirementConfirmationDetailResponse>(
+  return apiRequestDecoded(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}${searchParamsFrom({
       ownerUserId
-    })}`
+    })}`,
+    decodeRequirementConfirmationDetailResponse
   );
 }
 
 export function initializeProcurementPool(demandItemId: string, command: ProcurementConfirmationCommand & { triggerInquiry?: boolean }) {
-  return sendJson<RequirementConfirmationDetailResponse>(
+  return sendDetailJson(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}/pool/initialize`,
     command
   );
@@ -58,7 +63,7 @@ export function removeProcurementPoolItem(
   poolItemId: string,
   command: ProcurementConfirmationCommand & { reason?: string }
 ) {
-  return sendJson<RequirementConfirmationDetailResponse>(
+  return sendDetailJson(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}/pool/items/${encodeURIComponent(poolItemId)}/remove`,
     command
   );
@@ -69,7 +74,7 @@ export function addProcurementCandidateToPool(
   candidateId: string,
   command: ProcurementConfirmationCommand & { reason?: string; triggerInquiry?: boolean }
 ) {
-  return sendJson<RequirementConfirmationDetailResponse>(
+  return sendDetailJson(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}/pool/candidates/${encodeURIComponent(candidateId)}/add`,
     command
   );
@@ -79,7 +84,7 @@ export function finishProcurementInquiry(
   demandItemId: string,
   command: ProcurementConfirmationCommand & { finishMode?: string; note?: string; force?: boolean }
 ) {
-  return sendJson<RequirementConfirmationDetailResponse>(
+  return sendDetailJson(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}/pool/inquiry/finish`,
     command
   );
@@ -96,7 +101,7 @@ export function recordProcurementPoolItemReply(
     riskNote?: string;
   }
 ) {
-  return sendJson<RequirementConfirmationDetailResponse>(
+  return sendDetailJson(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}/pool/items/${encodeURIComponent(poolItemId)}/reply`,
     command
   );
@@ -107,7 +112,7 @@ export function advanceProcurementPoolItemFollowUp(
   poolItemId: string,
   command: ProcurementConfirmationCommand & { note?: string }
 ) {
-  return sendJson<RequirementConfirmationDetailResponse>(
+  return sendDetailJson(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}/pool/items/${encodeURIComponent(poolItemId)}/follow-up/advance`,
     command
   );
@@ -118,7 +123,7 @@ export function markProcurementPoolItemNoReplyHandoff(
   poolItemId: string,
   command: ProcurementConfirmationCommand & { reason?: string; replySummary?: string; riskNote?: string }
 ) {
-  return sendJson<RequirementConfirmationDetailResponse>(
+  return sendDetailJson(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}/pool/items/${encodeURIComponent(poolItemId)}/no-reply-handoff`,
     command
   );
@@ -129,7 +134,7 @@ export function markProcurementPoolItemReplyParseFailed(
   poolItemId: string,
   command: ProcurementConfirmationCommand & { reason?: string; replySummary?: string; riskNote?: string }
 ) {
-  return sendJson<RequirementConfirmationDetailResponse>(
+  return sendDetailJson(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}/pool/items/${encodeURIComponent(poolItemId)}/reply-parse-failed`,
     command
   );
@@ -143,7 +148,7 @@ export function confirmProcurementFinalCandidates(
     decisionNote?: string;
   }
 ) {
-  return sendJson<RequirementConfirmationDetailResponse>(
+  return sendDetailJson(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}/final-candidates/confirm`,
     command
   );
@@ -153,7 +158,7 @@ export function generateProcurementSummary(
   demandItemId: string,
   command: ProcurementConfirmationCommand & { regenerate?: boolean }
 ) {
-  return sendJson<RequirementConfirmationDetailResponse>(
+  return sendDetailJson(
     `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}/summary/generate`,
     command
   );

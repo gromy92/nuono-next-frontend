@@ -2,8 +2,10 @@ import {
   SESSION_EXPIRED_EVENT,
   executeApiFetch
 } from './apiTransportRuntime'
+import type { ApiResponseDecoder } from './responseDecoder'
 
 export { SESSION_EXPIRED_EVENT }
+export type { ApiResponseDecoder }
 
 export type ApiProblem = {
   code: string
@@ -120,6 +122,20 @@ export async function apiRequestJson<T>(
 ): Promise<T> {
   const response = await apiFetch(input, init)
   return parseApiResponse<T>(response, resolveApiErrorFallback(response.status, fallback))
+}
+
+export async function apiRequestDecoded<T>(
+  input: RequestInfo | URL,
+  decoder: ApiResponseDecoder<T>,
+  init?: RequestInit,
+  fallback?: ApiErrorFallback
+): Promise<T> {
+  const response = await apiFetch(input, init)
+  const payload = await parseApiResponse<unknown>(
+    response,
+    resolveApiErrorFallback(response.status, fallback)
+  )
+  return decoder(payload)
 }
 
 export async function apiRequestNoContent(
