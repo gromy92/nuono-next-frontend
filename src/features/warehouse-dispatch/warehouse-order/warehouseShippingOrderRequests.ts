@@ -1,46 +1,95 @@
 import type {
   CreateShippingOrderPayload,
-  LogisticsBill,
-  PurchaseOrderLogisticsQuoteExportSelection,
-  PurchaseOrderLogisticsQuoteImportResult,
-  PurchaseOrderLogisticsQuoteOptions,
   ShippingOrder,
   ShippingOrderSubmitResult,
   UpdateShippingOrderLineQuotePayload,
   UpdateShippingOrderLineQuotesPayload,
   UpdateShippingOrderLineYiteMaterialPayload,
   UpdateShippingOrderPayload
-} from './types'
+} from './warehouseShippingOrderTypes'
 import {
-  downloadPurchaseOrderFile,
-  getPurchaseOrderJson,
-  sendPurchaseOrderJson,
-  uploadPurchaseOrderForm
-} from './purchaseOrderApiClient'
+  apiFetch,
+  apiRequestJson,
+  readApiErrorMessage
+} from '../../../shared/api'
+import type {
+  OrderLogisticsQuoteExportSelection,
+  OrderLogisticsQuoteImportResult,
+  OrderLogisticsQuoteOptions
+} from '../../logistics-quote/orderLogisticsQuoteTypes'
+
+function getWarehouseOrderJson<TResponse>(url: string, fallback: string) {
+  return apiRequestJson<TResponse>(url, undefined, fallback)
+}
+
+function sendWarehouseOrderJson<TResponse>(
+  url: string,
+  method: 'POST' | 'PUT',
+  body: unknown,
+  fallback: string
+) {
+  return apiRequestJson<TResponse>(
+    url,
+    {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    },
+    fallback
+  )
+}
+
+async function downloadWarehouseOrderFile(url: string, fallback: string, defaultFilename: string) {
+  const response = await apiFetch(url)
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, fallback))
+  }
+  return {
+    blob: await response.blob(),
+    filename: readDownloadFilename(response.headers.get('content-disposition')) || defaultFilename
+  }
+}
+
+function uploadWarehouseOrderForm<TResponse>(url: string, formData: FormData, fallback: string) {
+  return apiRequestJson<TResponse>(url, { method: 'POST', body: formData }, fallback)
+}
+
+function readDownloadFilename(contentDisposition: string | null) {
+  if (!contentDisposition) return undefined
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(contentDisposition)?.[1]
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded)
+    } catch {
+      return encoded
+    }
+  }
+  return /filename="?([^";]+)"?/i.exec(contentDisposition)?.[1]
+}
 
 export function loadShippingOrders(keyword?: string) {
   const params = new URLSearchParams()
   if (keyword?.trim()) params.set('keyword', keyword.trim())
   const suffix = params.toString() ? `?${params.toString()}` : ''
-  return getPurchaseOrderJson<ShippingOrder[]>(`/api/procurement/purchase-orders/shipping-orders${suffix}`, '读取仓库单失败')
+  return getWarehouseOrderJson<ShippingOrder[]>(`/api/procurement/purchase-orders/shipping-orders${suffix}`, '读取仓库单失败')
 }
 
 export function loadAssignedShippingPurchaseOrderIds() {
-  return getPurchaseOrderJson<string[]>(
+  return getWarehouseOrderJson<string[]>(
     '/api/procurement/purchase-orders/shipping-orders/assigned-purchase-order-ids',
     '读取仓库单占用失败'
   )
 }
 
 export function loadShippingOrder(shippingOrderId: string) {
-  return getPurchaseOrderJson<ShippingOrder>(
+  return getWarehouseOrderJson<ShippingOrder>(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}`,
     '读取仓库单失败'
   )
 }
 
 export function createShippingOrder(payload: CreateShippingOrderPayload) {
-  return sendPurchaseOrderJson<ShippingOrder>(
+  return sendWarehouseOrderJson<ShippingOrder>(
     '/api/procurement/purchase-orders/shipping-orders',
     'POST',
     payload,
@@ -49,7 +98,7 @@ export function createShippingOrder(payload: CreateShippingOrderPayload) {
 }
 
 export function updateShippingOrder(shippingOrderId: string, payload: UpdateShippingOrderPayload) {
-  return sendPurchaseOrderJson<ShippingOrder>(
+  return sendWarehouseOrderJson<ShippingOrder>(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}`,
     'PUT',
     payload,
@@ -62,7 +111,7 @@ export function updateShippingOrderLineYiteMaterial(
   lineId: string,
   payload: UpdateShippingOrderLineYiteMaterialPayload
 ) {
-  return sendPurchaseOrderJson<ShippingOrder>(
+  return sendWarehouseOrderJson<ShippingOrder>(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/lines/${encodeURIComponent(lineId)}/yite-material`,
     'PUT',
     payload,
@@ -75,7 +124,7 @@ export function updateShippingOrderLineQuote(
   lineId: string,
   payload: UpdateShippingOrderLineQuotePayload
 ) {
-  return sendPurchaseOrderJson<ShippingOrder>(
+  return sendWarehouseOrderJson<ShippingOrder>(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/lines/${encodeURIComponent(lineId)}/quote`,
     'PUT',
     payload,
@@ -87,7 +136,7 @@ export function updateShippingOrderLineQuotes(
   shippingOrderId: string,
   payload: UpdateShippingOrderLineQuotesPayload
 ) {
-  return sendPurchaseOrderJson<ShippingOrder>(
+  return sendWarehouseOrderJson<ShippingOrder>(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/lines/quotes`,
     'PUT',
     payload,
@@ -103,7 +152,7 @@ export function loadShippingOrderLogisticsQuoteOptionsForScope(shippingOrderId: 
   const params = new URLSearchParams()
   for (const segmentId of segmentIds || []) params.append('segmentIds', segmentId)
   const suffix = params.toString() ? `?${params.toString()}` : ''
-  return getPurchaseOrderJson<PurchaseOrderLogisticsQuoteOptions>(
+  return getWarehouseOrderJson<OrderLogisticsQuoteOptions>(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/logistics-quote-options${suffix}`,
     '读取可导出货代渠道失败'
   )
@@ -111,7 +160,7 @@ export function loadShippingOrderLogisticsQuoteOptionsForScope(shippingOrderId: 
 
 export function exportShippingOrderLogisticsQuoteReport(
   shippingOrderId: string,
-  selection: PurchaseOrderLogisticsQuoteExportSelection & { segmentIds?: string[]; missingOnly?: boolean }
+  selection: OrderLogisticsQuoteExportSelection & { segmentIds?: string[]; missingOnly?: boolean }
 ) {
   const params = new URLSearchParams({
     forwarderCode: selection.forwarderCode,
@@ -119,7 +168,7 @@ export function exportShippingOrderLogisticsQuoteReport(
   })
   for (const segmentId of selection.segmentIds || []) params.append('segmentIds', segmentId)
   if (selection.missingOnly) params.set('missingOnly', 'true')
-  return downloadPurchaseOrderFile(
+  return downloadWarehouseOrderFile(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/logistics-quote-report?${params.toString()}`,
     '导出物流报价表失败',
     '物流报价确认表.xls'
@@ -130,7 +179,7 @@ export function importShippingOrderLogisticsQuoteReport(shippingOrderId: string,
   const formData = new FormData()
   formData.append('file', file)
   for (const segmentId of segmentIds || []) formData.append('segmentIds', segmentId)
-  return uploadPurchaseOrderForm<PurchaseOrderLogisticsQuoteImportResult>(
+  return uploadWarehouseOrderForm<OrderLogisticsQuoteImportResult>(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/logistics-quote-report/import`,
     formData,
     '回传物流报价表失败'
@@ -138,24 +187,10 @@ export function importShippingOrderLogisticsQuoteReport(shippingOrderId: string,
 }
 
 export function submitShippingOrder(shippingOrderId: string) {
-  return sendPurchaseOrderJson<ShippingOrderSubmitResult>(
+  return sendWarehouseOrderJson<ShippingOrderSubmitResult>(
     `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/submit-shipping`,
     'POST',
     {},
     '提交发货失败'
-  )
-}
-
-export function loadLogisticsBills(keyword?: string) {
-  const params = new URLSearchParams()
-  if (keyword?.trim()) params.set('keyword', keyword.trim())
-  const suffix = params.toString() ? `?${params.toString()}` : ''
-  return getPurchaseOrderJson<LogisticsBill[]>(`/api/procurement/purchase-orders/logistics-bills${suffix}`, '读取物流账单失败')
-}
-
-export function loadLogisticsBill(expectedBillId: string) {
-  return getPurchaseOrderJson<LogisticsBill>(
-    `/api/procurement/purchase-orders/logistics-bills/${encodeURIComponent(expectedBillId)}`,
-    '读取物流账单失败'
   )
 }

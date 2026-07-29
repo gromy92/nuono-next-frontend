@@ -1,12 +1,14 @@
 import { Select, Spin, Tag, Typography } from 'antd';
 import type {
-  PurchaseOrderLogisticsQuoteChannelOption,
-  PurchaseOrderLogisticsQuoteForwarderOption,
-  PurchaseOrderLogisticsQuoteImportResult,
-  PurchaseOrderLogisticsQuoteOptions,
+  OrderLogisticsQuoteChannelOption,
+  OrderLogisticsQuoteForwarderOption,
+  OrderLogisticsQuoteImportResult,
+  OrderLogisticsQuoteOptions
+} from '../../logistics-quote/types';
+import type {
   ShippingOrder,
   ShippingOrderSegment
-} from '../../purchase-order/types';
+} from './warehouseShippingOrderTypes';
 import {
   formatQuantity,
   shippingOrderQuoteIssueSummary
@@ -79,12 +81,12 @@ export function ActiveSegmentQuoteControls({
   selectedOption,
   onSelect
 }: {
-  options: PurchaseOrderLogisticsQuoteOptions | null;
+  options: OrderLogisticsQuoteOptions | null;
   loading: boolean;
   selectedOption: QuoteExportSelection;
   onSelect: (
-    forwarder: PurchaseOrderLogisticsQuoteForwarderOption,
-    channel: PurchaseOrderLogisticsQuoteChannelOption
+    forwarder: OrderLogisticsQuoteForwarderOption,
+    channel: OrderLogisticsQuoteChannelOption
   ) => void;
 }) {
   const forwarders = options?.forwarders || [];
@@ -184,7 +186,7 @@ export function DetailLineFilterLabel({ label, count }: { label: string; count: 
   );
 }
 
-export function QuoteImportResultContent({ result }: { result: PurchaseOrderLogisticsQuoteImportResult }) {
+export function QuoteImportResultContent({ result }: { result: OrderLogisticsQuoteImportResult }) {
   const summary = `识别 ${formatQuantity(Number(result.totalRows || 0))} 行，更新 ${formatQuantity(Number(result.updatedRows || 0))} 行，跳过 ${formatQuantity(Number(result.skippedRows || 0))} 行。`;
   const errors = (result.errors || []).slice(0, 6)
     .map((error) => `第 ${error.rowNumber || '-'} 行：${error.message || '未更新'}`);

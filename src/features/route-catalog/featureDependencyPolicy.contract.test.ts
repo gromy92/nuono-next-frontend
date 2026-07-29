@@ -25,7 +25,9 @@ assert.equal(
 const fixtureRoot = mkdtempSync(join(tmpdir(), 'feature-dependency-policy-'))
 mkdirSync(join(fixtureRoot, 'app-shell'))
 mkdirSync(join(fixtureRoot, 'business'))
+mkdirSync(join(fixtureRoot, 'purchase-order'))
 mkdirSync(join(fixtureRoot, 'route-catalog'))
+mkdirSync(join(fixtureRoot, 'warehouse-dispatch'))
 writeFileSync(join(fixtureRoot, 'app-shell', 'Shell.ts'), 'export const shell = true\n')
 writeFileSync(
   join(fixtureRoot, 'business', 'Page.ts'),
@@ -34,6 +36,14 @@ writeFileSync(
 writeFileSync(
   join(fixtureRoot, 'route-catalog', 'routes.ts'),
   "export const loadBusiness = () => import('../business/Page')\n"
+)
+writeFileSync(
+  join(fixtureRoot, 'purchase-order', 'internal.ts'),
+  'export const purchaseOrderInternal = true\n'
+)
+writeFileSync(
+  join(fixtureRoot, 'warehouse-dispatch', 'warehouseOrder.ts'),
+  "import { purchaseOrderInternal } from '../purchase-order/internal'\nexport const warehouseOrder = purchaseOrderInternal\n"
 )
 
 const dynamicImportResult = spawnSync(
@@ -53,5 +63,9 @@ assert.match(
 assert.match(
   dynamicImportResult.stderr,
   /native fetch bypasses shared HTTP transport: .*business\/Page\.ts:2/
+)
+assert.match(
+  dynamicImportResult.stderr,
+  /warehouse implementation depends on purchase-order owner: .*warehouse-dispatch\/warehouseOrder\.ts -> .*purchase-order\/internal\.ts/
 )
 assert.match(dynamicImportResult.stdout, /1 route loader adapter edges/)

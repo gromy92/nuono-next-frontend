@@ -1,12 +1,10 @@
-import type { PurchaseSiteCode, PurchaseTransportMode } from './purchaseOrderBaseTypes';
-
 export type WarehouseQuotePriceSource =
   | 'SHIPPING_ORDER_SNAPSHOT'
   | 'PRODUCT_CURRENT'
   | 'LEGACY_CHANNEL_QUOTE'
   | string
 
-export type PurchaseOrderLogisticsQuoteSummary = {
+export type OrderLogisticsQuoteSummary = {
   totalLineCount: number
   pendingLineCount: number
   confirmedLineCount: number
@@ -15,14 +13,14 @@ export type PurchaseOrderLogisticsQuoteSummary = {
   shippingSubmitStatus: 'NOT_SUBMITTED' | 'SUBMITTED' | string
 }
 
-export type PurchaseOrderLogisticsQuoteChannelOption = {
+export type OrderLogisticsQuoteChannelOption = {
   routeCode: string
   routeName?: string
   serviceCode?: string
   serviceName?: string
   quoteVersionCode?: string
-  siteCode?: PurchaseSiteCode
-  transportMode?: PurchaseTransportMode
+  siteCode?: string
+  transportMode?: string
   transportModeLabel?: string
   country?: string
   targetPlatform?: string
@@ -34,12 +32,12 @@ export type PurchaseOrderLogisticsQuoteChannelOption = {
   pendingLineCount: number
   confirmedLineCount?: number
   newProductLineCount: number
-  publishedPrices?: PurchaseOrderLogisticsQuotePublishedPrice[]
-  surcharges?: PurchaseOrderLogisticsQuoteSurcharge[]
-  lineQuotes?: PurchaseOrderLogisticsQuoteChannelLine[]
+  publishedPrices?: OrderLogisticsQuotePublishedPrice[]
+  surcharges?: OrderLogisticsQuoteSurcharge[]
+  lineQuotes?: OrderLogisticsQuoteChannelLine[]
 }
 
-export type PurchaseOrderLogisticsQuotePublishedPrice = {
+export type OrderLogisticsQuotePublishedPrice = {
   priceRuleCode?: string
   cargoCategoryCode?: string
   cargoCategoryName?: string
@@ -54,7 +52,7 @@ export type PurchaseOrderLogisticsQuotePublishedPrice = {
   minCharge?: string | number | null
 }
 
-export type PurchaseOrderLogisticsQuoteSurcharge = {
+export type OrderLogisticsQuoteSurcharge = {
   feeName?: string
   feeType?: string
   triggerCondition?: string
@@ -67,7 +65,7 @@ export type PurchaseOrderLogisticsQuoteSurcharge = {
   minBillableUnit?: string | number | null
 }
 
-export type PurchaseOrderLogisticsQuoteChannelLine = {
+export type OrderLogisticsQuoteChannelLine = {
   shippingOrderLineId?: string
   purchaseOrderItemSiteId?: string
   partnerSku?: string
@@ -80,28 +78,28 @@ export type PurchaseOrderLogisticsQuoteChannelLine = {
   priceSource?: WarehouseQuotePriceSource
 }
 
-export type PurchaseOrderLogisticsQuoteForwarderOption = {
+export type OrderLogisticsQuoteForwarderOption = {
   forwarderCode: string
   forwarderName?: string
   templateType?: string
   templateName?: string
-  channels: PurchaseOrderLogisticsQuoteChannelOption[]
+  channels: OrderLogisticsQuoteChannelOption[]
 }
 
-export type PurchaseOrderLogisticsQuoteOptions = {
+export type OrderLogisticsQuoteOptions = {
   purchaseOrderId: string
   purchaseOrderNo?: string
   pendingLineCount: number
   unsupportedChannelCount: number
-  forwarders: PurchaseOrderLogisticsQuoteForwarderOption[]
+  forwarders: OrderLogisticsQuoteForwarderOption[]
 }
 
-export type PurchaseOrderLogisticsQuoteExportSelection = {
+export type OrderLogisticsQuoteExportSelection = {
   forwarderCode: string
   routeCode: string
 }
 
-export type PurchaseOrderLogisticsQuoteImportResult = {
+export type OrderLogisticsQuoteImportResult = {
   totalRows: number
   updatedRows: number
   skippedRows: number
@@ -109,11 +107,4 @@ export type PurchaseOrderLogisticsQuoteImportResult = {
     rowNumber?: number
     message?: string
   }>
-}
-
-export type PurchaseOrderShippingSubmitResult = {
-  purchaseOrderId: string
-  purchaseOrderNo: string
-  shippingSubmitStatus: 'SUBMITTED' | string
-  submittedLineCount: number
 }

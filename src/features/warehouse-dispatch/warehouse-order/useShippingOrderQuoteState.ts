@@ -1,12 +1,12 @@
 import { message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import { loadShippingOrderLogisticsQuoteOptionsForScope } from '../../purchase-order/api';
+import { loadShippingOrderLogisticsQuoteOptionsForScope } from './warehouseShippingOrderRequests';
 import type {
-  PurchaseOrderLogisticsQuoteChannelOption,
-  PurchaseOrderLogisticsQuoteForwarderOption,
-  PurchaseOrderLogisticsQuoteOptions,
-  ShippingOrderLine
-} from '../../purchase-order/types';
+  OrderLogisticsQuoteChannelOption,
+  OrderLogisticsQuoteForwarderOption,
+  OrderLogisticsQuoteOptions
+} from '../../logistics-quote/types';
+import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
 import {
   applySelectedChannelQuoteToLine,
   isLineQuoteConfirmed,
@@ -38,7 +38,7 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
   const [bulkQuoteModalOpen, setBulkQuoteModalOpen] = useState(false);
   const [bulkQuoteUnitPrice, setBulkQuoteUnitPrice] = useState('');
   const [bulkQuoteYiteMaterial, setBulkQuoteYiteMaterial] = useState<string>();
-  const [activeSegmentQuoteOptions, setActiveSegmentQuoteOptions] = useState<PurchaseOrderLogisticsQuoteOptions | null>(null);
+  const [activeSegmentQuoteOptions, setActiveSegmentQuoteOptions] = useState<OrderLogisticsQuoteOptions | null>(null);
   const [optionsLoading, setOptionsLoading] = useState(false);
   const [selectedOption, setSelectedOption] = useState<QuoteExportSelection>({});
   const [selectedSegmentIds, setSelectedSegmentIds] = useState<string[]>([]);
@@ -195,8 +195,8 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     resetQuoteEditing();
   };
   const selectQuoteOption = (
-    forwarder: PurchaseOrderLogisticsQuoteForwarderOption,
-    channel: PurchaseOrderLogisticsQuoteChannelOption
+    forwarder: OrderLogisticsQuoteForwarderOption,
+    channel: OrderLogisticsQuoteChannelOption
   ) => {
     setSelectedOption({ forwarderCode: forwarder.forwarderCode, routeCode: channel.routeCode });
     if (!isYiteQuoteForwarder(forwarder)) setDetailLineFilter('ALL');

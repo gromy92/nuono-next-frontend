@@ -6,11 +6,9 @@ import {
   loadShippingOrder,
   loadShippingOrderLogisticsQuoteOptions,
   loadShippingOrderLogisticsQuoteOptionsForScope
-} from '../../purchase-order/api';
-import type {
-  PurchaseOrderLogisticsQuoteOptions,
-  ShippingOrder
-} from '../../purchase-order/types';
+} from './warehouseShippingOrderRequests';
+import type { OrderLogisticsQuoteOptions } from '../../logistics-quote/types';
+import type { ShippingOrder } from './warehouseShippingOrderTypes';
 import { QuoteImportResultContent } from './WarehouseShippingOrderSharedViews';
 import {
   quoteImportResultTitle,
@@ -36,7 +34,7 @@ export function useShippingOrderQuoteTransfer(
 ) {
   const [exportTarget, setExportTarget] = useState<ShippingOrder | null>(null);
   const [exportSegmentIds, setExportSegmentIds] = useState<string[]>([]);
-  const [exportOptions, setExportOptions] = useState<PurchaseOrderLogisticsQuoteOptions | null>(null);
+  const [exportOptions, setExportOptions] = useState<OrderLogisticsQuoteOptions | null>(null);
   const [exportSelection, setExportSelection] = useState<QuoteExportSelection>({});
   const [exportMissingOnly, setExportMissingOnly] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);

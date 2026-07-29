@@ -6,7 +6,7 @@ import { normalizeError } from '../../../shared/api'
 import {
   createShippingOrder,
   loadAssignedShippingPurchaseOrderIds
-} from '../api'
+} from '../../warehouse-dispatch/api'
 import type { PurchaseOrder } from '../types'
 import {
   isOrderAvailableForShippingMerge,

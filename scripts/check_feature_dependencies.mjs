@@ -201,6 +201,7 @@ const runtimeEdges = new Map(files.map((file) => [file, new Set()]))
 const featureEdges = new Map()
 const appShellReverseDependencies = []
 const routeLoaderAdapterEdges = []
+const orderOwnershipViolations = []
 
 for (const file of files) {
   const sourceFeature = featureName(file)
@@ -229,6 +230,14 @@ for (const file of files) {
           `${relative(root, file)} -> ${relative(root, target)}`
         )
       }
+      if (
+        targetFeature === 'purchase-order'
+        && ['warehouse-dispatch', 'warehouse-logistics-bill'].includes(sourceFeature)
+      ) {
+        orderOwnershipViolations.push(
+          `${relative(root, file)} -> ${relative(root, target)}`
+        )
+      }
     }
   }
 }
@@ -251,6 +260,9 @@ unexpectedFeatureCycles.forEach((component) => {
 })
 appShellReverseDependencies.sort().forEach((dependency) => {
   issues.push(`business feature depends on app-shell: ${dependency}`)
+})
+orderOwnershipViolations.sort().forEach((dependency) => {
+  issues.push(`warehouse implementation depends on purchase-order owner: ${dependency}`)
 })
 nativeFetchBypasses.sort().forEach((reference) => {
   issues.push(`native fetch bypasses shared HTTP transport: ${reference}`)

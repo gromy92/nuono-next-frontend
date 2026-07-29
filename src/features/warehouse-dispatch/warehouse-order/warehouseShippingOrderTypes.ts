@@ -1,8 +1,6 @@
-import type {
-  PurchaseOrderFulfillmentType,
-  PurchaseSiteCode,
-  PurchaseTransportMode
-} from './purchaseOrderBaseTypes'
+type PurchaseSiteCode = string
+type PurchaseTransportMode = 'AIR' | 'SEA' | 'UNSPECIFIED' | string
+type PurchaseOrderFulfillmentType = 'WAREHOUSE_RECEIPT' | 'FACTORY_DIRECT' | string
 
 export type ShippingOrderLine = {
   id: string
@@ -117,50 +115,4 @@ export type ShippingOrderSubmitResult = {
   shippingOrderNo: string
   shippingSubmitStatus: 'SUBMITTED' | string
   submittedLineCount: number
-}
-
-export type LogisticsBillComponent = {
-  id: string
-  shippingOrderSegmentId?: string
-  shippingOrderLineId?: string
-  quoteLineId?: string
-  barcode?: string
-  pskuCode?: string
-  siteCode?: string
-  feeType?: string
-  quantity?: number
-  chargeQuantity?: number
-  chargeUnit?: string
-  unitPrice?: number
-  currency?: string
-  expectedAmount?: number
-  expectedAmountCny?: number
-}
-
-export type LogisticsBill = {
-  id: string
-  expectedBillNo: string
-  shippingOrderId: string
-  shippingOrderNo: string
-  shippingOrderTitle?: string
-  shippingOrderSegmentId?: string
-  shippingOrderSegmentNo?: string
-  forwarderCode?: string
-  forwarderName?: string
-  routeCode?: string
-  routeName?: string
-  serviceCode?: string
-  serviceName?: string
-  transportMode?: PurchaseTransportMode
-  currency?: string
-  expectedTotalAmount?: number
-  expectedTotalCny?: number
-  actualTotalCny?: number
-  diffAmountCny?: number
-  componentCount?: number
-  billStatus?: string
-  reconciliationStatus?: string
-  createdAt?: string
-  updatedAt?: string
-  components?: LogisticsBillComponent[]
 }
