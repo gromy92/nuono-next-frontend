@@ -10,14 +10,14 @@ import type {
   InTransitGoodsLine,
   InTransitLogisticsNode
 } from './types'
-import { createLatestRequestGuard } from './latestRequestGuard'
+import { createLatestRequestGate } from '../../shared/latestRequestGate'
 
 const EMPTY_FREIGHT_COSTS: InTransitBatchFreightCost = { bills: [], components: [] }
 
 export function useInTransitBatchResources() {
-  const linesRequestGuard = useRef(createLatestRequestGuard())
-  const nodesRequestGuard = useRef(createLatestRequestGuard())
-  const freightRequestGuard = useRef(createLatestRequestGuard())
+  const linesRequestGuard = useRef(createLatestRequestGate<undefined>())
+  const nodesRequestGuard = useRef(createLatestRequestGate<undefined>())
+  const freightRequestGuard = useRef(createLatestRequestGate<undefined>())
   const [lines, setLines] = useState<InTransitGoodsLine[]>([])
   const [loadingLines, setLoadingLines] = useState(false)
   const [nodes, setNodes] = useState<InTransitLogisticsNode[]>([])
@@ -32,63 +32,63 @@ export function useInTransitBatchResources() {
   }
 
   const loadLines = async (batchId: number) => {
-    const requestToken = linesRequestGuard.current.begin()
+    const requestToken = linesRequestGuard.current.begin(undefined)
     setLoadingLines(true)
     try {
       const nextLines = await fetchInTransitGoodsLines(batchId)
-      if (linesRequestGuard.current.isCurrent(requestToken)) {
+      if (linesRequestGuard.current.isCurrent(requestToken, undefined)) {
         setLines(nextLines.items ?? [])
       }
     } catch (error) {
-      if (linesRequestGuard.current.isCurrent(requestToken)) {
+      if (linesRequestGuard.current.isCurrent(requestToken, undefined)) {
         message.error(error instanceof Error ? error.message : '商品明细加载失败')
         setLines([])
       }
     } finally {
-      if (linesRequestGuard.current.isCurrent(requestToken)) {
+      if (linesRequestGuard.current.isCurrent(requestToken, undefined)) {
         setLoadingLines(false)
       }
     }
   }
 
   const loadNodes = async (batchId: number) => {
-    const requestToken = nodesRequestGuard.current.begin()
+    const requestToken = nodesRequestGuard.current.begin(undefined)
     setLoadingNodes(true)
     try {
       const nextNodes = await fetchInTransitLogisticsNodes(batchId)
-      if (nodesRequestGuard.current.isCurrent(requestToken)) {
+      if (nodesRequestGuard.current.isCurrent(requestToken, undefined)) {
         setNodes(nextNodes.items ?? [])
       }
     } catch (error) {
-      if (nodesRequestGuard.current.isCurrent(requestToken)) {
+      if (nodesRequestGuard.current.isCurrent(requestToken, undefined)) {
         message.error(error instanceof Error ? error.message : '物流节点加载失败')
         setNodes([])
       }
     } finally {
-      if (nodesRequestGuard.current.isCurrent(requestToken)) {
+      if (nodesRequestGuard.current.isCurrent(requestToken, undefined)) {
         setLoadingNodes(false)
       }
     }
   }
 
   const loadBatchFreightCosts = async (batchId: number) => {
-    const requestToken = freightRequestGuard.current.begin()
+    const requestToken = freightRequestGuard.current.begin(undefined)
     setLoadingBatchFreightCosts(true)
     try {
       const nextFreightCosts = await fetchInTransitBatchFreightCosts(batchId)
-      if (freightRequestGuard.current.isCurrent(requestToken)) {
+      if (freightRequestGuard.current.isCurrent(requestToken, undefined)) {
         setBatchFreightCosts({
           bills: nextFreightCosts.bills ?? [],
           components: nextFreightCosts.components ?? []
         })
       }
     } catch (error) {
-      if (freightRequestGuard.current.isCurrent(requestToken)) {
+      if (freightRequestGuard.current.isCurrent(requestToken, undefined)) {
         message.error(error instanceof Error ? error.message : '实际运费加载失败')
         setBatchFreightCosts(EMPTY_FREIGHT_COSTS)
       }
     } finally {
-      if (freightRequestGuard.current.isCurrent(requestToken)) {
+      if (freightRequestGuard.current.isCurrent(requestToken, undefined)) {
         setLoadingBatchFreightCosts(false)
       }
     }

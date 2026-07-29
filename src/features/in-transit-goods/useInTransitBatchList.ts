@@ -14,10 +14,10 @@ import type {
 } from './types'
 import { DEFAULT_BATCH_PAGE_SIZE, DEFAULT_CONTRACT, DEFAULT_FILTERS } from './InTransitGoodsPage.constants'
 import type { BatchListMeta, PageState } from './InTransitGoodsPage.models'
-import { createLatestRequestGuard } from './latestRequestGuard'
+import { createLatestRequestGate } from '../../shared/latestRequestGate'
 
 export function useInTransitBatchList(isBoxDetailTab: boolean) {
-  const requestGuard = useRef(createLatestRequestGuard())
+  const requestGuard = useRef(createLatestRequestGate<undefined>())
   const [state, setState] = useState<PageState>({ status: 'idle' })
   const [contract, setContract] = useState<InTransitContract>(DEFAULT_CONTRACT)
   const [forwarders, setForwarders] = useState<InTransitForwarder[]>([])
@@ -78,7 +78,7 @@ export function useInTransitBatchList(isBoxDetailTab: boolean) {
   }, [forwarders])
 
   const load = async (nextFilters: InTransitBatchFilters = filters) => {
-    const requestToken = requestGuard.current.begin()
+    const requestToken = requestGuard.current.begin(undefined)
     setState((current) => ({ status: 'loading', data: current.data }))
     try {
       const [nextContract, nextForwarders, list] = await Promise.all([
@@ -86,7 +86,7 @@ export function useInTransitBatchList(isBoxDetailTab: boolean) {
         fetchInTransitForwarders(),
         fetchInTransitBatches(nextFilters)
       ])
-      if (!requestGuard.current.isCurrent(requestToken)) {
+      if (!requestGuard.current.isCurrent(requestToken, undefined)) {
         return
       }
       const nextItems = list.items ?? []
@@ -99,7 +99,7 @@ export function useInTransitBatchList(isBoxDetailTab: boolean) {
       })
       setState({ status: 'success', data: nextItems })
     } catch (error) {
-      if (!requestGuard.current.isCurrent(requestToken)) {
+      if (!requestGuard.current.isCurrent(requestToken, undefined)) {
         return
       }
       const errorMessage = error instanceof Error ? error.message : '在途批次加载失败'
