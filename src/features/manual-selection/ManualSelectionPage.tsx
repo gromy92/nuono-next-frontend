@@ -24,10 +24,7 @@ import { ManualSelectionToolbar } from './components/ManualSelectionToolbar'
 import { NewCollectionModal } from './components/NewCollectionModal'
 import { useManualSelectionCollections } from './hooks/useManualSelectionCollections'
 import { collectionFromLinkCompetitor } from './competitorDetailAdapter'
-import {
-  buildManualSelectionGroupListingTarget,
-  openManualSelectionGroupListingInNewTab
-} from './listingNavigation'
+import { navigateManualSelectionGroupListingInCurrentTab } from './listingNavigation'
 import { normalizeManualSelectionKeyword } from './utils'
 import { createManualSelectionProfitEstimateSeed } from './profitEstimateSeed'
 import {
@@ -351,19 +348,13 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
       message.warning('选品组缺少组编号，无法进入上架')
       return
     }
-    const listingTarget = buildManualSelectionGroupListingTarget(project, props.storeCode)
     saveManualSelectionGroupListingPrefill(
       project,
       props.storeCode,
       project.competitors || [],
       null
     )
-    // The listing page performs authoritative server hydration for the group
-    // and profit snapshot, so the user click can open the destination
-    // synchronously without losing browser new-tab permission.
-    if (!openManualSelectionGroupListingInNewTab(project, props.storeCode)) {
-      window.location.assign(listingTarget)
-    }
+    navigateManualSelectionGroupListingInCurrentTab(project, props.storeCode)
   }
 
   const handleOpenProfitEstimate = async (project: ManualSelectionAnalysisProjectView) => {
@@ -385,6 +376,7 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
   }
 
   const handleProfitEstimateSaved = async () => {
+    setProfitEstimateSeed(null)
     try {
       const groups = await loadManualSelectionGroups(props.storeName, props.storeCode)
       const normalizedGroups = groups.map(normalizeManualSelectionGroup)

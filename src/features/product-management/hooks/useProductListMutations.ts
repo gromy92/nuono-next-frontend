@@ -1,11 +1,11 @@
 import { useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import {
+  countProductListStatuses,
   isProductListRowOnline,
   getProductListRowIdentityKey,
   mergeProductListItemWithSummary,
   mergeSampleProductWithSummary,
-  normalizeProductSyncStatus,
   productListSummaryAppliesToItem,
   textInputValue
 } from '../utils';
@@ -236,10 +236,9 @@ export function useProductListMutations({
           );
         }
 
+        const nextStatusCounts = countProductListStatuses(nextItems, {}, false);
         const nextCounts = nextItems.reduce(
           (accumulator, item) => {
-            const syncStatus = normalizeProductSyncStatus(item.syncStatus) ?? 'synced';
-            accumulator[syncStatus] += 1;
             if (isProductListRowOnline(item)) {
               accumulator.liveCount += 1;
             }
@@ -255,10 +254,6 @@ export function useProductListMutations({
             return accumulator;
           },
           {
-            synced: 0,
-            draft: 0,
-            conflict: 0,
-            failed: 0,
             liveCount: 0,
             groupedCount: 0,
             pendingPriceCount: 0,
@@ -272,10 +267,10 @@ export function useProductListMutations({
             ...currentValue.data,
             items: nextItems,
             totalItems: nextItems.length,
-            syncedCount: nextCounts.synced,
-            draftCount: nextCounts.draft,
-            conflictCount: nextCounts.conflict,
-            failedCount: nextCounts.failed,
+            syncedCount: nextStatusCounts.synced,
+            draftCount: nextStatusCounts.draft,
+            conflictCount: nextStatusCounts.conflict,
+            failedCount: nextStatusCounts.failed,
             liveCount: nextCounts.liveCount,
             groupedCount: nextCounts.groupedCount,
             pendingPriceCount: nextCounts.pendingPriceCount,

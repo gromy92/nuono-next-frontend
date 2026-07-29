@@ -14,16 +14,10 @@ function source(path: string) {
 const draftDrawerSource = source('./product-management/components/ProductListingDraftDrawer.tsx')
 const manualSelectionSource = source('./manual-selection/listingNavigation.ts')
 
-assert.doesNotMatch(
-  draftDrawerSource,
-  /window\.location\.assign\(withCurrentWorkspaceDevQuery\(`\$\{PURCHASE_LISTING_PATH\}/,
-  '上架草稿继续编辑不能替换当前页，必须打开新标签页'
-)
-
 assert.match(
   draftDrawerSource,
-  /openProductListingTargetInNewTab/,
-  '上架草稿继续编辑必须复用统一新标签页工具'
+  /navigateProductListingTargetInCurrentTab/,
+  '上架草稿继续编辑必须使用确定性的同页跳转'
 )
 
 assert.match(

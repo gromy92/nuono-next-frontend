@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
-import { resolveProductListingWorkflowEditSession } from './productListingWorkflowEditSession'
+import {
+  resolveProductListingWorkflowActionPlacement,
+  resolveProductListingWorkflowEditSession
+} from './productListingWorkflowEditSession'
 
 const readyWorkflow = {
   phase: 'READY_TO_CONFIRM',
@@ -57,3 +60,29 @@ for (const nextAction of ['EDIT_DRAFT', 'REVIEW_DRAFT'] as const) {
     'ACTION_REQUIRED must remain locked until its source dry-run is reopened'
   )
 }
+
+assert.deepEqual(
+  resolveProductListingWorkflowActionPlacement({
+    phase: 'EDITING',
+    writeCertainty: 'NOT_STARTED',
+    nextAction: 'REVIEW_DRAFT'
+  }),
+  {
+    showReviewActionInEditor: true,
+    hideWorkflowPanelAction: true
+  },
+  'editable drafts should keep one REVIEW_DRAFT action beside the save button'
+)
+
+assert.deepEqual(
+  resolveProductListingWorkflowActionPlacement({
+    phase: 'ACTION_REQUIRED',
+    writeCertainty: 'NOT_STARTED',
+    nextAction: 'REVIEW_DRAFT'
+  }),
+  {
+    showReviewActionInEditor: false,
+    hideWorkflowPanelAction: false
+  },
+  'failed drafts must expose REVIEW_DRAFT outside the disabled editor fieldset'
+)

@@ -3,7 +3,7 @@ import { Button, Drawer, Empty, List, Space, Tag, Tooltip, Typography, message }
 import { useCallback, useState } from 'react'
 import { PURCHASE_LISTING_PATH, withWorkspaceStoreDevQuery } from '../../app-shell/WorkspaceRouting'
 import { fetchProductListingDrafts } from '../../product-listing/api'
-import { openProductListingTargetInNewTab } from '../../product-listing/listingTabNavigation'
+import { navigateProductListingTargetInCurrentTab } from '../../product-listing/listingTabNavigation'
 import { presentProductListingDraftWorkflow } from '../../product-listing/productListingDraftWorkflowPresentation'
 import { saveProductListingDraftRecoveryPrefill } from '../../product-listing/sourcePrefill'
 import type { ProductListingDraftView } from '../../product-listing/types'
@@ -44,14 +44,13 @@ export function ProductListingDraftDrawer({ storeCode, activeOwnerId }: ProductL
     saveProductListingDraftRecoveryPrefill(draft)
     const params = new URLSearchParams({
       listingSource: 'listing-draft',
-      listingDraftId: String(draft.draftId)
+      listingDraftId: String(draft.draftId),
+      storeCode: draft.storeCode
     })
-    if (!openProductListingTargetInNewTab(withWorkspaceStoreDevQuery(
+    navigateProductListingTargetInCurrentTab(withWorkspaceStoreDevQuery(
       `${PURCHASE_LISTING_PATH}?${params.toString()}`,
       draft.storeCode
-    ))) {
-      message.warning('浏览器拦截了上架新标签页，请允许弹窗后重试')
-    }
+    ))
   }
 
   return (

@@ -7,6 +7,11 @@ export type ProductListingWorkflowEditSession = {
   canConfirm: boolean
 }
 
+export type ProductListingWorkflowActionPlacement = {
+  showReviewActionInEditor: boolean
+  hideWorkflowPanelAction: boolean
+}
+
 export function resolveProductListingWorkflowEditSession(
   workflow: ProductListingWorkflowView
 ): ProductListingWorkflowEditSession {
@@ -19,5 +24,17 @@ export function resolveProductListingWorkflowEditSession(
     canReturnToEdit: readyToConfirm,
     canEditAndSave: presentation.allowSave,
     canConfirm: readyToConfirm
+  }
+}
+
+export function resolveProductListingWorkflowActionPlacement(
+  workflow: ProductListingWorkflowView
+): ProductListingWorkflowActionPlacement {
+  const reviewActionIsInsideEditableEditor =
+    workflow.nextAction === 'REVIEW_DRAFT' &&
+    resolveProductListingWorkflowEditSession(workflow).canEditAndSave
+  return {
+    showReviewActionInEditor: reviewActionIsInsideEditableEditor,
+    hideWorkflowPanelAction: reviewActionIsInsideEditableEditor
   }
 }
