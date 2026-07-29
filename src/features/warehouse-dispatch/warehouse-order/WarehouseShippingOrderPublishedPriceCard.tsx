@@ -2,9 +2,9 @@ import { DownOutlined, UpOutlined } from '@ant-design/icons';
 import { Button, Tag, Typography } from 'antd';
 import { useEffect, useState } from 'react';
 import type {
-  PurchaseOrderLogisticsQuoteChannelOption,
-  PurchaseOrderLogisticsQuotePublishedPrice
-} from '../../purchase-order/types';
+  OrderLogisticsQuoteChannelOption,
+  OrderLogisticsQuotePublishedPrice
+} from '../../logistics-quote/types';
 import { formatPublishedQuotePrice } from './warehouseShippingQuoteDomain';
 
 const { Text } = Typography;
@@ -12,7 +12,7 @@ const { Text } = Typography;
 export function WarehouseShippingOrderPublishedPriceCard({
   channel
 }: {
-  channel?: PurchaseOrderLogisticsQuoteChannelOption;
+  channel?: OrderLogisticsQuoteChannelOption;
 }) {
   const [seaPricesExpanded, setSeaPricesExpanded] = useState(false);
 
@@ -67,7 +67,7 @@ export function WarehouseShippingOrderPublishedPriceCard({
   );
 }
 
-function PublishedPriceItem({ price }: { price: PurchaseOrderLogisticsQuotePublishedPrice }) {
+function PublishedPriceItem({ price }: { price: OrderLogisticsQuotePublishedPrice }) {
   return (
     <div className="warehouse-shipping-order-published-price-item">
       <Text type="secondary">{price.cargoCategoryName || '基础价'}</Text>

@@ -16,6 +16,11 @@ import type {
 } from './shippingApiTypes'
 import { mapOutboundOrder, mapPackingList, mapShippingBatch } from './shippingApiMappers'
 
+export {
+  createShippingOrder,
+  loadAssignedShippingPurchaseOrderIds
+} from './warehouse-order/warehouseShippingOrderRequests'
+
 export function loadWarehouseReceiptOrders(keyword?: string) {
   return getJson<ApiPurchaseReceiptOrder[]>(
     `/api/warehouse/dispatch/receipt-orders${keywordSuffix(keyword)}`,

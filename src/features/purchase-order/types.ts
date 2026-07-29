@@ -6,7 +6,7 @@ import type {
   PurchaseTransportMode,
   SiteAllocation
 } from './purchaseOrderBaseTypes'
-import type { PurchaseOrderLogisticsQuoteSummary } from './purchaseOrderLogisticsQuoteTypes'
+import type { OrderLogisticsQuoteSummary } from '../logistics-quote/types'
 
 export type {
   PurchaseCollectionStatus,
@@ -16,20 +16,7 @@ export type {
   PurchaseTransportMode,
   SiteAllocation
 } from './purchaseOrderBaseTypes'
-export type * from './purchaseOrderShippingTypes'
 export type * from './purchaseOrderLogisticsPlanTypes'
-export type {
-  PurchaseOrderLogisticsQuoteChannelLine,
-  PurchaseOrderLogisticsQuoteChannelOption,
-  PurchaseOrderLogisticsQuoteExportSelection,
-  PurchaseOrderLogisticsQuoteForwarderOption,
-  PurchaseOrderLogisticsQuoteImportResult,
-  PurchaseOrderLogisticsQuoteOptions,
-  PurchaseOrderLogisticsQuotePublishedPrice,
-  PurchaseOrderLogisticsQuoteSummary,
-  PurchaseOrderLogisticsQuoteSurcharge,
-  PurchaseOrderShippingSubmitResult
-} from './purchaseOrderLogisticsQuoteTypes'
 
 export type PurchaseOrderItem = {
   id: string
@@ -131,7 +118,7 @@ export type PurchaseOrder = {
   remark?: string
   siteCodes?: PurchaseSiteCode[]
   items: PurchaseOrderItem[]
-  logisticsQuoteSummary?: PurchaseOrderLogisticsQuoteSummary
+  logisticsQuoteSummary?: OrderLogisticsQuoteSummary
 }
 
 export type ProductOption = {
@@ -186,4 +173,11 @@ export type UpdatePurchaseOrderItemSourcingRequirementPayload = {
   sourcingSpec?: string
   sourcingSize?: string
   sourcingColor?: string
+}
+
+export type PurchaseOrderShippingSubmitResult = {
+  purchaseOrderId: string
+  purchaseOrderNo: string
+  shippingSubmitStatus: 'SUBMITTED' | string
+  submittedLineCount: number
 }

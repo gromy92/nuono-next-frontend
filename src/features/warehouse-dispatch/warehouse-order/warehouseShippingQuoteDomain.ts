@@ -1,10 +1,10 @@
 import type {
-  PurchaseOrderLogisticsQuoteChannelOption,
-  PurchaseOrderLogisticsQuoteForwarderOption,
-  PurchaseOrderLogisticsQuoteOptions,
-  PurchaseOrderLogisticsQuotePublishedPrice,
-  ShippingOrderSegment
-} from '../../purchase-order/types';
+  OrderLogisticsQuoteChannelOption,
+  OrderLogisticsQuoteForwarderOption,
+  OrderLogisticsQuoteOptions,
+  OrderLogisticsQuotePublishedPrice
+} from '../../logistics-quote/types';
+import type { ShippingOrderSegment } from './warehouseShippingOrderTypes';
 import type { QuoteExportSelection } from './warehouseShippingOrderModels';
 
 export function sameCode(left?: string, right?: string) {
@@ -13,14 +13,14 @@ export function sameCode(left?: string, right?: string) {
   return Boolean(normalizedLeft && normalizedRight && normalizedLeft === normalizedRight);
 }
 
-export function segmentQuoteOptionChoices(options?: PurchaseOrderLogisticsQuoteOptions | null) {
+export function segmentQuoteOptionChoices(options?: OrderLogisticsQuoteOptions | null) {
   return (options?.forwarders || []).flatMap((forwarder) => (
     (forwarder.channels || []).map((channel) => ({ forwarder, channel }))
   ));
 }
 
 export function defaultSegmentQuoteSelection(
-  options: PurchaseOrderLogisticsQuoteOptions,
+  options: OrderLogisticsQuoteOptions,
   segment?: ShippingOrderSegment
 ): QuoteExportSelection {
   const choices = segmentQuoteOptionChoices(options);
@@ -36,7 +36,7 @@ export function defaultSegmentQuoteSelection(
     : {};
 }
 
-export function firstAvailableSegmentQuoteSelection(options: PurchaseOrderLogisticsQuoteOptions) {
+export function firstAvailableSegmentQuoteSelection(options: OrderLogisticsQuoteOptions) {
   const first = segmentQuoteOptionChoices(options)[0];
   return first
     ? { forwarderCode: first.forwarder.forwarderCode, routeCode: first.channel.routeCode }
@@ -120,7 +120,7 @@ export function shippingSubmitLabel(value?: string) {
 }
 
 export function findQuoteForwarderOption(
-  options?: PurchaseOrderLogisticsQuoteOptions | null,
+  options?: OrderLogisticsQuoteOptions | null,
   forwarderCode?: string
 ) {
   return forwarderCode
@@ -129,27 +129,27 @@ export function findQuoteForwarderOption(
 }
 
 export function findQuoteChannelOption(
-  forwarder?: PurchaseOrderLogisticsQuoteForwarderOption,
+  forwarder?: OrderLogisticsQuoteForwarderOption,
   routeCode?: string
 ) {
   return routeCode ? forwarder?.channels?.find((item) => item.routeCode === routeCode) : undefined;
 }
 
 export function filterQuoteOptionsWithTemplates(
-  options?: PurchaseOrderLogisticsQuoteOptions | null
-): PurchaseOrderLogisticsQuoteOptions | null {
+  options?: OrderLogisticsQuoteOptions | null
+): OrderLogisticsQuoteOptions | null {
   return options
     ? { ...options, forwarders: (options.forwarders || []).filter((item) => Boolean(item.templateType)) }
     : null;
 }
 
-export function quoteExportEmptyDescription(options: PurchaseOrderLogisticsQuoteOptions) {
+export function quoteExportEmptyDescription(options: OrderLogisticsQuoteOptions) {
   return Number(options.unsupportedChannelCount || 0) > 0
     ? '当前只有未配置导出模板的货代渠道，不能导出审核单。'
     : '当前仓库单没有已配置模板的可导出渠道。';
 }
 
-export function quoteForwarderLabel(forwarder?: PurchaseOrderLogisticsQuoteForwarderOption) {
+export function quoteForwarderLabel(forwarder?: OrderLogisticsQuoteForwarderOption) {
   const text = `${forwarder?.forwarderName || ''} ${forwarder?.forwarderCode || ''}`.trim();
   if (/义特|YITE|YT/i.test(text)) return '义特';
   if (/易通|\bET\b/i.test(text)) return '易通';
@@ -158,8 +158,8 @@ export function quoteForwarderLabel(forwarder?: PurchaseOrderLogisticsQuoteForwa
 }
 
 export function quoteChannelDisplayName(
-  forwarder: PurchaseOrderLogisticsQuoteForwarderOption | undefined,
-  channel: PurchaseOrderLogisticsQuoteChannelOption
+  forwarder: OrderLogisticsQuoteForwarderOption | undefined,
+  channel: OrderLogisticsQuoteChannelOption
 ) {
   const rawName = (channel.routeName || channel.routeCode || '-').trim();
   const candidates = [
@@ -177,27 +177,27 @@ export function quoteChannelDisplayName(
 }
 
 export function quoteChannelLabel(
-  forwarder: PurchaseOrderLogisticsQuoteForwarderOption | undefined,
-  channel: PurchaseOrderLogisticsQuoteChannelOption
+  forwarder: OrderLogisticsQuoteForwarderOption | undefined,
+  channel: OrderLogisticsQuoteChannelOption
 ) {
   return [quoteForwarderLabel(forwarder), channel.siteCode || channel.routeCode].filter(Boolean).join(' / ');
 }
 
-export function buildQuoteForwarderSelectOptions(options?: PurchaseOrderLogisticsQuoteOptions | null) {
+export function buildQuoteForwarderSelectOptions(options?: OrderLogisticsQuoteOptions | null) {
   return (options?.forwarders || []).map((forwarder) => ({
     value: forwarder.forwarderCode,
     label: quoteForwarderLabel(forwarder)
   }));
 }
 
-export function buildQuoteChannelSelectOptions(forwarder?: PurchaseOrderLogisticsQuoteForwarderOption) {
+export function buildQuoteChannelSelectOptions(forwarder?: OrderLogisticsQuoteForwarderOption) {
   return (forwarder?.channels || []).map((channel) => ({
     value: channel.routeCode,
     label: quoteChannelLabel(forwarder, channel)
   }));
 }
 
-export function formatPublishedQuotePrice(price: PurchaseOrderLogisticsQuotePublishedPrice) {
+export function formatPublishedQuotePrice(price: OrderLogisticsQuotePublishedPrice) {
   const status = (price.priceStatus || '').toUpperCase();
   if ((status && status !== 'NORMAL') || price.unitPrice === null || price.unitPrice === undefined) {
     return '需询价';

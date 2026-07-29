@@ -2,8 +2,8 @@ import { EyeOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { Button, Empty, Input, Modal, Spin, Table, Tag, Typography, message } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { AuthSession } from '../auth/session'
-import { loadLogisticsBill, loadLogisticsBills } from '../purchase-order/api'
-import type { LogisticsBill, LogisticsBillComponent } from '../purchase-order/types'
+import { loadLogisticsBill, loadLogisticsBills } from './api'
+import type { LogisticsBill, LogisticsBillComponent } from './types'
 import {
   feeTypeLabel,
   filterBills,

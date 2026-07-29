@@ -6,7 +6,7 @@ import {
 } from '@ant-design/icons';
 import { Button, Empty, Input, Select, Spin, Table, Tabs, Tag, Typography } from 'antd';
 import { useMemo, useState } from 'react';
-import type { ShippingOrder, ShippingOrderSegment } from '../../purchase-order/types';
+import type { ShippingOrder, ShippingOrderSegment } from './warehouseShippingOrderTypes';
 import {
   matchesLogisticsPartition,
   summarizeLogisticsPartitions

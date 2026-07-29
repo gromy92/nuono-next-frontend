@@ -1,12 +1,16 @@
 import type {
-  PurchaseOrder,
-  PurchaseOrderLogisticsQuoteChannelOption,
-  PurchaseOrderLogisticsQuoteForwarderOption,
-  PurchaseOrderLogisticsQuoteImportResult,
+  OrderLogisticsQuoteChannelOption,
+  OrderLogisticsQuoteForwarderOption,
+  OrderLogisticsQuoteImportResult
+} from '../../logistics-quote/types';
+import type {
   ShippingOrder,
   ShippingOrderLine,
   ShippingOrderSegment
-} from '../../purchase-order/types';
+} from './warehouseShippingOrderTypes';
+import type {
+  WarehouseOrderPurchaseCandidate
+} from './warehouseOrderPurchaseCandidateAdapter';
 import { sameCode } from './warehouseShippingQuoteDomain';
 import type { WarehouseOrderJourney } from './warehouseOrderJourney';
 import { warehouseOrderJourneyStatusMeta } from './warehouseOrderJourney';
@@ -80,7 +84,7 @@ export function filterShippingOrdersByStatus(
   ));
 }
 
-export function filterPurchaseOrders(orders: PurchaseOrder[], keyword: string) {
+export function filterPurchaseOrders(orders: WarehouseOrderPurchaseCandidate[], keyword: string) {
   const normalized = keyword.trim().toLowerCase();
   if (!normalized) return orders;
   return orders.filter((order) => [
@@ -115,7 +119,7 @@ export function isYiteSegment(segment: ShippingOrderSegment) {
   return /义特|YITE|\bYT\b/i.test(`${segment.forwarderCode || ''} ${segment.forwarderName || ''}`.trim());
 }
 
-export function isYiteQuoteForwarder(forwarder?: PurchaseOrderLogisticsQuoteForwarderOption | null) {
+export function isYiteQuoteForwarder(forwarder?: OrderLogisticsQuoteForwarderOption | null) {
   return /义特|YITE|\bYT\b/i.test(`${forwarder?.forwarderCode || ''} ${forwarder?.forwarderName || ''}`.trim());
 }
 
@@ -129,13 +133,13 @@ export function isMissingYiteMaterial(line: ShippingOrderLine, yiteSegmentIds: S
     && !line.yiteMaterial?.trim());
 }
 
-export function countPurchaseOrderSku(order: PurchaseOrder) {
+export function countPurchaseOrderSku(order: WarehouseOrderPurchaseCandidate) {
   return new Set((order.items || [])
     .map((item) => item.partnerSku || item.skuParent || '')
     .filter(Boolean)).size;
 }
 
-export function sumPurchaseOrderQuantity(orders: PurchaseOrder[]) {
+export function sumPurchaseOrderQuantity(orders: WarehouseOrderPurchaseCandidate[]) {
   return orders.reduce((total, order) => total + (order.items || [])
     .reduce((sum, item) => sum + Number(item.totalQuantity || 0), 0), 0);
 }
@@ -181,7 +185,7 @@ export function isLineQuoteConfirmed(line: ShippingOrderLine) {
 
 export function applySelectedChannelQuoteToLine(
   line: ShippingOrderLine,
-  channel?: PurchaseOrderLogisticsQuoteChannelOption
+  channel?: OrderLogisticsQuoteChannelOption
 ): ShippingOrderLine {
   const quote = channel?.lineQuotes?.find((item) => (
     (item.shippingOrderLineId && item.shippingOrderLineId === line.id)
@@ -265,7 +269,7 @@ export function formatDate(value?: string) {
     : date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
-export function quoteImportResultTitle(result: PurchaseOrderLogisticsQuoteImportResult) {
+export function quoteImportResultTitle(result: OrderLogisticsQuoteImportResult) {
   const updated = Number(result.updatedRows || 0);
   const skipped = Number(result.skippedRows || 0);
   if (updated > 0 && skipped > 0) return `已回传 ${formatQuantity(updated)} 行，跳过 ${formatQuantity(skipped)} 行`;

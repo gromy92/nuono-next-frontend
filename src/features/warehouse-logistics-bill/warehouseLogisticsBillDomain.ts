@@ -1,4 +1,4 @@
-import type { LogisticsBill } from '../purchase-order/types';
+import type { LogisticsBill } from './types';
 
 export function filterBills(bills: LogisticsBill[], keyword: string) {
   const normalized = keyword.trim().toLowerCase();

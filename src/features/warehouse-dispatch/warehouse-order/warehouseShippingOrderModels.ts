@@ -1,4 +1,4 @@
-import type { PurchaseOrderLogisticsQuoteImportResult } from '../../purchase-order/types';
+import type { OrderLogisticsQuoteImportResult } from '../../logistics-quote/types';
 
 export type QuoteExportSelection = {
   forwarderCode?: string;
@@ -8,7 +8,7 @@ export type QuoteExportSelection = {
 export type QuoteImportResultState = {
   orderId: string;
   segmentIds: string[];
-  result: PurchaseOrderLogisticsQuoteImportResult;
+  result: OrderLogisticsQuoteImportResult;
 };
 
 export type DetailLineFilter =

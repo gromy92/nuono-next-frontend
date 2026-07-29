@@ -3,12 +3,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Key } from 'react';
 import {
   createShippingOrder,
-  loadPurchaseOrders,
   loadShippingOrder,
   loadShippingOrders,
   updateShippingOrder
-} from '../../purchase-order/api';
-import type { PurchaseOrder, ShippingOrder } from '../../purchase-order/types';
+} from './warehouseShippingOrderRequests';
+import {
+  loadWarehouseOrderPurchaseCandidates
+} from './warehouseOrderPurchaseCandidateAdapter';
+import type {
+  WarehouseOrderPurchaseCandidate
+} from './warehouseOrderPurchaseCandidateAdapter';
+import type { ShippingOrder } from './warehouseShippingOrderTypes';
 import {
   filterPurchaseOrders,
   filterShippingOrders
@@ -22,7 +27,7 @@ import type { WarehouseOrderJourney } from './warehouseOrderJourney';
 export function useWarehouseShippingOrderData() {
   const [shippingOrders, setShippingOrders] = useState<ShippingOrder[]>([]);
   const [journeys, setJourneys] = useState<WarehouseOrderJourney[]>([]);
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<WarehouseOrderPurchaseCandidate[]>([]);
   const [selectedSourceOrderIds, setSelectedSourceOrderIds] = useState<string[]>([]);
   const [keyword, setKeyword] = useState('');
   const [sourceKeyword, setSourceKeyword] = useState('');
@@ -39,7 +44,7 @@ export function useWarehouseShippingOrderData() {
   const selectedSourceOrders = useMemo(
     () => selectedSourceOrderIds
       .map((id) => purchaseOrders.find((order) => order.id === id))
-      .filter((order): order is PurchaseOrder => Boolean(order)),
+      .filter((order): order is WarehouseOrderPurchaseCandidate => Boolean(order)),
     [purchaseOrders, selectedSourceOrderIds]
   );
   const journeysByOrder = useMemo(() => groupWarehouseOrderJourneys(journeys), [journeys]);
@@ -72,7 +77,7 @@ export function useWarehouseShippingOrderData() {
       setLoading(false);
     }
     try {
-      const orders = await loadPurchaseOrders({ submittedOnly: true, shippingAvailableOnly: false });
+      const orders = await loadWarehouseOrderPurchaseCandidates();
       setPurchaseOrders(orders);
       setSelectedSourceOrderIds((current) => current.filter((id) => orders.some((order) => order.id === id)));
     } catch {
@@ -124,7 +129,7 @@ export function useWarehouseShippingOrderData() {
     setCreateModalOpen(true);
     setSourceKeyword('');
     try {
-      const orders = await loadPurchaseOrders({ submittedOnly: true, shippingAvailableOnly: false });
+      const orders = await loadWarehouseOrderPurchaseCandidates();
       setPurchaseOrders(orders);
       setSelectedSourceOrderIds((current) => current.filter((id) => orders.some((order) => order.id === id)));
     } catch (error) {

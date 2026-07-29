@@ -22,10 +22,5 @@ export const contractSources = {
   detailCss: source('./WarehouseShippingOrderDetail.css'),
   lineTableCss: source('./WarehouseShippingOrderLineTable.css'),
   quoteCss: source('./WarehouseShippingOrderQuote.css'),
-  purchaseOrderApi: [
-    source('../../purchase-order/api.ts'),
-    source('../../purchase-order/purchaseOrderApiClient.ts'),
-    source('../../purchase-order/purchaseOrderRequests.ts'),
-    source('../../purchase-order/shippingOrderRequests.ts')
-  ].join('\n')
+  warehouseOrderApi: source('./warehouseShippingOrderRequests.ts')
 };

@@ -53,8 +53,8 @@ assert.match(
   sources.bulkModal,
   /title="批量添加报价"[\s\S]*label="货代渠道"[\s\S]*quote\.forwarderSelectOptions[\s\S]*label="渠道"[\s\S]*quote\.channelSelectOptions/
 );
-assert.match(sources.purchaseOrderApi, /export function updateShippingOrderLineQuotes[\s\S]*shipping-orders\/.*lines\/quotes/);
-assert.match(sources.purchaseOrderApi, /shipping-orders\/.*lines\/.*quote/);
+assert.match(sources.warehouseOrderApi, /export function updateShippingOrderLineQuotes[\s\S]*shipping-orders\/.*lines\/quotes/);
+assert.match(sources.warehouseOrderApi, /shipping-orders\/.*lines\/.*quote/);
 
 assert.match(
   sources.quoteState,
@@ -82,7 +82,7 @@ assert.doesNotMatch(sources.publishedPriceCard, /surcharges|triggerCondition|pub
 assert.match(sources.quoteTransfer, /useState\(false\)[\s\S]*exportMissingOnly/);
 assert.match(sources.quoteTransfer, /exportShippingOrderLogisticsQuoteReport[\s\S]*missingOnly: exportMissingOnly/);
 assert.match(sources.quoteTransfer, /selectedChannel\?\.totalLineCount[\s\S]*selectedChannel\?\.pendingLineCount[\s\S]*selectedChannel\?\.confirmedLineCount/);
-assert.match(sources.purchaseOrderApi, /missingOnly\?: boolean[\s\S]*params\.set\('missingOnly', 'true'\)/);
+assert.match(sources.warehouseOrderApi, /missingOnly\?: boolean[\s\S]*params\.set\('missingOnly', 'true'\)/);
 assert.doesNotMatch(sources.detailToolbar, /导出缺报价|生成账单/);
 assert.match(sources.detailToolbar, /label="缺义特材质"[\s\S]*label="待确认"[\s\S]*label="缺单价"/);
 assert.doesNotMatch(sources.sharedViews, />材料缺失 /);

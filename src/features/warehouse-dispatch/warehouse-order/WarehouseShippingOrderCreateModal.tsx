@@ -1,6 +1,6 @@
 import { SearchOutlined } from '@ant-design/icons';
 import { Alert, Button, Empty, Input, Modal, Table, Typography } from 'antd';
-import type { PurchaseOrder } from '../../purchase-order/types';
+import type { WarehouseOrderPurchaseCandidate } from './warehouseOrderPurchaseCandidateAdapter';
 import {
   countPurchaseOrderSku,
   formatDate,
@@ -44,7 +44,7 @@ export function WarehouseShippingOrderCreateModal({ data }: { data: WarehouseShi
           value={data.sourceKeyword}
           onChange={(event) => data.setSourceKeyword(event.target.value)}
         />
-        <Table<PurchaseOrder>
+        <Table<WarehouseOrderPurchaseCandidate>
           size="small"
           rowKey="id"
           rowSelection={data.sourceOrderSelection}

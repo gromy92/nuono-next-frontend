@@ -1,6 +1,6 @@
 import { SaveOutlined } from '@ant-design/icons';
 import { Button, Empty, Image, Input, Select, Table, Typography } from 'antd';
-import type { ShippingOrderLine } from '../../purchase-order/types';
+import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
 import { buildYiteMaterialCellModel } from './WarehouseOrderPanel.models';
 import {
   isLineQuoteConfirmed,

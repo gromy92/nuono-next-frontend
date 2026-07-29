@@ -4,14 +4,16 @@ import type {
   ProductOption,
   PurchaseOrder,
   PurchaseOrderAli1688HistoryView,
-  PurchaseOrderLogisticsQuoteExportSelection,
-  PurchaseOrderLogisticsQuoteImportResult,
-  PurchaseOrderLogisticsQuoteOptions,
   PurchaseOrderShippingSubmitResult,
   UpdatePurchaseOrderItemPayload,
   UpdatePurchaseOrderItemSourcingRequirementPayload,
   UpdatePurchaseOrderPayload
 } from './types'
+import type {
+  OrderLogisticsQuoteExportSelection,
+  OrderLogisticsQuoteImportResult,
+  OrderLogisticsQuoteOptions
+} from '../logistics-quote/types'
 import {
   downloadPurchaseOrderFile,
   getPurchaseOrderJson,
@@ -107,7 +109,7 @@ export function updatePurchaseOrderItem(orderId: string, itemId: string, payload
 }
 
 export function loadPurchaseOrderLogisticsQuoteOptions(orderId: string) {
-  return getPurchaseOrderJson<PurchaseOrderLogisticsQuoteOptions>(
+  return getPurchaseOrderJson<OrderLogisticsQuoteOptions>(
     `/api/procurement/purchase-orders/${encodeURIComponent(orderId)}/logistics-quote-options`,
     '读取可导出货代渠道失败'
   )
@@ -115,7 +117,7 @@ export function loadPurchaseOrderLogisticsQuoteOptions(orderId: string) {
 
 export function exportPurchaseOrderLogisticsQuoteReport(
   orderId: string,
-  selection: PurchaseOrderLogisticsQuoteExportSelection
+  selection: OrderLogisticsQuoteExportSelection
 ) {
   const params = new URLSearchParams({
     forwarderCode: selection.forwarderCode,
@@ -131,7 +133,7 @@ export function exportPurchaseOrderLogisticsQuoteReport(
 export function importPurchaseOrderLogisticsQuoteReport(orderId: string, file: File) {
   const formData = new FormData()
   formData.append('file', file)
-  return uploadPurchaseOrderForm<PurchaseOrderLogisticsQuoteImportResult>(
+  return uploadPurchaseOrderForm<OrderLogisticsQuoteImportResult>(
     `/api/procurement/purchase-orders/${encodeURIComponent(orderId)}/logistics-quote-report/import`,
     formData,
     '回传物流报价表失败'

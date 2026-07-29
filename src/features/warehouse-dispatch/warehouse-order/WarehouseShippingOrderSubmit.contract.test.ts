@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import type { ShippingOrder } from '../../purchase-order/types';
+import type { ShippingOrder } from './warehouseShippingOrderTypes';
 import { contractSources as sources } from './WarehouseOrderContractSources';
 import {
   countShippingOrderPendingQuoteLines,
@@ -56,6 +56,6 @@ assert.match(
 );
 assert.doesNotMatch(sources.page + sources.detailToolbar + sources.submit, /部分提交|PARTIAL_SUBMITTED/);
 assert.match(
-  sources.purchaseOrderApi,
+  sources.warehouseOrderApi,
   /export function submitShippingOrder\(shippingOrderId: string\)[\s\S]*'POST',[\s\S]*\{\}/
 );

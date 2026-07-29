@@ -6,15 +6,15 @@ const root = resolve(import.meta.dirname, '..');
 const typesSource = [
   readFileSync(resolve(root, 'src/features/purchase-order/types.ts'), 'utf8'),
   readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderBaseTypes.ts'), 'utf8'),
-  readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderShippingTypes.ts'), 'utf8'),
   readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderLogisticsPlanTypes.ts'), 'utf8'),
-  readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderLogisticsQuoteTypes.ts'), 'utf8')
+  readFileSync(resolve(root, 'src/features/logistics-quote/orderLogisticsQuoteTypes.ts'), 'utf8'),
+  readFileSync(resolve(root, 'src/features/warehouse-dispatch/warehouse-order/warehouseShippingOrderTypes.ts'), 'utf8')
 ].join('\n');
 const apiSource = [
   readFileSync(resolve(root, 'src/features/purchase-order/api.ts'), 'utf8'),
   readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderApiClient.ts'), 'utf8'),
   readFileSync(resolve(root, 'src/features/purchase-order/purchaseOrderRequests.ts'), 'utf8'),
-  readFileSync(resolve(root, 'src/features/purchase-order/shippingOrderRequests.ts'), 'utf8')
+  readFileSync(resolve(root, 'src/features/warehouse-dispatch/warehouse-order/warehouseShippingOrderRequests.ts'), 'utf8')
 ].join('\n');
 const pageSource = readFileSync(resolve(root, 'src/features/purchase-order/PurchaseOrderPage.tsx'), 'utf8');
 const formsSource = readFileSync(resolve(root, 'src/features/purchase-order/components/PurchaseOrderForms.tsx'), 'utf8');
@@ -57,9 +57,9 @@ const createStoreOptionsBlock = storeModelSource.slice(
 );
 
 assert.match(typesSource, /export type PurchaseOrderFulfillmentType\b/);
-assert.match(typesSource, /export type PurchaseOrderLogisticsQuoteSummary\b/);
-assert.match(typesSource, /export type PurchaseOrderLogisticsQuoteOptions\b/);
-assert.match(typesSource, /logisticsQuoteSummary\?:\s*PurchaseOrderLogisticsQuoteSummary/);
+assert.match(typesSource, /export type OrderLogisticsQuoteSummary\b/);
+assert.match(typesSource, /export type OrderLogisticsQuoteOptions\b/);
+assert.match(typesSource, /logisticsQuoteSummary\?:\s*OrderLogisticsQuoteSummary/);
 assert.match(typesSource, /fulfillmentType:\s*PurchaseOrderFulfillmentType/);
 assert.match(typesSource, /fulfillmentType\?:\s*PurchaseOrderFulfillmentType/);
 assert.match(purchaseOrderFeatureSource, /FULFILLMENT_TYPE_OPTIONS/);
