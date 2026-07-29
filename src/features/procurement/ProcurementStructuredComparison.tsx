@@ -18,11 +18,16 @@ import {
   procurementSourcePlatformColor,
   procurementStructuredFieldSourceMeta
 } from './domain'
+import type { ProcurementCandidate, ProcurementDemandItem } from './types'
 
 const { Text } = Typography
 
-export function ProcurementStructuredComparison({ model }: { model: any }) {
-  const { selectedProcurementItem: item, comparingProcurementCandidate: candidate } = model
+type Props = {
+  item: ProcurementDemandItem
+  candidate: ProcurementCandidate
+}
+
+export function ProcurementStructuredComparison({ item, candidate }: Props) {
   const sourceFieldMeta = procurementStructuredFieldSourceMeta(item.structuredFieldSource)
   const candidateFieldMeta = procurementStructuredFieldSourceMeta(candidate.structuredFieldSource)
   return (

@@ -9,11 +9,17 @@ import {
   procurementCandidatePriceText,
   procurementCandidateSizeText
 } from './domain'
+import type { ProcurementComparisonContext } from './ProcurementComparisonPanel'
+import type { ProcurementCandidate } from './types'
 
 const { Text } = Typography
 
-export function ProcurementDecisionSummary({ model }: { model: any }) {
-  const { procurementCompareSummary: summary, comparingProcurementCandidate: candidate } = model
+type Props = {
+  summary: ProcurementComparisonContext['procurementCompareSummary']
+  candidate: ProcurementCandidate
+}
+
+export function ProcurementDecisionSummary({ summary, candidate }: Props) {
   return (
     <>
       <Alert

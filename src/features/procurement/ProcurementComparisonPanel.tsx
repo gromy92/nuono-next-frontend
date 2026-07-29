@@ -5,8 +5,16 @@ import { ProcurementComparisonHeader } from './ProcurementComparisonHeader'
 import { ProcurementDecisionSummary } from './ProcurementDecisionSummary'
 import { ProcurementInquirySheetPanel } from './ProcurementInquirySheetPanel'
 import { ProcurementStructuredComparison } from './ProcurementStructuredComparison'
+import type { ProcurementWorkspaceModel } from './ProcurementWorkspace'
 
-export function ProcurementComparisonPanel({ model }: { model: any }) {
+export type ProcurementComparisonModel = ProcurementWorkspaceModel['decision']['comparison']
+export type ProcurementComparisonContext = {
+  selectedProcurementItem: NonNullable<ProcurementComparisonModel['selectedProcurementItem']>
+  comparingProcurementCandidate: NonNullable<ProcurementComparisonModel['comparingProcurementCandidate']>
+  procurementCompareSummary: NonNullable<ProcurementComparisonModel['procurementCompareSummary']>
+}
+
+export function ProcurementComparisonPanel({ model }: { model: ProcurementComparisonModel }) {
   const {
     selectedProcurementItem,
     comparingProcurementCandidate,
@@ -26,14 +34,25 @@ export function ProcurementComparisonPanel({ model }: { model: any }) {
     procurementSavingReview,
     saveProcurementCandidateReview
   } = model
-  if (!comparingProcurementCandidate || !procurementCompareSummary) {
+  if (!selectedProcurementItem || !comparingProcurementCandidate || !procurementCompareSummary) {
     return null
+  }
+  const context: ProcurementComparisonContext = {
+    selectedProcurementItem,
+    comparingProcurementCandidate,
+    procurementCompareSummary
   }
   return (
     <div style={{ padding: 16, borderRadius: 12, background: '#ffffff', border: '1px solid #e2e8f0' }}>
-      <ProcurementComparisonHeader model={model} />
-      <ProcurementStructuredComparison model={model} />
-      <ProcurementDecisionSummary model={model} />
+      <ProcurementComparisonHeader context={context} model={model.header} />
+      <ProcurementStructuredComparison
+        item={selectedProcurementItem}
+        candidate={comparingProcurementCandidate}
+      />
+      <ProcurementDecisionSummary
+        summary={procurementCompareSummary}
+        candidate={comparingProcurementCandidate}
+      />
       {procurementInquirySheet ? (
         <ProcurementInquirySheetPanel
           sheet={procurementInquirySheet}

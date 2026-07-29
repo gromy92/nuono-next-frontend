@@ -10,21 +10,19 @@ import { useProcurementCandidatePool } from './useProcurementCandidatePool';
 import { useProcurementSourcing } from './useProcurementSourcing';
 import { useProcurementWorkspacePresentation } from './useProcurementWorkspacePresentation';
 import { useProcurementProfitSignals } from './useProcurementProfitSignals';
-import type { ProcurementCandidatePoolPayload } from './types';
+import type { ProcurementCandidatePoolPayload, ProcurementReviewFormValues } from './types';
 import type { ProcurementProfitSignalsState } from '../profit-calculator/domain';
-
 type ProcurementWorkspaceProps = {
   session: AuthSession | null;
   activeOwnerId?: number;
   onOpenProfitCalculatorPrefilled: () => void;
 };
-
-export function ProcurementWorkspace({
+function useProcurementWorkspaceModel({
   session,
   activeOwnerId,
   onOpenProfitCalculatorPrefilled
 }: ProcurementWorkspaceProps) {
-  const [procurementReviewForm] = Form.useForm();
+  const [procurementReviewForm] = Form.useForm<ProcurementReviewFormValues>();
   const [procurementSavingReview, setProcurementSavingReview] = useState(false);
   const [procurementProfitSignalsState, setProcurementProfitSignalsState] = useState<ProcurementProfitSignalsState>({
     status: 'idle'
@@ -78,9 +76,6 @@ export function ProcurementWorkspace({
     openProcurementBackfillModal,
     submitProcurementManualBackfill
   } = sourcing;
-
-
-
   const selectedProcurementQuickSignalsRequest = useMemo(
     () => buildProcurementQuickSignalsRequest(selectedProcurementItem),
     [selectedProcurementItem]
@@ -108,8 +103,6 @@ export function ProcurementWorkspace({
     selectedProcurementQuickSignalsRequest,
     setProcurementProfitSignalsState
   });
-
-
   const candidateAutoInquiry = useProcurementCandidateAutoInquiry({
     activeOwnerId,
     session,
@@ -243,7 +236,62 @@ export function ProcurementWorkspace({
   ]);
 
 
-  return (
-    <ProcurementWorkspaceView model={{ procurementState, procurementSummaryCards, showProcurementAutoInquiryDevValidation, procurementBuildProgress, selectedProcurementItem, selectedProcurementSourcingProgress, session, procurementAutoInquiryStarting, procurementAutoInquiryValidationMeta, procurementAutoInquiryFeedback, procurementAutoInquiryState, procurementAutoInquiryRealSession, procurementAutoInquiryLatestTask, openProcurementAutoInquiryValidationSample, loadProcurementAutoInquiryWorkbench, startProcurementAutoInquiryValidation, activeOwnerId, loadProcurementCandidatePool, openProcurement1688Search, copyProcurement1688Keyword, openProcurementBackfillModal, selectedProcurementItemId, procurementRunningDemandItemId, setSelectedProcurementItemId, runProcurementAutoSelection, comparingProcurementCandidate, selectedProcurementSignalByCandidateId, onOpenProfitCalculatorPrefilled, procurementCompareSummary, selectedProcurementSourceMainFrame, procurementSourcePreviewFrames, procurementSourcePreviewKey, setProcurementSourcePreviewKey, procurementCandidatePreviewFrames, procurementCandidatePreviewKey, setProcurementCandidatePreviewKey, activeProcurementSourceFrame, activeProcurementCandidateFrame, procurementInquirySheet, procurementCandidateGroupFilterKey, setProcurementCandidateGroupFilterKey, copyCurrentProcurementInquiry, currentProcurementAutoInquiryBusinessState, currentProcurementAutoInquiryBusinessMeta, currentProcurementAutoInquiryBusinessAction, nextProcurementAutoInquiryCandidate, startProcurementCandidateAutoInquiry, loadProcurementCandidateAutoInquiry, setProcurementComparingCandidateId, procurementReviewForm, procurementSavingReview, saveProcurementCandidateReview, selectedProcurementCandidateGroups, procurementCandidateFilter, setProcurementCandidateFilter, procurementProfitSignalsState, filteredProcurementCandidates, procurementComparingCandidateId, procurementSelectingCandidateId, procurementAutoInquiryBusinessStates, selectProcurementCandidate, procurementBackfillModalOpen, procurementBackfillSubmitting, procurementBackfillForm, setProcurementBackfillModalOpen, submitProcurementManualBackfill }} />
-  );
+  return {
+    overview: {
+      procurementState, procurementSummaryCards,
+      showProcurementAutoInquiryDevValidation, procurementBuildProgress,
+      selectedProcurementItem, selectedProcurementSourcingProgress,
+      session, activeOwnerId, loadProcurementCandidatePool,
+      procurementAutoInquiryStarting, procurementAutoInquiryValidationMeta,
+      procurementAutoInquiryFeedback, procurementAutoInquiryState,
+      procurementAutoInquiryRealSession, procurementAutoInquiryLatestTask,
+      openProcurementAutoInquiryValidationSample,
+      loadProcurementAutoInquiryWorkbench, startProcurementAutoInquiryValidation,
+      openProcurement1688Search, copyProcurement1688Keyword, openProcurementBackfillModal
+    },
+    demandList: {
+      selectedProcurementItemId, procurementRunningDemandItemId,
+      setSelectedProcurementItemId, runProcurementAutoSelection
+    },
+    decision: {
+      onOpenProfitCalculatorPrefilled, selectedProcurementSourceMainFrame,
+      comparison: {
+        selectedProcurementItem, comparingProcurementCandidate, procurementCompareSummary,
+        procurementInquirySheet, procurementCandidateGroupFilterKey,
+        setProcurementCandidateGroupFilterKey, copyCurrentProcurementInquiry,
+        currentProcurementAutoInquiryBusinessState, currentProcurementAutoInquiryBusinessMeta,
+        currentProcurementAutoInquiryBusinessAction, nextProcurementAutoInquiryCandidate,
+        startProcurementCandidateAutoInquiry, loadProcurementCandidateAutoInquiry,
+        setProcurementComparingCandidateId, procurementReviewForm,
+        procurementSavingReview, saveProcurementCandidateReview,
+        header: {
+          procurementSourcePreviewFrames, procurementSourcePreviewKey,
+          setProcurementSourcePreviewKey, procurementCandidatePreviewFrames,
+          procurementCandidatePreviewKey, setProcurementCandidatePreviewKey,
+          activeProcurementSourceFrame, activeProcurementCandidateFrame
+        }
+      },
+      candidateList: {
+        selectedProcurementCandidateGroups, procurementCandidateGroupFilterKey,
+        setProcurementCandidateGroupFilterKey,
+        procurementCandidateFilter, setProcurementCandidateFilter,
+        procurementProfitSignalsState, filteredProcurementCandidates,
+        procurementComparingCandidateId, procurementSelectingCandidateId,
+        selectedProcurementSignalByCandidateId, procurementAutoInquiryBusinessStates,
+        setProcurementComparingCandidateId, selectProcurementCandidate,
+        startProcurementCandidateAutoInquiry
+      }
+    },
+    backfill: {
+      procurementBackfillModalOpen, procurementBackfillSubmitting,
+      procurementBackfillForm, setProcurementBackfillModalOpen,
+      submitProcurementManualBackfill
+    }
+  };
+}
+
+export type ProcurementWorkspaceModel = ReturnType<typeof useProcurementWorkspaceModel>;
+
+export function ProcurementWorkspace(props: ProcurementWorkspaceProps) {
+  return <ProcurementWorkspaceView model={useProcurementWorkspaceModel(props)} />;
 }

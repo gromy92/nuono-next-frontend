@@ -202,6 +202,12 @@ export type ProcurementBackfillFormValues = {
   candidates: ProcurementBackfillCandidateInput[];
 };
 
+export type ProcurementReviewFormValues = {
+  manualReviewNote?: string;
+  inquirySummary?: string;
+  nextAction?: string;
+};
+
 export type ProcurementSourcingProgress = {
   searchOpenedAt?: string;
   keywordCopiedAt?: string;

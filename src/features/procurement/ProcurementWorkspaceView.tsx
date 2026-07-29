@@ -14,11 +14,48 @@ import {
   procurementSourcePlatformColor
 } from './domain';
 import { PROCUREMENT_REQUIREMENT_CONFIRMATION_BASE_PATH } from '../procurement-confirmation/constants';
+import type { ProcurementWorkspaceModel } from './ProcurementWorkspace';
 
 const { Text } = Typography;
 
-export function ProcurementWorkspaceView({ model }: { model: any }) {
-  const { procurementState, procurementSummaryCards, showProcurementAutoInquiryDevValidation, procurementBuildProgress, selectedProcurementItem, selectedProcurementSourcingProgress, session, procurementAutoInquiryStarting, procurementAutoInquiryValidationMeta, procurementAutoInquiryFeedback, procurementAutoInquiryState, procurementAutoInquiryRealSession, procurementAutoInquiryLatestTask, openProcurementAutoInquiryValidationSample, loadProcurementAutoInquiryWorkbench, startProcurementAutoInquiryValidation, activeOwnerId, loadProcurementCandidatePool, openProcurement1688Search, copyProcurement1688Keyword, openProcurementBackfillModal, selectedProcurementItemId, procurementRunningDemandItemId, setSelectedProcurementItemId, runProcurementAutoSelection, comparingProcurementCandidate, selectedProcurementSignalByCandidateId, onOpenProfitCalculatorPrefilled, procurementCompareSummary, selectedProcurementSourceMainFrame, procurementSourcePreviewFrames, procurementSourcePreviewKey, setProcurementSourcePreviewKey, procurementCandidatePreviewFrames, procurementCandidatePreviewKey, setProcurementCandidatePreviewKey, activeProcurementSourceFrame, activeProcurementCandidateFrame, procurementInquirySheet, procurementCandidateGroupFilterKey, setProcurementCandidateGroupFilterKey, copyCurrentProcurementInquiry, currentProcurementAutoInquiryBusinessState, currentProcurementAutoInquiryBusinessMeta, currentProcurementAutoInquiryBusinessAction, nextProcurementAutoInquiryCandidate, startProcurementCandidateAutoInquiry, loadProcurementCandidateAutoInquiry, setProcurementComparingCandidateId, procurementReviewForm, procurementSavingReview, saveProcurementCandidateReview, selectedProcurementCandidateGroups, procurementCandidateFilter, setProcurementCandidateFilter, procurementProfitSignalsState, filteredProcurementCandidates, procurementComparingCandidateId, procurementSelectingCandidateId, procurementAutoInquiryBusinessStates, selectProcurementCandidate, procurementBackfillModalOpen, procurementBackfillSubmitting, procurementBackfillForm, setProcurementBackfillModalOpen, submitProcurementManualBackfill } = model;
+export function ProcurementWorkspaceView({ model }: { model: ProcurementWorkspaceModel }) {
+  const {
+    procurementState, procurementSummaryCards,
+    showProcurementAutoInquiryDevValidation, procurementBuildProgress,
+    selectedProcurementItem, selectedProcurementSourcingProgress,
+    session, activeOwnerId, loadProcurementCandidatePool,
+    procurementAutoInquiryStarting, procurementAutoInquiryValidationMeta,
+    procurementAutoInquiryFeedback, procurementAutoInquiryState,
+    procurementAutoInquiryRealSession, procurementAutoInquiryLatestTask,
+    openProcurementAutoInquiryValidationSample,
+    loadProcurementAutoInquiryWorkbench, startProcurementAutoInquiryValidation,
+    openProcurement1688Search, copyProcurement1688Keyword, openProcurementBackfillModal
+  } = model.overview;
+  const {
+    selectedProcurementItemId, procurementRunningDemandItemId,
+    setSelectedProcurementItemId, runProcurementAutoSelection
+  } = model.demandList;
+  const {
+    onOpenProfitCalculatorPrefilled,
+    selectedProcurementSourceMainFrame,
+    comparison,
+    candidateList
+  } = model.decision;
+  const {
+    selectedProcurementCandidateGroups, procurementCandidateGroupFilterKey,
+    setProcurementCandidateGroupFilterKey,
+    procurementCandidateFilter, setProcurementCandidateFilter,
+    procurementProfitSignalsState, filteredProcurementCandidates,
+    procurementComparingCandidateId, procurementSelectingCandidateId,
+    selectedProcurementSignalByCandidateId, procurementAutoInquiryBusinessStates,
+    setProcurementComparingCandidateId, selectProcurementCandidate,
+    startProcurementCandidateAutoInquiry
+  } = candidateList;
+  const {
+    procurementBackfillModalOpen, procurementBackfillSubmitting,
+    procurementBackfillForm, setProcurementBackfillModalOpen,
+    submitProcurementManualBackfill
+  } = model.backfill;
 
   const procurementBoard = (
     <Space direction="vertical" size={16} style={{ width: '100%' }}>
@@ -131,7 +168,7 @@ export function ProcurementWorkspaceView({ model }: { model: any }) {
                   sourceMainFrame={selectedProcurementSourceMainFrame}
                 />
 
-                <ProcurementComparisonPanel model={model} />
+                <ProcurementComparisonPanel model={comparison} />
 
                   <ProcurementCandidateGroupFilterPanel
                     groups={selectedProcurementCandidateGroups}
@@ -170,7 +207,7 @@ export function ProcurementWorkspaceView({ model }: { model: any }) {
 
 	                {filteredProcurementCandidates.length ? (
 	                  <Space direction="vertical" size={12} style={{ width: '100%' }}>
-                    {filteredProcurementCandidates.map((candidate: any) => (
+                    {filteredProcurementCandidates.map((candidate) => (
                       <ProcurementCandidateResultCard
                         key={candidate.id}
                         candidate={candidate}

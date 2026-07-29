@@ -4,14 +4,25 @@ import {
   procurementNextActionMeta
 } from './domain'
 import { ProcurementPreviewPanel } from './preview'
+import type {
+  ProcurementComparisonContext,
+  ProcurementComparisonModel
+} from './ProcurementComparisonPanel'
 
 const { Text } = Typography
 
-export function ProcurementComparisonHeader({ model }: { model: any }) {
+type Props = {
+  context: ProcurementComparisonContext
+  model: ProcurementComparisonModel['header']
+}
+
+export function ProcurementComparisonHeader({ context, model }: Props) {
   const {
     selectedProcurementItem,
     comparingProcurementCandidate,
-    procurementCompareSummary,
+    procurementCompareSummary
+  } = context
+  const {
     procurementSourcePreviewFrames,
     procurementSourcePreviewKey,
     setProcurementSourcePreviewKey,
