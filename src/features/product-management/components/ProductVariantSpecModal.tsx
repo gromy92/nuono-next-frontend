@@ -1,11 +1,11 @@
 import { App as AntdApp, Modal, Space } from 'antd';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductVariantModalWorkspace } from '../workspaceTypes';
 import { formatSnapshotValue } from '../utils/common';
 import { ProductVariantSpecTable } from './ProductVariantSpecTable';
 import { ProductBaselineIdentity } from '../../product-baseline';
 
 type ProductVariantSpecModalProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductVariantModalWorkspace;
 };
 
 export function ProductVariantSpecModal({ workspace }: ProductVariantSpecModalProps) {

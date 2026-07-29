@@ -1,13 +1,11 @@
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { Button, Modal, Space, Typography } from 'antd';
-import { useProductManagementWorkspace } from '../useProductManagementWorkspace';
+import type { ProductGalleryModalWorkspace } from '../workspaceTypes';
 
 const { Text } = Typography;
 
-type ProductManagementWorkspace = ReturnType<typeof useProductManagementWorkspace>;
-
 type ProductGalleryModalProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductGalleryModalWorkspace;
 };
 
 export function ProductGalleryModal({ workspace }: ProductGalleryModalProps) {

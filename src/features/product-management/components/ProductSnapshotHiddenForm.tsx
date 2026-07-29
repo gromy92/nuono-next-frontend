@@ -1,8 +1,8 @@
 import { Col, Form, Input, Row, Select } from 'antd';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductSnapshotFormWorkspace } from '../workspaceTypes';
 
 type ProductSnapshotHiddenFormProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductSnapshotFormWorkspace;
 };
 
 export function ProductSnapshotHiddenForm({ workspace }: ProductSnapshotHiddenFormProps) {

@@ -9,7 +9,10 @@ import {
 import { getProductCurrentZCode, isLocalDraftNoonCode } from '../../product-domain/productIdentity';
 import { textInputValue } from '../utils/common';
 import { isProductNotListedSource } from '../../product-baseline';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type {
+  ProductDetailPublishSyncWorkspace,
+  ProductDetailSummaryWorkspace
+} from '../workspaceTypes';
 import { buildProductDetailListingTarget } from '../utils/productDetailListingNavigation';
 import { ProductDetailSummaryBar } from './ProductDetailSummaryBar';
 import { ProductDetailSyncAlert } from './ProductDetailSyncAlert';
@@ -20,10 +23,14 @@ const LISTING_DRAFT_MISSING_REASON =
   '当前商品没有关联到原上架草稿，暂时无法继续上架。';
 
 type ProductDetailSummaryPanelProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductDetailSummaryWorkspace;
+  publishSyncWorkspace: ProductDetailPublishSyncWorkspace;
 };
 
-export function ProductDetailSummaryPanel({ workspace }: ProductDetailSummaryPanelProps) {
+export function ProductDetailSummaryPanel({
+  workspace,
+  publishSyncWorkspace
+}: ProductDetailSummaryPanelProps) {
   const {
     productSnapshotView,
     productDetailSummarySurface,
@@ -154,7 +161,7 @@ export function ProductDetailSummaryPanel({ workspace }: ProductDetailSummaryPan
         activeProductSiteOffer={activeProductSiteOffer}
         productLeadImage={productLeadImage}
         openCurrentProductGallery={openCurrentProductGallery}
-        syncAlert={<ProductDetailSyncAlert workspace={workspace} />}
+        syncAlert={<ProductDetailSyncAlert workspace={publishSyncWorkspace} />}
         actions={
           <Space wrap size={[8, 8]} style={{ justifyContent: 'flex-end' }}>
             <Button

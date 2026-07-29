@@ -2,10 +2,10 @@ import { Card, Col, Space } from 'antd';
 import { ProductKeywordPanel } from '../../product-keywords/ProductKeywordPanel';
 import { ProductDetailSnapshotBody } from './ProductDetailSnapshotBody';
 import { siteOfferCode } from '../utils/common';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductDetailWorkspace } from '../workspaceTypes';
 
 type ProductDetailWorkbenchViewProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductDetailWorkspace;
 };
 
 export function ProductDetailWorkbenchView({ workspace }: ProductDetailWorkbenchViewProps) {
@@ -15,7 +15,7 @@ export function ProductDetailWorkbenchView({ workspace }: ProductDetailWorkbench
     productDetailSummarySurface,
     productWorkbenchContext,
     productWorkbenchRef
-  } = workspace;
+  } = workspace.header;
   const productSummary = currentProductSummarySurface ?? productDetailSummarySurface;
   const currentStoreCode =
     (activeProductSiteOffer ? siteOfferCode(activeProductSiteOffer) : '') ||

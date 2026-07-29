@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { Button, Space, Typography } from 'antd';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductDetailPublishSyncWorkspace } from '../workspaceTypes';
 import { isProductPublishTaskActive, isProductPublishTaskNeedsAttention } from '../utils/workbench';
 
 const { Text } = Typography;
 
 type ProductDetailSyncAlertProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductDetailPublishSyncWorkspace;
 };
 
 function buildDraftDescription(

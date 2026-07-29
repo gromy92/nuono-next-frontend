@@ -1,10 +1,10 @@
 import { Col, Form, Input, Row, Select, Space, Tag, Typography } from 'antd';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductCatalogAccessWorkspace } from '../workspaceTypes';
 
 const { Text } = Typography;
 
 type ProductInitializationFormProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductCatalogAccessWorkspace;
   hidden?: boolean;
 };
 

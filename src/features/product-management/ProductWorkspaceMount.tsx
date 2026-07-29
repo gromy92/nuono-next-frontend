@@ -70,10 +70,10 @@ export function ProductWorkspaceMount(props: WorkspaceMountProps) {
     key: 'product-detail',
     parentMenuKey: 'product-manage' as const,
     pathLabel: '商品 / 商品详情',
-    label: <ProductWorkspaceDetailTabLabel summary={workspace.productDetailSummarySurface} />,
+    label: <ProductWorkspaceDetailTabLabel summary={workspace.navigation.productDetailSummarySurface} />,
     closable: true,
-    onClose: workspace.requestCloseProductDetailTab
-  }), [workspace.productDetailSummarySurface, workspace.requestCloseProductDetailTab]);
+    onClose: workspace.navigation.requestCloseProductDetailTab
+  }), [workspace.navigation.productDetailSummarySurface, workspace.navigation.requestCloseProductDetailTab]);
 
   openDetailTabRef.current = () => openOwnedTab(detailTab);
 
@@ -88,12 +88,21 @@ export function ProductWorkspaceMount(props: WorkspaceMountProps) {
   useEffect(() => () => unregisterOwnedTab('product-detail'), [unregisterOwnedTab]);
 
   const content = menuKey === 'product-groups'
-    ? <ProductGroupManagementPage workspace={workspace} activeOwnerId={storeSync.activeOwnerId} />
+    ? (
+      <ProductGroupManagementPage
+        workspace={workspace.groups}
+        snapshotForm={workspace.snapshotForm}
+        activeOwnerId={storeSync.activeOwnerId}
+      />
+    )
     : menuKey === 'product-specs'
       ? <ProductSpecsPage session={session} activeOwnerId={storeSync.activeOwnerId} />
       : (
         <ProductManagementWorkspacePage
-          workspace={workspace}
+          catalog={workspace.catalog}
+          detail={workspace.detail}
+          overlays={workspace.overlays}
+          snapshotForm={workspace.snapshotForm}
           activeOwnerId={storeSync.activeOwnerId}
           isProductDetailTab={activeProductWorkspaceTabKey === 'product-detail'}
         />
@@ -102,7 +111,7 @@ export function ProductWorkspaceMount(props: WorkspaceMountProps) {
   return (
     <>
       {content}
-      <ProductManagementWorkspaceModals workspace={workspace} />
+      <ProductManagementWorkspaceModals workspaces={workspace.modals} />
     </>
   );
 }

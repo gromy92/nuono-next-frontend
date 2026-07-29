@@ -2,12 +2,12 @@ import { Button, Card, Space, Tag, Typography } from 'antd';
 import { ProductInitializationForm } from './ProductInitializationForm';
 import { ProductInitializationResult } from './ProductInitializationResult';
 import { ProductInitializationScopePreview } from './ProductInitializationScopePreview';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductCatalogAccessWorkspace } from '../workspaceTypes';
 
 const { Text } = Typography;
 
 type ProductCatalogAccessPanelProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductCatalogAccessWorkspace;
   activeOwnerId?: number;
 };
 

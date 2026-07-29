@@ -1,9 +1,9 @@
 import { ProductCatalogFilterBar } from './ProductCatalogFilterBar';
 import { ProductCatalogTablePanel } from './ProductCatalogTablePanel';
-import type { ProductManagementWorkspace } from '../workspaceTypes';
+import type { ProductCatalogWorkspace } from '../workspaceTypes';
 
 type ProductCatalogSurfaceProps = {
-  workspace: ProductManagementWorkspace;
+  workspace: ProductCatalogWorkspace;
   activeOwnerId?: number;
 };
 
@@ -18,8 +18,8 @@ export function ProductCatalogSurface({ workspace, activeOwnerId }: ProductCatal
         overflow: 'hidden'
       }}
     >
-      <ProductCatalogFilterBar workspace={workspace} activeOwnerId={activeOwnerId} />
-      <ProductCatalogTablePanel workspace={workspace} />
+      <ProductCatalogFilterBar workspace={workspace.filters} activeOwnerId={activeOwnerId} />
+      <ProductCatalogTablePanel workspace={workspace.table} />
     </div>
   );
 }
