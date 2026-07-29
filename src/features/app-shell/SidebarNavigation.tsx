@@ -17,7 +17,7 @@ import {
   shouldShowWorkspaceMenuInSidebar,
   workspaceMenuDefinition,
   type WorkspaceSectionIconKey
-} from './WorkspaceMenuRegistry'
+} from '../route-catalog/RouteCatalog'
 
 export type SidebarMenuItem = {
   key: string

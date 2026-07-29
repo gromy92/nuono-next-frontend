@@ -129,6 +129,14 @@ export function workspaceTabKeyForMenuKey(menuKey: AppMenuKey): AppMenuKey {
   return workspaceMenuDefinition(menuKey).tabKey ?? menuKey
 }
 
+export function workspaceAccessKeyForMenuKey(menuKey: AppMenuKey): AppMenuKey {
+  return workspaceMenuDefinition(menuKey).accessKey ?? menuKey
+}
+
+export function workspaceSidebarSelectionKeyForMenuKey(menuKey: AppMenuKey): AppMenuKey {
+  return workspaceTabKeyForMenuKey(menuKey)
+}
+
 export function workspaceMenuPath(menuKey: AppMenuKey) {
   return workspaceMenuDefinition(menuKey).path
 }
@@ -145,8 +153,8 @@ export function workspaceMenuMount(menuKey: AppMenuKey): WorkspaceMountAdapter {
   return workspaceMenuDefinition(menuKey).workspaceMount
 }
 
-export function isProductWorkspaceMenu(menuKey: AppMenuKey) {
-  return menuKey === 'product-manage' || menuKey === 'product-groups'
+export function workspaceMenuContentDensity(menuKey: AppMenuKey) {
+  return workspaceMenuDefinition(menuKey).contentDensity ?? 'standard'
 }
 
 export function workspaceMenuSectionKey(menuKey: AppMenuKey) {

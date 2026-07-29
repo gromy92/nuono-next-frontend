@@ -7,16 +7,18 @@ import { currentAppPathname } from '../../runtimePaths';
 import { apiFetch } from '../../shared/api';
 import type { ChangePasswordFormValues } from './ShellFrame';
 import { SESSION_STORAGE_KEY } from './ShellSessionStorage';
+import type { AppMenuKey } from '../route-catalog/RouteCatalog';
 import {
-  type AppMenuKey,
   canSwitchBossRoleView,
   normalizeSessionRoleView,
   resolveSessionAllowedMenuKeys,
-  resolveSessionLandingMenuKey,
+  resolveSessionLandingMenuKey
+} from '../route-catalog/sessionAccessPolicy';
+import {
   resolveWorkspaceMenuKeyFromLocation,
-  resolveWorkspacePathForMenuKey,
-  withCurrentWorkspaceDevQuery
-} from './WorkspaceRouting';
+  resolveWorkspacePathForMenuKey
+} from '../route-catalog/routePaths';
+import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery';
 
 type UseShellAccountControllerParams = {
   activeMenuKey: AppMenuKey;

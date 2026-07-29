@@ -1,7 +1,10 @@
 import { Layout, Menu } from 'antd';
 import type { MenuProps } from 'antd';
+import {
+  workspaceSidebarSelectionKeyForMenuKey,
+  type AppMenuKey
+} from '../route-catalog/RouteCatalog';
 import { legacySectionIcon, type SidebarMenuItem } from './SidebarNavigation';
-import type { AppMenuKey } from './WorkspaceRouting';
 
 const { Sider } = Layout;
 
@@ -15,10 +18,6 @@ type ShellSidebarProps = {
   onOpenKeysChange: (keys: string[]) => void;
 };
 
-function effectiveSelectedMenuKey(activeMenuKey: AppMenuKey) {
-  return activeMenuKey === 'user-store-noon' ? 'user-role' : activeMenuKey;
-}
-
 export function ShellSidebar({
   activeMenuKey,
   activeSidebarRootKey,
@@ -28,7 +27,7 @@ export function ShellSidebar({
   onMouseLeave,
   onOpenKeysChange
 }: ShellSidebarProps) {
-  const selectedMenuKey = effectiveSelectedMenuKey(activeMenuKey);
+  const selectedMenuKey = workspaceSidebarSelectionKeyForMenuKey(activeMenuKey);
 
   return (
     <Sider width={48} theme="light" className="nuono-shell-sidebar-rail" onMouseLeave={onMouseLeave}>

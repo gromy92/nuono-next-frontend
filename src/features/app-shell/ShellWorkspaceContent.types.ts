@@ -1,5 +1,5 @@
 import type { AuthSession } from '../auth/session'
-import type { AppMenuKey } from './WorkspaceRouting'
+import type { AppMenuKey } from '../route-catalog/RouteCatalog'
 
 export type ShellWorkspaceRenderContext = {
   shellSession: AuthSession

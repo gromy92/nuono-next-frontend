@@ -1,5 +1,5 @@
 import type { AuthSession } from '../auth/session';
-import { isBossOperatorView } from './WorkspaceRouting';
+import { isBossOperatorView } from '../route-catalog/sessionAccessPolicy';
 
 export const shellRoleColorMap: Record<string, string> = {
   系统管理员: '#722ed1',
