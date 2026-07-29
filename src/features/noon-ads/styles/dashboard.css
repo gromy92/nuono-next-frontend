@@ -214,8 +214,3 @@
   justify-content: flex-end;
   gap: 8px;
 }
-
-.noon-ads-product-analysis {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;

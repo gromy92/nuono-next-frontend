@@ -1,3 +1,7 @@
+.noon-ads-product-analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   overflow-x: auto;
 }
 
@@ -163,59 +167,3 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.noon-ads-product-detail-title-text {
-  min-width: 0;
-}
-
-.noon-ads-product-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: transparent;
-}
-
-.noon-ads-product-detail-empty {
-  min-height: 168px;
-  align-items: center;
-  justify-content: center;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-}
-
-.noon-ads-product-dossier,
-.noon-ads-product-section {
-  padding: 12px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-}
-
-.noon-ads-product-dossier {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.noon-ads-product-dossier-main {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  min-width: 0;
-}
-
-.noon-ads-product-dossier-title {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.noon-ads-product-dossier-title .ant-typography {
-  font-size: 16px;
-}
-
-.noon-ads-product-diagnosis {
-  display: flex;

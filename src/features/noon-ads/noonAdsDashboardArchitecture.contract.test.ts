@@ -12,10 +12,29 @@ const pageSource = [
   'hooks/useNoonAdvertisingDashboard.ts',
   'presentation/formatters.tsx'
 ].map(readFeatureFile).join('\n')
-const pageStyles = [
+const styleFileNames = [
   'NoonAdvertisingPage.css', 'styles/dashboard.css',
-  'styles/product-analysis.css', 'styles/responsive.css'
-].map(readFeatureFile).join('\n')
+  'styles/product-analysis.css', 'styles/product-detail.css',
+  'styles/responsive.css'
+]
+const styleSources = styleFileNames.map((fileName) => ({
+  fileName,
+  source: readFeatureFile(fileName)
+}))
+const pageStyles = styleSources.map(({ source }) => source).join('\n')
+styleSources.forEach(({ fileName, source }) => {
+  let blockDepth = 0
+  for (const character of source.replace(/\/\*[\s\S]*?\*\//g, '')) {
+    if (character === '{') blockDepth += 1
+    if (character === '}') blockDepth -= 1
+    if (blockDepth < 0) {
+      throw new Error(`Noon Ads stylesheet ${fileName} closes a block opened in another file`)
+    }
+  }
+  if (blockDepth !== 0) {
+    throw new Error(`Noon Ads stylesheet ${fileName} contains an unclosed block`)
+  }
+})
 if (!pageSource.includes('ProductNavigationList') || !pageSource.includes('noon-ads-product-nav-list')) {
   throw new Error('Noon Ads product detail should use a product navigation list instead of a wide product table')
 }
