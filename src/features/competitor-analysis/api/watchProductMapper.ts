@@ -37,6 +37,7 @@ import {
   optionalNumberValue,
   stringValue
 } from './transportValues'
+import { listFieldTags } from './listFieldTags'
 
 export function mapDetail(payload: BackendDetailResponse): CompetitorWatchProduct {
   const watchProduct = payload.watchProduct || {}
@@ -233,13 +234,16 @@ function mapCandidate(
     noonProductCode,
     codeType: normalizeCodeType(row.codeType, noonProductCode),
     canonicalUrl: stringValue(row.canonicalUrl) || buildNoonProductUrl(noonProductCode),
-    title: stringValue(row.titleSnapshot) || `竞品 ${noonProductCode}`,
-    brand: stringValue(row.brandSnapshot) || '待补充',
+    title:
+      stringValue(row.titleEnSnapshot || row.titleSnapshot) ||
+      stringValue(row.titleArSnapshot) ||
+      `竞品 ${noonProductCode}`,
+    titleEn: stringValue(row.titleEnSnapshot || row.titleSnapshot) || undefined,
+    titleAr: stringValue(row.titleArSnapshot) || undefined,
+    tags: listFieldTags(row.tagsSnapshotJson),
     imageUrl: imageUrlValue(row.imageUrlSnapshot),
     priceAmount: row.priceAmountSnapshot,
     currencyCode: stringValue(row.currencyCodeSnapshot) || undefined,
-    rating: row.ratingSnapshot,
-    reviewCount: row.reviewCountSnapshot,
     isSponsored: latestRankPoint?.isSponsored ?? Boolean(latestRelation?.lastSeenSponsored),
     ownedByCurrentStore: Boolean(row.ownedByCurrentStore),
     latestRankNo: latestRankPoint?.rankNo ?? latestRelation?.lastSeenRankNo,

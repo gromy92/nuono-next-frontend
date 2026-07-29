@@ -184,9 +184,14 @@
   min-height: 20px;
 }
 
+.competitor-analysis-candidate-title-ar {
+  text-align: right;
+}
+
 .competitor-analysis-candidate-meta {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: 5px;
   min-width: 0;
 }

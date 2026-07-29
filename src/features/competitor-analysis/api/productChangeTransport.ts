@@ -15,7 +15,7 @@ export async function fetchCompetitorProductChanges(
   const response = await apiFetch(`/api/competitor-analysis/watch-products/${watchProductId}/product-changes?${params}`, {
     signal
   })
-  const payload = await parseApiResponse<BackendProductChangeResponse>(response, '读取商品详情变化失败')
+  const payload = await parseApiResponse<BackendProductChangeResponse>(response, '读取商品列表变化失败')
   const rows = Array.isArray(payload) ? payload : payload.items || []
   return {
     items: rows.map(mapProductChangeGroup),

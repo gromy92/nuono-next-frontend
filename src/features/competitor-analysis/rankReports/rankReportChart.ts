@@ -73,7 +73,7 @@ export function buildSelfRankChartOption(report: SelfRankKeywordReport): ECharts
       type: 'value',
       inverse: true,
       min: 1,
-      max: 100,
+      max: 200,
       splitNumber: 5,
       axisLabel: { formatter: (value: number) => `${value}` },
       splitArea: {

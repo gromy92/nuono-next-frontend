@@ -1,6 +1,6 @@
 import type { CompetitorRankPoint } from './types'
 
-export const DEFAULT_RANK_SCAN_DEPTH = 100
+export const DEFAULT_RANK_SCAN_DEPTH = 200
 
 export function normalizeNoonProductCode(value?: string) {
   return (value || '').trim().toUpperCase()
@@ -25,7 +25,7 @@ export function formatRankStatus(
 export function formatNotInRankRangeText(scanDepth = DEFAULT_RANK_SCAN_DEPTH) {
   const depth =
     Number.isFinite(scanDepth) && scanDepth > 0
-      ? Math.max(DEFAULT_RANK_SCAN_DEPTH, scanDepth)
+      ? scanDepth
       : DEFAULT_RANK_SCAN_DEPTH
   return `未进前${depth}`
 }
