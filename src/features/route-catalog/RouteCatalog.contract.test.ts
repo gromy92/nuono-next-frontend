@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import './sessionAccessPolicy.contract.test'
 import type { AuthSession } from '../auth/session'
@@ -258,29 +258,15 @@ assert.equal(
   'user-role'
 )
 
-const registryAdapter = readFileSync(
-  join(process.cwd(), 'src/features/app-shell/WorkspaceMenuRegistry.ts'),
-  'utf8'
+assert.equal(
+  existsSync(join(process.cwd(), 'src/features/app-shell/WorkspaceMenuRegistry.ts')),
+  false
 )
-const routingAdapter = readFileSync(
-  join(process.cwd(), 'src/features/app-shell/WorkspaceRouting.ts'),
-  'utf8'
+assert.equal(
+  existsSync(join(process.cwd(), 'src/features/app-shell/WorkspaceRouting.ts')),
+  false
 )
-for (const adapter of [registryAdapter, routingAdapter]) {
-  assert.doesNotMatch(adapter, /\/purchase\/order|WORKSPACE_MENU_DEFINITIONS\s*=|WORKSPACE_GRANTED_MENU_RULES\s*=/)
-  assert.ok(adapter.split('\n').length <= 300)
-}
 
-const administrationRoutesSource = readFileSync(
-  join(process.cwd(), 'src/features/route-catalog/administrationRoutes.ts'),
-  'utf8'
-)
-const shellContentSource = readFileSync(
-  join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
-  'utf8'
-)
-assert.match(administrationRoutesSource, /import\('\.\.\/ai-file-parse\/AiFileParseBoard'\)/)
-assert.doesNotMatch(shellContentSource, /AiFileParseBoard|system-file-management/)
 assert.equal(
   existsSync(join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx')),
   false

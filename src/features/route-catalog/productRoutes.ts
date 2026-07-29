@@ -18,6 +18,7 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     tabLabel: '商品管理',
     workspaceMount: PRODUCT_WORKSPACE_MOUNT,
     closable: true,
+    contentDensity: 'compact',
     sidebarOrder: 0,
     routeAliases: ['/product-manage']
   },
@@ -30,6 +31,7 @@ export const PRODUCT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     tabLabel: '商品分组',
     workspaceMount: PRODUCT_WORKSPACE_MOUNT,
     closable: true,
+    contentDensity: 'compact',
     sidebarOrder: 1
   },
   'product-specs': {

@@ -1,5 +1,6 @@
 export type RouteDefinitionReference = {
   readonly key: string
+  readonly accessKey?: string
   readonly tabKey?: string
   readonly sectionKey?: string
   readonly workspaceMount?: unknown
@@ -22,6 +23,9 @@ export function routeReferenceIntegrityIssues(
     }
     if (definition.tabKey && !knownKeys.has(definition.tabKey)) {
       issues.push(`unknown tab key for ${recordKey}: ${definition.tabKey}`)
+    }
+    if (definition.accessKey && !knownKeys.has(definition.accessKey)) {
+      issues.push(`unknown access key for ${recordKey}: ${definition.accessKey}`)
     }
     const declaresWorkspaceMount = Object.prototype.hasOwnProperty.call(definition, 'workspaceMount')
     const hasWorkspaceMount = typeof definition.workspaceMount === 'function'

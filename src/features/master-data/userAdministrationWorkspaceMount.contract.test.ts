@@ -1,30 +1,21 @@
 import { strict as assert } from 'node:assert'
-import { readFileSync } from 'node:fs'
+import {
+  workspaceAccessKeyForMenuKey,
+  workspaceMenuDefinition,
+  workspaceMenuMount,
+  workspaceSidebarSelectionKeyForMenuKey
+} from '../route-catalog/RouteCatalog'
 
-const mount = readFileSync(
-  'src/features/master-data/UserAdministrationWorkspaceMount.tsx',
-  'utf8'
-)
-const routes = readFileSync('src/features/route-catalog/administrationRoutes.ts', 'utf8')
-const shell = [
-  'src/features/app-shell/AppShellRuntime.tsx',
-  'src/features/app-shell/ShellFrame.tsx',
-  'src/features/app-shell/useShellWorkspaceNavigation.tsx'
-].map((path) => readFileSync(path, 'utf8')).join('\n')
+const storeDefinition = workspaceMenuDefinition('user-store-noon')
+const roleDefinition = workspaceMenuDefinition('user-role')
 
-assert.match(mount, /useState<RoleManagementWorkspaceTabKey>/)
-assert.match(mount, /useStoreSyncContext/)
-assert.match(mount, /useWorkspaceOwnedTabs/)
-assert.match(mount, /resolveSessionAllowedMenuKeys/)
-assert.match(mount, /<RoleManagementWorkspace/)
-assert.match(
-  routes,
-  /const USER_ADMINISTRATION_WORKSPACE_MOUNT[\s\S]*'user-store-noon':[\s\S]*workspaceMount: USER_ADMINISTRATION_WORKSPACE_MOUNT[\s\S]*'user-role':[\s\S]*workspaceMount: USER_ADMINISTRATION_WORKSPACE_MOUNT/,
+assert.strictEqual(
+  storeDefinition.workspaceMount,
+  roleDefinition.workspaceMount,
   'role and store definitions must share one state-owning mount'
 )
-assert.doesNotMatch(
-  shell,
-  /RoleManagementWorkspace|userRoleActiveTabKey|roleManagementRefreshSignal|canShowStoreManagement/,
-  'Shell must know nothing about user-administration implementation details'
-)
-assert(mount.split(/\r?\n/u).length <= 301, 'user-administration mount must remain below 300 lines')
+assert.strictEqual(workspaceMenuMount('user-role'), roleDefinition.workspaceMount)
+assert.equal(workspaceAccessKeyForMenuKey('user-store-noon'), 'user-role')
+assert.equal(workspaceSidebarSelectionKeyForMenuKey('user-store-noon'), 'user-role')
+assert.equal(storeDefinition.visibleInSidebar, false)
+assert.equal(storeDefinition.visibleInWorkspaceTabs, false)

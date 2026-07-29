@@ -54,6 +54,7 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     tabLabel: '店铺管理',
     workspaceMount: USER_ADMINISTRATION_WORKSPACE_MOUNT,
     closable: true,
+    accessKey: 'user-role',
     tabKey: 'user-role',
     visibleInSidebar: false,
     visibleInWorkspaceTabs: false

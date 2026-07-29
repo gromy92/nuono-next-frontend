@@ -3,7 +3,8 @@ import {
   ALL_WORKSPACE_MENU_KEYS,
   BOSS_OPERATOR_MENU_KEYS,
   MANAGEMENT_MENU_KEYS,
-  WORKSPACE_GRANTED_MENU_RULES
+  WORKSPACE_GRANTED_MENU_RULES,
+  workspaceAccessKeyForMenuKey
 } from './RouteCatalog'
 import { normalizeWorkspacePath } from './routePaths'
 import type { AppMenuKey } from './routeDefinitions'
@@ -107,10 +108,8 @@ export function resolveSessionAllowedMenuKeys(session: AuthSession | null) {
     keySet.add('system-file-management')
     keySet.delete('product-manual-selection')
     keySet.delete('user-role')
-    keySet.delete('user-store-noon')
   } else if (isBossManagementSession(session)) {
     keySet.add('user-role')
-    keySet.add('user-store-noon')
     keySet.delete('user-account')
     keySet.delete('system-role')
     keySet.delete('system-file-management')
@@ -120,6 +119,12 @@ export function resolveSessionAllowedMenuKeys(session: AuthSession | null) {
   } else {
     keySet.delete('system-file-management')
   }
+
+  ALL_WORKSPACE_MENU_KEYS.forEach((key) => {
+    if (keySet.has(workspaceAccessKeyForMenuKey(key))) {
+      keySet.add(key)
+    }
+  })
 
   return ALL_WORKSPACE_MENU_KEYS.filter((key) => keySet.has(key))
 }
@@ -215,10 +220,6 @@ export function resolveSessionLandingMenuKey(
   if (requestedMenuKey && allowedMenuKeys.includes(requestedMenuKey)) {
     return requestedMenuKey
   }
-  if (requestedMenuKey === 'user-store-noon' && allowedMenuKeys.includes('user-role')) {
-    return 'user-store-noon'
-  }
-
   const preferredOrder = isSystemAdminSession(session)
     ? SYSTEM_ADMIN_LANDING_ORDER
     : isBossManagementSession(session)

@@ -28,7 +28,9 @@ type WorkspaceMenuDefinitionCommon<MenuKey extends string> = {
   readonly closable: boolean
   readonly sidebarOrder?: number
   readonly routeAliases?: readonly string[]
+  readonly accessKey?: MenuKey
   readonly tabKey?: MenuKey
+  readonly contentDensity?: 'standard' | 'compact'
   readonly visibleInSidebar?: boolean
   readonly visibleInWorkspaceTabs?: boolean
 }

@@ -25,10 +25,17 @@ assert.equal(
 const fixtureRoot = mkdtempSync(join(tmpdir(), 'feature-dependency-policy-'))
 mkdirSync(join(fixtureRoot, 'app-shell'))
 mkdirSync(join(fixtureRoot, 'business'))
+mkdirSync(join(fixtureRoot, 'domain'))
+mkdirSync(join(fixtureRoot, 'product-management'))
 mkdirSync(join(fixtureRoot, 'purchase-order'))
 mkdirSync(join(fixtureRoot, 'route-catalog'))
 mkdirSync(join(fixtureRoot, 'warehouse-dispatch'))
 writeFileSync(join(fixtureRoot, 'app-shell', 'Shell.ts'), 'export const shell = true\n')
+writeFileSync(join(fixtureRoot, 'domain', 'Page.ts'), 'export const domainPage = true\n')
+writeFileSync(
+  join(fixtureRoot, 'app-shell', 'Forbidden.ts'),
+  "import { domainPage } from '../domain/Page'\nexport const forbidden = domainPage\n"
+)
 writeFileSync(
   join(fixtureRoot, 'business', 'Page.ts'),
   "export const loadShell = () => import('../app-shell/Shell')\nexport const bypassTransport = () => fetch('/api/bypass')\n"
@@ -40,6 +47,10 @@ writeFileSync(
 writeFileSync(
   join(fixtureRoot, 'purchase-order', 'internal.ts'),
   'export const purchaseOrderInternal = true\n'
+)
+writeFileSync(
+  join(fixtureRoot, 'product-management', 'utils.ts'),
+  'export const shallowUtility = true\n'
 )
 writeFileSync(
   join(fixtureRoot, 'warehouse-dispatch', 'warehouseOrder.ts'),
@@ -59,6 +70,14 @@ assert.equal(dynamicImportResult.status, 1)
 assert.match(
   dynamicImportResult.stderr,
   /business feature depends on app-shell: .*business\/Page\.ts -> .*app-shell\/Shell\.ts/
+)
+assert.match(
+  dynamicImportResult.stderr,
+  /app-shell depends on business implementation: .*app-shell\/Forbidden\.ts -> .*domain\/Page\.ts/
+)
+assert.match(
+  dynamicImportResult.stderr,
+  /shallow product-management utility barrel exists: .*product-management\/utils\.ts/
 )
 assert.match(
   dynamicImportResult.stderr,

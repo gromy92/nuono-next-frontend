@@ -10,16 +10,18 @@ import {
   readStoredSession,
   SESSION_STORAGE_KEY
 } from './ShellSessionStorage';
+import type { AppMenuKey } from '../route-catalog/RouteCatalog';
 import {
-  type AppMenuKey,
   PURCHASE_ORDER_PATH,
   readInitialWorkspaceMenuKey,
-  resolveSessionAllowedMenuKeys,
-  resolveSessionLandingMenuKey,
   resolveWorkspaceMenuKeyFromLocation,
-  resolveWorkspacePathForMenuKey,
-  withCurrentWorkspaceDevQuery
-} from './WorkspaceRouting';
+  resolveWorkspacePathForMenuKey
+} from '../route-catalog/routePaths';
+import {
+  resolveSessionAllowedMenuKeys,
+  resolveSessionLandingMenuKey
+} from '../route-catalog/sessionAccessPolicy';
+import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery';
 
 export function useShellSessionState() {
   const [session, setSession] = useState<AuthSession | null>(() => readStoredSession());

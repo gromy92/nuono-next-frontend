@@ -61,6 +61,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Source-contract quality policy self-test
+        run: pnpm source-contract-quality:test
+
+      - name: Enforce source-contract quality
+        env:
+          SOURCE_CONTRACT_BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: pnpm source-contract-quality:check
+
       - name: Product baseline display contract
         run: pnpm product-baseline:display-contract
 
