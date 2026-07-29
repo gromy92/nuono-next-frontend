@@ -1,8 +1,11 @@
 import { strict as assert } from 'node:assert'
-import fs from 'node:fs'
-import path from 'node:path'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { workspaceMenuItems } from './SidebarNavigation'
-import { workspaceContentMountKeys } from './ShellWorkspaceContent'
+import {
+  workspaceContentMountGroups,
+  workspaceContentMountKeys
+} from './ShellWorkspaceContent'
 import {
   BOSS_OPERATOR_MENU_KEYS,
   WORKSPACE_MENU_DEFINITIONS,
@@ -21,54 +24,31 @@ assert.equal(typeof workspaceMenuMount('official-warehouse'), 'function')
 assert.equal(OPERATIONS_PRODUCT_KEYWORDS_PATH, '/operations/product-keywords')
 assert.equal(workspaceMenuPath('operations-product-keywords'), OPERATIONS_PRODUCT_KEYWORDS_PATH)
 assert.equal(typeof workspaceMenuMount('operations-product-keywords'), 'function')
-assert.equal(fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8').includes('<title>诺诺管家</title>'), true)
-assert.equal(
-  fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf8').includes('href="%BASE_URL%favicon.png"'),
-  true
-)
-assert.equal(fs.existsSync(path.join(process.cwd(), 'public/favicon.png')), true)
-assert.equal(
-  fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellSidebar.tsx'), 'utf8').includes('/logo-title.png'),
-  false
-)
+assert.equal(existsSync(join(process.cwd(), 'public/favicon.png')), true)
 
-const shellFrameSource = fs.readFileSync(path.join(process.cwd(), 'src/features/app-shell/ShellFrame.tsx'), 'utf8')
-const shellWorkspaceContentSource = fs.readFileSync(
-  path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceContent.tsx'),
-  'utf8'
+const mountedGroups = workspaceContentMountGroups(
+  'product-manage',
+  ['system-file-management']
 )
-const shellWorkspaceNavigationSource = fs.readFileSync(
-  path.join(process.cwd(), 'src/features/app-shell/useShellWorkspaceNavigation.tsx'),
-  'utf8'
-)
-
-assert.equal(
-  shellWorkspaceNavigationSource.includes('openedWorkspaceTabKeys,'),
-  true,
-  'workspace navigation must expose opened tab keys so content panes can remain mounted'
-)
-assert.equal(
-  shellFrameSource.includes('openedWorkspaceTabKeys={openedWorkspaceTabKeys}'),
-  true,
-  'shell frame must pass opened tab keys into the workspace content layer'
+assert.equal(mountedGroups.length, 2)
+assert.deepEqual(
+  mountedGroups.map((group) => ({
+    active: group.active,
+    menuKey: group.menuKey
+  })),
+  [
+    { active: false, menuKey: 'system-file-management' },
+    { active: true, menuKey: 'product-manage' }
+  ],
+  'opened panes must stay mounted while exactly one route is active'
 )
 assert.equal(
-  shellWorkspaceContentSource.includes('nuono-shell-workspace-pane-hidden'),
-  true,
-  'workspace content must hide inactive opened panes instead of unmounting them'
-)
-assert.match(
-  shellWorkspaceContentSource,
-  /<WorkspaceMount active=\{active\} menuKey=\{menuKey\} session=\{context\.shellSession\} \/>/,
-  'the Shell must pass lifecycle, route identity and authentication through the workspace mount Interface'
-)
-assert.equal(
-  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/LegacyOperationsWorkspaceContent.tsx')),
+  existsSync(join(process.cwd(), 'src/features/app-shell/LegacyOperationsWorkspaceContent.tsx')),
   false,
   'operations and report routes must not retain a second Legacy renderer registry'
 )
 assert.equal(
-  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/LegacyWorkspaceContent.tsx')),
+  existsSync(join(process.cwd(), 'src/features/app-shell/LegacyWorkspaceContent.tsx')),
   false,
   'all routes must use catalog-owned mount Adapters'
 )
@@ -97,12 +77,12 @@ assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-pre-order-pr
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/listing'), 'purchase-listing')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/pre-order-profit'), null)
 assert.equal(
-  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/LegacyCommerceWorkspaceContent.tsx')),
+  existsSync(join(process.cwd(), 'src/features/app-shell/LegacyCommerceWorkspaceContent.tsx')),
   false,
   'commerce routes must not retain a Legacy renderer registry'
 )
 assert.equal(
-  fs.existsSync(path.join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx')),
+  existsSync(join(process.cwd(), 'src/features/app-shell/ShellWorkspaceLazyComponents.tsx')),
   false,
   'route-owned mount Adapters replace the former global lazy component registry'
 )

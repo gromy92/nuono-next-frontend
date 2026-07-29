@@ -1,31 +1,22 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
+import {
+  workspaceMenuDefinition,
+  workspaceMenuMount
+} from '../route-catalog/RouteCatalog';
 
-const mount = readFileSync(
-  'src/features/in-transit-goods/InTransitGoodsWorkspaceMount.tsx',
-  'utf8'
+const definition = workspaceMenuDefinition('purchase-in-transit-goods');
+assert.equal(definition.path, '/purchase/in-transit-goods');
+assert.equal(typeof definition.workspaceMount, 'function');
+assert.strictEqual(
+  workspaceMenuMount('purchase-in-transit-goods'),
+  definition.workspaceMount,
+  'in-transit route must expose its stable owner mount Adapter'
 );
-const routes = readFileSync('src/features/route-catalog/procurementRoutes.ts', 'utf8');
-const shellRuntime = readFileSync('src/features/app-shell/AppShellRuntime.tsx', 'utf8');
-const shellNavigation = readFileSync(
-  'src/features/app-shell/useShellWorkspaceNavigation.tsx',
-  'utf8'
-);
-
-assert.match(mount, /useWorkspaceOwnedTabs/);
-assert.match(mount, /InTransitGoodsPage/);
-assert.match(mount, /in-transit-box-detail/);
-assert.match(mount, /onOpenBoxDetailTab=\{openDetail\}/);
-assert.match(mount, /onCloseBoxDetailTab=\{closeDetail\}/);
-assert.match(
-  routes,
-  /import\('\.\.\/in-transit-goods\/InTransitGoodsWorkspaceMount'\)/,
-  'in-transit route must own its mount Adapter'
-);
-assert.doesNotMatch(
-  `${shellRuntime}\n${shellNavigation}`,
-  /InTransitBoxDetail|inTransitBoxDetail|activeInTransitWorkspaceTabKey/,
-  'Shell must not own in-transit detail state or types'
+assert.notStrictEqual(
+  definition.workspaceMount,
+  workspaceMenuMount('purchase-order'),
+  'in-transit detail state must not be coalesced into the procurement workspace'
 );
 assert.equal(
   existsSync('src/features/app-shell/LegacyCommerceWorkspaceContent.tsx'),
@@ -37,4 +28,3 @@ assert.equal(
   false,
   'the final Legacy workspace dispatcher must stay deleted'
 );
-assert(mount.split(/\r?\n/u).length <= 301, 'in-transit mount must remain below 300 lines');

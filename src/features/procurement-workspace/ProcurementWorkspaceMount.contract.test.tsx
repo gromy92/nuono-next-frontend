@@ -1,37 +1,25 @@
 import { strict as assert } from 'node:assert'
-import { readFileSync } from 'node:fs'
+import { workspaceMenuDefinition, workspaceMenuMount } from '../route-catalog/RouteCatalog'
+import { initialProcurementTab } from './ProcurementWorkspace'
 
-const purchasePageSource = readFileSync(
-  'src/features/purchase-order/PurchaseOrderPage.tsx',
-  'utf8'
-)
-const workspaceSource = readFileSync(
-  'src/features/procurement-workspace/ProcurementWorkspace.tsx',
-  'utf8'
-)
-const mountSource = readFileSync(
-  'src/features/procurement-workspace/ProcurementWorkspaceMount.tsx',
-  'utf8'
-)
-const routeSource = readFileSync(
-  'src/features/route-catalog/procurementRoutes.ts',
-  'utf8'
+assert.equal(initialProcurementTab(), 'replenishment-plan')
+assert.equal(workspaceMenuDefinition('purchase-order').path, '/purchase/order')
+assert.strictEqual(
+  workspaceMenuMount('purchase-order'),
+  workspaceMenuDefinition('purchase-order').workspaceMount
 )
 
-assert.doesNotMatch(purchasePageSource, /replenishment-plan/)
-assert.doesNotMatch(purchasePageSource, /ReplenishmentPlanTab/)
-assert.match(workspaceSource, /key: 'replenishment-plan'/)
-assert.match(workspaceSource, /key: 'purchase-orders'/)
-assert.ok(
-  workspaceSource.indexOf("key: 'replenishment-plan'") <
-    workspaceSource.indexOf("key: 'purchase-orders'")
-)
-assert.match(
-  mountSource,
-  /isProcurementRequirementConfirmationPath\(currentAppPathname\(\)\)/
-)
-assert.match(mountSource, /<ProcurementWorkspace session=\{session\}/)
-assert.match(
-  routeSource,
-  /procurement-workspace\/ProcurementWorkspaceMount/
-)
+const previousWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
+Object.defineProperty(globalThis, 'window', {
+  configurable: true,
+  value: { location: { search: '?tab=purchase-orders' } }
+})
+try {
+  assert.equal(initialProcurementTab(), 'purchase-orders')
+} finally {
+  if (previousWindowDescriptor) {
+    Object.defineProperty(globalThis, 'window', previousWindowDescriptor)
+  } else {
+    delete (globalThis as { window?: unknown }).window
+  }
+}
