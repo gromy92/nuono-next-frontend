@@ -108,7 +108,7 @@ export function ManualSelectionCompetitorOverview(props: Props) {
                     <Space size={4} wrap>
                       <Tag>{manualSelectionStatusText(item.status)}</Tag>
                       <Tag
-                        color={manualSelectionCollectionSourceLabel(item) === '插件' ? 'purple' : 'blue'}
+                        color={manualSelectionCollectionSourceLabel(item) === '插件' ? undefined : 'blue'}
                         data-testid="manual-selection-collection-source"
                       >
                         {manualSelectionCollectionSourceLabel(item)}

@@ -28,6 +28,30 @@ body,
   overflow-x: clip;
 }
 
+.nuono-shell-theme-green .nuono-shell-brand-mark {
+  background: linear-gradient(135deg, #168553 0%, #4daf78 100%);
+}
+
+.nuono-shell-theme-green .nuono-shell-sidebar-rail-item:hover,
+.nuono-shell-theme-green .nuono-shell-sidebar-rail-item-active {
+  background: #eef8f2;
+  color: #168553;
+}
+
+.nuono-shell-theme-green [data-testid='user-avatar-menu-button'] .ant-tag {
+  background: #168553 !important;
+  color: #fff !important;
+}
+
+.nuono-shell-theme-green .ant-tag {
+  font-size: 12px;
+}
+
+.nuono-shell-theme-green .ant-input-affix-wrapper,
+.nuono-shell-theme-green .ant-select-selector {
+  align-items: center;
+}
+
 .nuono-shell-main {
   flex: 1 1 auto;
   width: calc(100vw - var(--nuono-sidebar-rail-width));
@@ -48,6 +72,13 @@ body,
   min-width: 0;
   overflow-x: clip;
   overflow-y: visible;
+}
+
+.nuono-shell-default-page {
+  display: grid;
+  min-height: calc(100vh - 132px);
+  padding: 20px;
+  place-items: center;
 }
 
 .nuono-shell-workspace-pane {

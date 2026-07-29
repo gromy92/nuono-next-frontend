@@ -1,0 +1,115 @@
+@media (max-width: 980px) {
+  .nuono-login-page {
+    min-height: 100vh;
+    padding: 14px;
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .nuono-solar-term-panel {
+    min-height: 280px;
+    grid-row: 1;
+    padding: 26px 30px;
+  }
+
+  .nuono-login-auth-panel {
+    min-height: 640px;
+    grid-row: 2;
+  }
+
+  .nuono-solar-term-content {
+    width: auto;
+    margin: auto 0;
+  }
+
+  .nuono-solar-term-content h2 {
+    margin-top: 8px;
+    font-size: 60px;
+  }
+
+  .nuono-solar-term-content p {
+    margin-top: 12px;
+    font-size: 18px;
+  }
+
+  .nuono-solar-term-sun {
+    top: 42px;
+    right: 9%;
+    width: 130px;
+    height: 130px;
+  }
+
+  .nuono-solar-term-footer {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .nuono-login-page {
+    padding: 0;
+    gap: 0;
+    background: #fff;
+  }
+
+  .nuono-solar-term-panel,
+  .nuono-login-auth-panel {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .nuono-solar-term-panel {
+    min-height: 250px;
+    padding: 22px 24px;
+  }
+
+  .nuono-solar-term-header time {
+    font-size: 14px;
+  }
+
+  .nuono-solar-term-calendar {
+    gap: 3px;
+  }
+
+  .nuono-solar-term-calendar > span {
+    font-size: 14px;
+  }
+
+  .nuono-solar-term-content h2 {
+    font-size: 52px;
+  }
+
+  .nuono-solar-term-sun {
+    right: 3%;
+    width: 112px;
+    height: 112px;
+  }
+
+  .nuono-login-auth-panel {
+    min-height: calc(100vh - 250px);
+    padding: 26px 24px 22px;
+    overflow: visible;
+  }
+
+  .nuono-login-auth-main {
+    padding: 42px 0 30px;
+  }
+
+  .nuono-login-page .ant-form-item-row {
+    display: block;
+  }
+
+  .nuono-login-page .ant-form-item-label,
+  .nuono-login-page .ant-form-item-control {
+    max-width: 100%;
+  }
+
+  .nuono-login-page .ant-form-item-label {
+    padding-bottom: 5px;
+    text-align: left;
+  }
+
+  .nuono-login-security {
+    display: none;
+  }
+}

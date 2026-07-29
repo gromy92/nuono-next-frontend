@@ -4,12 +4,12 @@
   align-items: center;
   justify-content: center;
   min-width: 42px;
-  height: 18px;
+  height: 20px;
   padding: 0 6px;
   border-radius: 5px;
-  font-size: 11px !important;
+  font-size: 12px !important;
   font-weight: 600;
-  line-height: 18px !important;
+  line-height: 20px !important;
 }
 
 .manual-selection-analysis-competitor-platform.is-noon {
@@ -25,21 +25,21 @@
 }
 
 .manual-selection-analysis-competitor-platform.is-link {
-  border: 1px solid #c4b5fd;
-  background: #f5f3ff;
-  color: #6d28d9;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .manual-selection-analysis-competitor-platform.is-collected {
-  border: 1px solid #86efac;
-  background: #f0fdf4;
-  color: #15803d;
+  border: 1px solid #b9dec9;
+  background: #eef8f2;
+  color: #0f7044;
 }
 
-.manual-selection-analysis-competitor-status.is-success {
-  border: 1px solid #bbf7d0;
-  background: #f0fdf4;
-  color: #15803d;
+.manual-selection-analysis-competitor-status.is-source {
+  border: 1px solid #dbe2ea;
+  background: #f8fafc;
+  color: #475467;
 }
 
 .manual-selection-analysis-competitor-status.is-fetching {
@@ -104,8 +104,8 @@
 }
 
 .manual-selection-analysis-competitor-value.is-success {
-  color: #15803d !important;
-  font-weight: 700;
+  color: #334155 !important;
+  font-weight: 600;
 }
 
 .manual-selection-analysis-competitor-title {

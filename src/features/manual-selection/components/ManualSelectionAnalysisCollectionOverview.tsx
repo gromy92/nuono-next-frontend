@@ -49,7 +49,7 @@ export function ManualSelectionAnalysisCollectionOverview({
           <span className="manual-selection-analysis-competitor-platform is-collected">
             {record.sourcePlatform || '平台'}
           </span>
-          <span className="manual-selection-analysis-competitor-status is-success">
+          <span className="manual-selection-analysis-competitor-status is-source">
             {manualSelectionCollectionSourceLabel(record)}
           </span>
           <span className="manual-selection-analysis-competitor-summary">

@@ -1,0 +1,281 @@
+.nuono-login-page {
+  --login-green: #168553;
+  --login-deep: #0d5f3b;
+  --login-ink: #193129;
+  display: grid;
+  min-height: 100vh;
+  padding: 20px;
+  grid-template-columns: minmax(440px, .82fr) minmax(560px, 1.18fr);
+  gap: 18px;
+  overflow: hidden;
+  color: var(--login-ink);
+  background: #edf3ef;
+}
+
+.nuono-login-auth-panel {
+  display: flex;
+  min-height: calc(100vh - 40px);
+  padding: 32px clamp(38px, 4vw, 66px) 24px;
+  overflow-y: auto;
+  flex-direction: column;
+  border: 1px solid rgba(17, 91, 56, .1);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 20px 54px rgba(22, 68, 46, .08);
+}
+
+.nuono-login-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--login-ink);
+}
+
+.nuono-login-brand-mark {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 11px;
+  color: #fff;
+  font-size: 21px;
+  font-weight: 800;
+  background: linear-gradient(145deg, #25a96b, #0d7045);
+  box-shadow: 0 7px 18px rgba(13, 95, 59, .22);
+}
+
+.nuono-login-brand > span:last-child {
+  display: grid;
+  gap: 1px;
+}
+
+.nuono-login-brand strong {
+  font-size: 16px;
+  letter-spacing: .03em;
+}
+
+.nuono-login-brand small {
+  color: #718078;
+  font-size: 12px;
+}
+
+.nuono-login-auth-main {
+  width: 100%;
+  max-width: 430px;
+  margin: auto;
+  padding: 36px 0;
+}
+
+.nuono-login-auth-eyebrow {
+  display: block;
+  margin-bottom: 12px;
+  color: var(--login-green);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .1em;
+}
+
+.nuono-login-page .nuono-auth-heading > div:first-child {
+  margin-bottom: 5px !important;
+  color: var(--login-ink) !important;
+  font-size: 26px !important;
+  line-height: 1.25;
+}
+
+.nuono-login-page .nuono-auth-switch-copy span,
+.nuono-login-page .nuono-auth-switch-copy a {
+  font-size: 13px !important;
+}
+
+.nuono-login-page .nuono-auth-form-body {
+  margin-top: 36px !important;
+}
+
+.nuono-login-page .nuono-auth-register-form,
+.nuono-login-page .nuono-auth-reset-form {
+  margin-top: 26px !important;
+}
+
+.nuono-login-page .ant-form-item {
+  margin-bottom: 18px;
+}
+
+.nuono-login-page .ant-form-item-label > label {
+  color: #40544a;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nuono-login-page .ant-input,
+.nuono-login-page .ant-input-affix-wrapper {
+  min-height: 42px;
+  border-color: #d5e0da;
+  border-radius: 9px;
+  box-shadow: none;
+}
+
+.nuono-login-page .ant-input-affix-wrapper > input.ant-input {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.nuono-login-page .ant-btn-lg {
+  height: 42px;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.nuono-login-security {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 18px;
+  color: #829088;
+  font-size: 12px;
+}
+
+.nuono-login-record {
+  align-self: center;
+  color: #8a9890;
+  font-size: 12px;
+}
+
+.nuono-solar-term-panel {
+  --term-accent: #f1c46d;
+  position: relative;
+  display: flex;
+  min-height: calc(100vh - 40px);
+  padding: 38px 46px;
+  overflow: hidden;
+  flex-direction: column;
+  color: #fff;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 73% 28%, rgba(255, 226, 155, .25), transparent 24%),
+    linear-gradient(145deg, #0a4b31 0%, #0d7045 54%, #188859 100%);
+  box-shadow: 0 24px 64px rgba(17, 77, 48, .18);
+}
+
+.nuono-solar-term-panel.is-spring {
+  --term-accent: #b9ecba;
+  background: linear-gradient(145deg, #215c3b, #4b9360);
+}
+
+.nuono-solar-term-panel.is-autumn {
+  --term-accent: #ffd086;
+  background: linear-gradient(145deg, #405b39, #9c7040);
+}
+
+.nuono-solar-term-panel.is-winter {
+  --term-accent: #c9e8e3;
+  background: linear-gradient(145deg, #254c48, #476c6e);
+}
+
+.nuono-solar-term-header,
+.nuono-solar-term-footer,
+.nuono-solar-term-content {
+  position: relative;
+  z-index: 2;
+}
+
+.nuono-solar-term-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, .68);
+  font-size: 16px;
+}
+
+.nuono-solar-term-header > span {
+  font-weight: 700;
+  letter-spacing: .22em;
+}
+
+.nuono-solar-term-calendar {
+  display: grid;
+  gap: 5px;
+  text-align: right;
+}
+
+.nuono-solar-term-calendar time {
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.nuono-solar-term-calendar > span {
+  color: var(--term-accent);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 20px;
+  line-height: 1.3;
+  letter-spacing: .08em;
+}
+
+.nuono-solar-term-content {
+  width: min(650px, 90%);
+  margin: auto 0 auto 7%;
+}
+
+.nuono-solar-term-content h2 {
+  margin: 0;
+  color: #fff;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: clamp(80px, 8vw, 120px);
+  font-weight: 700;
+  line-height: .94;
+  letter-spacing: .08em;
+}
+
+.nuono-solar-term-content p {
+  margin: 30px 0 0;
+  color: rgba(255, 255, 255, .86);
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 24px;
+  letter-spacing: .12em;
+}
+
+.nuono-solar-term-footer {
+  display: grid;
+  gap: 12px;
+}
+
+.nuono-solar-term-meta {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, .88);
+  font-size: 14px;
+}
+
+.nuono-solar-term-meta span {
+  display: grid;
+  gap: 4px;
+}
+
+.nuono-solar-term-meta span:last-child {
+  text-align: right;
+}
+
+.nuono-solar-term-meta small {
+  color: rgba(255, 255, 255, .52);
+  font-size: 12px;
+}
+
+.nuono-solar-term-progress {
+  height: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, .18);
+}
+
+.nuono-solar-term-progress i {
+  display: block;
+  height: 100%;
+  background: var(--term-accent);
+}
+
+.nuono-solar-term-progress-label {
+  color: rgba(255, 255, 255, .52);
+  font-size: 12px;
+}

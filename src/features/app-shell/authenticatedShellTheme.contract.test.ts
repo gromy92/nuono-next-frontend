@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import { AUTHENTICATED_SHELL_THEME, SHELL_PRIMARY } from './authenticatedShellTheme';
+
+assert.equal(SHELL_PRIMARY, '#168553', '登录后系统必须使用统一绿色主题色');
+assert.equal(
+  AUTHENTICATED_SHELL_THEME.token?.colorPrimary,
+  SHELL_PRIMARY,
+  '登录后全局主题必须由统一主题色驱动'
+);
+assert.equal(
+  AUTHENTICATED_SHELL_THEME.components?.Menu?.itemSelectedColor,
+  SHELL_PRIMARY,
+  '菜单选中态必须继承统一主题色'
+);
+assert.equal(
+  AUTHENTICATED_SHELL_THEME.components?.Tabs?.inkBarColor,
+  SHELL_PRIMARY,
+  '页签指示条必须继承统一主题色'
+);
+assert.equal(
+  AUTHENTICATED_SHELL_THEME.components?.Input?.activeBorderColor,
+  SHELL_PRIMARY,
+  '输入框聚焦态必须继承统一主题色'
+);
+assert.equal(
+  AUTHENTICATED_SHELL_THEME.components?.Select?.activeBorderColor,
+  SHELL_PRIMARY,
+  '下拉框聚焦态必须继承统一主题色'
+);
+assert.equal(
+  AUTHENTICATED_SHELL_THEME.components?.Table?.rowSelectedBg,
+  '#eef8f2',
+  '表格选中态必须使用统一的浅绿色背景'
+);
+assert.equal(
+  AUTHENTICATED_SHELL_THEME.components?.Tag?.defaultColor,
+  '#475467',
+  '默认标签必须保持中性，避免与状态色争抢视觉焦点'
+);
+assert.equal(
+  AUTHENTICATED_SHELL_THEME.token?.colorSuccess,
+  SHELL_PRIMARY,
+  '成功状态文字必须使用清晰的主题绿色'
+);
+assert.equal(
+  AUTHENTICATED_SHELL_THEME.token?.colorSuccessBg,
+  '#effaf3',
+  '成功状态背景必须使用干净的浅绿色，不能回退为灰绿色'
+);
+assert.equal(
+  AUTHENTICATED_SHELL_THEME.token?.colorSuccessBorder,
+  '#a8ddb9',
+  '成功状态边框必须与浅绿色背景保持足够区分'
+);

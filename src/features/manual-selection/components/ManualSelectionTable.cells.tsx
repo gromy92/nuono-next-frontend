@@ -144,11 +144,19 @@ export function SourceChannelCell({ record }: { record: ProductSelectionSourceCo
   )
 }
 
-export function SourceTitleCell({ value, record }: { value?: string; record: ProductSelectionSourceCollection }) {
+export function SourceTitleCell({
+  value,
+  record,
+  primary = false
+}: {
+  value?: string
+  record: ProductSelectionSourceCollection
+  primary?: boolean
+}) {
   const sourceUrl = record.pageUrl || record.sourceUrl
   const title = value || '-'
   return (
-    <div className="manual-selection-source-title-cell" title={title !== '-' ? title : undefined}>
+    <div className={`manual-selection-source-title-cell${primary ? ' is-primary' : ''}`} title={title !== '-' ? title : undefined}>
       <span className="manual-selection-source-title-text">
         {sourceUrl ? (
           <Typography.Link href={sourceUrl} target="_blank" rel="noreferrer noopener">
@@ -171,10 +179,11 @@ export function SourceChineseTitleCell({ value, record }: { value?: string; reco
 }
 
 export function SourceNameCell({ record }: { record: ProductSelectionSourceCollection }) {
+  const hasChineseTitle = Boolean(record.sourceTitleCn?.trim() || record.selectedText?.trim())
   return (
     <div className="manual-selection-source-name-cell">
-      <SourceTitleCell value={record.sourceTitle} record={record} />
-      <SourceChineseTitleCell value={record.sourceTitleCn} record={record} />
+      {hasChineseTitle ? <SourceChineseTitleCell value={record.sourceTitleCn} record={record} /> : null}
+      <SourceTitleCell value={record.sourceTitle} record={record} primary={!hasChineseTitle} />
     </div>
   )
 }
@@ -182,10 +191,10 @@ export function SourceNameCell({ record }: { record: ProductSelectionSourceColle
 export function CompletenessCell({ record }: { record: ProductSelectionSourceCollection }) {
   const completeness = formatManualSelectionCompleteness(record)
   return (
-    <Space direction="vertical" size={2}>
-      <Text>{completeness.basics}</Text>
-      <Text type="secondary">{completeness.other}</Text>
-    </Space>
+    <div className="manual-selection-completeness">
+      <Text className="manual-selection-completeness-primary">{completeness.basics}</Text>
+      <Text className="manual-selection-completeness-secondary" type="secondary">{completeness.other}</Text>
+    </div>
   )
 }
 
@@ -197,20 +206,22 @@ export function SourceStatusCell({
   record: ProductSelectionSourceCollection
 }) {
   return (
-    <Space direction="vertical" size={2}>
-      <Badge
-        status={MANUAL_SELECTION_STATUS_BADGE[value] || 'default'}
-        text={record.statusText || manualSelectionStatusText(value)}
-      />
-      <Tag
-        className="manual-selection-collection-source-tag"
-        color={manualSelectionCollectionSourceLabel(record) === '插件' ? 'purple' : 'blue'}
-        data-testid="manual-selection-collection-source"
-      >
-        {manualSelectionCollectionSourceLabel(record)}
-      </Tag>
+    <div className="manual-selection-source-status">
+      <div className="manual-selection-source-status-main">
+        <Badge
+          status={MANUAL_SELECTION_STATUS_BADGE[value] || 'default'}
+          text={record.statusText || manualSelectionStatusText(value)}
+        />
+        <Tag
+          className="manual-selection-collection-source-tag"
+          color={manualSelectionCollectionSourceLabel(record) === '插件' ? undefined : 'blue'}
+          data-testid="manual-selection-collection-source"
+        >
+          {manualSelectionCollectionSourceLabel(record)}
+        </Tag>
+      </div>
       {record.failureMessage ? <Text type="danger">{record.failureMessage}</Text> : null}
-    </Space>
+    </div>
   )
 }
 

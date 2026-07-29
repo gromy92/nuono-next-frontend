@@ -6,6 +6,7 @@ import {
   workspaceContentMountGroups,
   workspaceContentMountKeys
 } from './ShellWorkspaceContent'
+import { isWorkspaceRouteNotFound } from './useShellSessionState'
 import {
   BOSS_OPERATOR_MENU_KEYS,
   WORKSPACE_MENU_DEFINITIONS,
@@ -76,6 +77,13 @@ assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-listing'), t
 assert.equal(BOSS_OPERATOR_MENU_KEYS.map(String).includes('purchase-pre-order-profit'), false)
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/listing'), 'purchase-listing')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/pre-order-profit'), null)
+assert.equal(isWorkspaceRouteNotFound('/unknown-workspace'), true)
+assert.equal(isWorkspaceRouteNotFound('/product/manage'), false)
+assert.equal(isWorkspaceRouteNotFound('/purchase/order/requirement-confirmation/detail/PR-1'), false)
+assert.equal(isWorkspaceRouteNotFound('/login'), false)
+assert.equal(isWorkspaceRouteNotFound('/login/register'), false)
+assert.equal(isWorkspaceRouteNotFound('/login-invalid'), true)
+assert.equal(isWorkspaceRouteNotFound('/'), false)
 assert.equal(
   existsSync(join(process.cwd(), 'src/features/app-shell/LegacyCommerceWorkspaceContent.tsx')),
   false,

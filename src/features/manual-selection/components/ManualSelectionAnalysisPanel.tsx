@@ -209,6 +209,7 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
       render: (_, project) => (
         <div className="manual-selection-analysis-actions" data-testid="manual-selection-analysis-actions">
           <Button
+            className="manual-selection-analysis-action-ai"
             size="small"
             icon={<BulbOutlined />}
             data-testid="manual-selection-ai-analysis-button"
@@ -218,6 +219,7 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
             AI分析
           </Button>
           <Button
+            className="manual-selection-analysis-action-profit"
             size="small"
             icon={<CalculatorOutlined />}
             data-testid="manual-selection-profit-button"
@@ -226,6 +228,7 @@ export function ManualSelectionAnalysisPanel(props: ManualSelectionAnalysisPanel
             利润
           </Button>
           <Button
+            className="manual-selection-analysis-action-listing"
             size="small"
             type="primary"
             icon={<RocketOutlined />}

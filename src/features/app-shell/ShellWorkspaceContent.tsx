@@ -1,15 +1,20 @@
 import { useMemo } from 'react'
-import { Alert, Card } from 'antd'
+import { HomeOutlined } from '@ant-design/icons'
+import { Button } from 'antd'
 import { workspaceMenuMount } from '../route-catalog/RouteCatalog'
 import {
   shouldShowWorkspaceMenuInTabs,
   workspaceTabKeyForMenuKey,
   type AppMenuKey
 } from '../route-catalog/RouteCatalog'
+import { resolveWorkspacePathForMenuKey } from '../route-catalog/routePaths'
+import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery'
+import { SystemStatePanel } from '../../shared/system-state/SystemStatePanel'
 import type {
   ShellWorkspaceContentProps,
   ShellWorkspaceRenderContext
 } from './ShellWorkspaceContent.types'
+import { ShellDefaultPage } from './ShellDefaultPage'
 
 export function workspaceContentMountKeys(
   activeMenuKey: AppMenuKey,
@@ -79,6 +84,7 @@ export function ShellWorkspaceContent({
   activeMenuKey,
   noMenuPermission,
   openedWorkspaceTabKeys,
+  routeNotFound,
   ...baseContext
 }: ShellWorkspaceContentProps) {
   const mountGroups = useMemo(() => {
@@ -86,15 +92,33 @@ export function ShellWorkspaceContent({
   }, [activeMenuKey, openedWorkspaceTabKeys])
 
   if (noMenuPermission) {
+    return <ShellDefaultPage />
+  }
+
+  if (routeNotFound) {
     return (
-      <Card variant="borderless" style={{ boxShadow: 'none', background: '#ffffff' }}>
-        <Alert
-          type="warning"
-          showIcon
-          message="当前账号未配置菜单权限"
-          description="请先在角色管理或菜单维护中给该账号所属角色配置菜单权限；未配置的菜单不会展示在左侧导航。"
+      <div className="nuono-shell-default-page">
+        <SystemStatePanel
+          variant="not-found"
+          title="这个页面不存在"
+          description="地址可能已经失效，或对应功能已经迁移。你可以返回当前账号的默认工作台继续操作。"
+          actions={
+            <Button
+              type="primary"
+              icon={<HomeOutlined />}
+              onClick={() => {
+                const nextPath = withCurrentWorkspaceDevQuery(
+                  resolveWorkspacePathForMenuKey(activeMenuKey)
+                )
+                window.history.replaceState({}, '', nextPath)
+                window.dispatchEvent(new PopStateEvent('popstate'))
+              }}
+            >
+              返回默认工作台
+            </Button>
+          }
         />
-      </Card>
+      </div>
     )
   }
 

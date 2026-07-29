@@ -32,36 +32,36 @@ export function buildManualSelectionTableColumns(
     {
       title: '主图/三方渠道',
       key: 'source',
-      width: 118,
+      width: 86,
       render: (_value, record) => <SourceChannelCell record={record} />
     },
     {
       title: '商品名称',
       key: 'sourceName',
-      width: 292,
+      width: 330,
       render: (_value, record) => <SourceNameCell record={record} />
     },
     {
       title: '采集完整度',
       key: 'collectedCompleteness',
-      width: 124,
+      width: 118,
       render: (_value, record) => <CompletenessCell record={record} />
     },
     {
       title: '采集状态',
       key: 'collectStatus',
-      width: 168,
+      width: 154,
       render: (_value, record) => (
-        <Space direction="vertical" size={3}>
+        <Space className="manual-selection-status-cell" direction="vertical" size={2}>
           <SourceStatusCell value={record.status} record={record} />
-          <Text type="secondary">{formatManualSelectionCollectedAt(record.collectedAt)}</Text>
+          <Text className="manual-selection-status-time" type="secondary">{formatManualSelectionCollectedAt(record.collectedAt)}</Text>
         </Space>
       )
     },
     {
       title: '组',
       key: 'analysisProject',
-      width: 126,
+      width: 132,
       render: (_value, record) => {
         const project = options.analysisProjectByCollectionId[record.id]
         if (!project) {
@@ -78,13 +78,13 @@ export function buildManualSelectionTableColumns(
     {
       title: '1688查询',
       key: 'ali1688Query',
-      width: 196,
+      width: 210,
       render: (_value, record) => <Ali1688StatusCell record={record} />
     },
     {
       title: '操作',
       key: 'action',
-      width: 112,
+      width: 186,
       fixed: 'right',
       render: (_value, record) => (
         <ActionCell

@@ -34,7 +34,7 @@ export function buildNetUnitsLineOption(points: LinePoint[]): EChartsCoreOption 
         return `
           <div style="font-weight:600;color:#111827;margin-bottom:6px;">${fullDate}</div>
           <div style="display:flex;align-items:center;gap:8px;color:#475569;">
-            <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#5e3cde;"></span>
+            <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#168553;"></span>
             <span>净销量</span>
             <span style="font-weight:700;color:#111827;">${formatChartNumber(value)}</span>
             <span>件</span>
@@ -90,11 +90,11 @@ export function buildNetUnitsLineOption(points: LinePoint[]): EChartsCoreOption 
           color: {
             colorStops: [
               {
-                color: 'rgba(94, 60, 222, 0.24)',
+                color: 'rgba(22, 133, 83, 0.24)',
                 offset: 0.1
               },
               {
-                color: 'rgba(94, 60, 222, 0.02)',
+                color: 'rgba(22, 133, 83, 0.02)',
                 offset: 1
               }
             ],
@@ -110,12 +110,12 @@ export function buildNetUnitsLineOption(points: LinePoint[]): EChartsCoreOption 
           focus: 'series'
         },
         itemStyle: {
-          borderColor: '#5e3cde',
+          borderColor: '#168553',
           borderWidth: 2,
           color: '#fff'
         },
         lineStyle: {
-          color: '#5e3cde',
+          color: '#168553',
           width: 2.5
         },
         name: '净销量',

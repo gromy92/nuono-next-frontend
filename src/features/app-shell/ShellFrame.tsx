@@ -1,8 +1,10 @@
 import { type Dispatch, type Key, type SetStateAction } from 'react';
 import { App as AntdApp, Col, ConfigProvider, Layout, Modal, Row, Typography } from 'antd';
 import type { FormInstance, MenuProps, TabsProps } from 'antd';
+import { NUONO_PRIMARY } from '../../shared/themePalette';
 import { WorkspaceTabsBar, type WorkspaceTabItem } from './WorkspaceTabsBar';
 import { ChangePasswordModal, type ChangePasswordFormValues } from '../auth/ChangePasswordModal';
+import { AUTHENTICATED_SHELL_THEME } from './authenticatedShellTheme';
 import { ReplicaLoginPage } from '../auth/ReplicaLoginPage';
 import type { AuthRoleView, AuthSession } from '../auth/session';
 import { ShellHeader } from './ShellHeader';
@@ -41,6 +43,7 @@ type ShellFrameProps = {
   logoutConfirmOpen: boolean;
   noMenuPermission: boolean;
   openedWorkspaceTabKeys: AppMenuKey[];
+  routeNotFound: boolean;
   setChangePasswordOpen: (open: boolean) => void;
   setLoginError: (message: string | null) => void;
   setLogoutConfirmOpen: (open: boolean) => void;
@@ -77,6 +80,7 @@ export function ShellFrame({
   logoutConfirmOpen,
   noMenuPermission,
   openedWorkspaceTabKeys,
+  routeNotFound,
   setChangePasswordOpen,
   setLoginError,
   setLogoutConfirmOpen,
@@ -94,7 +98,7 @@ export function ShellFrame({
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: '#5e3cde',
+          colorPrimary: NUONO_PRIMARY,
           colorBgLayout: '#f4f7f1',
           borderRadius: 8,
           fontSize: 14
@@ -115,41 +119,12 @@ export function ShellFrame({
             </Content>
           </Layout>
         ) : (
-          <ConfigProvider
-            theme={{
-              token: {
-                colorPrimary: '#5e3cde',
-                colorBgLayout: '#f5f7fb',
-                colorBgContainer: '#ffffff',
-                borderRadius: 6,
-                fontSize: 14
-              },
-              components: {
-                Menu: {
-                  itemHeight: 44,
-                  itemBorderRadius: 14,
-                  itemColor: '#2b2f42',
-                  itemHoverColor: '#5e3cde',
-                  itemHoverBg: '#f4efff',
-                  itemSelectedColor: '#5e3cde',
-                  itemSelectedBg: '#ede6ff',
-                  subMenuItemBg: '#f8f8ff',
-                  activeBarBorderWidth: 0
-                },
-                Tabs: {
-                  itemColor: '#4b5563',
-                  itemSelectedColor: '#5e3cde',
-                  itemHoverColor: '#5e3cde',
-                  inkBarColor: '#7c5cff'
-                }
-              }
-            }}
-          >
+          <ConfigProvider theme={AUTHENTICATED_SHELL_THEME}>
             <Layout
-              className="nuono-shell-layout"
+              className="nuono-shell-layout nuono-shell-theme-green"
               style={{
                 minHeight: '100vh',
-                background: 'linear-gradient(180deg, #fbfbfd 0%, #f5f7fb 100%)'
+                background: 'linear-gradient(180deg, #fbfcfb 0%, #f5f7f6 100%)'
               }}
             >
               <ShellSidebar
@@ -163,7 +138,7 @@ export function ShellFrame({
               />
               <Layout className="nuono-shell-main" style={{ background: 'transparent' }}>
                 <ShellHeader
-                  activeMenuPathLabel={activeMenuPathLabel}
+                  activeMenuPathLabel={routeNotFound ? null : activeMenuPathLabel}
                   session={shellSession}
                   userDropdownItems={userDropdownItems}
                   onRoleViewChange={handleRoleViewChange}
@@ -179,7 +154,7 @@ export function ShellFrame({
                   }}
                 >
                   <div className="nuono-shell-content-inner">
-                    {shouldRenderWorkspaceTabs ? (
+                    {shouldRenderWorkspaceTabs && !routeNotFound ? (
                       <WorkspaceErrorBoundary boundaryName="workspace-tabs">
                         <WorkspaceTabsBar
                           activeKey={activeWorkspaceTabKey}
@@ -199,6 +174,7 @@ export function ShellFrame({
                             noMenuPermission={noMenuPermission}
                             shellSession={shellSession}
                             openedWorkspaceTabKeys={openedWorkspaceTabKeys}
+                            routeNotFound={routeNotFound}
                           />
                         </WorkspaceErrorBoundary>
                       </Col>

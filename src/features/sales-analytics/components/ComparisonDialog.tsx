@@ -59,7 +59,7 @@ export function ComparisonDialog({
                   <div key={`${product.partnerSku}|trend`} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 80px', gap: 8, alignItems: 'center' }}>
                     <Text>{product.partnerSku}</Text>
                     <div style={{ height: 8, background: '#eef2ff', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ width: `${Math.max(6, Math.min(100, Number(product.netUnits || 0) * 8))}%`, height: '100%', background: '#5e3cde' }} />
+                      <div style={{ width: `${Math.max(6, Math.min(100, Number(product.netUnits || 0) * 8))}%`, height: '100%', background: '#168553' }} />
                     </div>
                     <Text>{formatNumber(product.netUnits)}</Text>
                   </div>

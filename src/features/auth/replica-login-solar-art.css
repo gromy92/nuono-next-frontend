@@ -1,0 +1,56 @@
+.nuono-solar-term-orbit {
+  position: absolute;
+  border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 50%;
+}
+
+.nuono-solar-term-orbit-one {
+  top: 11%;
+  right: -9%;
+  width: 560px;
+  height: 560px;
+}
+
+.nuono-solar-term-orbit-two {
+  right: 10%;
+  bottom: -28%;
+  width: 620px;
+  height: 620px;
+}
+
+.nuono-solar-term-sun {
+  position: absolute;
+  top: 16%;
+  right: 12%;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #ffe5a7, #efbc62 60%, rgba(239, 188, 98, .18) 61%);
+  box-shadow: 0 0 90px rgba(255, 211, 119, .27);
+  opacity: .9;
+}
+
+.nuono-solar-term-sun i {
+  position: absolute;
+  right: 48px;
+  bottom: -190px;
+  width: 1px;
+  height: 210px;
+  background: rgba(255, 255, 255, .18);
+  transform: rotate(19deg);
+  transform-origin: top;
+}
+
+.nuono-solar-term-sun i:nth-child(2) {
+  right: 80px;
+  bottom: -230px;
+  height: 260px;
+  transform: rotate(7deg);
+}
+
+.nuono-solar-term-sun i:nth-child(3) {
+  right: 112px;
+  bottom: -210px;
+  height: 235px;
+  transform: rotate(-9deg);
+}

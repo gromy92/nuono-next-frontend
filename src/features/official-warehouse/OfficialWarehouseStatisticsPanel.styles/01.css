@@ -44,12 +44,12 @@
 
 .official-warehouse-statistics .official-warehouse-metric-clickable:hover,
 .official-warehouse-statistics .official-warehouse-metric-active {
-  border-color: #8b5cf6;
-  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.28);
+  border-color: #168553;
+  box-shadow: inset 0 0 0 1px rgba(22, 133, 83, 0.24);
 }
 
 .official-warehouse-statistics .official-warehouse-metric-clickable:focus-visible {
-  outline: 2px solid #8b5cf6;
+  outline: 2px solid #168553;
   outline-offset: 2px;
 }
 

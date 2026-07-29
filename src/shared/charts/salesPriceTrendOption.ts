@@ -55,7 +55,7 @@ export function buildSalesPriceTrendOption(
         return `
           <div style="font-weight:600;color:#111827;margin-bottom:6px;">${axisPoint?.fullDate || axisPoint?.date || ''}</div>
           <div style="display:flex;align-items:center;gap:8px;color:#475569;margin-bottom:4px;">
-            <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#5e3cde;"></span>
+            <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#168553;"></span>
             <span>净销量</span>
             <span style="font-weight:700;color:#111827;">${formatChartNullableNumber(salesValues[dataIndex])}</span>
             <span>件</span>
@@ -127,12 +127,12 @@ export function buildSalesPriceTrendOption(
           focus: 'series'
         },
         itemStyle: {
-          borderColor: '#5e3cde',
+          borderColor: '#168553',
           borderWidth: 2,
           color: '#fff'
         },
         lineStyle: {
-          color: '#5e3cde',
+          color: '#168553',
           width: 2.5
         },
         name: '净销量',

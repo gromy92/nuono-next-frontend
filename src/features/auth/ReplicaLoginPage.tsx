@@ -1,9 +1,10 @@
-import { Carousel, ConfigProvider } from 'antd';
+import { SafetyCertificateOutlined } from '@ant-design/icons';
+import { ConfigProvider } from 'antd';
 import type { FormInstance } from 'antd/es/form';
 import { useEffect, useMemo, useState } from 'react';
-import { currentAppPathname, withPublicBasePath } from '../../runtimePaths';
+import { currentAppPathname } from '../../runtimePaths';
+import { NUONO_PRIMARY } from '../../shared/themePalette';
 import {
-  LEGACY_LOGIN_PRIMARY,
   normalizeAuthView,
   ReplicaAuthHeader,
   ReplicaLoginContent,
@@ -12,6 +13,10 @@ import {
   type AuthView,
   type LoginFormValues
 } from './ReplicaAuthContent';
+import { SolarTermPanel } from './SolarTermPanel';
+import './replica-login-layout.css';
+import './replica-login-solar-art.css';
+import './replica-login-responsive.css';
 
 type Props = {
   errorMessage?: string | null;
@@ -21,20 +26,11 @@ type Props = {
   onSubmit: () => void;
 };
 
-const carouselStyles = `
-  .replica-login-dots {
-    bottom: 20px !important;
-  }
-  .replica-login-dots li button {
-    background: rgba(255, 255, 255, 0.6) !important;
-    border-radius: 50% !important;
-    width: 8px !important;
-    height: 8px !important;
-  }
-  .replica-login-dots li.slick-active button {
-    background: rgba(255, 255, 255, 1) !important;
-  }
-`;
+const VIEW_EYEBROW: Record<AuthView, string> = {
+  login: '账号登录',
+  register: '创建账号',
+  'reset-pwd': '找回访问'
+};
 
 export function ReplicaLoginPage({ errorMessage, form, submitting, onInputChange, onSubmit }: Props) {
   const [authView, setAuthView] = useState<AuthView>(() =>
@@ -56,7 +52,7 @@ export function ReplicaLoginPage({ errorMessage, form, submitting, onInputChange
     return () => window.removeEventListener('popstate', sync);
   }, []);
 
-  const rightContent = useMemo(() => {
+  const authContent = useMemo(() => {
     if (authView === 'register') {
       return <ReplicaRegisterContent />;
     }
@@ -78,113 +74,44 @@ export function ReplicaLoginPage({ errorMessage, form, submitting, onInputChange
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: LEGACY_LOGIN_PRIMARY
+          colorPrimary: NUONO_PRIMARY,
+          borderRadius: 9,
+          controlHeightLG: 42
         }
       }}
     >
-      <div
-        data-testid={`auth-page-${authView}`}
-        style={{
-          minHeight: '100vh',
-          backgroundImage: `url(${withPublicBasePath('/auth/login-bg.png')})`,
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
-          overflow: 'hidden',
-          position: 'relative'
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: '#01010133'
-          }}
-        />
+      <main className="nuono-login-page" data-testid={`auth-page-${authView}`}>
+        <section className="nuono-login-auth-panel">
+          <div className="nuono-login-brand" aria-label="诺诺管家">
+            <span className="nuono-login-brand-mark">诺</span>
+            <span>
+              <strong>诺诺管家</strong>
+              <small>跨境电商运营工作台</small>
+            </span>
+          </div>
 
-        <style>{carouselStyles}</style>
-
-        <div
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            minHeight: '100vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 24
-          }}
-        >
-          <div
-            style={{
-              width: 1300,
-              maxWidth: '100%',
-              display: 'flex',
-              gap: 40,
-              alignItems: 'stretch'
-            }}
-          >
-            <div style={{ flex: '0 0 720px', minWidth: 0 }}>
-              <Carousel
-                autoplay
-                effect="fade"
-                dots={{ className: 'replica-login-dots' }}
-                style={{ borderRadius: 24, overflow: 'hidden' }}
-              >
-                <div>
-                  <div
-                    style={{
-                      height: 520,
-                      backgroundImage: `url(${withPublicBasePath('/auth/banner-1.jpg')})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
-                    }}
-                  />
-                </div>
-              </Carousel>
-            </div>
-
-            <div
-              style={{
-                flex: '0 0 520px',
-                padding: 32,
-                background: 'rgba(251,249,255,0.88)',
-                border: '1px solid #D5D2E0',
-                borderRadius: 15,
-                boxShadow: '0px 1px 2px 0px rgba(0,0,0,0.5)'
-              }}
-            >
-              <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                <ReplicaAuthHeader authView={authView} />
-                <div className="nuono-shell-brand-lockup" aria-label="诺诺管家">
-                  <span className="nuono-shell-brand-mark">诺</span>
-                  <span className="nuono-shell-brand-text">诺诺管家</span>
-                </div>
-              </div>
-
-              {rightContent}
+          <div className="nuono-login-auth-main">
+            <span className="nuono-login-auth-eyebrow">{VIEW_EYEBROW[authView]}</span>
+            <ReplicaAuthHeader authView={authView} />
+            {authContent}
+            <div className="nuono-login-security">
+              <SafetyCertificateOutlined />
+              账号信息经安全连接传输
             </div>
           </div>
-        </div>
 
-        <div
-          style={{
-            position: 'absolute',
-            zIndex: 3,
-            bottom: 16,
-            width: '100%',
-            textAlign: 'center'
-          }}
-        >
           <a
+            className="nuono-login-record"
             href="https://beian.miit.gov.cn"
             rel="noopener noreferrer"
-            style={{ color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 14 }}
             target="_blank"
           >
             浙ICP备2025165687号-1
           </a>
-        </div>
-      </div>
+        </section>
+
+        <SolarTermPanel />
+      </main>
     </ConfigProvider>
   );
 }

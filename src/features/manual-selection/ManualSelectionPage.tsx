@@ -129,8 +129,9 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
   } = competitorActions
 
   return (
-    <Space className="manual-selection-page" direction="vertical" size={16}>
+    <Space className="manual-selection-page" direction="vertical" size={10}>
       <Tabs
+        size="small"
         activeKey={activeTabKey}
         onChange={handleTabChange}
         items={[
@@ -142,7 +143,11 @@ export function ManualSelectionPage(props: ManualSelectionPageProps) {
               </span>
             ),
             children: (
-              <Card bordered={false} bodyStyle={{ padding: 0 }} className="manual-selection-tab-panel">
+              <Card
+                variant="borderless"
+                styles={{ body: { padding: 0 } }}
+                className="manual-selection-tab-panel"
+              >
                 <ManualSelectionToolbar
                   form={searchForm}
                   loading={loading}

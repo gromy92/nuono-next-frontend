@@ -1,10 +1,11 @@
 import type { AuthSession } from '../auth/session';
+import { NUONO_PRIMARY } from '../../shared/themePalette';
 import { isBossOperatorView } from '../route-catalog/sessionAccessPolicy';
 
 export const shellRoleColorMap: Record<string, string> = {
-  系统管理员: '#722ed1',
-  管理员: '#722ed1',
-  老板: '#722ed1',
+  系统管理员: NUONO_PRIMARY,
+  管理员: NUONO_PRIMARY,
+  老板: NUONO_PRIMARY,
   运营主管: '#fa8c16',
   运营: '#1677ff',
   采购: '#52c41a',
