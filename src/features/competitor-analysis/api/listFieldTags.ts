@@ -1,10 +1,11 @@
 export function listFieldTags(value: unknown) {
   let source = value
   if (typeof source === 'string') {
+    const serialized = source
     try {
-      source = JSON.parse(source)
+      source = JSON.parse(serialized)
     } catch {
-      source = source.trim() ? [source.trim()] : []
+      source = serialized.trim() ? [serialized.trim()] : []
     }
   }
   const values: string[] = []

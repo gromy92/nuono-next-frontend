@@ -271,7 +271,7 @@ export function mapRankPoint(row: BackendRankPoint): CompetitorRankPoint {
     rankStatus,
     rankNo: row.rankNo,
     rankChannel,
-    scanDepth: normalizeRankScanDepth(row.scanDepth, rankStatus),
+    scanDepth: normalizeRankScanDepth(row.scanDepth),
     isSelf: trackedType === 'SELF',
     isConfirmedCompetitor: trackedType === 'COMPETITOR',
     isSponsored: rankChannel === 'sponsored',

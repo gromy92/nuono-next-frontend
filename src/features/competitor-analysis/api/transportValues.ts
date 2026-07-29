@@ -72,7 +72,7 @@ export function normalizeRankStatus(value: unknown): RankStatus {
   return 'not_in_scan_depth'
 }
 
-export function normalizeRankScanDepth(value: unknown, rankStatus: RankStatus) {
+export function normalizeRankScanDepth(value: unknown) {
   const numericValue = typeof value === 'number' ? value : Number(value)
   const normalized = Number.isFinite(numericValue) && numericValue > 0 ? numericValue : DEFAULT_RANK_SCAN_DEPTH
   return normalized
