@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import './sessionAccessPolicy.contract.test'
 import type { AuthSession } from '../auth/session'
 import {
   ALL_WORKSPACE_MENU_KEYS,
