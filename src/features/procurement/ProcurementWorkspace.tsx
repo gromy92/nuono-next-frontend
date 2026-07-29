@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Form, message } from 'antd';
 import type { AuthSession } from '../auth/session';
+import { apiRequestJson } from '../../shared/api';
 import { procurementBuildRoadmap } from './constants';
 import { buildProcurementQuickSignalsRequest } from './profitSignals';
 import { ProcurementWorkspaceView } from './ProcurementWorkspaceView';
@@ -164,7 +165,7 @@ function useProcurementWorkspaceModel({
       const values = await procurementReviewForm.validateFields();
       setProcurementSavingReview(true);
 
-      const response = await fetch('/api/procurement/review-candidate', {
+      const payload = await apiRequestJson<ProcurementCandidatePoolPayload>('/api/procurement/review-candidate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -180,18 +181,6 @@ function useProcurementWorkspaceModel({
         })
       });
 
-      if (!response.ok) {
-        let backendMessage = `后端返回 ${response.status}`;
-        try {
-          const errorPayload = (await response.json()) as { message?: string; error?: string };
-          backendMessage = errorPayload.message || errorPayload.error || backendMessage;
-        } catch {
-          // ignore json parse failure
-        }
-        throw new Error(backendMessage);
-      }
-
-      const payload = (await response.json()) as ProcurementCandidatePoolPayload;
       setProcurementState({ status: 'success', data: payload });
       setSelectedProcurementItemId(selectedProcurementItem.id);
       setProcurementComparingCandidateId(comparingProcurementCandidate.id);

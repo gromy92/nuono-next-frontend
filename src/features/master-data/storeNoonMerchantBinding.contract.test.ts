@@ -27,8 +27,8 @@ assert.match(storeBoardSource, /projectList\?\./);
 assert.match(storeBoardSource, /orgCode:\s*selectedProject\?\.orgCode/);
 assert.match(storeBoardSource, /orgName:\s*selectedProject\?\.orgName/);
 
-assert.match(storeApiSource, /fetch\('\/api\/store-sync\/bind'/);
-assert.match(storeApiSource, /fetch\('\/api\/store-sync\/create-store'/);
+assert.match(storeApiSource, /apiFetch\('\/api\/store-sync\/bind'/);
+assert.match(storeApiSource, /apiFetch\('\/api\/store-sync\/create-store'/);
 assert.match(storeApiSource, /StoreBindingResult/);
 assert.doesNotMatch(storeApiSource, /\/api\/auth\/email-code/);
 

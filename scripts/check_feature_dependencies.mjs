@@ -4,9 +4,14 @@ import process from 'node:process'
 import ts from 'typescript'
 
 const root = process.cwd()
+const sourceRoot = join(root, 'src')
 const featuresRoot = process.env.FEATURE_DEPENDENCY_ROOT
   ? resolve(root, process.env.FEATURE_DEPENDENCY_ROOT)
   : join(root, 'src/features')
+const transportAuditRoot = process.env.FEATURE_DEPENDENCY_ROOT
+  ? featuresRoot
+  : sourceRoot
+const transportImplementation = join(sourceRoot, 'shared/apiTransportRuntime.ts')
 const auditOnly = process.argv.includes('--audit')
 const allowedFeatureCycles = new Set()
 
@@ -57,6 +62,38 @@ function sourceImports(filePath) {
   }
   visit(source)
   return imports
+}
+
+function nativeFetchReferences(filePath) {
+  if (filePath === transportImplementation) {
+    return []
+  }
+  const source = ts.createSourceFile(
+    filePath,
+    readFileSync(filePath, 'utf8'),
+    ts.ScriptTarget.Latest,
+    true,
+    extname(filePath) === '.tsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+  )
+  const references = []
+  function visit(node) {
+    const directFetchCall =
+      ts.isCallExpression(node)
+      && ts.isIdentifier(node.expression)
+      && node.expression.text === 'fetch'
+    const nativeFetchProperty =
+      ts.isPropertyAccessExpression(node)
+      && node.name.text === 'fetch'
+      && ts.isIdentifier(node.expression)
+      && ['globalThis', 'window'].includes(node.expression.text)
+    if (directFetchCall || nativeFetchProperty) {
+      const { line } = source.getLineAndCharacterOfPosition(node.getStart(source))
+      references.push(`${relative(root, filePath)}:${line + 1}`)
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return references
 }
 
 function isTypeOnlyDeclaration(statement) {
@@ -157,6 +194,8 @@ function isRouteLoaderAdapterEdge(sourceFeature, targetFeature, imported) {
 }
 
 const files = productionSourceFiles(featuresRoot)
+const nativeFetchBypasses = productionSourceFiles(transportAuditRoot)
+  .flatMap(nativeFetchReferences)
 const knownFiles = new Set(files)
 const runtimeEdges = new Map(files.map((file) => [file, new Set()]))
 const featureEdges = new Map()
@@ -213,11 +252,15 @@ unexpectedFeatureCycles.forEach((component) => {
 appShellReverseDependencies.sort().forEach((dependency) => {
   issues.push(`business feature depends on app-shell: ${dependency}`)
 })
+nativeFetchBypasses.sort().forEach((reference) => {
+  issues.push(`native fetch bypasses shared HTTP transport: ${reference}`)
+})
 
 console.log(
   `Feature dependency policy: ${files.length} production files, `
     + `${runtimeCycles.length} runtime cycles, ${featureCycles.length} feature cycles, `
-    + `${routeLoaderAdapterEdges.length} route loader adapter edges.`
+    + `${routeLoaderAdapterEdges.length} route loader adapter edges, `
+    + `${nativeFetchBypasses.length} native fetch bypasses.`
 )
 if (featureCycles.length) {
   console.log(`Feature SCCs: ${featureCycles.map(cycleKey).sort().join(', ')}`)

@@ -43,6 +43,22 @@ Run the dependency gate with:
 pnpm dependencies:check
 ```
 
+## HTTP transport ownership
+
+`src/shared/api.ts` is the public HTTP Transport Module Interface.
+Base-path rewriting, session and role headers, and session-expiry notification
+belong to its private `apiTransportRuntime.ts` Implementation.
+
+- Feature Modules prefer `apiRequestJson` or `apiRequestNoContent` for ordinary
+  responses. Use `apiFetch` only when a caller must consume the `Response`
+  directly, such as auth-specific handling or blob/text bodies.
+- Feature Modules must not call native `fetch` or patch `window.fetch`.
+- Callers may supply request headers and abort signals; the transport
+  Implementation preserves them and does not attach session context to
+  cross-origin requests.
+- `pnpm dependencies:check` rejects production source that bypasses this
+  Interface.
+
 ## Interface hygiene
 
 Module Interfaces must expose only data and actions consumed across their Seam.

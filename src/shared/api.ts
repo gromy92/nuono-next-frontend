@@ -1,3 +1,10 @@
+import {
+  SESSION_EXPIRED_EVENT,
+  executeApiFetch
+} from './apiTransportRuntime'
+
+export { SESSION_EXPIRED_EVENT }
+
 export type ApiProblem = {
   code: string
   message: string
@@ -37,12 +44,18 @@ export async function readApiError(response: Response, fallback?: string) {
       return new ApiError(response.status, message);
     }
     try {
-      const payload = JSON.parse(text) as Partial<ApiProblem> & { error?: string };
+      const payload = JSON.parse(text) as Partial<ApiProblem> & {
+        detail?: string
+        error?: string
+      };
       const payloadMessage = normalizeApiMessage(payload.message);
       if (payloadMessage && !isBackendDefaultEmptyMessage(payloadMessage)) {
         message = payloadMessage;
       } else if (!payloadMessage) {
-        message = normalizeApiMessage(payload.error) || message;
+        message =
+          normalizeApiMessage(payload.detail)
+          || normalizeApiMessage(payload.error)
+          || message;
       }
       const code = normalizeApiMessage(payload.code);
       const problem = code
@@ -90,48 +103,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-const SESSION_STORAGE_KEY = 'nuono-next-session';
-
-export function devSessionHeaders(): Record<string, string> {
-  if (typeof window === 'undefined') {
-    return {};
-  }
-  if (window.location.hostname !== '127.0.0.1' && window.location.hostname !== 'localhost') {
-    return {};
-  }
-  try {
-    const rawSession = window.localStorage.getItem(SESSION_STORAGE_KEY);
-    if (!rawSession) {
-      return {};
-    }
-    const session = JSON.parse(rawSession) as {
-      userId?: number | string;
-      roleId?: number | string | null;
-      level?: number | string | null;
-    };
-    if (!session.userId) {
-      return {};
-    }
-    return {
-      'X-Nuono-Dev-Session-User-Id': String(session.userId),
-      ...(session.roleId ? { 'X-Nuono-Dev-Session-Role-Id': String(session.roleId) } : {}),
-      ...(session.level !== undefined && session.level !== null
-        ? { 'X-Nuono-Dev-Session-Level': String(session.level) }
-        : {})
-    };
-  } catch {
-    return {};
-  }
-}
-
 export function apiFetch(input: RequestInfo | URL, init?: RequestInit) {
-  const headers = new Headers(init?.headers);
-  Object.entries(devSessionHeaders()).forEach(([key, value]) => {
-    if (!headers.has(key)) {
-      headers.set(key, value);
-    }
-  });
-  return fetch(input, { ...init, headers });
+  return executeApiFetch(input, init)
 }
 
 export type ApiErrorFallback = string | ((status: number) => string)

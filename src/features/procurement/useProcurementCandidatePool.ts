@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
 import type { AuthSession } from '../auth/session';
+import { apiRequestJson } from '../../shared/api';
 import type { ProcurementCandidatePoolPayload, ProcurementState } from './types';
 
 export function useProcurementCandidatePool({
@@ -34,19 +35,9 @@ export function useProcurementCandidatePool({
         params.set('orderNo', orderNo);
       }
 
-      const response = await fetch(`/api/procurement/candidate-pool?${params.toString()}`);
-      if (!response.ok) {
-        let backendMessage = `后端返回 ${response.status}`;
-        try {
-          const errorPayload = (await response.json()) as { message?: string; error?: string };
-          backendMessage = errorPayload.message || errorPayload.error || backendMessage;
-        } catch {
-          // ignore json parse failure
-        }
-        throw new Error(backendMessage);
-      }
-
-      const payload = (await response.json()) as ProcurementCandidatePoolPayload;
+      const payload = await apiRequestJson<ProcurementCandidatePoolPayload>(
+        `/api/procurement/candidate-pool?${params.toString()}`
+      );
       setProcurementState({ status: 'success', data: payload });
       setSelectedProcurementItemId((currentValue) => {
         if (currentValue && payload.demandItems.some((item) => item.id === currentValue)) {
@@ -83,7 +74,7 @@ export function useProcurementCandidatePool({
     try {
       setProcurementSelectingCandidateId(candidateId);
 
-      const response = await fetch('/api/procurement/select-candidate', {
+      const payload = await apiRequestJson<ProcurementCandidatePoolPayload>('/api/procurement/select-candidate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -96,18 +87,6 @@ export function useProcurementCandidatePool({
         })
       });
 
-      if (!response.ok) {
-        let backendMessage = `后端返回 ${response.status}`;
-        try {
-          const errorPayload = (await response.json()) as { message?: string; error?: string };
-          backendMessage = errorPayload.message || errorPayload.error || backendMessage;
-        } catch {
-          // ignore json parse failure
-        }
-        throw new Error(backendMessage);
-      }
-
-      const payload = (await response.json()) as ProcurementCandidatePoolPayload;
       setProcurementState({ status: 'success', data: payload });
       setSelectedProcurementItemId(demandItemId);
       setProcurementComparingCandidateId(candidateId);
@@ -130,7 +109,7 @@ export function useProcurementCandidatePool({
     try {
       setProcurementRunningDemandItemId(demandItemId);
 
-      const response = await fetch('/api/procurement/run-auto-selection', {
+      const payload = await apiRequestJson<ProcurementCandidatePoolPayload>('/api/procurement/run-auto-selection', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -142,18 +121,6 @@ export function useProcurementCandidatePool({
         })
       });
 
-      if (!response.ok) {
-        let backendMessage = `后端返回 ${response.status}`;
-        try {
-          const errorPayload = (await response.json()) as { message?: string; error?: string };
-          backendMessage = errorPayload.message || errorPayload.error || backendMessage;
-        } catch {
-          // ignore json parse failure
-        }
-        throw new Error(backendMessage);
-      }
-
-      const payload = (await response.json()) as ProcurementCandidatePoolPayload;
       setProcurementState({ status: 'success', data: payload });
       setSelectedProcurementItemId(demandItemId);
       setProcurementComparingCandidateId(payload.demandItems.find((item) => item.id === demandItemId)?.candidates[0]?.id);

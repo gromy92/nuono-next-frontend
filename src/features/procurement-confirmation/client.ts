@@ -3,32 +3,7 @@ import type {
   RequirementConfirmationDetailResponse,
   RequirementConfirmationListResponse
 } from './dto';
-
-export class ProcurementConfirmationApiError extends Error {
-  status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.name = 'ProcurementConfirmationApiError';
-    this.status = status;
-  }
-}
-
-async function parseResponse<T>(response: Response): Promise<T> {
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    let message = `后端返回 ${response.status}`;
-    if (payload && typeof payload.message === 'string' && payload.message) {
-      message = payload.message;
-    } else if (payload && typeof payload.detail === 'string' && payload.detail) {
-      message = payload.detail;
-    } else if (payload && typeof payload.error === 'string' && payload.error) {
-      message = payload.error;
-    }
-    throw new ProcurementConfirmationApiError(response.status, message);
-  }
-  return payload as T;
-}
+import { apiRequestJson } from '../../shared/api';
 
 function searchParamsFrom(params: Record<string, string | number | undefined | null>) {
   const searchParams = new URLSearchParams();
@@ -42,15 +17,13 @@ function searchParamsFrom(params: Record<string, string | number | undefined | n
 }
 
 async function sendJson<TResponse>(url: string, body: unknown): Promise<TResponse> {
-  return parseResponse<TResponse>(
-    await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(body || {})
-    })
-  );
+  return apiRequestJson<TResponse>(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body || {})
+  });
 }
 
 export async function fetchProcurementConfirmationList(params: {
@@ -60,18 +33,16 @@ export async function fetchProcurementConfirmationList(params: {
   page?: number;
   pageSize?: number;
 }) {
-  return parseResponse<RequirementConfirmationListResponse>(
-    await fetch(`/api/procurement/requirement-confirmation/demands${searchParamsFrom(params)}`)
+  return apiRequestJson<RequirementConfirmationListResponse>(
+    `/api/procurement/requirement-confirmation/demands${searchParamsFrom(params)}`
   );
 }
 
 export async function fetchProcurementConfirmationDetail(demandItemId: string, ownerUserId?: number) {
-  return parseResponse<RequirementConfirmationDetailResponse>(
-    await fetch(
-      `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}${searchParamsFrom({
-        ownerUserId
-      })}`
-    )
+  return apiRequestJson<RequirementConfirmationDetailResponse>(
+    `/api/procurement/requirement-confirmation/demands/${encodeURIComponent(demandItemId)}${searchParamsFrom({
+      ownerUserId
+    })}`
   );
 }
 

@@ -58,7 +58,7 @@ export async function exportSalesForecastCsv(query: SalesForecastQuery, options:
     riskFilter: options.riskFilter,
     confidenceFilter: options.confidenceFilter
   })
-  const response = await fetch(`/api/sales-forecast/export?${params.toString()}`)
+  const response = await apiFetch(`/api/sales-forecast/export?${params.toString()}`)
   const content = await response.text()
   if (!response.ok) {
     throw new SalesForecastApiError(response.status, content || `请求失败：${response.status}`)

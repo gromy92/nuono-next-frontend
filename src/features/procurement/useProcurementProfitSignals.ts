@@ -3,6 +3,7 @@ import type {
   ProcurementProfitSignalsState,
   ProfitQuickSignalsPayload
 } from '../profit-calculator/domain';
+import { apiRequestJson } from '../../shared/api';
 import type { buildProcurementQuickSignalsRequest } from './profitSignals';
 import type { ProcurementDemandItem } from './types';
 
@@ -29,7 +30,7 @@ export function useProcurementProfitSignals({
     async function loadProfitSignals() {
       setProcurementProfitSignalsState({ status: 'loading', demandItemId });
       try {
-        const response = await fetch('/api/profit/quick-signals', {
+        const payload = await apiRequestJson<ProfitQuickSignalsPayload>('/api/profit/quick-signals', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -37,18 +38,6 @@ export function useProcurementProfitSignals({
           body: JSON.stringify(selectedProcurementQuickSignalsRequest)
         });
 
-        if (!response.ok) {
-          let backendMessage = `后端返回 ${response.status}`;
-          try {
-            const errorPayload = (await response.json()) as { message?: string; error?: string };
-            backendMessage = errorPayload.message || errorPayload.error || backendMessage;
-          } catch {
-            // ignore json parse failure
-          }
-          throw new Error(backendMessage);
-        }
-
-        const payload = (await response.json()) as ProfitQuickSignalsPayload;
         if (cancelled) {
           return;
         }
