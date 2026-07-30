@@ -1,7 +1,8 @@
 import { type Dispatch, type Key, type SetStateAction } from 'react';
-import { App as AntdApp, Col, ConfigProvider, Form, Input, Layout, Modal, Row, Typography } from 'antd';
+import { App as AntdApp, Col, ConfigProvider, Layout, Modal, Row, Typography } from 'antd';
 import type { FormInstance, MenuProps, TabsProps } from 'antd';
 import { WorkspaceTabsBar, type WorkspaceTabItem } from './WorkspaceTabsBar';
+import { ChangePasswordModal, type ChangePasswordFormValues } from '../auth/ChangePasswordModal';
 import { ReplicaLoginPage } from '../auth/ReplicaLoginPage';
 import type { AuthRoleView, AuthSession } from '../auth/session';
 import { ShellHeader } from './ShellHeader';
@@ -17,12 +18,6 @@ import './shell-layout.css';
 
 const { Content } = Layout;
 const { Text } = Typography;
-const LEGACY_PASSWORD_PATTERN = /^[!-~]{6,14}$/;
-
-export type ChangePasswordFormValues = {
-  password1: string;
-  password2: string;
-};
 
 type ShellFrameProps = {
   activeMenuKey: AppMenuKey;
@@ -226,66 +221,13 @@ export function ShellFrame({
                       <Text data-testid="logout-confirm-dialog">确认退出登录吗？</Text>
                     </Modal>
 
-                    <Modal
-                      title="修改密码"
+                    <ChangePasswordModal
+                      form={changePasswordForm}
                       open={changePasswordOpen}
-                      width={400}
-                      destroyOnClose
-                      confirmLoading={changePasswordSubmitting}
-                      okText="确定"
-                      cancelText="取消"
-                      okButtonProps={{ 'data-testid': 'change-password-submit-button' }}
-                      cancelButtonProps={{ 'data-testid': 'change-password-cancel-button' }}
-                      onCancel={() => {
-                        if (changePasswordSubmitting) {
-                          return;
-                        }
-                        setChangePasswordOpen(false);
-                        changePasswordForm.resetFields();
-                      }}
-                      onOk={() => void submitChangePassword()}
-                    >
-                      <Form
-                        data-testid="change-password-form"
-                        form={changePasswordForm}
-                        layout="horizontal"
-                        labelCol={{ span: 6 }}
-                        wrapperCol={{ span: 18 }}
-                        preserve={false}
-                        style={{ marginTop: 16 }}
-                      >
-                        <Form.Item
-                          label="新密码"
-                          name="password1"
-                          rules={[
-                            { required: true, message: '请输入新密码' },
-                            {
-                              pattern: LEGACY_PASSWORD_PATTERN,
-                              message: '密码需为 6-14 位，不能包含空格或中文'
-                            }
-                          ]}
-                        >
-                          <Input.Password data-testid="change-password-new-input" placeholder="请输入新密码" autoComplete="new-password" />
-                        </Form.Item>
-                        <Form.Item
-                          label="确认密码"
-                          name="password2"
-                          rules={[
-                            { required: true, message: '请输入确认密码' },
-                            ({ getFieldValue }) => ({
-                              validator(_, value) {
-                                if (!value || getFieldValue('password1') === value) {
-                                  return Promise.resolve();
-                                }
-                                return Promise.reject(new Error('两次密码不一致'));
-                              }
-                            })
-                          ]}
-                        >
-                          <Input.Password data-testid="change-password-confirm-input" placeholder="请输入确认密码" autoComplete="new-password" />
-                        </Form.Item>
-                      </Form>
-                    </Modal>
+                      submitting={changePasswordSubmitting}
+                      onClose={() => setChangePasswordOpen(false)}
+                      onSubmit={submitChangePassword}
+                    />
                   </div>
                 </Content>
               </Layout>
