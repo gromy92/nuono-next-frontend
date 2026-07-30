@@ -18,8 +18,9 @@ export function ActionCell({ analysisProject, isInAnalysis, record, recollecting
   const canAddToAnalysis = record.status === 'success' && !isInAnalysis
 
   return (
-    <Space className="manual-selection-row-actions" direction="vertical" size={4}>
+    <Space className="manual-selection-row-actions" size={4}>
       <Button
+        className="manual-selection-row-action-detail"
         size="small"
         type="text"
         icon={<FileSearchOutlined />}
@@ -30,6 +31,7 @@ export function ActionCell({ analysisProject, isInAnalysis, record, recollecting
         详情
       </Button>
       <Button
+        className="manual-selection-row-action-analysis"
         size="small"
         type={canAddToAnalysis ? 'primary' : 'default'}
         icon={<BarChartOutlined />}
@@ -42,6 +44,7 @@ export function ActionCell({ analysisProject, isInAnalysis, record, recollecting
         {isInAnalysis ? '已入组' : '加入组'}
       </Button>
       <Button
+        className="manual-selection-row-action-recollect"
         size="small"
         icon={<ReloadOutlined />}
         block
@@ -50,7 +53,7 @@ export function ActionCell({ analysisProject, isInAnalysis, record, recollecting
         disabled={!manualSelectionCollectionUrl(record)}
         onClick={() => onRecollect(record)}
       >
-        重新采集
+        重采
       </Button>
     </Space>
   )

@@ -1,4 +1,6 @@
-import { Button, ConfigProvider, Layout, Result } from 'antd';
+import { Button, ConfigProvider, Layout } from 'antd';
+import { NUONO_PRIMARY } from '../../shared/themePalette';
+import { SystemStatePanel } from '../../shared/system-state/SystemStatePanel';
 import type { AuthSession } from '../auth/session';
 import { RequirementDetailPage } from './components/detail/RequirementDetailPage';
 import { RequirementListPage } from './components/RequirementListPage';
@@ -80,11 +82,11 @@ export function ProcurementRequirementConfirmationPage({
           />
         )
         : (
-          <Result
-            status="404"
+          <SystemStatePanel
+            variant="not-found"
             title="当前采购需求不存在"
-            subTitle="请返回列表重新选择。"
-            extra={<Button type="primary" onClick={() => navigateRequirementRoute({ page: 'list' })}>回到列表页</Button>}
+            description="这条采购需求可能已被移除或地址已经失效，请返回列表重新选择。"
+            actions={<Button type="primary" onClick={() => navigateRequirementRoute({ page: 'list' })}>回到列表页</Button>}
           />
         );
 
@@ -112,7 +114,7 @@ export function ProcurementRequirementConfirmationPage({
     <ConfigProvider
       theme={{
         token: {
-          colorPrimary: '#0f766e',
+          colorPrimary: NUONO_PRIMARY,
           colorBgLayout: '#f3f7f4',
           colorBgContainer: '#ffffff',
           borderRadius: 16,

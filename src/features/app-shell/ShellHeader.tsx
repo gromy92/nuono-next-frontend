@@ -1,6 +1,7 @@
 import { DownOutlined } from '@ant-design/icons';
 import { Button, Dropdown, Layout, Segmented, Space, Tag, Typography } from 'antd';
 import type { MenuProps } from 'antd';
+import { NUONO_PRIMARY } from '../../shared/themePalette';
 import { GlobalStoreSwitch } from '../auth/GlobalStoreSwitch';
 import type { AuthRoleView, AuthSession } from '../auth/session';
 import {
@@ -73,7 +74,7 @@ export function ShellHeader({
           >
             <Tag
               bordered={false}
-              color={shellRoleColorMap[roleName] || '#7c5cff'}
+              color={shellRoleColorMap[roleName] || NUONO_PRIMARY}
               style={shellHeaderRoleTagStyle}
             >
               {shellRoleAvatarText(session)}

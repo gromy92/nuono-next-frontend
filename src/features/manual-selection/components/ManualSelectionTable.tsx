@@ -31,7 +31,7 @@ export function ManualSelectionTable(props: ManualSelectionTableProps) {
     <Table
       data-testid="manual-selection-table"
       rowKey="id"
-      size="middle"
+      size="small"
       className="manual-selection-collection-table"
       tableLayout="fixed"
       loading={loading}
@@ -49,10 +49,11 @@ export function ManualSelectionTable(props: ManualSelectionTableProps) {
               : '采集成功后才能加入组'
         })
       }}
-      scroll={{ x: 1248 }}
+      scroll={{ x: 1216 }}
       locale={{ emptyText: '暂无人工选品采集记录' }}
       pagination={{
         pageSize: 50,
+        size: 'small',
         showSizeChanger: false,
         showTotal: (total) => `共 ${total} 条`
       }}

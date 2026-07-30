@@ -27,6 +27,7 @@ function AppShellRuntimeContent({
 }) {
   const {
     activeMenuKey,
+    routeNotFound,
     setActiveMenuKey,
     setCurrentPathname,
     session,
@@ -133,6 +134,7 @@ function AppShellRuntimeContent({
         logoutConfirmOpen={logoutConfirmOpen}
         noMenuPermission={!usingProcurementRequirementDemoSession && !sessionAllowedMenuKeys.length}
         openedWorkspaceTabKeys={openedWorkspaceTabKeys}
+        routeNotFound={routeNotFound}
         setChangePasswordOpen={setChangePasswordOpen}
         setLoginError={setLoginError}
         setLogoutConfirmOpen={setLogoutConfirmOpen}

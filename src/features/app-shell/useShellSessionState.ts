@@ -32,6 +32,7 @@ export function useShellSessionState() {
 
   const shouldRenderProcurementRequirementConfirmation =
     isProcurementRequirementConfirmationPath(currentPathname);
+  const routeNotFound = isWorkspaceRouteNotFound(currentPathname);
   const usingProcurementRequirementDemoSession = shouldRenderProcurementRequirementConfirmation && !session;
   const shellSession = session ?? (usingProcurementRequirementDemoSession ? PROCUREMENT_REQUIREMENT_DEMO_SESSION : null);
   const sessionAllowedMenuKeys = useMemo(
@@ -62,6 +63,7 @@ export function useShellSessionState() {
 
   return {
     activeMenuKey,
+    routeNotFound,
     setActiveMenuKey,
     setCurrentPathname,
     session,
@@ -190,7 +192,15 @@ export function useShellSessionEffects({
       return;
     }
 
-    const requestedMenuKey = resolveWorkspaceMenuKeyFromLocation(currentAppPathname());
+    const currentPath = currentAppPathname();
+    const requestedMenuKey = resolveWorkspaceMenuKeyFromLocation(currentPath);
+    if (isWorkspaceRouteNotFound(currentPath)) {
+      const landingMenuKey = resolveSessionLandingMenuKey(session, sessionAllowedMenuKeys, null);
+      if (landingMenuKey && landingMenuKey !== activeMenuKey) {
+        setActiveMenuKey(landingMenuKey);
+      }
+      return;
+    }
     const effectiveMenuKey = requestedMenuKey ?? activeMenuKey;
     if (sessionAllowedMenuKeySet.has(effectiveMenuKey)) {
       if (requestedMenuKey) {
@@ -217,4 +227,17 @@ export function useShellSessionEffects({
     window.history.replaceState({}, '', withCurrentWorkspaceDevQuery(resolveWorkspacePathForMenuKey(nextMenuKey)));
     window.dispatchEvent(new PopStateEvent('popstate'));
   }, [activeMenuKey, session, sessionAllowedMenuKeySet, sessionAllowedMenuKeys, setActiveMenuKey]);
+}
+
+export function isWorkspaceRouteNotFound(pathname: string) {
+  const normalizedPath = pathname.replace(/\/+$/, '') || '/';
+  if (
+    normalizedPath === '/'
+    || normalizedPath === '/login'
+    || normalizedPath.startsWith('/login/')
+    || isProcurementRequirementConfirmationPath(normalizedPath)
+  ) {
+    return false;
+  }
+  return resolveWorkspaceMenuKeyFromLocation(normalizedPath) === null;
 }

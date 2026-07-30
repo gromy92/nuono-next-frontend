@@ -21,14 +21,14 @@ export function ManualSelectionToolbar(props: ManualSelectionToolbarProps) {
               data-testid="manual-selection-channel-filter"
               placeholder="三方渠道"
               options={MANUAL_SELECTION_CHANNEL_OPTIONS}
-              style={{ width: 138 }}
+              style={{ width: 112 }}
             />
           </Form.Item>
           <Form.Item name="productTitleEn" style={{ marginBottom: 0 }}>
-            <Input placeholder="英文名" style={{ width: 210 }} />
+            <Input allowClear placeholder="英文名" style={{ width: 158 }} />
           </Form.Item>
           <Form.Item name="productTitleCn" style={{ marginBottom: 0 }}>
-            <Input placeholder="中文名" style={{ width: 190 }} />
+            <Input allowClear placeholder="中文名" style={{ width: 148 }} />
           </Form.Item>
           <Form.Item name="collectStatus" style={{ marginBottom: 0 }}>
             <Select
@@ -36,7 +36,7 @@ export function ManualSelectionToolbar(props: ManualSelectionToolbarProps) {
               data-testid="manual-selection-status-filter"
               placeholder="采集状态"
               options={MANUAL_SELECTION_STATUS_OPTIONS}
-              style={{ width: 138 }}
+              style={{ width: 112 }}
             />
           </Form.Item>
           <Form.Item name="collectionSource" style={{ marginBottom: 0 }}>
@@ -45,7 +45,7 @@ export function ManualSelectionToolbar(props: ManualSelectionToolbarProps) {
               data-testid="manual-selection-collection-source-filter"
               placeholder="采集来源"
               options={MANUAL_SELECTION_COLLECTION_SOURCE_OPTIONS}
-              style={{ width: 118 }}
+              style={{ width: 106 }}
             />
           </Form.Item>
           <Form.Item name="analysisLinkedStatus" style={{ marginBottom: 0 }}>
@@ -54,14 +54,14 @@ export function ManualSelectionToolbar(props: ManualSelectionToolbarProps) {
               data-testid="manual-selection-linked-filter"
               placeholder="组状态"
               options={MANUAL_SELECTION_ANALYSIS_LINKED_OPTIONS}
-              style={{ width: 118 }}
+              style={{ width: 102 }}
             />
           </Form.Item>
           <Form.Item name="projectName" style={{ marginBottom: 0 }}>
-            <Input allowClear placeholder="组名" style={{ width: 150 }} />
+            <Input allowClear placeholder="组名" style={{ width: 126 }} />
           </Form.Item>
           <Form.Item style={{ marginBottom: 0 }}>
-            <Button htmlType="submit" type="primary" ghost icon={<SearchOutlined />}>
+            <Button className="manual-selection-action-search" htmlType="submit" type="primary" icon={<SearchOutlined />}>
               搜索
             </Button>
           </Form.Item>
@@ -74,6 +74,7 @@ export function ManualSelectionToolbar(props: ManualSelectionToolbarProps) {
 
         <Space.Compact className="manual-selection-toolbar-actions">
           <Button
+            className="manual-selection-action-analysis"
             data-testid="manual-selection-batch-analysis-button"
             icon={<BarChartOutlined />}
             disabled={!selectedCount}
@@ -82,10 +83,10 @@ export function ManualSelectionToolbar(props: ManualSelectionToolbarProps) {
           >
             {selectedCount ? `批量加入组 (${selectedCount})` : '批量加入组'}
           </Button>
-          <Button data-testid="manual-selection-new-button" type="primary" ghost icon={<PlusOutlined />} onClick={onOpenNewCollection}>
+          <Button className="manual-selection-action-create" data-testid="manual-selection-new-button" type="primary" icon={<PlusOutlined />} onClick={onOpenNewCollection}>
             新建采集
           </Button>
-          <Button data-testid="manual-selection-refresh-button" icon={<ReloadOutlined />} loading={loading} onClick={onRefresh} />
+          <Button className="manual-selection-action-refresh" data-testid="manual-selection-refresh-button" icon={<ReloadOutlined />} loading={loading} title="刷新列表" aria-label="刷新列表" onClick={onRefresh} />
         </Space.Compact>
       </div>
     </div>

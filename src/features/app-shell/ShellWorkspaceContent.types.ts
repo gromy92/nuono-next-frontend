@@ -9,4 +9,5 @@ export type ShellWorkspaceContentProps = ShellWorkspaceRenderContext & {
   activeMenuKey: AppMenuKey
   noMenuPermission: boolean
   openedWorkspaceTabKeys: AppMenuKey[]
+  routeNotFound: boolean
 }

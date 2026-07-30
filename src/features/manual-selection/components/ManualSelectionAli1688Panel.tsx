@@ -37,22 +37,22 @@ export function ManualSelectionAli1688InlineStatus({ record }: { record: Product
   const view = buildManualSelectionAli1688View(record)
   const meta = ALI_1688_STATUS_META[view.status]
   return (
-    <Space direction="vertical" size={4} style={{ width: '100%' }}>
-      <Space wrap size={[6, 4]}>
+    <div className="manual-selection-ali1688-inline">
+      <Space wrap size={[4, 3]} className="manual-selection-ali1688-inline-status">
         <Tag color={meta.color}>{meta.label}</Tag>
         {view.searchMode ? <Tag color="blue">{view.searchMode}</Tag> : null}
         {view.progressPercent != null ? <Tag>{view.progressPercent}%</Tag> : null}
       </Space>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-        <MiniMetric label="候选" value={String(view.candidateCount ?? 0)} />
-        <MiniMetric label="推荐" value={String(view.recommendedCount ?? 0)} />
+      <div className="manual-selection-ali1688-inline-metrics">
+        <span>候选 <strong>{view.candidateCount ?? 0}</strong></span>
+        <span>推荐 <strong>{view.recommendedCount ?? 0}</strong></span>
       </div>
       {view.message ? (
-        <Text type={view.status === 'failed' ? 'danger' : 'secondary'} style={{ fontSize: 12 }}>
+        <Text className="manual-selection-ali1688-inline-message" type={view.status === 'failed' ? 'danger' : 'secondary'}>
           {view.message}
         </Text>
       ) : null}
-    </Space>
+    </div>
   )
 }
 
@@ -124,15 +124,6 @@ export function ManualSelectionAli1688DetailPanel({ record }: { record: ProductS
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无 1688 候选明细" />
         )}
       </div>
-    </div>
-  )
-}
-
-function MiniMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ borderRadius: 6, background: '#f8fafc', padding: '4px 6px' }}>
-      <Text type="secondary" style={{ display: 'block', fontSize: 11 }}>{label}</Text>
-      <Text strong style={{ fontSize: 13 }}>{value}</Text>
     </div>
   )
 }

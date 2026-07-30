@@ -1,6 +1,7 @@
 import { Alert, Button, Checkbox, Form, Input, Space } from 'antd';
 import type { FormInstance } from 'antd/es/form';
 import { withPublicBasePath } from '../../runtimePaths';
+import { NUONO_PRIMARY } from '../../shared/themePalette';
 
 export type LoginFormValues = {
   accountNo: string;
@@ -8,8 +9,6 @@ export type LoginFormValues = {
 };
 
 export type AuthView = 'login' | 'register' | 'reset-pwd';
-
-export const LEGACY_LOGIN_PRIMARY = '#5E3CDE';
 
 export function normalizeAuthView(pathname: string): AuthView {
   if (pathname === '/login/register') {
@@ -31,15 +30,15 @@ export function navigateAuthView(nextPath: string) {
 
 function HeaderLinks({ authView }: { authView: AuthView }) {
   const linkStyle = {
-    color: LEGACY_LOGIN_PRIMARY,
+    color: NUONO_PRIMARY,
     fontSize: 14,
     fontWeight: 500,
     textDecoration: 'underline'
   } as const;
   if (authView === 'login') {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        <span style={{ color: '#433F4F', fontSize: 14 }}>还没有账号？</span>
+      <div className="nuono-auth-switch-copy" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ color: '#34463b', fontSize: 14 }}>还没有账号？</span>
         <a
           href={withPublicBasePath('/login/register')}
           onClick={(event) => {
@@ -56,8 +55,8 @@ function HeaderLinks({ authView }: { authView: AuthView }) {
 
   const prompt = authView === 'reset-pwd' ? '想起密码了？' : '已有账号？';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-      <span style={{ color: '#433F4F', fontSize: 14 }}>{prompt}</span>
+    <div className="nuono-auth-switch-copy" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <span style={{ color: '#34463b', fontSize: 14 }}>{prompt}</span>
       <a
         href={withPublicBasePath('/login')}
         onClick={(event) => {
@@ -75,8 +74,8 @@ function HeaderLinks({ authView }: { authView: AuthView }) {
 export function ReplicaAuthHeader({ authView }: { authView: AuthView }) {
   const title = authView === 'login' ? '欢迎登陆' : authView === 'reset-pwd' ? '重置密码' : '欢迎注册';
   return (
-    <div>
-      <div style={{ color: '#433F4F', fontSize: 24, fontWeight: 'bold', marginBottom: 4 }}>{title}</div>
+    <div className="nuono-auth-heading">
+      <div style={{ color: '#26352d', fontSize: 24, fontWeight: 'bold', marginBottom: 4 }}>{title}</div>
       <HeaderLinks authView={authView} />
     </div>
   );
@@ -96,8 +95,9 @@ export function ReplicaLoginContent({
   onSubmit: () => void;
 }) {
   return (
-    <div style={{ marginTop: 100 }}>
+    <div className="nuono-auth-form-body nuono-auth-login-body" style={{ marginTop: 100 }}>
       <Form
+        className="nuono-auth-form"
         data-testid="login-form"
         form={form}
         labelCol={{ span: 4 }}
@@ -123,7 +123,7 @@ export function ReplicaLoginContent({
               event.preventDefault();
               navigateAuthView('/login/reset-pwd');
             }}
-            style={{ color: LEGACY_LOGIN_PRIMARY, fontSize: 14, fontWeight: 500 }}
+            style={{ color: NUONO_PRIMARY, fontSize: 14, fontWeight: 500 }}
           >
             忘记密码？
           </a>
@@ -140,7 +140,7 @@ export function ReplicaLoginContent({
 
 export function ReplicaRegisterContent() {
   return (
-    <Form labelCol={{ span: 4 }} style={{ marginTop: 12 }}>
+    <Form className="nuono-auth-form nuono-auth-register-form" labelCol={{ span: 4 }} style={{ marginTop: 12 }}>
       <Form.Item label="用户名"><Input placeholder="请输入用户名" /></Form.Item>
       <Form.Item label="手机号"><Input placeholder="请输入手机号" /></Form.Item>
       <Form.Item label="密码"><Input.Password placeholder="请输入密码" /></Form.Item>
@@ -155,8 +155,8 @@ export function ReplicaRegisterContent() {
         <Button block shape="round" size="large" type="primary" disabled>注册</Button>
         <Checkbox>
           勾选代表同意
-          <span style={{ color: LEGACY_LOGIN_PRIMARY, marginInline: 4 }}>《隐私协议》</span>和
-          <span style={{ color: LEGACY_LOGIN_PRIMARY, marginInlineStart: 4 }}>《服务协议》</span>
+          <span style={{ color: NUONO_PRIMARY, marginInline: 4 }}>《隐私协议》</span>和
+          <span style={{ color: NUONO_PRIMARY, marginInlineStart: 4 }}>《服务协议》</span>
         </Checkbox>
       </Space>
     </Form>
@@ -165,7 +165,7 @@ export function ReplicaRegisterContent() {
 
 export function ReplicaResetPwdContent() {
   return (
-    <Form labelCol={{ span: 4 }} style={{ marginTop: 60 }}>
+    <Form className="nuono-auth-form nuono-auth-reset-form" labelCol={{ span: 4 }} style={{ marginTop: 60 }}>
       <Form.Item label="手机号"><Input placeholder="请输入手机号" /></Form.Item>
       <Form.Item label="验证码">
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

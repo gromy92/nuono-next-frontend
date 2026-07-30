@@ -68,7 +68,7 @@ export function DataStatus({
   return (
     <div
       data-testid="sales-data-status"
-      style={{ borderLeft: '3px solid #5e3cde', background: '#f8fafc', padding: '10px 12px', borderRadius: 6 }}
+      style={{ borderLeft: '3px solid #168553', background: '#f8fafc', padding: '10px 12px', borderRadius: 6 }}
     >
       <Space wrap>
         <Text strong>数据状态：</Text>

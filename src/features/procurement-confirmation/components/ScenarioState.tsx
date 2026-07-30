@@ -1,4 +1,5 @@
-import { Button, Card, Empty, Progress, Result, Space, Typography } from 'antd';
+import { Button, Card, Progress, Space, Typography } from 'antd';
+import { SystemStatePanel } from '../../../shared/system-state/SystemStatePanel';
 import { navigateRequirementRoute, type RequirementRoute } from '../route';
 import type { PreviewScenario } from '../types';
 
@@ -21,7 +22,7 @@ export function ScenarioState({
 }: ScenarioStateProps) {
   if (scenario === 'loading') {
     return (
-      <Card bordered={false} style={{ borderRadius: 22, padding: 36, minHeight: 520 }}>
+      <Card variant="borderless" style={{ borderRadius: 22, padding: 36, minHeight: 520 }}>
         <Space direction="vertical" size={18} style={{ width: '100%', alignItems: 'center', justifyContent: 'center', minHeight: 420 }}>
           <Progress type="circle" percent={62} strokeColor="#0f766e" />
           <Title level={3} style={{ margin: 0 }}>
@@ -37,19 +38,22 @@ export function ScenarioState({
 
   if (scenario === 'empty') {
     return (
-      <Card bordered={false} style={{ borderRadius: 22, padding: 24, minHeight: 520 }}>
-        <Empty description="当前还没有待确认采购需求" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-      </Card>
+      <SystemStatePanel
+        compact
+        variant="empty"
+        title="当前还没有待确认采购需求"
+        description="新的采购需求进入系统后，会自动显示在这里，无需手动刷新。"
+      />
     );
   }
 
   if (scenario === 'error') {
     return (
-      <Result
-        status="error"
+      <SystemStatePanel
+        variant="error"
         title="采购需求确认加载失败"
-        subTitle={lastErrorMessage || '请重试或返回列表。'}
-        extra={[
+        description={lastErrorMessage || '请重试或返回列表。'}
+        actions={[
           <Button
             key="retry"
             type="primary"
@@ -73,11 +77,11 @@ export function ScenarioState({
 
   if (scenario === 'forbidden') {
     return (
-      <Result
-        status="403"
+      <SystemStatePanel
+        variant="forbidden"
         title="当前角色没有访问权限"
-        subTitle={lastErrorMessage || '当前角色没有访问权限。'}
-        extra={
+        description={lastErrorMessage || '当前角色没有访问权限。'}
+        actions={
           <Space>
             <Button
               type="primary"
