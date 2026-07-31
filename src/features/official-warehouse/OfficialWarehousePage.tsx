@@ -38,7 +38,8 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     loadShippingBatches, handleShippingBatchSearch, shippingBatchOptions,
     selectedAlreadyAppointedBatches, candidateEmptyDescription, loadCandidates,
     updateCandidateSelection, clearCandidateSelection, submitCreateAsn,
-    confirmCreateAsn
+    confirmCreateAsn, batchSummary, batchSummaryLoading, batchSummaryError,
+    reloadBatchSummary, batchSummaryBlocked
   } = useOfficialWarehouseCreateAsn({
     storeCode,
     siteCode,
@@ -180,6 +181,11 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         shippingBatchLoading={shippingBatchLoading}
         shippingBatches={shippingBatches}
         selectedShippingBatchIds={selectedShippingBatchIds}
+        batchSummary={batchSummary}
+        batchSummaryLoading={batchSummaryLoading}
+        batchSummaryError={batchSummaryError}
+        reloadBatchSummary={reloadBatchSummary}
+        batchSummaryBlocked={batchSummaryBlocked}
         setSelectedShippingBatchIds={setSelectedShippingBatchIds}
         shippingBatchOptions={shippingBatchOptions}
         handleShippingBatchSearch={handleShippingBatchSearch}

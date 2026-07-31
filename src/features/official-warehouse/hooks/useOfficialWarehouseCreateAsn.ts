@@ -23,6 +23,7 @@ import type {
   CreateAsnSubmitFeedback
 } from '../officialWarehouseFormModel'
 import { useShippingBatchSearch } from '../useShippingBatchSearch'
+import { useOfficialWarehouseBatchSummary } from './useOfficialWarehouseBatchSummary'
 
 export function useOfficialWarehouseCreateAsn({
   storeCode,
@@ -60,6 +61,19 @@ export function useOfficialWarehouseCreateAsn({
     setShippingBatches,
     setSelectedShippingBatchIds
   })
+  const {
+    batchSummary,
+    batchSummaryLoading,
+    batchSummaryError,
+    reloadBatchSummary
+  } = useOfficialWarehouseBatchSummary({
+    enabled: createOpen,
+    storeCode,
+    siteCode,
+    shippingBatchIds: selectedShippingBatchIds
+  })
+  const batchSummaryBlocked = selectedShippingBatchIds.length > 0 &&
+    Boolean(batchSummaryLoading || batchSummaryError || !batchSummary)
 
 
   const shippingBatchOptions = useMemo(
@@ -160,6 +174,10 @@ export function useOfficialWarehouseCreateAsn({
 
 
   async function submitCreateAsn() {
+    if (batchSummaryBlocked) {
+      message.warning('请等待物流批次商品汇总加载成功后再创建 ASN')
+      return
+    }
     const selectedRows = selectedCandidateKeys
       .map((key) => selectedCandidateByKey[String(key)])
       .filter((row): row is OfficialWarehouseProductCandidate => Boolean(row))
@@ -265,6 +283,7 @@ export function useOfficialWarehouseCreateAsn({
     loadShippingBatches, handleShippingBatchSearch, shippingBatchOptions,
     selectedAlreadyAppointedBatches, candidateEmptyDescription, loadCandidates,
     updateCandidateSelection, clearCandidateSelection, submitCreateAsn,
-    confirmCreateAsn
+    confirmCreateAsn, batchSummary, batchSummaryLoading, batchSummaryError,
+    reloadBatchSummary, batchSummaryBlocked
   }
 }

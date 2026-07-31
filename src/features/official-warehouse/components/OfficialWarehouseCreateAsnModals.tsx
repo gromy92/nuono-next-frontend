@@ -3,9 +3,11 @@ import { Alert, Button, Empty, Input, InputNumber, Modal, Select, Space, Table, 
 import type { ColumnsType } from 'antd/es/table'
 import type { Dispatch, Key, SetStateAction } from 'react'
 import type {
+  OfficialWarehouseBatchProductSummary,
   OfficialWarehouseProductCandidate,
   OfficialWarehouseShippingBatchCandidate
 } from '../api'
+import { OfficialWarehouseBatchSummaryPanel } from './OfficialWarehouseBatchSummaryPanel'
 import { ShippingBatchLoadAlert } from '../ShippingBatchLoadAlert'
 import {
   displayPsku,
@@ -36,6 +38,11 @@ type Props = {
   shippingBatchLoading: boolean
   shippingBatches: OfficialWarehouseShippingBatchCandidate[]
   selectedShippingBatchIds: string[]
+  batchSummary?: OfficialWarehouseBatchProductSummary
+  batchSummaryLoading: boolean
+  batchSummaryError?: string
+  reloadBatchSummary: () => Promise<void>
+  batchSummaryBlocked: boolean
   setSelectedShippingBatchIds: Dispatch<SetStateAction<string[]>>
   shippingBatchOptions: Array<{ label: string; value: string }>
   handleShippingBatchSearch: (value: string) => void
@@ -66,6 +73,7 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
     selectedAlreadyAppointedBatches, shippingBatchLoadError, loadShippingBatches,
     shippingBatchKeyword, shippingBatchLoading, shippingBatches,
     selectedShippingBatchIds, setSelectedShippingBatchIds, shippingBatchOptions,
+    batchSummary, batchSummaryLoading, batchSummaryError, reloadBatchSummary, batchSummaryBlocked,
     handleShippingBatchSearch, clearCandidateSelection, setQuantityByCandidateKey,
     loadCandidates, candidateKeyword, setCandidateKeyword, candidateLoading,
     selectedCandidateKeys, candidateColumns, candidates, updateCandidateSelection,
@@ -86,7 +94,7 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
         onOk={() => void submitCreateAsn()}
         confirmLoading={submitting}
         okText="创建 ASN"
-        okButtonProps={{ disabled: Boolean(createSubmitFeedback?.problem?.partialSuccess) }}
+        okButtonProps={{ disabled: batchSummaryBlocked || Boolean(createSubmitFeedback?.problem?.partialSuccess) }}
         destroyOnClose
       >
         <div className="official-warehouse-modal-body">
@@ -145,6 +153,7 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
               maxTagCount="responsive"
             />
           </div>
+          <OfficialWarehouseBatchSummaryPanel selectedBatchCount={selectedShippingBatchIds.length} summary={batchSummary} loading={batchSummaryLoading} error={batchSummaryError} onRetry={() => void reloadBatchSummary()} />
           <div className="official-warehouse-toolbar official-warehouse-modal-toolbar">
             <div className="official-warehouse-toolbar-left">
               <Input.TextArea
