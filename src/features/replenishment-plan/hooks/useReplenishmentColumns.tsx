@@ -25,7 +25,7 @@ export function useReplenishmentColumns(state: ReturnType<typeof useReplenishmen
   } = state
   function activeStateLabel(item: ReplenishmentPlanItem) {
     if (resolvedProductActiveState(item) === 'INACTIVE') return '已停用'
-    if (resolvedProductActiveState(item) === 'UNKNOWN') return '自动核实中'
+    if (resolvedProductActiveState(item) === 'UNKNOWN') return '列表状态缺失'
     return '参与预测'
   }
 

@@ -35,7 +35,7 @@ assert.match(tabSource, /if \(suggestionFilter === ['"]needed['"]\)/, 'needed fi
 assert.match(tabSource, /if \(suggestionFilter === ['"]all['"]\)[\s\S]*return true/, 'all filter must show every searched row')
 assert.match(tabSource, /resolvedProductActiveState\(item\) !== ['"]ACTIVE['"] \? renderEligibilityNotice/, 'inactive and unresolved products must not present forecast evidence as calculated')
 assert.match(tabSource, /searchMatchedRows\.filter\(\(item\) => \(item\.activeState \|\| ['"]ACTIVE['"]\) === ['"]ACTIVE['"] && item\.calculationBlocked\)/, 'calculation evidence alert must remain scoped to confirmed active products')
-assert.match(tabSource, /正在自动核实 Noon 在售状态[\s\S]*确认在售后进入销量预测/, 'unknown active state must be described as an automatic resolving workflow')
+assert.match(tabSource, /缺少可识别的 Noon 列表状态[\s\S]*完整商品列表同步[\s\S]*在售商品进入销量预测/, 'unknown active state must be tied to the daily product-list reconciliation workflow')
 assert.match(tabSource, /buildPurchaseDrafts/, 'ReplenishmentPlanTab must build purchase drafts from replenishment suggestions')
 assert.match(tabSource, /const \[openingPurchaseKey,\s*setOpeningPurchaseKey\] = useState<string>\(\)/, 'single-row add must track loading by the clicked product row instead of a global boolean')
 assert.match(tabSource, /purchaseOrdersRevision\?: number/, 'ReplenishmentPlanTab must accept purchase-order revision changes from the parent page')

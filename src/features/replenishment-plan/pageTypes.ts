@@ -11,7 +11,7 @@ export const BLOCKING_WARNING_LABELS: Record<string, string> = {
   fbn_stock_fact_missing: '缺少 FBN 库存',
   forecast_fact_expired: '预测事实已过期',
   inbound_site_unresolved: '在途目的站点无法确认',
-  active_state_unknown: '正在自动核实 Noon 在售状态',
+  active_state_unknown: 'Noon 商品列表未返回可识别的在售状态',
   product_inactive: 'Noon 已停用',
   active_forecast_missing: '在售商品缺少预测'
 }

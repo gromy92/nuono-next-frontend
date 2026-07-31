@@ -125,7 +125,7 @@ export function ReplenishmentPlanWorkbench({ state }: {
               {renderCoverageFilterButton('all', '全部商品', coverage.totalProductCount)}
               {renderCoverageFilterButton('active', '在售商品', coverage.activeProductCount)}
               {renderCoverageFilterButton('inactive', '已停用', coverage.inactiveProductCount)}
-              {renderCoverageFilterButton('unknown', '待核实', coverage.unknownProductCount)}
+              {renderCoverageFilterButton('unknown', '列表状态缺失', coverage.unknownProductCount)}
               <span className="replenishment-plan-forecasted-count">
                 参与预测 <strong>{formatQuantity(coverage.forecastedProductCount)}</strong>
               </span>
@@ -156,8 +156,8 @@ export function ReplenishmentPlanWorkbench({ state }: {
           className="replenishment-plan-active-state-alert"
           type="warning"
           showIcon
-          message={`${coverage.unknownProductCount} 个商品正在自动核实 Noon 在售状态`}
-          description="系统会按店铺、站点和 PSKU 自动续跑；确认在售后进入销量预测，确认停用后退出补货测算。"
+          message={`${coverage.unknownProductCount} 个商品缺少可识别的 Noon 列表状态`}
+          description="后续完整商品列表同步会直接更新状态：在售商品进入销量预测，已从完整列表移除的商品退出补货测算。"
         />
       ) : null}
       {blockedRows.length ? (
