@@ -15,6 +15,7 @@ import type {
   OfficialWarehouseAppointmentAvailability,
   UpsertOfficialWarehouseAppointmentPayload
 } from './officialWarehouseAppointmentTypes'
+import type { OfficialWarehouseBatchProductSummary } from './officialWarehouseBatchSummaryTypes'
 
 type AsnFilters = {
   storeCode?: string
@@ -85,6 +86,19 @@ export async function loadOfficialWarehouseShippingBatches(filters: CandidateFil
   appendParam(params, 'keyword', filters.keyword)
   const response = await apiFetch(`/api/warehouse/official-warehouse/shipping-batches?${params.toString()}`)
   return parseApiResponse<OfficialWarehouseShippingBatchCandidate[]>(response, '读取物流批次失败')
+}
+
+export async function loadOfficialWarehouseBatchProductSummary(
+  filters: Pick<CandidateFilters, 'storeCode' | 'siteCode' | 'shippingBatchIds'>
+) {
+  const params = new URLSearchParams()
+  appendParam(params, 'storeCode', filters.storeCode)
+  appendParam(params, 'siteCode', filters.siteCode)
+  filters.shippingBatchIds?.forEach((id) => appendParam(params, 'shippingBatchIds', id))
+  const response = await apiFetch(
+    `/api/warehouse/official-warehouse/shipping-batches/product-summary?${params.toString()}`
+  )
+  return parseApiResponse<OfficialWarehouseBatchProductSummary>(response, '读取物流批次商品汇总失败')
 }
 
 export async function createOfficialWarehouseAsn(payload: CreateOfficialWarehouseAsnPayload) {
