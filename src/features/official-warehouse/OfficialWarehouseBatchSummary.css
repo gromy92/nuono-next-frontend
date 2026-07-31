@@ -1,0 +1,139 @@
+.official-warehouse-batch-summary .ant-card-head {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.official-warehouse-batch-summary .ant-card-head-title,
+.official-warehouse-batch-summary .ant-card-extra {
+  padding: 8px 0;
+}
+
+.official-warehouse-batch-summary .ant-card-body {
+  padding: 10px 12px 12px;
+}
+
+.official-warehouse-batch-summary-extra {
+  font-size: 12px;
+}
+
+.official-warehouse-batch-summary-content {
+  width: 100%;
+}
+
+.official-warehouse-batch-summary-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.official-warehouse-batch-summary-metric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+
+.official-warehouse-batch-summary-metric.is-emphasized {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.official-warehouse-batch-summary-metric-label {
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.official-warehouse-batch-summary-metric-value {
+  color: #0f172a;
+  font-size: 18px;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.official-warehouse-batch-summary-metric.is-emphasized .official-warehouse-batch-summary-metric-value {
+  color: #1677ff;
+}
+
+.official-warehouse-batch-summary-metric-value span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.official-warehouse-batch-summary-status {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid;
+  border-radius: 7px;
+}
+
+.official-warehouse-batch-summary-status-success {
+  border-color: #b7ebc6;
+  background: #f0faf3;
+  color: #168653;
+}
+
+.official-warehouse-batch-summary-status-info {
+  align-items: flex-start;
+  border-color: #bfdbfe;
+  background: #f2f7ff;
+  color: #2468d4;
+}
+
+.official-warehouse-batch-summary-status-title {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  line-height: 22px;
+}
+
+.official-warehouse-batch-summary-store-list {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.official-warehouse-batch-summary-store {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  line-height: 22px;
+}
+
+.official-warehouse-batch-summary-store-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.official-warehouse-batch-summary-store-quantity {
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .official-warehouse-batch-summary-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .official-warehouse-batch-summary-status-info {
+    flex-direction: column;
+  }
+
+  .official-warehouse-batch-summary-store {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

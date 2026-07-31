@@ -6,9 +6,15 @@ import {
   officialWarehouseError,
   type OfficialWarehouseShippingBatchCandidate
 } from './api'
+import {
+  readOfficialWarehouseShippingBatchCache,
+  SHIPPING_BATCH_CACHE_FRESH_MS,
+  writeOfficialWarehouseShippingBatchCache
+} from './officialWarehouseShippingBatchCache'
 import { loadPreparedOfficialWarehouseShippingBatches } from './productMatchPreparation'
 
 type ShippingBatchSearchOptions = {
+  sessionUserId: string
   storeCode: string
   siteCode: string
   selectedShippingBatchIds: string[]
@@ -18,6 +24,7 @@ type ShippingBatchSearchOptions = {
 
 export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
   const {
+    sessionUserId,
     storeCode,
     siteCode,
     selectedShippingBatchIds,
@@ -29,6 +36,7 @@ export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
   const [shippingBatchLoadError, setShippingBatchLoadError] = useState<string>()
   const searchTimerRef = useRef<number | undefined>(undefined)
   const requestRef = useRef(0)
+  const activeScopeRef = useRef('')
 
   function resetShippingBatchSearch() {
     setShippingBatchKeyword('')
@@ -40,9 +48,39 @@ export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
     }
   }
 
-  async function loadShippingBatches(keywordValue = shippingBatchKeyword, prepare = false) {
+  async function loadShippingBatches(
+    keywordValue = shippingBatchKeyword,
+    prepare = false,
+    forceRefresh = false
+  ) {
     if (!storeCode || !siteCode) {
       message.warning('请选择店铺和站点')
+      return
+    }
+    const normalizedKeyword = keywordValue.trim()
+    const scopeKey = `${sessionUserId.trim()}::${storeCode.trim()}::${siteCode.trim().toUpperCase()}`
+    const scopeChanged = activeScopeRef.current !== scopeKey
+    activeScopeRef.current = scopeKey
+    const cached = normalizedKeyword || prepare
+      ? undefined
+      : readOfficialWarehouseShippingBatchCache(sessionUserId, storeCode, siteCode)
+    if (scopeChanged) {
+      setSelectedShippingBatchIds([])
+      setShippingBatches(cached?.rows ?? [])
+    } else if (cached) {
+      setShippingBatches((current) => {
+        const retained = current.filter((row) => selectedShippingBatchIds.includes(row.id))
+        return Array.from(new Map([...retained, ...cached.rows].map((row) => [row.id, row])).values())
+      })
+    }
+    if (
+      cached &&
+      !forceRefresh &&
+      Date.now() - cached.savedAt <= SHIPPING_BATCH_CACHE_FRESH_MS
+    ) {
+      requestRef.current += 1
+      setShippingBatchLoading(false)
+      setShippingBatchLoadError(undefined)
       return
     }
     const requestId = requestRef.current + 1
@@ -65,6 +103,9 @@ export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
             preparationError: undefined
       }
       if (requestId !== requestRef.current) return
+      if (!normalizedKeyword) {
+        writeOfficialWarehouseShippingBatchCache(sessionUserId, storeCode, siteCode, prepared.rows)
+      }
       setShippingBatches((current) => {
         const retained = prepare ? [] : current.filter((row) => selectedShippingBatchIds.includes(row.id))
         return Array.from(new Map([...retained, ...prepared.rows].map((row) => [row.id, row])).values())

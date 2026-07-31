@@ -27,10 +27,12 @@ import { useShippingBatchSearch } from '../useShippingBatchSearch'
 import { useOfficialWarehouseBatchSummary } from './useOfficialWarehouseBatchSummary'
 
 export function useOfficialWarehouseCreateAsn({
+  sessionUserId,
   storeCode,
   siteCode,
   reloadAll
 }: {
+  sessionUserId: string
   storeCode: string
   siteCode: string
   reloadAll: () => Promise<void>
@@ -56,6 +58,7 @@ export function useOfficialWarehouseCreateAsn({
     handleShippingBatchSearch,
     resetShippingBatchSearch
   } = useShippingBatchSearch({
+    sessionUserId,
     storeCode,
     siteCode,
     selectedShippingBatchIds,
@@ -114,7 +117,7 @@ export function useOfficialWarehouseCreateAsn({
       setSelectedCandidateByKey({})
       setQuantityByCandidateKey({})
       void loadCandidates([], '')
-      void loadShippingBatches('', true)
+      void loadShippingBatches('', false)
     } else {
       resetShippingBatchSearch()
     }

@@ -1,4 +1,5 @@
-import { Alert, Button, Card, Col, List, Row, Skeleton, Space, Statistic, Tag, Typography } from 'antd'
+import { CheckCircleFilled, InfoCircleFilled } from '@ant-design/icons'
+import { Alert, Button, Card, List, Skeleton, Space, Tag, Typography } from 'antd'
 import type {
   OfficialWarehouseBatchProductIssue,
   OfficialWarehouseBatchProductSummary
@@ -24,8 +25,8 @@ export function OfficialWarehouseBatchSummaryPanel({
   if (!selectedBatchCount) return null
   if (loading) {
     return (
-      <Card size="small" title="所选物流批次商品汇总">
-        <Skeleton active paragraph={{ rows: 2 }} />
+      <Card className="official-warehouse-batch-summary" size="small" title="所选物流批次商品汇总">
+        <Skeleton active paragraph={{ rows: 1 }} />
       </Card>
     )
   }
@@ -52,35 +53,34 @@ export function OfficialWarehouseBatchSummaryPanel({
 
   return (
     <Card
+      className="official-warehouse-batch-summary"
       size="small"
       title="所选物流批次商品汇总"
-      extra={<Text type="secondary">物流单原始 {number(summary.totalLineCount)} 行，重复 SKU 已合并</Text>}
+      extra={(
+        <Text className="official-warehouse-batch-summary-extra" type="secondary">
+          物流单原始 {number(summary.totalLineCount)} 行，重复 SKU 已合并
+        </Text>
+      )}
     >
-      <Space direction="vertical" size={12} style={{ width: '100%' }}>
-        <Row gutter={[12, 12]}>
-          <Col xs={24} md={8}>
-            <Statistic
-              title="整票商品"
-              value={summary.totalQuantity}
-              suffix={`件 / ${number(summary.totalSkuCount)} SKU`}
-            />
-          </Col>
-          <Col xs={24} md={8}>
-            <Statistic
-              title={`当前店铺 · ${current.storeName || current.storeCode}`}
-              value={current.totalQuantity}
-              suffix={`件 / ${number(current.totalSkuCount)} SKU`}
-            />
-          </Col>
-          <Col xs={24} md={8}>
-            <Statistic
-              title="当前店铺可约"
-              value={current.bookableQuantity || 0}
-              valueStyle={{ color: '#1677ff' }}
-              suffix={`件 / ${number(current.bookableSkuCount || 0)} SKU`}
-            />
-          </Col>
-        </Row>
+      <Space className="official-warehouse-batch-summary-content" direction="vertical" size={8}>
+        <div className="official-warehouse-batch-summary-metrics">
+          <SummaryMetric
+            label="整票商品"
+            quantity={summary.totalQuantity}
+            skuCount={summary.totalSkuCount}
+          />
+          <SummaryMetric
+            label={`当前店铺 · ${current.storeName || current.storeCode}`}
+            quantity={current.totalQuantity}
+            skuCount={current.totalSkuCount}
+          />
+          <SummaryMetric
+            label="当前店铺可约"
+            quantity={current.bookableQuantity || 0}
+            skuCount={current.bookableSkuCount || 0}
+            emphasized
+          />
+        </div>
 
         {current.missingDimensionItems.length ? (
           <Alert
@@ -90,7 +90,10 @@ export function OfficialWarehouseBatchSummaryPanel({
             description={<IssueList items={current.missingDimensionItems} />}
           />
         ) : (
-          <Alert type="success" showIcon message="当前店铺没有缺尺寸商品" />
+          <div className="official-warehouse-batch-summary-status official-warehouse-batch-summary-status-success">
+            <CheckCircleFilled />
+            <Text strong>当前店铺没有缺尺寸商品</Text>
+          </div>
         )}
 
         {otherBlockedItems.length ? (
@@ -103,27 +106,29 @@ export function OfficialWarehouseBatchSummaryPanel({
         ) : null}
 
         {summary.otherStores.length ? (
-          <Alert
-            type="info"
-            showIcon
-            message={`别的店铺：${summary.otherStores.length} 家`}
-            description={(
-              <List
-                size="small"
-                dataSource={summary.otherStores}
-                renderItem={(store) => (
-                  <List.Item>
-                    <Text>
-                      {store.storeName || store.storeCode}（{store.storeCode} / {store.siteCode}）：
-                      {number(store.totalQuantity)} 件 / {number(store.totalSkuCount)} SKU
-                    </Text>
-                  </List.Item>
-                )}
-              />
-            )}
-          />
+          <div className="official-warehouse-batch-summary-status official-warehouse-batch-summary-status-info">
+            <div className="official-warehouse-batch-summary-status-title">
+              <InfoCircleFilled />
+              <Text strong>别的店铺：{summary.otherStores.length} 家</Text>
+            </div>
+            <div className="official-warehouse-batch-summary-store-list">
+              {summary.otherStores.map((store) => (
+                <div className="official-warehouse-batch-summary-store" key={`${store.storeCode}:${store.siteCode}`}>
+                  <Text className="official-warehouse-batch-summary-store-name">
+                    {store.storeName || store.storeCode}（{store.storeCode} / {store.siteCode}）
+                  </Text>
+                  <Text className="official-warehouse-batch-summary-store-quantity" type="secondary">
+                    {number(store.totalQuantity)} 件 / {number(store.totalSkuCount)} SKU
+                  </Text>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : (
-          <Alert type="info" showIcon message="别的有权限店铺没有这票商品" />
+          <div className="official-warehouse-batch-summary-status official-warehouse-batch-summary-status-info">
+            <InfoCircleFilled />
+            <Text strong>别的有权限店铺没有这票商品</Text>
+          </div>
         )}
 
         {summary.unassignedQuantity > 0 ? (
@@ -143,6 +148,27 @@ export function OfficialWarehouseBatchSummaryPanel({
         ) : null}
       </Space>
     </Card>
+  )
+}
+
+function SummaryMetric({
+  label,
+  quantity,
+  skuCount,
+  emphasized = false
+}: {
+  label: string
+  quantity: number
+  skuCount: number
+  emphasized?: boolean
+}) {
+  return (
+    <div className={`official-warehouse-batch-summary-metric${emphasized ? ' is-emphasized' : ''}`}>
+      <Text className="official-warehouse-batch-summary-metric-label" type="secondary">{label}</Text>
+      <Text className="official-warehouse-batch-summary-metric-value" strong>
+        {number(quantity)} 件 <span>/ {number(skuCount)} SKU</span>
+      </Text>
+    </div>
   )
 }
 

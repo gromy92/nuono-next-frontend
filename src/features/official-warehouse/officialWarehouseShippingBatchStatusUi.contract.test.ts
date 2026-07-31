@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import {
   officialWarehouseApiContractSource,
-  officialWarehousePageContractSource
+  officialWarehousePageContractSource,
+  officialWarehousePageStyleContractSource
 } from './officialWarehouseContractSources'
 
 const currentDir = dirname(fileURLToPath(import.meta.url))
@@ -13,6 +14,10 @@ const apiSource = officialWarehouseApiContractSource
 const preparationSource = readFileSync(join(currentDir, 'productMatchPreparation.ts'), 'utf8')
 const searchHookSource = readFileSync(join(currentDir, 'useShippingBatchSearch.ts'), 'utf8')
 const loadAlertSource = readFileSync(join(currentDir, 'ShippingBatchLoadAlert.tsx'), 'utf8')
+const createHookSource = pageSource.slice(
+  pageSource.indexOf('export function useOfficialWarehouseCreateAsn'),
+  pageSource.indexOf('export function useOfficialWarehouseSpecEditor')
+)
 
 const optionTextSource = pageSource.slice(
   pageSource.indexOf('function shippingBatchOptionText'),
@@ -102,6 +107,31 @@ assert.match(
   searchHookSource,
   /loadOfficialWarehouseShippingBatches\(\{[\s\S]*?keyword: keywordValue/,
   'remote logistics batch search should send the keyword to the shipping-batches API'
+)
+assert.match(
+  createHookSource,
+  /void loadShippingBatches\('', false\)/,
+  'opening the create ASN modal should read landed batches without blocking on product-match preparation'
+)
+assert.doesNotMatch(
+  createHookSource,
+  /void loadShippingBatches\('', true\)/,
+  'opening the create ASN modal must not run product-match preparation automatically'
+)
+assert.match(
+  searchHookSource,
+  /readOfficialWarehouseShippingBatchCache[\s\S]*?writeOfficialWarehouseShippingBatchCache/,
+  'shipping batch search should reuse and refresh a store/user/site-scoped successful result'
+)
+assert.match(
+  pageSource,
+  /刷新物流匹配/,
+  'product-match preparation should remain available as an explicit refresh action'
+)
+assert.match(
+  officialWarehousePageStyleContractSource,
+  /\.official-warehouse-batch-summary-metrics \{/,
+  'compact batch summary metrics should have a dedicated responsive style'
 )
 assert.match(
   preparationSource,
