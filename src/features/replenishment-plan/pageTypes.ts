@@ -10,7 +10,11 @@ export const BLOCKING_WARNING_LABELS: Record<string, string> = {
   stock_fact_missing: '缺少库存事实',
   fbn_stock_fact_missing: '缺少 FBN 库存',
   forecast_fact_expired: '预测事实已过期',
-  inbound_site_unresolved: '在途目的站点无法确认'
+  inbound_site_unresolved: '在途目的站点无法确认',
+  forecast_missing: '本次运行缺少销量预测',
+  active_state_unknown: '在售状态待核实',
+  product_inactive: 'Noon 已停用',
+  active_forecast_missing: '在售商品缺少预测'
 }
 export type ReplenishmentPlanTabProps = {
   session?: AuthSession | null
@@ -40,6 +44,7 @@ export type PurchaseTransportSource = {
 }
 
 export type SuggestionFilter = 'all' | 'needed' | 'air' | 'sea'
+export type ProductCoverageFilter = 'all' | 'active' | 'inactive' | 'unknown'
 
 export function siteCodeFromStoreCode(storeCode?: string) {
   const normalized = (storeCode || '').toUpperCase()

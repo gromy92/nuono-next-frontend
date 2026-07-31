@@ -4,6 +4,7 @@ import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery
 import { pskuSiteTransportKey, type PurchaseDraftRow } from './purchaseDrafts'
 import type { ReplenishmentPlanItem } from './types'
 import { BATCH_PURCHASE_OPENING_KEY, BLOCKING_WARNING_LABELS, SEA_ETA_UNCERTAIN_AIR_WINDOW_WARNING, type PurchaseDraftLine, type PurchaseTransportSource, type SuggestionFilter } from './pageTypes'
+import type { ProductCoverageFilter } from './pageTypes'
 import { numericQuantity } from './replenishmentFormatting'
 
 function hasAirSuggestion(item: ReplenishmentPlanItem) {
@@ -168,4 +169,19 @@ export function matchesSuggestionFilter(item: ReplenishmentPlanItem, suggestionF
     return hasSeaSuggestion(item)
   }
   return true
+}
+
+export function matchesProductCoverageFilter(
+  item: ReplenishmentPlanItem,
+  coverageFilter: ProductCoverageFilter
+) {
+  const activeState = resolvedProductActiveState(item)
+  if (coverageFilter === 'active') return activeState === 'ACTIVE'
+  if (coverageFilter === 'inactive') return activeState === 'INACTIVE'
+  if (coverageFilter === 'unknown') return activeState === 'UNKNOWN'
+  return true
+}
+
+export function resolvedProductActiveState(item: ReplenishmentPlanItem) {
+  return item.activeState || 'ACTIVE'
 }

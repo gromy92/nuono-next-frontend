@@ -5,7 +5,9 @@ import { ProductBaselineIdentity } from '../../product-baseline'
 import { pskuSiteTransportKey } from '../purchaseDrafts'
 import type { ReplenishmentPlanItem } from '../types'
 import { SEA_ETA_UNCERTAIN_AIR_WINDOW_TOOLTIP } from '../pageTypes'
-import { blockingReasonText, hasSeaEtaRiskWarning, purchaseOpeningKey } from '../replenishmentDomain'
+import {
+  blockingReasonText, hasSeaEtaRiskWarning, purchaseOpeningKey, resolvedProductActiveState
+} from '../replenishmentDomain'
 import {
   formatAdjustedHistoryBuckets, formatDate, formatListingAgeDays, formatMonthDay,
   formatMonthlyStabilityFactor, formatPurchaseTransportSource, formatQuantity,
@@ -21,6 +23,11 @@ export function useReplenishmentColumns(state: ReturnType<typeof useReplenishmen
     planDate, overview, query, setPreviewImage, openPurchaseModal, openingPurchaseKey,
     purchaseTransportQuantities, purchaseTransportSources
   } = state
+  function activeStateLabel(item: ReplenishmentPlanItem) {
+    if (resolvedProductActiveState(item) === 'INACTIVE') return '已停用'
+    if (resolvedProductActiveState(item) === 'UNKNOWN') return '待核实'
+    return '在售'
+  }
   function renderSuggestionTransportTag(item: ReplenishmentPlanItem, transportMode: 'AIR' | 'SEA') {
     const isAir = transportMode === 'AIR'
     const label = isAir ? '空运' : '海运'
@@ -110,6 +117,12 @@ export function useReplenishmentColumns(state: ReturnType<typeof useReplenishmen
                   <div className="replenishment-plan-product-codes">
                     <Text type="secondary" copyable={{ text: item.partnerSku }}>{item.partnerSku}</Text>
                     {item.sku ? <Text type="secondary" copyable={{ text: item.sku }}>{item.sku}</Text> : null}
+                    <Tag color={resolvedProductActiveState(item) === 'ACTIVE'
+                      ? 'green'
+                      : resolvedProductActiveState(item) === 'UNKNOWN' ? 'orange' : 'default'}
+                    >
+                      {activeStateLabel(item)}
+                    </Tag>
                   </div>
                   <div className="replenishment-plan-product-listing">
                     <Text type="secondary" className="replenishment-plan-label">上架</Text>
