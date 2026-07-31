@@ -14,6 +14,7 @@ import {
 import {
   buildAppointmentRunOnceFeedback
 } from '../domain'
+import { officialWarehouseAppointmentRequiresReconciliation } from '../officialWarehouseAppointmentLifecycle'
 import {
   businessErrorText
 } from '../officialWarehouseAsnPresentation'
@@ -128,6 +129,8 @@ export function useOfficialWarehouseAppointmentActions({
   }
 
   function openCorrection(appointment: OfficialWarehouseAppointment) {
+    const reconciliationRequired =
+      officialWarehouseAppointmentRequiresReconciliation(appointment)
     setCorrectionTarget(appointment)
     setCorrectionForm({
       status: appointment.status || 'PENDING',
@@ -136,15 +139,26 @@ export function useOfficialWarehouseAppointmentActions({
         : null,
       appointmentSlotId: appointment.appointmentSlotId,
       appointmentTime: appointment.appointmentTime || '',
-      failureType: appointment.failureType || '',
-      errorStage: appointment.errorStage || 'MANUAL_CORRECTION',
-      errorMessage: appointment.errorMessage || ''
+      failureType: reconciliationRequired
+        ? 'MANUAL_RECONCILED_FAILED'
+        : appointment.failureType || '',
+      errorStage: reconciliationRequired
+        ? 'MANUAL_RECONCILIATION'
+        : appointment.errorStage || 'MANUAL_CORRECTION',
+      errorMessage: reconciliationRequired ? '' : appointment.errorMessage || '',
+      reconciliationConfirmed: false
     })
     setCorrectionOpen(true)
   }
 
   async function submitCorrection() {
     if (!correctionTarget) return
+    const reconciliationRequired =
+      officialWarehouseAppointmentRequiresReconciliation(correctionTarget)
+    if (reconciliationRequired && !correctionForm.reconciliationConfirmed) {
+      message.warning('请先确认已在 Noon 后台核对当前约仓结果')
+      return
+    }
     if (
       correctionForm.status === 'SCHEDULED' &&
       !correctionForm.appointmentDate
@@ -152,8 +166,17 @@ export function useOfficialWarehouseAppointmentActions({
       message.warning('订正为约仓成功时必须填写约仓日期')
       return
     }
+    if (
+      reconciliationRequired &&
+      correctionForm.status === 'FAILED' &&
+      !correctionForm.errorMessage.trim()
+    ) {
+      message.warning('请填写 Noon 对账结论')
+      return
+    }
     const payload: CorrectOfficialWarehouseAppointmentPayload = {
-      status: correctionForm.status
+      status: correctionForm.status,
+      reconciliationConfirmed: reconciliationRequired || undefined
     }
     if (correctionForm.status === 'SCHEDULED') {
       payload.appointmentDate =
@@ -171,7 +194,7 @@ export function useOfficialWarehouseAppointmentActions({
     setCorrectionSubmitting(true)
     try {
       await correctOfficialWarehouseAppointment(correctionTarget.id, payload)
-      message.success('约仓记录已订正')
+      message.success(reconciliationRequired ? 'Noon 对账结果已订正' : '约仓记录已订正')
       setCorrectionOpen(false)
       await reloadAll()
     } catch (error) {

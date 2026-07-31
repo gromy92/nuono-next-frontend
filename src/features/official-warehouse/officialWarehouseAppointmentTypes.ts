@@ -79,4 +79,5 @@ export type CorrectOfficialWarehouseAppointmentPayload = {
   failureType?: string
   errorStage?: string
   errorMessage?: string
+  reconciliationConfirmed?: boolean
 }

@@ -9,6 +9,7 @@ import {
 import {
   buildManualAppointmentResultMessage
 } from '../domain'
+import { officialWarehouseAppointmentRequiresReconciliation } from '../officialWarehouseAppointmentLifecycle'
 import {
   availabilitySlotKey,
   compactAppointmentFeedbackMessage,
@@ -41,8 +42,20 @@ export function useOfficialWarehouseAppointmentWorkflow({
     row: OfficialWarehouseAsn,
     mode: AppointmentSubmitMode
   ) {
+    if (officialWarehouseAppointmentRequiresReconciliation(row.appointment)) {
+      message.warning('上次约仓结果未知，请先在 Noon 后台核对并订正本地状态。')
+      return
+    }
+    if (row.appointment?.status === 'RUNNING') {
+      message.warning('约仓正在执行，请等待结果后再操作。')
+      return
+    }
     if (mode === 'manual' && isAutoAppointmentRunning(row)) {
       message.warning('自动约仓处理中，不能手动约仓。')
+      return
+    }
+    if (mode === 'auto' && row.appointment?.status === 'SCHEDULED') {
+      message.warning('已约仓成功的 ASN 如需改约，请选择明确日期和时段后手动约仓。')
       return
     }
     if (row.appointment?.status === 'SCHEDULED') {

@@ -180,15 +180,17 @@ const appointmentHistorySummary = buildAppointmentHistorySummary([
   { status: 'SCHEDULED' },
   { status: 'FAILED', failureType: 'NO_CAPACITY' },
   { status: 'FAILED', failureType: 'NOON_CALL' },
+  { status: 'FAILED', failureType: 'NOON_WRITE_RECONCILIATION_REQUIRED' },
   { status: 'CANCELED' }
 ])
 if (
-  appointmentHistorySummary.total !== 6 ||
+  appointmentHistorySummary.total !== 7 ||
   appointmentHistorySummary.pending !== 2 ||
   appointmentHistorySummary.scheduled !== 1 ||
-  appointmentHistorySummary.failed !== 2 ||
+  appointmentHistorySummary.failed !== 3 ||
   appointmentHistorySummary.canceled !== 1 ||
-  appointmentHistorySummary.noCapacity !== 1
+  appointmentHistorySummary.noCapacity !== 1 ||
+  appointmentHistorySummary.reconciliationRequired !== 1
 ) {
   throw new Error('expected appointment history summary counts')
 }
@@ -207,8 +209,11 @@ if (noonAsnStatusDisplayMeta('canceled').label !== '已取消') {
 if (noonAsnStatusDisplayMeta('sealed', 'PENDING').label !== '约仓中') {
   throw new Error('expected pending local appointment to keep booking-in-progress label')
 }
-if (DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES.join(',') !== 'APPOINTING,SCHEDULED') {
-  throw new Error('expected ASN list to default to booking-in-progress and booking-success statuses')
+if (
+  DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES.join(',') !==
+  'RECONCILIATION_REQUIRED,APPOINTING,SCHEDULED'
+) {
+  throw new Error('expected ASN list to keep reconciliation-required appointments visible by default')
 }
 const filterRows = [
   { id: 'pending', noonAsnStatus: 'SEALED', appointment: { status: 'PENDING' } },
@@ -216,7 +221,15 @@ const filterRows = [
   { id: 'receiving', noonAsnStatus: 'RECEIVING' },
   { id: 'received', noonAsnStatus: 'GRN_COMPLETED' },
   { id: 'not-appointed', noonAsnStatus: 'CREATED' },
-  { id: 'failed', noonAsnStatus: 'SEALED', appointment: { status: 'FAILED' } }
+  { id: 'failed', noonAsnStatus: 'SEALED', appointment: { status: 'FAILED' } },
+  {
+    id: 'reconciliation-required',
+    noonAsnStatus: 'SEALED',
+    appointment: {
+      status: 'FAILED',
+      failureType: 'STALE_EXECUTION_RECONCILIATION_REQUIRED'
+    }
+  }
 ]
 if (officialWarehouseAppointmentFilterStatus(filterRows[0]) !== 'APPOINTING') {
   throw new Error('expected pending and running appointments to share the booking-in-progress filter')
@@ -230,6 +243,9 @@ if (officialWarehouseInboundFilterStatus(filterRows[2]) !== 'RECEIVING') {
 if (officialWarehouseInboundFilterStatus(filterRows[3]) !== 'COMPLETED') {
   throw new Error('expected Noon GRN completed status to map to inbound completed')
 }
+if (officialWarehouseAppointmentFilterStatus(filterRows[6]) !== 'RECONCILIATION_REQUIRED') {
+  throw new Error('expected quarantined appointments to use their own filter status')
+}
 const defaultFilteredIds = filterRows
   .filter((row) => matchesOfficialWarehouseAsnFilters(
     row,
@@ -237,8 +253,8 @@ const defaultFilteredIds = filterRows
     []
   ))
   .map((row) => row.id)
-if (defaultFilteredIds.join(',') !== 'pending,scheduled,receiving,received') {
-  throw new Error('expected default ASN filters to keep only booking-in-progress and booking-success rows')
+if (defaultFilteredIds.join(',') !== 'pending,scheduled,receiving,received,reconciliation-required') {
+  throw new Error('expected default ASN filters to retain appointments that require reconciliation')
 }
 const receivedFilteredIds = filterRows
   .filter((row) => matchesOfficialWarehouseAsnFilters(row, [], ['COMPLETED']))

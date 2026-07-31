@@ -1,4 +1,21 @@
+import {
+  appointmentStatusDisplayMeta,
+  officialWarehouseAppointmentRequiresReconciliation
+} from './officialWarehouseAppointmentLifecycle'
+
 export * from './officialWarehouseSummaryDomain'
+export {
+  appointmentStatusDisplayMeta,
+  buildAppointmentRunOnceFeedback,
+  officialWarehouseAppointmentCanCancel,
+  officialWarehouseAppointmentCanRun,
+  officialWarehouseAppointmentRequiresReconciliation
+} from './officialWarehouseAppointmentLifecycle'
+export type {
+  AppointmentRunOnceFeedback,
+  AppointmentRunOnceResult,
+  AppointmentStatusDisplayMeta
+} from './officialWarehouseAppointmentLifecycle'
 
 export type OfficialWarehousePublicAsnRow = {
   localAsnNo?: string
@@ -10,18 +27,6 @@ export type ManualAppointmentResult = {
   status?: string
   failureType?: string
   errorMessage?: string
-}
-
-export type AppointmentRunOnceResult = {
-  status?: string
-  failureType?: string
-  errorMessage?: string
-  nextAttemptAt?: string
-}
-
-export type AppointmentRunOnceFeedback = {
-  type: 'success' | 'warning' | 'error'
-  message: string
 }
 
 export type AppointmentHistorySummaryRow = {
@@ -36,11 +41,7 @@ export type AppointmentHistorySummary = {
   failed: number
   canceled: number
   noCapacity: number
-}
-
-export type AppointmentStatusDisplayMeta = {
-  label: string
-  color: string
+  reconciliationRequired: number
 }
 
 export type NoonAsnStatusDisplayMeta = {
@@ -51,6 +52,7 @@ export type NoonAsnStatusDisplayMeta = {
 export type OfficialWarehouseAppointmentFilterStatus =
   | 'NOT_APPOINTED'
   | 'APPOINTING'
+  | 'RECONCILIATION_REQUIRED'
   | 'SCHEDULED'
   | 'FAILED'
   | 'CANCELED'
@@ -62,10 +64,12 @@ export type OfficialWarehouseAsnFilterRow = {
   noonAsnStatus?: string
   appointment?: {
     status?: string
+    failureType?: string
   } | null
 }
 
 export const DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES: OfficialWarehouseAppointmentFilterStatus[] = [
+  'RECONCILIATION_REQUIRED',
   'APPOINTING',
   'SCHEDULED'
 ]
@@ -73,6 +77,9 @@ export const DEFAULT_OFFICIAL_WAREHOUSE_APPOINTMENT_FILTER_STATUSES: OfficialWar
 export function officialWarehouseAppointmentFilterStatus(
   row: OfficialWarehouseAsnFilterRow
 ): OfficialWarehouseAppointmentFilterStatus {
+  if (officialWarehouseAppointmentRequiresReconciliation(row.appointment)) {
+    return 'RECONCILIATION_REQUIRED'
+  }
   const appointmentStatus = normalizeNoonStatus(row.appointment?.status)
   if (appointmentStatus === 'PENDING' || appointmentStatus === 'RUNNING') return 'APPOINTING'
   if (appointmentStatus === 'SCHEDULED') return 'SCHEDULED'
@@ -108,23 +115,6 @@ export function matchesOfficialWarehouseAsnFilters(
   const inboundMatches = inboundStatuses.length === 0 ||
     inboundStatuses.includes(officialWarehouseInboundFilterStatus(row))
   return appointmentMatches && inboundMatches
-}
-
-export function appointmentStatusDisplayMeta(status?: string): AppointmentStatusDisplayMeta {
-  const normalized = status || ''
-  if (normalized === 'PENDING' || normalized === 'RUNNING') {
-    return { label: '约仓中', color: normalized === 'RUNNING' ? 'processing' : 'blue' }
-  }
-  if (normalized === 'SCHEDULED') {
-    return { label: '约仓成功', color: 'green' }
-  }
-  if (normalized === 'FAILED') {
-    return { label: '约仓失败', color: 'red' }
-  }
-  if (normalized === 'CANCELED') {
-    return { label: '已取消', color: 'default' }
-  }
-  return { label: normalized || '未约仓', color: 'default' }
 }
 
 export function noonAsnStatusDisplayMeta(status?: string, appointmentStatus?: string): NoonAsnStatusDisplayMeta {
@@ -167,22 +157,6 @@ export function officialWarehousePublicAsnNo(row?: OfficialWarehousePublicAsnRow
   return noonAsn || '-'
 }
 
-export function buildAppointmentRunOnceFeedback(result: AppointmentRunOnceResult): AppointmentRunOnceFeedback {
-  if (result.status === 'SCHEDULED') {
-    return { type: 'success', message: '约仓成功' }
-  }
-  const detail = [result.failureType, result.errorMessage].filter(Boolean).join(': ').trim()
-  if (result.status === 'PENDING' || result.status === 'RUNNING') {
-    const retryText = result.nextAttemptAt ? `，下次自动重试：${result.nextAttemptAt}` : ''
-    const detailText = detail ? `。原因：${detail}` : ''
-    return { type: 'warning', message: `本次执行未约成功，已保持自动约仓中${retryText}${detailText}` }
-  }
-  if (result.status === 'FAILED') {
-    return { type: 'error', message: detail ? `自动约仓执行失败：${detail}` : '自动约仓执行失败' }
-  }
-  return { type: 'warning', message: '自动约仓已执行，请查看最新状态。' }
-}
-
 export function buildAppointmentHistorySummary(rows: AppointmentHistorySummaryRow[]): AppointmentHistorySummary {
   return rows.reduce<AppointmentHistorySummary>(
     (summary, row) => {
@@ -202,6 +176,9 @@ export function buildAppointmentHistorySummary(rows: AppointmentHistorySummaryRo
       if (row.failureType === 'NO_CAPACITY') {
         summary.noCapacity += 1
       }
+      if (officialWarehouseAppointmentRequiresReconciliation(row)) {
+        summary.reconciliationRequired += 1
+      }
       return summary
     },
     {
@@ -210,7 +187,8 @@ export function buildAppointmentHistorySummary(rows: AppointmentHistorySummaryRo
       scheduled: 0,
       failed: 0,
       canceled: 0,
-      noCapacity: 0
+      noCapacity: 0,
+      reconciliationRequired: 0
     }
   )
 }
@@ -235,6 +213,12 @@ export function officialWarehouseBusinessErrorText(message?: string, failureType
   const raw = [failureType, message].filter(Boolean).join(': ').trim()
   if (!raw) {
     return '-'
+  }
+  if (failureType === 'NOON_WRITE_RECONCILIATION_REQUIRED') {
+    return 'Noon 写入响应未知，已暂停并禁止自动重试。请先在 Noon 后台核对，再订正本地状态。'
+  }
+  if (failureType === 'STALE_EXECUTION_RECONCILIATION_REQUIRED') {
+    return '上次约仓执行已中断，Noon 结果未知。请先在 Noon 后台核对，再订正本地状态。'
   }
   if (/NOON_ASN_EXPIRED|\\bexpired\\b/i.test(raw)) {
     return 'Noon后台显示该 ASN 已过期，不能继续约仓。'

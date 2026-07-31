@@ -115,7 +115,8 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     downloadFbnTransferPdf,
     requestOpenAppointment,
     runAppointmentNow,
-    cancelAppointment
+    cancelAppointment,
+    openCorrection
   })
 
   const appointmentColumns = buildOfficialWarehouseAppointmentColumns({
