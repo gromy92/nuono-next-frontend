@@ -41,6 +41,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     confirmCreateAsn, batchSummary, batchSummaryLoading, batchSummaryError,
     reloadBatchSummary, batchSummaryBlocked
   } = useOfficialWarehouseCreateAsn({
+    sessionUserId: String(session?.userId || ''),
     storeCode,
     siteCode,
     reloadAll: reloadWarehouseData

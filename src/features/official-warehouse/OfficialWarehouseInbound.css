@@ -31,6 +31,11 @@
   gap: 12px;
 }
 
+.official-warehouse-shipping-picker-header .ant-btn {
+  height: 22px;
+  padding: 0;
+}
+
 .official-warehouse-modal-body .ant-select,
 .official-warehouse-modal-body .ant-input {
   width: 100%;

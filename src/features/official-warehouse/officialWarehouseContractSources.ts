@@ -26,6 +26,7 @@ export const officialWarehousePageContractSource = [
   read('columns/officialWarehouseInboundColumns.tsx'),
   read('components/OfficialWarehouseListPanel.tsx'),
   read('components/OfficialWarehouseBatchSummaryPanel.tsx'),
+  read('components/OfficialWarehouseShippingBatchPicker.tsx'),
   read('components/OfficialWarehouseCreateAsnModals.tsx'),
   read('components/OfficialWarehouseAppointmentModal.tsx'),
   read('components/OfficialWarehouseCorrectionModal.tsx'),
@@ -43,6 +44,7 @@ export const officialWarehouseApiContractSource = [
 export const officialWarehousePageStyleContractSource = [
   read('OfficialWarehouseLayout.css'),
   read('OfficialWarehouseInbound.css'),
+  read('OfficialWarehouseBatchSummary.css'),
   read('OfficialWarehouseForms.css'),
   read('OfficialWarehouseResponsive.css')
 ].join('')

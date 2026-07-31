@@ -57,6 +57,19 @@ const markup = renderToStaticMarkup(createElement(OfficialWarehouseBatchSummaryP
   onRetry: () => undefined
 }))
 
+assert.ok(
+  markup.includes('official-warehouse-batch-summary-metrics'),
+  'summary should render the compact metric row'
+)
+assert.ok(
+  markup.includes('official-warehouse-batch-summary-store-list'),
+  'other-store attribution should use the compact store list'
+)
+assert.ok(
+  !markup.includes('ant-statistic'),
+  'summary should not use oversized Statistic components'
+)
+
 for (const expected of [
   '所选物流批次商品汇总',
   '物流单原始 71 行，重复 SKU 已合并',
