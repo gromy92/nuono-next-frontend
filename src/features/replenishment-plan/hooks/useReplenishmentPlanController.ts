@@ -92,7 +92,7 @@ export function useReplenishmentPlanController({
   const suggestionSummary = useMemo(() => summarizeSuggestions(searchMatchedRows), [searchMatchedRows])
   const missingEtaSummary = useMemo(() => summarizeMissingEta(searchMatchedRows), [searchMatchedRows])
   const blockedRows = useMemo(
-    () => searchMatchedRows.filter((item) => item.calculationBlocked),
+    () => searchMatchedRows.filter((item) => (item.activeState || 'ACTIVE') === 'ACTIVE' && item.calculationBlocked),
     [searchMatchedRows]
   )
   const pastEtaReviewCount = useMemo(

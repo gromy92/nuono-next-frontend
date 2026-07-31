@@ -25,8 +25,20 @@ export function useReplenishmentColumns(state: ReturnType<typeof useReplenishmen
   } = state
   function activeStateLabel(item: ReplenishmentPlanItem) {
     if (resolvedProductActiveState(item) === 'INACTIVE') return '已停用'
-    if (resolvedProductActiveState(item) === 'UNKNOWN') return '待核实'
-    return '在售'
+    if (resolvedProductActiveState(item) === 'UNKNOWN') return '自动核实中'
+    return '参与预测'
+  }
+
+  function renderEligibilityNotice(item: ReplenishmentPlanItem) {
+    return (
+      <Space direction="vertical" size={3} className="replenishment-plan-eligibility-notice">
+        <Tag color={resolvedProductActiveState(item) === 'INACTIVE' ? 'default' : 'orange'}>
+          {activeStateLabel(item)}
+        </Tag>
+        <Text type="secondary">未参与预测</Text>
+        <Text type="secondary">{blockingReasonText(item)}</Text>
+      </Space>
+    )
   }
   function renderSuggestionTransportTag(item: ReplenishmentPlanItem, transportMode: 'AIR' | 'SEA') {
     const isAir = transportMode === 'AIR'
@@ -155,7 +167,7 @@ export function useReplenishmentColumns(state: ReturnType<typeof useReplenishmen
       ),
       dataIndex: 'historyUnits7',
       width: '20%',
-      render: (_: unknown, item) => (
+      render: (_: unknown, item) => resolvedProductActiveState(item) !== 'ACTIVE' ? renderEligibilityNotice(item) : (
         <div className="replenishment-plan-evidence-cell">
           <div className="replenishment-plan-evidence-card replenishment-plan-evidence-card-history">
             <div className="replenishment-plan-line replenishment-plan-history-row">
@@ -186,7 +198,7 @@ export function useReplenishmentColumns(state: ReturnType<typeof useReplenishmen
       title: '预测数据',
       dataIndex: 'forecastUnits100',
       width: '18%',
-      render: (_: unknown, item) => (
+      render: (_: unknown, item) => resolvedProductActiveState(item) !== 'ACTIVE' ? renderEligibilityNotice(item) : (
         <div className="replenishment-plan-evidence-cell">
           <div className="replenishment-plan-evidence-card replenishment-plan-evidence-card-forecast">
             <Space direction="vertical" size={4} className="replenishment-plan-forecast-stack">

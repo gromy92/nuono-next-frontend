@@ -156,8 +156,8 @@ export function ReplenishmentPlanWorkbench({ state }: {
           className="replenishment-plan-active-state-alert"
           type="warning"
           showIcon
-          message={`${coverage.unknownProductCount} 个商品在售状态待核实`}
-          description="状态仅用于提示，不影响补货测算。"
+          message={`${coverage.unknownProductCount} 个商品正在自动核实 Noon 在售状态`}
+          description="系统会按店铺、站点和 PSKU 自动续跑；确认在售后进入销量预测，确认停用后退出补货测算。"
         />
       ) : null}
       {blockedRows.length ? (
