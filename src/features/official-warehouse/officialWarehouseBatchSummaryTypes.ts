@@ -31,3 +31,17 @@ export type OfficialWarehouseBatchProductSummary = {
   unassignedSkuCount: number
   attributionWarning: boolean
 }
+
+export function isOfficialWarehouseBatchSummaryBlocked({
+  selectedBatchCount,
+  summary,
+  loading,
+  error
+}: {
+  selectedBatchCount: number
+  summary?: OfficialWarehouseBatchProductSummary
+  loading: boolean
+  error?: string
+}) {
+  return selectedBatchCount > 0 && Boolean(loading || error || !summary)
+}

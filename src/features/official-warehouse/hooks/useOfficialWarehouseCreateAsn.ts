@@ -22,6 +22,7 @@ import type {
   CreateAsnConfirmation,
   CreateAsnSubmitFeedback
 } from '../officialWarehouseFormModel'
+import { isOfficialWarehouseBatchSummaryBlocked } from '../officialWarehouseBatchSummaryTypes'
 import { useShippingBatchSearch } from '../useShippingBatchSearch'
 import { useOfficialWarehouseBatchSummary } from './useOfficialWarehouseBatchSummary'
 
@@ -72,8 +73,12 @@ export function useOfficialWarehouseCreateAsn({
     siteCode,
     shippingBatchIds: selectedShippingBatchIds
   })
-  const batchSummaryBlocked = selectedShippingBatchIds.length > 0 &&
-    Boolean(batchSummaryLoading || batchSummaryError || !batchSummary)
+  const batchSummaryBlocked = isOfficialWarehouseBatchSummaryBlocked({
+    selectedBatchCount: selectedShippingBatchIds.length,
+    summary: batchSummary,
+    loading: batchSummaryLoading,
+    error: batchSummaryError
+  })
 
 
   const shippingBatchOptions = useMemo(

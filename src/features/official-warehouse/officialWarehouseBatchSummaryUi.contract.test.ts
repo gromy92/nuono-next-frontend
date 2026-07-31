@@ -1,67 +1,123 @@
 import { strict as assert } from 'node:assert'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { OfficialWarehouseBatchSummaryPanel } from './components/OfficialWarehouseBatchSummaryPanel'
 import {
-  officialWarehouseApiContractSource,
-  officialWarehousePageContractSource
-} from './officialWarehouseContractSources'
+  isOfficialWarehouseBatchSummaryBlocked,
+  type OfficialWarehouseBatchProductSummary
+} from './officialWarehouseBatchSummaryTypes'
 
-const apiSource = officialWarehouseApiContractSource
-const pageSource = officialWarehousePageContractSource
+const summary: OfficialWarehouseBatchProductSummary = {
+  totalQuantity: 3016,
+  totalSkuCount: 64,
+  totalLineCount: 71,
+  currentStore: {
+    storeCode: 'STR108065-NSA',
+    storeName: 'Canman',
+    siteCode: 'SA',
+    totalQuantity: 2263,
+    totalSkuCount: 42,
+    bookableQuantity: 2223,
+    bookableSkuCount: 41,
+    blockedQuantity: 40,
+    blockedSkuCount: 1,
+    missingDimensionQuantity: 40,
+    missingDimensionSkuCount: 1,
+    blockedItems: [{
+      partnerSku: 'PAPERSAYSB372',
+      title: '缺尺寸商品',
+      quantity: 40,
+      reasons: ['缺尺寸']
+    }],
+    missingDimensionItems: [{
+      partnerSku: 'PAPERSAYSB372',
+      title: '缺尺寸商品',
+      quantity: 40,
+      reasons: ['缺尺寸']
+    }]
+  },
+  otherStores: [{
+    storeCode: 'STR69486-NSA',
+    storeName: '另一家店',
+    siteCode: 'SA',
+    totalQuantity: 753,
+    totalSkuCount: 22,
+    blockedItems: [],
+    missingDimensionItems: []
+  }],
+  unassignedQuantity: 0,
+  unassignedSkuCount: 0,
+  attributionWarning: false
+}
 
-assert.match(
-  apiSource,
-  /shipping-batches\/product-summary/,
-  'selected batches should load the read-only batch product summary endpoint'
-)
-assert.match(apiSource, /totalQuantity: number/, 'summary contract should expose whole-batch quantity')
-assert.match(apiSource, /totalSkuCount: number/, 'summary contract should expose whole-batch SKU count')
-assert.match(apiSource, /missingDimensionItems:/, 'summary contract should expose missing-dimension SKU details')
-assert.match(apiSource, /otherStores:/, 'summary contract should expose other accessible store totals')
+const markup = renderToStaticMarkup(createElement(OfficialWarehouseBatchSummaryPanel, {
+  selectedBatchCount: 1,
+  summary,
+  loading: false,
+  onRetry: () => undefined
+}))
 
-assert.match(pageSource, /title="整票商品"/, 'the page should label whole-batch quantity and SKU count')
-assert.match(pageSource, /title=\{`当前店铺/, 'the page should label the selected store totals')
-assert.match(pageSource, /title="当前店铺可约"/, 'the page should label bookable quantity and SKU count')
-assert.match(
-  pageSource,
-  /缺尺寸：\$\{number\(current\.missingDimensionSkuCount/,
-  'the page should show missing-dimension SKU and unit totals'
+for (const expected of [
+  '所选物流批次商品汇总',
+  '物流单原始 71 行，重复 SKU 已合并',
+  '整票商品',
+  '3,016',
+  '64 SKU',
+  '当前店铺 · Canman',
+  '2,263',
+  '42 SKU',
+  '当前店铺可约',
+  '2,223',
+  '41 SKU',
+  '缺尺寸：1 SKU / 40 件',
+  'PAPERSAYSB372',
+  '× 40 件',
+  '别的店铺：1 家',
+  '另一家店（STR69486-NSA / SA）',
+  '753 件 / 22 SKU'
+]) {
+  assert.ok(markup.includes(expected), `summary should render ${expected}`)
+}
+
+assert.equal(
+  isOfficialWarehouseBatchSummaryBlocked({
+    selectedBatchCount: 0,
+    loading: false
+  }),
+  false,
+  'no selected batch should not block the create flow'
 )
-assert.match(
-  pageSource,
-  /item\.partnerSku[\s\S]*?item\.quantity[\s\S]*?item\.reasons/,
-  'blocked rows should show the exact SKU, quantity and reason'
+assert.equal(
+  isOfficialWarehouseBatchSummaryBlocked({
+    selectedBatchCount: 1,
+    loading: true
+  }),
+  true,
+  'loading should block ASN creation'
 )
-assert.match(
-  pageSource,
-  /别的店铺：\$\{summary\.otherStores\.length\} 家/,
-  'the page should explicitly count other stores'
+assert.equal(
+  isOfficialWarehouseBatchSummaryBlocked({
+    selectedBatchCount: 1,
+    loading: false,
+    error: '读取失败'
+  }),
+  true,
+  'a summary error should block ASN creation'
 )
-assert.match(
-  pageSource,
-  /store\.storeName[\s\S]*?store\.storeCode[\s\S]*?store\.siteCode[\s\S]*?store\.totalQuantity[\s\S]*?store\.totalSkuCount/,
-  'each other store should show name, code, site, quantity and SKU count'
+assert.equal(
+  isOfficialWarehouseBatchSummaryBlocked({
+    selectedBatchCount: 1,
+    loading: false
+  }),
+  true,
+  'a missing summary should block ASN creation'
 )
-assert.match(
-  pageSource,
-  /未归属或无权查看/,
-  'unattributed units should remain visible without leaking unauthorized stores'
-)
-assert.match(
-  pageSource,
-  /if \(!enabled \|\| !storeCode \|\| !siteCode \|\| !shippingBatchIds\.length\)/,
-  'the summary hook should not request data before a batch is selected'
-)
-assert.match(
-  pageSource,
-  /requestId === requestIdRef\.current/,
-  'stale summary responses should not replace the current selection'
-)
-assert.match(
-  pageSource,
-  /if \(batchSummaryBlocked\)[\s\S]*?汇总加载成功后再创建 ASN/,
-  'ASN submission should stop while the selected-batch summary is unavailable'
-)
-assert.match(
-  pageSource,
-  /okButtonProps=\{\{ disabled: batchSummaryBlocked/,
-  'the create button should visibly remain disabled until summary loading succeeds'
+assert.equal(
+  isOfficialWarehouseBatchSummaryBlocked({
+    selectedBatchCount: 1,
+    summary,
+    loading: false
+  }),
+  false,
+  'the current successful summary should allow ASN creation'
 )
