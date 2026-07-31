@@ -9,10 +9,10 @@ import { formatPurchaseDuplicateNotice } from '../purchaseDuplicateNotice'
 import { summarizeMissingEta } from '../summary'
 import { summarizePurchasePlanProgress } from '../purchaseProgress'
 import type { ReplenishmentPlanItem, ReplenishmentPlanOverview, ReplenishmentPlanQuery } from '../types'
-import type { ProductImagePreview, ReplenishmentPlanTabProps, SuggestionFilter } from '../pageTypes'
+import type { ProductCoverageFilter, ProductImagePreview, ReplenishmentPlanTabProps, SuggestionFilter } from '../pageTypes'
 import { siteCodeFromStoreCode } from '../pageTypes'
 import {
-  editablePurchaseOrders, matchesSuggestionFilter, purchaseDraftLines, purchaseOpeningKey,
+  editablePurchaseOrders, matchesProductCoverageFilter, matchesSuggestionFilter, purchaseDraftLines, purchaseOpeningKey,
   purchaseOrderTransportQuantities, purchaseOrderTransportSources, purchasePlanningScopeOrders,
   replacePurchaseOrder, summarizeSuggestions
 } from '../replenishmentDomain'
@@ -27,6 +27,7 @@ export function useReplenishmentPlanController({
   const [errorMessage, setErrorMessage] = useState('')
   const [searchKeyword, setSearchKeyword] = useState('')
   const [suggestionFilter, setSuggestionFilter] = useState<SuggestionFilter>('all')
+  const [coverageFilter, setCoverageFilter] = useState<ProductCoverageFilter>('all')
   const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([])
   const [selectedPurchaseRows, setSelectedPurchaseRows] = useState<ReplenishmentPlanItem[]>([])
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([])
@@ -80,14 +81,18 @@ export function useReplenishmentPlanController({
       item.productTitle
     ].some((value) => (value || '').toLowerCase().includes(normalized)))
   }, [rows, searchKeyword])
+  const coverageMatchedRows = useMemo(
+    () => searchMatchedRows.filter((item) => matchesProductCoverageFilter(item, coverageFilter)),
+    [coverageFilter, searchMatchedRows]
+  )
   const filteredRows = useMemo(
-    () => searchMatchedRows.filter((item) => matchesSuggestionFilter(item, suggestionFilter)),
-    [searchMatchedRows, suggestionFilter]
+    () => coverageMatchedRows.filter((item) => matchesSuggestionFilter(item, suggestionFilter)),
+    [coverageMatchedRows, suggestionFilter]
   )
   const suggestionSummary = useMemo(() => summarizeSuggestions(searchMatchedRows), [searchMatchedRows])
   const missingEtaSummary = useMemo(() => summarizeMissingEta(searchMatchedRows), [searchMatchedRows])
   const blockedRows = useMemo(
-    () => searchMatchedRows.filter((item) => item.calculationBlocked),
+    () => searchMatchedRows.filter((item) => (item.activeState || 'ACTIVE') === 'ACTIVE' && item.calculationBlocked),
     [searchMatchedRows]
   )
   const pastEtaReviewCount = useMemo(
@@ -253,6 +258,7 @@ export function useReplenishmentPlanController({
 
   return {
     overview, loading, errorMessage, searchKeyword, setSearchKeyword, suggestionFilter, setSuggestionFilter,
+    coverageFilter, setCoverageFilter,
     selectedRowKeys, selectedPurchaseRows, purchaseOrders, ordersLoading, openingPurchaseKey,
     purchaseModalOpen, purchaseDrafts, setPurchaseDrafts, selectedOrderId, setSelectedOrderId,
     submitting, previewImage, setPreviewImage, purchaseDuplicateNotice, query, planDate,
