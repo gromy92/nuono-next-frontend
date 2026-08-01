@@ -249,16 +249,11 @@ export function shippingOrderQuoteIssueSummary(order: ShippingOrder) {
 
 function isZdShippingForwarder(target: {
   forwarderCode?: string;
-  forwarderName?: string;
   routeCode?: string;
-  routeName?: string;
 }) {
   const routeCode = (target.routeCode || '').trim().toUpperCase();
-  const text = `${target.forwarderName || ''} ${target.routeName || ''}`.trim();
   return sameCode(target.forwarderCode, 'ZD')
-    || routeCode === 'ZD'
-    || routeCode.startsWith('ZD-')
-    || /众鸫|众东/.test(text);
+    || routeCode.startsWith('ZD-');
 }
 
 export function formatQuantity(value: number) {

@@ -28,6 +28,38 @@ const order = {
 } as ShippingOrder;
 assert.equal(countShippingOrderPendingQuoteLines(order), 1, 'ZD 缺价不应阻塞整单提交');
 
+const nameOnlyZd = {
+  segments: [{
+    id: 'name-only-zd',
+    forwarderCode: 'CHIC',
+    forwarderName: '众鸫供应链',
+    routeCode: 'CHIC-SA-AIR',
+    routeName: '众东物流专线'
+  }],
+  lines: [{
+    id: 'name-only-line',
+    shippingOrderSegmentId: 'name-only-zd',
+    quoteStatus: 'PENDING_QUOTE',
+    eligibilityStatus: 'SUPPORTED'
+  }]
+} as ShippingOrder;
+assert.equal(
+  countShippingOrderPendingQuoteLines(nameOnlyZd),
+  1,
+  '展示名称不能冒充 ZD 机器身份并绕过缺价门禁'
+);
+
+const routeIdentifiedZd = {
+  segments: [{ id: 'route-zd', forwarderCode: 'CHIC', routeCode: 'ZD-SA-AIR' }],
+  lines: [{
+    id: 'route-zd-line',
+    shippingOrderSegmentId: 'route-zd',
+    quoteStatus: 'PENDING_QUOTE',
+    eligibilityStatus: 'SUPPORTED'
+  }]
+} as ShippingOrder;
+assert.equal(countShippingOrderPendingQuoteLines(routeIdentifiedZd), 0, 'ZD 线路机器码应保留无价豁免');
+
 const overlappingIssues = {
   segments: [{ id: 'yt', forwarderCode: 'YT' }],
   lines: [
