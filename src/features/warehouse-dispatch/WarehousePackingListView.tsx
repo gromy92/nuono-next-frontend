@@ -1,7 +1,23 @@
 import { Space, Tag, Typography } from 'antd'
-import type { PackingList, ShippingSuggestionOption } from './types'
+import { summarizeLogisticsPartitionValues } from './logisticsPartitionDomain'
+import type { PackingList, ShippingBatch, ShippingSuggestionOption } from './types'
 
 const { Text } = Typography
+
+export const PACKING_LIST_TABLE_PAGINATION = {
+  pageSize: 30, showSizeChanger: true, pageSizeOptions: [20, 30, 50],
+  showTotal: (total: number) => `共 ${total} 张发货单`, size: 'small' as const
+}
+
+export function shippingBatchPartition(batch: ShippingBatch) {
+  return summarizeLogisticsPartitionValues(batch.siteCodes, batch.transportModes)
+}
+
+export function renderShippingBatchMetric(value: number | undefined, digits: number, unit: string) {
+  return Number(value || 0) > 0
+    ? `${Number(value).toFixed(digits)} ${unit}`
+    : <Text type="secondary">待装箱</Text>
+}
 
 const SHIPPING_BATCH_STATUS_META: Record<string, { label: string; color: string }> = {
   DRAFT: { label: '待物流计划', color: 'gold' },

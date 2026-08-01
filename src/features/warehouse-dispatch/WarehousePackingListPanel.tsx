@@ -8,33 +8,30 @@ import {
   loadShippingBatches,
   shipPackingList
 } from './api'
-import {
-  matchesLogisticsPartition,
-  summarizeLogisticsPartitionValues
-} from './logisticsPartitionDomain'
-import type {
-  LogisticsSiteFilter,
-  LogisticsTransportFilter
-} from './logisticsPartitionDomain'
+import { matchesLogisticsPartition, summarizeLogisticsPartitionValues } from './logisticsPartitionDomain'
+import type { LogisticsSiteFilter, LogisticsTransportFilter } from './logisticsPartitionDomain'
 import { LogisticsPartitionFilters, LogisticsPartitionTags } from './LogisticsPartitionViews'
 import type { PackingBatchDetails } from './packingExportDomain'
-import { mergeBatchOutboundOrder } from './shippingExecutionDomain'
+import {
+  mergeBatchOutboundOrder,
+  requireCurrentShippingBatchScope,
+  requirePackingBatchDetailsScope,
+  requirePackingListActionScope,
+  requireShippingBatchOwner,
+  WarehousePackingScopeError
+} from './shippingExecutionDomain'
 import type { OutboundOrder, PackingList, ShippingBatch } from './types'
 import { usePackingListExport } from './usePackingListExport'
 import { WarehousePackingExportModal } from './WarehousePackingExportModal'
-import { renderShippingBatchStatus } from './WarehousePackingListView'
+import {
+  PACKING_LIST_TABLE_PAGINATION,
+  renderShippingBatchMetric,
+  renderShippingBatchStatus,
+  shippingBatchPartition
+} from './WarehousePackingListView'
 import { WarehousePackingSubmissionDrawer } from './WarehousePackingSubmissionDrawer'
 
 const { Text } = Typography
-
-const PAGINATION = {
-  pageSize: 30,
-  showSizeChanger: true,
-  pageSizeOptions: [20, 30, 50],
-  showTotal: (total: number) => `共 ${total} 张发货单`,
-  size: 'small' as const
-}
-
 export function WarehousePackingListPanel() {
   const [shippingBatches, setShippingBatches] = useState<ShippingBatch[]>([])
   const [selectedBatchId, setSelectedBatchId] = useState<string>()
@@ -49,7 +46,9 @@ export function WarehousePackingListPanel() {
   const [transportFilter, setTransportFilter] = useState<LogisticsTransportFilter>('all')
   const packingExport = usePackingListExport(loadBatchDetails)
   const filteredBatches = useMemo(() => shippingBatches.filter((batch) => (
-    matchesLogisticsPartition(batchPartition(batch), siteFilter, transportFilter)
+    matchesLogisticsPartition(
+      summarizeLogisticsPartitionValues(batch.siteCodes, batch.transportModes), siteFilter, transportFilter
+    )
   )), [shippingBatches, siteFilter, transportFilter])
 
   const selectedBatch = useMemo(
@@ -75,12 +74,14 @@ export function WarehousePackingListPanel() {
     setLoadError(undefined)
     try {
       const nextBatches = await loadShippingBatches()
+      nextBatches.forEach(requireShippingBatchOwner)
       setShippingBatches(nextBatches)
       setOutboundOrdersByBatch({})
       setPackingListsByOutboundOrder({})
       setSelectedBatchId(undefined)
       setDrawerOpen(false)
     } catch (error) {
+      rejectUnsafePackingScope(error)
       const messageText = error instanceof Error ? error.message : '发货单读取失败'
       setLoadError(messageText)
       message.error(messageText)
@@ -89,45 +90,61 @@ export function WarehousePackingListPanel() {
     }
   }
 
-  async function loadBatchDetails(batchId: string): Promise<PackingBatchDetails> {
-    const cachedOrders = outboundOrdersByBatch[batchId]
-    if (cachedOrders) {
-      return {
+  async function loadBatchDetails(requestedBatch: ShippingBatch): Promise<PackingBatchDetails> {
+    try {
+      const batch = requireCurrentShippingBatchScope(shippingBatches, requestedBatch)
+      const cachedOrders = outboundOrdersByBatch[batch.id]
+      if (!cachedOrders) return await refreshBatchDetails(batch)
+      const details = {
         outboundOrders: cachedOrders,
         packingListsByOutboundOrder: Object.fromEntries(
           cachedOrders.map((order) => [order.id, packingListsByOutboundOrder[order.id] || []])
         )
       }
+      return requirePackingBatchDetailsScope(batch, details)
+    } catch (error) {
+      rejectUnsafePackingScope(error)
+      throw error
     }
-    return refreshBatchDetails(batchId)
   }
 
-  async function refreshBatchDetails(batchId: string): Promise<PackingBatchDetails> {
-    const outboundOrders = await loadOutboundOrders(batchId)
+  async function refreshBatchDetails(
+    requestedBatch: ShippingBatch,
+    currentBatches = shippingBatches
+  ): Promise<PackingBatchDetails> {
+    const batch = requireCurrentShippingBatchScope(currentBatches, requestedBatch)
+    const outboundOrders = await loadOutboundOrders(batch.id)
     const packingEntries = await Promise.all(
       outboundOrders.map(async (order) => [order.id, await loadPackingLists(order.id)] as const)
     )
     const nextPackingLists = Object.fromEntries(packingEntries)
-    setOutboundOrdersByBatch((current) => ({ ...current, [batchId]: outboundOrders }))
+    const details = requirePackingBatchDetailsScope(batch, {
+      outboundOrders, packingListsByOutboundOrder: nextPackingLists
+    })
+    setOutboundOrdersByBatch((current) => ({ ...current, [batch.id]: outboundOrders }))
     setPackingListsByOutboundOrder((current) => ({
       ...current,
       ...nextPackingLists
     }))
-    return { outboundOrders, packingListsByOutboundOrder: nextPackingLists }
+    return details
   }
 
   async function completeShipment(packingListId: string) {
-    if (!selectedBatchId) return
-    setShippingPackingListId(packingListId)
+    if (!selectedBatch) return
     try {
+      requireCurrentShippingBatchScope(shippingBatches, selectedBatch)
+      setShippingPackingListId(packingListId)
+      const details = await loadBatchDetails(selectedBatch)
+      requirePackingListActionScope(selectedBatch, details, packingListId)
       await shipPackingList(packingListId)
-      const [nextBatches] = await Promise.all([
-        loadShippingBatches(),
-        refreshBatchDetails(selectedBatchId)
-      ])
+      const nextBatches = await loadShippingBatches()
+      nextBatches.forEach(requireShippingBatchOwner)
+      const nextBatch = requireCurrentShippingBatchScope(nextBatches, selectedBatch)
       setShippingBatches(nextBatches)
+      await refreshBatchDetails(nextBatch, nextBatches)
       message.success('已确认交货代，本单发货状态已完成。')
     } catch (error) {
+      rejectUnsafePackingScope(error)
       message.error(error instanceof Error ? error.message : '完成发货失败')
     } finally {
       setShippingPackingListId(undefined)
@@ -135,19 +152,27 @@ export function WarehousePackingListPanel() {
   }
 
   async function openPackingDetails(batch: ShippingBatch) {
-    setSelectedBatchId(batch.id)
-    if (!Object.prototype.hasOwnProperty.call(outboundOrdersByBatch, batch.id)) {
-      setDetailLoadingBatchId(batch.id)
-      try {
-        await loadBatchDetails(batch.id)
-      } catch (error) {
-        message.error(error instanceof Error ? error.message : '装箱详情读取失败')
-        return
-      } finally {
-        setDetailLoadingBatchId(undefined)
-      }
+    setDetailLoadingBatchId(batch.id)
+    try {
+      await loadBatchDetails(batch)
+      setSelectedBatchId(batch.id)
+      setDrawerOpen(true)
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '装箱详情读取失败')
+    } finally {
+      setDetailLoadingBatchId(undefined)
     }
-    setDrawerOpen(true)
+  }
+
+  function rejectUnsafePackingScope(error: unknown) {
+    if (!(error instanceof WarehousePackingScopeError)) return
+    setShippingBatches([])
+    setOutboundOrdersByBatch({})
+    setPackingListsByOutboundOrder({})
+    setSelectedBatchId(undefined)
+    setDrawerOpen(false)
+    packingExport.close()
+    setLoadError(error.message)
   }
 
   const columns: ColumnsType<ShippingBatch> = [
@@ -165,7 +190,7 @@ export function WarehousePackingListPanel() {
     {
       title: '站点 / 运输方式',
       width: 190,
-      render: (_value, batch) => <LogisticsPartitionTags summary={batchPartition(batch)} />
+      render: (_value, batch) => <LogisticsPartitionTags summary={shippingBatchPartition(batch)} />
     },
     {
       title: '状态',
@@ -176,13 +201,13 @@ export function WarehousePackingListPanel() {
       title: '总体积',
       width: 120,
       align: 'right',
-      render: (_value, batch) => actualMetric(batch.volumeCbm, 4, 'm³')
+      render: (_value, batch) => renderShippingBatchMetric(batch.volumeCbm, 4, 'm³')
     },
     {
       title: '总毛重',
       width: 120,
       align: 'right',
-      render: (_value, batch) => actualMetric(batch.grossWeightKg, 1, 'kg')
+      render: (_value, batch) => renderShippingBatchMetric(batch.grossWeightKg, 1, 'kg')
     },
     {
       title: '箱数',
@@ -255,7 +280,7 @@ export function WarehousePackingListPanel() {
         </Space>
       </div>
       <Table rowKey="id" size="small" columns={columns} dataSource={filteredBatches}
-        loading={loading} pagination={PAGINATION} scroll={{ x: 1430 }}
+        loading={loading} pagination={PACKING_LIST_TABLE_PAGINATION} scroll={{ x: 1430 }}
         rowClassName="warehouse-dispatch-clickable-row"
         onRow={(batch) => ({ onClick: () => void openPackingDetails(batch) })}
         locale={{ emptyText: <Empty description={loadError || '暂无发货单'} /> }} />
@@ -271,14 +296,4 @@ export function WarehousePackingListPanel() {
         onConfirm={() => void packingExport.confirm()} onClose={packingExport.close} />
     </div>
   )
-}
-
-function batchPartition(batch: ShippingBatch) {
-  return summarizeLogisticsPartitionValues(batch.siteCodes, batch.transportModes)
-}
-
-function actualMetric(value: number | undefined, digits: number, unit: string) {
-  return Number(value || 0) > 0
-    ? `${Number(value).toFixed(digits)} ${unit}`
-    : <Text type="secondary">待装箱</Text>
 }

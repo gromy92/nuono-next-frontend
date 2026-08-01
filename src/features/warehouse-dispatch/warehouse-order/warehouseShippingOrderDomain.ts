@@ -1,12 +1,13 @@
-import type {
-  OrderLogisticsQuoteChannelOption,
-  OrderLogisticsQuoteForwarderOption,
-  OrderLogisticsQuoteImportResult
-} from '../../logistics-quote/types';
+import type { OrderLogisticsQuoteForwarderOption, OrderLogisticsQuoteImportResult } from '../../logistics-quote/types';
 import type { ShippingOrder, ShippingOrderLine, ShippingOrderSegment } from './warehouseShippingOrderTypes';
 import type { WarehouseOrderPurchaseCandidate } from './warehouseOrderPurchaseCandidateAdapter';
 import { sameCode } from './warehouseShippingQuoteDomain';
-import { isInquiryRequiredForwarderEligibility, isUnsupportedForwarderEligibility } from './warehouseForwarderEligibilityDomain';
+import {
+  isInquiryRequiredForwarderEligibility,
+  isSupportedForwarderEligibility,
+  isUnknownForwarderEligibility,
+  isUnsupportedForwarderEligibility
+} from './warehouseForwarderEligibilityDomain';
 import type { WarehouseOrderJourney } from './warehouseOrderJourney';
 import { warehouseOrderJourneyStatusMeta } from './warehouseOrderJourney';
 export type ShippingOrderStatusFilter =
@@ -182,34 +183,13 @@ export function hasLineQuotePrice(line: ShippingOrderLine) {
     && unitPrice > 0;
 }
 
-export function applySelectedChannelQuoteToLine(
-  line: ShippingOrderLine,
-  channel?: OrderLogisticsQuoteChannelOption
-): ShippingOrderLine {
-  const quote = channel?.lineQuotes?.find((item) => (
-    (item.shippingOrderLineId && item.shippingOrderLineId === line.id)
-    || (item.purchaseOrderItemSiteId && item.purchaseOrderItemSiteId === line.purchaseOrderItemSiteId)
-    || (item.partnerSku && sameCode(item.partnerSku, line.partnerSku))
-  ));
-  return quote ? {
-    ...line,
-    quoteStatus: quote.quoteStatus || 'PENDING_QUOTE',
-    unitPrice: quote.unitPrice ?? null,
-    currency: quote.currency,
-    billingUnit: quote.billingUnit,
-    priceSource: quote.priceSource,
-    yiteMaterial: quote.yiteMaterial ?? line.yiteMaterial,
-    eligibilityStatus: quote.eligibilityStatus || 'SUPPORTED'
-  } : line;
-}
-
 export function countShippingOrderPendingQuoteLines(order: ShippingOrder) {
   const segments = order.segments || [];
   const segmentById = new Map(segments.map((segment) => [segment.id, segment]));
   if (order.lines?.length) {
     return order.lines.filter((line) => {
       const segment = line.shippingOrderSegmentId ? segmentById.get(line.shippingOrderSegmentId) : undefined;
-      return !isUnsupportedForwarderEligibility(line)
+      return isSupportedForwarderEligibility(line)
         && (!segment || !isZdShippingForwarder(segment))
         && !hasLineQuotePrice(line);
     }).length;
@@ -230,6 +210,7 @@ export function shippingOrderQuoteIssueSummary(order: ShippingOrder) {
       missingMaterialCount,
       unsupportedCount: 0,
       inquiryRequiredCount: 0,
+      unknownEligibilityCount: 0,
       // 列表接口只有两个可能重叠的汇总数，取较大值可避免把同一商品重复计数。
       totalCount: Math.max(pendingQuoteCount, missingMaterialCount)
     };
@@ -240,21 +221,24 @@ export function shippingOrderQuoteIssueSummary(order: ShippingOrder) {
     .filter((line) => isMissingYiteMaterial(line, yiteSegmentIds)).length;
   const unsupportedCount = order.lines.filter(isUnsupportedForwarderEligibility).length;
   const inquiryRequiredCount = order.lines.filter(isInquiryRequiredForwarderEligibility).length;
+  const unknownEligibilityCount = order.lines.filter(isUnknownForwarderEligibility).length;
   const totalCount = order.lines.filter((line) => {
     const segment = line.shippingOrderSegmentId ? segmentById.get(line.shippingOrderSegmentId) : undefined;
-    const quoteIncomplete = !isUnsupportedForwarderEligibility(line)
+    const quoteIncomplete = isSupportedForwarderEligibility(line)
       && (!segment || !isZdShippingForwarder(segment))
       && !hasLineQuotePrice(line);
     return quoteIncomplete
       || isMissingYiteMaterial(line, yiteSegmentIds)
       || isUnsupportedForwarderEligibility(line)
-      || isInquiryRequiredForwarderEligibility(line);
+      || isInquiryRequiredForwarderEligibility(line)
+      || isUnknownForwarderEligibility(line);
   }).length;
   return {
     pendingQuoteCount,
     missingMaterialCount,
     unsupportedCount,
     inquiryRequiredCount,
+    unknownEligibilityCount,
     totalCount
   };
 }

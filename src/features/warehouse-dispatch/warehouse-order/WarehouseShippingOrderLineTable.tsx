@@ -2,7 +2,12 @@ import { SaveOutlined } from '@ant-design/icons';
 import { Button, Empty, Image, Input, Select, Table, Typography } from 'antd';
 import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
 import { buildYiteMaterialCellModel } from './WarehouseOrderPanel.models';
-import { isUnsupportedForwarderEligibility } from './warehouseForwarderEligibilityDomain';
+import {
+  isUnknownForwarderEligibility,
+  isUnsupportedForwarderEligibility,
+  normalizeForwarderEligibilityStatus
+} from './warehouseForwarderEligibilityDomain';
+import type { EffectiveForwarderEligibilityStatus } from './warehouseForwarderEligibilityDomain';
 import {
   hasLineQuotePrice,
   shippingOrderLineImageUrl,
@@ -18,17 +23,20 @@ import type { ShippingOrderQuoteState } from './useShippingOrderQuoteState';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
 
 const { Text } = Typography;
-type EditableEligibilityStatus = 'SUPPORTED' | 'INQUIRY_REQUIRED' | 'UNSUPPORTED';
 
-const ELIGIBILITY_OPTIONS: Array<{ value: EditableEligibilityStatus; label: string }> = [
+const ELIGIBILITY_OPTIONS: Array<{
+  value: EffectiveForwarderEligibilityStatus;
+  label: string;
+  disabled?: boolean;
+}> = [
   { value: 'SUPPORTED', label: '可发' },
   { value: 'INQUIRY_REQUIRED', label: '需询价' },
-  { value: 'UNSUPPORTED', label: '不接' }
+  { value: 'UNSUPPORTED', label: '不接' },
+  { value: 'UNKNOWN', label: '状态待确认', disabled: true }
 ];
 
-function editableEligibilityStatus(line: ShippingOrderLine): EditableEligibilityStatus {
-  const status = String(line.eligibilityStatus || 'SUPPORTED').toUpperCase();
-  return status === 'INQUIRY_REQUIRED' || status === 'UNSUPPORTED' ? status : 'SUPPORTED';
+function displayEligibilityStatus(line: ShippingOrderLine) {
+  return normalizeForwarderEligibilityStatus(line.eligibilityStatus);
 }
 
 export function WarehouseShippingOrderLineTable({
@@ -146,12 +154,14 @@ export function WarehouseShippingOrderLineTable({
             <Select
               size="small"
               className="warehouse-shipping-order-eligibility-select"
-              value={editableEligibilityStatus(line)}
+              value={displayEligibilityStatus(line)}
               options={ELIGIBILITY_OPTIONS}
               loading={data.actionKey === `line-eligibility:${line.id}`}
               disabled={line.shippingSubmitStatus === 'SUBMITTED'
                 || data.actionKey === `line-eligibility:${line.id}`}
-              onChange={(status: EditableEligibilityStatus) => void actions.handleSaveEligibility(line, status)}
+              onChange={(status: EffectiveForwarderEligibilityStatus) => {
+                if (status !== 'UNKNOWN') void actions.handleSaveEligibility(line, status);
+              }}
             />
           )
         },
@@ -170,9 +180,12 @@ export function WarehouseShippingOrderLineTable({
                     size="small"
                     inputMode="decimal"
                     value={draft.unitPrice}
-                    placeholder={isUnsupportedForwarderEligibility(line) ? '该货代不接' : '单价'}
+                    placeholder={isUnsupportedForwarderEligibility(line)
+                      ? '该货代不接'
+                      : isUnknownForwarderEligibility(line) ? '请先确认承运状态' : '单价'}
                     disabled={line.shippingSubmitStatus === 'SUBMITTED'
-                      || isUnsupportedForwarderEligibility(line)}
+                      || isUnsupportedForwarderEligibility(line)
+                      || isUnknownForwarderEligibility(line)}
                     onChange={(event) => quote.updateLineDraft(line.id, { unitPrice: event.target.value })}
                   />
                   <Select
@@ -181,7 +194,8 @@ export function WarehouseShippingOrderLineTable({
                     value={draft.billingUnit}
                     options={QUOTE_BILLING_UNIT_OPTIONS}
                     disabled={line.shippingSubmitStatus === 'SUBMITTED'
-                      || isUnsupportedForwarderEligibility(line)}
+                      || isUnsupportedForwarderEligibility(line)
+                      || isUnknownForwarderEligibility(line)}
                     onChange={(billingUnit) => quote.updateLineDraft(line.id, { billingUnit })}
                   />
                 </div>
@@ -207,7 +221,8 @@ export function WarehouseShippingOrderLineTable({
               icon={<SaveOutlined />}
               loading={data.actionKey === `line-quote:${line.id}`}
               disabled={line.shippingSubmitStatus === 'SUBMITTED'
-                || isUnsupportedForwarderEligibility(line)}
+                || isUnsupportedForwarderEligibility(line)
+                || isUnknownForwarderEligibility(line)}
               onClick={() => void actions.handleSaveLineQuote(line)}
             >
               保存报价
@@ -222,10 +237,11 @@ export function WarehouseShippingOrderLineTable({
             image={Empty.PRESENTED_IMAGE_SIMPLE}
             description={quote.detailUnitPriceFilter !== 'ALL'
               ? '当前单价与状态筛选下暂无商品'
-              : quote.detailLineFilter === 'MISSING_PRICE'
-                ? '暂无缺单价商品'
+                : quote.detailLineFilter === 'MISSING_PRICE'
+                  ? '暂无缺单价商品'
               : quote.detailLineFilter === 'MISSING_MATERIAL' ? '暂无缺义特材质商品'
                 : quote.detailLineFilter === 'UNSUPPORTED' ? '暂无当前货代不接商品'
+                  : quote.detailLineFilter === 'ELIGIBILITY_UNKNOWN' ? '暂无承运状态待确认商品'
                   : quote.detailLineFilter === 'INQUIRY_REQUIRED' ? '暂无需询价商品'
                     : '暂无商品'}
           />

@@ -1,5 +1,33 @@
 import { strict as assert } from 'node:assert';
 import { dispatchContractSources as sources } from './warehouseDispatchContractSources';
+import { requireShippingBatchForPlan } from './warehouse-dispatch/shippingBatchScopeDomain';
+import type { DispatchPlan, ShippingBatch } from './warehouse-dispatch/types';
+
+const scopedPlan = { id: 'plan-a', ownerUserId: 307 } as DispatchPlan;
+const scopedBatch = {
+  id: 'batch-a', dispatchPlanId: 'plan-a', ownerUserId: 307
+} as ShippingBatch;
+assert.equal(requireShippingBatchForPlan(scopedPlan, scopedBatch), scopedBatch);
+assert.throws(
+  () => requireShippingBatchForPlan(scopedPlan, { ...scopedBatch, dispatchPlanId: 'plan-b' }),
+  /不匹配/
+);
+assert.throws(
+  () => requireShippingBatchForPlan(scopedPlan, { ...scopedBatch, ownerUserId: undefined }),
+  /所属账号/
+);
+assert.throws(
+  () => requireShippingBatchForPlan(scopedPlan, { ...scopedBatch, ownerUserId: 999 }),
+  /所属账号.*不匹配/
+);
+assert.throws(
+  () => requireShippingBatchForPlan({ ...scopedPlan, ownerUserId: undefined }, scopedBatch),
+  /所属账号/
+);
+assert.throws(
+  () => requireShippingBatchForPlan(scopedPlan, { ...scopedBatch, dispatchPlanId: undefined }),
+  /不匹配/
+);
 
 assert.match(sources.workbench, /key: 'dispatch-plan'[\s\S]*buildTabLabel\('发货申请单'/);
 assert.match(sources.planPanel, /ColumnsType<DispatchPlan>/);
@@ -22,7 +50,7 @@ assert.match(
 );
 assert.match(
   sources.shippingWorkspace,
-  /generateLogisticsPlan[\s\S]*requestIdentity[\s\S]*isCurrentRequest[\s\S]*createShippingBatchFromDispatchPlan[\s\S]*if \(!isCurrentRequest\(\)\) return[\s\S]*setSelectedPlanId\(plan\.id\)[\s\S]*setShippingBatch\(batch\)[\s\S]*finally[\s\S]*isCurrentRequest\(\)[\s\S]*setGeneratingPlanId\(undefined\)/
+  /generateLogisticsPlan[\s\S]*requestIdentity[\s\S]*isCurrentRequest[\s\S]*createShippingBatchFromDispatchPlan[\s\S]*if \(!isCurrentRequest\(\)\) return[\s\S]*requireShippingBatchForPlan\(plan, batch\)[\s\S]*setSelectedPlanId\(plan\.id\)[\s\S]*setShippingBatch\(batch\)[\s\S]*finally[\s\S]*isCurrentRequest\(\)[\s\S]*setGeneratingPlanId\(undefined\)/
 );
 assert.match(sources.planDetail, /title=\{plan \? `\$\{plan\.planNo\} 发货申请单详情`[\s\S]*warehouse-dispatch-plan-detail is-modal/);
 assert.match(sources.costDomain, /formatDispatchPlanBatchMetric[\s\S]*待生成[\s\S]*actualWeightKg[\s\S]*volumeCbm[\s\S]*规格缺失/);
@@ -47,6 +75,10 @@ assert.match(sources.workbench, /key: 'packing-list'[\s\S]*buildTabLabel\('发�
 assert.match(sources.packingPanel, /loadShippingBatches\(/);
 assert.match(sources.packingPanel, /loadPackingLists\(/);
 assert.match(sources.packingPanel, /shipPackingList\(packingListId\)/);
+assert.match(
+  sources.packingPanel,
+  /requirePackingBatchDetailsScope[\s\S]*loadOutboundOrders[\s\S]*loadPackingLists[\s\S]*requirePackingListActionScope[\s\S]*shipPackingList/
+);
 assert.match(sources.packingSubmissionDrawer, /确认已交货代/);
 assert.doesNotMatch(sources.packingPanel, /createPackingList\(|createOutboundOrders\(|selectShippingOption\(|生成装箱单/);
 assert.match(sources.dispatchApi, /loadShippingBatches\(/);

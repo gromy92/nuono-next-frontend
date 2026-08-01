@@ -16,6 +16,7 @@ export type DetailLineFilter =
   | 'MISSING_MATERIAL'
   | 'MISSING_PRICE'
   | 'INQUIRY_REQUIRED'
+  | 'ELIGIBILITY_UNKNOWN'
   | 'UNSUPPORTED';
 
 export type QuoteBillingUnit = 'KG' | 'CBM';

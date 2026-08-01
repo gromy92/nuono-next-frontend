@@ -7,7 +7,10 @@ import {
   updateShippingOrderLineQuotes
 } from './warehouseShippingOrderRequests';
 import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
-import { isUnsupportedForwarderEligibility } from './warehouseForwarderEligibilityDomain';
+import {
+  isUnknownForwarderEligibility,
+  isUnsupportedForwarderEligibility
+} from './warehouseForwarderEligibilityDomain';
 import { isYiteQuoteForwarder } from './warehouseShippingOrderDomain';
 import {
   defaultSegmentQuoteSelection,
@@ -39,6 +42,10 @@ export function useShippingOrderQuoteActions(
     if (!order) return;
     if (isUnsupportedForwarderEligibility(line)) {
       message.warning('该货代当前不接此商品，不能保存报价。');
+      return;
+    }
+    if (isUnknownForwarderEligibility(line)) {
+      message.warning('请先确认商品承运状态，再保存报价。');
       return;
     }
     if (!quote.selectedOption.forwarderCode || !quote.selectedOption.routeCode) {
@@ -90,6 +97,10 @@ export function useShippingOrderQuoteActions(
     }
     if (quote.selectedLines.some(isUnsupportedForwarderEligibility)) {
       message.warning('所选商品包含当前货代不接的商品，不能批量报价。');
+      return;
+    }
+    if (quote.selectedLines.some(isUnknownForwarderEligibility)) {
+      message.warning('所选商品包含承运状态待确认的商品，不能批量报价。');
       return;
     }
     if (!quote.selectedOption.forwarderCode || !quote.selectedOption.routeCode) {

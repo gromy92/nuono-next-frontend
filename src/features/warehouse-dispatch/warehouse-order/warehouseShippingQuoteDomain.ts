@@ -6,6 +6,7 @@ import type {
 } from '../../logistics-quote/types';
 import type { ShippingOrderSegment } from './warehouseShippingOrderTypes';
 import type { QuoteBillingUnit, QuoteExportSelection } from './warehouseShippingOrderModels';
+import { normalizeForwarderEligibilityStatus } from './warehouseForwarderEligibilityDomain';
 
 export function sameCode(left?: string, right?: string) {
   const normalizedLeft = (left || '').trim().toUpperCase();
@@ -81,7 +82,9 @@ export function buildQuoteUnitPriceFilterOptions(
   transportMode?: string
 ) {
   const counts = new Map<string, number>();
-  lines.filter((line) => line.eligibilityStatus !== 'UNSUPPORTED').forEach((line) => {
+  lines.filter((line) => (
+    normalizeForwarderEligibilityStatus(line.eligibilityStatus) === 'SUPPORTED'
+  )).forEach((line) => {
     const value = quoteUnitPriceFilterValue(line.unitPrice, line.billingUnit, transportMode);
     if (value) counts.set(value, (counts.get(value) || 0) + 1);
   });

@@ -27,6 +27,9 @@ export function useShippingOrderSubmit(data: WarehouseShippingOrderData) {
         quoteIssue.inquiryRequiredCount > 0
           ? `${quoteIssue.inquiryRequiredCount} 个商品需询价确认`
           : '',
+        quoteIssue.unknownEligibilityCount > 0
+          ? `${quoteIssue.unknownEligibilityCount} 个商品承运状态待确认`
+          : '',
         quoteIssue.pendingQuoteCount > 0
           ? `${quoteIssue.pendingQuoteCount} 个商品缺单价`
           : '',

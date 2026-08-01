@@ -5,7 +5,7 @@ import { buildPackingExportChannels } from './packingExportDomain'
 import type { PackingBatchDetails, PackingExportSelection } from './packingExportDomain'
 import type { ShippingBatch } from './types'
 
-export function usePackingListExport(loadDetails: (batchId: string) => Promise<PackingBatchDetails>) {
+export function usePackingListExport(loadDetails: (batch: ShippingBatch) => Promise<PackingBatchDetails>) {
   const [targetBatch, setTargetBatch] = useState<ShippingBatch>()
   const [details, setDetails] = useState<PackingBatchDetails>()
   const [selection, setSelection] = useState<PackingExportSelection>({})
@@ -16,9 +16,10 @@ export function usePackingListExport(loadDetails: (batchId: string) => Promise<P
   )
 
   async function open(batch: ShippingBatch) {
+    close()
     setLoadingBatchId(batch.id)
     try {
-      const nextDetails = await loadDetails(batch.id)
+      const nextDetails = await loadDetails(batch)
       const nextChannels = buildPackingExportChannels(nextDetails)
       if (!nextChannels.length) {
         message.warning('当前发货单没有已装箱的货代渠道。')
@@ -41,6 +42,16 @@ export function usePackingListExport(loadDetails: (batchId: string) => Promise<P
     if (!targetBatch || !selection.forwarderCode || !selection.routeCode) return
     setLoadingBatchId(targetBatch.id)
     try {
+      const nextDetails = await loadDetails(targetBatch)
+      const nextChannels = buildPackingExportChannels(nextDetails)
+      const selectedChannel = nextChannels.find((channel) => (
+        channel.forwarderCode === selection.forwarderCode && channel.routeCode === selection.routeCode
+      ))
+      if (!selectedChannel) {
+        setDetails(nextDetails)
+        message.warning('所选装箱渠道已变化，请重新选择。')
+        return
+      }
       const file = await downloadShippingBatchPackingList(targetBatch.id, {
         forwarderCode: selection.forwarderCode,
         routeCode: selection.routeCode

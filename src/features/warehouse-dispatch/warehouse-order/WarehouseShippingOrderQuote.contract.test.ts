@@ -1,5 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { contractSources as sources } from './WarehouseOrderContractSources';
+import { applySelectedChannelQuoteToLine } from './warehouseShippingQuoteLineMatching';
+import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
 import {
   buildQuoteUnitPriceFilterOptions,
   defaultQuoteBillingUnit,
@@ -18,10 +20,10 @@ assert.equal(resolveQuoteBillingUnit(undefined, 'SEA'), 'CBM');
 assert.deepEqual(
   buildQuoteUnitPriceFilterOptions(
     [
-      { unitPrice: 32, billingUnit: 'KG' },
-      { unitPrice: '32.00', billingUnit: 'CBM' },
-      { unitPrice: 32, billingUnit: 'KG' },
-      { unitPrice: null, billingUnit: 'CBM' }
+      { unitPrice: 32, billingUnit: 'KG', eligibilityStatus: 'SUPPORTED' },
+      { unitPrice: '32.00', billingUnit: 'CBM', eligibilityStatus: 'SUPPORTED' },
+      { unitPrice: 32, billingUnit: 'KG', eligibilityStatus: 'SUPPORTED' },
+      { unitPrice: null, billingUnit: 'CBM', eligibilityStatus: 'SUPPORTED' }
     ],
     'SEA'
   ),
@@ -30,6 +32,18 @@ assert.deepEqual(
     { value: 'PRICE:32:CBM', label: '32 CNY / CBM（1）' },
     { value: 'PRICE:32:KG', label: '32 CNY / KG（2）' }
   ]
+);
+assert.deepEqual(
+  buildQuoteUnitPriceFilterOptions([
+    { unitPrice: 65, billingUnit: 'KG', eligibilityStatus: 'UNKNOWN' },
+    { unitPrice: 66, billingUnit: 'KG', eligibilityStatus: 'FUTURE_STATUS' },
+    { unitPrice: 67, billingUnit: 'KG', eligibilityStatus: 'SUPPORTED' }
+  ]),
+  [
+    { value: 'ALL', label: '全部单价（3）' },
+    { value: 'PRICE:67:KG', label: '67 CNY / KG（1）' }
+  ],
+  '只有显式 SUPPORTED 的商品价可进入单价筛选'
 );
 assert.equal(matchesQuoteUnitPriceFilter('32.00', 'KG', 'PRICE:32:KG', 'SEA'), true);
 assert.equal(matchesQuoteUnitPriceFilter(32, 'CBM', 'PRICE:32:KG', 'SEA'), false);
@@ -62,6 +76,51 @@ assert.equal(
   '需询价'
 );
 
+const quoteLine = (
+  id: string,
+  purchaseOrderItemSiteId: string,
+  sourceStoreCode: string,
+  purchaseOrderId: string
+): ShippingOrderLine => ({
+  id,
+  purchaseOrderId,
+  purchaseOrderItemId: `item-${id}`,
+  purchaseOrderItemSiteId,
+  partnerSku: 'PSKU-SHARED',
+  sourceStoreCode,
+  quantity: 1,
+  unitPrice: 11,
+  eligibilityStatus: 'SUPPORTED'
+});
+const lineA = quoteLine('line-a', 'site-a', 'STORE-A', 'order-a');
+const lineB = quoteLine('line-b', 'site-b', 'STORE-B', 'order-b');
+const conflictingStrongIdentity = applySelectedChannelQuoteToLine(lineA, {
+  routeCode: 'ET-AIR', pendingLineCount: 0, newProductLineCount: 0,
+  lineQuotes: [{
+    shippingOrderLineId: 'line-b',
+    purchaseOrderItemSiteId: 'site-a',
+    partnerSku: 'PSKU-SHARED',
+    unitPrice: 99,
+    eligibilityStatus: 'SUPPORTED'
+  }]
+}, [lineA]);
+assert.notEqual(conflictingStrongIdentity.unitPrice, 99, '强 shippingOrderLineId 冲突不能降级按 site 命中');
+const ambiguousPskuFallback = applySelectedChannelQuoteToLine(lineA, {
+  routeCode: 'ET-AIR', pendingLineCount: 0, newProductLineCount: 0,
+  lineQuotes: [{ partnerSku: 'PSKU-SHARED', unitPrice: 88, eligibilityStatus: 'SUPPORTED' }]
+}, [lineA, lineB]);
+assert.notEqual(ambiguousPskuFallback.unitPrice, 88, '跨店/采购单同 PSKU 不能弱身份串价');
+const uniquePskuFallback = applySelectedChannelQuoteToLine(lineA, {
+  routeCode: 'ET-AIR', pendingLineCount: 0, newProductLineCount: 0,
+  lineQuotes: [{ partnerSku: 'PSKU-SHARED', unitPrice: 66, eligibilityStatus: 'SUPPORTED' }]
+}, [lineA]);
+assert.equal(uniquePskuFallback.unitPrice, 66);
+const blankEligibility = applySelectedChannelQuoteToLine(lineA, {
+  routeCode: 'ET-AIR', pendingLineCount: 0, newProductLineCount: 0,
+  lineQuotes: [{ shippingOrderLineId: 'line-a', unitPrice: 65 }]
+}, [lineA]);
+assert.equal(blankEligibility.eligibilityStatus, 'UNKNOWN', '缺失承运状态不得默认可发');
+
 assert.match(
   sources.quoteActions,
   /handleSaveLineQuote[\s\S]*updateShippingOrderLineQuote[\s\S]*quote\.selectedOption[\s\S]*currency: 'CNY'[\s\S]*billingUnit: resolveQuoteBillingUnit\([\s\S]*draft\.billingUnit/
@@ -91,7 +150,7 @@ assert.match(
   sources.quoteActions + sources.eligibilityDomain,
   /isUnsupportedForwarderEligibility[\s\S]*不能保存报价/
 );
-assert.match(sources.eligibilityDomain, /eligibilityStatus \|\| 'SUPPORTED'/);
+assert.match(sources.eligibilityDomain, /normalized === 'SUPPORTED'[\s\S]*UNKNOWN/);
 assert.match(
   sources.reassignModal,
   /AIR[\s\S]*SEA[\s\S]*label: `新建 \$\{/
@@ -108,9 +167,8 @@ assert.match(
 );
 assert.match(
   sources.quoteState,
-  /linesWithSelectedQuote[\s\S]*applySelectedChannelQuoteToLine\(line, selectedChannel\)/
+  /linesWithSelectedQuote[\s\S]*applySelectedChannelQuoteToLine\(line, selectedChannel, activeLines\)/
 );
-assert.match(sources.orderDomain, /priceSource: quote\.priceSource/);
 assert.doesNotMatch(sources.quoteState, /pendingConfirmationCount|warehouseQuoteConfirmationState/);
 assert.match(sources.quoteState, /missingPriceCount[\s\S]*warehouseQuotePriceState/);
 assert.match(
@@ -126,6 +184,11 @@ assert.match(sources.sharedViews, /QuoteChipGroup label="货代"[\s\S]*forwarder
 assert.doesNotMatch(sources.sharedViews, /QuoteChipGroup label="渠道"/);
 assert.match(sources.sharedViews, /selectedForwarder\?\.channels \|\| \[\]\)\.length > 1[\s\S]*<Select/);
 assert.match(sources.sharedViews, /WarehouseShippingOrderPublishedPriceCard channel=\{selectedChannel\}/);
+assert.doesNotMatch(sources.sharedViews, /报价缺失 \{formatQuantity\(quoteIssue\.totalCount\)\}/);
+assert.match(
+  sources.sharedViews,
+  /缺单价[\s\S]*缺义特材质[\s\S]*需询价[\s\S]*不接[\s\S]*承运状态待确认/
+);
 assert.match(sources.publishedPriceCard, /线上报价[\s\S]*暂无线上报价/);
 assert.match(sources.publishedPriceCard, /quoteVersionCode[\s\S]*展开海运报价/);
 assert.match(
@@ -160,7 +223,7 @@ assert.match(sources.quoteTransfer, /selectedChannel\?\.totalLineCount[\s\S]*sel
 assert.match(sources.warehouseOrderApi, /missingOnly\?: boolean[\s\S]*params\.set\('missingOnly', 'true'\)/);
 assert.doesNotMatch(sources.detailToolbar, /导出缺报价|生成账单/);
 assert.match(sources.detailToolbar, /label="缺义特材质"[\s\S]*label="缺单价"/);
-assert.doesNotMatch(sources.detailToolbar, /待确认|PENDING_CONFIRMATION/);
+assert.doesNotMatch(sources.detailToolbar, /PENDING_CONFIRMATION/);
 assert.match(sources.detailToolbar, /报价单价[\s\S]*detailUnitPriceFilter[\s\S]*unitPriceFilterOptions/);
 assert.doesNotMatch(sources.sharedViews, />材料缺失 /);
 assert.doesNotMatch(sources.lineTable, /title: '币种'|title: '计费单位'/);

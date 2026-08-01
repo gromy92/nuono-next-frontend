@@ -32,12 +32,21 @@ export function WarehouseOrderIssueTags({ order }: { order: ShippingOrder }) {
   }
   return (
     <div className="warehouse-shipping-order-issue-tags">
-      <Tag color="red" title={[
-        quoteIssue.pendingQuoteCount > 0 ? `缺单价 ${formatQuantity(quoteIssue.pendingQuoteCount)}` : '',
-        quoteIssue.missingMaterialCount > 0 ? `缺义特材质 ${formatQuantity(quoteIssue.missingMaterialCount)}` : ''
-      ].filter(Boolean).join('；')}>
-        报价缺失 {formatQuantity(quoteIssue.totalCount)}
-      </Tag>
+      {quoteIssue.pendingQuoteCount > 0
+        ? <Tag color="red">缺单价 {formatQuantity(quoteIssue.pendingQuoteCount)}</Tag>
+        : null}
+      {quoteIssue.missingMaterialCount > 0
+        ? <Tag color="red">缺义特材质 {formatQuantity(quoteIssue.missingMaterialCount)}</Tag>
+        : null}
+      {quoteIssue.inquiryRequiredCount > 0
+        ? <Tag color="orange">需询价 {formatQuantity(quoteIssue.inquiryRequiredCount)}</Tag>
+        : null}
+      {quoteIssue.unsupportedCount > 0
+        ? <Tag color="volcano">不接 {formatQuantity(quoteIssue.unsupportedCount)}</Tag>
+        : null}
+      {quoteIssue.unknownEligibilityCount > 0
+        ? <Tag color="gold">承运状态待确认 {formatQuantity(quoteIssue.unknownEligibilityCount)}</Tag>
+        : null}
     </div>
   );
 }

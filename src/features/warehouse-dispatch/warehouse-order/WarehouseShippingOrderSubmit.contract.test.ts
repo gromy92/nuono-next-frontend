@@ -13,9 +13,10 @@ const order = {
     { id: 'et', forwarderCode: 'ET', pendingQuoteLineCount: 2 }
   ],
   lines: [
-    { id: '1', shippingOrderSegmentId: 'zd', quoteStatus: 'PENDING_QUOTE' },
-    { id: '2', shippingOrderSegmentId: 'et', quoteStatus: 'PENDING_QUOTE' },
-    { id: '3', shippingOrderSegmentId: 'et', quoteStatus: 'PENDING_QUOTE', unitPrice: 65 }
+    { id: '1', shippingOrderSegmentId: 'zd', quoteStatus: 'PENDING_QUOTE', eligibilityStatus: 'SUPPORTED' },
+    { id: '2', shippingOrderSegmentId: 'et', quoteStatus: 'PENDING_QUOTE', eligibilityStatus: 'SUPPORTED' },
+    { id: '3', shippingOrderSegmentId: 'et', quoteStatus: 'PENDING_QUOTE', unitPrice: 65,
+      eligibilityStatus: 'SUPPORTED' }
   ]
 } as ShippingOrder;
 assert.equal(countShippingOrderPendingQuoteLines(order), 1, 'ZD 缺价不应阻塞整单提交');
@@ -23,8 +24,10 @@ assert.equal(countShippingOrderPendingQuoteLines(order), 1, 'ZD 缺价不应阻�
 const overlappingIssues = {
   segments: [{ id: 'yt', forwarderCode: 'YT' }],
   lines: [
-    { id: '1', shippingOrderSegmentId: 'yt', quoteStatus: 'PENDING_QUOTE', yiteMaterial: '' },
-    { id: '2', shippingOrderSegmentId: 'yt', quoteStatus: 'PENDING_QUOTE', unitPrice: 65, yiteMaterial: '' }
+    { id: '1', shippingOrderSegmentId: 'yt', quoteStatus: 'PENDING_QUOTE', yiteMaterial: '',
+      eligibilityStatus: 'SUPPORTED' },
+    { id: '2', shippingOrderSegmentId: 'yt', quoteStatus: 'PENDING_QUOTE', unitPrice: 65, yiteMaterial: '',
+      eligibilityStatus: 'SUPPORTED' }
   ]
 } as ShippingOrder;
 assert.deepEqual(shippingOrderQuoteIssueSummary(overlappingIssues), {
@@ -32,6 +35,7 @@ assert.deepEqual(shippingOrderQuoteIssueSummary(overlappingIssues), {
   missingMaterialCount: 2,
   unsupportedCount: 0,
   inquiryRequiredCount: 0,
+  unknownEligibilityCount: 0,
   totalCount: 2
 }, '报价状态和义特材质问题必须按商品行取并集，不能重复计数');
 
@@ -57,8 +61,25 @@ assert.deepEqual(shippingOrderQuoteIssueSummary(pricedEligibilityBlocks), {
   missingMaterialCount: 0,
   unsupportedCount: 1,
   inquiryRequiredCount: 1,
+  unknownEligibilityCount: 0,
   totalCount: 2
 }, '旧价格不能绕过不接或需询价承运门禁');
+
+const unknownEligibilityBlocks = {
+  segments: [{ id: 'et', forwarderCode: 'ET' }],
+  lines: [
+    { id: 'blank', shippingOrderSegmentId: 'et', unitPrice: 65, eligibilityStatus: '' },
+    { id: 'future', shippingOrderSegmentId: 'et', unitPrice: 66, eligibilityStatus: 'FUTURE_STATUS' }
+  ]
+} as ShippingOrder;
+assert.deepEqual(shippingOrderQuoteIssueSummary(unknownEligibilityBlocks), {
+  pendingQuoteCount: 0,
+  missingMaterialCount: 0,
+  unsupportedCount: 0,
+  inquiryRequiredCount: 0,
+  unknownEligibilityCount: 2,
+  totalCount: 2
+}, '空白和未来承运状态必须 fail-closed');
 
 assert.match(
   sources.submit,
@@ -68,9 +89,9 @@ assert.match(sources.submit, /import \{ App \} from 'antd'/);
 assert.match(sources.submit, /const \{ modal, message \} = App\.useApp\(\)/);
 assert.match(
   sources.submit,
-  /当前货代不接[\s\S]*需询价确认[\s\S]*商品缺单价[\s\S]*缺少材质[\s\S]*title: '暂不能提交发货'[\s\S]*modal\.success\(\{[\s\S]*message\.error\(/
+  /当前货代不接[\s\S]*需询价确认[\s\S]*承运状态待确认[\s\S]*商品缺单价[\s\S]*缺少材质[\s\S]*title: '暂不能提交发货'[\s\S]*modal\.success\(\{[\s\S]*message\.error\(/
 );
-assert.doesNotMatch(sources.submit, /待确认|已确认/);
+assert.doesNotMatch(sources.submit, /已确认|PENDING_CONFIRMATION/);
 assert.doesNotMatch(sources.submit, /title: '义特材质缺失'/);
 assert.doesNotMatch(
   sources.submit,

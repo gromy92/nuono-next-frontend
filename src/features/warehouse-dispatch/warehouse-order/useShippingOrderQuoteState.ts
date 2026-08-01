@@ -8,15 +8,17 @@ import type {
 } from '../../logistics-quote/types';
 import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
 import {
-  applySelectedChannelQuoteToLine,
   hasLineQuotePrice,
   isMissingYiteQuoteMaterial,
   isYiteQuoteForwarder
 } from './warehouseShippingOrderDomain';
 import {
   isInquiryRequiredForwarderEligibility,
+  isSupportedForwarderEligibility,
+  isUnknownForwarderEligibility,
   isUnsupportedForwarderEligibility
 } from './warehouseForwarderEligibilityDomain';
+import { applySelectedChannelQuoteToLine } from './warehouseShippingQuoteLineMatching';
 import type {
   DetailLineFilter,
   DetailUnitPriceFilter,
@@ -76,7 +78,7 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     [selectedForwarder, selectedOption.routeCode]
   );
   const linesWithSelectedQuote = useMemo(
-    () => activeLines.map((line) => applySelectedChannelQuoteToLine(line, selectedChannel)),
+    () => activeLines.map((line) => applySelectedChannelQuoteToLine(line, selectedChannel, activeLines)),
     [activeLines, selectedChannel]
   );
   const showYiteFields = isYiteQuoteForwarder(selectedForwarder);
@@ -86,7 +88,7 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
   );
   const missingPriceCount = useMemo(
     () => linesWithSelectedQuote
-      .filter((line) => !isUnsupportedForwarderEligibility(line))
+      .filter(isSupportedForwarderEligibility)
       .filter((line) => warehouseQuotePriceState(line) === 'MISSING_PRICE').length,
     [linesWithSelectedQuote]
   );
@@ -96,6 +98,10 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
   );
   const unsupportedCount = useMemo(
     () => linesWithSelectedQuote.filter(isUnsupportedForwarderEligibility).length,
+    [linesWithSelectedQuote]
+  );
+  const unknownEligibilityCount = useMemo(
+    () => linesWithSelectedQuote.filter(isUnknownForwarderEligibility).length,
     [linesWithSelectedQuote]
   );
   const unitPriceFilterOptions = useMemo(
@@ -113,13 +119,16 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
       ? isMissingYiteQuoteMaterial(line)
       : true)
     .filter((line) => detailLineFilter === 'MISSING_PRICE'
-      ? !isUnsupportedForwarderEligibility(line) && warehouseQuotePriceState(line) === 'MISSING_PRICE'
+      ? isSupportedForwarderEligibility(line) && warehouseQuotePriceState(line) === 'MISSING_PRICE'
       : true)
     .filter((line) => detailLineFilter === 'INQUIRY_REQUIRED'
       ? isInquiryRequiredForwarderEligibility(line)
       : true)
     .filter((line) => detailLineFilter === 'UNSUPPORTED'
       ? isUnsupportedForwarderEligibility(line)
+      : true)
+    .filter((line) => detailLineFilter === 'ELIGIBILITY_UNKNOWN'
+      ? isUnknownForwarderEligibility(line)
       : true),
   [activeSegment?.transportMode, detailLineFilter, detailUnitPriceFilter, linesWithSelectedQuote, showYiteFields]);
   const selectedLines = useMemo(() => {
@@ -272,7 +281,8 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     setActiveSegmentQuoteOptions, optionsLoading, selectedOption, setSelectedOption,
     selectedSegmentIds, detailLines, detailSegments, sortedSegments, activeSegment, activeSegmentIds,
     activeLines, selectedForwarder, selectedChannel, linesWithSelectedQuote, showYiteFields,
-    missingMaterialCount, missingPriceCount, inquiryRequiredCount, unsupportedCount, visibleLines, selectedLines,
+    missingMaterialCount, missingPriceCount, inquiryRequiredCount, unsupportedCount,
+    unknownEligibilityCount, visibleLines, selectedLines,
     forwarderSelectOptions: buildQuoteForwarderSelectOptions(activeSegmentQuoteOptions),
     channelSelectOptions: buildQuoteChannelSelectOptions(selectedForwarder),
     activeMaintenanceKey: `${selectedOption.forwarderCode || ''}:${selectedOption.routeCode || ''}:${detailLineFilter}:${detailUnitPriceFilter}`,

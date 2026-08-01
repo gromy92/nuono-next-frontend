@@ -138,6 +138,10 @@ export function WarehouseShippingOrderDetailToolbar({
               {
                 label: <DetailLineFilterLabel label="不接" count={quote.unsupportedCount} />,
                 value: 'UNSUPPORTED'
+              },
+              {
+                label: <DetailLineFilterLabel label="承运待确认" count={quote.unknownEligibilityCount} />,
+                value: 'ELIGIBILITY_UNKNOWN'
               }
             ]}
             onChange={(value) => quote.setDetailLineFilter(value as DetailLineFilter)}
