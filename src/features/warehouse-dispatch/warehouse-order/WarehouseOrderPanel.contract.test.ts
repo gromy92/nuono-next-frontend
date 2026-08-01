@@ -28,7 +28,7 @@ assert.match(
 );
 assert.doesNotMatch(sources.lineTable, /title: 'Barcode'|title: '来源采购单'|title: '数量'/);
 assert.doesNotMatch(sources.lineTable, /shippingOrderLineTitleEn|warehouse-shipping-order-product-title-en/);
-assert.match(sources.lineTable, /scroll=\{\{ x: quote\.showYiteFields \? 1120 : 860 \}\}/);
+assert.match(sources.lineTable, /scroll=\{\{ x: quote\.showYiteFields \? 1170 : 960 \}\}/);
 assert.match(sources.lineTable, /key=\{quote\.activeMaintenanceKey\}[\s\S]*rowKey="id"/);
 
 assert.match(sources.list, /embedded \? null : \([\s\S]*<Title level=\{4\}>发货单/);
