@@ -44,8 +44,11 @@ export function ProductDetailSyncAlert({ workspace }: ProductDetailSyncAlertProp
   ) {
     const publishTaskMessage = publishTask.message || '发布任务状态已更新。';
     const taskNeedsAttention = isProductPublishTaskNeedsAttention(publishTask);
+    const deleteTask = publishTask.taskType === 'product-delete';
+    const rebuildTask = publishTask.taskType === 'product-rebuild';
+    const taskName = deleteTask ? '删除' : rebuildTask ? '重建' : '发布';
     const warning = taskNeedsAttention;
-    const taskAction = taskNeedsAttention ? (
+    const taskAction = taskNeedsAttention && publishTask.retryAllowed !== false ? (
       <Button
         size="small"
         type="primary"
@@ -53,22 +56,22 @@ export function ProductDetailSyncAlert({ workspace }: ProductDetailSyncAlertProp
         disabled={workspace.productPublishTaskActionSubmitting}
         onClick={() => void workspace.retryProductPublishTask(publishTask.taskId)}
       >
-        重试发布
+        {deleteTask ? '继续删除' : rebuildTask ? '继续重建' : '重试发布'}
       </Button>
-    ) : publishTask.status === 'queued' ? (
+    ) : publishTask.status === 'queued' || publishTask.status === 'product_delete_queued' ? (
       <Button
         size="small"
         loading={workspace.productPublishTaskActionSubmitting}
         disabled={workspace.productPublishTaskActionSubmitting}
         onClick={() => void workspace.cancelProductPublishTask(publishTask.taskId)}
       >
-        取消发布
+        取消{taskName}
       </Button>
     ) : undefined;
     return (
       <CompactDetailNotice
         tone={warning ? 'warning' : 'info'}
-        title="商品发布任务"
+        title={`商品${taskName}任务`}
         description={publishTaskMessage}
         action={taskAction}
       />

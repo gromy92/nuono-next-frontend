@@ -13,7 +13,10 @@ function productIdentityLabel(record: ProductListRowPayload) {
   return ''
 }
 
-export function ProductDeleteConfirmDescription({ record }: { record: ProductListRowPayload }) {
+export function ProductDeleteConfirmDescription({
+  record,
+  continuing = false
+}: { record: ProductListRowPayload; continuing?: boolean }) {
   const identityLabel = productIdentityLabel(record)
 
   return (
@@ -49,7 +52,9 @@ export function ProductDeleteConfirmDescription({ record }: { record: ProductLis
         }}
       >
         <Text style={{ color: '#9a3412', display: 'block', fontSize: 12, lineHeight: '18px' }}>
-          系统会先删除 Noon 商品并回查确认，成功后再清理本地商品目录。
+          {continuing
+            ? '系统会复用原删除任务，从已验证的安全检查点继续；不会创建第二个删除任务。'
+            : '系统会先删除 Noon 商品并回查确认，成功后再清理本地商品目录。'}
         </Text>
       </div>
     </Space>

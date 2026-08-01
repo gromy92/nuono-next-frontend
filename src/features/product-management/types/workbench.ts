@@ -47,6 +47,7 @@ export type ProductPublishTaskPayload = {
   changedDomains?: string[];
   retryCount?: number;
   verifyAttemptCount?: number;
+  retryAllowed?: boolean;
   nextRunAt?: string;
   finishedAt?: string;
   pollAfterMillis?: number;

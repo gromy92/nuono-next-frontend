@@ -259,6 +259,7 @@ assert.match(
 );
 const productListIdentityCellsSource = [
   readFileSync(new URL('./components/ProductListIdentityCells.tsx', import.meta.url), 'utf8'),
+  readFileSync(new URL('./components/ProductDeleteAction.tsx', import.meta.url), 'utf8'),
   readFileSync(new URL('./components/ProductListConfirmDescriptions.tsx', import.meta.url), 'utf8')
 ].join('\n');
 assert.equal(
@@ -268,7 +269,7 @@ assert.equal(
   'product list delete button must not stop propagation before Popconfirm can open'
 );
 assert.equal(
-  productListIdentityCellsSource.includes('description={<ProductDeleteConfirmDescription record={record} />}') &&
+  productListIdentityCellsSource.includes('description={<ProductDeleteConfirmDescription record={record} continuing={state.continuing} />}') &&
     productListIdentityCellsSource.includes("style={{ width: 360, maxWidth: 'calc(100vw - 72px)' }}") &&
     productListIdentityCellsSource.includes("wordBreak: 'break-word'"),
   true,

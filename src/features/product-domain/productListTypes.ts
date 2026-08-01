@@ -21,6 +21,7 @@ export type ProductLastPublishTaskPayload = {
     | '重建待核对'
     | string;
   resultText?: string;
+  retryAllowed?: boolean;
   submittedAt?: string;
   finishedAt?: string;
   targetSiteCode?: string;

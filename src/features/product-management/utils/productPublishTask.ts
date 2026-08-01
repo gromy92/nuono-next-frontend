@@ -8,7 +8,14 @@ const ACTIVE_PUBLISH_TASK_STATUSES = new Set([
   'pending_effective',
   'write_unknown',
   'write_retry_scheduled',
-  'verify_timeout'
+  'verify_timeout',
+  'product_delete_queued',
+  'product_delete_running',
+  'product_delete_submitted',
+  'product_delete_verifying',
+  'product_delete_pending_effective',
+  'product_delete_write_retry_scheduled',
+  'product_delete_verify_timeout'
 ])
 
 export function isProductPublishTaskActive(task?: ProductPublishTaskPayload) {
