@@ -224,6 +224,9 @@ export function appointmentDeliveryTimeText(appointment?: OfficialWarehouseAppoi
   if (appointment.appointmentDate) {
     return `${appointment.appointmentDate} ${appointment.appointmentTime || ''}`.trim()
   }
+  if (appointment.status === 'SCHEDULED') {
+    return '约仓时间待同步'
+  }
   if (appointment.apStartDate && appointment.apEndDate) {
     return `${appointment.apStartDate} - ${appointment.apEndDate}`
   }
