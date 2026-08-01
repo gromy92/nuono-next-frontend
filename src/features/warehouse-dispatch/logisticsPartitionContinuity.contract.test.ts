@@ -10,6 +10,7 @@ const source = (relativePath: string) => readFileSync(
 const warehouseOrders = source('./warehouse-order/WarehouseShippingOrderList.tsx')
 const dispatchPlans = source('./WarehouseDispatchPlanPanel.tsx')
 const shippingExecution = source('./WarehousePackingListPanel.tsx')
+const shippingExecutionColumns = source('./WarehousePackingListColumns.tsx')
 const partitionViews = source('./LogisticsPartitionViews.tsx')
 
 for (const [name, content] of Object.entries({ warehouseOrders, dispatchPlans, shippingExecution })) {
@@ -20,7 +21,7 @@ for (const [name, content] of Object.entries({ warehouseOrders, dispatchPlans, s
 assert.match(warehouseOrders, /LogisticsPartitionCombinationTags/)
 assert.doesNotMatch(warehouseOrders, /LogisticsPartitionTags/)
 assert.match(dispatchPlans, /LogisticsPartitionTags/)
-assert.match(shippingExecution, /LogisticsPartitionTags/)
+assert.match(shippingExecutionColumns, /LogisticsPartitionTags/)
 assert.match(shippingExecution, /batch\.siteCodes/)
 assert.match(shippingExecution, /batch\.transportModes/)
 assert.match(
@@ -61,4 +62,4 @@ assert.match(
   '共享分区标签必须默认保留真实历史混合记录的提示'
 )
 assert.doesNotMatch(dispatchPlans, /showHistoricalMixed=\{false\}/)
-assert.doesNotMatch(shippingExecution, /showHistoricalMixed=\{false\}/)
+assert.doesNotMatch(shippingExecutionColumns, /showHistoricalMixed=\{false\}/)
