@@ -1,6 +1,7 @@
 export {
   isProductPublishTaskActive,
   isProductPublishTaskNeedsAttention,
+  productPublishTaskAttentionLabel,
   productPublishTaskStatusLabel
 } from './productPublishTask'
 export {

@@ -29,6 +29,16 @@ export function isProductPublishTaskNeedsAttention(task?: ProductPublishTaskPayl
   )
 }
 
+export function productPublishTaskAttentionLabel(task?: ProductPublishTaskPayload) {
+  if (task?.taskType === 'product-delete') {
+    return task.retryAllowed === false ? '删除待核对' : '继续删除'
+  }
+  if (task?.taskType === 'product-rebuild') {
+    return task.retryAllowed === false ? '重建待核对' : '继续重建'
+  }
+  return '重试发布'
+}
+
 export function productPublishTaskStatusLabel(task?: ProductPublishTaskPayload) {
   if (!task?.status) return ''
 

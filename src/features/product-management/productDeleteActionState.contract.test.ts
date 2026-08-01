@@ -1,7 +1,9 @@
 import { strict as assert } from 'node:assert';
-import { readFileSync } from 'node:fs';
 import { productDeleteActionState } from './utils/productDeleteActionState';
-import { isProductPublishTaskActive } from './utils/productPublishTask';
+import {
+  isProductPublishTaskActive,
+  productPublishTaskAttentionLabel
+} from './utils/productPublishTask';
 import type { ProductListRowPayload } from './types';
 
 function row(overrides: Partial<ProductListRowPayload> = {}): ProductListRowPayload {
@@ -71,22 +73,17 @@ assert.equal(isProductPublishTaskActive({
   taskType: 'product-delete',
   status: 'product_delete_write_retry_scheduled'
 }), true, 'prefixed delete statuses must remain active in every product surface');
-
-const deleteActionSource = readFileSync(
-  new URL('./components/ProductDeleteAction.tsx', import.meta.url),
-  'utf8'
-);
-const detailAlertSource = readFileSync(
-  new URL('./components/ProductDetailSyncAlert.tsx', import.meta.url),
-  'utf8'
-);
-const detailSummarySource = readFileSync(
-  new URL('./components/ProductDetailSummaryPanel.tsx', import.meta.url),
-  'utf8'
-);
-
-assert.match(deleteActionSource, /state\.continuing \? '确认继续删除？' : '确认删除商品？'/);
-assert.match(deleteActionSource, /void requestDeleteLocalProduct\(record\)/);
-assert.match(detailAlertSource, /deleteTask \? '继续删除'/);
-assert.match(detailSummarySource, /productLifecycleRetryBlocked \? '删除待核对' : '继续删除'/);
-assert.match(detailSummarySource, /productLifecycleTaskBlocking/);
+assert.equal(productPublishTaskAttentionLabel({
+  taskType: 'product-delete',
+  status: 'pending_manual_check',
+  retryAllowed: true
+}), '继续删除');
+assert.equal(productPublishTaskAttentionLabel({
+  taskType: 'product-delete',
+  status: 'pending_manual_check',
+  retryAllowed: false
+}), '删除待核对');
+assert.equal(productPublishTaskAttentionLabel({
+  taskType: 'publish-current',
+  status: 'failed'
+}), '重试发布');

@@ -4,7 +4,8 @@ import { navigateProductListingTargetInCurrentTab } from '../../product-listing/
 import {
   isPublicDetailReadonlyWorkbench,
   isProductPublishTaskActive,
-  isProductPublishTaskNeedsAttention
+  isProductPublishTaskNeedsAttention,
+  productPublishTaskAttentionLabel
 } from '../utils/workbench';
 import { getProductCurrentZCode, isLocalDraftNoonCode } from '../../product-domain/productIdentity';
 import { textInputValue } from '../utils/common';
@@ -197,11 +198,7 @@ export function ProductDetailSummaryPanel({
                   {productNotReadyForCurrentPublish
                     ? '上架'
                     : publishTaskNeedsAttention
-                      ? publishTask?.taskType === 'product-delete'
-                        ? productLifecycleRetryBlocked ? '删除待核对' : '继续删除'
-                        : publishTask?.taskType === 'product-rebuild'
-                          ? productLifecycleRetryBlocked ? '重建待核对' : '继续重建'
-                          : '重试发布'
+                      ? productPublishTaskAttentionLabel(publishTask)
                       : '发布当前修改'}
                 </Button>
               </span>

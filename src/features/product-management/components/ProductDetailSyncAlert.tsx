@@ -2,7 +2,11 @@ import type { ReactNode } from 'react';
 import { InfoCircleOutlined } from '@ant-design/icons';
 import { Button, Space, Typography } from 'antd';
 import type { ProductDetailPublishSyncWorkspace } from '../workspaceTypes';
-import { isProductPublishTaskActive, isProductPublishTaskNeedsAttention } from '../utils/workbench';
+import {
+  isProductPublishTaskActive,
+  isProductPublishTaskNeedsAttention,
+  productPublishTaskAttentionLabel
+} from '../utils/workbench';
 
 const { Text } = Typography;
 
@@ -56,7 +60,7 @@ export function ProductDetailSyncAlert({ workspace }: ProductDetailSyncAlertProp
         disabled={workspace.productPublishTaskActionSubmitting}
         onClick={() => void workspace.retryProductPublishTask(publishTask.taskId)}
       >
-        {deleteTask ? '继续删除' : rebuildTask ? '继续重建' : '重试发布'}
+        {productPublishTaskAttentionLabel(publishTask)}
       </Button>
     ) : publishTask.status === 'queued' || publishTask.status === 'product_delete_queued' ? (
       <Button
