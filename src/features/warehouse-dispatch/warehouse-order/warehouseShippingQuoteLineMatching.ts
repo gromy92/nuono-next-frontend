@@ -8,7 +8,7 @@ import { sameCode } from './warehouseShippingQuoteDomain';
 
 export function applySelectedChannelQuoteToLine(
   line: ShippingOrderLine,
-  channel?: OrderLogisticsQuoteChannelOption,
+  channel: OrderLogisticsQuoteChannelOption | undefined,
   scopeLines: ShippingOrderLine[]
 ): ShippingOrderLine {
   if (!channel) return line;
