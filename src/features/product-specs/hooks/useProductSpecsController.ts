@@ -28,6 +28,8 @@ import {
 import {
   assertProductSpecsResponseScope,
   buildProductSpecsStoreLabelByCode,
+  isCurrentProductSpecsRequest,
+  isCurrentProductSpecsScope,
   productSpecsScopeKey,
   resolveProductSpecsRequestScope
 } from '../productSpecsRequestScope'
@@ -60,7 +62,7 @@ export function useProductSpecsController({
     scopeKey: string
     items: ProductVariantSpecPayload[]
   }>({ scopeKey: currentScopeKey, items: [] })
-  const rows = rowsState.scopeKey === currentScopeKey ? rowsState.items : []
+  const rows = isCurrentProductSpecsScope(rowsState.scopeKey, currentScopeKey) ? rowsState.items : []
   const [loading, setLoading] = useState(false)
   const [editingKey, setEditingKey] = useState<string | null>(null)
   const [editingDraft, setEditingDraft] = useState<SpecSourceDraft>(createSpecSourceDraft())
@@ -86,14 +88,23 @@ export function useProductSpecsController({
         keyword: keyword.trim() || undefined
       })
       assertProductSpecsResponseScope(requestScope, payload)
-      if (requestSequence !== requestSequenceRef.current || scopeKeyRef.current !== currentScopeKey) return
+      if (!isCurrentProductSpecsRequest({
+        requestSequence, latestRequestSequence: requestSequenceRef.current,
+        requestScopeKey: currentScopeKey, currentScopeKey: scopeKeyRef.current
+      })) return
       setRowsState({ scopeKey: currentScopeKey, items: payload.items || [] })
     } catch (error) {
-      if (requestSequence !== requestSequenceRef.current || scopeKeyRef.current !== currentScopeKey) return
+      if (!isCurrentProductSpecsRequest({
+        requestSequence, latestRequestSequence: requestSequenceRef.current,
+        requestScopeKey: currentScopeKey, currentScopeKey: scopeKeyRef.current
+      })) return
       setRowsState({ scopeKey: currentScopeKey, items: [] })
       message.error(error instanceof Error ? error.message : '商品规格加载失败')
     } finally {
-      if (requestSequence === requestSequenceRef.current && scopeKeyRef.current === currentScopeKey) {
+      if (isCurrentProductSpecsRequest({
+        requestSequence, latestRequestSequence: requestSequenceRef.current,
+        requestScopeKey: currentScopeKey, currentScopeKey: scopeKeyRef.current
+      })) {
         setLoading(false)
       }
     }
@@ -145,16 +156,16 @@ export function useProductSpecsController({
         partnerSku: row.partnerSku, currentZCode: getProductCurrentZCode(row),
         skuParent: getProductCurrentZCode(row), sourceType, ...editingDraft
       })
-      if (scopeKeyRef.current !== actionScopeKey) return
+      if (!isCurrentProductSpecsScope(scopeKeyRef.current, actionScopeKey)) return
       message.success('规格已保存')
       setEditingKey(null)
       setEditingDraft(createSpecSourceDraft())
       await loadRows()
     } catch (error) {
-      if (scopeKeyRef.current !== actionScopeKey) return
+      if (!isCurrentProductSpecsScope(scopeKeyRef.current, actionScopeKey)) return
       message.error(error instanceof Error ? error.message : '保存规格来源失败')
     } finally {
-      if (scopeKeyRef.current === actionScopeKey) setSavingKey(null)
+      if (isCurrentProductSpecsScope(scopeKeyRef.current, actionScopeKey)) setSavingKey(null)
     }
   }, [currentScopeKey, editingDraft, loadRows, message, ownerUserId, storeCode])
 
@@ -177,14 +188,14 @@ export function useProductSpecsController({
         partnerSku: row.partnerSku, currentZCode: getProductCurrentZCode(row),
         skuParent: getProductCurrentZCode(row), sourceId: source.sourceId
       })
-      if (scopeKeyRef.current !== actionScopeKey) return
+      if (!isCurrentProductSpecsScope(scopeKeyRef.current, actionScopeKey)) return
       message.success(`${sourceLabels[sourceType]}规格已设为生效`)
       await loadRows()
     } catch (error) {
-      if (scopeKeyRef.current !== actionScopeKey) return
+      if (!isCurrentProductSpecsScope(scopeKeyRef.current, actionScopeKey)) return
       message.error(error instanceof Error ? error.message : '切换生效规格失败')
     } finally {
-      if (scopeKeyRef.current === actionScopeKey) setSelectingEffectiveKey(null)
+      if (isCurrentProductSpecsScope(scopeKeyRef.current, actionScopeKey)) setSelectingEffectiveKey(null)
     }
   }, [currentScopeKey, loadRows, message, ownerUserId, storeCode])
 
@@ -217,7 +228,7 @@ export function useProductSpecsController({
         variantId: row.variantId, partnerSku: row.partnerSku,
         currentZCode: getProductCurrentZCode(row), skuParent: getProductCurrentZCode(row)
       })
-      if (scopeKeyRef.current !== actionScopeKey) return
+      if (!isCurrentProductSpecsScope(scopeKeyRef.current, actionScopeKey)) return
       setRowsState((current) => current.scopeKey === actionScopeKey ? {
         ...current,
         items: current.items.map((item) =>
@@ -225,11 +236,11 @@ export function useProductSpecsController({
         )
       } : current)
     } catch (error) {
-      if (scopeKeyRef.current !== actionScopeKey) return
+      if (!isCurrentProductSpecsScope(scopeKeyRef.current, actionScopeKey)) return
       message.error(error instanceof Error ? error.message : '保存物流属性失败，已重新加载当前数据')
       await loadRows()
     } finally {
-      if (scopeKeyRef.current === actionScopeKey) setLogisticsSavingKey(null)
+      if (isCurrentProductSpecsScope(scopeKeyRef.current, actionScopeKey)) setLogisticsSavingKey(null)
     }
   }, [currentScopeKey, loadRows, message, ownerUserId, storeCode])
 

@@ -74,6 +74,25 @@ export function productSpecsScopeKey(scope: ProductSpecsRequestScope) {
   return `${scope.ownerUserId || 'owner-unknown'}::${normalizeStoreCode(scope.storeCode)}::${scope.error || ''}`
 }
 
+export function isCurrentProductSpecsScope(currentScopeKey: string, expectedScopeKey: string) {
+  return currentScopeKey === expectedScopeKey
+}
+
+export function isCurrentProductSpecsRequest({
+  requestSequence,
+  latestRequestSequence,
+  requestScopeKey,
+  currentScopeKey
+}: {
+  requestSequence: number
+  latestRequestSequence: number
+  requestScopeKey: string
+  currentScopeKey: string
+}) {
+  return requestSequence === latestRequestSequence &&
+    isCurrentProductSpecsScope(currentScopeKey, requestScopeKey)
+}
+
 function collectProductSpecsStores(session: AuthSession) {
   const stores: AuthSessionStore[] = []
   const seen = new Set<string>()

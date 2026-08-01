@@ -1,8 +1,9 @@
 import { strict as assert } from 'node:assert'
-import { readFileSync } from 'node:fs'
 import type { AuthSession } from '../auth/session'
 import {
   assertProductSpecsResponseScope,
+  isCurrentProductSpecsRequest,
+  isCurrentProductSpecsScope,
   resolveProductSpecsRequestScope
 } from './productSpecsRequestScope'
 
@@ -42,7 +43,23 @@ assert.match(resolveProductSpecsRequestScope(
   new URLSearchParams({ ownerUserId: '408' })
 ).error || '', /货主和店铺必须同时提供/)
 
-const controllerSource = readFileSync(new URL('./hooks/useProductSpecsController.ts', import.meta.url), 'utf8')
-assert.match(controllerSource, /rowsState\.scopeKey === currentScopeKey \? rowsState\.items : \[\]/)
-assert.match(controllerSource, /requestSequence !== requestSequenceRef\.current/)
-assert.ok([...controllerSource.matchAll(/scopeKeyRef\.current !== actionScopeKey/g)].length >= 3)
+assert.equal(isCurrentProductSpecsScope('owner-307::STORE-A', 'owner-307::STORE-A'), true)
+assert.equal(isCurrentProductSpecsScope('owner-408::STORE-B', 'owner-307::STORE-A'), false)
+assert.equal(isCurrentProductSpecsRequest({
+  requestSequence: 4,
+  latestRequestSequence: 5,
+  requestScopeKey: 'owner-307::STORE-A',
+  currentScopeKey: 'owner-307::STORE-A'
+}), false)
+assert.equal(isCurrentProductSpecsRequest({
+  requestSequence: 5,
+  latestRequestSequence: 5,
+  requestScopeKey: 'owner-307::STORE-A',
+  currentScopeKey: 'owner-408::STORE-B'
+}), false)
+assert.equal(isCurrentProductSpecsRequest({
+  requestSequence: 5,
+  latestRequestSequence: 5,
+  requestScopeKey: 'owner-307::STORE-A',
+  currentScopeKey: 'owner-307::STORE-A'
+}), true)
