@@ -40,7 +40,11 @@ assert.match(
   sources.detailToolbar,
   /warehouse-shipping-order-detail-toolbar[\s\S]*warehouse-shipping-order-detail-route-row[\s\S]*DetailSegmentChips[\s\S]*warehouse-shipping-order-detail-status-row[\s\S]*ActiveSegmentQuoteControls/
 );
-assert.doesNotMatch(sources.detailToolbar, /<Select/);
+assert.equal([...sources.detailToolbar.matchAll(/<Select/g)].length, 1);
+assert.match(
+  sources.detailToolbar,
+  /warehouse-shipping-order-unit-price-filter[\s\S]*<Select[\s\S]*detailUnitPriceFilter/
+);
 assert.match(sources.sharedViews, /DetailLineFilterLabel[\s\S]*warehouse-shipping-order-detail-filter-danger/);
 assert.match(sources.detailCss, /warehouse-shipping-order-detail-filter-danger \{[\s\S]*color: #ff4d4f/);
 assert.match(sources.detailCss, /warehouse-shipping-order-detail-toolbar \{[\s\S]*grid-template-rows: auto auto/);
