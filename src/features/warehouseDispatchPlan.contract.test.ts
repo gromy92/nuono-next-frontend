@@ -90,7 +90,7 @@ assert.match(
 
 assert.match(
   shippingWorkspace,
-  /issueShippingBatch\(shippingBatch\.id, selectedOptionId\)[\s\S]*已下发发货单和装箱单/,
+  /issueShippingBatch\(batch\.id, optionId\)[\s\S]*已下发发货单和装箱单/,
   'final logistics submission must use one atomic issue command'
 )
 

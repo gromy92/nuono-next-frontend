@@ -6,9 +6,12 @@ import {
   packingGroupLabel,
   requireCurrentShippingBatchScope,
   requirePackingBatchDetailsScope,
-  requirePackingListActionScope,
   sumPackingLists
 } from './shippingExecutionDomain'
+import {
+  requirePackingBatchExportScope,
+  requirePackingListActionScope
+} from './shippingExecutionActionScope'
 import type { PackingBatchDetails } from './packingExportDomain'
 import type {
   OutboundOrder, OutboundOrderLine, PackingBox, PackingBoxItem, PackingList, ShippingBatch
@@ -82,6 +85,42 @@ assert.throws(
 )
 assert.equal(requirePackingBatchDetailsScope(scopedBatch, scopedDetails), scopedDetails)
 assert.equal(requirePackingListActionScope(scopedBatch, scopedDetails, 'packing-1'), scopedPackingList)
+assert.equal(
+  requirePackingListActionScope({ ...scopedBatch, status: 'PACKING' }, scopedDetails, 'packing-1'),
+  scopedPackingList,
+  'a completed outbound may hand off while another outbound in the same batch is still packing'
+)
+assert.equal(requirePackingBatchExportScope(scopedBatch, scopedDetails), scopedDetails)
+assert.throws(
+  () => requirePackingListActionScope(
+    { ...scopedBatch, status: 'OUTBOUND_CREATED' }, scopedDetails, 'packing-1'
+  ),
+  /发货单状态/
+)
+assert.throws(
+  () => requirePackingListActionScope(scopedBatch, {
+    ...scopedDetails,
+    outboundOrders: [{ ...scopedOrders[0], status: 'PACKING' }, scopedOrders[1]]
+  }, 'packing-1'),
+  /出库单状态/
+)
+assert.throws(() => requirePackingListActionScope(scopedBatch, {
+  ...scopedDetails,
+  packingListsByOutboundOrder: {
+    ...scopedDetails.packingListsByOutboundOrder,
+    '1': [{ ...scopedPackingList, status: 'DRAFT' }]
+  }
+}, 'packing-1'), /只有 APP 已提交/)
+assert.throws(() => requirePackingBatchExportScope(
+  { ...scopedBatch, status: 'PACKING' }, scopedDetails
+), /完成装箱/)
+assert.throws(() => requirePackingBatchExportScope(scopedBatch, {
+  ...scopedDetails,
+  packingListsByOutboundOrder: {
+    ...scopedDetails.packingListsByOutboundOrder,
+    '1': [{ ...scopedPackingList, status: 'DRAFT' }]
+  }
+}), /完成装箱/)
 const nestedDetails = (
   boxPatch: Partial<PackingBox> = {},
   itemPatch: Partial<PackingBoxItem> = {}
@@ -130,6 +169,19 @@ assert.throws(() => requirePackingBatchDetailsScope(scopedBatch, {
   ...scopedDetails,
   outboundOrders: [{ ...scopedOrders[0], ownerUserId: 999 }]
 }), /所属账号不匹配/)
+assert.throws(() => requirePackingBatchDetailsScope(scopedBatch, {
+  ...scopedDetails,
+  outboundOrders: [{
+    ...scopedOrders[0],
+    lines: [{
+      ...scopedOrders[0].lines[0],
+      sources: [{
+        id: 'source-1', outboundOrderId: 'outside', outboundOrderLineId: 'line-1',
+        plannedTransportMode: 'SEA', quantity: 20
+      }]
+    }]
+  }]
+}), /商品来源的父级关联不匹配/)
 assert.throws(() => requirePackingBatchDetailsScope(scopedBatch, {
   ...scopedDetails,
   packingListsByOutboundOrder: { '1': [{ ...scopedPackingList, outboundOrderId: '2' }], '2': [] }

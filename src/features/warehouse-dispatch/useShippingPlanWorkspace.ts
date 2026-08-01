@@ -4,10 +4,14 @@ import { createLatestRequestGate } from '../../shared/latestRequestGate'
 import {
   createShippingBatchFromDispatchPlan,
   issueShippingBatch,
+  loadDispatchPlans,
   loadShippingBatch
 } from './api'
 import { buildRouteGroups } from './dispatchPlanDomain'
-import { requireShippingBatchForPlan } from './shippingBatchScopeDomain'
+import {
+  requireCurrentShippingBatchForPlan,
+  requireShippingBatchForPlan
+} from './shippingBatchScopeDomain'
 import type { DispatchPlan, ShippingBatch } from './types'
 import { resolveShippingBatchOption } from './shippingCostDomain'
 
@@ -28,6 +32,7 @@ export function useShippingPlanWorkspace(
   const [outboundSubmitting, setOutboundSubmitting] = useState(false)
   const batchRequestGateRef = useRef(createLatestRequestGate<string>())
   const batchRequestScopeRef = useRef<string | undefined>(undefined)
+  const outboundSubmissionSequenceRef = useRef(0)
 
   const selectedPlan = useMemo(
     () => dispatchPlans.find((plan) => plan.id === selectedPlanId) || dispatchPlans[0],
@@ -53,14 +58,21 @@ export function useShippingPlanWorkspace(
     setCostDrawerOpen(false)
   }
 
+  function cancelOutboundSubmission() {
+    outboundSubmissionSequenceRef.current += 1
+    setOutboundSubmitting(false)
+  }
+
   useEffect(() => {
     if (!dispatchPlans.length) {
       batchRequestGateRef.current.invalidate()
       batchRequestScopeRef.current = undefined
+      cancelOutboundSubmission()
       setSelectedPlanId(undefined)
     } else if (!selectedPlanId || !dispatchPlans.some((plan) => plan.id === selectedPlanId)) {
       batchRequestGateRef.current.invalidate()
       batchRequestScopeRef.current = dispatchPlans[0].id
+      cancelOutboundSubmission()
       setSelectedPlanId(dispatchPlans[0].id)
     }
   }, [dispatchPlans, selectedPlanId])
@@ -68,6 +80,7 @@ export function useShippingPlanWorkspace(
   useEffect(() => () => {
     batchRequestGateRef.current.invalidate()
     batchRequestScopeRef.current = undefined
+    outboundSubmissionSequenceRef.current += 1
   }, [])
 
   useEffect(() => {
@@ -82,6 +95,7 @@ export function useShippingPlanWorkspace(
     const plan = dispatchPlans.find((candidate) => candidate.id === planId)
     batchRequestGateRef.current.invalidate()
     batchRequestScopeRef.current = planId
+    cancelOutboundSubmission()
     setBatchLoadingId(undefined)
     setGeneratingPlanId(undefined)
     clearShippingBatchState()
@@ -129,6 +143,7 @@ export function useShippingPlanWorkspace(
       message.warning('当前发货申请单还没有可对比的物流方案。')
       return
     }
+    cancelOutboundSubmission()
     setSelectedPlanId(plan.id)
     setCostDrawerOpen(false)
     setCostDetailOptionId(undefined)
@@ -136,6 +151,7 @@ export function useShippingPlanWorkspace(
   }
 
   async function generateLogisticsPlan(plan: DispatchPlan) {
+    cancelOutboundSubmission()
     batchRequestScopeRef.current = plan.id
     const requestIdentity = batchRequestGateRef.current.begin(plan.id)
     const isCurrentRequest = () => batchRequestScopeRef.current !== undefined
@@ -177,26 +193,43 @@ export function useShippingPlanWorkspace(
       message.warning('请先选择物流方案。')
       return
     }
-    try {
-      if (!selectedPlan) throw new Error('当前发货申请单不存在，请刷新后重试。')
-      requireShippingBatchForPlan(selectedPlan, shippingBatch)
-    } catch (error) {
+    if (!selectedPlan) {
       clearShippingBatchState()
-      message.error(error instanceof Error ? error.message : '物流计划范围校验失败')
+      message.error('当前发货申请单不存在，请刷新后重试。')
       return
     }
+    const batch = shippingBatch
+    const optionId = selectedOptionId
+    const planId = selectedPlan.id
+    batchRequestScopeRef.current = planId
+    const requestIdentity = batchRequestGateRef.current.begin(planId)
+    const submissionSequence = ++outboundSubmissionSequenceRef.current
+    const isCurrentRequest = () => batchRequestScopeRef.current !== undefined
+      && batchRequestGateRef.current.isCurrent(requestIdentity, batchRequestScopeRef.current)
     setOutboundSubmitting(true)
     try {
-      await issueShippingBatch(shippingBatch.id, selectedOptionId)
+      const currentPlans = await loadDispatchPlans()
+      if (!isCurrentRequest()) return
+      const currentPlan = currentPlans.find((plan) => String(plan.id) === String(planId))
+      if (!currentPlan) throw new Error('当前发货申请单不存在，请刷新后重试。')
+      requireCurrentShippingBatchForPlan(currentPlan, batch)
+      await issueShippingBatch(batch.id, optionId)
+      if (!isCurrentRequest()) return
       onIssued()
       await refresh()
+      if (!isCurrentRequest()) return
       setCostDrawerOpen(false)
       setDetailOpen(false)
       message.success('已下发发货单和装箱单，仓库可以开始装箱。')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '下发仓库单失败')
+      if (isCurrentRequest()) {
+        clearShippingBatchState()
+        message.error(error instanceof Error ? error.message : '下发仓库单失败')
+      }
     } finally {
-      setOutboundSubmitting(false)
+      if (submissionSequence === outboundSubmissionSequenceRef.current) {
+        setOutboundSubmitting(false)
+      }
     }
   }
 

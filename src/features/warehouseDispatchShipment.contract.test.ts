@@ -1,6 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { dispatchContractSources as sources } from './warehouseDispatchContractSources';
-import { requireShippingBatchForPlan } from './warehouse-dispatch/shippingBatchScopeDomain';
+import {
+  requireCurrentShippingBatchForPlan,
+  requireShippingBatchForPlan
+} from './warehouse-dispatch/shippingBatchScopeDomain';
 import type { DispatchPlan, ShippingBatch } from './warehouse-dispatch/types';
 
 const scopedPlan = { id: 'plan-a', ownerUserId: 307 } as DispatchPlan;
@@ -27,6 +30,19 @@ assert.throws(
 assert.throws(
   () => requireShippingBatchForPlan(scopedPlan, { ...scopedBatch, dispatchPlanId: undefined }),
   /不匹配/
+);
+const currentPlan = { ...scopedPlan, currentShippingBatch: scopedBatch };
+assert.equal(requireCurrentShippingBatchForPlan(currentPlan, scopedBatch), scopedBatch);
+assert.throws(
+  () => requireCurrentShippingBatchForPlan(
+    { ...currentPlan, currentShippingBatch: { ...scopedBatch, id: 'batch-new' } },
+    scopedBatch
+  ),
+  /不再是当前物流计划/
+);
+assert.throws(
+  () => requireCurrentShippingBatchForPlan(scopedPlan, scopedBatch),
+  /当前物流计划不存在/
 );
 
 assert.match(sources.workbench, /key: 'dispatch-plan'[\s\S]*buildTabLabel\('发货申请单'/);
@@ -66,7 +82,17 @@ assert.match(
 assert.match(sources.shippingWorkspace, /selectedRouteGroupKey/);
 assert.match(sources.shippingWorkspace, /请先选择物流方案/);
 assert.match(sources.planDetail, /aria-label="提交物流方案"/);
-assert.match(sources.shippingWorkspace, /issueShippingBatch\(shippingBatch\.id, selectedOptionId\)/);
+assert.match(sources.shippingWorkspace, /issueShippingBatch\(batch\.id, optionId\)/);
+assert.match(
+  sources.shippingWorkspace,
+  /const currentPlans = await loadDispatchPlans\(\)[\s\S]*currentPlan[\s\S]*requireCurrentShippingBatchForPlan\(currentPlan, batch\)[\s\S]*issueShippingBatch\(batch\.id, optionId\)/,
+  'issuing must re-read the current plan and reject a stale current batch before POST'
+);
+assert.match(
+  sources.shippingWorkspace,
+  /outboundSubmissionSequenceRef[\s\S]*function cancelOutboundSubmission[\s\S]*outboundSubmissionSequenceRef\.current \+= 1[\s\S]*setOutboundSubmitting\(false\)[\s\S]*function selectPlan[\s\S]*cancelOutboundSubmission\(\)[\s\S]*const submissionSequence = \+\+outboundSubmissionSequenceRef\.current[\s\S]*finally[\s\S]*submissionSequence === outboundSubmissionSequenceRef\.current[\s\S]*setOutboundSubmitting\(false\)/,
+  'switching plans must clear its old loading state without letting an older request clear a newer submission'
+);
 assert.match(sources.dispatchApi, /issueShippingBatch[\s\S]*shipping-batches\/\$\{encodeURIComponent\(batchId\)\}\/issue/);
 assert.doesNotMatch(sources.planDetail + sources.shippingWorkspace, /同步发货单|selectShippingOption\(|createOutboundOrders\(/);
 assert.match(sources.planDetail, /shippingBatch\.status !== 'OUTBOUND_CREATED'[\s\S]*确认物流并下发发货单/);
@@ -78,6 +104,26 @@ assert.match(sources.packingPanel, /shipPackingList\(packingListId\)/);
 assert.match(
   sources.packingPanel,
   /requirePackingBatchDetailsScope[\s\S]*loadOutboundOrders[\s\S]*loadPackingLists[\s\S]*requirePackingListActionScope[\s\S]*shipPackingList/
+);
+assert.match(
+  sources.packingPanel,
+  /loadShippingBatches\(\)[\s\S]*loadOutboundOrders\(batch\.id\)[\s\S]*loadPackingLists\(order\.id\)/,
+  'ship/export preflight must force fresh batch, outbound and packing GETs'
+);
+assert.match(
+  sources.packingPanel,
+  /requestEpochGateRef[\s\S]*isCurrent\(requestTicket\)[\s\S]*setOutboundOrdersByBatch/,
+  'validated details may populate cache only while their request ticket is current'
+);
+assert.match(
+  sources.packingPanel,
+  /const refreshTicket = requestEpochGateRef\.current\.begin[\s\S]*isCurrentRefresh[\s\S]*isCurrent\(refreshTicket\)[\s\S]*setShippingBatches\(nextBatches\)/,
+  'refresh must share the latest-request gate with detail work'
+);
+assert.doesNotMatch(
+  sources.packingPanel,
+  /const cachedOrders[\s\S]*return requirePackingBatchDetailsScope/,
+  'ship/export must never return the old detail cache as action evidence'
 );
 assert.match(sources.packingSubmissionDrawer, /确认已交货代/);
 assert.doesNotMatch(sources.packingPanel, /createPackingList\(|createOutboundOrders\(|selectShippingOption\(|生成装箱单/);

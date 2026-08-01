@@ -65,7 +65,14 @@ export function requireCurrentShippingBatchScope(
   requestedBatch: ShippingBatch
 ) {
   const requestedOwnerUserId = requireShippingBatchOwner(requestedBatch)
-  const matches = batches.filter((batch) => String(batch.id) === String(requestedBatch.id))
+  const requestedBatchId = requireEntityId(requestedBatch.id, '当前发货单')
+  const batchIds = new Set<string>()
+  batches.forEach((batch) => {
+    requireShippingBatchOwner(batch)
+    requireUniqueId(batch.id, batchIds, '发货单')
+    requireOptionalId(batch.dispatchPlanId, '发货申请单')
+  })
+  const matches = batches.filter((batch) => String(batch.id) === requestedBatchId)
   if (matches.length !== 1) {
     throw new WarehousePackingScopeError('当前发货单已变化，请刷新后重试。')
   }
@@ -80,6 +87,7 @@ export function requireOutboundOrdersScope(batch: ShippingBatch, orders: Outboun
   const batchOwnerUserId = requireShippingBatchOwner(batch)
   const orderIds = new Set<string>()
   const lineIds = new Set<string>()
+  const lineSourceIds = new Set<string>()
   orders.forEach((order) => {
     const orderId = requireUniqueId(order.id, orderIds, '发货单明细')
     if (String(order.batchId) !== String(batch.id)) {
@@ -89,10 +97,17 @@ export function requireOutboundOrdersScope(batch: ShippingBatch, orders: Outboun
       throw new WarehousePackingScopeError('发货单明细所属账号不匹配，已阻止继续操作。')
     }
     order.lines.forEach((line) => {
-      requireUniqueId(line.id, lineIds, '发货商品行')
+      const lineId = requireUniqueId(line.id, lineIds, '发货商品行')
       if (String(line.outboundOrderId) !== orderId) {
         throw new WarehousePackingScopeError('发货商品行不属于当前发货单明细，已阻止继续操作。')
       }
+      line.sources.forEach((source) => {
+        requireUniqueId(source.id, lineSourceIds, '发货商品来源')
+        if (String(source.outboundOrderId) !== orderId
+          || String(source.outboundOrderLineId) !== lineId) {
+          throw new WarehousePackingScopeError('发货商品来源的父级关联不匹配，已阻止继续操作。')
+        }
+      })
     })
   })
   return orders
@@ -143,21 +158,6 @@ export function requirePackingBatchDetailsScope(
   return details
 }
 
-export function requirePackingListActionScope(
-  batch: ShippingBatch,
-  details: PackingBatchDetails,
-  packingListId: string
-) {
-  const scoped = requirePackingBatchDetailsScope(batch, details)
-  const matches = Object.values(scoped.packingListsByOutboundOrder)
-    .flat()
-    .filter((packingList) => String(packingList.id) === String(packingListId))
-  if (matches.length !== 1) {
-    throw new WarehousePackingScopeError('目标装箱单不属于当前发货单，请刷新后重试。')
-  }
-  return matches[0]
-}
-
 export function formatBoxSpec(box: PackingBox) {
   if (!box.lengthCm || !box.widthCm || !box.heightCm) return '箱规未填写'
   return `${decimalText(box.lengthCm)} x ${decimalText(box.widthCm)} x ${decimalText(box.heightCm)} cm`
@@ -198,5 +198,24 @@ function requireUniqueId(value: string, seen: Set<string>, label: string) {
     throw new WarehousePackingScopeError(`${label}标识缺失或重复，已阻止继续操作。`)
   }
   seen.add(id)
+  return id
+}
+
+function requireEntityId(value: string | undefined, label: string) {
+  const rawId = String(value || '')
+  const id = rawId.trim()
+  if (!id || id !== rawId) {
+    throw new WarehousePackingScopeError(`${label}标识缺失或无效，已阻止继续操作。`)
+  }
+  return id
+}
+
+function requireOptionalId(value: string | undefined, label: string) {
+  if (value == null) return undefined
+  const rawId = String(value)
+  const id = rawId.trim()
+  if (!id || id !== rawId) {
+    throw new WarehousePackingScopeError(`${label}标识无效，已阻止继续操作。`)
+  }
   return id
 }
