@@ -49,7 +49,10 @@ assert.match(sources.sharedViews, /DetailLineFilterLabel[\s\S]*warehouse-shippin
 assert.match(sources.detailCss, /warehouse-shipping-order-detail-filter-danger \{[\s\S]*color: #ff4d4f/);
 assert.match(sources.detailCss, /warehouse-shipping-order-detail-toolbar \{[\s\S]*grid-template-rows: auto auto/);
 assert.match(sources.detailCss, /warehouse-shipping-order-detail-route-row \{[\s\S]*justify-content: space-between/);
-assert.match(sources.detailCss, /warehouse-shipping-order-detail-status-row \{[\s\S]*justify-content: space-between/);
+assert.match(
+  sources.detailCss,
+  /warehouse-shipping-order-detail-status-row \{[\s\S]*display: grid[\s\S]*grid-template-columns: minmax\(0, 1fr\)/
+);
 assert.match(sources.detailCss, /warehouse-shipping-order-chip \{[\s\S]*border-radius: 6px[\s\S]*font-size: 12px/);
 assert.match(sources.detailCss, /warehouse-shipping-order-chip--active \{[\s\S]*background: #1677ff/);
 assert.match(sources.lineTableCss, /warehouse-shipping-order-line-meta-cell \{[\s\S]*display: flex[\s\S]*gap: 10px/);
