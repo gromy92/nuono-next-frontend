@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ShippingOrderQuoteActions } from './useShippingOrderQuoteActions';
 import type { ShippingOrderQuoteState } from './useShippingOrderQuoteState';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
+import { isExactlyNotSubmitted } from './warehouseShippingOrderDomain';
 import { transportModeLabel } from './warehouseShippingQuoteDomain';
 
 const { Text } = Typography;
@@ -31,7 +32,7 @@ export function WarehouseShippingOrderReassignModal({
     segment.id !== quote.activeSegment?.id
     && String(segment.siteCode || '').toUpperCase() === String(quote.activeSegment?.siteCode || '').toUpperCase()
     && String(segment.transportMode || '').toUpperCase() === targetTransportMode
-    && segment.shippingSubmitStatus !== 'SUBMITTED'
+    && isExactlyNotSubmitted(segment.shippingSubmitStatus)
   )), [quote.activeSegment?.id, quote.activeSegment?.siteCode, quote.detailSegments, targetTransportMode]);
 
   useEffect(() => {

@@ -35,7 +35,8 @@ export function WarehouseShippingOrderDetailToolbar({
   const scopeActionDisabled = quote.detailSegments.length
     ? !quote.activeSegmentIds.length
     : !quote.detailLines.length;
-  const submitDisabled = quote.warehouseOrderSubmitted || !quote.detailLines.length;
+  const mutationDisabled = scopeActionDisabled || !quote.detailMutationAllowed;
+  const submitDisabled = !quote.warehouseOrderMutable || !quote.detailLines.length;
   return (
     <div className="warehouse-shipping-order-detail-toolbar">
       <div className="warehouse-shipping-order-detail-route-row">
@@ -43,6 +44,7 @@ export function WarehouseShippingOrderDetailToolbar({
           segments={quote.sortedSegments}
           activeSegment={quote.activeSegment}
           onSelect={quote.selectSegment}
+          disabled={Boolean(data.actionKey)}
         />
         <div className="warehouse-shipping-order-detail-actions">
           <Button
@@ -64,7 +66,7 @@ export function WarehouseShippingOrderDetailToolbar({
             <Button
               size="small"
               icon={<UploadOutlined />}
-              disabled={scopeActionDisabled}
+              disabled={mutationDisabled}
               loading={data.actionKey === `logistics-quote-import:${order?.id}`}
             >
               回传报价
@@ -73,7 +75,7 @@ export function WarehouseShippingOrderDetailToolbar({
           <Button
             size="small"
             icon={<SaveOutlined />}
-            disabled={scopeActionDisabled || quote.activeSegmentSubmitted}
+            disabled={mutationDisabled}
             loading={data.actionKey === `bulk-line-quote:${order?.id}`}
             onClick={quote.openBulkModal}
           >
@@ -82,7 +84,7 @@ export function WarehouseShippingOrderDetailToolbar({
           <Button
             size="small"
             icon={<SwapOutlined />}
-            disabled={scopeActionDisabled || quote.activeSegmentSubmitted}
+            disabled={mutationDisabled}
             onClick={quote.openReassignModal}
           >
             调整运输方案

@@ -129,6 +129,26 @@ assert.match(
   sources.quoteActions,
   /handleSaveBulkLineQuotes[\s\S]*updateShippingOrderLineQuotes[\s\S]*lineIds: selectedIds[\s\S]*unitPrice[\s\S]*billingUnit: quote\.bulkQuoteBillingUnit[\s\S]*yiteMaterial: quote\.showYiteFields/
 );
+assert.match(
+  sources.interactionController,
+  /createShippingOrderInteractionScope[\s\S]*activateDetailInteractionScope[\s\S]*beginDetailRequest[\s\S]*isCurrentDetailRequest[\s\S]*acceptCurrentInteractionResponse/
+);
+assert.match(
+  sources.interactionScope,
+  /ShippingOrderInteractionTicket[\s\S]*scope: ShippingOrderInteractionScope[\s\S]*requireShippingOrderResponseOrderId[\s\S]*rawActualOrderId !== rawExpectedOrderId/
+);
+assert.match(
+  sources.scopedOptions,
+  /activateDetailInteractionScope\(orderId, activeSegmentIds\)[\s\S]*beginDetailRequest\('options'[\s\S]*acceptCurrentInteractionResponse\(request, nextOptions\.purchaseOrderId\)/
+);
+assert.match(
+  sources.quoteActions,
+  /refreshOptions[\s\S]*beginDetailRequest\('options'[\s\S]*acceptCurrentInteractionResponse\(request, options\.purchaseOrderId\)[\s\S]*beginDetailAction[\s\S]*isCurrentDetailAction[\s\S]*finishDetailAction/
+);
+assert.match(
+  sources.quoteTransfer,
+  /handleImport[\s\S]*beginDetailAction[\s\S]*isCurrentDetailAction[\s\S]*refreshDetail\(order\.id\)[\s\S]*finishDetailAction/
+);
 assert.doesNotMatch(sources.quoteActions, /billingUnit: defaultQuoteBillingUnit/);
 assert.doesNotMatch(
   sources.quoteActions,

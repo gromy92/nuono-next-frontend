@@ -183,6 +183,10 @@ export function hasLineQuotePrice(line: ShippingOrderLine) {
     && unitPrice > 0;
 }
 
+export function isExactlyNotSubmitted(value?: string | null) {
+  return String(value ?? '').trim().toUpperCase() === 'NOT_SUBMITTED';
+}
+
 export function countShippingOrderPendingQuoteLines(order: ShippingOrder) {
   const segments = order.segments || [];
   const segmentById = new Map(segments.map((segment) => [segment.id, segment]));

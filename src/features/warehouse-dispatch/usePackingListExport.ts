@@ -13,7 +13,7 @@ export function usePackingListExport(loadDetails: (batch: ShippingBatch) => Prom
   const [selection, setSelection] = useState<PackingExportSelection>({})
   const [loadingBatchId, setLoadingBatchId] = useState<string>()
   const requestGateRef = useRef(createLatestRequestGate<string>())
-  const requestScopeRef = useRef<string>()
+  const requestScopeRef = useRef<string | undefined>(undefined)
   const channels = useMemo(
     () => details ? buildPackingExportChannels(details) : [],
     [details]

@@ -11,7 +11,10 @@ import {
   isUnknownForwarderEligibility,
   isUnsupportedForwarderEligibility
 } from './warehouseForwarderEligibilityDomain';
-import { isYiteQuoteForwarder } from './warehouseShippingOrderDomain';
+import {
+  isExactlyNotSubmitted,
+  isYiteQuoteForwarder
+} from './warehouseShippingOrderDomain';
 import {
   defaultSegmentQuoteSelection,
   findQuoteChannelOption,
@@ -26,7 +29,12 @@ export function useShippingOrderQuoteActions(
   quote: ShippingOrderQuoteState
 ) {
   const refreshOptions = async (orderId: string) => {
-    const options = await loadShippingOrderLogisticsQuoteOptionsForScope(orderId, quote.activeSegmentIds);
+    const segmentIds = [...quote.activeSegmentIds];
+    const request = data.beginDetailRequest('options', orderId, segmentIds);
+    if (!request) return;
+    const options = await loadShippingOrderLogisticsQuoteOptionsForScope(orderId, segmentIds);
+    if (!data.isCurrentDetailRequest(request)) return;
+    if (!data.acceptCurrentInteractionResponse(request, options.purchaseOrderId)) return;
     quote.setActiveSegmentQuoteOptions(options);
     quote.setSelectedOption((current) => {
       const forwarder = findQuoteForwarderOption(options, current.forwarderCode);
@@ -40,6 +48,10 @@ export function useShippingOrderQuoteActions(
   const handleSaveLineQuote = async (line: ShippingOrderLine) => {
     const order = data.detailTarget;
     if (!order) return;
+    if (!quote.detailMutationAllowed || !isExactlyNotSubmitted(line.shippingSubmitStatus)) {
+      message.warning('当前仓库单、分区或商品状态不可修改。');
+      return;
+    }
     if (isUnsupportedForwarderEligibility(line)) {
       message.warning('该货代当前不接此商品，不能保存报价。');
       return;
@@ -63,7 +75,8 @@ export function useShippingOrderQuoteActions(
       message.warning('请输入有效单价。');
       return;
     }
-    data.setActionKey(`line-quote:${line.id}`);
+    const action = data.beginDetailAction(`line-quote:${line.id}`, order.id, quote.activeSegmentIds);
+    if (!action) return;
     try {
       const next = await updateShippingOrderLineQuote(order.id, line.id, {
         forwarderCode: quote.selectedOption.forwarderCode,
@@ -76,21 +89,29 @@ export function useShippingOrderQuoteActions(
         ),
         yiteMaterial: quote.showYiteFields ? draft.yiteMaterial?.trim() : undefined
       });
-      data.setDetailTarget(next);
-      data.replaceOrder(next);
+      if (!data.isCurrentDetailAction(action) || !data.applyCurrentDetail(action.request, next)) return;
       await refreshOptions(next.id);
+      if (!data.isCurrentDetailAction(action)) return;
       quote.clearLineDrafts([line.id]);
       message.success('已保存商品报价。');
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '保存商品报价失败');
+      if (data.isCurrentDetailAction(action)) {
+        message.error(error instanceof Error ? error.message : '保存商品报价失败');
+      }
     } finally {
-      data.setActionKey(undefined);
+      data.finishDetailAction(action);
     }
   };
 
   const handleSaveBulkLineQuotes = async () => {
     const order = data.detailTarget;
     if (!order) return;
+    if (!quote.detailMutationAllowed || quote.selectedLines.some((line) => (
+      !isExactlyNotSubmitted(line.shippingSubmitStatus)
+    ))) {
+      message.warning('当前仓库单、分区或商品状态不可修改。');
+      return;
+    }
     if (!quote.selectedQuoteLineIds.length) {
       message.warning('请选择要批量报价的商品。');
       return;
@@ -114,7 +135,8 @@ export function useShippingOrderQuoteActions(
       return;
     }
     const selectedIds = quote.selectedQuoteLineIds;
-    data.setActionKey(`bulk-line-quote:${order.id}`);
+    const action = data.beginDetailAction(`bulk-line-quote:${order.id}`, order.id, quote.activeSegmentIds);
+    if (!action) return;
     try {
       const next = await updateShippingOrderLineQuotes(order.id, {
         lineIds: selectedIds,
@@ -125,9 +147,9 @@ export function useShippingOrderQuoteActions(
         billingUnit: quote.bulkQuoteBillingUnit,
         yiteMaterial: quote.showYiteFields ? quote.bulkQuoteYiteMaterial?.trim() : undefined
       });
-      data.setDetailTarget(next);
-      data.replaceOrder(next);
+      if (!data.isCurrentDetailAction(action) || !data.applyCurrentDetail(action.request, next)) return;
       await refreshOptions(next.id);
+      if (!data.isCurrentDetailAction(action)) return;
       quote.clearLineDrafts(selectedIds);
       quote.setSelectedQuoteLineIds([]);
       quote.setBulkQuoteModalOpen(false);
@@ -135,9 +157,11 @@ export function useShippingOrderQuoteActions(
       quote.setBulkQuoteYiteMaterial(undefined);
       message.success(`已批量保存 ${selectedIds.length} 个商品报价。`);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '批量保存商品报价失败');
+      if (data.isCurrentDetailAction(action)) {
+        message.error(error instanceof Error ? error.message : '批量保存商品报价失败');
+      }
     } finally {
-      data.setActionKey(undefined);
+      data.finishDetailAction(action);
     }
   };
 
@@ -163,24 +187,31 @@ export function useShippingOrderQuoteActions(
     const order = data.detailTarget;
     const forwarderCode = quote.selectedOption.forwarderCode;
     if (!order) return;
+    if (!quote.detailMutationAllowed || !isExactlyNotSubmitted(line.shippingSubmitStatus)) {
+      message.warning('当前仓库单、分区或商品状态不可修改。');
+      return;
+    }
     if (!forwarderCode) {
       message.warning('请先选择上方货代渠道。');
       return;
     }
-    data.setActionKey(`line-eligibility:${line.id}`);
+    const action = data.beginDetailAction(`line-eligibility:${line.id}`, order.id, quote.activeSegmentIds);
+    if (!action) return;
     try {
       const next = await updateShippingOrderLineEligibility(order.id, line.id, {
         forwarderCode,
         eligibilityStatus
       });
-      data.setDetailTarget(next);
-      data.replaceOrder(next);
+      if (!data.isCurrentDetailAction(action) || !data.applyCurrentDetail(action.request, next)) return;
       await refreshOptions(next.id);
+      if (!data.isCurrentDetailAction(action)) return;
       message.success('承运状态已更新。');
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '保存承运状态失败');
+      if (data.isCurrentDetailAction(action)) {
+        message.error(error instanceof Error ? error.message : '保存承运状态失败');
+      }
     } finally {
-      data.setActionKey(undefined);
+      data.finishDetailAction(action);
     }
   };
 
@@ -190,8 +221,18 @@ export function useShippingOrderQuoteActions(
   ) => {
     const order = data.detailTarget;
     if (!order || !quote.selectedQuoteLineIds.length) return;
+    const targetSegment = targetSegmentId
+      ? quote.detailSegments.find((segment) => segment.id === targetSegmentId)
+      : undefined;
+    if (!quote.detailMutationAllowed
+      || quote.selectedLines.some((line) => !isExactlyNotSubmitted(line.shippingSubmitStatus))
+      || (targetSegmentId && !isExactlyNotSubmitted(targetSegment?.shippingSubmitStatus))) {
+      message.warning('当前仓库单、分区或商品状态不可调整。');
+      return;
+    }
     const lineIds = [...quote.selectedQuoteLineIds];
-    data.setActionKey(`line-reassign:${order.id}`);
+    const action = data.beginDetailAction(`line-reassign:${order.id}`, order.id, quote.activeSegmentIds);
+    if (!action) return;
     try {
       const next = await reassignShippingOrderLines(order.id, {
         lineIds,
@@ -199,8 +240,7 @@ export function useShippingOrderQuoteActions(
         targetTransportMode
       });
       const targetLine = (next.lines || []).find((line) => lineIds.includes(line.id));
-      data.setDetailTarget(next);
-      data.replaceOrder(next);
+      if (!data.isCurrentDetailAction(action) || !data.applyCurrentDetail(action.request, next)) return;
       quote.setReassignModalOpen(false);
       quote.setSelectedQuoteLineIds([]);
       if (targetLine?.shippingOrderSegmentId) {
@@ -208,9 +248,11 @@ export function useShippingOrderQuoteActions(
       }
       message.success(`已调整 ${lineIds.length} 个商品的运输分区。`);
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '调整运输方案失败');
+      if (data.isCurrentDetailAction(action)) {
+        message.error(error instanceof Error ? error.message : '调整运输方案失败');
+      }
     } finally {
-      data.setActionKey(undefined);
+      data.finishDetailAction(action);
     }
   };
 

@@ -10,6 +10,7 @@ import {
 import type { EffectiveForwarderEligibilityStatus } from './warehouseForwarderEligibilityDomain';
 import {
   hasLineQuotePrice,
+  isExactlyNotSubmitted,
   shippingOrderLineImageUrl,
   shippingOrderLineTitleCn
 } from './warehouseShippingOrderDomain';
@@ -63,7 +64,8 @@ export function WarehouseShippingOrderLineTable({
             placeholder="选择材质"
             options={YITE_MATERIAL_OPTIONS}
             value={draft.yiteMaterial || cell.value}
-            disabled={!cell.editable || line.shippingSubmitStatus === 'SUBMITTED'}
+            disabled={!cell.editable || !quote.detailMutationAllowed
+              || !isExactlyNotSubmitted(line.shippingSubmitStatus)}
             onChange={(yiteMaterial) => quote.updateLineDraft(line.id, { yiteMaterial })}
           />
         );
@@ -89,7 +91,9 @@ export function WarehouseShippingOrderLineTable({
       rowSelection={{
         selectedRowKeys: quote.selectedQuoteLineIds,
         onChange: (keys) => quote.setSelectedQuoteLineIds(keys.map(String)),
-        getCheckboxProps: (line) => ({ disabled: line.shippingSubmitStatus === 'SUBMITTED' })
+        getCheckboxProps: (line) => ({
+          disabled: !quote.detailMutationAllowed || !isExactlyNotSubmitted(line.shippingSubmitStatus)
+        })
       }}
       scroll={{ x: quote.showYiteFields ? 1170 : 960 }}
       pagination={{ pageSize: 20, showSizeChanger: false }}
@@ -157,7 +161,7 @@ export function WarehouseShippingOrderLineTable({
               value={displayEligibilityStatus(line)}
               options={ELIGIBILITY_OPTIONS}
               loading={data.actionKey === `line-eligibility:${line.id}`}
-              disabled={line.shippingSubmitStatus === 'SUBMITTED'
+              disabled={!quote.detailMutationAllowed || !isExactlyNotSubmitted(line.shippingSubmitStatus)
                 || data.actionKey === `line-eligibility:${line.id}`}
               onChange={(status: EffectiveForwarderEligibilityStatus) => {
                 if (status !== 'UNKNOWN') void actions.handleSaveEligibility(line, status);
@@ -183,7 +187,7 @@ export function WarehouseShippingOrderLineTable({
                     placeholder={isUnsupportedForwarderEligibility(line)
                       ? '该货代不接'
                       : isUnknownForwarderEligibility(line) ? '请先确认承运状态' : '单价'}
-                    disabled={line.shippingSubmitStatus === 'SUBMITTED'
+                    disabled={!quote.detailMutationAllowed || !isExactlyNotSubmitted(line.shippingSubmitStatus)
                       || isUnsupportedForwarderEligibility(line)
                       || isUnknownForwarderEligibility(line)}
                     onChange={(event) => quote.updateLineDraft(line.id, { unitPrice: event.target.value })}
@@ -193,7 +197,7 @@ export function WarehouseShippingOrderLineTable({
                     size="small"
                     value={draft.billingUnit}
                     options={QUOTE_BILLING_UNIT_OPTIONS}
-                    disabled={line.shippingSubmitStatus === 'SUBMITTED'
+                    disabled={!quote.detailMutationAllowed || !isExactlyNotSubmitted(line.shippingSubmitStatus)
                       || isUnsupportedForwarderEligibility(line)
                       || isUnknownForwarderEligibility(line)}
                     onChange={(billingUnit) => quote.updateLineDraft(line.id, { billingUnit })}
@@ -220,7 +224,7 @@ export function WarehouseShippingOrderLineTable({
               type={hasLineQuotePrice(line) ? 'default' : 'primary'}
               icon={<SaveOutlined />}
               loading={data.actionKey === `line-quote:${line.id}`}
-              disabled={line.shippingSubmitStatus === 'SUBMITTED'
+              disabled={!quote.detailMutationAllowed || !isExactlyNotSubmitted(line.shippingSubmitStatus)
                 || isUnsupportedForwarderEligibility(line)
                 || isUnknownForwarderEligibility(line)}
               onClick={() => void actions.handleSaveLineQuote(line)}

@@ -1,14 +1,13 @@
 import { message } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
-import { loadShippingOrderLogisticsQuoteOptionsForScope } from './warehouseShippingOrderRequests';
 import type {
   OrderLogisticsQuoteChannelOption,
-  OrderLogisticsQuoteForwarderOption,
-  OrderLogisticsQuoteOptions
+  OrderLogisticsQuoteForwarderOption
 } from '../../logistics-quote/types';
 import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
 import {
   hasLineQuotePrice,
+  isExactlyNotSubmitted,
   isMissingYiteQuoteMaterial,
   isYiteQuoteForwarder
 } from './warehouseShippingOrderDomain';
@@ -23,14 +22,12 @@ import type {
   DetailLineFilter,
   DetailUnitPriceFilter,
   LineQuoteDraft,
-  QuoteBillingUnit,
-  QuoteExportSelection
+  QuoteBillingUnit
 } from './warehouseShippingOrderModels';
 import {
   buildQuoteUnitPriceFilterOptions,
   buildQuoteChannelSelectOptions,
   buildQuoteForwarderSelectOptions,
-  defaultSegmentQuoteSelection,
   findQuoteChannelOption,
   findQuoteForwarderOption,
   firstAvailableSegmentQuoteSelection,
@@ -41,6 +38,7 @@ import {
   warehouseQuotePriceState
 } from './warehouseShippingQuoteDomain';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
+import { useShippingOrderScopedOptions } from './useShippingOrderScopedOptions';
 
 export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
   const [detailLineFilter, setDetailLineFilter] = useState<DetailLineFilter>('ALL');
@@ -52,9 +50,6 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
   const [bulkQuoteUnitPrice, setBulkQuoteUnitPrice] = useState('');
   const [bulkQuoteBillingUnit, setBulkQuoteBillingUnit] = useState<QuoteBillingUnit>('KG');
   const [bulkQuoteYiteMaterial, setBulkQuoteYiteMaterial] = useState<string>();
-  const [activeSegmentQuoteOptions, setActiveSegmentQuoteOptions] = useState<OrderLogisticsQuoteOptions | null>(null);
-  const [optionsLoading, setOptionsLoading] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<QuoteExportSelection>({});
   const [selectedSegmentIds, setSelectedSegmentIds] = useState<string[]>([]);
 
   const detailLines = useMemo(() => data.detailTarget?.lines || [], [data.detailTarget]);
@@ -65,6 +60,17 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     return detailSegments.find((segment) => String(segment.id) === String(selectedId)) || sortedSegments[0];
   }, [detailSegments, selectedSegmentIds, sortedSegments]);
   const activeSegmentIds = useMemo(() => activeSegment ? [activeSegment.id] : [], [activeSegment]);
+  const {
+    activeSegmentQuoteOptions, setActiveSegmentQuoteOptions, optionsLoading,
+    selectedOption, setSelectedOption
+  } = useShippingOrderScopedOptions(data, activeSegment, activeSegmentIds);
+  const warehouseOrderMutable = Boolean(data.detailTarget)
+    && isExactlyNotSubmitted(data.detailTarget?.shippingSubmitStatus)
+    && detailSegments.every((segment) => isExactlyNotSubmitted(segment.shippingSubmitStatus))
+    && detailLines.every((line) => isExactlyNotSubmitted(line.shippingSubmitStatus));
+  const activeSegmentMutable = Boolean(activeSegment)
+    && isExactlyNotSubmitted(activeSegment?.shippingSubmitStatus);
+  const detailMutationAllowed = warehouseOrderMutable && activeSegmentMutable;
   const activeLines = useMemo(
     () => detailLines.filter((line) => !activeSegment || line.shippingOrderSegmentId === activeSegment.id),
     [activeSegment, detailLines]
@@ -155,37 +161,10 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     setSelectedSegmentIds((current) => {
       const currentId = current[0];
       if (currentId && ids.includes(currentId)) return current.length === 1 ? current : [currentId];
-      const firstOpen = sortedSegments.find((segment) => segment.shippingSubmitStatus !== 'SUBMITTED');
+      const firstOpen = sortedSegments.find((segment) => isExactlyNotSubmitted(segment.shippingSubmitStatus));
       return firstOpen ? [firstOpen.id] : ids[0] ? [ids[0]] : [];
     });
   }, [data.detailTarget, sortedSegments]);
-
-  useEffect(() => {
-    if (!data.detailTarget?.id || !activeSegmentIds.length) {
-      setActiveSegmentQuoteOptions(null);
-      setSelectedOption({});
-      setOptionsLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setOptionsLoading(true);
-    loadShippingOrderLogisticsQuoteOptionsForScope(data.detailTarget.id, activeSegmentIds)
-      .then((options) => {
-        if (cancelled) return;
-        setActiveSegmentQuoteOptions(options);
-        setSelectedOption(defaultSegmentQuoteSelection(options, activeSegment));
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        setActiveSegmentQuoteOptions(null);
-        setSelectedOption({});
-        message.error(error instanceof Error ? error.message : '读取货代渠道选项失败');
-      })
-      .finally(() => {
-        if (!cancelled) setOptionsLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [activeSegment, activeSegmentIds, data.detailTarget?.id]);
 
   useEffect(() => {
     if (!showYiteFields && detailLineFilter === 'MISSING_MATERIAL') setDetailLineFilter('ALL');
@@ -196,11 +175,11 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     }
   }, [detailUnitPriceFilter, unitPriceFilterOptions]);
   useEffect(() => {
-    const selectable = new Set(linesWithSelectedQuote
-      .filter((line) => line.shippingSubmitStatus !== 'SUBMITTED')
+    const selectable = new Set((detailMutationAllowed ? linesWithSelectedQuote : [])
+      .filter((line) => isExactlyNotSubmitted(line.shippingSubmitStatus))
       .map((line) => line.id));
     setSelectedQuoteLineIds((current) => current.filter((id) => selectable.has(id)));
-  }, [linesWithSelectedQuote]);
+  }, [detailMutationAllowed, linesWithSelectedQuote]);
 
   const readLineDraft = (line: ShippingOrderLine): LineQuoteDraft => ({
     unitPrice: lineQuoteDrafts[line.id]?.unitPrice ?? formatQuoteInputValue(line.unitPrice),
@@ -280,14 +259,15 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     bulkQuoteYiteMaterial, setBulkQuoteYiteMaterial, activeSegmentQuoteOptions,
     setActiveSegmentQuoteOptions, optionsLoading, selectedOption, setSelectedOption,
     selectedSegmentIds, detailLines, detailSegments, sortedSegments, activeSegment, activeSegmentIds,
+    warehouseOrderMutable, activeSegmentMutable, detailMutationAllowed,
     activeLines, selectedForwarder, selectedChannel, linesWithSelectedQuote, showYiteFields,
     missingMaterialCount, missingPriceCount, inquiryRequiredCount, unsupportedCount,
     unknownEligibilityCount, visibleLines, selectedLines,
     forwarderSelectOptions: buildQuoteForwarderSelectOptions(activeSegmentQuoteOptions),
     channelSelectOptions: buildQuoteChannelSelectOptions(selectedForwarder),
     activeMaintenanceKey: `${selectedOption.forwarderCode || ''}:${selectedOption.routeCode || ''}:${detailLineFilter}:${detailUnitPriceFilter}`,
-    activeSegmentSubmitted: activeSegment?.shippingSubmitStatus === 'SUBMITTED',
-    warehouseOrderSubmitted: data.detailTarget?.shippingSubmitStatus === 'SUBMITTED',
+    activeSegmentSubmitted: String(activeSegment?.shippingSubmitStatus || '').trim().toUpperCase() === 'SUBMITTED',
+    warehouseOrderSubmitted: String(data.detailTarget?.shippingSubmitStatus || '').trim().toUpperCase() === 'SUBMITTED',
     readLineDraft, updateLineDraft, clearLineDrafts, resetQuoteEditing, selectSegment, selectQuoteOption,
     openBulkModal, openReassignModal
   };

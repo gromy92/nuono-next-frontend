@@ -4,7 +4,6 @@ import { createLatestRequestGate } from '../../../shared/latestRequestGate';
 import {
   exportShippingOrderLogisticsQuoteReport,
   importShippingOrderLogisticsQuoteReport,
-  loadShippingOrder,
   loadShippingOrderLogisticsQuoteOptions,
   loadShippingOrderLogisticsQuoteOptionsForScope
 } from './warehouseShippingOrderRequests';
@@ -28,6 +27,7 @@ import {
 } from './warehouseShippingQuoteDomain';
 import type { ShippingOrderQuoteState } from './useShippingOrderQuoteState';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
+import { requireShippingOrderResponseOrderId } from './shippingOrderInteractionScope';
 
 export function useShippingOrderQuoteTransfer(
   data: WarehouseShippingOrderData,
@@ -115,6 +115,7 @@ export function useShippingOrderQuoteTransfer(
         ? await loadShippingOrderLogisticsQuoteOptionsForScope(order.id, segmentIds)
         : await loadShippingOrderLogisticsQuoteOptions(order.id);
       if (!isCurrentRequest()) return;
+      requireShippingOrderResponseOrderId(order.id, options.purchaseOrderId);
       setExportOptions(options);
     } catch (error) {
       if (!isCurrentRequest()) return;
@@ -142,7 +143,7 @@ export function useShippingOrderQuoteTransfer(
       segmentIds: [...exportSegmentIds],
       missingOnly: exportMissingOnly
     };
-    data.setActionKey(`logistics-quote-export:${orderId}`);
+    const action = data.beginAction(`logistics-quote-export:${orderId}`);
     closeExportModal();
     notification.success({
       message: '已提交导出',
@@ -163,7 +164,7 @@ export function useShippingOrderQuoteTransfer(
       } catch (error) {
         message.error(error instanceof Error ? error.message : '导出物流报价表失败');
       } finally {
-        data.setActionKey(undefined);
+        data.finishAction(action);
       }
     })();
   };
@@ -177,15 +178,20 @@ export function useShippingOrderQuoteTransfer(
   };
 
   const handleImport = async (order: ShippingOrder, file: File, segmentIds?: string[]) => {
-    data.setActionKey(`logistics-quote-import:${order.id}`);
+    if (!quote.detailMutationAllowed) {
+      message.warning('当前仓库单或分区状态不可回传报价。');
+      return;
+    }
+    const action = data.beginDetailAction(`logistics-quote-import:${order.id}`, order.id, segmentIds);
+    if (!action) return;
     try {
       const result = await importShippingOrderLogisticsQuoteReport(order.id, file, segmentIds);
+      if (!data.isCurrentDetailAction(action)) return;
       setLastImportResult({ orderId: order.id, segmentIds: segmentIds || [], result });
       await data.loadPage();
-      if (data.detailTarget?.id === order.id) {
-        const detail = await loadShippingOrder(order.id);
-        data.setDetailTarget(detail);
-      }
+      if (!data.isCurrentDetailAction(action)) return;
+      await data.refreshDetail(order.id);
+      if (!data.isCurrentDetailAction(action)) return;
       if (!result.updatedRows) {
         Modal.warning({
           title: '报价未更新',
@@ -203,9 +209,11 @@ export function useShippingOrderQuoteTransfer(
         });
       }
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '回传物流报价表失败');
+      if (data.isCurrentDetailAction(action)) {
+        message.error(error instanceof Error ? error.message : '回传物流报价表失败');
+      }
     } finally {
-      data.setActionKey(undefined);
+      data.finishDetailAction(action);
     }
   };
 

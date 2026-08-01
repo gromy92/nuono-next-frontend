@@ -3,8 +3,15 @@ import type { ShippingOrder } from './warehouseShippingOrderTypes';
 import { contractSources as sources } from './WarehouseOrderContractSources';
 import {
   countShippingOrderPendingQuoteLines,
+  isExactlyNotSubmitted,
   shippingOrderQuoteIssueSummary
 } from './warehouseShippingOrderDomain';
+
+assert.equal(isExactlyNotSubmitted('NOT_SUBMITTED'), true);
+assert.equal(isExactlyNotSubmitted(' not_submitted '), true);
+for (const status of [undefined, null, '', 'SUBMITTED', 'UNKNOWN', 'FUTURE_STATUS']) {
+  assert.equal(isExactlyNotSubmitted(status), false, `${status ?? 'blank'} 必须 fail-closed`);
+}
 
 const order = {
   quoteStatus: 'PENDING_QUOTE',
@@ -101,7 +108,20 @@ assert.doesNotMatch(
 assert.match(sources.orderDomain, /isZdShippingForwarder[\s\S]*sameCode\(target\.forwarderCode, 'ZD'\)[\s\S]*众鸫/);
 assert.match(
   sources.detailToolbar,
-  /submitDisabled = quote\.warehouseOrderSubmitted \|\| !quote\.detailLines\.length[\s\S]*icon=\{<SendOutlined \/>\}[\s\S]*submit\.handleSubmit\(order\)/
+  /submitDisabled = !quote\.warehouseOrderMutable \|\| !quote\.detailLines\.length[\s\S]*icon=\{<SendOutlined \/>\}[\s\S]*submit\.handleSubmit\(order\)/
+);
+assert.match(sources.submit, /mutableStatuses[\s\S]*every\(isExactlyNotSubmitted\)[\s\S]*当前状态不可提交/);
+assert.match(
+  sources.submit,
+  /submitShippingOrder\(order\.id\)[\s\S]*acceptCurrentInteractionResponse\(action\.request, result\.shippingOrderId\)[\s\S]*result\.submittedLineCount/
+);
+assert.match(sources.sharedViews, /DetailSegmentChips[\s\S]*disabled\?: boolean[\s\S]*disabled=\{disabled\}/);
+assert.match(sources.detailToolbar, /DetailSegmentChips[\s\S]*disabled=\{Boolean\(data\.actionKey\)\}/);
+assert.match(sources.quoteState, /firstOpen[\s\S]*isExactlyNotSubmitted[\s\S]*detailMutationAllowed/);
+assert.doesNotMatch(
+  sources.quoteState + sources.lineTable + sources.reassignModal + sources.submit,
+  /shippingSubmitStatus\s*!==\s*'SUBMITTED'|shippingSubmitStatus\s*===\s*'SUBMITTED'/,
+  '可变性判断不得把空白或未来状态当成未提交'
 );
 assert.doesNotMatch(sources.page + sources.detailToolbar + sources.submit, /部分提交|PARTIAL_SUBMITTED/);
 assert.match(

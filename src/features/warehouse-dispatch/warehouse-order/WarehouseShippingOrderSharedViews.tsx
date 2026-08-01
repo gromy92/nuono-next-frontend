@@ -54,11 +54,13 @@ export function WarehouseOrderIssueTags({ order }: { order: ShippingOrder }) {
 export function DetailSegmentChips({
   segments,
   activeSegment,
-  onSelect
+  onSelect,
+  disabled = false
 }: {
   segments: ShippingOrderSegment[];
   activeSegment?: ShippingOrderSegment;
   onSelect: (segmentId: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="warehouse-shipping-order-chip-group warehouse-shipping-order-chip-group--route">
@@ -79,6 +81,7 @@ export function DetailSegmentChips({
               'warehouse-shipping-order-chip',
               activeSegment?.id === segment.id ? 'warehouse-shipping-order-chip--active' : ''
             ].filter(Boolean).join(' ')}
+            disabled={disabled}
             onClick={() => onSelect(String(segment.id))}
           >
             {label}
