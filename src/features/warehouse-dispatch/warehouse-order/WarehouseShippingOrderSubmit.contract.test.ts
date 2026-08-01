@@ -152,7 +152,11 @@ assert.doesNotMatch(
   /\bModal\.(?:warning|success)\(/,
   '提交反馈必须使用 App 上下文实例，避免静态 Modal 在 React 19 页面中不显示'
 );
-assert.match(sources.orderDomain, /isZdShippingForwarder[\s\S]*sameCode\(target\.forwarderCode, 'ZD'\)[\s\S]*众鸫/);
+assert.match(
+  sources.orderDomain,
+  /isZdShippingForwarder[\s\S]*sameCode\(target\.forwarderCode, 'ZD'\)[\s\S]*routeCode\.startsWith\('ZD-'\)/,
+  '众鸫免价必须只使用承运商或线路机器码'
+);
 assert.match(
   sources.detailToolbar,
   /submitDisabled = !quote\.warehouseOrderMutable \|\| !quote\.detailLines\.length[\s\S]*icon=\{<SendOutlined \/>\}[\s\S]*submit\.handleSubmit\(order\)/
