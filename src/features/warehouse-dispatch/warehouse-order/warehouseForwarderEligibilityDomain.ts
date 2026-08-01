@@ -1,4 +1,4 @@
-import type { ShippingOrderLine } from '../../purchase-order/types';
+import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
 
 export function isUnsupportedForwarderEligibility(line: ShippingOrderLine) {
   return (line.eligibilityStatus || 'SUPPORTED').toUpperCase() === 'UNSUPPORTED';
