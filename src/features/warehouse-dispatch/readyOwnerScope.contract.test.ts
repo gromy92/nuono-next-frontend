@@ -8,11 +8,15 @@ import {
 } from './readyDomain'
 import type { ReadyShipmentRow } from './workbenchModels'
 
-const row = (ownerUserId: number | undefined, storeCode: string, id: string) => ({
+const row = (ownerUserId: number | undefined, storeCode: string, id: string): ReadyShipmentRow => ({
   id,
+  orderId: `order-${id}`,
+  orderNo: `PO-${id}`,
   ownerUserId,
   storeCode,
+  storeName: `Store ${storeCode}`,
   psku: 'PSKU-1',
+  title: `Product ${id}`,
   siteCode: 'SA',
   transportMode: 'AIR',
   fulfillmentType: 'WAREHOUSE_RECEIPT',
@@ -22,7 +26,7 @@ const row = (ownerUserId: number | undefined, storeCode: string, id: string) => 
   plannedQty: 0,
   availableQty: 1,
   items: []
-}) as ReadyShipmentRow
+})
 
 assert.notEqual(
   productBaselineMapKey({ ownerUserId: 307, storeCode: 'STORE-A' }, 'PSKU-1'),

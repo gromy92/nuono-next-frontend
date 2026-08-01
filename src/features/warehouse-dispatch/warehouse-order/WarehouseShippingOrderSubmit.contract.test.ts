@@ -30,18 +30,45 @@ const overlappingIssues = {
 assert.deepEqual(shippingOrderQuoteIssueSummary(overlappingIssues), {
   pendingQuoteCount: 1,
   missingMaterialCount: 2,
+  unsupportedCount: 0,
+  inquiryRequiredCount: 0,
   totalCount: 2
 }, '报价状态和义特材质问题必须按商品行取并集，不能重复计数');
 
+const pricedEligibilityBlocks = {
+  segments: [{ id: 'et', forwarderCode: 'ET' }],
+  lines: [
+    {
+      id: 'unsupported',
+      shippingOrderSegmentId: 'et',
+      unitPrice: 65,
+      eligibilityStatus: 'UNSUPPORTED'
+    },
+    {
+      id: 'inquiry',
+      shippingOrderSegmentId: 'et',
+      unitPrice: 66,
+      eligibilityStatus: 'INQUIRY_REQUIRED'
+    }
+  ]
+} as ShippingOrder;
+assert.deepEqual(shippingOrderQuoteIssueSummary(pricedEligibilityBlocks), {
+  pendingQuoteCount: 0,
+  missingMaterialCount: 0,
+  unsupportedCount: 1,
+  inquiryRequiredCount: 1,
+  totalCount: 2
+}, '旧价格不能绕过不接或需询价承运门禁');
+
 assert.match(
   sources.submit,
-  /handleSubmit[\s\S]*shippingOrderQuoteIssueSummary\(order\)[\s\S]*if \(quoteIssue\.totalCount > 0\)[\s\S]*title: '报价缺失'[\s\S]*submitShippingOrder\(order\.id\)/
+  /handleSubmit[\s\S]*shippingOrderQuoteIssueSummary\(order\)[\s\S]*if \(quoteIssue\.totalCount > 0\)[\s\S]*title: '暂不能提交发货'[\s\S]*submitShippingOrder\(order\.id\)/
 );
 assert.match(sources.submit, /import \{ App \} from 'antd'/);
 assert.match(sources.submit, /const \{ modal, message \} = App\.useApp\(\)/);
 assert.match(
   sources.submit,
-  /商品缺单价[\s\S]*缺少材质[\s\S]*title: '报价缺失'[\s\S]*整张仓库单的报价资料尚未完整[\s\S]*modal\.success\(\{[\s\S]*message\.error\(/
+  /当前货代不接[\s\S]*需询价确认[\s\S]*商品缺单价[\s\S]*缺少材质[\s\S]*title: '暂不能提交发货'[\s\S]*modal\.success\(\{[\s\S]*message\.error\(/
 );
 assert.doesNotMatch(sources.submit, /待确认|已确认/);
 assert.doesNotMatch(sources.submit, /title: '义特材质缺失'/);

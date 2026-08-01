@@ -1,5 +1,6 @@
 import { App as AntdApp, Modal } from 'antd';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createLatestRequestGate } from '../../../shared/latestRequestGate';
 import {
   exportShippingOrderLogisticsQuoteReport,
   importShippingOrderLogisticsQuoteReport,
@@ -40,6 +41,13 @@ export function useShippingOrderQuoteTransfer(
   const [exportMissingOnly, setExportMissingOnly] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
   const [lastImportResult, setLastImportResult] = useState<QuoteImportResultState | null>(null);
+  const exportRequestGateRef = useRef(createLatestRequestGate<string>());
+  const exportRequestScopeRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => () => {
+    exportRequestGateRef.current.invalidate();
+    exportRequestScopeRef.current = undefined;
+  }, []);
 
   const exportableOptions = exportOptions;
   const selectedForwarder = useMemo(
@@ -76,6 +84,8 @@ export function useShippingOrderQuoteTransfer(
   }, [data.detailTarget, lastImportResult, quote.activeSegmentIds]);
 
   const closeExportModal = () => {
+    exportRequestGateRef.current.invalidate();
+    exportRequestScopeRef.current = undefined;
     setExportTarget(null);
     setExportSegmentIds([]);
     setExportOptions(null);
@@ -89,6 +99,11 @@ export function useShippingOrderQuoteTransfer(
       message.warning('当前仓库单还没有商品。');
       return;
     }
+    const requestScope = quoteExportRequestScope(order.id, segmentIds);
+    exportRequestScopeRef.current = requestScope;
+    const requestIdentity = exportRequestGateRef.current.begin(requestScope);
+    const isCurrentRequest = () => exportRequestScopeRef.current !== undefined
+      && exportRequestGateRef.current.isCurrent(requestIdentity, exportRequestScopeRef.current);
     setExportTarget(order);
     setExportSegmentIds(segmentIds || []);
     setExportOptions(null);
@@ -99,12 +114,14 @@ export function useShippingOrderQuoteTransfer(
       const options = segmentIds?.length
         ? await loadShippingOrderLogisticsQuoteOptionsForScope(order.id, segmentIds)
         : await loadShippingOrderLogisticsQuoteOptions(order.id);
+      if (!isCurrentRequest()) return;
       setExportOptions(options);
     } catch (error) {
+      if (!isCurrentRequest()) return;
       setExportOptions(null);
       message.error(error instanceof Error ? error.message : '读取可导出货代渠道失败');
     } finally {
-      setExportLoading(false);
+      if (isCurrentRequest()) setExportLoading(false);
     }
   };
 
@@ -202,6 +219,11 @@ export function useShippingOrderQuoteTransfer(
     importResultTitle: visibleImportResult ? quoteImportResultTitle(visibleImportResult) : '',
     clearImportResult: () => setLastImportResult(null)
   };
+}
+
+function quoteExportRequestScope(orderId: string, segmentIds: string[] = []) {
+  const normalizedSegmentIds = [...new Set(segmentIds)].sort();
+  return `${orderId}:${normalizedSegmentIds.join(',')}`;
 }
 
 function saveBlobFile(blob: Blob, filename: string) {

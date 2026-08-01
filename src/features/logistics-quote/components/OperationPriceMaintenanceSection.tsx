@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Button, Card, Select, Space, Tabs, Tag } from 'antd'
+import { Alert, Button, Card, Select, Space, Tabs, Tag } from 'antd'
 import { fetchLogisticsQuoteOperationPriceItems } from '../api'
-import { buildMockOperationPriceItemsResponse } from '../operationQuoteMockData'
 import { buildOperationQuoteView } from '../operationQuoteModels'
+import { requireReadyOperationPriceItems } from '../operationPriceItemsDomain'
 import type {
   LogisticsQuoteOperationPriceItemDto,
   LogisticsQuoteOperationPriceItemsResponse
@@ -52,18 +52,20 @@ export function OperationPriceMaintenanceSection() {
 
     const loadPriceItems = async () => {
       setState({ status: 'loading' })
+      setSelectedForwarderKey(undefined)
+      setSelectedVersionKey(undefined)
+      setSelectedTransportMode(undefined)
       try {
-        const data = await fetchLogisticsQuoteOperationPriceItems()
+        const data = requireReadyOperationPriceItems(
+          await fetchLogisticsQuoteOperationPriceItems()
+        )
         if (!cancelled) {
           setState({ status: 'success', data })
         }
       } catch (error) {
         if (!cancelled) {
           const message = error instanceof Error ? error.message : '运营报价维护列表加载失败'
-          setState({
-            status: 'success',
-            data: buildMockOperationPriceItemsResponse('ALL', message)
-          })
+          setState({ status: 'error', message })
         }
       }
     }
@@ -156,13 +158,25 @@ export function OperationPriceMaintenanceSection() {
       style={{ boxShadow: '0 12px 32px rgba(15, 23, 42, 0.06)' }}
       extra={
         <Space wrap size={8}>
-          {data?.mode === 'mock-demo' ? <Tag color="warning">样例数据</Tag> : null}
           {data?.mode === 'local-db' ? <Tag color="success">当前生效版本</Tag> : null}
-          <Button onClick={() => setReloadKey((current) => current + 1)}>刷新</Button>
+          <Button loading={loading} onClick={() => setReloadKey((current) => current + 1)}>刷新</Button>
         </Space>
       }
     >
       <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        {state.status === 'error' ? (
+          <Alert
+            type="error"
+            showIcon
+            message="正式报价加载失败"
+            description={state.message}
+            action={(
+              <Button size="small" onClick={() => setReloadKey((current) => current + 1)}>
+                重新加载
+              </Button>
+            )}
+          />
+        ) : null}
         <Space wrap size={8}>
           <Select
             value={selectedForwarderKey}

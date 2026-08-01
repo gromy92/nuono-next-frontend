@@ -21,6 +21,12 @@ export function useShippingOrderSubmit(data: WarehouseShippingOrderData) {
     }
     if (quoteIssue.totalCount > 0) {
       const reasons = [
+        quoteIssue.unsupportedCount > 0
+          ? `${quoteIssue.unsupportedCount} 个商品当前货代不接`
+          : '',
+        quoteIssue.inquiryRequiredCount > 0
+          ? `${quoteIssue.inquiryRequiredCount} 个商品需询价确认`
+          : '',
         quoteIssue.pendingQuoteCount > 0
           ? `${quoteIssue.pendingQuoteCount} 个商品缺单价`
           : '',
@@ -29,8 +35,8 @@ export function useShippingOrderSubmit(data: WarehouseShippingOrderData) {
           : ''
       ].filter(Boolean).join('；');
       modal.warning({
-        title: '报价缺失',
-        content: `整张仓库单的报价资料尚未完整：${reasons}。补齐后才能提交给仓库装箱。`,
+        title: '暂不能提交发货',
+        content: `整张仓库单仍有阻断项：${reasons}。处理完成后才能提交给仓库装箱。`,
         okText: '知道了'
       });
       return;

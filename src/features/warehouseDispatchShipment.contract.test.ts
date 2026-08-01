@@ -16,6 +16,14 @@ assert.match(sources.planPanel, /CalculatorOutlined[\s\S]*workspace\.openCostCom
 assert.match(sources.planPanel, /暂无发货申请单，请先在仓管 APP 发起/);
 
 assert.match(sources.shippingWorkspace, /selectPlan\(planId: string\)[\s\S]*setDetailOpen\(true\)[\s\S]*currentShippingBatch[\s\S]*hydrateBatch/);
+assert.match(
+  sources.shippingWorkspace,
+  /createLatestRequestGate[\s\S]*batchRequestGateRef[\s\S]*batchRequestScopeRef/
+);
+assert.match(
+  sources.shippingWorkspace,
+  /generateLogisticsPlan[\s\S]*requestIdentity[\s\S]*isCurrentRequest[\s\S]*createShippingBatchFromDispatchPlan[\s\S]*if \(!isCurrentRequest\(\)\) return[\s\S]*setSelectedPlanId\(plan\.id\)[\s\S]*setShippingBatch\(batch\)[\s\S]*finally[\s\S]*isCurrentRequest\(\)[\s\S]*setGeneratingPlanId\(undefined\)/
+);
 assert.match(sources.planDetail, /title=\{plan \? `\$\{plan\.planNo\} 发货申请单详情`[\s\S]*warehouse-dispatch-plan-detail is-modal/);
 assert.match(sources.costDomain, /formatDispatchPlanBatchMetric[\s\S]*待生成[\s\S]*actualWeightKg[\s\S]*volumeCbm[\s\S]*规格缺失/);
 assert.match(

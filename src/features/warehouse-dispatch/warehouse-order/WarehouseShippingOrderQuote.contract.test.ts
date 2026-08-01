@@ -141,6 +141,18 @@ assert.match(sources.quoteTransfer, /useState\(false\)[\s\S]*exportMissingOnly/)
 assert.match(sources.quoteTransfer, /App as AntdApp[\s\S]*AntdApp\.useApp\(\)/);
 assert.match(
   sources.quoteTransfer,
+  /createLatestRequestGate[\s\S]*exportRequestGateRef[\s\S]*exportRequestScopeRef/
+);
+assert.match(
+  sources.quoteTransfer,
+  /closeExportModal[\s\S]*exportRequestGateRef\.current\.invalidate\(\)[\s\S]*exportRequestScopeRef\.current = undefined/
+);
+assert.match(
+  sources.quoteTransfer,
+  /openExportModal[\s\S]*requestIdentity[\s\S]*isCurrentRequest[\s\S]*if \(!isCurrentRequest\(\)\) return[\s\S]*setExportOptions\(options\)[\s\S]*catch[\s\S]*if \(!isCurrentRequest\(\)\) return[\s\S]*finally[\s\S]*isCurrentRequest\(\)[\s\S]*setExportLoading\(false\)/
+);
+assert.match(
+  sources.quoteTransfer,
   /missingOnly: exportMissingOnly[\s\S]*closeExportModal\(\)[\s\S]*notification\.success\(\{[\s\S]*message: '已提交导出'/
 );
 assert.doesNotMatch(sources.quoteTransfer + sources.quoteDomain, /filterQuoteOptionsWithTemplates/);
