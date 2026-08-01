@@ -60,6 +60,21 @@ const routeIdentifiedZd = {
 } as ShippingOrder;
 assert.equal(countShippingOrderPendingQuoteLines(routeIdentifiedZd), 0, 'ZD 线路机器码应保留无价豁免');
 
+const bareRouteCodeZd = {
+  segments: [{ id: 'bare-route-zd', forwarderCode: 'CHIC', routeCode: 'ZD' }],
+  lines: [{
+    id: 'bare-route-zd-line',
+    shippingOrderSegmentId: 'bare-route-zd',
+    quoteStatus: 'PENDING_QUOTE',
+    eligibilityStatus: 'SUPPORTED'
+  }]
+} as ShippingOrder;
+assert.equal(
+  countShippingOrderPendingQuoteLines(bareRouteCodeZd),
+  1,
+  '裸 ZD 不是受支持的线路机器码，不能绕过缺价门禁'
+);
+
 const overlappingIssues = {
   segments: [{ id: 'yt', forwarderCode: 'YT' }],
   lines: [
