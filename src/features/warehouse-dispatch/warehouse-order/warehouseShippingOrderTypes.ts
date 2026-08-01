@@ -1,3 +1,5 @@
+import type { ForwarderEligibilityStatus } from '../../logistics-quote/types'
+
 type PurchaseSiteCode = string
 type PurchaseTransportMode = 'AIR' | 'SEA' | 'UNSPECIFIED' | string
 type PurchaseOrderFulfillmentType = 'WAREHOUSE_RECEIPT' | 'FACTORY_DIRECT' | string
@@ -31,6 +33,7 @@ export type ShippingOrderLine = {
   currency?: string
   billingUnit?: string
   priceSource?: string
+  eligibilityStatus?: ForwarderEligibilityStatus
   quantity: number
 }
 

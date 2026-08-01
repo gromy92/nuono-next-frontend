@@ -1,11 +1,11 @@
-import { Alert, Form, Input, Modal, Select, Typography } from 'antd';
-import { YITE_MATERIAL_OPTIONS } from './warehouseShippingOrderModels';
-import { quoteUnitDisplayText } from './warehouseShippingQuoteDomain';
+import { Alert, Form, Input, Modal, Select } from 'antd';
+import {
+  QUOTE_BILLING_UNIT_OPTIONS,
+  YITE_MATERIAL_OPTIONS
+} from './warehouseShippingOrderModels';
 import type { ShippingOrderQuoteActions } from './useShippingOrderQuoteActions';
 import type { ShippingOrderQuoteState } from './useShippingOrderQuoteState';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
-
-const { Text } = Typography;
 
 export function WarehouseShippingOrderBulkQuoteModal({
   data,
@@ -65,9 +65,12 @@ export function WarehouseShippingOrderBulkQuoteModal({
               placeholder="输入统一单价"
               onChange={(event) => quote.setBulkQuoteUnitPrice(event.target.value)}
             />
-            <Text type="secondary" className="warehouse-shipping-order-price-unit">
-              {quoteUnitDisplayText(quote.activeSegment?.transportMode || quote.selectedLines[0]?.plannedTransportMode)}
-            </Text>
+            <Select
+              className="warehouse-shipping-order-billing-unit-select"
+              value={quote.bulkQuoteBillingUnit}
+              options={QUOTE_BILLING_UNIT_OPTIONS}
+              onChange={quote.setBulkQuoteBillingUnit}
+            />
           </div>
         </Form.Item>
         {quote.showYiteFields ? (

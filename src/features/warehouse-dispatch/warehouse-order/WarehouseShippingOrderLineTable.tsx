@@ -2,18 +2,34 @@ import { SaveOutlined } from '@ant-design/icons';
 import { Button, Empty, Image, Input, Select, Table, Typography } from 'antd';
 import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
 import { buildYiteMaterialCellModel } from './WarehouseOrderPanel.models';
+import { isUnsupportedForwarderEligibility } from './warehouseForwarderEligibilityDomain';
 import {
-  isLineQuoteConfirmed,
+  hasLineQuotePrice,
   shippingOrderLineImageUrl,
   shippingOrderLineTitleCn
 } from './warehouseShippingOrderDomain';
-import { YITE_MATERIAL_OPTIONS } from './warehouseShippingOrderModels';
-import { quotePriceSourceLabel, quoteUnitDisplayText } from './warehouseShippingQuoteDomain';
+import {
+  QUOTE_BILLING_UNIT_OPTIONS,
+  YITE_MATERIAL_OPTIONS
+} from './warehouseShippingOrderModels';
+import { quotePriceSourceLabel } from './warehouseShippingQuoteDomain';
 import type { ShippingOrderQuoteActions } from './useShippingOrderQuoteActions';
 import type { ShippingOrderQuoteState } from './useShippingOrderQuoteState';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
 
 const { Text } = Typography;
+type EditableEligibilityStatus = 'SUPPORTED' | 'INQUIRY_REQUIRED' | 'UNSUPPORTED';
+
+const ELIGIBILITY_OPTIONS: Array<{ value: EditableEligibilityStatus; label: string }> = [
+  { value: 'SUPPORTED', label: '可发' },
+  { value: 'INQUIRY_REQUIRED', label: '需询价' },
+  { value: 'UNSUPPORTED', label: '不接' }
+];
+
+function editableEligibilityStatus(line: ShippingOrderLine): EditableEligibilityStatus {
+  const status = String(line.eligibilityStatus || 'SUPPORTED').toUpperCase();
+  return status === 'INQUIRY_REQUIRED' || status === 'UNSUPPORTED' ? status : 'SUPPORTED';
+}
 
 export function WarehouseShippingOrderLineTable({
   data,
@@ -28,7 +44,7 @@ export function WarehouseShippingOrderLineTable({
     {
       title: '义特材质',
       dataIndex: 'yiteMaterial',
-      width: 150,
+      width: 100,
       render: (_: unknown, line: ShippingOrderLine) => {
         const cell = buildYiteMaterialCellModel(line);
         const draft = quote.readLineDraft(line);
@@ -67,13 +83,13 @@ export function WarehouseShippingOrderLineTable({
         onChange: (keys) => quote.setSelectedQuoteLineIds(keys.map(String)),
         getCheckboxProps: (line) => ({ disabled: line.shippingSubmitStatus === 'SUBMITTED' })
       }}
-      scroll={{ x: quote.showYiteFields ? 1120 : 860 }}
+      scroll={{ x: quote.showYiteFields ? 1170 : 960 }}
       pagination={{ pageSize: 20, showSizeChanger: false }}
       columns={[
         {
           title: '商品',
           dataIndex: 'productTitle',
-          width: 400,
+          width: 280,
           render: (_, line) => {
             const imageUrl = shippingOrderLineImageUrl(line);
             const titleCn = shippingOrderLineTitleCn(line);
@@ -109,7 +125,7 @@ export function WarehouseShippingOrderLineTable({
         {
           title: '来源/数量',
           dataIndex: 'lineMeta',
-          width: 220,
+          width: 180,
           render: (_, line) => (
             <div className="warehouse-shipping-order-line-meta-cell">
               <Text type="secondary" className="warehouse-shipping-order-line-meta-source">
@@ -123,9 +139,26 @@ export function WarehouseShippingOrderLineTable({
         },
         ...yiteColumns,
         {
+          title: '承运状态',
+          dataIndex: 'eligibilityStatus',
+          width: 120,
+          render: (_: unknown, line: ShippingOrderLine) => (
+            <Select
+              size="small"
+              className="warehouse-shipping-order-eligibility-select"
+              value={editableEligibilityStatus(line)}
+              options={ELIGIBILITY_OPTIONS}
+              loading={data.actionKey === `line-eligibility:${line.id}`}
+              disabled={line.shippingSubmitStatus === 'SUBMITTED'
+                || data.actionKey === `line-eligibility:${line.id}`}
+              onChange={(status: EditableEligibilityStatus) => void actions.handleSaveEligibility(line, status)}
+            />
+          )
+        },
+        {
           title: '报价单价',
           dataIndex: 'unitPrice',
-          width: 158,
+          width: 232,
           render: (_, line) => {
             const draft = quote.readLineDraft(line);
             const priceSourceLabel = quotePriceSourceLabel(line.priceSource);
@@ -137,13 +170,20 @@ export function WarehouseShippingOrderLineTable({
                     size="small"
                     inputMode="decimal"
                     value={draft.unitPrice}
-                    placeholder="单价"
-                    disabled={line.shippingSubmitStatus === 'SUBMITTED'}
+                    placeholder={isUnsupportedForwarderEligibility(line) ? '该货代不接' : '单价'}
+                    disabled={line.shippingSubmitStatus === 'SUBMITTED'
+                      || isUnsupportedForwarderEligibility(line)}
                     onChange={(event) => quote.updateLineDraft(line.id, { unitPrice: event.target.value })}
                   />
-                  <Text type="secondary" className="warehouse-shipping-order-price-unit">
-                    {quoteUnitDisplayText(quote.activeSegment?.transportMode || line.plannedTransportMode)}
-                  </Text>
+                  <Select
+                    className="warehouse-shipping-order-billing-unit-select"
+                    size="small"
+                    value={draft.billingUnit}
+                    options={QUOTE_BILLING_UNIT_OPTIONS}
+                    disabled={line.shippingSubmitStatus === 'SUBMITTED'
+                      || isUnsupportedForwarderEligibility(line)}
+                    onChange={(billingUnit) => quote.updateLineDraft(line.id, { billingUnit })}
+                  />
                 </div>
                 {priceSourceLabel ? (
                   <Text
@@ -163,10 +203,11 @@ export function WarehouseShippingOrderLineTable({
           render: (_, line) => (
             <Button
               size="small"
-              type={isLineQuoteConfirmed(line) ? 'default' : 'primary'}
+              type={hasLineQuotePrice(line) ? 'default' : 'primary'}
               icon={<SaveOutlined />}
               loading={data.actionKey === `line-quote:${line.id}`}
-              disabled={line.shippingSubmitStatus === 'SUBMITTED'}
+              disabled={line.shippingSubmitStatus === 'SUBMITTED'
+                || isUnsupportedForwarderEligibility(line)}
               onClick={() => void actions.handleSaveLineQuote(line)}
             >
               保存报价
@@ -179,11 +220,14 @@ export function WarehouseShippingOrderLineTable({
         emptyText: (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={quote.detailLineFilter === 'PENDING_CONFIRMATION'
-              ? '暂无待确认价格'
+            description={quote.detailUnitPriceFilter !== 'ALL'
+              ? '当前单价与状态筛选下暂无商品'
               : quote.detailLineFilter === 'MISSING_PRICE'
                 ? '暂无缺单价商品'
-              : quote.detailLineFilter === 'MISSING_MATERIAL' ? '暂无缺义特材质商品' : '暂无商品'}
+              : quote.detailLineFilter === 'MISSING_MATERIAL' ? '暂无缺义特材质商品'
+                : quote.detailLineFilter === 'UNSUPPORTED' ? '暂无当前货代不接商品'
+                  : quote.detailLineFilter === 'INQUIRY_REQUIRED' ? '暂无需询价商品'
+                    : '暂无商品'}
           />
         )
       }}

@@ -33,9 +33,9 @@ export const SHIPPING_ORDER_STATUS_FILTER_OPTIONS: Array<{
   value: ShippingOrderStatusFilter;
 }> = [
   { label: '全部状态', value: 'all' },
-  { label: '报价待确认', value: 'QUOTE_PENDING' },
+  { label: '报价缺失', value: 'QUOTE_PENDING' },
   { label: '已导出', value: 'QUOTE_EXPORTED' },
-  { label: '报价已确认', value: 'QUOTE_CONFIRMED' },
+  { label: '报价完整', value: 'QUOTE_CONFIRMED' },
   { label: '已提交发货', value: 'SHIPPING_SUBMITTED' },
   { label: '计划中', value: 'PLANNING' },
   { label: '已选物流', value: 'OPTION_SELECTED' },
@@ -147,9 +147,9 @@ export function sumPurchaseOrderQuantity(orders: WarehouseOrderPurchaseCandidate
 export function shippingOrderStatusMeta(order: ShippingOrder, journeys: WarehouseOrderJourney[] = []) {
   const status = shippingOrderStatusCode(order, journeys);
   if (status === 'SHIPPING_SUBMITTED') return { label: '已提交发货', color: 'green' };
-  if (status === 'QUOTE_CONFIRMED') return { label: '报价已确认', color: 'blue' };
+  if (status === 'QUOTE_CONFIRMED') return { label: '报价完整', color: 'blue' };
   if (status === 'QUOTE_EXPORTED') return { label: '已导出', color: 'cyan' };
-  if (status === 'QUOTE_PENDING') return { label: '报价待确认', color: 'gold' };
+  if (status === 'QUOTE_PENDING') return { label: '报价缺失', color: 'gold' };
   return warehouseOrderJourneyStatusMeta(status);
 }
 
@@ -179,8 +179,13 @@ function isKnownJourneyStatus(status: string): status is Exclude<
   return ['OPTION_SELECTED', 'OUTBOUND_CREATED', 'PACKING', 'PACKED', 'SHIPPED'].includes(status);
 }
 
-export function isLineQuoteConfirmed(line: ShippingOrderLine) {
-  return line.quoteStatus === 'CONFIRMED';
+export function hasLineQuotePrice(line: ShippingOrderLine) {
+  const unitPrice = Number(line.unitPrice);
+  return line.unitPrice !== null
+    && line.unitPrice !== undefined
+    && line.unitPrice !== ''
+    && Number.isFinite(unitPrice)
+    && unitPrice > 0;
 }
 
 export function applySelectedChannelQuoteToLine(
@@ -199,7 +204,8 @@ export function applySelectedChannelQuoteToLine(
     currency: quote.currency,
     billingUnit: quote.billingUnit,
     priceSource: quote.priceSource,
-    yiteMaterial: quote.yiteMaterial ?? line.yiteMaterial
+    yiteMaterial: quote.yiteMaterial ?? line.yiteMaterial,
+    eligibilityStatus: quote.eligibilityStatus || 'SUPPORTED'
   } : line;
 }
 
@@ -209,7 +215,7 @@ export function countShippingOrderPendingQuoteLines(order: ShippingOrder) {
   if (order.lines?.length) {
     return order.lines.filter((line) => {
       const segment = line.shippingOrderSegmentId ? segmentById.get(line.shippingOrderSegmentId) : undefined;
-      return (!segment || !isZdShippingForwarder(segment)) && line.quoteStatus !== 'CONFIRMED';
+      return (!segment || !isZdShippingForwarder(segment)) && !hasLineQuotePrice(line);
     }).length;
   }
   if (segments.length) {
@@ -237,7 +243,7 @@ export function shippingOrderQuoteIssueSummary(order: ShippingOrder) {
   const totalCount = order.lines.filter((line) => {
     const segment = line.shippingOrderSegmentId ? segmentById.get(line.shippingOrderSegmentId) : undefined;
     const quoteIncomplete = (!segment || !isZdShippingForwarder(segment))
-      && line.quoteStatus !== 'CONFIRMED';
+      && !hasLineQuotePrice(line);
     return quoteIncomplete || isMissingYiteMaterial(line, yiteSegmentIds);
   }).length;
   return { pendingQuoteCount, missingMaterialCount, totalCount };

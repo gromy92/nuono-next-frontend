@@ -1,4 +1,4 @@
-import { Modal, message } from 'antd';
+import { App as AntdApp, Modal } from 'antd';
 import { useMemo, useState } from 'react';
 import {
   exportShippingOrderLogisticsQuoteReport,
@@ -11,6 +11,7 @@ import type { OrderLogisticsQuoteOptions } from '../../logistics-quote/types';
 import type { ShippingOrder } from './warehouseShippingOrderTypes';
 import { QuoteImportResultContent } from './WarehouseShippingOrderSharedViews';
 import {
+  hasLineQuotePrice,
   quoteImportResultTitle,
   sameStringSet
 } from './warehouseShippingOrderDomain';
@@ -21,7 +22,6 @@ import type {
 import {
   buildQuoteChannelSelectOptions,
   buildQuoteForwarderSelectOptions,
-  filterQuoteOptionsWithTemplates,
   findQuoteChannelOption,
   findQuoteForwarderOption
 } from './warehouseShippingQuoteDomain';
@@ -32,6 +32,7 @@ export function useShippingOrderQuoteTransfer(
   data: WarehouseShippingOrderData,
   quote: ShippingOrderQuoteState
 ) {
+  const { message, notification } = AntdApp.useApp();
   const [exportTarget, setExportTarget] = useState<ShippingOrder | null>(null);
   const [exportSegmentIds, setExportSegmentIds] = useState<string[]>([]);
   const [exportOptions, setExportOptions] = useState<OrderLogisticsQuoteOptions | null>(null);
@@ -40,10 +41,7 @@ export function useShippingOrderQuoteTransfer(
   const [exportLoading, setExportLoading] = useState(false);
   const [lastImportResult, setLastImportResult] = useState<QuoteImportResultState | null>(null);
 
-  const exportableOptions = useMemo(
-    () => filterQuoteOptionsWithTemplates(exportOptions),
-    [exportOptions]
-  );
+  const exportableOptions = exportOptions;
   const selectedForwarder = useMemo(
     () => findQuoteForwarderOption(exportableOptions, exportSelection.forwarderCode),
     [exportSelection.forwarderCode, exportableOptions]
@@ -64,9 +62,11 @@ export function useShippingOrderQuoteTransfer(
     ?? exportOptions?.pendingLineCount
     ?? 0);
   const pendingCount = Number(selectedChannel?.pendingLineCount
-    ?? Math.max(0, scopeLines.length - scopeLines.filter((line) => line.quoteStatus === 'CONFIRMED').length));
+    ?? Math.max(0, scopeLines.length - scopeLines.filter(hasLineQuotePrice).length));
   const confirmedCount = Number(selectedChannel?.confirmedLineCount
     ?? Math.max(0, totalCount - pendingCount));
+  const unsupportedCount = Number(selectedChannel?.unsupportedLineCount || 0);
+  const inquiryRequiredCount = Number(selectedChannel?.inquiryRequiredLineCount || 0);
   const visibleImportResult = useMemo(() => {
     if (!data.detailTarget || !lastImportResult) return null;
     if (lastImportResult.orderId !== data.detailTarget.id) return null;
@@ -108,29 +108,47 @@ export function useShippingOrderQuoteTransfer(
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = () => {
     if (!exportTarget?.id) return;
     if (!exportSelection.forwarderCode || !exportSelection.routeCode) {
       message.warning('请选择货代和渠道。');
       return;
     }
-    data.setActionKey(`logistics-quote-export:${exportTarget.id}`);
-    try {
-      const report = await exportShippingOrderLogisticsQuoteReport(exportTarget.id, {
-        forwarderCode: exportSelection.forwarderCode,
-        routeCode: exportSelection.routeCode,
-        segmentIds: exportSegmentIds,
-        missingOnly: exportMissingOnly
-      });
-      saveBlobFile(report.blob, report.filename);
-      closeExportModal();
-      await data.loadPage();
-      message.success('已导出物流报价表。');
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '导出物流报价表失败');
-    } finally {
-      data.setActionKey(undefined);
+    if (unsupportedCount > 0) {
+      message.warning(`当前货代有 ${unsupportedCount} 个商品不接，请先调整运输方案。`);
+      return;
     }
+    const orderId = exportTarget.id;
+    const request = {
+      forwarderCode: exportSelection.forwarderCode,
+      routeCode: exportSelection.routeCode,
+      segmentIds: [...exportSegmentIds],
+      missingOnly: exportMissingOnly
+    };
+    data.setActionKey(`logistics-quote-export:${orderId}`);
+    closeExportModal();
+    notification.success({
+      message: '已提交导出',
+      description: '文件正在后台生成，完成后将自动下载。',
+      placement: 'topRight',
+      duration: 5
+    });
+    void (async () => {
+      try {
+        const report = await exportShippingOrderLogisticsQuoteReport(orderId, request);
+        saveBlobFile(report.blob, report.filename);
+        message.success('审核单已生成，文件开始下载。');
+        try {
+          await data.loadPage();
+        } catch {
+          message.warning('文件已下载，列表刷新失败，请手动刷新。');
+        }
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : '导出物流报价表失败');
+      } finally {
+        data.setActionKey(undefined);
+      }
+    })();
   };
 
   const selectExportForwarder = (forwarderCode: string) => {
@@ -177,7 +195,7 @@ export function useShippingOrderQuoteTransfer(
   return {
     exportTarget, exportOptions, exportSelection, setExportSelection, exportMissingOnly,
     setExportMissingOnly, exportLoading, exportableOptions, selectedForwarder, selectedChannel,
-    totalCount, pendingCount, confirmedCount, visibleImportResult,
+    totalCount, pendingCount, confirmedCount, unsupportedCount, inquiryRequiredCount, visibleImportResult,
     forwarderOptions: buildQuoteForwarderSelectOptions(exportableOptions),
     channelOptions: buildQuoteChannelSelectOptions(selectedForwarder),
     openExportModal, closeExportModal, handleExport, selectExportForwarder, handleImport,

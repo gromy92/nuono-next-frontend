@@ -2,9 +2,10 @@ import {
   DownloadOutlined,
   SaveOutlined,
   SendOutlined,
+  SwapOutlined,
   UploadOutlined
 } from '@ant-design/icons';
-import { Button, Segmented, Typography, Upload } from 'antd';
+import { Button, Segmented, Select, Typography, Upload } from 'antd';
 import {
   ActiveSegmentQuoteControls,
   DetailLineFilterLabel,
@@ -80,6 +81,14 @@ export function WarehouseShippingOrderDetailToolbar({
           </Button>
           <Button
             size="small"
+            icon={<SwapOutlined />}
+            disabled={scopeActionDisabled || quote.activeSegmentSubmitted}
+            onClick={quote.openReassignModal}
+          >
+            调整运输方案
+          </Button>
+          <Button
+            size="small"
             type="primary"
             icon={<SendOutlined />}
             disabled={submitDisabled}
@@ -100,6 +109,15 @@ export function WarehouseShippingOrderDetailToolbar({
           />
         </div>
         <div className="warehouse-shipping-order-detail-subbar">
+          <div className="warehouse-shipping-order-unit-price-filter">
+            <Text type="secondary">报价单价</Text>
+            <Select
+              size="small"
+              value={quote.detailUnitPriceFilter}
+              options={quote.unitPriceFilterOptions}
+              onChange={(value) => quote.setDetailUnitPriceFilter(value as typeof quote.detailUnitPriceFilter)}
+            />
+          </div>
           <Segmented
             size="small"
             value={quote.detailLineFilter}
@@ -110,12 +128,16 @@ export function WarehouseShippingOrderDetailToolbar({
                 value: 'MISSING_MATERIAL'
               }] : []),
               {
-                label: <DetailLineFilterLabel label="待确认" count={quote.pendingConfirmationCount} />,
-                value: 'PENDING_CONFIRMATION'
-              },
-              {
                 label: <DetailLineFilterLabel label="缺单价" count={quote.missingPriceCount} />,
                 value: 'MISSING_PRICE'
+              },
+              {
+                label: <DetailLineFilterLabel label="需询价" count={quote.inquiryRequiredCount} />,
+                value: 'INQUIRY_REQUIRED'
+              },
+              {
+                label: <DetailLineFilterLabel label="不接" count={quote.unsupportedCount} />,
+                value: 'UNSUPPORTED'
               }
             ]}
             onChange={(value) => quote.setDetailLineFilter(value as DetailLineFilter)}

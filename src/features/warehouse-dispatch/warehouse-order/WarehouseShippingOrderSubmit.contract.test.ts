@@ -15,7 +15,7 @@ const order = {
   lines: [
     { id: '1', shippingOrderSegmentId: 'zd', quoteStatus: 'PENDING_QUOTE' },
     { id: '2', shippingOrderSegmentId: 'et', quoteStatus: 'PENDING_QUOTE' },
-    { id: '3', shippingOrderSegmentId: 'et', quoteStatus: 'CONFIRMED' }
+    { id: '3', shippingOrderSegmentId: 'et', quoteStatus: 'PENDING_QUOTE', unitPrice: 65 }
   ]
 } as ShippingOrder;
 assert.equal(countShippingOrderPendingQuoteLines(order), 1, 'ZD 缺价不应阻塞整单提交');
@@ -24,7 +24,7 @@ const overlappingIssues = {
   segments: [{ id: 'yt', forwarderCode: 'YT' }],
   lines: [
     { id: '1', shippingOrderSegmentId: 'yt', quoteStatus: 'PENDING_QUOTE', yiteMaterial: '' },
-    { id: '2', shippingOrderSegmentId: 'yt', quoteStatus: 'CONFIRMED', yiteMaterial: '' }
+    { id: '2', shippingOrderSegmentId: 'yt', quoteStatus: 'PENDING_QUOTE', unitPrice: 65, yiteMaterial: '' }
   ]
 } as ShippingOrder;
 assert.deepEqual(shippingOrderQuoteIssueSummary(overlappingIssues), {
@@ -41,8 +41,9 @@ assert.match(sources.submit, /import \{ App \} from 'antd'/);
 assert.match(sources.submit, /const \{ modal, message \} = App\.useApp\(\)/);
 assert.match(
   sources.submit,
-  /缺单价或报价待确认[\s\S]*缺少材质[\s\S]*title: '报价缺失'[\s\S]*整张仓库单的报价资料尚未完整[\s\S]*modal\.success\(\{[\s\S]*message\.error\(/
+  /商品缺单价[\s\S]*缺少材质[\s\S]*title: '报价缺失'[\s\S]*整张仓库单的报价资料尚未完整[\s\S]*modal\.success\(\{[\s\S]*message\.error\(/
 );
+assert.doesNotMatch(sources.submit, /待确认|已确认/);
 assert.doesNotMatch(sources.submit, /title: '义特材质缺失'/);
 assert.doesNotMatch(
   sources.submit,

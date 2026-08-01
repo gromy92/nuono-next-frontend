@@ -5,7 +5,7 @@ import type {
   OrderLogisticsQuotePublishedPrice
 } from '../../logistics-quote/types';
 import type { ShippingOrderSegment } from './warehouseShippingOrderTypes';
-import type { QuoteExportSelection } from './warehouseShippingOrderModels';
+import type { QuoteBillingUnit, QuoteExportSelection } from './warehouseShippingOrderModels';
 
 export function sameCode(left?: string, right?: string) {
   const normalizedLeft = (left || '').trim().toUpperCase();
@@ -48,32 +48,84 @@ export function formatQuoteInputValue(value?: string | number | null) {
 }
 
 export function defaultQuoteBillingUnit(transportMode?: string) {
-  return (transportMode || '').toUpperCase() === 'SEA' ? 'CBM' : 'KG';
+  return ((transportMode || '').toUpperCase() === 'SEA' ? 'CBM' : 'KG') as QuoteBillingUnit;
 }
 
-export function quoteUnitDisplayText(transportMode?: string) {
-  return `CNY / ${defaultQuoteBillingUnit(transportMode)}`;
+export function resolveQuoteBillingUnit(
+  billingUnit?: string | null,
+  transportMode?: string
+): QuoteBillingUnit {
+  const normalized = (billingUnit || '').trim().toUpperCase();
+  return normalized === 'KG' || normalized === 'CBM'
+    ? normalized
+    : defaultQuoteBillingUnit(transportMode);
+}
+
+export function quoteUnitPriceFilterValue(
+  value?: string | number | null,
+  billingUnit?: string | null,
+  transportMode?: string
+) {
+  if (value === undefined || value === null || String(value).trim() === '') return undefined;
+  const amount = Number(value);
+  const unit = resolveQuoteBillingUnit(billingUnit, transportMode);
+  return Number.isFinite(amount) ? `PRICE:${amount}:${unit}` as const : undefined;
+}
+
+export function buildQuoteUnitPriceFilterOptions(
+  lines: Array<{
+    unitPrice?: string | number | null;
+    billingUnit?: string | null;
+    eligibilityStatus?: string;
+  }>,
+  transportMode?: string
+) {
+  const counts = new Map<string, number>();
+  lines.filter((line) => line.eligibilityStatus !== 'UNSUPPORTED').forEach((line) => {
+    const value = quoteUnitPriceFilterValue(line.unitPrice, line.billingUnit, transportMode);
+    if (value) counts.set(value, (counts.get(value) || 0) + 1);
+  });
+  return [
+    { value: 'ALL' as const, label: `全部单价（${lines.length}）` },
+    ...[...counts.entries()]
+      .sort(([left], [right]) => {
+        const [leftAmount, leftUnit] = left.slice(6).split(':');
+        const [rightAmount, rightUnit] = right.slice(6).split(':');
+        return Number(leftAmount) - Number(rightAmount) || leftUnit.localeCompare(rightUnit);
+      })
+      .map(([value, count]) => {
+        const [amount, unit] = value.slice(6).split(':');
+        return { value, label: `${formatPublishedNumber(Number(amount))} CNY / ${unit}（${count}）` };
+      })
+  ];
+}
+
+export function matchesQuoteUnitPriceFilter(
+  value: string | number | null | undefined,
+  billingUnit: string | null | undefined,
+  filter: string,
+  transportMode?: string
+) {
+  return filter === 'ALL' || quoteUnitPriceFilterValue(value, billingUnit, transportMode) === filter;
 }
 
 export function quotePriceSourceLabel(source?: string) {
   switch (source) {
-    case 'SHIPPING_ORDER_SNAPSHOT': return '本单已确认';
-    case 'PRODUCT_CURRENT': return '商品当前价 · 待确认';
-    case 'LEGACY_CHANNEL_QUOTE': return '历史渠道价 · 待确认';
+    case 'SHIPPING_ORDER_SNAPSHOT': return '本单报价';
+    case 'PRODUCT_CURRENT': return '';
+    case 'LEGACY_CHANNEL_QUOTE': return '历史渠道价';
     default: return '';
   }
 }
 
-export type WarehouseQuoteConfirmationState = 'CONFIRMED' | 'SUGGESTED_PRICE' | 'MISSING_PRICE';
+export type WarehouseQuotePriceState = 'PRICED' | 'MISSING_PRICE';
 
-export function warehouseQuoteConfirmationState(line: {
-  quoteStatus?: string;
+export function warehouseQuotePriceState(line: {
   unitPrice?: string | number | null;
-}): WarehouseQuoteConfirmationState {
-  if (line.quoteStatus === 'CONFIRMED') return 'CONFIRMED';
-  return line.unitPrice === null || line.unitPrice === undefined || line.unitPrice === ''
-    ? 'MISSING_PRICE'
-    : 'SUGGESTED_PRICE';
+}): WarehouseQuotePriceState {
+  const unitPrice = Number(line.unitPrice);
+  return line.unitPrice === null || line.unitPrice === undefined || line.unitPrice === '' ||
+    !Number.isFinite(unitPrice) || unitPrice <= 0 ? 'MISSING_PRICE' : 'PRICED';
 }
 
 export function transportModeLabel(value?: string) {
@@ -135,18 +187,8 @@ export function findQuoteChannelOption(
   return routeCode ? forwarder?.channels?.find((item) => item.routeCode === routeCode) : undefined;
 }
 
-export function filterQuoteOptionsWithTemplates(
-  options?: OrderLogisticsQuoteOptions | null
-): OrderLogisticsQuoteOptions | null {
-  return options
-    ? { ...options, forwarders: (options.forwarders || []).filter((item) => Boolean(item.templateType)) }
-    : null;
-}
-
-export function quoteExportEmptyDescription(options: OrderLogisticsQuoteOptions) {
-  return Number(options.unsupportedChannelCount || 0) > 0
-    ? '当前只有未配置导出模板的货代渠道，不能导出审核单。'
-    : '当前仓库单没有已配置模板的可导出渠道。';
+export function quoteExportEmptyDescription(_options: OrderLogisticsQuoteOptions) {
+  return '当前站点/运输方式没有可导出的货代渠道。';
 }
 
 export function quoteForwarderLabel(forwarder?: OrderLogisticsQuoteForwarderOption) {
@@ -206,8 +248,14 @@ export function formatPublishedQuotePrice(price: OrderLogisticsQuotePublishedPri
 }
 
 function formatPublishedAmount(currency: string | undefined, value: string | number, billingUnit?: string) {
-  const amount = [currency || '', formatPublishedNumber(value)].filter(Boolean).join(' ');
+  const amount = [currency || '', formatPublishedPriceNumber(value)].filter(Boolean).join(' ');
   return billingUnit ? `${amount}/${billingUnit}` : amount;
+}
+
+function formatPublishedPriceNumber(value: string | number) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return String(value);
+  return number.toLocaleString('zh-CN', { maximumFractionDigits: 4, useGrouping: false });
 }
 
 function formatPublishedNumber(value: string | number) {

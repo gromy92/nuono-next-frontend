@@ -14,10 +14,10 @@
 }
 
 .warehouse-shipping-order-detail-status-row {
-  display: flex;
+  display: grid;
+  width: 100%;
   min-width: 0;
-  align-items: flex-start;
-  justify-content: space-between;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -33,6 +33,7 @@
 
 .warehouse-shipping-order-quote-control-bar {
   display: flex;
+  width: 100%;
   flex: 1 1 auto;
   flex-wrap: wrap;
   gap: 8px;
@@ -128,30 +129,42 @@
 }
 
 .warehouse-shipping-order-published-price-card {
-  display: flex;
+  display: grid;
   flex: 1 0 100%;
   min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 14px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
   border: 1px solid #e6f4ff;
   border-radius: 8px;
   background: #f7fbff;
-  padding: 8px 12px;
+  padding: 10px 12px 12px;
 }
 
-.warehouse-shipping-order-published-price-header,
-.warehouse-shipping-order-published-price-list,
-.warehouse-shipping-order-published-price-item {
+.warehouse-shipping-order-published-price-header {
   display: flex;
   min-width: 0;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e6f4ff;
 }
 
 .warehouse-shipping-order-published-price-header .ant-tag {
   margin-inline-end: 0;
+}
+
+.warehouse-shipping-order-published-price-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.warehouse-shipping-order-product-quote-updated {
+  color: #1677ff;
+  font-weight: 500;
 }
 
 .warehouse-shipping-order-sea-price-toggle.ant-btn {
@@ -159,24 +172,89 @@
   padding: 0 2px;
 }
 
-.warehouse-shipping-order-published-price-list--expanded {
-  flex: 1 0 100%;
+.warehouse-shipping-order-published-price-list {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .warehouse-shipping-order-published-price-item {
-  border-left: 1px solid #d9e8f5;
-  padding-left: 12px;
+  display: grid;
+  grid-column: span 2;
+  min-width: 0;
+  min-height: 76px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 12px;
+  row-gap: 5px;
+  border: 1px solid #d9e8f5;
+  border-radius: 6px;
+  background: #fff;
+  padding: 9px 12px;
+}
+
+@media (min-width: 1281px) {
+  .warehouse-shipping-order-published-price-item:nth-last-child(2):nth-child(3n + 1),
+  .warehouse-shipping-order-published-price-item:last-child:nth-child(3n + 2) {
+    grid-column: span 3;
+  }
+
+  .warehouse-shipping-order-published-price-item:last-child:nth-child(3n + 1) {
+    grid-column: 1 / -1;
+  }
+}
+
+.warehouse-shipping-order-published-price-category-name {
+  min-width: 0;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.warehouse-shipping-order-published-price-description {
+  grid-column: 1 / -1;
+  min-width: 0;
+  color: #595959;
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.warehouse-shipping-order-published-price-amount {
+  color: #135200;
+  padding-top: 1px;
+  line-height: 20px;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .warehouse-shipping-order-detail-subbar {
   display: flex;
-  flex-wrap: wrap;
-  flex: 0 1 auto;
+  width: 100%;
+  flex: 1 1 100%;
+  flex-wrap: nowrap;
   gap: 6px;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   min-width: 0;
   margin-bottom: 0;
+}
+
+.warehouse-shipping-order-unit-price-filter {
+  display: flex;
+  flex: 0 0 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.warehouse-shipping-order-unit-price-filter .ant-select {
+  width: 240px;
+  min-width: 0;
+  flex: 0 0 240px;
 }
 
 .warehouse-shipping-order-detail-filter-danger {
@@ -186,19 +264,14 @@
 
 .warehouse-shipping-order-segment-summary {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   gap: 6px;
   align-items: center;
   min-width: 0;
+  white-space: nowrap;
 }
 
 .warehouse-shipping-order-segment-summary .ant-tag {
   margin-inline-end: 0;
-}
-
-@media (max-width: 920px) {
-  .warehouse-shipping-order-quote-control-bar {
-    flex-basis: 100%;
-    grid-template-columns: 1fr;
-  }
 }

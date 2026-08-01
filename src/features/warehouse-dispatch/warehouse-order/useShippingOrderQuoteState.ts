@@ -9,16 +9,23 @@ import type {
 import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
 import {
   applySelectedChannelQuoteToLine,
-  isLineQuoteConfirmed,
+  hasLineQuotePrice,
   isMissingYiteQuoteMaterial,
   isYiteQuoteForwarder
 } from './warehouseShippingOrderDomain';
+import {
+  isInquiryRequiredForwarderEligibility,
+  isUnsupportedForwarderEligibility
+} from './warehouseForwarderEligibilityDomain';
 import type {
   DetailLineFilter,
+  DetailUnitPriceFilter,
   LineQuoteDraft,
+  QuoteBillingUnit,
   QuoteExportSelection
 } from './warehouseShippingOrderModels';
 import {
+  buildQuoteUnitPriceFilterOptions,
   buildQuoteChannelSelectOptions,
   buildQuoteForwarderSelectOptions,
   defaultSegmentQuoteSelection,
@@ -26,17 +33,22 @@ import {
   findQuoteForwarderOption,
   firstAvailableSegmentQuoteSelection,
   formatQuoteInputValue,
+  matchesQuoteUnitPriceFilter,
+  resolveQuoteBillingUnit,
   sortShippingOrderSegments,
-  warehouseQuoteConfirmationState
+  warehouseQuotePriceState
 } from './warehouseShippingQuoteDomain';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
 
 export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
   const [detailLineFilter, setDetailLineFilter] = useState<DetailLineFilter>('ALL');
+  const [detailUnitPriceFilter, setDetailUnitPriceFilter] = useState<DetailUnitPriceFilter>('ALL');
   const [lineQuoteDrafts, setLineQuoteDrafts] = useState<Record<string, LineQuoteDraft>>({});
   const [selectedQuoteLineIds, setSelectedQuoteLineIds] = useState<string[]>([]);
   const [bulkQuoteModalOpen, setBulkQuoteModalOpen] = useState(false);
+  const [reassignModalOpen, setReassignModalOpen] = useState(false);
   const [bulkQuoteUnitPrice, setBulkQuoteUnitPrice] = useState('');
+  const [bulkQuoteBillingUnit, setBulkQuoteBillingUnit] = useState<QuoteBillingUnit>('KG');
   const [bulkQuoteYiteMaterial, setBulkQuoteYiteMaterial] = useState<string>();
   const [activeSegmentQuoteOptions, setActiveSegmentQuoteOptions] = useState<OrderLogisticsQuoteOptions | null>(null);
   const [optionsLoading, setOptionsLoading] = useState(false);
@@ -72,36 +84,44 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     () => showYiteFields ? linesWithSelectedQuote.filter(isMissingYiteQuoteMaterial).length : 0,
     [linesWithSelectedQuote, showYiteFields]
   );
-  const confirmedQuoteCount = useMemo(() => {
-    const computed = linesWithSelectedQuote.filter(isLineQuoteConfirmed).length;
-    return selectedChannel?.confirmedLineCount == null
-      ? computed
-      : Number(selectedChannel.confirmedLineCount || 0);
-  }, [linesWithSelectedQuote, selectedChannel?.confirmedLineCount]);
-  const pendingQuoteCount = selectedChannel?.pendingLineCount == null
-    ? Math.max(0, linesWithSelectedQuote.length - confirmedQuoteCount)
-    : Number(selectedChannel.pendingLineCount || 0);
-  const pendingConfirmationCount = useMemo(
-    () => linesWithSelectedQuote
-      .filter((line) => warehouseQuoteConfirmationState(line) === 'SUGGESTED_PRICE').length,
-    [linesWithSelectedQuote]
-  );
   const missingPriceCount = useMemo(
     () => linesWithSelectedQuote
-      .filter((line) => warehouseQuoteConfirmationState(line) === 'MISSING_PRICE').length,
+      .filter((line) => !isUnsupportedForwarderEligibility(line))
+      .filter((line) => warehouseQuotePriceState(line) === 'MISSING_PRICE').length,
     [linesWithSelectedQuote]
   );
+  const inquiryRequiredCount = useMemo(
+    () => linesWithSelectedQuote.filter(isInquiryRequiredForwarderEligibility).length,
+    [linesWithSelectedQuote]
+  );
+  const unsupportedCount = useMemo(
+    () => linesWithSelectedQuote.filter(isUnsupportedForwarderEligibility).length,
+    [linesWithSelectedQuote]
+  );
+  const unitPriceFilterOptions = useMemo(
+    () => buildQuoteUnitPriceFilterOptions(linesWithSelectedQuote, activeSegment?.transportMode),
+    [activeSegment?.transportMode, linesWithSelectedQuote]
+  );
   const visibleLines = useMemo(() => linesWithSelectedQuote
+    .filter((line) => matchesQuoteUnitPriceFilter(
+      line.unitPrice,
+      line.billingUnit,
+      detailUnitPriceFilter,
+      activeSegment?.transportMode || line.plannedTransportMode
+    ))
     .filter((line) => showYiteFields && detailLineFilter === 'MISSING_MATERIAL'
       ? isMissingYiteQuoteMaterial(line)
       : true)
-    .filter((line) => detailLineFilter === 'PENDING_CONFIRMATION'
-      ? warehouseQuoteConfirmationState(line) === 'SUGGESTED_PRICE'
-      : true)
     .filter((line) => detailLineFilter === 'MISSING_PRICE'
-      ? warehouseQuoteConfirmationState(line) === 'MISSING_PRICE'
+      ? !isUnsupportedForwarderEligibility(line) && warehouseQuotePriceState(line) === 'MISSING_PRICE'
+      : true)
+    .filter((line) => detailLineFilter === 'INQUIRY_REQUIRED'
+      ? isInquiryRequiredForwarderEligibility(line)
+      : true)
+    .filter((line) => detailLineFilter === 'UNSUPPORTED'
+      ? isUnsupportedForwarderEligibility(line)
       : true),
-  [detailLineFilter, linesWithSelectedQuote, showYiteFields]);
+  [activeSegment?.transportMode, detailLineFilter, detailUnitPriceFilter, linesWithSelectedQuote, showYiteFields]);
   const selectedLines = useMemo(() => {
     const ids = new Set(selectedQuoteLineIds);
     return linesWithSelectedQuote.filter((line) => ids.has(line.id));
@@ -109,10 +129,13 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
 
   useEffect(() => {
     setDetailLineFilter('ALL');
+    setDetailUnitPriceFilter('ALL');
     setLineQuoteDrafts({});
     setSelectedQuoteLineIds([]);
     setBulkQuoteModalOpen(false);
+    setReassignModalOpen(false);
     setBulkQuoteUnitPrice('');
+    setBulkQuoteBillingUnit('KG');
     setBulkQuoteYiteMaterial(undefined);
     setSelectedSegmentIds([]);
   }, [data.detailTarget?.id]);
@@ -159,6 +182,11 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     if (!showYiteFields && detailLineFilter === 'MISSING_MATERIAL') setDetailLineFilter('ALL');
   }, [detailLineFilter, showYiteFields]);
   useEffect(() => {
+    if (!unitPriceFilterOptions.some((option) => option.value === detailUnitPriceFilter)) {
+      setDetailUnitPriceFilter('ALL');
+    }
+  }, [detailUnitPriceFilter, unitPriceFilterOptions]);
+  useEffect(() => {
     const selectable = new Set(linesWithSelectedQuote
       .filter((line) => line.shippingSubmitStatus !== 'SUBMITTED')
       .map((line) => line.id));
@@ -167,6 +195,11 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
 
   const readLineDraft = (line: ShippingOrderLine): LineQuoteDraft => ({
     unitPrice: lineQuoteDrafts[line.id]?.unitPrice ?? formatQuoteInputValue(line.unitPrice),
+    billingUnit: resolveQuoteBillingUnit(
+      lineQuoteDrafts[line.id]?.billingUnit
+        ?? (hasLineQuotePrice(line) ? line.billingUnit : undefined),
+      activeSegment?.transportMode || line.plannedTransportMode
+    ),
     yiteMaterial: lineQuoteDrafts[line.id]?.yiteMaterial ?? line.yiteMaterial ?? undefined
   });
   const updateLineDraft = (lineId: string, patch: LineQuoteDraft) => {
@@ -187,11 +220,13 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
     setSelectedQuoteLineIds([]);
     setBulkQuoteModalOpen(false);
     setBulkQuoteUnitPrice('');
+    setBulkQuoteBillingUnit(resolveQuoteBillingUnit(undefined, activeSegment?.transportMode));
     setBulkQuoteYiteMaterial(undefined);
   };
   const selectSegment = (segmentId: string) => {
     setSelectedSegmentIds([segmentId]);
     setDetailLineFilter('ALL');
+    setDetailUnitPriceFilter('ALL');
     resetQuoteEditing();
   };
   const selectQuoteOption = (
@@ -200,6 +235,7 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
   ) => {
     setSelectedOption({ forwarderCode: forwarder.forwarderCode, routeCode: channel.routeCode });
     if (!isYiteQuoteForwarder(forwarder)) setDetailLineFilter('ALL');
+    setDetailUnitPriceFilter('ALL');
     resetQuoteEditing();
   };
   const openBulkModal = () => {
@@ -211,25 +247,39 @@ export function useShippingOrderQuoteState(data: WarehouseShippingOrderData) {
       setSelectedOption(firstAvailableSegmentQuoteSelection(activeSegmentQuoteOptions));
     }
     setBulkQuoteUnitPrice('');
+    setBulkQuoteBillingUnit(resolveQuoteBillingUnit(
+      undefined,
+      activeSegment?.transportMode || selectedLines[0]?.plannedTransportMode
+    ));
     setBulkQuoteYiteMaterial(undefined);
     setBulkQuoteModalOpen(true);
   };
+  const openReassignModal = () => {
+    if (!selectedQuoteLineIds.length) {
+      message.warning('请选择要调整运输方案的商品。');
+      return;
+    }
+    setReassignModalOpen(true);
+  };
 
   return {
-    detailLineFilter, setDetailLineFilter, selectedQuoteLineIds, setSelectedQuoteLineIds,
+    detailLineFilter, setDetailLineFilter, detailUnitPriceFilter, setDetailUnitPriceFilter,
+    unitPriceFilterOptions, selectedQuoteLineIds, setSelectedQuoteLineIds,
     bulkQuoteModalOpen, setBulkQuoteModalOpen, bulkQuoteUnitPrice, setBulkQuoteUnitPrice,
+    bulkQuoteBillingUnit, setBulkQuoteBillingUnit,
+    reassignModalOpen, setReassignModalOpen,
     bulkQuoteYiteMaterial, setBulkQuoteYiteMaterial, activeSegmentQuoteOptions,
     setActiveSegmentQuoteOptions, optionsLoading, selectedOption, setSelectedOption,
     selectedSegmentIds, detailLines, detailSegments, sortedSegments, activeSegment, activeSegmentIds,
     activeLines, selectedForwarder, selectedChannel, linesWithSelectedQuote, showYiteFields,
-    missingMaterialCount, confirmedQuoteCount, pendingQuoteCount,
-    pendingConfirmationCount, missingPriceCount, visibleLines, selectedLines,
+    missingMaterialCount, missingPriceCount, inquiryRequiredCount, unsupportedCount, visibleLines, selectedLines,
     forwarderSelectOptions: buildQuoteForwarderSelectOptions(activeSegmentQuoteOptions),
     channelSelectOptions: buildQuoteChannelSelectOptions(selectedForwarder),
-    activeMaintenanceKey: `${selectedOption.forwarderCode || ''}:${selectedOption.routeCode || ''}`,
+    activeMaintenanceKey: `${selectedOption.forwarderCode || ''}:${selectedOption.routeCode || ''}:${detailLineFilter}:${detailUnitPriceFilter}`,
     activeSegmentSubmitted: activeSegment?.shippingSubmitStatus === 'SUBMITTED',
     warehouseOrderSubmitted: data.detailTarget?.shippingSubmitStatus === 'SUBMITTED',
-    readLineDraft, updateLineDraft, clearLineDrafts, resetQuoteEditing, selectSegment, selectQuoteOption, openBulkModal
+    readLineDraft, updateLineDraft, clearLineDrafts, resetQuoteEditing, selectSegment, selectQuoteOption,
+    openBulkModal, openReassignModal
   };
 }
 

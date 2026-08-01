@@ -22,7 +22,7 @@ export function useShippingOrderSubmit(data: WarehouseShippingOrderData) {
     if (quoteIssue.totalCount > 0) {
       const reasons = [
         quoteIssue.pendingQuoteCount > 0
-          ? `${quoteIssue.pendingQuoteCount} 个商品缺单价或报价待确认`
+          ? `${quoteIssue.pendingQuoteCount} 个商品缺单价`
           : '',
         quoteIssue.missingMaterialCount > 0
           ? `${quoteIssue.missingMaterialCount} 个义特商品缺少材质`
