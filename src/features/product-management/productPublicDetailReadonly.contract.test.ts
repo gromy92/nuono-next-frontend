@@ -68,7 +68,7 @@ assert.match(
 
 assert.match(
   summaryPanel,
-  /disabled=\{!workbenchReady \|\| publicDetailReadonly \|\| publishTaskActive\}/,
+  /disabled=\{!workbenchReady \|\| publicDetailReadonly \|\| productLifecycleTaskBlocking\}/,
   'save button must be disabled for public detail readonly fallback'
 );
 
@@ -80,6 +80,6 @@ assert.match(
 
 assert.match(
   summaryPanel,
-  /disabled=\{!workbenchReady \|\| publicDetailReadonly \|\| productActionSubmitting \|\| publishTaskActive\}/,
+  /disabled=\{!workbenchReady \|\| publicDetailReadonly \|\| productActionSubmitting \|\| productLifecycleTaskBlocking\}/,
   'pull button must be disabled for public detail readonly fallback'
 );

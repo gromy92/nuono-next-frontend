@@ -8,7 +8,14 @@ const ACTIVE_PUBLISH_TASK_STATUSES = new Set([
   'pending_effective',
   'write_unknown',
   'write_retry_scheduled',
-  'verify_timeout'
+  'verify_timeout',
+  'product_delete_queued',
+  'product_delete_running',
+  'product_delete_submitted',
+  'product_delete_verifying',
+  'product_delete_pending_effective',
+  'product_delete_write_retry_scheduled',
+  'product_delete_verify_timeout'
 ])
 
 export function isProductPublishTaskActive(task?: ProductPublishTaskPayload) {
@@ -20,6 +27,16 @@ export function isProductPublishTaskNeedsAttention(task?: ProductPublishTaskPayl
     task?.taskId &&
       (task.status === 'failed' || task.status === 'pending_manual_check')
   )
+}
+
+export function productPublishTaskAttentionLabel(task?: ProductPublishTaskPayload) {
+  if (task?.taskType === 'product-delete') {
+    return task.retryAllowed === false ? '删除待核对' : '继续删除'
+  }
+  if (task?.taskType === 'product-rebuild') {
+    return task.retryAllowed === false ? '重建待核对' : '继续重建'
+  }
+  return '重试发布'
 }
 
 export function productPublishTaskStatusLabel(task?: ProductPublishTaskPayload) {

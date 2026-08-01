@@ -1,5 +1,5 @@
-import { BranchesOutlined, DeleteOutlined, HistoryOutlined, ProfileOutlined, ReloadOutlined } from '@ant-design/icons';
-import { Button, Modal, Popconfirm, Space, Tag, Tooltip, Typography } from 'antd';
+import { BranchesOutlined, HistoryOutlined, ProfileOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Button, Modal, Space, Tag, Tooltip, Typography } from 'antd';
 import { useState } from 'react';
 import { ProductKeywordListHoverPopover } from '../../product-keywords/ProductKeywordListHoverPopover';
 import type { ProductListRowPayload, ProductOperationStageCode } from '../types';
@@ -11,7 +11,8 @@ import {
 } from '../../product-baseline';
 import { productKeywordSiteCodeFromScope } from '../utils/productKeywordSiteScope';
 import { productRebuildActionState } from '../utils/productRebuildActionState';
-import { ProductDeleteConfirmDescription, ProductRebuildConfirmDescription } from './ProductListConfirmDescriptions';
+import { ProductRebuildConfirmDescription } from './ProductListConfirmDescriptions';
+import { ProductDeleteAction } from './ProductDeleteAction';
 import { OperationStageCell } from './ProductListOperationalCells';
 
 const { Text } = Typography;
@@ -220,29 +221,11 @@ export function ProductDetailsCell(props: {
             siteCode={productKeywordSiteCode(record)}
             partnerSku={record.partnerSku}
           />
-          <Popconfirm
-            title="确认删除商品？"
-            description={<ProductDeleteConfirmDescription record={record} />}
-            okText="删除"
-            cancelText="取消"
-            okButtonProps={{ danger: true }}
-            onConfirm={(event) => {
-              event?.stopPropagation();
-              void requestDeleteLocalProduct(record);
-            }}
-            onCancel={(event) => event?.stopPropagation()}
-          >
-            <Button
-              danger
-              type="link"
-              size="small"
-              icon={<DeleteOutlined />}
-              loading={deleting}
-              style={{ height: 20, padding: 0, fontSize: 12 }}
-            >
-              删除
-            </Button>
-          </Popconfirm>
+          <ProductDeleteAction
+            record={record}
+            deleting={deleting}
+            requestDeleteLocalProduct={requestDeleteLocalProduct}
+          />
           {summary.groupRef ? (
             <Tag color="default" style={{ marginInlineEnd: 0, fontSize: 11 }}>
               Group {summary.groupRef}
