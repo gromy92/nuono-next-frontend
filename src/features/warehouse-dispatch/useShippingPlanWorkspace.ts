@@ -1,6 +1,10 @@
 import { message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { issueShippingBatch, loadShippingBatch } from './api'
+import {
+  createShippingBatchFromDispatchPlan,
+  issueShippingBatch,
+  loadShippingBatch
+} from './api'
 import { buildRouteGroups } from './dispatchPlanDomain'
 import type { DispatchPlan, ShippingBatch } from './types'
 import { resolveShippingBatchOption } from './shippingCostDomain'
@@ -18,6 +22,7 @@ export function useShippingPlanWorkspace(
   const [costDrawerOpen, setCostDrawerOpen] = useState(false)
   const [costDetailOptionId, setCostDetailOptionId] = useState<string>()
   const [batchLoadingId, setBatchLoadingId] = useState<string>()
+  const [generatingPlanId, setGeneratingPlanId] = useState<string>()
   const [outboundSubmitting, setOutboundSubmitting] = useState(false)
   const requestRef = useRef(0)
 
@@ -107,6 +112,23 @@ export function useShippingPlanWorkspace(
     void hydrateBatch(plan, 'cost')
   }
 
+  async function generateLogisticsPlan(plan: DispatchPlan) {
+    setGeneratingPlanId(plan.id)
+    try {
+      const batch = await createShippingBatchFromDispatchPlan(plan.id)
+      const option = resolveShippingBatchOption(batch)
+      setSelectedPlanId(plan.id)
+      setShippingBatch(batch)
+      setSelectedOptionId(option?.id)
+      await refresh()
+      message.success('物流计划已生成，请核对费用后选择方案下发。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '生成物流计划失败')
+    } finally {
+      setGeneratingPlanId(undefined)
+    }
+  }
+
   function selectOptionFromComparison(optionId: string) {
     if (shippingBatch?.status === 'OUTBOUND_CREATED') {
       message.warning('发货单已经下发，不能再修改物流方案。')
@@ -153,9 +175,11 @@ export function useShippingPlanWorkspace(
     setCostDetailOptionId,
     costDetailOption,
     batchLoadingId,
+    generatingPlanId,
     outboundSubmitting,
     selectPlan,
     openCostComparison,
+    generateLogisticsPlan,
     selectOptionFromComparison,
     confirmOutbound
   }

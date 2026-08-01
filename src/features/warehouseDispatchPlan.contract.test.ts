@@ -12,7 +12,8 @@ const {
   shippingWorkspace,
   costDrawer,
   costComparison,
-  costDomain
+  costDomain,
+  packingSubmissionDrawer
 } = dispatchContractSources
 
 assert.match(
@@ -111,10 +112,16 @@ assert.match(
   'dispatch request creation must remain APP-only'
 )
 
-assert.doesNotMatch(
+assert.match(
   `${planPanel}\n${planDetail}`,
-  /生成物流计划|选择物流渠道|同步发货单/,
-  'web must not expose retired manual generation or sync actions'
+  /生成物流计划/,
+  'web must generate a logistics plan from an APP dispatch request'
+)
+
+assert.match(
+  `${packingListPanel}\n${packingSubmissionDrawer}\n${dispatchApi}`,
+  /shipPackingList[\s\S]*确认已交货代/,
+  'web must close the handoff after APP packing submission'
 )
 
 assert.match(

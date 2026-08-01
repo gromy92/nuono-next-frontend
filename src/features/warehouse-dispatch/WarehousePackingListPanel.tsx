@@ -2,7 +2,12 @@ import { DownloadOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons
 import { Button, Empty, Space, Table, Typography, message } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useEffect, useMemo, useState } from 'react'
-import { loadOutboundOrders, loadPackingLists, loadShippingBatches } from './api'
+import {
+  loadOutboundOrders,
+  loadPackingLists,
+  loadShippingBatches,
+  shipPackingList
+} from './api'
 import {
   matchesLogisticsPartition,
   summarizeLogisticsPartitionValues
@@ -37,6 +42,7 @@ export function WarehousePackingListPanel() {
   const [packingListsByOutboundOrder, setPackingListsByOutboundOrder] = useState<Record<string, PackingList[]>>({})
   const [loading, setLoading] = useState(false)
   const [detailLoadingBatchId, setDetailLoadingBatchId] = useState<string>()
+  const [shippingPackingListId, setShippingPackingListId] = useState<string>()
   const [loadError, setLoadError] = useState<string>()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [siteFilter, setSiteFilter] = useState<LogisticsSiteFilter>('all')
@@ -93,6 +99,10 @@ export function WarehousePackingListPanel() {
         )
       }
     }
+    return refreshBatchDetails(batchId)
+  }
+
+  async function refreshBatchDetails(batchId: string): Promise<PackingBatchDetails> {
     const outboundOrders = await loadOutboundOrders(batchId)
     const packingEntries = await Promise.all(
       outboundOrders.map(async (order) => [order.id, await loadPackingLists(order.id)] as const)
@@ -104,6 +114,24 @@ export function WarehousePackingListPanel() {
       ...nextPackingLists
     }))
     return { outboundOrders, packingListsByOutboundOrder: nextPackingLists }
+  }
+
+  async function completeShipment(packingListId: string) {
+    if (!selectedBatchId) return
+    setShippingPackingListId(packingListId)
+    try {
+      await shipPackingList(packingListId)
+      const [nextBatches] = await Promise.all([
+        loadShippingBatches(),
+        refreshBatchDetails(selectedBatchId)
+      ])
+      setShippingBatches(nextBatches)
+      message.success('已确认交货代，本单发货状态已完成。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '完成发货失败')
+    } finally {
+      setShippingPackingListId(undefined)
+    }
   }
 
   async function openPackingDetails(batch: ShippingBatch) {
@@ -233,7 +261,9 @@ export function WarehousePackingListPanel() {
         locale={{ emptyText: <Empty description={loadError || '暂无发货单'} /> }} />
       <WarehousePackingSubmissionDrawer open={drawerOpen} batch={selectedBatch}
         outboundOrders={displayOutboundOrders} packingListsByOutboundOrder={displayPackingListsByOrder}
-        loading={Boolean(detailLoadingBatchId)} onClose={() => setDrawerOpen(false)} />
+        loading={Boolean(detailLoadingBatchId)} shippingPackingListId={shippingPackingListId}
+        onShipPackingList={(packingListId) => { void completeShipment(packingListId) }}
+        onClose={() => setDrawerOpen(false)} />
       <WarehousePackingExportModal batch={packingExport.targetBatch}
         channels={packingExport.channels} selection={packingExport.selection}
         loading={Boolean(packingExport.loadingBatchId)}

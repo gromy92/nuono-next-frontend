@@ -35,6 +35,11 @@ assert.match(
 )
 assert.match(
   warehouseOrders,
+  /value\.split\('、'\)[\s\S]*warehouse-order-partition-source-list[\s\S]*names\.map/,
+  '同一分区的多个来源采购单必须逐行纵向展示'
+)
+assert.match(
+  warehouseOrders,
   /title: '总SKU \/ 总件数'[\s\S]*order\.skuCount[\s\S]*order\.totalQuantity/,
   '仓库单必须另列展示整单去重 SKU 和总件数'
 )

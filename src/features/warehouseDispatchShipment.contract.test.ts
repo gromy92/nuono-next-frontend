@@ -18,11 +18,14 @@ assert.match(sources.planPanel, /暂无发货申请单，请先在仓管 APP 发
 assert.match(sources.shippingWorkspace, /selectPlan\(planId: string\)[\s\S]*setDetailOpen\(true\)[\s\S]*currentShippingBatch[\s\S]*hydrateBatch/);
 assert.match(sources.planDetail, /title=\{plan \? `\$\{plan\.planNo\} 发货申请单详情`[\s\S]*warehouse-dispatch-plan-detail is-modal/);
 assert.match(sources.costDomain, /formatDispatchPlanBatchMetric[\s\S]*待生成[\s\S]*actualWeightKg[\s\S]*volumeCbm[\s\S]*规格缺失/);
-assert.doesNotMatch(
+assert.match(
   sources.workbench + sources.planDetail + sources.shippingWorkspace,
-  /openLogisticsPlanModal|generateLogisticsPlan|okText="生成物流计划"|title="选择物流渠道"/
+  /generateLogisticsPlan[\s\S]*生成物流计划/
 );
-assert.doesNotMatch(sources.dispatchApi, /CreateShippingBatchFromDispatchPlanPayload|loadDispatchPlanShippingRouteOptions/);
+assert.match(
+  sources.dispatchApi,
+  /createShippingBatchFromDispatchPlan[\s\S]*dispatch-plans\/\$\{encodeURIComponent\(dispatchPlanId\)\}\/shipping-batch/
+);
 
 assert.match(sources.shippingWorkspace, /selectedRouteGroupKey/);
 assert.match(sources.shippingWorkspace, /请先选择物流方案/);
@@ -35,6 +38,8 @@ assert.match(sources.planDetail, /shippingBatch\.status !== 'OUTBOUND_CREATED'[\
 assert.match(sources.workbench, /key: 'packing-list'[\s\S]*buildTabLabel\('发货执行'[\s\S]*WarehousePackingListPanel/);
 assert.match(sources.packingPanel, /loadShippingBatches\(/);
 assert.match(sources.packingPanel, /loadPackingLists\(/);
+assert.match(sources.packingPanel, /shipPackingList\(packingListId\)/);
+assert.match(sources.packingSubmissionDrawer, /确认已交货代/);
 assert.doesNotMatch(sources.packingPanel, /createPackingList\(|createOutboundOrders\(|selectShippingOption\(|生成装箱单/);
 assert.match(sources.dispatchApi, /loadShippingBatches\(/);
 assert.match(sources.types, /currentShippingBatch\?: ShippingBatch/);
