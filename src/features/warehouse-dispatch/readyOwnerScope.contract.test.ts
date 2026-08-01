@@ -56,7 +56,18 @@ const baselineItem = {
   liveStatuses: [],
   issueTags: []
 }
-assert.equal(Object.keys(buildProductBaselineMap([
+const baselineMap = buildProductBaselineMap([
   { ownerUserId: 307, storeCode: 'STORE-A', items: [baselineItem] },
   { ownerUserId: 408, storeCode: 'STORE-A', items: [baselineItem] }
-])).length, 2)
+])
+assert.equal(Object.keys(baselineMap).length, 4)
+assert.equal(
+  baselineMap[productBaselineMapKey({ ownerUserId: 307, storeCode: 'STORE-A' }, 'PSKU-1')]
+    ?.ownerUserId,
+  307
+)
+assert.equal(
+  baselineMap[productBaselineMapKey({ ownerUserId: 408, storeCode: 'STORE-A' }, 'PSKU-1')]
+    ?.ownerUserId,
+  408
+)
