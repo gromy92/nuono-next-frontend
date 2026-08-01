@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { summarizeMissingEta } from './summary'
-import type { ReplenishmentPlanItem, ReplenishmentPlanMissingEtaBatch } from './types'
+import { summarizeMissingEta, summarizePastEtaReview } from './summary'
+import type { ReplenishmentPlanInboundBatch, ReplenishmentPlanItem, ReplenishmentPlanMissingEtaBatch } from './types'
 
 function missingBatch(
   batchId: number | null,
@@ -51,4 +51,46 @@ assert.deepEqual(
   ]),
   { itemCount: 1, batchCount: 3, quantity: 12.5 },
   'missing ETA summary must keep backend aggregate fallback when batch detail is absent'
+)
+
+function reviewBatch(
+  batchId: number | null,
+  batchReferenceNo: string | null,
+  etaReviewRequired = true
+): ReplenishmentPlanInboundBatch {
+  return {
+    batchId,
+    batchReferenceNo,
+    transportMode: 'SEA',
+    batchStatus: 'in_transit',
+    etaDate: '2026-07-31',
+    remainingQuantity: 10,
+    destinationCode: 'RUH',
+    coverageIncluded: false,
+    etaReviewRequired
+  }
+}
+
+function reviewRow(partnerSku: string, inboundBatches: ReplenishmentPlanInboundBatch[]) {
+  return { partnerSku, inboundBatches } as ReplenishmentPlanItem
+}
+
+assert.deepEqual(
+  summarizePastEtaReview([
+    reviewRow('PAPER-A', [reviewBatch(2001, 'YT-A'), reviewBatch(2002, 'YT-B')]),
+    reviewRow('PAPER-B', [reviewBatch(2001, 'YT-A-COPY')]),
+    reviewRow('PAPER-C', [reviewBatch(null, 'YT-C')]),
+    reviewRow('PAPER-D', [reviewBatch(null, ' yt-c ')]),
+    reviewRow('PAPER-E', [reviewBatch(null, null)]),
+    reviewRow('PAPER-F', [reviewBatch(null, null)]),
+    reviewRow('PAPER-G', [reviewBatch(2003, 'YT-NOT-PAST', false)])
+  ]),
+  { itemCount: 6, batchCount: 5 },
+  'past ETA summary must count physical batches once and affected products once'
+)
+
+assert.deepEqual(
+  summarizePastEtaReview([]),
+  { itemCount: 0, batchCount: 0 },
+  'past ETA summary must stay empty without review-required inbound batches'
 )

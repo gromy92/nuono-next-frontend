@@ -1,4 +1,4 @@
-import type { ReplenishmentPlanItem, ReplenishmentPlanMissingEtaBatch, ReplenishmentQuantity } from './types'
+import type { ReplenishmentPlanInboundBatch, ReplenishmentPlanItem, ReplenishmentPlanMissingEtaBatch, ReplenishmentQuantity } from './types'
 
 export type MissingEtaSummary = {
   itemCount: number
@@ -10,6 +10,13 @@ type MissingEtaSummaryRow = Pick<
   ReplenishmentPlanItem,
   'missingEtaBatches' | 'missingEtaBatchCount' | 'missingEtaInboundQty'
 >
+
+export type PastEtaReviewSummary = {
+  itemCount: number
+  batchCount: number
+}
+
+type PastEtaReviewRow = Pick<ReplenishmentPlanItem, 'inboundBatches'>
 
 export function summarizeMissingEta(rows: MissingEtaSummaryRow[]): MissingEtaSummary {
   let itemCount = 0
@@ -42,7 +49,33 @@ export function summarizeMissingEta(rows: MissingEtaSummaryRow[]): MissingEtaSum
   return { itemCount, batchCount, quantity }
 }
 
+export function summarizePastEtaReview(rows: PastEtaReviewRow[]): PastEtaReviewSummary {
+  let itemCount = 0
+  const seenBatchKeys = new Set<string>()
+
+  rows.forEach((row, rowIndex) => {
+    let itemRequiresReview = false
+    const inboundBatches = row.inboundBatches || []
+    inboundBatches.forEach((batch, batchIndex) => {
+      if (!batch.etaReviewRequired) return
+      itemRequiresReview = true
+      seenBatchKeys.add(inboundBatchIdentityKey(batch, rowIndex, batchIndex))
+    })
+    if (itemRequiresReview) itemCount += 1
+  })
+
+  return { itemCount, batchCount: seenBatchKeys.size }
+}
+
 function missingEtaBatchKey(batch: ReplenishmentPlanMissingEtaBatch, rowIndex: number, batchIndex: number) {
+  return inboundBatchIdentityKey(batch, rowIndex, batchIndex)
+}
+
+function inboundBatchIdentityKey(
+  batch: ReplenishmentPlanInboundBatch | ReplenishmentPlanMissingEtaBatch,
+  rowIndex: number,
+  batchIndex: number
+) {
   if (batch.batchId !== null && batch.batchId !== undefined) {
     return `id:${batch.batchId}`
   }
