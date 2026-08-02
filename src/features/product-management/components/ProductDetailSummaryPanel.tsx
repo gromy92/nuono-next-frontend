@@ -4,7 +4,8 @@ import { navigateProductListingTargetInCurrentTab } from '../../product-listing/
 import {
   isPublicDetailReadonlyWorkbench,
   isProductPublishTaskActive,
-  isProductPublishTaskNeedsAttention
+  isProductPublishTaskNeedsAttention,
+  productPublishTaskAttentionLabel
 } from '../utils/workbench';
 import { getProductCurrentZCode, isLocalDraftNoonCode } from '../../product-domain/productIdentity';
 import { textInputValue } from '../utils/common';
@@ -54,6 +55,10 @@ export function ProductDetailSummaryPanel({
   const publishTaskId = typeof publishTask?.taskId === 'number' ? publishTask.taskId : undefined;
   const publishTaskActive = isProductPublishTaskActive(publishTask);
   const publishTaskNeedsAttention = isProductPublishTaskNeedsAttention(publishTask);
+  const productLifecycleTaskNeedsAttention = publishTaskNeedsAttention
+    && (publishTask?.taskType === 'product-delete' || publishTask?.taskType === 'product-rebuild');
+  const productLifecycleRetryBlocked = productLifecycleTaskNeedsAttention && publishTask?.retryAllowed === false;
+  const productLifecycleTaskBlocking = publishTaskActive || productLifecycleTaskNeedsAttention;
   const publicDetailReadonly = isPublicDetailReadonlyWorkbench(productWorkbenchState);
   const currentNoonCode =
     getProductCurrentZCode(productDetailSummarySurface ?? undefined) ||
@@ -74,6 +79,7 @@ export function ProductDetailSummaryPanel({
     !workbenchReady ||
     publicDetailReadonly ||
     publishTaskActive ||
+    productLifecycleRetryBlocked ||
     productPublishTaskActionSubmitting ||
     (productNotReadyForCurrentPublish &&
       (productActionSubmitting || !listingDraftTarget));
@@ -167,7 +173,7 @@ export function ProductDetailSummaryPanel({
             <Button
               size="small"
               loading={productActionSubmitting}
-              disabled={!workbenchReady || publicDetailReadonly || publishTaskActive}
+              disabled={!workbenchReady || publicDetailReadonly || productLifecycleTaskBlocking}
               onClick={() => void previewProductAction('save')}
             >
               保存草稿
@@ -175,7 +181,7 @@ export function ProductDetailSummaryPanel({
             <Button
               size="small"
               danger
-              disabled={!workbenchReady || publicDetailReadonly || !productDraftDirty || productActionSubmitting || publishTaskActive}
+              disabled={!workbenchReady || publicDetailReadonly || !productDraftDirty || productActionSubmitting || productLifecycleTaskBlocking}
               onClick={() => setRollbackConfirmOpen(true)}
             >
               回滚草稿
@@ -192,14 +198,14 @@ export function ProductDetailSummaryPanel({
                   {productNotReadyForCurrentPublish
                     ? '上架'
                     : publishTaskNeedsAttention
-                      ? '重试发布'
+                      ? productPublishTaskAttentionLabel(publishTask)
                       : '发布当前修改'}
                 </Button>
               </span>
             </Tooltip>
             <Button
               size="small"
-              disabled={!workbenchReady || publicDetailReadonly || productActionSubmitting || publishTaskActive}
+              disabled={!workbenchReady || publicDetailReadonly || productActionSubmitting || productLifecycleTaskBlocking}
               onClick={requestPullFromNoon}
             >
               从 Noon 同步
