@@ -1,4 +1,9 @@
-import type { ReplenishmentPlanInboundBatch, ReplenishmentPlanItem, ReplenishmentPlanMissingEtaBatch, ReplenishmentQuantity } from './types'
+import type {
+  ReplenishmentPlanInboundBatch,
+  ReplenishmentPlanItem,
+  ReplenishmentPlanMissingEtaBatch,
+  ReplenishmentQuantity
+} from './types'
 
 export type MissingEtaSummary = {
   itemCount: number
