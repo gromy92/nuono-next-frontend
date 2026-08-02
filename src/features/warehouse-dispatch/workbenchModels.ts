@@ -1,5 +1,4 @@
 import type { AuthSession } from '../auth/session'
-import type { ProductListRowPayload } from '../product-domain/productListTypes'
 import type {
   DispatchPlan,
   PurchaseReceiptOrder,
@@ -45,23 +44,12 @@ export type ReceiptStoreOption = {
 }
 
 export type ProductBaselineSummary = {
-  ownerUserId: number
-  storeCode: string
   psku: string
   skuParent?: string
   title?: string
   imageUrl?: string
   productFulltype?: string
   detailBaselineStatus?: string
-}
-
-export type ProductBaselineScope = {
-  ownerUserId: number
-  storeCode: string
-}
-
-export type ProductBaselineDataset = ProductBaselineScope & {
-  items: ProductListRowPayload[]
 }
 
 export type ReadyShipmentRow = ReadyShipmentItem & {

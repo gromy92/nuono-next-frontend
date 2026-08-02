@@ -250,10 +250,7 @@ assert.deepEqual(
   resolveSessionAllowedMenuKeys(
     session({ level: 1, roleName: '老板', activeRoleView: 'operator', grantedMenus: [] })
   ),
-  ALL_WORKSPACE_MENU_KEYS.filter(
-    (key) => BOSS_OPERATOR_MENU_KEYS.includes(key) && key !== 'product-specs'
-  ),
-  '老板操作视角也不能在缺少后端商品/采购能力时挂载商品规格页'
+  ALL_WORKSPACE_MENU_KEYS.filter((key) => BOSS_OPERATOR_MENU_KEYS.includes(key))
 )
 assert.equal(resolveSessionLandingMenuKey(null, ['purchase-order', 'product-manage'], null), 'purchase-order')
 assert.equal(

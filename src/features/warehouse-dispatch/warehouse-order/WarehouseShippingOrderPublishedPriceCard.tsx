@@ -38,20 +38,7 @@ export function WarehouseShippingOrderPublishedPriceCard({
     >
       <div className="warehouse-shipping-order-published-price-header">
         <Text strong>线上报价</Text>
-        {channel.quoteVersionCode ? <Tag>基础报价版本 {channel.quoteVersionCode}</Tag> : null}
-        <div className="warehouse-shipping-order-published-price-meta">
-          {channel.quoteEffectiveFrom ? (
-            <Text type="secondary">基础价生效 {channel.quoteEffectiveFrom}</Text>
-          ) : null}
-          {channel.quoteRecordedAt ? (
-            <Text type="secondary">基础价录入 {formatRecordedDate(channel.quoteRecordedAt)}</Text>
-          ) : null}
-          {channel.latestProductQuoteAt ? (
-            <Text className="warehouse-shipping-order-product-quote-updated">
-              商品报价最近更新 {formatRecordedDate(channel.latestProductQuoteAt)}
-            </Text>
-          ) : null}
-        </div>
+        {channel.quoteVersionCode ? <Tag>{channel.quoteVersionCode}</Tag> : null}
         {isSea && prices.length ? (
           <Button
             className="warehouse-shipping-order-sea-price-toggle"
@@ -65,7 +52,7 @@ export function WarehouseShippingOrderPublishedPriceCard({
         ) : null}
       </div>
       {prices.length && showPrices ? (
-        <div className="warehouse-shipping-order-published-price-list">
+        <div className={`warehouse-shipping-order-published-price-list${isSea ? ' warehouse-shipping-order-published-price-list--expanded' : ''}`}>
           {prices.map((price, index) => (
             <PublishedPriceItem
               key={price.priceRuleCode || price.cargoCategoryCode || `${price.cargoCategoryName || 'price'}-${index}`}
@@ -80,27 +67,11 @@ export function WarehouseShippingOrderPublishedPriceCard({
   );
 }
 
-function formatRecordedDate(value: string) {
-  return value.replace('T', ' ').slice(0, 16);
-}
-
 function PublishedPriceItem({ price }: { price: OrderLogisticsQuotePublishedPrice }) {
   return (
     <div className="warehouse-shipping-order-published-price-item">
-      <Text
-        className="warehouse-shipping-order-published-price-category-name"
-        type="secondary"
-      >
-        {price.cargoCategoryName || '基础价'}
-      </Text>
-      <Text className="warehouse-shipping-order-published-price-amount" strong>
-        {formatPublishedQuotePrice(price)}
-      </Text>
-      {price.cargoCategoryDescription ? (
-        <Text className="warehouse-shipping-order-published-price-description">
-          {price.cargoCategoryDescription}
-        </Text>
-      ) : null}
+      <Text type="secondary">{price.cargoCategoryName || '基础价'}</Text>
+      <Text strong>{formatPublishedQuotePrice(price)}</Text>
     </div>
   );
 }

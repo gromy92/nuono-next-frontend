@@ -188,17 +188,9 @@
   line-height: 18px;
 }
 
-.warehouse-order-partition-source-list {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.warehouse-order-partition-source-list strong {
+.warehouse-order-partition-metric--source strong {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .warehouse-order-total-cell {

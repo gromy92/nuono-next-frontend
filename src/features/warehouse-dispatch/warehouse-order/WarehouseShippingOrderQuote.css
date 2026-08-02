@@ -68,11 +68,6 @@
   white-space: nowrap;
 }
 
-.warehouse-shipping-order-billing-unit-select {
-  flex: 0 0 116px;
-  width: 116px;
-}
-
 .warehouse-shipping-order-price-source {
   font-size: 12px;
   line-height: 16px;
@@ -92,7 +87,7 @@
 
 .warehouse-shipping-order-bulk-quote-price {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 110px;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
 }

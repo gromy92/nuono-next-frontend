@@ -1,15 +1,20 @@
-import type { OrderLogisticsQuoteForwarderOption, OrderLogisticsQuoteImportResult } from '../../logistics-quote/types';
-import type { ShippingOrder, ShippingOrderLine, ShippingOrderSegment } from './warehouseShippingOrderTypes';
-import type { WarehouseOrderPurchaseCandidate } from './warehouseOrderPurchaseCandidateAdapter';
+import type {
+  OrderLogisticsQuoteChannelOption,
+  OrderLogisticsQuoteForwarderOption,
+  OrderLogisticsQuoteImportResult
+} from '../../logistics-quote/types';
+import type {
+  ShippingOrder,
+  ShippingOrderLine,
+  ShippingOrderSegment
+} from './warehouseShippingOrderTypes';
+import type {
+  WarehouseOrderPurchaseCandidate
+} from './warehouseOrderPurchaseCandidateAdapter';
 import { sameCode } from './warehouseShippingQuoteDomain';
-import {
-  isInquiryRequiredForwarderEligibility,
-  isSupportedForwarderEligibility,
-  isUnknownForwarderEligibility,
-  isUnsupportedForwarderEligibility
-} from './warehouseForwarderEligibilityDomain';
 import type { WarehouseOrderJourney } from './warehouseOrderJourney';
 import { warehouseOrderJourneyStatusMeta } from './warehouseOrderJourney';
+
 export type ShippingOrderStatusFilter =
   | 'all'
   | 'QUOTE_PENDING'
@@ -28,9 +33,9 @@ export const SHIPPING_ORDER_STATUS_FILTER_OPTIONS: Array<{
   value: ShippingOrderStatusFilter;
 }> = [
   { label: '全部状态', value: 'all' },
-  { label: '报价缺失', value: 'QUOTE_PENDING' },
+  { label: '报价待确认', value: 'QUOTE_PENDING' },
   { label: '已导出', value: 'QUOTE_EXPORTED' },
-  { label: '报价完整', value: 'QUOTE_CONFIRMED' },
+  { label: '报价已确认', value: 'QUOTE_CONFIRMED' },
   { label: '已提交发货', value: 'SHIPPING_SUBMITTED' },
   { label: '计划中', value: 'PLANNING' },
   { label: '已选物流', value: 'OPTION_SELECTED' },
@@ -142,9 +147,9 @@ export function sumPurchaseOrderQuantity(orders: WarehouseOrderPurchaseCandidate
 export function shippingOrderStatusMeta(order: ShippingOrder, journeys: WarehouseOrderJourney[] = []) {
   const status = shippingOrderStatusCode(order, journeys);
   if (status === 'SHIPPING_SUBMITTED') return { label: '已提交发货', color: 'green' };
-  if (status === 'QUOTE_CONFIRMED') return { label: '报价完整', color: 'blue' };
+  if (status === 'QUOTE_CONFIRMED') return { label: '报价已确认', color: 'blue' };
   if (status === 'QUOTE_EXPORTED') return { label: '已导出', color: 'cyan' };
-  if (status === 'QUOTE_PENDING') return { label: '报价缺失', color: 'gold' };
+  if (status === 'QUOTE_PENDING') return { label: '报价待确认', color: 'gold' };
   return warehouseOrderJourneyStatusMeta(status);
 }
 
@@ -174,17 +179,28 @@ function isKnownJourneyStatus(status: string): status is Exclude<
   return ['OPTION_SELECTED', 'OUTBOUND_CREATED', 'PACKING', 'PACKED', 'SHIPPED'].includes(status);
 }
 
-export function hasLineQuotePrice(line: ShippingOrderLine) {
-  const unitPrice = Number(line.unitPrice);
-  return line.unitPrice !== null
-    && line.unitPrice !== undefined
-    && line.unitPrice !== ''
-    && Number.isFinite(unitPrice)
-    && unitPrice > 0;
+export function isLineQuoteConfirmed(line: ShippingOrderLine) {
+  return line.quoteStatus === 'CONFIRMED';
 }
 
-export function isExactlyNotSubmitted(value?: string | null) {
-  return String(value ?? '').trim().toUpperCase() === 'NOT_SUBMITTED';
+export function applySelectedChannelQuoteToLine(
+  line: ShippingOrderLine,
+  channel?: OrderLogisticsQuoteChannelOption
+): ShippingOrderLine {
+  const quote = channel?.lineQuotes?.find((item) => (
+    (item.shippingOrderLineId && item.shippingOrderLineId === line.id)
+    || (item.purchaseOrderItemSiteId && item.purchaseOrderItemSiteId === line.purchaseOrderItemSiteId)
+    || (item.partnerSku && sameCode(item.partnerSku, line.partnerSku))
+  ));
+  return quote ? {
+    ...line,
+    quoteStatus: quote.quoteStatus || 'PENDING_QUOTE',
+    unitPrice: quote.unitPrice ?? null,
+    currency: quote.currency,
+    billingUnit: quote.billingUnit,
+    priceSource: quote.priceSource,
+    yiteMaterial: quote.yiteMaterial ?? line.yiteMaterial
+  } : line;
 }
 
 export function countShippingOrderPendingQuoteLines(order: ShippingOrder) {
@@ -193,9 +209,7 @@ export function countShippingOrderPendingQuoteLines(order: ShippingOrder) {
   if (order.lines?.length) {
     return order.lines.filter((line) => {
       const segment = line.shippingOrderSegmentId ? segmentById.get(line.shippingOrderSegmentId) : undefined;
-      return isSupportedForwarderEligibility(line)
-        && (!segment || !isZdShippingForwarder(segment))
-        && !hasLineQuotePrice(line);
+      return (!segment || !isZdShippingForwarder(segment)) && line.quoteStatus !== 'CONFIRMED';
     }).length;
   }
   if (segments.length) {
@@ -212,9 +226,6 @@ export function shippingOrderQuoteIssueSummary(order: ShippingOrder) {
     return {
       pendingQuoteCount,
       missingMaterialCount,
-      unsupportedCount: 0,
-      inquiryRequiredCount: 0,
-      unknownEligibilityCount: 0,
       // 列表接口只有两个可能重叠的汇总数，取较大值可避免把同一商品重复计数。
       totalCount: Math.max(pendingQuoteCount, missingMaterialCount)
     };
@@ -223,37 +234,27 @@ export function shippingOrderQuoteIssueSummary(order: ShippingOrder) {
   const yiteSegmentIds = new Set((order.segments || []).filter(isYiteSegment).map((segment) => segment.id));
   const missingMaterialCount = order.lines
     .filter((line) => isMissingYiteMaterial(line, yiteSegmentIds)).length;
-  const unsupportedCount = order.lines.filter(isUnsupportedForwarderEligibility).length;
-  const inquiryRequiredCount = order.lines.filter(isInquiryRequiredForwarderEligibility).length;
-  const unknownEligibilityCount = order.lines.filter(isUnknownForwarderEligibility).length;
   const totalCount = order.lines.filter((line) => {
     const segment = line.shippingOrderSegmentId ? segmentById.get(line.shippingOrderSegmentId) : undefined;
-    const quoteIncomplete = isSupportedForwarderEligibility(line)
-      && (!segment || !isZdShippingForwarder(segment))
-      && !hasLineQuotePrice(line);
-    return quoteIncomplete
-      || isMissingYiteMaterial(line, yiteSegmentIds)
-      || isUnsupportedForwarderEligibility(line)
-      || isInquiryRequiredForwarderEligibility(line)
-      || isUnknownForwarderEligibility(line);
+    const quoteIncomplete = (!segment || !isZdShippingForwarder(segment))
+      && line.quoteStatus !== 'CONFIRMED';
+    return quoteIncomplete || isMissingYiteMaterial(line, yiteSegmentIds);
   }).length;
-  return {
-    pendingQuoteCount,
-    missingMaterialCount,
-    unsupportedCount,
-    inquiryRequiredCount,
-    unknownEligibilityCount,
-    totalCount
-  };
+  return { pendingQuoteCount, missingMaterialCount, totalCount };
 }
 
 function isZdShippingForwarder(target: {
   forwarderCode?: string;
+  forwarderName?: string;
   routeCode?: string;
+  routeName?: string;
 }) {
   const routeCode = (target.routeCode || '').trim().toUpperCase();
+  const text = `${target.forwarderName || ''} ${target.routeName || ''}`.trim();
   return sameCode(target.forwarderCode, 'ZD')
-    || routeCode.startsWith('ZD-');
+    || routeCode === 'ZD'
+    || routeCode.startsWith('ZD-')
+    || /众鸫|众东/.test(text);
 }
 
 export function formatQuantity(value: number) {

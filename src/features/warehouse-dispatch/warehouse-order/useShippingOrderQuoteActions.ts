@@ -1,25 +1,16 @@
 import { message } from 'antd';
 import {
   loadShippingOrderLogisticsQuoteOptionsForScope,
-  reassignShippingOrderLines,
-  updateShippingOrderLineEligibility,
   updateShippingOrderLineQuote,
   updateShippingOrderLineQuotes
 } from './warehouseShippingOrderRequests';
 import type { ShippingOrderLine } from './warehouseShippingOrderTypes';
+import { isYiteQuoteForwarder } from './warehouseShippingOrderDomain';
 import {
-  isUnknownForwarderEligibility,
-  isUnsupportedForwarderEligibility
-} from './warehouseForwarderEligibilityDomain';
-import {
-  isExactlyNotSubmitted,
-  isYiteQuoteForwarder
-} from './warehouseShippingOrderDomain';
-import {
+  defaultQuoteBillingUnit,
   defaultSegmentQuoteSelection,
   findQuoteChannelOption,
-  findQuoteForwarderOption,
-  resolveQuoteBillingUnit
+  findQuoteForwarderOption
 } from './warehouseShippingQuoteDomain';
 import type { ShippingOrderQuoteState } from './useShippingOrderQuoteState';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
@@ -29,12 +20,7 @@ export function useShippingOrderQuoteActions(
   quote: ShippingOrderQuoteState
 ) {
   const refreshOptions = async (orderId: string) => {
-    const segmentIds = [...quote.activeSegmentIds];
-    const request = data.beginDetailRequest('options', orderId, segmentIds);
-    if (!request) return;
-    const options = await loadShippingOrderLogisticsQuoteOptionsForScope(orderId, segmentIds);
-    if (!data.isCurrentDetailRequest(request)) return;
-    if (!data.acceptCurrentInteractionResponse(request, options.purchaseOrderId)) return;
+    const options = await loadShippingOrderLogisticsQuoteOptionsForScope(orderId, quote.activeSegmentIds);
     quote.setActiveSegmentQuoteOptions(options);
     quote.setSelectedOption((current) => {
       const forwarder = findQuoteForwarderOption(options, current.forwarderCode);
@@ -48,18 +34,6 @@ export function useShippingOrderQuoteActions(
   const handleSaveLineQuote = async (line: ShippingOrderLine) => {
     const order = data.detailTarget;
     if (!order) return;
-    if (!quote.detailMutationAllowed || !isExactlyNotSubmitted(line.shippingSubmitStatus)) {
-      message.warning('当前仓库单、分区或商品状态不可修改。');
-      return;
-    }
-    if (isUnsupportedForwarderEligibility(line)) {
-      message.warning('该货代当前不接此商品，不能保存报价。');
-      return;
-    }
-    if (isUnknownForwarderEligibility(line)) {
-      message.warning('请先确认商品承运状态，再保存报价。');
-      return;
-    }
     if (!quote.selectedOption.forwarderCode || !quote.selectedOption.routeCode) {
       message.warning('请先选择上方货代渠道。');
       return;
@@ -75,53 +49,33 @@ export function useShippingOrderQuoteActions(
       message.warning('请输入有效单价。');
       return;
     }
-    const action = data.beginDetailAction(`line-quote:${line.id}`, order.id, quote.activeSegmentIds);
-    if (!action) return;
+    data.setActionKey(`line-quote:${line.id}`);
     try {
       const next = await updateShippingOrderLineQuote(order.id, line.id, {
         forwarderCode: quote.selectedOption.forwarderCode,
         routeCode: quote.selectedOption.routeCode,
         unitPrice,
         currency: 'CNY',
-        billingUnit: resolveQuoteBillingUnit(
-          draft.billingUnit,
-          quote.activeSegment?.transportMode || line.plannedTransportMode
-        ),
+        billingUnit: defaultQuoteBillingUnit(quote.activeSegment?.transportMode || line.plannedTransportMode),
         yiteMaterial: quote.showYiteFields ? draft.yiteMaterial?.trim() : undefined
       });
-      if (!data.isCurrentDetailAction(action) || !data.applyCurrentDetail(action.request, next)) return;
+      data.setDetailTarget(next);
+      data.replaceOrder(next);
       await refreshOptions(next.id);
-      if (!data.isCurrentDetailAction(action)) return;
       quote.clearLineDrafts([line.id]);
       message.success('已保存商品报价。');
     } catch (error) {
-      if (data.isCurrentDetailAction(action)) {
-        message.error(error instanceof Error ? error.message : '保存商品报价失败');
-      }
+      message.error(error instanceof Error ? error.message : '保存商品报价失败');
     } finally {
-      data.finishDetailAction(action);
+      data.setActionKey(undefined);
     }
   };
 
   const handleSaveBulkLineQuotes = async () => {
     const order = data.detailTarget;
     if (!order) return;
-    if (!quote.detailMutationAllowed || quote.selectedLines.some((line) => (
-      !isExactlyNotSubmitted(line.shippingSubmitStatus)
-    ))) {
-      message.warning('当前仓库单、分区或商品状态不可修改。');
-      return;
-    }
     if (!quote.selectedQuoteLineIds.length) {
       message.warning('请选择要批量报价的商品。');
-      return;
-    }
-    if (quote.selectedLines.some(isUnsupportedForwarderEligibility)) {
-      message.warning('所选商品包含当前货代不接的商品，不能批量报价。');
-      return;
-    }
-    if (quote.selectedLines.some(isUnknownForwarderEligibility)) {
-      message.warning('所选商品包含承运状态待确认的商品，不能批量报价。');
       return;
     }
     if (!quote.selectedOption.forwarderCode || !quote.selectedOption.routeCode) {
@@ -135,8 +89,7 @@ export function useShippingOrderQuoteActions(
       return;
     }
     const selectedIds = quote.selectedQuoteLineIds;
-    const action = data.beginDetailAction(`bulk-line-quote:${order.id}`, order.id, quote.activeSegmentIds);
-    if (!action) return;
+    data.setActionKey(`bulk-line-quote:${order.id}`);
     try {
       const next = await updateShippingOrderLineQuotes(order.id, {
         lineIds: selectedIds,
@@ -144,12 +97,14 @@ export function useShippingOrderQuoteActions(
         routeCode: quote.selectedOption.routeCode,
         unitPrice,
         currency: 'CNY',
-        billingUnit: quote.bulkQuoteBillingUnit,
+        billingUnit: defaultQuoteBillingUnit(
+          quote.activeSegment?.transportMode || quote.selectedLines[0]?.plannedTransportMode
+        ),
         yiteMaterial: quote.showYiteFields ? quote.bulkQuoteYiteMaterial?.trim() : undefined
       });
-      if (!data.isCurrentDetailAction(action) || !data.applyCurrentDetail(action.request, next)) return;
+      data.setDetailTarget(next);
+      data.replaceOrder(next);
       await refreshOptions(next.id);
-      if (!data.isCurrentDetailAction(action)) return;
       quote.clearLineDrafts(selectedIds);
       quote.setSelectedQuoteLineIds([]);
       quote.setBulkQuoteModalOpen(false);
@@ -157,11 +112,9 @@ export function useShippingOrderQuoteActions(
       quote.setBulkQuoteYiteMaterial(undefined);
       message.success(`已批量保存 ${selectedIds.length} 个商品报价。`);
     } catch (error) {
-      if (data.isCurrentDetailAction(action)) {
-        message.error(error instanceof Error ? error.message : '批量保存商品报价失败');
-      }
+      message.error(error instanceof Error ? error.message : '批量保存商品报价失败');
     } finally {
-      data.finishDetailAction(action);
+      data.setActionKey(undefined);
     }
   };
 
@@ -176,84 +129,7 @@ export function useShippingOrderQuoteActions(
   const closeBulkModal = () => {
     quote.setBulkQuoteModalOpen(false);
     quote.setBulkQuoteUnitPrice('');
-    quote.setBulkQuoteBillingUnit(resolveQuoteBillingUnit(undefined, quote.activeSegment?.transportMode));
     quote.setBulkQuoteYiteMaterial(undefined);
-  };
-
-  const handleSaveEligibility = async (
-    line: ShippingOrderLine,
-    eligibilityStatus: 'SUPPORTED' | 'INQUIRY_REQUIRED' | 'UNSUPPORTED'
-  ) => {
-    const order = data.detailTarget;
-    const forwarderCode = quote.selectedOption.forwarderCode;
-    if (!order) return;
-    if (!quote.detailMutationAllowed || !isExactlyNotSubmitted(line.shippingSubmitStatus)) {
-      message.warning('当前仓库单、分区或商品状态不可修改。');
-      return;
-    }
-    if (!forwarderCode) {
-      message.warning('请先选择上方货代渠道。');
-      return;
-    }
-    const action = data.beginDetailAction(`line-eligibility:${line.id}`, order.id, quote.activeSegmentIds);
-    if (!action) return;
-    try {
-      const next = await updateShippingOrderLineEligibility(order.id, line.id, {
-        forwarderCode,
-        eligibilityStatus
-      });
-      if (!data.isCurrentDetailAction(action) || !data.applyCurrentDetail(action.request, next)) return;
-      await refreshOptions(next.id);
-      if (!data.isCurrentDetailAction(action)) return;
-      message.success('承运状态已更新。');
-    } catch (error) {
-      if (data.isCurrentDetailAction(action)) {
-        message.error(error instanceof Error ? error.message : '保存承运状态失败');
-      }
-    } finally {
-      data.finishDetailAction(action);
-    }
-  };
-
-  const handleReassignLines = async (
-    targetTransportMode: 'AIR' | 'SEA',
-    targetSegmentId?: string
-  ) => {
-    const order = data.detailTarget;
-    if (!order || !quote.selectedQuoteLineIds.length) return;
-    const targetSegment = targetSegmentId
-      ? quote.detailSegments.find((segment) => segment.id === targetSegmentId)
-      : undefined;
-    if (!quote.detailMutationAllowed
-      || quote.selectedLines.some((line) => !isExactlyNotSubmitted(line.shippingSubmitStatus))
-      || (targetSegmentId && !isExactlyNotSubmitted(targetSegment?.shippingSubmitStatus))) {
-      message.warning('当前仓库单、分区或商品状态不可调整。');
-      return;
-    }
-    const lineIds = [...quote.selectedQuoteLineIds];
-    const action = data.beginDetailAction(`line-reassign:${order.id}`, order.id, quote.activeSegmentIds);
-    if (!action) return;
-    try {
-      const next = await reassignShippingOrderLines(order.id, {
-        lineIds,
-        targetSegmentId,
-        targetTransportMode
-      });
-      const targetLine = (next.lines || []).find((line) => lineIds.includes(line.id));
-      if (!data.isCurrentDetailAction(action) || !data.applyCurrentDetail(action.request, next)) return;
-      quote.setReassignModalOpen(false);
-      quote.setSelectedQuoteLineIds([]);
-      if (targetLine?.shippingOrderSegmentId) {
-        quote.selectSegment(targetLine.shippingOrderSegmentId);
-      }
-      message.success(`已调整 ${lineIds.length} 个商品的运输分区。`);
-    } catch (error) {
-      if (data.isCurrentDetailAction(action)) {
-        message.error(error instanceof Error ? error.message : '调整运输方案失败');
-      }
-    } finally {
-      data.finishDetailAction(action);
-    }
   };
 
   return {
@@ -261,9 +137,7 @@ export function useShippingOrderQuoteActions(
     handleSaveBulkLineQuotes,
     selectBulkForwarder,
     selectBulkChannel,
-    closeBulkModal,
-    handleSaveEligibility,
-    handleReassignLines
+    closeBulkModal
   };
 }
 

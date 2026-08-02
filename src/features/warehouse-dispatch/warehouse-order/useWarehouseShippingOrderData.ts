@@ -23,8 +23,6 @@ import {
   loadWarehouseOrderJourneys
 } from './warehouseOrderJourney';
 import type { WarehouseOrderJourney } from './warehouseOrderJourney';
-import type { ShippingOrderInteractionTicket } from './shippingOrderInteractionScope';
-import { useShippingOrderInteractionController } from './useShippingOrderInteractionController';
 
 export function useWarehouseShippingOrderData() {
   const [shippingOrders, setShippingOrders] = useState<ShippingOrder[]>([]);
@@ -42,19 +40,6 @@ export function useWarehouseShippingOrderData() {
   const [detailTarget, setDetailTarget] = useState<ShippingOrder | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionKey, setActionKey] = useState<string>();
-  const interaction = useShippingOrderInteractionController({
-    setActionKey,
-    onScopeError: (error) => {
-      setDetailTarget(null);
-      setDetailLoading(false);
-      message.error(error instanceof Error ? error.message : '仓库单交互范围校验失败');
-    }
-  });
-  const {
-    beginAction, finishAction, activateDetailInteractionScope, beginDetailRequest,
-    isCurrentDetailRequest, beginDetailAction, isCurrentDetailAction, finishDetailAction,
-    acceptCurrentInteractionResponse, invalidateDetailInteraction
-  } = interaction;
 
   const selectedSourceOrders = useMemo(
     () => selectedSourceOrderIds
@@ -113,22 +98,11 @@ export function useWarehouseShippingOrderData() {
     )));
   };
 
-  const applyCurrentDetail = (
-    request: ShippingOrderInteractionTicket,
-    detail: ShippingOrder,
-    preserveListLines = true
-  ) => {
-    if (!acceptCurrentInteractionResponse(request, detail.id)) return false;
-    setDetailTarget(detail);
-    replaceOrder(detail, preserveListLines);
-    return true;
-  };
-
   const refreshDetail = async (orderId: string) => {
-    const request = beginDetailRequest('detail', orderId);
-    if (!request) return undefined;
     const detail = await loadShippingOrder(orderId);
-    return applyCurrentDetail(request, detail) ? detail : undefined;
+    setDetailTarget(detail);
+    replaceOrder(detail);
+    return detail;
   };
 
   const handleCreate = async () => {
@@ -136,7 +110,7 @@ export function useWarehouseShippingOrderData() {
       message.warning('请选择要合并的采购单。');
       return;
     }
-    const action = beginAction('create-shipping-order');
+    setActionKey('create-shipping-order');
     try {
       const order = await createShippingOrder({ purchaseOrderIds: selectedSourceOrderIds });
       setSelectedSourceOrderIds([]);
@@ -147,7 +121,7 @@ export function useWarehouseShippingOrderData() {
     } catch (error) {
       message.error(error instanceof Error ? error.message : '创建仓库单失败');
     } finally {
-      finishAction(action);
+      setActionKey(undefined);
     }
   };
 
@@ -180,7 +154,7 @@ export function useWarehouseShippingOrderData() {
       message.warning('请输入仓库单名。');
       return;
     }
-    const action = beginAction(`update-shipping-order:${editTarget.id}`);
+    setActionKey(`update-shipping-order:${editTarget.id}`);
     try {
       const next = await updateShippingOrder(editTarget.id, {
         title,
@@ -192,45 +166,30 @@ export function useWarehouseShippingOrderData() {
     } catch (error) {
       message.error(error instanceof Error ? error.message : '保存仓库单失败');
     } finally {
-      finishAction(action);
+      setActionKey(undefined);
     }
   };
 
   const openDetail = async (order: ShippingOrder) => {
-    activateDetailInteractionScope(order.id);
-    const request = beginDetailRequest('detail', order.id, []);
-    if (!request) return;
-    setDetailTarget({ ...order, lines: [], segments: [] });
+    setDetailTarget({ ...order, lines: [] });
     setDetailLoading(true);
     try {
-      const detail = await loadShippingOrder(order.id);
-      applyCurrentDetail(request, detail);
+      await refreshDetail(order.id);
     } catch (error) {
-      if (isCurrentDetailRequest(request)) {
-        message.error(error instanceof Error ? error.message : '读取仓库单详情失败');
-      }
+      message.error(error instanceof Error ? error.message : '读取仓库单详情失败');
     } finally {
-      if (isCurrentDetailRequest(request)) setDetailLoading(false);
+      setDetailLoading(false);
     }
-  };
-
-  const closeDetail = () => {
-    invalidateDetailInteraction();
-    setDetailTarget(null);
-    setDetailLoading(false);
   };
 
   return {
     shippingOrders, setShippingOrders, journeysByOrder, purchaseOrders, selectedSourceOrderIds, setSelectedSourceOrderIds,
     keyword, setKeyword, sourceKeyword, setSourceKeyword, loading, loadError, createModalOpen,
     setCreateModalOpen, editTarget, editTitle, setEditTitle, editRemark, setEditRemark,
-    detailTarget, detailLoading, actionKey,
-    selectedSourceOrders, visibleShippingOrders, visiblePurchaseOrders, loadPage,
-    beginAction, finishAction, activateDetailInteractionScope, beginDetailRequest, isCurrentDetailRequest,
-    beginDetailAction, isCurrentDetailAction, finishDetailAction, acceptCurrentInteractionResponse,
-    applyCurrentDetail,
+    detailTarget, setDetailTarget, detailLoading, actionKey, setActionKey,
+    selectedSourceOrders, visibleShippingOrders, visiblePurchaseOrders, loadPage, replaceOrder,
     refreshDetail, handleCreate, openCreateModal, openEditModal, closeEditModal, handleUpdateTitle,
-    openDetail, closeDetail,
+    openDetail, closeDetail: () => setDetailTarget(null),
     sourceOrderSelection: {
       selectedRowKeys: selectedSourceOrderIds,
       onChange: (keys: Key[]) => setSelectedSourceOrderIds(keys.map(String))

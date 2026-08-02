@@ -10,7 +10,6 @@ const source = (relativePath: string) => readFileSync(
 const warehouseOrders = source('./warehouse-order/WarehouseShippingOrderList.tsx')
 const dispatchPlans = source('./WarehouseDispatchPlanPanel.tsx')
 const shippingExecution = source('./WarehousePackingListPanel.tsx')
-const shippingExecutionColumns = source('./WarehousePackingListColumns.tsx')
 const partitionViews = source('./LogisticsPartitionViews.tsx')
 
 for (const [name, content] of Object.entries({ warehouseOrders, dispatchPlans, shippingExecution })) {
@@ -21,7 +20,7 @@ for (const [name, content] of Object.entries({ warehouseOrders, dispatchPlans, s
 assert.match(warehouseOrders, /LogisticsPartitionCombinationTags/)
 assert.doesNotMatch(warehouseOrders, /LogisticsPartitionTags/)
 assert.match(dispatchPlans, /LogisticsPartitionTags/)
-assert.match(shippingExecutionColumns, /LogisticsPartitionTags/)
+assert.match(shippingExecution, /LogisticsPartitionTags/)
 assert.match(shippingExecution, /batch\.siteCodes/)
 assert.match(shippingExecution, /batch\.transportModes/)
 assert.match(
@@ -33,11 +32,6 @@ assert.match(
   warehouseOrders,
   /title: '分区明细'[\s\S]*segment\.purchaseOrderNames[\s\S]*segment\.lineCount[\s\S]*segment\.skuCount[\s\S]*segment\.totalQuantity/,
   '每个分区必须在同一列展示来源采购单名、商品行、SKU 和件数'
-)
-assert.match(
-  warehouseOrders,
-  /value\.split\('、'\)[\s\S]*warehouse-order-partition-source-list[\s\S]*names\.map/,
-  '同一分区的多个来源采购单必须逐行纵向展示'
 )
 assert.match(
   warehouseOrders,
@@ -62,4 +56,4 @@ assert.match(
   '共享分区标签必须默认保留真实历史混合记录的提示'
 )
 assert.doesNotMatch(dispatchPlans, /showHistoricalMixed=\{false\}/)
-assert.doesNotMatch(shippingExecutionColumns, /showHistoricalMixed=\{false\}/)
+assert.doesNotMatch(shippingExecution, /showHistoricalMixed=\{false\}/)

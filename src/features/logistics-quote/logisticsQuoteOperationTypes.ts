@@ -3,6 +3,7 @@ export type LogisticsQuoteOperationPriceItemsSummaryDto = {
   airItemCount: number
   seaItemCount: number
   warehouseItemCount: number
+  adjustedItemCount: number
 }
 
 export type LogisticsQuoteOperationPriceItemDto = {
@@ -25,6 +26,7 @@ export type LogisticsQuoteOperationPriceItemDto = {
   pricingModel?: string
   currency?: string
   standardValue?: number | null
+  adjustedValue?: number | null
   effectiveValue?: number | null
   billingUnit?: string
   billingBasis?: string
@@ -34,6 +36,8 @@ export type LogisticsQuoteOperationPriceItemDto = {
   sourceFileName?: string
   sourceLocator?: string
   remark?: string
+  hasAdjustment?: boolean
+  adjustmentReason?: string
   updatedAt?: string
 }
 
@@ -43,4 +47,19 @@ export type LogisticsQuoteOperationPriceItemsResponse = {
   message?: string
   summary: LogisticsQuoteOperationPriceItemsSummaryDto
   items: LogisticsQuoteOperationPriceItemDto[]
+}
+
+export type LogisticsQuoteOperationPriceAdjustmentRequest = {
+  targetType: string
+  targetId: number
+  numericField: string
+  adjustedValue: number
+  reason: string
+}
+
+export type LogisticsQuoteOperationPriceAdjustmentResponse = {
+  ready: boolean
+  message?: string
+  adjustmentId?: number
+  logId?: number
 }

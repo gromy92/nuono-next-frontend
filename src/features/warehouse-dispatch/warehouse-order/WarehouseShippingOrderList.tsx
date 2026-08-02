@@ -235,7 +235,7 @@ function WarehouseOrderPartitionRow({
           transportMode: segment.transportMode
         }]} />
       </div>
-      <PurchaseOrderMetric value={segment.purchaseOrderNames || '—'} />
+      <PartitionMetric label="来源采购单" value={segment.purchaseOrderNames || '—'} source />
       <PartitionMetric label="商品行" value={formatQuantity(Number(segment.lineCount || 0))} />
       <PartitionMetric label="SKU" value={formatQuantity(Number(segment.skuCount || 0))} />
       <PartitionMetric label="件数" value={`${formatQuantity(Number(segment.totalQuantity || 0))} 件`} />
@@ -243,23 +243,11 @@ function WarehouseOrderPartitionRow({
   );
 }
 
-function PurchaseOrderMetric({ value }: { value: string }) {
-  const names = Array.from(new Set(value.split('、').map((name) => name.trim()).filter(Boolean)));
+function PartitionMetric({ label, value, source = false }: { label: string; value: string; source?: boolean }) {
   return (
-    <span className="warehouse-order-partition-metric warehouse-order-partition-metric--source">
-      <span className="warehouse-order-partition-metric-label">来源采购单</span>
-      <span className="warehouse-order-partition-source-list" title={value}>
-        {names.map((name) => <strong key={name}>{name}</strong>)}
-      </span>
-    </span>
-  );
-}
-
-function PartitionMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="warehouse-order-partition-metric">
+    <span className={`warehouse-order-partition-metric${source ? ' warehouse-order-partition-metric--source' : ''}`}>
       <span className="warehouse-order-partition-metric-label">{label}</span>
-      <strong>{value}</strong>
+      <strong title={source ? value : undefined}>{value}</strong>
     </span>
   );
 }

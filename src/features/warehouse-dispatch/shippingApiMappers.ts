@@ -26,7 +26,6 @@ import type {
 } from './shippingApiTypes'
 import {
   normalizeFulfillmentType,
-  normalizeOwnerUserId,
   normalizeSiteCode,
   normalizeSpecStatus,
   normalizeTransportMode,
@@ -36,7 +35,6 @@ import {
 export function mapShippingBatch(batch: ApiShippingBatch): ShippingBatch {
   return {
     id: String(batch.id || ''),
-    ownerUserId: normalizeOwnerUserId(batch.ownerUserId),
     dispatchPlanId: batch.dispatchPlanId == null ? undefined : String(batch.dispatchPlanId),
     batchNo: batch.batchNo || '',
     status: batch.status || '',
@@ -66,7 +64,6 @@ export function mapOutboundOrder(order: ApiOutboundOrder): OutboundOrder {
     id: String(order.id || ''),
     batchId: String(order.batchId || ''),
     optionId: order.optionId ? String(order.optionId) : undefined,
-    ownerUserId: normalizeOwnerUserId(order.ownerUserId),
     outboundNo: order.outboundNo || '',
     status: order.status || '',
     originType: normalizeFulfillmentType(order.originType),
@@ -84,7 +81,6 @@ export function mapPackingList(packingList: ApiPackingList): PackingList {
   return {
     id: String(packingList.id || ''),
     outboundOrderId: String(packingList.outboundOrderId || ''),
-    ownerUserId: normalizeOwnerUserId(packingList.ownerUserId),
     packingNo: packingList.packingNo || '',
     status: packingList.status || '',
     boxCount: Number(packingList.boxCount || 0),

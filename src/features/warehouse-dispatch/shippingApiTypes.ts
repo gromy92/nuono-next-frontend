@@ -1,6 +1,5 @@
 export type ApiShippingBatch = {
   id?: string
-  ownerUserId?: number | string
   dispatchPlanId?: string | number
   batchNo?: string
   status?: string
@@ -112,7 +111,6 @@ export type ApiOutboundOrder = {
   id?: string
   batchId?: number | string
   optionId?: number | string
-  ownerUserId?: number | string
   outboundNo?: string
   status?: string
   originType?: string
@@ -173,7 +171,6 @@ export type ApiOutboundOrderLineSource = {
 export type ApiPackingList = {
   id?: string
   outboundOrderId?: number | string
-  ownerUserId?: number | string
   packingNo?: string
   status?: string
   boxCount?: number

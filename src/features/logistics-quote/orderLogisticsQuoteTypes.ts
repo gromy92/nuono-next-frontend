@@ -4,22 +4,12 @@ export type WarehouseQuotePriceSource =
   | 'LEGACY_CHANNEL_QUOTE'
   | string
 
-export type ForwarderEligibilityStatus =
-  | 'SUPPORTED'
-  | 'INQUIRY_REQUIRED'
-  | 'UNSUPPORTED'
-  | 'UNKNOWN'
-  | string
-
 export type OrderLogisticsQuoteSummary = {
   totalLineCount: number
   pendingLineCount: number
   confirmedLineCount: number
   submittedLineCount: number
   newProductLineCount: number
-  supportedLineCount?: number
-  inquiryRequiredLineCount?: number
-  unsupportedLineCount?: number
   shippingSubmitStatus: 'NOT_SUBMITTED' | 'SUBMITTED' | string
 }
 
@@ -29,9 +19,6 @@ export type OrderLogisticsQuoteChannelOption = {
   serviceCode?: string
   serviceName?: string
   quoteVersionCode?: string
-  quoteEffectiveFrom?: string
-  quoteRecordedAt?: string
-  latestProductQuoteAt?: string
   siteCode?: string
   transportMode?: string
   transportModeLabel?: string
@@ -45,9 +32,6 @@ export type OrderLogisticsQuoteChannelOption = {
   pendingLineCount: number
   confirmedLineCount?: number
   newProductLineCount: number
-  supportedLineCount?: number
-  inquiryRequiredLineCount?: number
-  unsupportedLineCount?: number
   publishedPrices?: OrderLogisticsQuotePublishedPrice[]
   surcharges?: OrderLogisticsQuoteSurcharge[]
   lineQuotes?: OrderLogisticsQuoteChannelLine[]
@@ -57,7 +41,6 @@ export type OrderLogisticsQuotePublishedPrice = {
   priceRuleCode?: string
   cargoCategoryCode?: string
   cargoCategoryName?: string
-  cargoCategoryDescription?: string
   priceStatus?: string
   currency?: string
   unitPrice?: string | number | null
@@ -93,8 +76,6 @@ export type OrderLogisticsQuoteChannelLine = {
   billingUnit?: string
   yiteMaterial?: string
   priceSource?: WarehouseQuotePriceSource
-  priceUpdatedAt?: string
-  eligibilityStatus?: ForwarderEligibilityStatus
 }
 
 export type OrderLogisticsQuoteForwarderOption = {

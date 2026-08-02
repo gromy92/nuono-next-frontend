@@ -2,7 +2,6 @@ import { WarehouseShippingOrderBulkQuoteModal } from './WarehouseShippingOrderBu
 import { WarehouseShippingOrderCreateModal } from './WarehouseShippingOrderCreateModal';
 import { WarehouseShippingOrderDetailModal } from './WarehouseShippingOrderDetailModal';
 import { WarehouseShippingOrderEditModal } from './WarehouseShippingOrderEditModal';
-import { WarehouseShippingOrderReassignModal } from './WarehouseShippingOrderReassignModal';
 import { WarehouseShippingOrderList } from './WarehouseShippingOrderList';
 import { WarehouseShippingQuoteExportModal } from './WarehouseShippingQuoteExportModal';
 import { useShippingOrderQuoteActions } from './useShippingOrderQuoteActions';
@@ -34,7 +33,6 @@ export function WarehouseOrderPanel() {
         submit={submit}
       />
       <WarehouseShippingOrderBulkQuoteModal data={data} quote={quote} actions={quoteActions} />
-      <WarehouseShippingOrderReassignModal data={data} quote={quote} actions={quoteActions} />
       <WarehouseShippingOrderCreateModal data={data} />
       <WarehouseShippingQuoteExportModal data={data} transfer={transfer} />
     </div>

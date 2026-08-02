@@ -48,7 +48,6 @@ export type PurchaseReceiptOrder = {
 }
 
 export type ReadyShipmentItem = PurchaseReceiptItem & {
-  ownerUserId?: number
   orderTitle?: string
   orderCreatedAt?: string
   availableQty: number
@@ -88,7 +87,6 @@ export type DispatchPlanLine = {
 
 export type DispatchPlan = {
   id: string
-  ownerUserId?: number
   planNo: string
   status: DispatchPlanStatus
   createdAt: string

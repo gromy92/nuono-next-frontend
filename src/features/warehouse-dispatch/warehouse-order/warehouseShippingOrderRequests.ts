@@ -7,17 +7,6 @@ import type {
   UpdateShippingOrderLineYiteMaterialPayload,
   UpdateShippingOrderPayload
 } from './warehouseShippingOrderTypes'
-
-export type UpdateShippingOrderLineEligibilityPayload = {
-  forwarderCode: string
-  eligibilityStatus: 'SUPPORTED' | 'INQUIRY_REQUIRED' | 'UNSUPPORTED'
-}
-
-export type ReassignShippingOrderLinesPayload = {
-  lineIds: string[]
-  targetSegmentId?: string
-  targetTransportMode: 'AIR' | 'SEA'
-}
 import {
   apiFetch,
   apiRequestJson,
@@ -152,31 +141,6 @@ export function updateShippingOrderLineQuotes(
     'PUT',
     payload,
     '批量保存商品报价失败'
-  )
-}
-
-export function updateShippingOrderLineEligibility(
-  shippingOrderId: string,
-  lineId: string,
-  payload: UpdateShippingOrderLineEligibilityPayload
-) {
-  return sendWarehouseOrderJson<ShippingOrder>(
-    `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/lines/${encodeURIComponent(lineId)}/eligibility`,
-    'PUT',
-    payload,
-    '保存承运状态失败'
-  )
-}
-
-export function reassignShippingOrderLines(
-  shippingOrderId: string,
-  payload: ReassignShippingOrderLinesPayload
-) {
-  return sendWarehouseOrderJson<ShippingOrder>(
-    `/api/procurement/purchase-orders/shipping-orders/${encodeURIComponent(shippingOrderId)}/lines/reassign`,
-    'POST',
-    payload,
-    '调整运输方案失败'
   )
 }
 

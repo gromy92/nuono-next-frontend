@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { HomeOutlined } from '@ant-design/icons'
-import { Alert, Button, Card } from 'antd'
+import { Button } from 'antd'
 import { workspaceMenuMount } from '../route-catalog/RouteCatalog'
 import {
   shouldShowWorkspaceMenuInTabs,
@@ -32,8 +32,7 @@ export function workspaceContentMountKeys(
 
 export function workspaceContentMountGroups(
   activeMenuKey: AppMenuKey,
-  openedWorkspaceTabKeys: AppMenuKey[],
-  allowedMenuKeySet?: ReadonlySet<AppMenuKey>
+  openedWorkspaceTabKeys: AppMenuKey[]
 ) {
   const activeWorkspaceMountKey = workspaceContentMountKeyForMenuKey(activeMenuKey)
   const groups: Array<{
@@ -42,13 +41,7 @@ export function workspaceContentMountGroups(
     mount: ReturnType<typeof workspaceMenuMount>
   }> = []
 
-  const mountKeys = allowedMenuKeySet && !allowedMenuKeySet.has(activeWorkspaceMountKey)
-    ? []
-    : workspaceContentMountKeys(activeMenuKey, openedWorkspaceTabKeys).filter(
-      (menuKey) => !allowedMenuKeySet || allowedMenuKeySet.has(menuKey)
-    )
-
-  mountKeys.forEach((menuKey) => {
+  workspaceContentMountKeys(activeMenuKey, openedWorkspaceTabKeys).forEach((menuKey) => {
     const mount = workspaceMenuMount(menuKey)
     const existing = groups.find((group) => group.mount === mount)
     if (existing) {
@@ -89,16 +82,14 @@ function ShellWorkspaceContentPane({ active, menuKey, context }: ShellWorkspaceC
 
 export function ShellWorkspaceContent({
   activeMenuKey,
-  allowedMenuKeySet,
   noMenuPermission,
   openedWorkspaceTabKeys,
   routeNotFound,
   ...baseContext
 }: ShellWorkspaceContentProps) {
   const mountGroups = useMemo(() => {
-    return workspaceContentMountGroups(activeMenuKey, openedWorkspaceTabKeys, allowedMenuKeySet)
-  }, [activeMenuKey, allowedMenuKeySet, openedWorkspaceTabKeys])
-  const activeWorkspaceMountKey = workspaceContentMountKeyForMenuKey(activeMenuKey)
+    return workspaceContentMountGroups(activeMenuKey, openedWorkspaceTabKeys)
+  }, [activeMenuKey, openedWorkspaceTabKeys])
 
   if (noMenuPermission) {
     return <ShellDefaultPage />
@@ -128,19 +119,6 @@ export function ShellWorkspaceContent({
           }
         />
       </div>
-    )
-  }
-
-  if (!allowedMenuKeySet.has(activeWorkspaceMountKey)) {
-    return (
-      <Card variant="borderless" style={{ boxShadow: 'none', background: '#ffffff' }}>
-        <Alert
-          type="warning"
-          showIcon
-          message="当前页面无访问权限"
-          description="正在返回当前账号有权访问的工作区。"
-        />
-      </Card>
     )
   }
 

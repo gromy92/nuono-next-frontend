@@ -2,6 +2,8 @@ import type {
   LogisticsQuoteDraftFromNoteRequest,
   LogisticsQuoteNotePreviewRequest,
   LogisticsQuoteNotePreviewResponse,
+  LogisticsQuoteOperationPriceAdjustmentRequest,
+  LogisticsQuoteOperationPriceAdjustmentResponse,
   LogisticsQuoteOperationPriceItemsResponse,
   LogisticsQuoteSourceBundleAnalysisSummaryUpdateRequest,
   LogisticsQuoteSourceBundleFileCreateRequest,
@@ -57,6 +59,19 @@ export async function fetchLogisticsQuoteOperationPriceItems(params?: {
   }
   return requestJson<LogisticsQuoteOperationPriceItemsResponse>(
     url.pathname + url.search
+  )
+}
+
+export async function saveLogisticsQuoteOperationPriceAdjustment(
+  request: LogisticsQuoteOperationPriceAdjustmentRequest
+): Promise<LogisticsQuoteOperationPriceAdjustmentResponse> {
+  return requestJson<LogisticsQuoteOperationPriceAdjustmentResponse>(
+    '/api/logistics-quote/operations/price-adjustments',
+    {
+      method: 'POST',
+      headers: JSON_HEADERS,
+      body: JSON.stringify(request)
+    }
   )
 }
 

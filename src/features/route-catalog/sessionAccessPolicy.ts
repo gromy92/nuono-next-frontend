@@ -13,52 +13,6 @@ function normalizeGrantedMenuName(menuName?: string | null) {
   return (menuName || '').trim()
 }
 
-export type SessionBusinessCapability = 'PRODUCT_MASTER' | 'PROCUREMENT'
-
-// These prefixes mirror backend BusinessCapability. Menu visibility alone is
-// not proof that the session may call product-spec APIs.
-const SESSION_BUSINESS_CAPABILITY_PATH_PREFIXES: Readonly<
-  Record<SessionBusinessCapability, readonly string[]>
-> = {
-  PRODUCT_MASTER: [
-    '/api/sku/manage',
-    '/product/groups',
-    '/product/manage',
-    '/product/images',
-    '/api/product-images'
-  ],
-  PROCUREMENT: [
-    '/api/purchase/order',
-    '/api/procurement/purchase-orders',
-    '/api/replenishment-plan',
-    '/purchase/order'
-  ]
-}
-
-function matchesBusinessCapabilityPath(path: string, prefix: string) {
-  const normalizedPath = path.trim()
-  const normalizedPrefix = prefix.trim()
-  return normalizedPath === normalizedPrefix || normalizedPath.startsWith(`${normalizedPrefix}/`)
-}
-
-export function sessionHasBusinessCapability(
-  session: AuthSession | null,
-  capability: SessionBusinessCapability
-) {
-  const prefixes = SESSION_BUSINESS_CAPABILITY_PATH_PREFIXES[capability]
-  return Boolean(session?.grantedMenus?.some((menu) => {
-    const menuPath = menu.urlPath
-    return Boolean(menuPath && prefixes.some((prefix) => matchesBusinessCapabilityPath(menuPath, prefix)))
-  }))
-}
-
-export function sessionHasAnyBusinessCapability(
-  session: AuthSession | null,
-  capabilities: readonly SessionBusinessCapability[]
-) {
-  return capabilities.some((capability) => sessionHasBusinessCapability(session, capability))
-}
-
 function isSameOrChildGrantedPath(path: string, prefix: string) {
   const normalizedPrefix = normalizeWorkspacePath(prefix)
   return path === normalizedPrefix || path.startsWith(`${normalizedPrefix}/`)
@@ -172,13 +126,6 @@ export function resolveSessionAllowedMenuKeys(session: AuthSession | null) {
     }
   })
 
-  if (
-    isSystemAdminSession(session) ||
-    !sessionHasAnyBusinessCapability(session, ['PRODUCT_MASTER', 'PROCUREMENT'])
-  ) {
-    keySet.delete('product-specs')
-  }
-
   return ALL_WORKSPACE_MENU_KEYS.filter((key) => keySet.has(key))
 }
 
@@ -280,15 +227,4 @@ export function resolveSessionLandingMenuKey(
       : OPERATOR_LANDING_ORDER
 
   return preferredOrder.find((menuKey) => allowedMenuKeys.includes(menuKey)) ?? allowedMenuKeys[0]
-}
-
-export function resolveSessionRenderMenuKey(
-  session: AuthSession | null,
-  allowedMenuKeys: AppMenuKey[],
-  requestedMenuKey: AppMenuKey
-) {
-  if (!session || !allowedMenuKeys.length) {
-    return requestedMenuKey
-  }
-  return resolveSessionLandingMenuKey(session, allowedMenuKeys, requestedMenuKey) ?? requestedMenuKey
 }

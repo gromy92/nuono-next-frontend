@@ -1,9 +1,8 @@
 import { EditOutlined } from '@ant-design/icons'
-import { Alert, Button, Empty, Modal, Segmented, Select, Space, Table, Tag, Tooltip, Typography } from 'antd'
+import { Button, Empty, Modal, Segmented, Select, Space, Table, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { WarehouseSiteCode } from './types'
 import type { useReadyWorkspace } from './useReadyWorkspace'
-import { resolveReadyProductSpecsScope } from './readyDomain'
 import {
   renderReadyFulfillmentCell,
   renderReadyProductCell,
@@ -26,35 +25,24 @@ const { Text } = Typography
 
 type WarehouseReadyPanelProps = {
   workspace: ReturnType<typeof useReadyWorkspace>
-  productBaselineByScope: Record<string, ProductBaselineSummary>
-  productBaselineError?: string
+  productBaselineByPsku: Record<string, ProductBaselineSummary>
   orderMetaById: Map<string, ReceiptOrderMeta>
   dataLoading: boolean
-  canOpenProductSpecs: boolean
   onOpenProductSpecs: (item: ReadyShipmentRow) => void
 }
 
 export function WarehouseReadyPanel({
   workspace,
-  productBaselineByScope,
-  productBaselineError,
+  productBaselineByPsku,
   orderMetaById,
   dataLoading,
-  canOpenProductSpecs,
   onOpenProductSpecs
 }: WarehouseReadyPanelProps) {
   const columns: ColumnsType<ReadyShipmentRow> = [
     { title: '商品', dataIndex: 'psku', render: (_, item) => renderReadyProductCell(
       item,
-      productBaselineByScope
+      productBaselineByPsku
     ) },
-    {
-      title: '货主',
-      width: 104,
-      render: (_, item) => item.ownerUserId
-        ? <Tag color="blue">账号 {item.ownerUserId}</Tag>
-        : <Tag color="red">归属缺失</Tag>
-    },
     { title: '来源', render: (_, item) => renderReadySourceCell(
       item,
       orderMetaById,
@@ -66,36 +54,22 @@ export function WarehouseReadyPanel({
     {
       title: '规格',
       width: 112,
-      render: (_, item) => {
-        const specsScope = resolveReadyProductSpecsScope(item)
-        return (
-          <Space direction="vertical" size={4}>
-            {renderSpecStatus(item.specStatus)}
-            <Tooltip title={!canOpenProductSpecs
-              ? '当前账号无商品/采购规格权限；仓管规格请在仓管 APP 收货时维护'
-              : specsScope ? undefined : '库存归属缺失或涉及多个店铺，暂不能编辑规格'}>
-              <span>
-                <Button aria-label={`编辑 ${item.psku} 规格`} icon={<EditOutlined />} size="small"
-                  disabled={!canOpenProductSpecs || !specsScope}
-                  type={item.specStatus === 'missing' ? 'primary' : 'default'}
-                  onClick={() => onOpenProductSpecs(item)}>
-                  编辑规格
-                </Button>
-              </span>
-            </Tooltip>
-          </Space>
-        )
-      }
+      render: (_, item) => (
+        <Space direction="vertical" size={4}>
+          {renderSpecStatus(item.specStatus)}
+          <Button aria-label={`编辑 ${item.psku} 规格`} icon={<EditOutlined />} size="small"
+            type={item.specStatus === 'missing' ? 'primary' : 'default'}
+            onClick={() => onOpenProductSpecs(item)}>
+            编辑规格
+          </Button>
+        </Space>
+      )
     },
     { title: '可发', dataIndex: 'availableQty' }
   ]
   return (
     <>
       <div className="warehouse-dispatch-panel">
-        {productBaselineError ? (
-          <Alert showIcon type="warning" message={productBaselineError}
-            className="warehouse-dispatch-data-alert" />
-        ) : null}
         <div className="warehouse-dispatch-toolbar">
           <div className="warehouse-dispatch-toolbar-left">
             <Segmented size="small" value={workspace.filter} options={READY_FILTER_OPTIONS}

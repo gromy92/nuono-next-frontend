@@ -3,7 +3,6 @@ import type { ReadyShipmentItem } from './types'
 import {
   buildReadySourceRows,
   formatReceiptSourceDate,
-  resolveReadyProductBaseline,
   uniqueFulfillmentTypes,
   uniqueReadySiteCodes
 } from './readyDomain'
@@ -17,18 +16,19 @@ import type {
   ReceiptOrderMeta
 } from './workbenchModels'
 import { TRANSPORT_LABELS } from './workbenchModels'
+import { normalizeProductKey } from './workbenchUtils'
 
 const { Text } = Typography
 
 export function renderReadyProductCell(
-  item: ReadyShipmentRow,
-  productBaselineByScope: Record<string, ProductBaselineSummary>
+  item: ReadyShipmentItem,
+  productBaselineByPsku: Record<string, ProductBaselineSummary>
 ) {
   return renderWarehouseProductCell({
     psku: item.psku,
     title: item.title,
     imageUrl: item.imageUrl,
-    baseline: resolveReadyProductBaseline(item, productBaselineByScope)
+    baseline: productBaselineByPsku[normalizeProductKey(item.psku)]
   })
 }
 
