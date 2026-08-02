@@ -1,4 +1,4 @@
-import { CalculatorOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons'
+import { CalculatorOutlined, EyeOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Empty, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMemo, useState } from 'react'
@@ -118,7 +118,14 @@ export function WarehouseDispatchPlanPanel({
                 event.stopPropagation()
                 workspace.openCostComparison(plan)
               }}>费用对比</Button>
-          ) : null}
+          ) : (
+            <Button type="link" size="small" icon={<PlusOutlined />}
+              loading={workspace.generatingPlanId === plan.id}
+              onClick={(event) => {
+                event.stopPropagation()
+                void workspace.generateLogisticsPlan(plan)
+              }}>生成物流计划</Button>
+          )}
         </Space>
       )
     }

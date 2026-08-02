@@ -2,6 +2,7 @@ import { App } from 'antd';
 import { submitShippingOrder } from './warehouseShippingOrderRequests';
 import type { ShippingOrder } from './warehouseShippingOrderTypes';
 import {
+  isExactlyNotSubmitted,
   shippingOrderQuoteIssueSummary
 } from './warehouseShippingOrderDomain';
 import type { WarehouseShippingOrderData } from './useWarehouseShippingOrderData';
@@ -11,44 +12,65 @@ export function useShippingOrderSubmit(data: WarehouseShippingOrderData) {
 
   const handleSubmit = async (order: ShippingOrder) => {
     const quoteIssue = shippingOrderQuoteIssueSummary(order);
-    if (order.shippingSubmitStatus === 'SUBMITTED') {
+    const mutableStatuses = [
+      order.shippingSubmitStatus,
+      ...(order.segments || []).map((segment) => segment.shippingSubmitStatus),
+      ...(order.lines || []).map((line) => line.shippingSubmitStatus)
+    ];
+    if (!mutableStatuses.every(isExactlyNotSubmitted)) {
       modal.warning({
-        title: '仓库单已提交',
-        content: '该仓库单已经整体提交，不能重复提交。',
+        title: '当前状态不可提交',
+        content: '仓库单、分区或商品只有明确处于未提交状态时才能提交。',
         okText: '知道了'
       });
       return;
     }
     if (quoteIssue.totalCount > 0) {
       const reasons = [
+        quoteIssue.unsupportedCount > 0
+          ? `${quoteIssue.unsupportedCount} 个商品当前货代不接`
+          : '',
+        quoteIssue.inquiryRequiredCount > 0
+          ? `${quoteIssue.inquiryRequiredCount} 个商品需询价确认`
+          : '',
+        quoteIssue.unknownEligibilityCount > 0
+          ? `${quoteIssue.unknownEligibilityCount} 个商品承运状态待确认`
+          : '',
         quoteIssue.pendingQuoteCount > 0
-          ? `${quoteIssue.pendingQuoteCount} 个商品缺单价或报价待确认`
+          ? `${quoteIssue.pendingQuoteCount} 个商品缺单价`
           : '',
         quoteIssue.missingMaterialCount > 0
           ? `${quoteIssue.missingMaterialCount} 个义特商品缺少材质`
           : ''
       ].filter(Boolean).join('；');
       modal.warning({
-        title: '报价缺失',
-        content: `整张仓库单的报价资料尚未完整：${reasons}。补齐后才能提交给仓库装箱。`,
+        title: '暂不能提交发货',
+        content: `整张仓库单仍有阻断项：${reasons}。处理完成后才能提交给仓库装箱。`,
         okText: '知道了'
       });
       return;
     }
-    data.setActionKey(`submit-shipping:${order.id}`);
+    const action = data.beginDetailAction(`submit-shipping:${order.id}`, order.id);
+    if (!action) return;
     try {
       const result = await submitShippingOrder(order.id);
+      if (!data.isCurrentDetailAction(action)) return;
+      if (!data.acceptCurrentInteractionResponse(action.request, result.shippingOrderId)) return;
       await data.loadPage();
-      if (data.detailTarget?.id === order.id) await data.refreshDetail(order.id);
+      if (!data.isCurrentDetailAction(action)) return;
+      await data.refreshDetail(order.id);
+      if (!data.isCurrentDetailAction(action)) return;
       modal.success({
         title: '已提交发货',
         content: `仓库单已整体提交，共 ${result.submittedLineCount} 行。`,
         okText: '知道了'
       });
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '提交发货失败');
+      if (data.isCurrentDetailAction(action)) {
+        message.error(error instanceof Error ? error.message : '提交发货失败');
+      }
     } finally {
-      data.setActionKey(undefined);
+      data.finishDetailAction(action);
     }
   };
   return { handleSubmit };

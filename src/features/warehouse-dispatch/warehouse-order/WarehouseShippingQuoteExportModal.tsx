@@ -29,6 +29,7 @@ export function WarehouseShippingQuoteExportModal({
         disabled: transfer.exportLoading
           || !transfer.exportSelection.forwarderCode
           || !transfer.exportSelection.routeCode
+          || transfer.unsupportedCount > 0
           || (transfer.exportMissingOnly && transfer.pendingCount <= 0),
         loading: data.actionKey === `logistics-quote-export:${transfer.exportTarget?.id}`
       }}
@@ -40,13 +41,15 @@ export function WarehouseShippingQuoteExportModal({
         {transfer.exportableOptions?.forwarders?.length ? (
           <div className="warehouse-shipping-quote-export">
             <Alert
-              type={selected ? 'success' : 'warning'}
+              type={transfer.unsupportedCount > 0 ? 'error' : selected ? 'success' : 'warning'}
               showIcon
               message={selected
-                ? transfer.exportMissingOnly
-                  ? `将导出未确认 ${transfer.pendingCount} 行：${quoteChannelLabel(transfer.selectedForwarder, transfer.selectedChannel!)}`
-                  : `将导出全部 ${transfer.totalCount} 行：${quoteChannelLabel(transfer.selectedForwarder, transfer.selectedChannel!)}（未确认 ${transfer.pendingCount}，已确认 ${transfer.confirmedCount}）`
-                : `请先选择货代和渠道，未确认 ${transfer.exportOptions?.pendingLineCount || 0} 行，已确认商品会一并导出`}
+                ? transfer.unsupportedCount > 0
+                  ? `当前货代有 ${transfer.unsupportedCount} 个商品不接，请先调整运输方案后再导出`
+                  : transfer.exportMissingOnly
+                    ? `将导出缺单价 ${transfer.pendingCount} 行：${quoteChannelLabel(transfer.selectedForwarder, transfer.selectedChannel!)}`
+                    : `将导出全部 ${transfer.totalCount} 行：${quoteChannelLabel(transfer.selectedForwarder, transfer.selectedChannel!)}（缺单价 ${transfer.pendingCount}，已有单价 ${transfer.confirmedCount}）`
+                : `请先选择货代和渠道，缺单价 ${transfer.exportOptions?.pendingLineCount || 0} 行，已有单价商品会一并导出`}
             />
             <div className="warehouse-shipping-quote-export-controls">
               <Form.Item label="选择货代" required>
@@ -74,15 +77,21 @@ export function WarehouseShippingQuoteExportModal({
               disabled={!transfer.selectedChannel}
               onChange={(event) => transfer.setExportMissingOnly(event.target.checked)}
             >
-              只导出未确认
+              只导出缺单价
             </Checkbox>
             {transfer.selectedChannel ? (
               <div className="warehouse-shipping-quote-export-detail">
                 <Tag color="blue">{quoteForwarderLabel(transfer.selectedForwarder)}</Tag>
                 <Tag color="processing">{transfer.selectedChannel.siteCode || '-'}</Tag>
                 <strong>{transfer.exportMissingOnly
-                  ? `未确认 ${transfer.pendingCount} 行`
+                  ? `缺单价 ${transfer.pendingCount} 行`
                   : `全部 ${transfer.totalCount} 行`}</strong>
+                {transfer.inquiryRequiredCount > 0 ? (
+                  <Tag color="warning">需询价 {transfer.inquiryRequiredCount}</Tag>
+                ) : null}
+                {transfer.unsupportedCount > 0 ? (
+                  <Tag color="error">不接 {transfer.unsupportedCount}</Tag>
+                ) : null}
               </div>
             ) : null}
             {transfer.selectedForwarder?.templateName ? (
