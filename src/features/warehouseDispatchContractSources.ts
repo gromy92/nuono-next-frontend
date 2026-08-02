@@ -30,6 +30,7 @@ export const dispatchContractSources = {
   forwarderBreakdown: source('warehouse-dispatch/ShippingForwarderBreakdown.tsx'),
   costDomain: source('warehouse-dispatch/shippingCostDomain.ts'),
   packingPanel: source('warehouse-dispatch/WarehousePackingListPanel.tsx'),
+  packingColumns: source('warehouse-dispatch/WarehousePackingListColumns.tsx'),
   packingExportModal: source('warehouse-dispatch/WarehousePackingExportModal.tsx'),
   packingExportDomain: source('warehouse-dispatch/packingExportDomain.ts'),
   packingSubmissionDrawer: source('warehouse-dispatch/WarehousePackingSubmissionDrawer.tsx'),

@@ -2,9 +2,10 @@ import {
   DownloadOutlined,
   SaveOutlined,
   SendOutlined,
+  SwapOutlined,
   UploadOutlined
 } from '@ant-design/icons';
-import { Button, Segmented, Typography, Upload } from 'antd';
+import { Button, Segmented, Select, Typography, Upload } from 'antd';
 import {
   ActiveSegmentQuoteControls,
   DetailLineFilterLabel,
@@ -34,7 +35,8 @@ export function WarehouseShippingOrderDetailToolbar({
   const scopeActionDisabled = quote.detailSegments.length
     ? !quote.activeSegmentIds.length
     : !quote.detailLines.length;
-  const submitDisabled = quote.warehouseOrderSubmitted || !quote.detailLines.length;
+  const mutationDisabled = scopeActionDisabled || !quote.detailMutationAllowed;
+  const submitDisabled = !quote.warehouseOrderMutable || !quote.detailLines.length;
   return (
     <div className="warehouse-shipping-order-detail-toolbar">
       <div className="warehouse-shipping-order-detail-route-row">
@@ -42,6 +44,7 @@ export function WarehouseShippingOrderDetailToolbar({
           segments={quote.sortedSegments}
           activeSegment={quote.activeSegment}
           onSelect={quote.selectSegment}
+          disabled={Boolean(data.actionKey)}
         />
         <div className="warehouse-shipping-order-detail-actions">
           <Button
@@ -63,7 +66,7 @@ export function WarehouseShippingOrderDetailToolbar({
             <Button
               size="small"
               icon={<UploadOutlined />}
-              disabled={scopeActionDisabled}
+              disabled={mutationDisabled}
               loading={data.actionKey === `logistics-quote-import:${order?.id}`}
             >
               回传报价
@@ -72,11 +75,19 @@ export function WarehouseShippingOrderDetailToolbar({
           <Button
             size="small"
             icon={<SaveOutlined />}
-            disabled={scopeActionDisabled || quote.activeSegmentSubmitted}
+            disabled={mutationDisabled}
             loading={data.actionKey === `bulk-line-quote:${order?.id}`}
             onClick={quote.openBulkModal}
           >
             批量添加报价{quote.selectedQuoteLineIds.length ? ` ${quote.selectedQuoteLineIds.length}` : ''}
+          </Button>
+          <Button
+            size="small"
+            icon={<SwapOutlined />}
+            disabled={mutationDisabled}
+            onClick={quote.openReassignModal}
+          >
+            调整运输方案
           </Button>
           <Button
             size="small"
@@ -100,6 +111,15 @@ export function WarehouseShippingOrderDetailToolbar({
           />
         </div>
         <div className="warehouse-shipping-order-detail-subbar">
+          <div className="warehouse-shipping-order-unit-price-filter">
+            <Text type="secondary">报价单价</Text>
+            <Select
+              size="small"
+              value={quote.detailUnitPriceFilter}
+              options={quote.unitPriceFilterOptions}
+              onChange={(value) => quote.setDetailUnitPriceFilter(value as typeof quote.detailUnitPriceFilter)}
+            />
+          </div>
           <Segmented
             size="small"
             value={quote.detailLineFilter}
@@ -110,12 +130,20 @@ export function WarehouseShippingOrderDetailToolbar({
                 value: 'MISSING_MATERIAL'
               }] : []),
               {
-                label: <DetailLineFilterLabel label="待确认" count={quote.pendingConfirmationCount} />,
-                value: 'PENDING_CONFIRMATION'
-              },
-              {
                 label: <DetailLineFilterLabel label="缺单价" count={quote.missingPriceCount} />,
                 value: 'MISSING_PRICE'
+              },
+              {
+                label: <DetailLineFilterLabel label="需询价" count={quote.inquiryRequiredCount} />,
+                value: 'INQUIRY_REQUIRED'
+              },
+              {
+                label: <DetailLineFilterLabel label="不接" count={quote.unsupportedCount} />,
+                value: 'UNSUPPORTED'
+              },
+              {
+                label: <DetailLineFilterLabel label="承运待确认" count={quote.unknownEligibilityCount} />,
+                value: 'ELIGIBILITY_UNKNOWN'
               }
             ]}
             onChange={(value) => quote.setDetailLineFilter(value as DetailLineFilter)}

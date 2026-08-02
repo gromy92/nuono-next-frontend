@@ -32,12 +32,21 @@ export function WarehouseOrderIssueTags({ order }: { order: ShippingOrder }) {
   }
   return (
     <div className="warehouse-shipping-order-issue-tags">
-      <Tag color="red" title={[
-        quoteIssue.pendingQuoteCount > 0 ? `缺单价或待确认 ${formatQuantity(quoteIssue.pendingQuoteCount)}` : '',
-        quoteIssue.missingMaterialCount > 0 ? `缺义特材质 ${formatQuantity(quoteIssue.missingMaterialCount)}` : ''
-      ].filter(Boolean).join('；')}>
-        报价缺失 {formatQuantity(quoteIssue.totalCount)}
-      </Tag>
+      {quoteIssue.pendingQuoteCount > 0
+        ? <Tag color="red">缺单价 {formatQuantity(quoteIssue.pendingQuoteCount)}</Tag>
+        : null}
+      {quoteIssue.missingMaterialCount > 0
+        ? <Tag color="red">缺义特材质 {formatQuantity(quoteIssue.missingMaterialCount)}</Tag>
+        : null}
+      {quoteIssue.inquiryRequiredCount > 0
+        ? <Tag color="orange">需询价 {formatQuantity(quoteIssue.inquiryRequiredCount)}</Tag>
+        : null}
+      {quoteIssue.unsupportedCount > 0
+        ? <Tag color="volcano">不接 {formatQuantity(quoteIssue.unsupportedCount)}</Tag>
+        : null}
+      {quoteIssue.unknownEligibilityCount > 0
+        ? <Tag color="gold">承运状态待确认 {formatQuantity(quoteIssue.unknownEligibilityCount)}</Tag>
+        : null}
     </div>
   );
 }
@@ -45,29 +54,40 @@ export function WarehouseOrderIssueTags({ order }: { order: ShippingOrder }) {
 export function DetailSegmentChips({
   segments,
   activeSegment,
-  onSelect
+  onSelect,
+  disabled = false
 }: {
   segments: ShippingOrderSegment[];
   activeSegment?: ShippingOrderSegment;
   onSelect: (segmentId: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="warehouse-shipping-order-chip-group warehouse-shipping-order-chip-group--route">
       <span className="warehouse-shipping-order-chip-label">站点/运输方式</span>
       <div className="warehouse-shipping-order-chip-row">
-        {segments.length ? segments.map((segment) => (
+        {segments.length ? segments.map((segment, index) => {
+          const sameScope = segments.filter((item) => (
+            String(item.siteCode || '').toUpperCase() === String(segment.siteCode || '').toUpperCase()
+            && String(item.transportMode || '').toUpperCase() === String(segment.transportMode || '').toUpperCase()
+          ));
+          const scopeIndex = sameScope.findIndex((item) => item.id === segment.id);
+          const label = `${shippingOrderSegmentTabLabel(segment)}${sameScope.length > 1 ? ` · ${scopeIndex + 1}` : ''}`;
+          return (
           <button
-            key={segment.id}
+            key={segment.id || index}
             type="button"
             className={[
               'warehouse-shipping-order-chip',
               activeSegment?.id === segment.id ? 'warehouse-shipping-order-chip--active' : ''
             ].filter(Boolean).join(' ')}
+            disabled={disabled}
             onClick={() => onSelect(String(segment.id))}
           >
-            {shippingOrderSegmentTabLabel(segment)}
+            {label}
           </button>
-        )) : (
+          );
+        }) : (
           <span className="warehouse-shipping-order-chip warehouse-shipping-order-chip--muted">暂无子仓库单</span>
         )}
       </div>

@@ -18,6 +18,7 @@ import {
   inferDominantTransport,
   mergeLogisticsQuoteStatus,
   mergeLogisticsShippingSubmitStatus,
+  normalizeOwnerUserId,
   normalizeDispatchStatus,
   normalizeFulfillmentType,
   normalizeLogisticsQuoteStatus,
@@ -41,6 +42,7 @@ export function mapReceiptOrder(order: ApiPurchaseReceiptOrder): PurchaseReceipt
 }
 
 export function mapReadyItem(item: ApiReadyItem): ReadyShipmentRow {
+  const ownerUserId = readyItemOwnerUserId(item)
   const siteCode = normalizeSiteCode(item.targetSiteCode || item.siteCode)
   const targetTransportMode = normalizeTransportMode(item.targetTransportMode)
   const fulfillmentType = normalizeFulfillmentType(item.fulfillmentType)
@@ -53,7 +55,13 @@ export function mapReadyItem(item: ApiReadyItem): ReadyShipmentRow {
   const productKey = item.partnerSku
     ? `psku:${item.partnerSku}`
     : `legacy:${item.productVariantId || item.skuParent || ''}`
-  const rowId = ['ready', sourceStoreKey || 'store', productKey, siteCode, fulfillmentType, specStatus].join('__')
+  const sourceIdentityKey = (item.sources || []).map((source) =>
+    source.fulfillmentBalanceId || source.purchaseOrderItemSiteId || source.purchaseOrderItemId
+  ).filter(Boolean).sort().join('+')
+  const ownerKey = ownerUserId
+    ? `owner:${ownerUserId}`
+    : `owner:unknown:${sourceIdentityKey || item.productVariantId || productKey}`
+  const rowId = ['ready', ownerKey, sourceStoreKey || 'store', productKey, siteCode, fulfillmentType, specStatus].join('__')
   const sourceItems = (item.sources || []).map((source) => {
     const availableQty = Number(source.availableQuantity || 0)
     const originalSiteCode = normalizeSiteCode(source.siteCode || item.siteCode)
@@ -66,6 +74,7 @@ export function mapReadyItem(item: ApiReadyItem): ReadyShipmentRow {
     )
     return {
       id: String(source.fulfillmentBalanceId || source.purchaseOrderItemSiteId || source.purchaseOrderItemId || rowId),
+      ownerUserId,
       orderId: String(source.purchaseOrderId || ''),
       orderNo: source.purchaseOrderNo || '',
       orderTitle: source.purchaseOrderTitle || source.purchaseOrderNo || '',
@@ -102,6 +111,7 @@ export function mapReadyItem(item: ApiReadyItem): ReadyShipmentRow {
     : [item.logisticsShippingSubmitStatus]
   return {
     id: rowId,
+    ownerUserId,
     orderId: '',
     orderNo: '',
     storeName: '',
@@ -128,6 +138,7 @@ export function mapReadyItem(item: ApiReadyItem): ReadyShipmentRow {
 export function mapDispatchPlan(plan: ApiDispatchPlan): DispatchPlan {
   return {
     id: String(plan.id || ''),
+    ownerUserId: normalizeOwnerUserId(plan.ownerUserId),
     planNo: plan.planNo || '',
     status: normalizeDispatchStatus(plan.status),
     createdAt: plan.createdAt || plan.updatedAt || '',
@@ -136,6 +147,24 @@ export function mapDispatchPlan(plan: ApiDispatchPlan): DispatchPlan {
     lines: (plan.lines || []).map(mapDispatchPlanLine),
     currentShippingBatch: plan.currentShippingBatch ? mapShippingBatch(plan.currentShippingBatch) : undefined
   }
+}
+
+function readyItemOwnerUserId(item: ApiReadyItem) {
+  const itemOwnerUserId = normalizeOwnerUserId(item.ownerUserId)
+  const sourceOwnerUserIds = (item.sources || []).map((source) => normalizeOwnerUserId(source.ownerUserId))
+  const knownSourceOwnerUserIds = Array.from(new Set(
+    sourceOwnerUserIds.filter((ownerUserId): ownerUserId is number => ownerUserId != null)
+  ))
+  if (itemOwnerUserId) {
+    return knownSourceOwnerUserIds.some((ownerUserId) => ownerUserId !== itemOwnerUserId)
+      ? undefined
+      : itemOwnerUserId
+  }
+  return sourceOwnerUserIds.length > 0 &&
+    knownSourceOwnerUserIds.length === 1 &&
+    sourceOwnerUserIds.every((ownerUserId) => ownerUserId === knownSourceOwnerUserIds[0])
+    ? knownSourceOwnerUserIds[0]
+    : undefined
 }
 
 function mapReceiptItem(item: ApiPurchaseReceiptItem): PurchaseReceiptItem {
