@@ -1,6 +1,7 @@
-import { Space, Table, Tag, Typography } from 'antd'
+import { Button, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { OperationQuoteFeeItemRow } from '../operationQuoteModels'
+import type { LogisticsQuoteOperationPriceItemDto } from '../types'
 import { operationPriceStatusColor, transportModeColor } from '../utils'
 
 const { Paragraph, Text } = Typography
@@ -8,13 +9,17 @@ const { Paragraph, Text } = Typography
 type OperationQuoteFeeItemTableProps = {
   rows: OperationQuoteFeeItemRow[]
   loading: boolean
+  canAdjust: boolean
   emptyText: string
+  onAdjust: (item: LogisticsQuoteOperationPriceItemDto) => void
 }
 
 export function OperationQuoteFeeItemTable({
   rows,
   loading,
-  emptyText
+  canAdjust,
+  emptyText,
+  onAdjust
 }: OperationQuoteFeeItemTableProps) {
   const columns: ColumnsType<OperationQuoteFeeItemRow> = [
     {
@@ -55,8 +60,12 @@ export function OperationQuoteFeeItemTable({
       width: 170,
       render: (_, record) => (
         <Space direction="vertical" size={4}>
-          <Text strong>{record.currentPriceText}</Text>
-          <Text type="secondary">正式报价</Text>
+          <Text strong>{record.effectivePriceText}</Text>
+          {record.hasAdjustment ? (
+            <Text type="secondary">标准：{record.standardPriceText}</Text>
+          ) : (
+            <Text type="secondary">未调整</Text>
+          )}
         </Space>
       )
     },
@@ -89,6 +98,17 @@ export function OperationQuoteFeeItemTable({
           {value}
         </Paragraph>
       )
+    },
+    {
+      title: '操作',
+      key: 'action',
+      fixed: 'right',
+      width: 120,
+      render: (_, record) => (
+        <Button size="small" disabled={!canAdjust} onClick={() => onAdjust(record.sourceItem)}>
+          调整数值
+        </Button>
+      )
     }
   ]
 
@@ -100,7 +120,7 @@ export function OperationQuoteFeeItemTable({
       dataSource={rows}
       columns={columns}
       pagination={{ pageSize: 10, showSizeChanger: false }}
-      scroll={{ x: 1550 }}
+      scroll={{ x: 1700 }}
       locale={{ emptyText }}
     />
   )

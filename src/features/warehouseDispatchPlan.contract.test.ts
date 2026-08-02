@@ -12,8 +12,7 @@ const {
   shippingWorkspace,
   costDrawer,
   costComparison,
-  costDomain,
-  packingSubmissionDrawer
+  costDomain
 } = dispatchContractSources
 
 assert.match(
@@ -90,7 +89,7 @@ assert.match(
 
 assert.match(
   shippingWorkspace,
-  /issueShippingBatch\(batch\.id, optionId\)[\s\S]*已下发发货单和装箱单/,
+  /issueShippingBatch\(shippingBatch\.id, selectedOptionId\)[\s\S]*已下发发货单和装箱单/,
   'final logistics submission must use one atomic issue command'
 )
 
@@ -112,16 +111,10 @@ assert.match(
   'dispatch request creation must remain APP-only'
 )
 
-assert.match(
+assert.doesNotMatch(
   `${planPanel}\n${planDetail}`,
-  /生成物流计划/,
-  'web must generate a logistics plan from an APP dispatch request'
-)
-
-assert.match(
-  `${packingListPanel}\n${packingSubmissionDrawer}\n${dispatchApi}`,
-  /shipPackingList[\s\S]*确认已交货代/,
-  'web must close the handoff after APP packing submission'
+  /生成物流计划|选择物流渠道|同步发货单/,
+  'web must not expose retired manual generation or sync actions'
 )
 
 assert.match(

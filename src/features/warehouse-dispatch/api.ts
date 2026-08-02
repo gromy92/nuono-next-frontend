@@ -40,15 +40,6 @@ export function loadDispatchPlans() {
     .then((plans) => plans.map(mapDispatchPlan))
 }
 
-export function createShippingBatchFromDispatchPlan(dispatchPlanId: string) {
-  return sendJson<ApiShippingBatch>(
-    `/api/warehouse/dispatch/dispatch-plans/${encodeURIComponent(dispatchPlanId)}/shipping-batch`,
-    'POST',
-    {},
-    '生成物流计划失败'
-  ).then(mapShippingBatch)
-}
-
 export function updateReadyItemDispatchTarget(
   fulfillmentBalanceId: number,
   payload: UpdateDispatchTargetPayload
@@ -137,15 +128,6 @@ export function loadPackingLists(outboundOrderId: string) {
     `/api/warehouse/dispatch/outbound-orders/${encodeURIComponent(outboundOrderId)}/packing-lists`,
     '读取装箱单失败'
   ).then((packingLists) => packingLists.map(mapPackingList))
-}
-
-export function shipPackingList(packingListId: string) {
-  return sendJson<ApiPackingList>(
-    `/api/warehouse/dispatch/packing-lists/${encodeURIComponent(packingListId)}/ship`,
-    'POST',
-    {},
-    '完成发货失败'
-  ).then(mapPackingList)
 }
 
 function keywordSuffix(keyword?: string) {

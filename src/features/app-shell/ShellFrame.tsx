@@ -23,7 +23,6 @@ const { Text } = Typography;
 
 type ShellFrameProps = {
   activeMenuKey: AppMenuKey;
-  allowedMenuKeySet: ReadonlySet<AppMenuKey>;
   activeMenuPathLabel: string | null;
   activeSidebarOpenKeys: string[];
   activeSidebarRootKey?: string;
@@ -61,7 +60,6 @@ type ShellFrameProps = {
 
 export function ShellFrame({
   activeMenuKey,
-  allowedMenuKeySet,
   activeMenuPathLabel,
   activeSidebarOpenKeys,
   activeSidebarRootKey,
@@ -173,7 +171,6 @@ export function ShellFrame({
                         <WorkspaceErrorBoundary boundaryName="main-content">
                           <ShellWorkspaceContent
                             activeMenuKey={activeMenuKey}
-                            allowedMenuKeySet={allowedMenuKeySet}
                             noMenuPermission={noMenuPermission}
                             shellSession={shellSession}
                             openedWorkspaceTabKeys={openedWorkspaceTabKeys}

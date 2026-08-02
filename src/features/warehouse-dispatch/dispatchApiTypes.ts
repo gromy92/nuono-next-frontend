@@ -25,7 +25,6 @@ export type ApiPurchaseReceiptItem = Omit<
 }
 
 export type ApiReadyItem = {
-  ownerUserId?: number | string
   productVariantId?: string
   partnerSku?: string
   skuParent?: string
@@ -44,7 +43,6 @@ export type ApiReadyItem = {
 }
 
 export type ApiReadySource = {
-  ownerUserId?: number | string
   fulfillmentBalanceId?: number
   sourceStoreCode?: string
   sourceStoreName?: string
@@ -65,7 +63,6 @@ export type ApiReadySource = {
 
 export type ApiDispatchPlan = {
   id?: string
-  ownerUserId?: number | string
   planNo?: string
   status?: string
   createdAt?: string

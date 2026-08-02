@@ -3,33 +3,41 @@ import { formatOperationPrice, operationPriceTargetTypeLabel, transportModeLabel
 
 export type OperationQuotePriceTierRow = {
   key: string
+  sourceItem: LogisticsQuoteOperationPriceItemDto
   forwarderName: string
   quoteVersionNo: string
   transportMode: string
   transportModeText: string
   cargoCategoryName: string
   applicableDescription: string
-  currentPriceText: string
+  standardPriceText: string
+  effectivePriceText: string
   transitTimeText: string
   singleBoxPolicy: string
   minShipmentRule: string
   remark: string
+  hasAdjustment: boolean
+  adjustmentReason?: string
   priceStatus?: string
 }
 
 export type OperationQuoteFeeItemRow = {
   key: string
+  sourceItem: LogisticsQuoteOperationPriceItemDto
   forwarderName: string
   quoteVersionNo: string
   transportMode: string
   transportModeText: string
   feeType: string
   feeName: string
-  currentPriceText: string
+  standardPriceText: string
+  effectivePriceText: string
   billingUnitText: string
   minChargeRule: string
   conditionText: string
   remark: string
+  hasAdjustment: boolean
+  adjustmentReason?: string
   priceStatus?: string
 }
 
@@ -118,17 +126,21 @@ function resolveFeeType(item: LogisticsQuoteOperationPriceItemDto): string {
 function buildPriceTierRow(item: LogisticsQuoteOperationPriceItemDto): OperationQuotePriceTierRow {
   return {
     key: `${item.targetType}-${item.targetId}-${item.numericField}`,
+    sourceItem: item,
     forwarderName: item.forwarderName || '-',
     quoteVersionNo: item.quoteVersionNo || '-',
     transportMode: item.transportMode || '',
     transportModeText: transportModeLabel(item.transportMode),
     cargoCategoryName: item.cargoCategoryName || item.cargoCategoryCode || '-',
     applicableDescription: resolveApplicableDescription(item),
-    currentPriceText: formatOperationPrice(item.effectiveValue, item.currency, item.billingUnit),
+    standardPriceText: formatOperationPrice(item.standardValue, item.currency, item.billingUnit),
+    effectivePriceText: formatOperationPrice(item.effectiveValue, item.currency, item.billingUnit),
     transitTimeText: resolveTransitTimeText(item),
     singleBoxPolicy: resolveSingleBoxPolicy(item),
     minShipmentRule: formatMinRule(item),
     remark: item.remark || '-',
+    hasAdjustment: Boolean(item.hasAdjustment),
+    adjustmentReason: item.adjustmentReason,
     priceStatus: item.priceStatus
   }
 }
@@ -136,17 +148,21 @@ function buildPriceTierRow(item: LogisticsQuoteOperationPriceItemDto): Operation
 function buildFeeItemRow(item: LogisticsQuoteOperationPriceItemDto): OperationQuoteFeeItemRow {
   return {
     key: `${item.targetType}-${item.targetId}-${item.numericField}`,
+    sourceItem: item,
     forwarderName: item.forwarderName || '-',
     quoteVersionNo: item.quoteVersionNo || '-',
     transportMode: item.transportMode || '',
     transportModeText: transportModeLabel(item.transportMode),
     feeType: resolveFeeType(item),
     feeName: item.cargoCategoryName || item.numericField || '-',
-    currentPriceText: formatOperationPrice(item.effectiveValue, item.currency, item.billingUnit),
+    standardPriceText: formatOperationPrice(item.standardValue, item.currency, item.billingUnit),
+    effectivePriceText: formatOperationPrice(item.effectiveValue, item.currency, item.billingUnit),
     billingUnitText: item.billingUnit || '-',
     minChargeRule: formatMinRule(item),
     conditionText: compactText([item.categoryLevel2, item.deliveryCity, item.targetPlatform]) || '按费用项说明',
     remark: item.remark || '-',
+    hasAdjustment: Boolean(item.hasAdjustment),
+    adjustmentReason: item.adjustmentReason,
     priceStatus: item.priceStatus
   }
 }

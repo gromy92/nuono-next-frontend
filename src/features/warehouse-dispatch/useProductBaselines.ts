@@ -1,42 +1,35 @@
 import { useEffect, useState } from 'react'
 import { fetchProductListDataset } from '../product-domain/productListApi'
-import { buildProductBaselineMap, toProductBaselineDataset } from './readyDomain'
-import type { ProductBaselineDataset, ProductBaselineScope, ProductBaselineSummary } from './workbenchModels'
+import { buildProductBaselineMap } from './readyDomain'
+import type { ProductBaselineSummary } from './workbenchModels'
 
-export function useProductBaselines(scopes: ProductBaselineScope[]) {
-  const [itemsByScope, setItemsByScope] = useState<Record<string, ProductBaselineSummary>>({})
+export function useProductBaselines(ownerUserId: number | undefined, storeCodes: string[]) {
+  const [itemsByPsku, setItemsByPsku] = useState<Record<string, ProductBaselineSummary>>({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>()
 
   useEffect(() => {
     let cancelled = false
-    if (!scopes.length) {
-      setItemsByScope({})
+    if (!ownerUserId || !storeCodes.length) {
+      setItemsByPsku({})
       setLoading(false)
       setError(undefined)
       return
     }
     setLoading(true)
     setError(undefined)
-    Promise.allSettled(scopes.map(async (scope): Promise<ProductBaselineDataset> => {
-      const payload = await fetchProductListDataset(scope)
-      return toProductBaselineDataset(scope, payload)
-    }))
+    Promise.allSettled(storeCodes.map((storeCode) => fetchProductListDataset({ ownerUserId, storeCode })))
       .then((results) => {
         if (cancelled) return
-        const datasets = results.flatMap((result) => result.status === 'fulfilled' ? [result.value] : [])
-        setItemsByScope(buildProductBaselineMap(datasets))
+        const items = results.flatMap((result) => result.status === 'fulfilled' ? result.value.items || [] : [])
+        setItemsByPsku(buildProductBaselineMap(items))
         const failedCount = results.filter((result) => result.status === 'rejected').length
-        setError(failedCount === 0
-          ? undefined
-          : datasets.some((dataset) => dataset.items.length > 0)
-            ? '部分商品信息未补全，库存数量不受影响'
-            : '商品补充信息暂不可用，库存数量不受影响')
+        setError(items.length > 0 || failedCount === 0 ? undefined : '商品基线读取失败')
       })
       .catch((reason) => {
         if (cancelled) return
-        setItemsByScope({})
-        setError(reason instanceof Error ? reason.message : '商品补充信息暂不可用，库存数量不受影响')
+        setItemsByPsku({})
+        setError(reason instanceof Error ? reason.message : '商品基线读取失败')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -44,7 +37,7 @@ export function useProductBaselines(scopes: ProductBaselineScope[]) {
     return () => {
       cancelled = true
     }
-  }, [scopes])
+  }, [ownerUserId, storeCodes])
 
-  return { itemsByScope, loading, error }
+  return { itemsByPsku, loading, error }
 }

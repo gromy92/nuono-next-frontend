@@ -1,4 +1,4 @@
-import { CheckCircleOutlined, PlusOutlined } from '@ant-design/icons'
+import { CheckCircleOutlined } from '@ant-design/icons'
 import { Button, Empty, Modal, Select, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { sumPlanQuantity } from './dispatchPlanDomain'
@@ -75,13 +75,6 @@ export function WarehouseDispatchPlanDetail({
             {plan.currentShippingBatch && workspace.batchLoadingId === plan.currentShippingBatch.id
               ? <Tag color="processing">物流方案加载中</Tag>
               : null}
-            {!plan.currentShippingBatch ? (
-              <Button type="primary" icon={<PlusOutlined />}
-                loading={workspace.generatingPlanId === plan.id}
-                onClick={() => { void workspace.generateLogisticsPlan(plan) }}>
-                生成物流计划
-              </Button>
-            ) : null}
           </div>
           {workspace.shippingBatch && workspace.shippingBatch.status !== 'OUTBOUND_CREATED'
             ? <ShippingSelection workspace={workspace} />

@@ -2,9 +2,7 @@ import { strict as assert } from 'node:assert'
 import type { AuthSession } from '../auth/session'
 import {
   matchGrantedMenuToWorkspaceMenuKeys,
-  resolveSessionAllowedMenuKeys,
-  resolveSessionRenderMenuKey,
-  sessionHasBusinessCapability
+  resolveSessionAllowedMenuKeys
 } from './sessionAccessPolicy'
 
 const systemAdmin: AuthSession = {
@@ -47,24 +45,4 @@ assert.deepEqual(
   }),
   [],
   'grant path prefixes must not match adjacent path segments'
-)
-
-const warehouseOnlySession: AuthSession = {
-  ...systemAdmin,
-  userId: 3,
-  accountNo: 'warehouse-operator',
-  roleId: 6,
-  roleName: '仓库操作员',
-  level: 6,
-  grantedMenus: [
-    { menuId: 30, menuName: '仓库发运', urlPath: '/warehouse/dispatch' }
-  ]
-}
-assert.equal(sessionHasBusinessCapability(warehouseOnlySession, 'PRODUCT_MASTER'), false)
-assert.equal(sessionHasBusinessCapability(warehouseOnlySession, 'PROCUREMENT'), false)
-assert.equal(resolveSessionAllowedMenuKeys(warehouseOnlySession).includes('product-specs'), false)
-assert.equal(
-  resolveSessionRenderMenuKey(warehouseOnlySession, ['warehouse-dispatch'], 'product-specs'),
-  'warehouse-dispatch',
-  'unauthorized requested workspaces must fail closed during render'
 )

@@ -90,7 +90,6 @@ export type ShippingBatchSource = {
 
 export type ShippingBatch = {
   id: string
-  ownerUserId?: number
   dispatchPlanId?: string
   batchNo: string
   status: string
@@ -162,7 +161,6 @@ export type OutboundOrder = {
   id: string
   batchId: string
   optionId?: string
-  ownerUserId?: number
   outboundNo: string
   status: string
   originType?: WarehouseFulfillmentType
@@ -178,7 +176,6 @@ export type OutboundOrder = {
 export type PackingList = {
   id: string
   outboundOrderId: string
-  ownerUserId?: number
   packingNo: string
   status: string
   boxCount: number

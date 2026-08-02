@@ -1,11 +1,8 @@
-import type { ProductListDatasetPayload } from '../product-domain/productListTypes'
+import type { ProductListRowPayload } from '../product-domain/productListTypes'
 import { normalizeNoonImageUrl } from '../product-baseline'
-import type { ReadyShipmentItem, WarehouseFulfillmentType, WarehouseTransportMode } from './types'
-import { normalizeOwnerUserId } from './apiNormalizers'
+import type { DispatchPlan, ReadyShipmentItem, WarehouseFulfillmentType, WarehouseTransportMode } from './types'
 import type {
   DispatchTargetTransportMode,
-  ProductBaselineDataset,
-  ProductBaselineScope,
   ProductBaselineSummary,
   ReadyFilterKey,
   ReadyShipmentRow,
@@ -14,71 +11,31 @@ import type {
 } from './workbenchModels'
 import { hasCjkText, normalizeProductKey } from './workbenchUtils'
 
-export function buildProductBaselineMap(datasets: ProductBaselineDataset[]) {
+export function buildProductBaselineMap(items: ProductListRowPayload[]) {
   const result: Record<string, ProductBaselineSummary> = {}
-  datasets.forEach((dataset) => {
-    dataset.items.forEach((item) => {
-      const summary: ProductBaselineSummary = {
-        ownerUserId: dataset.ownerUserId,
-        storeCode: dataset.storeCode,
-        psku: item.partnerSku || item.skuParent,
-        skuParent: item.skuParent,
-        title: item.title,
-        imageUrl: normalizeNoonImageUrl(item.imageUrl || item.galleryImages?.[0]),
-        productFulltype: item.productFulltype,
-        detailBaselineStatus: item.detailBaselineStatus
+  items.forEach((item) => {
+    const summary: ProductBaselineSummary = {
+      psku: item.partnerSku || item.skuParent,
+      skuParent: item.skuParent,
+      title: item.title,
+      imageUrl: normalizeNoonImageUrl(item.imageUrl || item.galleryImages?.[0]),
+      productFulltype: item.productFulltype,
+      detailBaselineStatus: item.detailBaselineStatus
+    }
+    ;[item.partnerSku, item.skuParent].forEach((key) => {
+      const normalizedKey = normalizeProductKey(key)
+      if (normalizedKey && !result[normalizedKey]) {
+        result[normalizedKey] = summary
       }
-      ;[item.partnerSku, item.skuParent].forEach((productKey) => {
-        const key = productBaselineMapKey(dataset, productKey)
-        if (key && !result[key]) result[key] = summary
-      })
     })
   })
   return result
 }
 
-export function productBaselineMapKey(scope: ProductBaselineScope, productKey?: string) {
-  const ownerUserId = normalizeOwnerUserId(scope.ownerUserId)
-  const storeCode = normalizeProductKey(scope.storeCode)
-  const normalizedProductKey = normalizeProductKey(productKey)
-  return ownerUserId && storeCode && normalizedProductKey
-    ? `${ownerUserId}::${storeCode}::${normalizedProductKey}`
-    : ''
-}
-
-export function resolveReadyProductBaseline(
-  item: ReadyShipmentRow,
-  baselineByScope: Record<string, ProductBaselineSummary>
-) {
-  const scope = resolveReadyProductSpecsScope(item)
-  return scope ? baselineByScope[productBaselineMapKey(scope, item.psku)] : undefined
-}
-
-export function toProductBaselineDataset(
-  requestScope: ProductBaselineScope,
-  payload: ProductListDatasetPayload
-): ProductBaselineDataset {
-  const responseOwnerUserId = normalizeOwnerUserId(payload.ownerUserId)
-  const responseStoreCode = String(payload.storeCode || '').trim()
-  if (
-    responseOwnerUserId !== requestScope.ownerUserId ||
-    normalizeProductKey(responseStoreCode) !== normalizeProductKey(requestScope.storeCode)
-  ) {
-    throw new Error('商品基线归属校验失败')
-  }
-  return {
-    ownerUserId: responseOwnerUserId,
-    storeCode: responseStoreCode,
-    items: payload.items || []
-  }
-}
-
 export function mergeReadyShipmentRowsByBusinessScope(items: ReadyShipmentRow[]) {
   const rowMap = new Map<string, ReadyShipmentRow>()
-  items.forEach((item, index) => {
-    const key = normalizeOwnerUserId(item.ownerUserId)
-      ? readyShipmentBusinessScopeKey(item)
-      : `OWNER_UNKNOWN_INPUT:${index}:${normalizeProductKey(item.id)}`
+  items.forEach((item) => {
+    const key = readyShipmentBusinessScopeKey(item)
     const sourceItems = item.items.length ? item.items : [item]
     const current = rowMap.get(key)
     if (!current) {
@@ -116,8 +73,7 @@ export function buildReadySourceRows(items: ReadyShipmentItem[], orderMetaById: 
     const targetSiteCode = item.targetSiteCode || item.siteCode
     const targetTransportMode = item.targetTransportMode || item.transportMode
     return {
-      key: [item.ownerUserId ? `owner:${item.ownerUserId}` : 'owner:unknown',
-        item.fulfillmentBalanceId ? `balance:${item.fulfillmentBalanceId}` : `item:${item.id}`,
+      key: [item.fulfillmentBalanceId ? `balance:${item.fulfillmentBalanceId}` : `item:${item.id}`,
         item.orderId, item.orderNo, item.storeCode, targetSiteCode, targetTransportMode].join('__'),
       item,
       orderNo: item.orderNo,
@@ -159,36 +115,35 @@ export function filterReadyItems(items: ReadyShipmentRow[], filter: ReadyFilterK
   ))
 }
 
-export function buildProductBaselineScopes({
+export function buildProductBaselineStoreCodes({
   activeTab,
+  currentStoreCode,
+  selectedPlan,
   visibleReadyItems
 }: {
   activeTab: WarehouseDispatchTabKey
+  currentStoreCode?: string
+  selectedPlan?: DispatchPlan
   visibleReadyItems: ReadyShipmentRow[]
-}): ProductBaselineScope[] {
-  return activeTab === 'ship-ready'
-    ? uniqueBaselineScopes(visibleReadyItems.flatMap((item) => {
-      const scope = resolveReadyProductSpecsScope(item)
-      return scope ? [scope] : []
-    }))
-    : []
-}
-
-export function readyProductBaselineScopes(item: ReadyShipmentRow) {
-  const ownerUserId = normalizeOwnerUserId(item.ownerUserId)
-  if (!ownerUserId) return []
-  const sourceItems = item.items.length ? item.items : [item]
-  const scopes = sourceItems.map((source) => ({
-    ownerUserId: normalizeOwnerUserId(source.ownerUserId),
-    storeCode: String(source.storeCode || '').trim()
-  }))
-  if (scopes.some((scope) => scope.ownerUserId !== ownerUserId || !scope.storeCode)) return []
-  return uniqueBaselineScopes(scopes)
-}
-
-export function resolveReadyProductSpecsScope(item: ReadyShipmentRow) {
-  const scopes = readyProductBaselineScopes(item)
-  return scopes.length === 1 ? scopes[0] : undefined
+}) {
+  if (activeTab === 'receipt-list') {
+    return []
+  }
+  if (activeTab === 'ship-ready') {
+    if (!visibleReadyItems.length) {
+      return []
+    }
+    const storeCodes = visibleReadyItems.flatMap((item) => [
+      item.storeCode,
+      ...item.items.map((source) => source.storeCode)
+    ])
+    return uniqueStoreCodes(storeCodes.length ? storeCodes : [currentStoreCode])
+  }
+  if (!selectedPlan?.lines.length) {
+    return []
+  }
+  const storeCodes = selectedPlan.lines.flatMap((line) => line.sources.map((source) => source.storeCode))
+  return uniqueStoreCodes(storeCodes.length ? storeCodes : [currentStoreCode])
 }
 
 export function toDispatchTargetTransportMode(mode: WarehouseTransportMode): DispatchTargetTransportMode {
@@ -205,9 +160,7 @@ function readyShipmentBusinessScopeKey(item: ReadyShipmentRow) {
   const stores = Array.from(new Set(
     sourceItems.map((source) => normalizeProductKey(source.storeCode)).filter(Boolean)
   )).sort().join('+')
-  const ownerUserId = normalizeOwnerUserId(item.ownerUserId)
-  const ownerScope = ownerUserId ? `OWNER:${ownerUserId}` : `OWNER_UNKNOWN:${normalizeProductKey(item.id)}`
-  return [ownerScope, stores || 'STORE', normalizeProductKey(item.psku) || normalizeProductKey(item.id),
+  return [stores || 'STORE', normalizeProductKey(item.psku) || normalizeProductKey(item.id),
     item.siteCode, item.transportMode, item.fulfillmentType || 'WAREHOUSE_RECEIPT', item.specStatus].join('__')
 }
 
@@ -226,15 +179,8 @@ function mergeReadyShippingSubmitStatus(current?: string, next?: string) {
   return current === 'NOT_SUBMITTED' || next === 'NOT_SUBMITTED' ? 'NOT_SUBMITTED' : 'SUBMITTED'
 }
 
-function uniqueBaselineScopes(scopes: Array<{ ownerUserId?: number; storeCode?: string }>): ProductBaselineScope[] {
-  const result = new Map<string, ProductBaselineScope>()
-  scopes.forEach((scope) => {
-    const ownerUserId = normalizeOwnerUserId(scope.ownerUserId)
-    const storeCode = String(scope.storeCode || '').trim()
-    if (!ownerUserId || !storeCode) return
-    result.set(`${ownerUserId}::${normalizeProductKey(storeCode)}`, { ownerUserId, storeCode })
-  })
-  return [...result.values()].sort((left, right) =>
-    left.ownerUserId - right.ownerUserId || left.storeCode.localeCompare(right.storeCode)
-  )
+function uniqueStoreCodes(storeCodes: Array<string | undefined>) {
+  return storeCodes.map((storeCode) => String(storeCode || '').trim())
+    .filter(Boolean)
+    .filter((storeCode, index, values) => values.indexOf(storeCode) === index)
 }

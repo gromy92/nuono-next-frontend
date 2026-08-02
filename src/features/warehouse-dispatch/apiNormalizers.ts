@@ -15,11 +15,6 @@ export function optionalNumber(value?: number | string) {
   return Number.isFinite(parsed) ? parsed : undefined
 }
 
-export function normalizeOwnerUserId(value?: number | string) {
-  const ownerUserId = optionalNumber(value)
-  return Number.isInteger(ownerUserId) && Number(ownerUserId) > 0 ? ownerUserId : undefined
-}
-
 export function normalizeSiteCode(value?: string): WarehouseSiteCode {
   return value === 'AE' ? 'AE' : 'SA'
 }

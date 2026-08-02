@@ -2,7 +2,7 @@ import { Tabs } from 'antd'
 import { useMemo, useState } from 'react'
 import { PRODUCT_SPECS_PATH } from '../route-catalog/routePaths'
 import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery'
-import { buildProductBaselineScopes, resolveReadyProductSpecsScope } from './readyDomain'
+import { buildProductBaselineStoreCodes } from './readyDomain'
 import { useProductBaselines } from './useProductBaselines'
 import { useReadyWorkspace } from './useReadyWorkspace'
 import { useReceiptWorkspace } from './useReceiptWorkspace'
@@ -15,7 +15,6 @@ import { WarehousePackingListPanel } from './WarehousePackingListPanel'
 import { WarehouseReadyPanel } from './WarehouseReadyPanel'
 import { WarehouseReceiptPanel } from './WarehouseReceiptPanel'
 import { WarehouseShippingCostDrawer } from './WarehouseShippingCostDrawer'
-import { canOpenProductSpecsFromWarehouse } from './warehouseProductSpecAccess'
 import { WarehouseOrderPanel } from './warehouse-order/WarehouseOrderPanel'
 import type {
   ReadyShipmentRow,
@@ -34,21 +33,20 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     setPackingListRefreshKey((current) => current + 1)
     setActiveTab('packing-list')
   })
-  const productBaselineScopes = useMemo(() => buildProductBaselineScopes({
+  const baselineStoreCodes = useMemo(() => buildProductBaselineStoreCodes({
     activeTab,
+    currentStoreCode: session?.currentStore?.storeCode,
+    selectedPlan: shipping.selectedPlan,
     visibleReadyItems: ready.visibleItems
-  }), [activeTab, ready.visibleItems])
-  const productBaselines = useProductBaselines(productBaselineScopes)
-  const canOpenProductSpecs = canOpenProductSpecsFromWarehouse(session)
+  }), [activeTab, ready.visibleItems, session?.currentStore?.storeCode, shipping.selectedPlan])
+  const productBaselines = useProductBaselines(
+    session?.defaultOwnerUserId || session?.userId,
+    baselineStoreCodes
+  )
 
   function openProductSpecs(item: ReadyShipmentRow) {
-    if (!canOpenProductSpecs) return
     const params = new URLSearchParams()
     if (item.psku) params.set('keyword', item.psku)
-    const scope = resolveReadyProductSpecsScope(item)
-    if (!scope) return
-    params.set('ownerUserId', String(scope.ownerUserId))
-    params.set('storeCode', scope.storeCode)
     window.location.assign(withCurrentWorkspaceDevQuery(`${PRODUCT_SPECS_PATH}?${params.toString()}`))
   }
 
@@ -67,10 +65,8 @@ export function WarehouseDispatchWorkbenchPage({ session }: WarehouseDispatchWor
     {
       key: 'ship-ready',
       label: buildTabLabel('库存', ready.allItems.length),
-      children: <WarehouseReadyPanel workspace={ready} productBaselineByScope={productBaselines.itemsByScope}
-        productBaselineError={productBaselines.error}
+      children: <WarehouseReadyPanel workspace={ready} productBaselineByPsku={productBaselines.itemsByPsku}
         orderMetaById={receipt.orderMetaById} dataLoading={data.dataLoading}
-        canOpenProductSpecs={canOpenProductSpecs}
         onOpenProductSpecs={openProductSpecs} />
     },
     {
