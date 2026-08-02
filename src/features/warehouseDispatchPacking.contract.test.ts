@@ -18,14 +18,14 @@ assert.match(
   /ApiOutboundOrderLine[\s\S]*targetForwarderName\?: string[\s\S]*cargoCategoryName\?: string[\s\S]*packingGroupName\?: string/
 );
 assert.match(sources.workbench, /buildTabLabel\('发货执行', 0\)/);
-assert.match(sources.packingPanel, /title: '总体积'/);
-assert.match(sources.packingPanel, /title: '总毛重'/);
-assert.match(sources.packingPanel, /title: '箱数'/);
-assert.match(sources.packingPanel, /title: '商品数'/);
-assert.match(sources.packingPanel, /title: '件数'/);
-assert.match(sources.packingPanel, /title: '计划物流数'/);
-assert.match(sources.packingPanel, /查看装箱详情/);
-assert.match(sources.packingPanel, /导出装箱单/);
+assert.match(sources.packingColumns, /title: '总体积'/);
+assert.match(sources.packingColumns, /title: '总毛重'/);
+assert.match(sources.packingColumns, /title: '箱数'/);
+assert.match(sources.packingColumns, /title: '商品数'/);
+assert.match(sources.packingColumns, /title: '件数'/);
+assert.match(sources.packingColumns, /title: '计划物流数'/);
+assert.match(sources.packingColumns, /查看装箱详情/);
+assert.match(sources.packingColumns, /导出装箱单/);
 assert.match(sources.dispatchApi, /shipping-batches\/\$\{encodeURIComponent\(batchId\)\}\/packing-list-export/);
 assert.match(sources.dispatchApi, /forwarderCode: string; routeCode: string/);
 assert.match(sources.packingExportModal, /选择货代/);

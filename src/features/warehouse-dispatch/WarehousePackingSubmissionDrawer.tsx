@@ -1,4 +1,5 @@
-import { Drawer, Empty, Image, Space, Tag, Typography } from 'antd'
+import { SendOutlined } from '@ant-design/icons'
+import { Button, Drawer, Empty, Image, Popconfirm, Space, Tag, Typography } from 'antd'
 import { useMemo } from 'react'
 import type { OutboundOrder, OutboundOrderLine, PackingBox, PackingList, ShippingBatch } from './types'
 import {
@@ -20,6 +21,8 @@ type Props = {
   packingListsByOutboundOrder: Record<string, PackingList[]>
   focusOutboundOrderId?: string
   loading: boolean
+  shippingPackingListId?: string
+  onShipPackingList: (packingListId: string) => void
   onClose: () => void
 }
 
@@ -30,6 +33,8 @@ export function WarehousePackingSubmissionDrawer({
   packingListsByOutboundOrder,
   focusOutboundOrderId,
   loading,
+  shippingPackingListId,
+  onShipPackingList,
   onClose
 }: Props) {
   const visibleOrders = focusOutboundOrderId
@@ -61,7 +66,9 @@ export function WarehousePackingSubmissionDrawer({
           <div className="warehouse-shipping-execution-orders">
             {visibleOrders.map((order) => (
               <ShippingOrderSubmission key={order.id} order={order}
-                packingLists={packingListsByOutboundOrder[order.id] || []} />
+                packingLists={packingListsByOutboundOrder[order.id] || []}
+                shippingPackingListId={shippingPackingListId}
+                onShipPackingList={onShipPackingList} />
             ))}
             {!visibleOrders.length && !loading ? <Empty description="暂无发货执行内容" /> : null}
           </div>
@@ -71,9 +78,11 @@ export function WarehousePackingSubmissionDrawer({
   )
 }
 
-function ShippingOrderSubmission({ order, packingLists }: {
+function ShippingOrderSubmission({ order, packingLists, shippingPackingListId, onShipPackingList }: {
   order: OutboundOrder
   packingLists: PackingList[]
+  shippingPackingListId?: string
+  onShipPackingList: (packingListId: string) => void
 }) {
   const lineById = useMemo(
     () => new Map(order.lines.map((line) => [line.id, line])),
@@ -95,10 +104,23 @@ function ShippingOrderSubmission({ order, packingLists }: {
       {packingLists.map((packingList) => (
         <div className="warehouse-shipping-execution-packing" key={packingList.id}>
           <div className="warehouse-shipping-execution-packing-title">
-            <Space size={8} wrap>
-              <Text strong>{packingList.packingNo || packingList.id}</Text>
-              {renderPackingListStatus(packingList.status)}
-            </Space>
+            <div>
+              <Space size={8} wrap>
+                <Text strong>{packingList.packingNo || packingList.id}</Text>
+                {renderPackingListStatus(packingList.status)}
+              </Space>
+              {canShipPackingList(packingList) ? (
+                <Popconfirm title="确认货物已经交给货代？"
+                  description="确认后会完成发货并锁定本次装箱结果。"
+                  okText="确认完成发货" cancelText="取消"
+                  onConfirm={() => onShipPackingList(packingList.id)}>
+                  <Button type="primary" size="small" icon={<SendOutlined />}
+                    loading={shippingPackingListId === packingList.id}>
+                    确认已交货代
+                  </Button>
+                </Popconfirm>
+              ) : null}
+            </div>
             <Text type="secondary">
               {packingList.boxCount} 箱 · {packingList.packedQuantity} 件 · {packingList.updatedAt || packingList.createdAt}
             </Text>
@@ -114,6 +136,10 @@ function ShippingOrderSubmission({ order, packingLists }: {
       {!packingLists.length ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="尚无装箱单" /> : null}
     </section>
   )
+}
+
+function canShipPackingList(packingList: PackingList) {
+  return ['CONFIRMED', 'SEALED'].includes(String(packingList.status || '').toUpperCase())
 }
 
 function ShippingBox({ box, lineById }: {

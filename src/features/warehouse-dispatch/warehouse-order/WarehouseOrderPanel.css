@@ -1,4 +1,5 @@
 @import './WarehouseShippingOrderBase.css';
 @import './WarehouseShippingOrderDetail.css';
+@import './WarehouseShippingOrderDetailResponsive.css';
 @import './WarehouseShippingOrderLineTable.css';
 @import './WarehouseShippingOrderQuote.css';
