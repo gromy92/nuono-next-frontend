@@ -20,7 +20,7 @@ export function ReplenishmentPlanWorkbench({ state }: {
     selectedRowKeys, selectedPurchaseRows, ordersLoading, openingPurchaseKey, purchaseModalOpen,
     purchaseDrafts, setPurchaseDrafts, selectedOrderId, setSelectedOrderId, submitting,
     previewImage, setPreviewImage, purchaseDuplicateNotice, filteredRows, suggestionSummary,
-    missingEtaSummary, blockedRows, pastEtaReviewCount, editableOrders,
+    missingEtaSummary, blockedRows, pastEtaReviewSummary, editableOrders,
     purchaseProgressSummary, refreshReplenishmentPlan, openPurchaseModal,
     closePurchaseModal, submitPurchaseDrafts, handleSelectedRowsChange
   } = state
@@ -178,12 +178,12 @@ export function ReplenishmentPlanWorkbench({ state }: {
           action={<Button size="small" onClick={openMissingEtaOverviewMaintenance}>维护在途 ETA</Button>}
         />
       ) : null}
-      {pastEtaReviewCount ? (
+      {pastEtaReviewSummary.batchCount ? (
         <Alert
           className="replenishment-plan-past-eta-alert"
           type="warning"
           showIcon
-          message={`${pastEtaReviewCount} 批在途 ETA 已过期，未计入覆盖，请复核实际到仓状态`}
+          message={`${pastEtaReviewSummary.batchCount} 批在途 ETA 已过期，影响 ${pastEtaReviewSummary.itemCount} 个商品，均未计入覆盖，请复核实际到仓状态`}
           action={<Button size="small" onClick={openMissingEtaOverviewMaintenance}>复核在途</Button>}
         />
       ) : null}
