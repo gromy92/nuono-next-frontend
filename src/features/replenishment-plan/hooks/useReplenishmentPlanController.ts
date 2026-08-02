@@ -6,7 +6,7 @@ import type { PurchaseOrder, PurchaseOrderItemCommand } from '../../purchase-ord
 import { fetchReplenishmentPlanOverview } from '../api'
 import { buildPurchaseDrafts, filterBatchPurchaseDrafts, type PurchaseDraftRow } from '../purchaseDrafts'
 import { formatPurchaseDuplicateNotice } from '../purchaseDuplicateNotice'
-import { summarizeMissingEta } from '../summary'
+import { summarizeMissingEta, summarizePastEtaReview } from '../summary'
 import { summarizePurchasePlanProgress } from '../purchaseProgress'
 import type { ReplenishmentPlanItem, ReplenishmentPlanOverview, ReplenishmentPlanQuery } from '../types'
 import type { ProductCoverageFilter, ProductImagePreview, ReplenishmentPlanTabProps, SuggestionFilter } from '../pageTypes'
@@ -95,12 +95,7 @@ export function useReplenishmentPlanController({
     () => searchMatchedRows.filter((item) => (item.activeState || 'ACTIVE') === 'ACTIVE' && item.calculationBlocked),
     [searchMatchedRows]
   )
-  const pastEtaReviewCount = useMemo(
-    () => searchMatchedRows.reduce((count, item) => (
-      count + (item.inboundBatches || []).filter((batch) => batch.etaReviewRequired).length
-    ), 0),
-    [searchMatchedRows]
-  )
+  const pastEtaReviewSummary = useMemo(() => summarizePastEtaReview(searchMatchedRows), [searchMatchedRows])
 
   const editableOrders = useMemo(
     () => editablePurchaseOrders(purchaseOrders),
@@ -262,7 +257,7 @@ export function useReplenishmentPlanController({
     selectedRowKeys, selectedPurchaseRows, purchaseOrders, ordersLoading, openingPurchaseKey,
     purchaseModalOpen, purchaseDrafts, setPurchaseDrafts, selectedOrderId, setSelectedOrderId,
     submitting, previewImage, setPreviewImage, purchaseDuplicateNotice, query, planDate,
-    filteredRows, suggestionSummary, missingEtaSummary, blockedRows, pastEtaReviewCount,
+    filteredRows, suggestionSummary, missingEtaSummary, blockedRows, pastEtaReviewSummary,
     editableOrders, purchasePlanningOrders, purchaseProgressSummary, selectedPurchaseOrder,
     purchaseTransportQuantities, purchaseTransportSources, refreshReplenishmentPlan,
     openPurchaseModal, closePurchaseModal, submitPurchaseDrafts, handleSelectedRowsChange
