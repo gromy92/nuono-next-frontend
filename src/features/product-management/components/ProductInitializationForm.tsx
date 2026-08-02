@@ -1,4 +1,4 @@
-import { Col, Form, Input, Row, Select, Space, Tag, Typography } from 'antd';
+import { Col, Form, Row, Select, Space, Tag, Typography } from 'antd';
 import type { ProductCatalogAccessWorkspace } from '../workspaceTypes';
 
 const { Text } = Typography;
@@ -14,7 +14,7 @@ export function ProductInitializationForm({ workspace, hidden = false }: Product
   return (
     <Form form={storeInitializationForm} layout="vertical" preserve={false} style={hidden ? { display: 'none' } : undefined}>
       <Row gutter={[12, 12]}>
-        <Col xs={24} md={10}>
+        <Col xs={24} md={16}>
           <Form.Item label="初始化店铺" name="storeCode" rules={[{ required: true, message: '请选择要初始化的逻辑店铺' }]}>
             <Select
               placeholder="选择要初始化的逻辑店铺"
@@ -24,11 +24,6 @@ export function ProductInitializationForm({ workspace, hidden = false }: Product
                 setSelectedInitializationStoreCodeOverride(value);
               }}
             />
-          </Form.Item>
-        </Col>
-        <Col xs={24} md={8}>
-          <Form.Item label="Noon 登录密码" name="noonPassword" rules={[{ required: true, message: '请输入 Noon 登录密码' }]}>
-            <Input.Password placeholder="本次初始化临时使用" maxLength={100} />
           </Form.Item>
         </Col>
         <Col xs={24} md={6}>

@@ -179,7 +179,6 @@ export function MasterDataUserDetailModal({ model }: { model: MasterDataBoardMod
                   ) : null}
                 <Descriptions.Item label="Noon Partner ID">{detailState.data.noonPartnerId || '-'}</Descriptions.Item>
                 <Descriptions.Item label="Noon 用户编码">{detailState.data.noonPartnerUserCode || '-'}</Descriptions.Item>
-                <Descriptions.Item label="邮箱授权码">{detailState.data.noonPartnerMailAuthCode || '-'}</Descriptions.Item>
                 <Descriptions.Item label="Cookie 更新时间">{detailState.data.cookieGenerateTime || '-'}</Descriptions.Item>
               </Descriptions>
             </Card>

@@ -148,10 +148,10 @@ export function useProductListingCreateOutcomePolling(
         stopSession(session)
         return
       }
-      if (verification.status === 'reauthentication_required') {
+      if (verification.status === 'authorization_waiting') {
         message.warning(
           verification.message ||
-            'Noon 授权再次失效，请重新授权；系统未重复创建商品。'
+            'Noon 授权恢复中；恢复后系统会自动继续只读核对，且不会重复创建商品。'
         )
         stopSession(session)
         return

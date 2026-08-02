@@ -159,7 +159,6 @@ export type MasterDataUserDetail = {
   noonPartnerProjectUser?: string;
   noonPartnerId?: string;
   noonPartnerUserCode?: string;
-  noonPartnerMailAuthCode?: string;
   cookieGenerateTime?: string;
   effectiveTime?: string;
   expiredTime?: string;

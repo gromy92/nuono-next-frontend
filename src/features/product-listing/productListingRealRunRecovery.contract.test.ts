@@ -14,22 +14,6 @@ const presentationSource = readFileSync(
   new URL('./productListingWorkflowPresentation.ts', import.meta.url),
   'utf8'
 )
-const reauthenticationSource = readFileSync(
-  new URL('./productListingReauthentication.ts', import.meta.url),
-  'utf8'
-)
-const reauthenticationControllerSource = readFileSync(
-  new URL('./useProductListingReauthentication.ts', import.meta.url),
-  'utf8'
-)
-const reauthenticationPollingSource = readFileSync(
-  new URL('./useProductListingReauthenticationPolling.ts', import.meta.url),
-  'utf8'
-)
-const automaticReauthenticationSource = readFileSync(
-  new URL('./useProductListingAutomaticReauthentication.ts', import.meta.url),
-  'utf8'
-)
 const reviewReopenControllerSource = readFileSync(
   new URL('./useProductListingReviewReopen.ts', import.meta.url),
   'utf8'
@@ -138,33 +122,17 @@ assert(
 )
 assert(
   pageSource.includes('subscribeProductListingWorkflowRefresh(window') &&
-    pageSource.includes("workflow.phase !== 'PUBLISHING'") &&
+    pageSource.includes("next.nextAction === 'WAIT_FOR_AUTHORIZATION'") &&
     pageSource.includes('window.setTimeout(() => void poll(), 3000)'),
-  'workflow recovery should refresh on window restore and poll publishing serially'
+  'workflow recovery should refresh on window restore and poll publishing or authorization wait serially'
 )
 assert(
-  apiSource.includes('/tasks/${taskId}/reauthenticate') &&
-    pageSource.includes('useProductListingReauthentication') &&
-    reauthenticationControllerSource.includes(
-      'current.workflow.realRunTask?.taskId'
-    ) &&
-    reauthenticationPollingSource.includes(
-      'isProductListingReauthenticationSuccess(workflow)'
-    ) &&
-    reauthenticationPollingSource.includes(
-      'callbacksRef.current.applyWorkflow(workflow)'
-    ) &&
-    automaticReauthenticationSource.includes(
-      'shouldAutoStartProductListingReauthentication(params.workflow)'
-    ) &&
-    !reauthenticationSource.includes('USER_STORE_NOON_PATH') &&
-    reauthenticationSource.includes('同一上架任务自动继续') &&
-    !reauthenticationPollingSource.includes(
-      'continueProductListingRealRunAfterCreate'
-    ) &&
-    !reauthenticationPollingSource.includes('replayProductListingProjection') &&
-    !reauthenticationPollingSource.includes('reopenProductListingReview'),
-  'reauthentication should use one listing-scoped backend command and apply only its authoritative workflow without replay'
+  !apiSource.includes('/reauthenticate') &&
+    !apiSource.includes('/reauthentication-status') &&
+    !pageSource.includes('useProductListingReauthentication') &&
+    pageSource.includes("nextAction === 'WAIT_FOR_AUTHORIZATION'") &&
+    !presentationSource.includes('重新授权 Noon'),
+  'authorization expiry should be passive workflow waiting without a business-owned auth command or button'
 )
 assert(
   terminalDraftHandlerStart >= 0 &&

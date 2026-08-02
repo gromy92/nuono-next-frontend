@@ -80,7 +80,11 @@ export function useProductListingWorkflowSynchronization(options: Options) {
   }, [currentDraftId, listingDraft.storeCode])
 
   useEffect(() => {
-    if (workflow.phase !== 'PUBLISHING' || !currentDraftId) return
+    const shouldPoll = (next: ProductListingWorkflowView | undefined) =>
+      !next ||
+      next.phase === 'PUBLISHING' ||
+      next.nextAction === 'WAIT_FOR_AUTHORIZATION'
+    if (!shouldPoll(workflow) || !currentDraftId) return
     let cancelled = false
     let timeoutId: number | undefined
     const expected = productListingWorkflowIdentity(
@@ -91,7 +95,7 @@ export function useProductListingWorkflowSynchronization(options: Options) {
     const poll = async () => {
       try {
         const next = await refreshWorkflow(currentDraftId, expected)
-        if (!cancelled && identityMatches(expected) && (!next || next.phase === 'PUBLISHING')) {
+        if (!cancelled && identityMatches(expected) && shouldPoll(next)) {
           timeoutId = window.setTimeout(() => void poll(), 3000)
         }
       } catch (error) {
@@ -107,7 +111,7 @@ export function useProductListingWorkflowSynchronization(options: Options) {
       if (timeoutId !== undefined) window.clearTimeout(timeoutId)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDraftId, workflow.phase, workflow.realRunTask?.taskId])
+  }, [currentDraftId, workflow.phase, workflow.nextAction, workflow.realRunTask?.taskId])
 
   useEffect(() => {
     if (!confirmationAwaitingWorkflow || !currentDraftId) return

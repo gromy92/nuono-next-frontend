@@ -62,26 +62,14 @@ export type StoreSyncOverviewState =
   | { status: 'success'; data: StoreSyncOverviewPayload }
   | { status: 'error'; message: string };
 
-export type StoreBindingProjectOption = {
-  projectCode: string;
-  projectName?: string;
-  orgCode?: string;
-  orgName?: string;
-};
-
 export type StoreBindingResult = {
   success?: boolean;
   message?: string;
-  projectList?: StoreBindingProjectOption[];
 };
 
 export type StoreBindPayload = {
   ownerUserId: number;
   storeCode: string;
-  projectCode?: string;
-  projectName?: string;
-  orgCode?: string;
-  orgName?: string;
 };
 
 export type StoreCreatePayload = {
@@ -90,8 +78,6 @@ export type StoreCreatePayload = {
   projectCode?: string;
   storeCode?: string;
   site?: string;
-  orgCode?: string;
-  orgName?: string;
 };
 
 export type StoreConnectionTestResult = {

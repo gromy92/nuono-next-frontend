@@ -205,7 +205,7 @@ function isValidWorkflowStateTuple(workflow: ProductListingWorkflowView) {
       (
         nextAction === 'EDIT_DRAFT' ||
         nextAction === 'REVIEW_DRAFT' ||
-        nextAction === 'REAUTHENTICATE'
+        nextAction === 'WAIT_FOR_AUTHORIZATION'
       )
     ) ||
     (
@@ -213,15 +213,7 @@ function isValidWorkflowStateTuple(workflow: ProductListingWorkflowView) {
         writeCertainty === 'UNKNOWN' ||
         writeCertainty === 'WRITTEN'
       ) &&
-      nextAction === 'REAUTHENTICATE'
-    ) ||
-    (
-      (
-        writeCertainty === 'NOT_STARTED' ||
-        writeCertainty === 'UNKNOWN' ||
-        writeCertainty === 'WRITTEN'
-      ) &&
-      nextAction === 'WAIT_FOR_REAUTHENTICATION'
+      nextAction === 'WAIT_FOR_AUTHORIZATION'
     ) ||
     (
       writeCertainty === 'UNKNOWN' &&

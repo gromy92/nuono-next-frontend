@@ -122,28 +122,6 @@ export function validateProductListingFields(payload: Partial<ProductListingDraf
   )
 }
 
-export function reauthenticateProductListingStore(
-  taskId: number,
-  signal?: AbortSignal
-) {
-  return postWithoutBody<ProductListingWorkflowView>(
-    `/api/product-listing/tasks/${taskId}/reauthenticate`,
-    '重新授权 Noon 失败',
-    { signal }
-  )
-}
-
-export function fetchProductListingReauthenticationStatus(
-  taskId: number,
-  signal?: AbortSignal
-) {
-  return getJson<ProductListingWorkflowView>(
-    `/api/product-listing/tasks/${taskId}/reauthentication-status`,
-    '查询 Noon 重新授权状态失败',
-    { signal }
-  )
-}
-
 export function submitProductListingDryRun(payload: { draftId: number; storeCode: string }) {
   return postJson<ProductListingTaskView>('/api/product-listing/dry-run', payload, '提交上架 dry-run 失败')
 }
