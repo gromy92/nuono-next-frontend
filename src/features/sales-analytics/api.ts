@@ -1,12 +1,10 @@
 import type {
   SalesAnalyticsQuery,
-  SalesAnalyticsSummary,
   SalesActivityWindow,
   SalesActivityWindowInput,
   SalesActivityWindowSnapshot,
   SalesProductDetail,
   SalesProductRow,
-  SalesHistoryBackfillResult,
   SalesTrendBucket
 } from './types'
 import { apiFetch } from '../../shared/api'
@@ -19,10 +17,6 @@ export class SalesAnalyticsApiError extends Error {
     this.name = 'SalesAnalyticsApiError'
     this.status = status
   }
-}
-
-export function fetchSalesAnalyticsSummary(query: SalesAnalyticsQuery) {
-  return getJson<SalesAnalyticsSummary>(`/api/sales-data/analytics/summary?${queryParams(query).toString()}`)
 }
 
 export function fetchSalesAnalyticsTrends(query: SalesAnalyticsQuery, granularity: string) {
@@ -66,25 +60,6 @@ export function fetchSalesProductDetail(query: SalesAnalyticsQuery, partnerSku: 
   const params = queryParams(query)
   params.set('partnerSku', partnerSku)
   return getJson<SalesProductDetail>(`/api/sales-data/analytics/product-detail?${params.toString()}`)
-}
-
-export async function requestSalesHistoryBackfill(input: Pick<SalesAnalyticsQuery, 'storeCode' | 'siteCode' | 'dateFrom' | 'dateTo'>) {
-  const response = await apiFetch('/api/sales-data/analytics/history-backfill', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json'
-    },
-    body: JSON.stringify(input)
-  })
-  const payload = await response.json().catch(() => null)
-  if (!response.ok) {
-    const message =
-      payload && typeof payload.message === 'string' && payload.message
-        ? payload.message
-        : `历史补全提交失败：${response.status}`
-    throw new SalesAnalyticsApiError(response.status, message)
-  }
-  return payload as SalesHistoryBackfillResult
 }
 
 export async function exportSalesAnalyticsCsv(query: SalesAnalyticsQuery) {

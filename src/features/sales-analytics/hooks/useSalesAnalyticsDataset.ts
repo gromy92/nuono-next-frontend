@@ -10,12 +10,10 @@ import type { SalesForecastQuery } from '../../sales-forecast/types'
 import {
   exportSalesAnalyticsCsv,
   fetchSalesAnalyticsProducts,
-  fetchSalesAnalyticsSummary,
   fetchSalesAnalyticsTrends
 } from '../api'
 import type {
   SalesAnalyticsQuery,
-  SalesAnalyticsSummary,
   SalesProductRow,
   SalesTrendBucket
 } from '../types'
@@ -24,18 +22,6 @@ import {
   parsePartnerSkuText,
   siteCodeFromStoreCode
 } from '../presentation/formatters'
-
-const emptySummary: SalesAnalyticsSummary = {
-  netUnits: 0,
-  grossUnits: 0,
-  shippedUnits: 0,
-  cancelledUnits: 0,
-  revenueShipped: 0,
-  yourVisitors: 0,
-  totalVisitors: 0,
-  conversionVisitorsPercentage: null,
-  buyBoxVisitorPercentage: null
-}
 
 export function useSalesAnalyticsDataset(
   session: AuthSession,
@@ -56,7 +42,6 @@ export function useSalesAnalyticsDataset(
     loading: boolean
   }>({ brands: [], fulltypes: [], loading: false })
   const [granularity] = useState('week')
-  const [summary, setSummary] = useState<SalesAnalyticsSummary>(emptySummary)
   const [trends, setTrends] = useState<SalesTrendBucket[]>([])
   const [products, setProducts] = useState<SalesProductRow[]>([])
   const [loading, setLoading] = useState(false)
@@ -99,12 +84,10 @@ export function useSalesAnalyticsDataset(
     if (!query) return
     setLoading(true)
     try {
-      const [nextSummary, nextTrends, nextProducts] = await Promise.all([
-        fetchSalesAnalyticsSummary(query),
+      const [nextTrends, nextProducts] = await Promise.all([
         fetchSalesAnalyticsTrends(query, granularity),
         fetchSalesAnalyticsProducts(query)
       ])
-      setSummary(nextSummary)
       setTrends(nextTrends)
       setProducts(nextProducts)
     } catch (error) {
@@ -204,7 +187,6 @@ export function useSalesAnalyticsDataset(
     dataQualityCode,
     setDataQualityCode,
     classificationOptions,
-    summary,
     trends,
     products,
     loading,

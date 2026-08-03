@@ -32,54 +32,6 @@ export const DATA_REPORT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     ),
     closable: true,
     sidebarOrder: 1
-  },
-  'noon-call-store-data': {
-    key: 'noon-call-store-data',
-    label: '店铺数据',
-    path: '/system-reports/store-data',
-    sectionKey: 'system-reports',
-    pathLabel: '系统报表 / 店铺数据',
-    tabLabel: '店铺数据',
-    workspaceMount: createLazyWorkspaceMount(() =>
-      import('../system-reports/NoonCallStoreDataPage').then((module) => ({
-        default: module.NoonCallStoreDataPage
-      }))
-    ),
-    closable: true,
-    sidebarOrder: 0,
-    visibleInWorkspaceTabs: false,
-    routeAliases: ['/noon-call/store-data']
-  },
-  'system-report-noon-data-completeness': {
-    key: 'system-report-noon-data-completeness',
-    label: '数据完整度',
-    path: '/system-reports/noon-data-completeness',
-    sectionKey: 'system-reports',
-    pathLabel: '系统报表 / 数据完整度',
-    tabLabel: '数据完整度',
-    workspaceMount: createLazyWorkspaceMount(() =>
-      import('../system-reports/NoonDataCompletenessPage').then((module) => ({
-        default: module.NoonDataCompletenessPage
-      }))
-    ),
-    closable: true,
-    sidebarOrder: 1
-  },
-  'system-report-noon-data-gaps': {
-    key: 'system-report-noon-data-gaps',
-    label: '数据缺口巡检',
-    path: '/system-reports/noon-data-gaps',
-    sectionKey: 'system-reports',
-    pathLabel: '系统报表 / 数据缺口巡检',
-    tabLabel: '数据缺口巡检',
-    workspaceMount: createLazyWorkspaceMount(() =>
-      import('../system-reports/NoonDataGapPatrolPage').then((module) => ({
-        default: module.NoonDataGapPatrolPage
-      }))
-    ),
-    closable: true,
-    sidebarOrder: 2,
-    visibleInWorkspaceTabs: false
   }
 } as const satisfies Record<string, WorkspaceMenuDefinitionBase>)
 
@@ -101,21 +53,5 @@ export const DATA_REPORT_GRANT_RULES = freezeCatalogMetadata([
       '/api/sales-forecast/'
     ],
     menuNames: ['销量分析', '订单分析', '销售分析', '销量数据']
-  },
-  {
-    keys: ['noon-call-store-data', 'system-report-noon-data-completeness', 'system-report-noon-data-gaps'],
-    urlPaths: [
-      '/system-reports/store-data',
-      '/noon-call/store-data',
-      '/api/noon-call/store-data',
-      '/system-reports/noon-data-completeness',
-      '/system-reports/noon-data-gaps',
-      '/api/system-reports/noon-data-completeness'
-    ],
-    urlPathPrefixes: [
-      '/api/noon-call/store-data/',
-      '/api/system-reports/noon-data-completeness/'
-    ],
-    menuNames: ['系统报表', 'Noon调用', 'Noon店铺数据', '店铺数据', '数据完整度', '数据缺口巡检']
   }
 ] as const satisfies readonly WorkspaceGrantedMenuRuleBase[])

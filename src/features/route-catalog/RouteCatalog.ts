@@ -101,9 +101,6 @@ export const BOSS_OPERATOR_MENU_KEYS = freezeCatalogMetadata<AppMenuKey[]>([
   'operations-product-keywords',
   'data-sales-analysis',
   'data-order-analysis',
-  'noon-call-store-data',
-  'system-report-noon-data-completeness',
-  'system-report-noon-data-gaps',
   'operations-config-versions',
   'data-activity-config'
 ])

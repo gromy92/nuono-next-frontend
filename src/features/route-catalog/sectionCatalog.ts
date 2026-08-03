@@ -10,7 +10,6 @@ export const WORKSPACE_SECTION_METADATA = freezeCatalogMetadata<WorkspaceSection
   { key: 'operations', label: '运营', iconKey: 'operations' },
   { key: 'operation-config', label: '运营配置', iconKey: 'operation-config' },
   { key: 'data', label: '数据', iconKey: 'data' },
-  { key: 'system-reports', label: '系统报表', iconKey: 'system-reports' },
   { key: 'user', label: '用户', iconKey: 'user' },
   { key: 'system', label: '系统管理', iconKey: 'system' }
 ])

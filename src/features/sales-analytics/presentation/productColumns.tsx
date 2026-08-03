@@ -9,8 +9,8 @@ import {
   formatMoney,
   formatNumber,
   formatStockCoverDays,
-  healthTags,
-  lastCategoryLabel
+  lastCategoryLabel,
+  missingFieldTags
 } from './formatters'
 
 const { Text } = Typography
@@ -20,9 +20,9 @@ export const productColumnHelp = {
     testId: 'sales-column-help-product',
     description: '展示商品标题、PSKU、SKU、品牌和后台类目。品牌/后台类目来自商品管理主档，未匹配时会显示缺失标签。'
   },
-  health: {
-    testId: 'sales-column-help-health',
-    description: '展示当前商品的数据质量和经营状态，例如销量是否就绪、商品主档是否匹配、品牌或后台类目是否缺失。'
+  productFields: {
+    testId: 'sales-column-help-product-fields',
+    description: '只展示商品主档未匹配、品牌缺失或后台类目缺失等直接字段事实，不推断数据是否就绪。'
   },
   traffic: {
     testId: 'sales-column-help-traffic',
@@ -105,10 +105,10 @@ export function productColumns(
       )
     },
     {
-      title: columnTitle('健康度', productColumnHelp.health),
-      key: 'health',
+      title: columnTitle('商品字段', productColumnHelp.productFields),
+      key: 'productFields',
       width: 130,
-      render: (_, row) => <Space direction="vertical" size={4}>{healthTags(row)}</Space>
+      render: (_, row) => <Space direction="vertical" size={4}>{missingFieldTags(row)}</Space>
     },
     {
       title: columnTitle('访客与转化', productColumnHelp.traffic),

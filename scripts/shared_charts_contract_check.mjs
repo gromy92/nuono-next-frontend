@@ -11,11 +11,6 @@ function read(path) {
   return readFileSync(filePath, 'utf8')
 }
 
-function readOptional(path) {
-  const filePath = join(root, path)
-  return existsSync(filePath) ? readFileSync(filePath, 'utf8') : null
-}
-
 function assertIncludes(source, needle, label) {
   if (!source.includes(needle)) {
     throw new Error(`${label} should include: ${needle}`)
@@ -41,11 +36,6 @@ const salesPage = read('src/features/sales-analytics/SalesAnalyticsPage.tsx')
 const salesTrendLineChart = read('src/features/sales-analytics/components/TrendLineChart.tsx')
 const salesProductForecastPanel = read('src/features/sales-analytics/components/ProductForecastPanel.tsx')
 const salesAnalyticsSeam = [salesPage, salesTrendLineChart, salesProductForecastPanel].join('\n')
-const storeReportPage = readOptional('src/features/system-reports/StoreDataReportPage.tsx')
-const noonCallStoreDataPage = read('src/features/system-reports/NoonCallStoreDataPage.tsx')
-const noonDataCompletenessPage = read('src/features/system-reports/NoonDataCompletenessPage.tsx')
-const noonDataGapPatrolPage = read('src/features/system-reports/NoonDataGapPatrolPage.tsx')
-const storeReportApi = read('src/features/system-reports/api.ts')
 const competitorPage = read('src/features/competitor-analysis/CompetitorAnalysisPage.tsx')
 const competitorProductTable = read('src/features/competitor-analysis/productList/CompetitorProductTable.tsx')
 const competitorProductListSeam = [competitorPage, competitorProductTable].join('\n')
@@ -103,32 +93,6 @@ assertNotIncludes(salesAnalyticsSeam, "from 'echarts/", 'SalesAnalytics chart se
 assertNotIncludes(salesAnalyticsSeam, 'echarts.init', 'SalesAnalytics chart seam')
 assertNotIncludes(salesAnalyticsSeam, 'echarts.use', 'SalesAnalytics chart seam')
 
-if (storeReportPage) {
-  assertIncludes(storeReportPage, "from '../../shared/charts'", 'StoreDataReportPage')
-  assertNotIncludes(storeReportPage, 'function EChartPanel', 'StoreDataReportPage')
-  assertNotIncludes(storeReportPage, 'echarts.init', 'StoreDataReportPage')
-  assertNotIncludes(storeReportPage, 'echarts.use', 'StoreDataReportPage')
-}
-
-assertIncludes(noonCallStoreDataPage, "from '../../shared/charts'", 'NoonCallStoreDataPage')
-assertIncludes(noonCallStoreDataPage, 'testId="noon-call-store-data-marker-chart"', 'NoonCallStoreDataPage')
-assertNotIncludes(noonCallStoreDataPage, 'echarts.init', 'NoonCallStoreDataPage')
-assertNotIncludes(noonCallStoreDataPage, 'echarts.use', 'NoonCallStoreDataPage')
-
-assertIncludes(noonDataCompletenessPage, "from '../../shared/charts'", 'NoonDataCompletenessPage')
-assertIncludes(noonDataCompletenessPage, 'testId="noon-data-completeness-category-chart"', 'NoonDataCompletenessPage')
-assertNotIncludes(noonDataCompletenessPage, 'echarts.init', 'NoonDataCompletenessPage')
-assertNotIncludes(noonDataCompletenessPage, 'echarts.use', 'NoonDataCompletenessPage')
-
-assertIncludes(noonDataGapPatrolPage, "from '../../shared/charts'", 'NoonDataGapPatrolPage')
-assertIncludes(noonDataGapPatrolPage, 'testId="noon-data-gap-status-chart"', 'NoonDataGapPatrolPage')
-assertNotIncludes(noonDataGapPatrolPage, 'echarts.init', 'NoonDataGapPatrolPage')
-assertNotIncludes(noonDataGapPatrolPage, 'echarts.use', 'NoonDataGapPatrolPage')
-
-assertIncludes(storeReportApi, "import { apiFetch } from '../../shared/api'", 'system reports api')
-assertIncludes(storeReportApi, 'apiFetch(url)', 'system reports api')
-assertIncludes(storeReportApi, "apiFetch(url, { method: 'POST' })", 'system reports api')
-
 assertIncludes(competitorDashboard, 'RankChangePanel', 'CompetitorDashboardTab rank change panel composition')
 assertIncludes(competitorPriceChangeTab, 'CompetitorAttributeChangePanel', 'CompetitorPriceChangeTab attribute change panel composition')
 assertNotIncludes(competitorDashboard, 'DashboardChartCard', 'CompetitorDashboardTab removed old dashboard chart area')
@@ -138,7 +102,7 @@ assertIncludes(competitorDashboard, "key === 'selfRank'", 'CompetitorDashboardTa
 assertIncludes(competitorDashboard, "key === 'competitorRank'", 'CompetitorDashboardTab competitor rank direction API query')
 assertIncludes(competitorDashboard, 'testId="competitor-dashboard-self-rank-change-chart"\n          fullWidth', 'self rank change panel should use full width layout')
 assertIncludes(competitorDashboard, 'testId="competitor-dashboard-competitor-rank-change-chart"\n          fullWidth', 'competitor rank change panel should use full width layout')
-assertIncludes(competitorDashboardPriorityPanels, '最近详情变化的竞品', 'CompetitorDashboardPriorityPanels detail change panel')
+assertIncludes(competitorDashboardPriorityPanels, '最近列表信息变化的竞品', 'CompetitorDashboardPriorityPanels listing change panel')
 assertIncludes(competitorDashboardPriorityPanels, 'title="价格变化"', 'CompetitorDashboardPriorityPanels price change table')
 assertIncludes(competitorDashboardPriorityPanels, 'title="标题变化"', 'CompetitorDashboardPriorityPanels title change table')
 assertIncludes(competitorDashboardPriorityPanels, 'buildPriceChangeDisplayModel', 'CompetitorDashboardPriorityPanels price list display model')

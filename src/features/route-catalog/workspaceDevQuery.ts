@@ -27,7 +27,6 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'grantPurchase',
   'grantSalesAnalytics',
   'grantSalesForecast',
-  'grantSystemReports',
   'grantOperationsConfig',
   'grantRoleAssignment',
   'grantSystemRole'

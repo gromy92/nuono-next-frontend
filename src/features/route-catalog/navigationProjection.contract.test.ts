@@ -25,14 +25,6 @@ assert.deepEqual(
 )
 
 assert.equal(
-  activeWorkspacePathLabel('noon-call-store-data'),
-  '系统报表 / 店铺数据'
-)
-assert.equal(
-  activeWorkspacePathLabel('system-report-noon-data-gaps'),
-  '系统报表 / 数据缺口巡检'
-)
-assert.equal(
   activeWorkspacePathLabel('product-manage', {
     parentMenuKey: 'product-manage',
     pathLabel: '商品 / 自定义详情'

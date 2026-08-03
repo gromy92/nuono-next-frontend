@@ -9,11 +9,10 @@ import type {
   SalesForecastQuery,
   SalesForecastRow
 } from '../../sales-forecast/types'
-import type { DailySalesFact, SalesHistoryCoverage, SalesProductRow } from '../types'
+import type { DailySalesFact, SalesProductRow } from '../types'
 import type { DateRangeValue } from '../model/pageTypes'
 import {
   actualUnitsForRange,
-  compactRangeText,
   forecastRiskColor,
   forecastUnitsForRange,
   formatDateRange,
@@ -200,44 +199,5 @@ export function ProductForecastPanel({
         ) : null}
       </Space>
     </Spin>
-  )
-}
-
-export function HistoryCoverageStatus({
-  coverage,
-  loading,
-  onBackfill
-}: {
-  coverage?: SalesHistoryCoverage | null
-  loading: boolean
-  onBackfill: () => void
-}) {
-  if (!coverage || coverage.backfill.state === 'covered') {
-    return null
-  }
-  const backfill = coverage.backfill
-  const salesRange = compactRangeText('销量', coverage.salesFactDateFrom, coverage.salesFactDateTo)
-  const priceRange = compactRangeText('价格', coverage.priceDateFrom, coverage.priceDateTo)
-  return (
-    <Alert
-      data-testid="sales-history-coverage-status"
-      type={backfill.actionAvailable ? 'warning' : 'info'}
-      showIcon
-      message={
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <Space wrap size={[8, 4]}>
-            <Text strong>{backfill.label}</Text>
-            <Text type="secondary">{backfill.message}</Text>
-            {salesRange ? <Tag style={{ marginInlineEnd: 0 }}>{salesRange}</Tag> : null}
-            {priceRange ? <Tag style={{ marginInlineEnd: 0 }}>{priceRange}</Tag> : null}
-          </Space>
-          {backfill.actionAvailable ? (
-            <Button size="small" icon={<ReloadOutlined />} loading={loading} onClick={onBackfill}>
-              触发历史补全
-            </Button>
-          ) : null}
-        </div>
-      }
-    />
   )
 }

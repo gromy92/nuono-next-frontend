@@ -5,8 +5,6 @@ import type { ProductClassificationOptionPayload } from '../../product-domain/pr
 import type { SalesForecastDailyForecast } from '../../sales-forecast/types'
 import type {
   DailySalesFact,
-  SalesAnalyticsQuery,
-  SalesAnalyticsSummary,
   SalesPriceTrendBucket,
   SalesProductRow
 } from '../types'
@@ -14,25 +12,27 @@ import type { DateRangeValue } from '../model/pageTypes'
 
 const { Text } = Typography
 
-export function healthTags(row?: SalesProductRow) {
-  if (!row) return <Tag>—</Tag>
-  const codes = row.dataQualityCodes || []
-  const tags: ReactNode[] = []
-  if (row.dimensionMatched !== false && !codes.includes('brand_missing') && !codes.includes('backend_fulltype_missing')) {
-    tags.push(<Tag key="normal" color="green">经营正常</Tag>)
-  }
-  for (const code of codes) {
-    if (code === 'product_dimension_matched') continue
-    tags.push(<Tag key={code} color={dataQualityColor(code)}>{dataQualityLabel(code)}</Tag>)
-  }
-  return tags.length ? tags : <Tag>—</Tag>
+const missingFieldLabelByCode: Readonly<Record<string, string>> = {
+  product_dimension_missing: '商品主档未匹配',
+  brand_missing: '品牌缺失',
+  backend_fulltype_missing: '后台类目缺失'
 }
 
-export function primaryHealthLabel(row: SalesProductRow) {
-  if (row.dataQualityCodes?.includes('brand_missing')) return '品牌缺失'
-  if (row.dataQualityCodes?.includes('backend_fulltype_missing')) return '后台类目缺失'
-  if (row.dataQualityCodes?.includes('product_dimension_missing')) return '商品主档未匹配'
-  return '经营正常'
+export function missingFieldLabels(row?: SalesProductRow) {
+  if (!row) return []
+  const codes = new Set(row.dataQualityCodes || [])
+  if (row.dimensionMatched === false) codes.add('product_dimension_missing')
+  return Object.entries(missingFieldLabelByCode)
+    .filter(([code]) => codes.has(code))
+    .map(([, label]) => label)
+}
+
+export function missingFieldTags(row?: SalesProductRow) {
+  const labels = missingFieldLabels(row)
+  const tags: ReactNode[] = labels.map((label) => (
+    <Tag key={label} color={label === '商品主档未匹配' ? 'red' : 'gold'}>{label}</Tag>
+  ))
+  return tags.length ? tags : <Text type="secondary">—</Text>
 }
 
 export function latestDateFromProducts(products: SalesProductRow[]) {
@@ -41,47 +41,6 @@ export function latestDateFromProducts(products: SalesProductRow[]) {
     .filter((value): value is string => Boolean(value))
     .sort()
     .at(-1)
-}
-
-export function emptySalesDateRangeWarning(
-  query: SalesAnalyticsQuery | null,
-  products: SalesProductRow[],
-  summary: SalesAnalyticsSummary,
-  latestSalesDate?: string,
-  loading?: boolean
-) {
-  if (loading || !query || products.length || !latestSalesDate || summaryHasSales(summary)) {
-    return null
-  }
-  const latest = dayjs(latestSalesDate)
-  const from = dayjs(query.dateFrom)
-  const to = dayjs(query.dateTo)
-  if (!latest.isValid() || !from.isValid() || !to.isValid() || !latest.isBefore(to, 'day')) {
-    return null
-  }
-  if (latest.isBefore(from, 'day')) {
-    return `当前选择日期范围没有销量事实；本地最新销量日是 ${latestSalesDate}。请把时间范围包含最新销量日，或等待销量同步完成。`
-  }
-  return `当前范围内暂未查到商品列表；本地最新销量日是 ${latestSalesDate}，所选结束日期晚于最新销量数据。`
-}
-
-export function summaryHasSales(summary: SalesAnalyticsSummary) {
-  return Boolean(
-    Number(summary.netUnits || 0) ||
-      Number(summary.grossUnits || 0) ||
-      Number(summary.shippedUnits || 0) ||
-      Number(summary.cancelledUnits || 0) ||
-      Number(summary.revenueShipped || 0) ||
-      Number(summary.yourVisitors || 0)
-  )
-}
-
-export function syncStatusLabel(state?: string) {
-  if (state === 'stale' || state === 'STALE_LATEST_SALES') return '数据过期'
-  if (state === 'empty_report') return '空报表'
-  if (state === 'provider_unavailable') return 'Provider 不可用'
-  if (state === 'missing_mapping') return '映射异常'
-  return state || 'ready'
 }
 
 export function averageOrderValue(revenue?: number | null, units?: number | null) {
@@ -255,30 +214,8 @@ export function formatTrendDataRange(facts: DailySalesFact[], priceTrend: SalesP
   return `${sorted[0]} 至 ${sorted.at(-1)}`
 }
 
-export function compactRangeText(label: string, dateFrom?: string | null, dateTo?: string | null) {
-  if (!dateFrom && !dateTo) return null
-  if (dateFrom && dateTo) return `${label} ${dateFrom} 至 ${dateTo}`
-  return `${label} ${dateFrom || dateTo}`
-}
-
 export function formatPercent(value?: number | null) {
   return typeof value === 'number' ? `${value.toLocaleString('zh-CN', { maximumFractionDigits: 2 })}%` : '-'
-}
-
-export function dataQualityLabel(code?: string) {
-  if (code === 'sales_fact_ready') return '销量就绪'
-  if (code === 'product_dimension_matched') return '商品已匹配'
-  if (code === 'product_dimension_missing') return '商品主档未匹配'
-  if (code === 'brand_missing') return '品牌缺失'
-  if (code === 'backend_fulltype_missing') return '后台类目缺失'
-  return code || '-'
-}
-
-export function dataQualityColor(code?: string) {
-  if (code === 'sales_fact_ready' || code === 'product_dimension_matched') return 'green'
-  if (code === 'product_dimension_missing') return 'red'
-  if (code === 'brand_missing' || code === 'backend_fulltype_missing') return 'gold'
-  return 'default'
 }
 
 export function activityTypeLabel(type?: string) {
