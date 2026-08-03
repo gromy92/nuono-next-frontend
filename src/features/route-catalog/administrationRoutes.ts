@@ -9,20 +9,6 @@ const USER_ADMINISTRATION_WORKSPACE_MOUNT = createLazyWorkspaceMount(() =>
 )
 
 export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
-  'system-file-management': {
-    key: 'system-file-management',
-    label: '文件管理',
-    path: '/system/file-management',
-    sectionKey: 'system',
-    pathLabel: '系统管理 / 文件管理',
-    tabLabel: '文件管理',
-    workspaceMount: createLazyWorkspaceMount(() =>
-      import('../ai-file-parse/AiFileParseBoard').then((module) => ({ default: module.AiFileParseBoard }))
-    ),
-    closable: true,
-    sidebarOrder: 1,
-    routeAliases: ['/system/ai-file-parse']
-  },
   'user-account': {
     key: 'user-account',
     label: '账号管理',
@@ -112,7 +98,7 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
       })
     ),
     closable: true,
-    sidebarOrder: 2
+    sidebarOrder: 1
   }
 } as const satisfies Record<string, WorkspaceMenuDefinitionBase>)
 
@@ -121,13 +107,4 @@ export const ADMINISTRATION_IDENTITY_GRANT_RULES = freezeCatalogMetadata([
   { keys: ['user-role'], urlPaths: ['/api/user/role'], menuNames: ['角色分配'] },
   { keys: ['system-role'], urlPaths: ['/system/role'], menuNames: ['角色维护', '角色管理'] },
   { keys: ['system-menu'], urlPaths: ['/system/menu'], menuNames: ['菜单维护'] }
-] as const satisfies readonly WorkspaceGrantedMenuRuleBase[])
-
-export const FILE_MANAGEMENT_GRANT_RULES = freezeCatalogMetadata([
-  {
-    keys: ['system-file-management'],
-    urlPaths: ['/system/file-management', '/system/ai-file-parse'],
-    urlPathPrefixes: ['/system/ai-file-parse/'],
-    menuNames: ['文件管理', '官方费用表', 'Noon费用表', '官方文件管理', '官方费用文件管理', 'AI文件解析', 'AI 文件解析']
-  }
 ] as const satisfies readonly WorkspaceGrantedMenuRuleBase[])

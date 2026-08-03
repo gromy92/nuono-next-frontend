@@ -29,7 +29,7 @@ assert.equal(existsSync(join(process.cwd(), 'public/favicon.png')), true)
 
 const mountedGroups = workspaceContentMountGroups(
   'product-manage',
-  ['system-file-management']
+  ['official-warehouse']
 )
 assert.equal(mountedGroups.length, 2)
 assert.deepEqual(
@@ -38,7 +38,7 @@ assert.deepEqual(
     menuKey: group.menuKey
   })),
   [
-    { active: false, menuKey: 'system-file-management' },
+    { active: false, menuKey: 'official-warehouse' },
     { active: true, menuKey: 'product-manage' }
   ],
   'opened panes must stay mounted while exactly one route is active'
@@ -58,11 +58,11 @@ assert.deepEqual(
   ['user-role'],
   'workspace content should mount one pane for menu aliases that share a top tab'
 )
-assert.deepEqual(workspaceContentMountKeys('system-file-management', []), ['system-file-management'])
+assert.deepEqual(workspaceContentMountKeys('official-warehouse', []), ['official-warehouse'])
 assert.deepEqual(
-  workspaceContentMountKeys('product-manage', ['system-file-management']),
-  ['system-file-management', 'product-manage'],
-  'an opened file-management pane must stay mounted while another tab is active'
+  workspaceContentMountKeys('product-manage', ['official-warehouse']),
+  ['official-warehouse', 'product-manage'],
+  'an opened workspace pane must stay mounted while another tab is active'
 )
 assert.deepEqual(
   workspaceContentMountGroups(
