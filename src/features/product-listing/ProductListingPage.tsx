@@ -10,7 +10,6 @@ import { productListingEditorDraftToMetadataValues, type ProductListingMetadataF
 import type { ProductListingChangeSummaryItem } from './productListingChangeSummary'
 import { completeProductListingReviewReopen } from './productListingReviewReopenCompletion'
 import { useProductListingReviewReopenController } from './useProductListingReviewReopen'
-import { useProductListingReauthentication } from './useProductListingReauthentication'
 import { useProductListingConfirmNotCreated } from './useProductListingConfirmNotCreated'
 import { useProductListingDangerousActionPolling } from './useProductListingDangerousActionPolling'
 import { useProductListingWorkflowState } from './useProductListingWorkflowState'
@@ -71,14 +70,6 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         () => setListingReviewOpen(false)
       )
   })
-  const reauthentication = useProductListingReauthentication({
-    workflow,
-    draftId: currentDraftId,
-    storeCode: listingDraft.storeCode,
-    commandInFlightRef: recoveryCommandInFlightRef,
-    identityIsCurrent: identityMatches,
-    applyWorkflow
-  })
   const confirmNotCreated = useProductListingConfirmNotCreated({
     workflow,
     commandInFlightRef: recoveryCommandInFlightRef,
@@ -110,7 +101,6 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     confirmationAwaitingWorkflow ||
     Boolean(dangerousActionAwaitingWorkflow) ||
     reviewReopen.busy ||
-    reauthentication.busy ||
     confirmNotCreated.busy ||
     workflowActionBusy
   const busy = operationBusy || Boolean(workflowIntegrityError)
@@ -192,7 +182,6 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
     setDangerousActionAwaitingWorkflow,
     reviewReopenAwaiting: reviewReopen.awaiting,
     reopenReview: reviewReopen.reopen,
-    openReauthentication: reauthentication.open,
     observeVerification: confirmNotCreated.observeVerification,
     resetDangerousPolling: dangerousActionPolling.reset,
     listingDraftRef,
@@ -211,7 +200,6 @@ export function ProductListingPage({ storeCode }: ProductListingPageProps) {
         draftSaveNotice={draftSaveNotice}
         workflowIntegrityError={workflowIntegrityError}
         sourceHydrationError={sourceHydrationError}
-        reauthenticationNotice={reauthentication.notice}
         dangerousActionAwaiting={Boolean(dangerousActionAwaitingWorkflow)}
         reopenAwaiting={reviewReopen.awaiting}
         confirmNotCreatedAwaiting={confirmNotCreated.awaiting}

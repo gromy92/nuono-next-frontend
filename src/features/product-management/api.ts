@@ -19,8 +19,6 @@ export type ProductStoreInitializationStartRequest = ProductStoreInitializationS
 export type ProductWorkbenchOpenRequest = {
   ownerUserId: number;
   storeCode: string;
-  noonUser?: string;
-  noonPassword?: string;
   skuParent?: string;
   currentZCode?: string;
   partnerSku?: string;

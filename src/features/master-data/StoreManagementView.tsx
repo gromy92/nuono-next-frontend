@@ -11,7 +11,7 @@ export function StoreManagementView({ model }: { model: StoreManagementBoardMode
     bindingMode, bindingModalOpen, bindingSubmitting, bindingStore, bindingForm,
     setBindingModalOpen, setBindingStore, submitBinding,
     createStoreModalOpen, createStoreSubmitting, createStoreForm,
-    setCreateStoreModalOpen, pendingCreateStoreProjects, setPendingCreateStoreProjects,
+    setCreateStoreModalOpen,
     submitCreateStore, messageApi
   } = model;
 
@@ -76,7 +76,6 @@ export function StoreManagementView({ model }: { model: StoreManagementBoardMode
                     type="primary"
                     onClick={() => {
                       createStoreForm.resetFields();
-                      setPendingCreateStoreProjects([]);
                       setCreateStoreModalOpen(true);
                     }}
                   >
@@ -186,7 +185,6 @@ export function StoreManagementView({ model }: { model: StoreManagementBoardMode
             return;
           }
           setCreateStoreModalOpen(false);
-          setPendingCreateStoreProjects([]);
           createStoreForm.resetFields();
         }}
         onOk={() => createStoreForm.submit()}
@@ -224,6 +222,13 @@ export function StoreManagementView({ model }: { model: StoreManagementBoardMode
               <Input data-testid="store-create-name-input" placeholder="例如：星耀迪拜店" maxLength={100} />
             </Form.Item>
             <Form.Item
+              label="Noon Project Code"
+              name="projectCode"
+              rules={[{ required: true, message: '请输入 Noon Project Code' }]}
+            >
+              <Input data-testid="store-create-project-code-input" placeholder="例如：PRJ245027" maxLength={64} />
+            </Form.Item>
+            <Form.Item
               label="站点店铺Code"
               name="storeCode"
               rules={[{ required: true, message: '请输入站点店铺Code' }]}
@@ -244,22 +249,6 @@ export function StoreManagementView({ model }: { model: StoreManagementBoardMode
                 ]}
               />
             </Form.Item>
-            {pendingCreateStoreProjects.length ? (
-              <Form.Item
-                label="选择 Noon Project"
-                name="projectCode"
-                rules={[{ required: true, message: '请选择要绑定的 Noon Project' }]}
-              >
-                <Select
-                  data-testid="store-create-project-select"
-                  placeholder="选择要绑定的 Noon Project"
-                  options={pendingCreateStoreProjects.map((project: { projectName?: string; projectCode: string }) => ({
-                    label: `${project.projectName || project.projectCode} · ${project.projectCode}`,
-                    value: project.projectCode
-                  }))}
-                />
-              </Form.Item>
-            ) : null}
           </Form>
         </Space>
       </Modal>

@@ -37,7 +37,6 @@ type Options = {
   setDangerousActionAwaitingWorkflow: (action?: DangerousProductListingRecoveryAction) => void
   reviewReopenAwaiting: boolean
   reopenReview: (intent: { kind: 'EDIT_DRAFT' | 'REVIEW_DRAFT' }) => Promise<unknown>
-  openReauthentication: () => void
   observeVerification: (
     verification: ProductListingCreateOutcomeVerificationView,
     identity: ProductListingWorkflowIdentity
@@ -114,8 +113,8 @@ export function useProductListingRecoveryActions(options: Options) {
           message.success(verification.message || '已找到 Noon 商品，可以继续完成剩余写入。')
         } else if (verification.status === 'not_found') {
           message.warning(verification.message || 'Noon 暂未找到该商品，不能继续写入。')
-        } else if (verification.status === 'reauthentication_required') {
-          message.warning(verification.message || 'Noon 授权已失效，请重新授权后继续只读核对。')
+        } else if (verification.status === 'authorization_waiting') {
+          message.warning(verification.message || 'Noon 授权恢复中，系统会自动继续只读核对。')
         } else {
           message.error(verification.message || '核对 Noon 创建结果失败。')
         }
@@ -176,16 +175,13 @@ export function useProductListingRecoveryActions(options: Options) {
       case 'CONFIRM_PUBLISH':
         options.setListingReviewOpen(true)
         return
-      case 'REAUTHENTICATE':
-        options.openReauthentication()
-        return
       case 'CHECK_CREATE_RESULT':
       case 'CONTINUE_AFTER_CREATE':
       case 'VERIFY_READBACK':
       case 'REPLAY_PROJECTION':
         return executeRealRunRecoveryAction(action)
       case 'WAIT':
-      case 'WAIT_FOR_REAUTHENTICATION':
+      case 'WAIT_FOR_AUTHORIZATION':
       case 'NONE':
         return
     }

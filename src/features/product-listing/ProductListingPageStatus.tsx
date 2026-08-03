@@ -1,6 +1,5 @@
 import { SaveOutlined } from '@ant-design/icons'
 import { Alert, Button } from 'antd'
-import type { ProductListingReauthenticationNotice } from './productListingReauthentication'
 
 export type ProductListingNotice = {
   type: 'success' | 'info' | 'warning' | 'error'
@@ -11,7 +10,6 @@ type ProductListingPageStatusProps = {
   draftSaveNotice?: ProductListingNotice
   workflowIntegrityError?: string
   sourceHydrationError?: string
-  reauthenticationNotice?: ProductListingReauthenticationNotice
   dangerousActionAwaiting: boolean
   reopenAwaiting: boolean
   confirmNotCreatedAwaiting: boolean
@@ -21,7 +19,6 @@ export function ProductListingPageStatus({
   draftSaveNotice,
   workflowIntegrityError,
   sourceHydrationError,
-  reauthenticationNotice,
   dangerousActionAwaiting,
   reopenAwaiting,
   confirmNotCreatedAwaiting
@@ -51,14 +48,6 @@ export function ProductListingPageStatus({
           showIcon
           data-testid="product-listing-source-hydration-error"
           message={sourceHydrationError}
-        />
-      ) : null}
-      {reauthenticationNotice ? (
-        <Alert
-          type={reauthenticationNotice.type}
-          showIcon
-          data-testid="product-listing-reauthentication-notice"
-          message={reauthenticationNotice.message}
         />
       ) : null}
       {dangerousActionAwaiting ? (

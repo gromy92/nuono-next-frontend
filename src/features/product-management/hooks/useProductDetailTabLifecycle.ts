@@ -21,8 +21,6 @@ type UseProductDetailTabLifecycleParams = {
   submitProductSnapshot: (
     nextValues?: Partial<{
       storeCode: string;
-      noonUser: string;
-      noonPassword: string;
       skuParent: string;
       currentZCode: string;
       partnerSku: string;

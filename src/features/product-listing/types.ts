@@ -132,8 +132,7 @@ export type ProductListingWorkflowNextAction =
   | 'EDIT_DRAFT'
   | 'CONFIRM_PUBLISH'
   | 'WAIT'
-  | 'WAIT_FOR_REAUTHENTICATION'
-  | 'REAUTHENTICATE'
+  | 'WAIT_FOR_AUTHORIZATION'
   | 'CHECK_CREATE_RESULT'
   | 'CONTINUE_AFTER_CREATE'
   | 'VERIFY_READBACK'
@@ -159,7 +158,7 @@ export type ProductListingWorkflowSummaryView = Pick<
 export type ProductListingCreateOutcomeVerificationStatus =
   | 'found'
   | 'not_found'
-  | 'reauthentication_required'
+  | 'authorization_waiting'
   | 'lookup_failed'
 
 export type ProductListingCreateOutcomeVerificationView = {
