@@ -22,7 +22,6 @@ import {
   PURCHASE_LOGISTICS_QUOTE_PATH,
   PURCHASE_PRODUCT_LOGISTICS_COSTS_PATH,
   PURCHASE_PROFIT_PATH,
-  SYSTEM_FILE_MANAGEMENT_PATH,
   WAREHOUSE_DISPATCH_PATH,
   WAREHOUSE_LOGISTICS_BILL_PATH,
   WAREHOUSE_SHIPPING_ORDER_LEGACY_PATH
@@ -120,13 +119,6 @@ export function buildDevGrantedMenus(
   ) {
     add(menus, 9503, '运营配置版本', OPERATIONS_CONFIG_VERSIONS_PATH)
     add(menus, 9501, '业务日历', DATA_ACTIVITY_CONFIG_PATH)
-  }
-  if (
-    !role.boss
-    && (startsWithAny(pathname, [SYSTEM_FILE_MANAGEMENT_PATH, '/system/ai-file-parse'])
-      || hasGrant(search, 'grantFileManagement', 'grantAiFileParse'))
-  ) {
-    add(menus, 9202, '文件管理', SYSTEM_FILE_MANAGEMENT_PATH)
   }
   return menus
 }

@@ -1,7 +1,4 @@
-import {
-  ADMINISTRATION_IDENTITY_GRANT_RULES,
-  FILE_MANAGEMENT_GRANT_RULES
-} from './administrationRoutes'
+import { ADMINISTRATION_IDENTITY_GRANT_RULES } from './administrationRoutes'
 import { DATA_REPORT_GRANT_RULES } from './dataReportRoutes'
 import { FULFILLMENT_GRANT_RULES } from './fulfillmentRoutes'
 import {
@@ -64,8 +61,7 @@ const workspaceGrantedMenuRuleInputs = freezeCatalogMetadata([
   ...FULFILLMENT_GRANT_RULES,
   ...OPERATIONS_GRANT_RULES,
   ...DATA_REPORT_GRANT_RULES,
-  ...OPERATION_CONFIG_GRANT_RULES,
-  ...FILE_MANAGEMENT_GRANT_RULES
+  ...OPERATION_CONFIG_GRANT_RULES
 ] as const)
 type DeclaredGrantTarget = (typeof workspaceGrantedMenuRuleInputs)[number]['keys'][number]
 type InvalidGrantTarget = Exclude<DeclaredGrantTarget, AppMenuKey>
@@ -106,7 +102,6 @@ export const BOSS_OPERATOR_MENU_KEYS = freezeCatalogMetadata<AppMenuKey[]>([
 ])
 
 export const MANAGEMENT_MENU_KEYS = freezeCatalogMetadata<AppMenuKey[]>([
-  'system-file-management',
   'user-account',
   'user-store-noon',
   'user-role',

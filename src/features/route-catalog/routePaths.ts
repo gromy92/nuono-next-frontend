@@ -31,7 +31,6 @@ export const OPERATIONS_PRODUCT_KEYWORDS_PATH = workspaceMenuPath('operations-pr
 export const DATA_SALES_ANALYTICS_PATH = workspaceMenuPath('data-sales-analysis')
 export const OPERATIONS_CONFIG_VERSIONS_PATH = workspaceMenuPath('operations-config-versions')
 export const DATA_ACTIVITY_CONFIG_PATH = workspaceMenuPath('data-activity-config')
-export const SYSTEM_FILE_MANAGEMENT_PATH = workspaceMenuPath('system-file-management')
 export const USER_ACCOUNT_PATH = workspaceMenuPath('user-account')
 export const USER_STORE_NOON_PATH = workspaceMenuPath('user-store-noon')
 export const USER_ROLE_PATH = workspaceMenuPath('user-role')

@@ -49,7 +49,6 @@ const EXPECTED_MENU_KEYS = [
   'data-order-analysis',
   'operations-config-versions',
   'data-activity-config',
-  'system-file-management',
   'user-account',
   'user-store-noon',
   'user-role',
@@ -90,7 +89,7 @@ const EXPECTED_SECTION_MENU_KEYS = {
   ],
   data: ['data-sales-analysis', 'data-order-analysis'],
   user: ['user-account', 'user-role'],
-  system: ['system-menu', 'system-file-management', 'system-role']
+  system: ['system-menu', 'system-role']
 }
 
 function sectionMenuKeys(sectionKey: string) {
@@ -116,26 +115,17 @@ function assertDeepFrozen(value: unknown, path: string) {
 }
 
 assert.deepEqual(ALL_WORKSPACE_MENU_KEYS, EXPECTED_MENU_KEYS)
-assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 32)
+assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 31)
 assert.equal(WORKSPACE_SECTION_DEFINITIONS.length, 10)
-assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 28)
+assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 27)
 const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.workspaceMount === 'function'
 )
-assert.equal(mountedDefinitions.length, 32)
+assert.equal(mountedDefinitions.length, 31)
 for (const definition of Object.values(WORKSPACE_MENU_DEFINITIONS)) {
   assert.equal(typeof definition.workspaceMount, 'function', `${definition.key} must declare a workspace mount`)
   assert.equal('contentKind' in definition, false, `${definition.key} must not use Legacy dispatch`)
 }
-const systemFileManagementDefinition = workspaceMenuDefinition('system-file-management')
-assert.equal('contentKind' in systemFileManagementDefinition, false)
-assert.equal(typeof systemFileManagementDefinition.workspaceMount, 'function')
-assert.equal(Object.isFrozen(systemFileManagementDefinition.workspaceMount), true)
-assert.strictEqual(
-  workspaceMenuMount('system-file-management'),
-  workspaceMenuMount('system-file-management'),
-  'Catalog must return a stable module-level mount Adapter'
-)
 assert.equal(typeof workspaceMenuMount('product-manage'), 'function')
 assert.strictEqual(
   workspaceMenuMount('product-manage'),
@@ -183,7 +173,6 @@ assert.deepEqual(workspaceMenuDefinition('warehouse-dispatch').routeAliases, [
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/warehouse/shipping-orders'), 'warehouse-dispatch')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/warehouse/shipping-orders/legacy'), 'warehouse-dispatch')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/WAREHOUSE/FBN/'), 'official-warehouse')
-assert.equal(resolveWorkspaceMenuKeyFromLocation('/system/ai-file-parse/jobs/1'), 'system-file-management')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/operation-config/holiday'), 'data-activity-config')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/operations/config/lifecycle-rules'), null)
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/unknown'), null)

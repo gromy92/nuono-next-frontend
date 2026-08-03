@@ -10,8 +10,6 @@ const WORKSPACE_DEV_QUERY_KEYS = new Set([
   'devStore',
   'devSite',
   'previewAli1688',
-  'grantAiFileParse',
-  'grantFileManagement',
   'grantProfit',
   'grantLogisticsQuote',
   'grantProductLogisticsCosts',
