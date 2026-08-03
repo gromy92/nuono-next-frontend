@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { assignmentTargetOptions, authorizedWorkbench, clickAssignmentTarget, missingFieldDetail, missingFieldWorkbench, noAuthorizationWorkbench, partialSuccessWorkbench, mockAliHistoricalOrderDefaults, storeSyncOverview, syncedWorkbench } from './ali1688-historical-orders.fixtures';
+import { assignmentTargetOptions, authorizedWorkbench, clickAssignmentTarget, missingFieldDetail, missingFieldWorkbench, noAuthorizationWorkbench, mockAliHistoricalOrderDefaults, storeSyncOverview, syncedWorkbench } from './ali1688-historical-orders.fixtures';
 
 test.beforeEach(async ({ page }) => mockAliHistoricalOrderDefaults(page));
 
@@ -13,7 +13,7 @@ test('boss sees historical order page no-auth empty state from real API', async 
   await expect(page.getByTestId('workspace-tabs-bar').getByRole('tab', { name: '1688 历史订单' })).toBeVisible();
   await expect(page.getByTestId('ali1688-historical-orders-page')).toBeVisible();
   await expect(page.getByRole('heading', { name: '1688 历史订单' })).not.toBeVisible();
-  await expect(page.getByRole('alert').getByText('老板授权后可同步 1688 历史订单')).toBeVisible();
+  await expect(page.getByRole('alert').getByText('老板授权后系统会每日自动拉取 1688 历史订单')).toBeVisible();
   await expect(page.getByRole('button', { name: '授权 1688' })).toBeVisible();
   await expect(page.getByText('暂无 1688 历史订单')).toBeVisible();
   await expect(page.getByText('PO-DEMO')).not.toBeVisible();
@@ -51,7 +51,6 @@ test('non-boss local acceptance roles can open historical order page with real d
           ...syncedWorkbench,
           roleCapabilities: {
             canAuthorize: false,
-            canTriggerSync: false,
             canViewOrders: true
           }
         }

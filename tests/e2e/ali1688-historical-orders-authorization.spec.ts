@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { assignmentTargetOptions, authorizedWorkbench, clickAssignmentTarget, missingFieldDetail, missingFieldWorkbench, noAuthorizationWorkbench, partialSuccessWorkbench, mockAliHistoricalOrderDefaults, storeSyncOverview, syncedWorkbench } from './ali1688-historical-orders.fixtures';
+import { assignmentTargetOptions, authorizedWorkbench, clickAssignmentTarget, missingFieldDetail, missingFieldWorkbench, noAuthorizationWorkbench, mockAliHistoricalOrderDefaults, storeSyncOverview, syncedWorkbench } from './ali1688-historical-orders.fixtures';
 
 test.beforeEach(async ({ page }) => mockAliHistoricalOrderDefaults(page));
 
@@ -38,6 +38,7 @@ test('boss can start real OpenAPI authorization from modal', async ({ page }) =>
   expect(startCalled).toBeTruthy();
   await expect(popup).toHaveURL(/auth\.1688\.com\/oauth\/authorize/);
   await expect(modal).not.toBeVisible();
+  await expect(page.getByText('已打开 1688 授权页，完成授权后系统每日自动拉取历史订单')).toBeVisible();
 });
 
 test('boss sees configuration warning without opening a blank authorization popup', async ({ page }) => {
@@ -82,7 +83,6 @@ test('operations can view authorization status but cannot mutate it', async ({ p
         ...noAuthorizationWorkbench,
         roleCapabilities: {
           canAuthorize: false,
-          canTriggerSync: false,
           canViewOrders: true
         }
       }
@@ -92,18 +92,12 @@ test('operations can view authorization status but cannot mutate it', async ({ p
   await page.goto('/purchase/ali1688-orders?devSession=1&devRole=operator&grantAli1688HistoricalOrders=1');
 
   await expect(page.getByTestId('ali1688-historical-orders-page')).toBeVisible();
-  await expect(page.getByRole('alert').getByText('老板授权后可同步 1688 历史订单')).toBeVisible();
+  await expect(page.getByRole('alert').getByText('老板授权后系统会每日自动拉取 1688 历史订单')).toBeVisible();
   await expect(page.getByRole('button', { name: '授权 1688' })).not.toBeVisible();
 });
 
-test('authorized boss can run fake initial sync and inspect product-line detail drawer', async ({ page }) => {
-  let workbench = authorizedWorkbench;
-
+test('authorized boss can inspect pulled product facts and product-line detail drawer', async ({ page }) => {
   await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
-    await route.fulfill({ json: workbench });
-  });
-  await page.route('**/api/procurement/ali1688-orders/sync-tasks/initial-backfill', async (route) => {
-    workbench = syncedWorkbench;
     await route.fulfill({ json: syncedWorkbench });
   });
   await page.route('**/api/procurement/ali1688-orders/93001**', async (route) => {
@@ -123,7 +117,6 @@ test('authorized boss can run fake initial sync and inspect product-line detail 
 
   await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
 
-  await page.getByRole('button', { name: '同步历史订单' }).click();
   await expect(page.getByText('ALI-ORDER-20260525-001').first()).toBeVisible();
   await expect(page.getByText('2026-05-25 10:30:00').first()).toBeVisible();
   await expect(page.getByText('义乌诚信通源头工厂').first()).toBeVisible();
@@ -139,8 +132,7 @@ test('authorized boss can run fake initial sync and inspect product-line detail 
   const controls = page.locator('.ali1688-historical-orders-controls');
   await expect(controls).toBeVisible();
   await expect(controls.getByPlaceholder('供应商')).toBeVisible();
-  await expect(controls.getByRole('button', { name: '同步历史订单' })).toBeVisible();
-  await expect(controls.getByRole('button', { name: '刷新', exact: true })).toHaveCount(0);
+  await expect(controls.getByRole('button', { name: '刷新', exact: true })).toBeVisible();
   await expect(controls.getByRole('button', { name: '批量分配/关联' })).toBeVisible();
   await expect(page.locator('.ali1688-assignment-toolbar')).toHaveCount(0);
   const controlsBox = await controls.boundingBox();
@@ -202,18 +194,6 @@ test('authorized boss can run fake initial sync and inspect product-line detail 
   await expect(drawer.getByText('ZTO20260525001')).toBeVisible();
 });
 
-test('partial success keeps synced orders visible and shows failure reason', async ({ page }) => {
-  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
-    await route.fulfill({ json: partialSuccessWorkbench });
-  });
-
-  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
-
-  await expect(page.getByRole('alert').getByText('部分成功')).toBeVisible();
-  await expect(page.getByRole('alert').getByText('部分订单详情字段未返回。')).toBeVisible();
-  await expect(page.getByText('ALI-ORDER-20260525-001').first()).toBeVisible();
-});
-
 test('missing fields are explicit and sensitive values never render', async ({ page }) => {
   await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
     await route.fulfill({ json: missingFieldWorkbench });
@@ -224,7 +204,6 @@ test('missing fields are explicit and sensitive values never render', async ({ p
 
   await page.goto('/purchase/ali1688-orders?devSession=1&devRole=boss&grantAli1688HistoricalOrders=1');
 
-  await expect(page.getByRole('alert').getByText('订单部分字段未返回，可稍后刷新。')).toBeVisible();
   await expect(page.getByText('ALI-ORDER-20260525-MISSING')).toBeVisible();
   const missingRow = page.getByText('ALI-ORDER-20260525-MISSING').locator('xpath=ancestor::tr');
   await expect(missingRow.getByText('未返回信息')).toHaveCount(1);

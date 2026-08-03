@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { assignmentTargetOptions, authorizedWorkbench, clickAssignmentTarget, missingFieldDetail, missingFieldWorkbench, noAuthorizationWorkbench, partialSuccessWorkbench, mockAliHistoricalOrderDefaults, storeSyncOverview, syncedWorkbench } from './ali1688-historical-orders.fixtures';
+import { assignmentTargetOptions, authorizedWorkbench, clickAssignmentTarget, missingFieldDetail, missingFieldWorkbench, noAuthorizationWorkbench, mockAliHistoricalOrderDefaults, storeSyncOverview, syncedWorkbench } from './ali1688-historical-orders.fixtures';
 
 test.beforeEach(async ({ page }) => mockAliHistoricalOrderDefaults(page));
 
@@ -60,10 +60,6 @@ test('keyword search is the first historical order filter control', async ({ pag
 test('filters update pagination total and search fields can be cleared', async ({ page }) => {
   let workbench = {
     ...JSON.parse(JSON.stringify(syncedWorkbench)),
-    syncSummary: {
-      ...syncedWorkbench.syncSummary,
-      totalItemCount: 4373
-    },
     pagination: {
       page: 1,
       pageSize: 20,
@@ -75,7 +71,6 @@ test('filters update pagination total and search fields can be cleared', async (
     const search = new URL(route.request().url()).searchParams;
     if (search.get('keyword') === '锁心本') {
       const filtered = JSON.parse(JSON.stringify(syncedWorkbench));
-      filtered.syncSummary.totalItemCount = 4373;
       filtered.orders[0].items = [filtered.orders[0].items[1]];
       filtered.pagination = {
         page: 1,

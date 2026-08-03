@@ -46,6 +46,15 @@ const ali1688HistoricalOrders = [
   join(featuresDir, 'ali1688-historical-orders', fileName),
   'utf8'
 )).join('\n')
+const ali1688HistoricalOrderAutomationBoundary = [
+  'api/workbenchApi.ts',
+  'components/Ali1688HistoricalOrdersPanel.tsx',
+  'hooks/useAli1688HistoricalOrdersWorkbench.ts',
+  'types/orderTypes.ts'
+].map((fileName) => readFileSync(
+  join(featuresDir, 'ali1688-historical-orders', fileName),
+  'utf8'
+)).join('\n')
 const profitCalculator = [
   'useProfitCalculatorWorkspace.tsx',
   'profitWorkspaceModel.ts',
@@ -173,6 +182,18 @@ assert.match(
   ali1688HistoricalOrders,
   /Noon pskuCode \{product\.pskuCode\}/,
   '1688 historical order can show external pskuCode only with its Noon pskuCode label'
+)
+
+assert.doesNotMatch(
+  ali1688HistoricalOrderAutomationBoundary,
+  /sync-tasks\/(?:initial-backfill|manual-refresh)|canTriggerSync|syncSummary|同步历史订单/,
+  '1688 historical order workbench must remain read-only for automatic DP10 pulling'
+)
+
+assert.match(
+  ali1688HistoricalOrderAutomationBoundary,
+  /系统每日自动拉取历史订单/,
+  '1688 authorization feedback must explain the daily automatic pull'
 )
 
 assert.doesNotMatch(

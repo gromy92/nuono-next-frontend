@@ -2,7 +2,6 @@ import {
   HistoryOutlined,
   KeyOutlined,
   ReloadOutlined,
-  SyncOutlined,
   UploadOutlined
 } from '@ant-design/icons'
 import {
@@ -26,7 +25,6 @@ import {
   renderSupplierCell
 } from '../presentation/orderContextCells'
 import { renderProductCell } from '../presentation/productCells'
-import { syncStatusText } from '../presentation/orderText'
 import type { useAli1688HistoricalOrdersWorkbench } from '../hooks/useAli1688HistoricalOrdersWorkbench'
 
 const { RangePicker } = DatePicker
@@ -55,7 +53,6 @@ export function Ali1688HistoricalOrdersPanel({
     setAuthorizationModalOpen,
     setExcelImportModalOpen,
     setAuthorizationErrorMessage,
-    syncing,
     selectedLineKeys,
     setSelectedLineKeys,
     visibleProductLineRows,
@@ -64,12 +61,10 @@ export function Ali1688HistoricalOrdersPanel({
     canMutateProductLinks,
     canBatchActOnSelectedLines,
     showAuthorizeButton,
-    canTriggerSync,
     paginationCurrent,
     paginationPageSize,
     paginationTotal,
-    loadWorkbench,
-    runSyncAction
+    loadWorkbench
   } = state
 
   return (
@@ -172,25 +167,14 @@ export function Ali1688HistoricalOrdersPanel({
           >
             批量分配/关联
           </Button>
-          {canTriggerSync ? (
-            <Button
-              className="ali1688-historical-orders-refresh-action"
-              icon={<SyncOutlined />}
-              loading={syncing}
-              onClick={() => void runSyncAction()}
-            >
-              同步历史订单
-            </Button>
-          ) : (
-            <Button
-              className="ali1688-historical-orders-refresh-action"
-              icon={<ReloadOutlined />}
-              loading={loading}
-              onClick={() => void loadWorkbench()}
-            >
-              刷新
-            </Button>
-          )}
+          <Button
+            className="ali1688-historical-orders-refresh-action"
+            icon={<ReloadOutlined />}
+            loading={loading}
+            onClick={() => void loadWorkbench()}
+          >
+            刷新
+          </Button>
         </div>
       </section>
 
@@ -198,19 +182,10 @@ export function Ali1688HistoricalOrdersPanel({
         <Alert
           type="warning"
           showIcon
-          message="老板授权后可同步 1688 历史订单"
+          message="老板授权后系统会每日自动拉取 1688 历史订单"
           description={showAuthorizeButton ? '当前页面暂未连接 1688 买家账号。' : '当前页面暂未连接 1688 买家账号，请老板完成授权。'}
         />
       ) : null}
-      {workbench.syncSummary?.failureMessage ? (
-        <Alert
-          type={workbench.syncSummary.latestTaskStatus === 'failed' ? 'error' : 'warning'}
-          showIcon
-          message={syncStatusText(workbench.syncSummary.latestTaskStatus)}
-          description={workbench.syncSummary.failureMessage}
-        />
-      ) : null}
-
       <Spin spinning={loading}>
         <Table<ProductLineRow>
           rowKey={(row) => row.lineKey}

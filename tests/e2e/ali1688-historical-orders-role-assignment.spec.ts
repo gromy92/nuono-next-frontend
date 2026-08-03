@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { assignmentTargetOptions, authorizedWorkbench, clickAssignmentTarget, missingFieldDetail, missingFieldWorkbench, noAuthorizationWorkbench, partialSuccessWorkbench, mockAliHistoricalOrderDefaults, storeSyncOverview, syncedWorkbench } from './ali1688-historical-orders.fixtures';
+import { assignmentTargetOptions, authorizedWorkbench, clickAssignmentTarget, missingFieldDetail, missingFieldWorkbench, noAuthorizationWorkbench, mockAliHistoricalOrderDefaults, storeSyncOverview, syncedWorkbench } from './ali1688-historical-orders.fixtures';
 
 test.beforeEach(async ({ page }) => mockAliHistoricalOrderDefaults(page));
 
@@ -64,7 +64,6 @@ test('procurement role sees product link state as read-only', async ({ page }) =
   const workbench = JSON.parse(JSON.stringify(syncedWorkbench));
   workbench.roleCapabilities = {
     canAuthorize: false,
-    canTriggerSync: false,
     canViewOrders: true
   };
   workbench.orders[0].items = [{

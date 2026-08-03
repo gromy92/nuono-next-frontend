@@ -135,22 +135,6 @@ export function orderStatusText(status?: string) {
   return statusMap[normalized.toLowerCase()] || normalized
 }
 
-export function syncStatusText(status?: string) {
-  if (status === 'success') {
-    return '同步成功'
-  }
-  if (status === 'partial_success') {
-    return '部分成功'
-  }
-  if (status === 'running') {
-    return '同步中'
-  }
-  if (status === 'failed') {
-    return '同步失败'
-  }
-  return '未开始'
-}
-
 export function importStatusText(status?: string) {
   if (status === 'committed' || status === 'success') {
     return '导入完成'

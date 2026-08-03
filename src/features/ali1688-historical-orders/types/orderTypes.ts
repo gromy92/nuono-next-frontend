@@ -11,7 +11,6 @@ export type Ali1688HistoricalOrderAuthorization = {
 
 export type Ali1688HistoricalOrderRoleCapabilities = {
   canAuthorize: boolean
-  canTriggerSync: boolean
   canViewOrders: boolean
 }
 
@@ -20,19 +19,6 @@ export type Ali1688OpenApiAuthorizationStart = {
   providerCode?: string
   authorizationUrl?: string
   message?: string
-}
-
-export type Ali1688HistoricalOrderSyncSummary = {
-  latestTaskStatus?: string
-  totalOrderCount: number
-  totalItemCount: number
-  processedCount?: number
-  importedCount?: number
-  failedCount?: number
-  progressPercent?: number
-  failureCode?: string
-  failureMessage?: string
-  checkpointJson?: string
 }
 
 export type Ali1688HistoricalOrderPagination = {
@@ -265,7 +251,6 @@ export type Ali1688HistoricalOrderWorkbench = {
   authorization: Ali1688HistoricalOrderAuthorization
   storeScope?: Ali1688HistoricalOrderStoreScope
   roleCapabilities: Ali1688HistoricalOrderRoleCapabilities
-  syncSummary: Ali1688HistoricalOrderSyncSummary
   orders: Ali1688HistoricalOrderRow[]
   pagination: Ali1688HistoricalOrderPagination
 }

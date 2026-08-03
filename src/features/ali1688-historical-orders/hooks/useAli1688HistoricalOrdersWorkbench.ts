@@ -2,8 +2,6 @@ import { message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   loadAli1688HistoricalOrderWorkbench,
-  runInitialAli1688HistoricalOrderSync,
-  runManualAli1688HistoricalOrderRefresh,
   startAli1688OpenApiAuthorization
 } from '../api'
 import type {
@@ -36,13 +34,7 @@ const EMPTY_WORKBENCH: Ali1688HistoricalOrderWorkbench = {
   authorization: { status: 'loading' },
   roleCapabilities: {
     canAuthorize: false,
-    canTriggerSync: false,
     canViewOrders: false
-  },
-  syncSummary: {
-    latestTaskStatus: 'loading',
-    totalOrderCount: 0,
-    totalItemCount: 0
   },
   orders: [],
   storeScope: {
@@ -80,7 +72,6 @@ export function useAli1688HistoricalOrdersWorkbench({
   const [authorizationSubmitting, setAuthorizationSubmitting] = useState(false)
   const [authorizationErrorMessage, setAuthorizationErrorMessage] =
     useState<string>()
-  const [syncing, setSyncing] = useState(false)
   const [selectedLineKeys, setSelectedLineKeys] = useState<string[]>([])
   const didMountFilters = useRef(false)
   const productLineRows = useMemo(
@@ -119,8 +110,6 @@ export function useAli1688HistoricalOrdersWorkbench({
     selectedProductLineRows.length > 0 &&
     selectedProductLineRows.every(isSelectableProductLine)
   const showAuthorizeButton = workbench.roleCapabilities?.canAuthorize
-  const canTriggerSync = workbench.roleCapabilities?.canTriggerSync
-  const hasSyncedOrders = (workbench.syncSummary?.totalOrderCount ?? 0) > 0
   const paginationCurrent = workbench.pagination?.page || 1
   const paginationPageSize = workbench.pagination?.pageSize || 20
   const paginationTotal = Math.max(
@@ -201,7 +190,7 @@ export function useAli1688HistoricalOrdersWorkbench({
       )
       if (!popup) window.location.assign(start.authorizationUrl)
       setAuthorizationModalOpen(false)
-      message.success('已打开 1688 授权页，完成后返回系统同步历史订单')
+      message.success('已打开 1688 授权页，完成授权后系统每日自动拉取历史订单')
     } catch (error) {
       const text =
         error instanceof Error ? error.message : '授权 1688 历史订单失败'
@@ -212,35 +201,15 @@ export function useAli1688HistoricalOrdersWorkbench({
     }
   }
 
-  async function runSyncAction() {
-    setSyncing(true)
-    try {
-      setWorkbench(
-        hasSyncedOrders
-          ? await runManualAli1688HistoricalOrderRefresh()
-          : await runInitialAli1688HistoricalOrderSync()
-      )
-      message.success(
-        hasSyncedOrders ? '1688 历史订单刷新完成' : '1688 历史订单同步完成'
-      )
-    } catch (error) {
-      message.error(
-        error instanceof Error ? error.message : '同步 1688 历史订单失败'
-      )
-    } finally {
-      setSyncing(false)
-    }
-  }
-
   return {
     workbench, loading, filters, setFilters, query, authorizationModalOpen,
     setAuthorizationModalOpen, excelImportModalOpen, setExcelImportModalOpen,
     authorizationSubmitting, authorizationErrorMessage,
-    setAuthorizationErrorMessage, syncing, selectedLineKeys,
+    setAuthorizationErrorMessage, selectedLineKeys,
     setSelectedLineKeys, visibleProductLineRows, selectedProductLineRows,
     assignmentTargetOptions, canMutateProductLinks,
-    canBatchActOnSelectedLines, showAuthorizeButton, canTriggerSync,
+    canBatchActOnSelectedLines, showAuthorizeButton,
     paginationCurrent, paginationPageSize, paginationTotal, loadWorkbench,
-    confirmOpenApiAuthorization, runSyncAction
+    confirmOpenApiAuthorization
   }
 }
