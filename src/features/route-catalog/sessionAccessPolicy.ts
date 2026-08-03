@@ -105,19 +105,15 @@ export function resolveSessionAllowedMenuKeys(session: AuthSession | null) {
   if (isSystemAdminSession(session)) {
     keySet.add('user-account')
     keySet.add('system-role')
-    keySet.add('system-file-management')
     keySet.delete('product-manual-selection')
     keySet.delete('user-role')
   } else if (isBossManagementSession(session)) {
     keySet.add('user-role')
     keySet.delete('user-account')
     keySet.delete('system-role')
-    keySet.delete('system-file-management')
   } else if (isBossOperatorView(session)) {
     MANAGEMENT_MENU_KEYS.forEach((key) => keySet.delete(key))
     BOSS_OPERATOR_MENU_KEYS.forEach((key) => keySet.add(key))
-  } else {
-    keySet.delete('system-file-management')
   }
 
   ALL_WORKSPACE_MENU_KEYS.forEach((key) => {
@@ -131,7 +127,6 @@ export function resolveSessionAllowedMenuKeys(session: AuthSession | null) {
 
 const SYSTEM_ADMIN_LANDING_ORDER: AppMenuKey[] = [
   'system-role',
-  'system-file-management',
   'user-account',
   'system-menu',
   'purchase-profit',
