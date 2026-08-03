@@ -5,7 +5,7 @@ import {
   bindStoreSyncStore,
   createStoreSyncStore
 } from '../store-sync/api';
-import type { StoreBindingProjectOption, StoreSyncOverviewState, StoreSyncStore } from '../store-sync/types';
+import type { StoreSyncOverviewState, StoreSyncStore } from '../store-sync/types';
 import type { LoadStoreSyncOptions } from '../store-sync/useStoreSyncOverviewController';
 import { StoreManagementView } from './StoreManagementView';
 import { useStoreManagementColumns } from './useStoreManagementColumns';
@@ -61,7 +61,6 @@ function useStoreManagementBoardModel({
   const [bindingForm] = Form.useForm<StoreBindFormValues>();
   const [createStoreModalOpen, setCreateStoreModalOpen] = useState(false);
   const [createStoreSubmitting, setCreateStoreSubmitting] = useState(false);
-  const [pendingCreateStoreProjects, setPendingCreateStoreProjects] = useState<StoreBindingProjectOption[]>([]);
   const [createStoreForm] = Form.useForm<StoreCreateFormValues>();
 
   const refresh: StoreManagementRefresh = async (nextOwnerId, options) => {
@@ -126,29 +125,17 @@ function useStoreManagementBoardModel({
     try {
       const values = submittedValues ?? await createStoreForm.validateFields();
       setCreateStoreSubmitting(true);
-      const selectedProject = pendingCreateStoreProjects.find(
-        (project) => project.projectCode === values.projectCode
-      );
 
       const payload = await createStoreSyncStore({
         ownerUserId: ownerId,
         projectName: values.projectName,
-        projectCode: selectedProject?.projectCode ?? values.projectCode,
+        projectCode: values.projectCode,
         storeCode: values.storeCode,
-        site: values.site,
-        orgCode: selectedProject?.orgCode,
-        orgName: selectedProject?.orgName
+        site: values.site
       });
-
-      if (payload.projectList?.length) {
-        setPendingCreateStoreProjects(payload.projectList);
-        messageApi.info(payload.message ?? '请选择要绑定的 Noon Project');
-        return;
-      }
 
       messageApi.success(payload.message ?? '店铺已绑定到当前账号视图');
       setCreateStoreModalOpen(false);
-      setPendingCreateStoreProjects([]);
       createStoreForm.resetFields();
       await refresh(ownerId);
       onDataChanged?.();
@@ -176,7 +163,7 @@ function useStoreManagementBoardModel({
     bindingMode, bindingModalOpen, bindingSubmitting, bindingStore, bindingForm,
     setBindingModalOpen, setBindingStore, submitBinding,
     createStoreModalOpen, createStoreSubmitting, createStoreForm,
-    setCreateStoreModalOpen, pendingCreateStoreProjects, setPendingCreateStoreProjects,
+    setCreateStoreModalOpen,
     submitCreateStore, messageApi
   };
 }

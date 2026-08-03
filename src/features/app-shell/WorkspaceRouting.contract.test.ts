@@ -64,6 +64,15 @@ assert.deepEqual(
   ['official-warehouse', 'product-manage'],
   'an opened workspace pane must stay mounted while another tab is active'
 )
+assert.deepEqual(
+  workspaceContentMountGroups(
+    'warehouse-dispatch',
+    ['product-specs', 'warehouse-dispatch'],
+    new Set(['warehouse-dispatch'])
+  ).map((group) => group.menuKey),
+  ['warehouse-dispatch'],
+  'a stale unauthorized pane must be removed before render instead of waiting for an effect'
+)
 assert.deepEqual(WORKSPACE_MENU_DEFINITIONS['official-warehouse'].routeAliases, [
   '/warehouse/fbn',
   '/storage/warehouse',

@@ -5,7 +5,9 @@ import { ProductBaselineIdentity } from '../../product-baseline'
 import { pskuSiteTransportKey } from '../purchaseDrafts'
 import type { ReplenishmentPlanItem } from '../types'
 import { SEA_ETA_UNCERTAIN_AIR_WINDOW_TOOLTIP } from '../pageTypes'
-import { blockingReasonText, hasSeaEtaRiskWarning, purchaseOpeningKey } from '../replenishmentDomain'
+import {
+  blockingReasonText, hasSeaEtaRiskWarning, purchaseOpeningKey, resolvedProductActiveState
+} from '../replenishmentDomain'
 import {
   formatAdjustedHistoryBuckets, formatDate, formatListingAgeDays, formatMonthDay,
   formatMonthlyStabilityFactor, formatPurchaseTransportSource, formatQuantity,
@@ -21,6 +23,23 @@ export function useReplenishmentColumns(state: ReturnType<typeof useReplenishmen
     planDate, overview, query, setPreviewImage, openPurchaseModal, openingPurchaseKey,
     purchaseTransportQuantities, purchaseTransportSources
   } = state
+  function activeStateLabel(item: ReplenishmentPlanItem) {
+    if (resolvedProductActiveState(item) === 'INACTIVE') return '已停用'
+    if (resolvedProductActiveState(item) === 'UNKNOWN') return '列表状态缺失'
+    return '参与预测'
+  }
+
+  function renderEligibilityNotice(item: ReplenishmentPlanItem) {
+    return (
+      <Space direction="vertical" size={3} className="replenishment-plan-eligibility-notice">
+        <Tag color={resolvedProductActiveState(item) === 'INACTIVE' ? 'default' : 'orange'}>
+          {activeStateLabel(item)}
+        </Tag>
+        <Text type="secondary">未参与预测</Text>
+        <Text type="secondary">{blockingReasonText(item)}</Text>
+      </Space>
+    )
+  }
   function renderSuggestionTransportTag(item: ReplenishmentPlanItem, transportMode: 'AIR' | 'SEA') {
     const isAir = transportMode === 'AIR'
     const label = isAir ? '空运' : '海运'
@@ -110,6 +129,12 @@ export function useReplenishmentColumns(state: ReturnType<typeof useReplenishmen
                   <div className="replenishment-plan-product-codes">
                     <Text type="secondary" copyable={{ text: item.partnerSku }}>{item.partnerSku}</Text>
                     {item.sku ? <Text type="secondary" copyable={{ text: item.sku }}>{item.sku}</Text> : null}
+                    <Tag color={resolvedProductActiveState(item) === 'ACTIVE'
+                      ? 'green'
+                      : resolvedProductActiveState(item) === 'UNKNOWN' ? 'orange' : 'default'}
+                    >
+                      {activeStateLabel(item)}
+                    </Tag>
                   </div>
                   <div className="replenishment-plan-product-listing">
                     <Text type="secondary" className="replenishment-plan-label">上架</Text>
@@ -142,7 +167,7 @@ export function useReplenishmentColumns(state: ReturnType<typeof useReplenishmen
       ),
       dataIndex: 'historyUnits7',
       width: '20%',
-      render: (_: unknown, item) => (
+      render: (_: unknown, item) => resolvedProductActiveState(item) !== 'ACTIVE' ? renderEligibilityNotice(item) : (
         <div className="replenishment-plan-evidence-cell">
           <div className="replenishment-plan-evidence-card replenishment-plan-evidence-card-history">
             <div className="replenishment-plan-line replenishment-plan-history-row">
@@ -173,7 +198,7 @@ export function useReplenishmentColumns(state: ReturnType<typeof useReplenishmen
       title: '预测数据',
       dataIndex: 'forecastUnits100',
       width: '18%',
-      render: (_: unknown, item) => (
+      render: (_: unknown, item) => resolvedProductActiveState(item) !== 'ACTIVE' ? renderEligibilityNotice(item) : (
         <div className="replenishment-plan-evidence-cell">
           <div className="replenishment-plan-evidence-card replenishment-plan-evidence-card-forecast">
             <Space direction="vertical" size={4} className="replenishment-plan-forecast-stack">

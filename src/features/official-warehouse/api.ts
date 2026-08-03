@@ -3,6 +3,7 @@ import type { OfficialWarehouseAppointment } from './officialWarehouseAppointmen
 
 export * from './officialWarehouseApiClient'
 export type * from './officialWarehouseAppointmentTypes'
+export type * from './officialWarehouseBatchSummaryTypes'
 
 export type OfficialWarehouseApiProblem = ApiProblem
 

@@ -202,8 +202,7 @@ export function buildMockOperationPriceItemsResponse(
       totalItems: items.length,
       airItemCount: items.filter((item) => item.transportMode === 'AIR').length,
       seaItemCount: items.filter((item) => item.transportMode === 'SEA').length,
-      warehouseItemCount: items.filter((item) => item.transportMode === 'WAREHOUSE').length,
-      adjustedItemCount: items.filter((item) => item.hasAdjustment).length
+      warehouseItemCount: items.filter((item) => item.transportMode === 'WAREHOUSE').length
     },
     items
   }

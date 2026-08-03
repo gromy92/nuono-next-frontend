@@ -27,12 +27,23 @@ assertTypeHasFields('ReplenishmentPlanOverview', [
   'calculationVersion',
   'configSnapshot',
   'anchorDate',
+  'coverage',
   'rows'
+])
+assertTypeHasFields('ReplenishmentPlanCoverage', [
+  'totalProductCount',
+  'forecastedProductCount',
+  'activeProductCount',
+  'inactiveProductCount',
+  'unknownProductCount'
 ])
 assertTypeHasFields('ReplenishmentPlanItem', [
   'partnerSku',
   'sku',
   'productTitle',
+  'activeState',
+  'activeStateSource',
+  'activeStateSyncedAt',
   'imageUrl',
   'listingAt',
   'latestFactDate',

@@ -22,13 +22,17 @@ import type {
   CreateAsnConfirmation,
   CreateAsnSubmitFeedback
 } from '../officialWarehouseFormModel'
+import { isOfficialWarehouseBatchSummaryBlocked } from '../officialWarehouseBatchSummaryTypes'
 import { useShippingBatchSearch } from '../useShippingBatchSearch'
+import { useOfficialWarehouseBatchSummary } from './useOfficialWarehouseBatchSummary'
 
 export function useOfficialWarehouseCreateAsn({
+  sessionUserId,
   storeCode,
   siteCode,
   reloadAll
 }: {
+  sessionUserId: string
   storeCode: string
   siteCode: string
   reloadAll: () => Promise<void>
@@ -54,11 +58,29 @@ export function useOfficialWarehouseCreateAsn({
     handleShippingBatchSearch,
     resetShippingBatchSearch
   } = useShippingBatchSearch({
+    sessionUserId,
     storeCode,
     siteCode,
     selectedShippingBatchIds,
     setShippingBatches,
     setSelectedShippingBatchIds
+  })
+  const {
+    batchSummary,
+    batchSummaryLoading,
+    batchSummaryError,
+    reloadBatchSummary
+  } = useOfficialWarehouseBatchSummary({
+    enabled: createOpen,
+    storeCode,
+    siteCode,
+    shippingBatchIds: selectedShippingBatchIds
+  })
+  const batchSummaryBlocked = isOfficialWarehouseBatchSummaryBlocked({
+    selectedBatchCount: selectedShippingBatchIds.length,
+    summary: batchSummary,
+    loading: batchSummaryLoading,
+    error: batchSummaryError
   })
 
 
@@ -95,7 +117,7 @@ export function useOfficialWarehouseCreateAsn({
       setSelectedCandidateByKey({})
       setQuantityByCandidateKey({})
       void loadCandidates([], '')
-      void loadShippingBatches('', true)
+      void loadShippingBatches('', false)
     } else {
       resetShippingBatchSearch()
     }
@@ -160,6 +182,10 @@ export function useOfficialWarehouseCreateAsn({
 
 
   async function submitCreateAsn() {
+    if (batchSummaryBlocked) {
+      message.warning('请等待物流批次商品汇总加载成功后再创建 ASN')
+      return
+    }
     const selectedRows = selectedCandidateKeys
       .map((key) => selectedCandidateByKey[String(key)])
       .filter((row): row is OfficialWarehouseProductCandidate => Boolean(row))
@@ -265,6 +291,7 @@ export function useOfficialWarehouseCreateAsn({
     loadShippingBatches, handleShippingBatchSearch, shippingBatchOptions,
     selectedAlreadyAppointedBatches, candidateEmptyDescription, loadCandidates,
     updateCandidateSelection, clearCandidateSelection, submitCreateAsn,
-    confirmCreateAsn
+    confirmCreateAsn, batchSummary, batchSummaryLoading, batchSummaryError,
+    reloadBatchSummary, batchSummaryBlocked
   }
 }

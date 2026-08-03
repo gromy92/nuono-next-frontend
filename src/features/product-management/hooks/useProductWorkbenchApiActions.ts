@@ -24,8 +24,6 @@ import type { ReadyProductWorkbenchSurfaceUpdater } from './useProductWorkbenchS
 
 type ProductSnapshotRequestValues = Partial<{
   storeCode: string;
-  noonUser: string;
-  noonPassword: string;
   skuParent: string;
   currentZCode: string;
   partnerSku: string;
@@ -134,8 +132,6 @@ export function useProductWorkbenchApiActions({
       const currentValues = productSnapshotForm.getFieldsValue();
       const requestValues = {
         storeCode: nextValues?.storeCode ?? currentValues.storeCode ?? selectedInitializationStoreCode,
-        noonUser: nextValues?.noonUser ?? currentValues.noonUser,
-        noonPassword: nextValues?.noonPassword ?? currentValues.noonPassword,
         skuParent: nextValues?.skuParent ?? currentValues.skuParent,
         currentZCode: nextValues?.currentZCode ?? currentValues.currentZCode ?? nextValues?.skuParent ?? currentValues.skuParent,
         partnerSku: nextValues?.partnerSku ?? currentValues.partnerSku,
@@ -193,8 +189,6 @@ export function useProductWorkbenchApiActions({
         const payload = await openProductWorkbenchSnapshot({
           ownerUserId: activeOwnerId,
           storeCode: requestValues.storeCode,
-          noonUser: requestValues.noonUser,
-          noonPassword: requestValues.noonPassword,
           skuParent: requestValues.skuParent,
           currentZCode: requestValues.currentZCode,
           partnerSku: requestValues.partnerSku,

@@ -93,10 +93,6 @@ export function useProductWorkbenchActionSubmitter({
           formValues.storeCode ??
           (typeof productSnapshotView.storeContext.storeCode === 'string' ? productSnapshotView.storeContext.storeCode : undefined) ??
           selectedInitializationStoreCode,
-        noonUser:
-          formValues.noonUser ??
-          (typeof productSnapshotView.storeContext.noonUser === 'string' ? productSnapshotView.storeContext.noonUser : undefined),
-        noonPassword: formValues.noonPassword,
         skuParent:
           formValues.skuParent ??
           (typeof productSnapshotView.identity.skuParent === 'string' ? productSnapshotView.identity.skuParent : undefined),
@@ -122,8 +118,6 @@ export function useProductWorkbenchActionSubmitter({
         const payload = await executeProductWorkbenchAction({
           ownerUserId: activeOwnerId,
           storeCode: requestValues.storeCode,
-          noonUser: requestValues.noonUser,
-          noonPassword: requestValues.noonPassword,
           skuParent: requestValues.skuParent,
           currentZCode: requestValues.currentZCode,
           partnerSku: requestValues.partnerSku,

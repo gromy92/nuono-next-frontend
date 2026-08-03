@@ -6,13 +6,22 @@ export type ReplenishmentPlanQuery = {
 }
 
 export type ReplenishmentPlanOverview = {
-  state: 'empty' | 'ready'
+  state: 'empty' | 'coverage_only' | 'ready'
   storeCode: string
   siteCode: string
   calculationVersion: string
   configSnapshot: ReplenishmentPlanConfigSnapshot
   anchorDate: string | null
+  coverage?: ReplenishmentPlanCoverage
   rows: ReplenishmentPlanItem[]
+}
+
+export type ReplenishmentPlanCoverage = {
+  totalProductCount: number
+  forecastedProductCount: number
+  activeProductCount: number
+  inactiveProductCount: number
+  unknownProductCount: number
 }
 
 export type ReplenishmentPlanItem = {
@@ -21,6 +30,9 @@ export type ReplenishmentPlanItem = {
   partnerSku: string
   sku: string | null
   productTitle: string | null
+  activeState?: 'ACTIVE' | 'INACTIVE' | 'UNKNOWN'
+  activeStateSource?: string | null
+  activeStateSyncedAt?: string | null
   imageUrl: string | null
   listingAt: string | null
   latestFactDate: string | null

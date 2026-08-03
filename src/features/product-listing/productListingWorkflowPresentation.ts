@@ -39,7 +39,6 @@ const ACTION_PRESENTATION: Partial<
   REVIEW_DRAFT: { label: '检查并上架', danger: false },
   EDIT_DRAFT: { label: '修改商品资料', danger: false },
   CONFIRM_PUBLISH: { label: '确认写入 Noon', danger: true },
-  REAUTHENTICATE: { label: '重新授权 Noon', danger: false },
   CHECK_CREATE_RESULT: { label: '系统正在核对 Noon 创建结果', danger: false },
   CONTINUE_AFTER_CREATE: { label: '继续完成剩余写入', danger: true },
   VERIFY_READBACK: { label: '重新回读 Noon', danger: false },
@@ -97,7 +96,6 @@ function actionAllowedForPhase(
     return (
       action === 'EDIT_DRAFT' ||
       action === 'REVIEW_DRAFT' ||
-      action === 'REAUTHENTICATE' ||
       action === 'CHECK_CREATE_RESULT' ||
       action === 'CONTINUE_AFTER_CREATE' ||
       action === 'VERIFY_READBACK' ||

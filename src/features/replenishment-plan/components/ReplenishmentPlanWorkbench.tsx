@@ -2,7 +2,7 @@ import { ReloadOutlined, ShoppingCartOutlined } from '@ant-design/icons'
 import { Alert, Button, Empty, Input, InputNumber, Modal, Select, Space, Spin, Table, Typography } from 'antd'
 import type { PurchaseDraftQuantity, PurchaseDraftRow } from '../purchaseDrafts'
 import type { ReplenishmentPlanItem } from '../types'
-import { BATCH_PURCHASE_OPENING_KEY, type PurchaseDraftTransportKey, type SuggestionFilter } from '../pageTypes'
+import { BATCH_PURCHASE_OPENING_KEY, type ProductCoverageFilter, type PurchaseDraftTransportKey, type SuggestionFilter } from '../pageTypes'
 import { openMissingEtaOverviewMaintenance, summarizeBlockingReasons } from '../replenishmentDomain'
 import { formatQuantity } from '../replenishmentFormatting'
 import { renderPurchaseProgressSummary } from './replenishmentPresentation'
@@ -16,13 +16,15 @@ export function ReplenishmentPlanWorkbench({ state }: {
 }) {
   const {
     overview, loading, errorMessage, searchKeyword, setSearchKeyword, suggestionFilter, setSuggestionFilter,
+    coverageFilter, setCoverageFilter,
     selectedRowKeys, selectedPurchaseRows, ordersLoading, openingPurchaseKey, purchaseModalOpen,
     purchaseDrafts, setPurchaseDrafts, selectedOrderId, setSelectedOrderId, submitting,
     previewImage, setPreviewImage, purchaseDuplicateNotice, filteredRows, suggestionSummary,
-    missingEtaSummary, blockedRows, pastEtaReviewCount, editableOrders,
+    missingEtaSummary, blockedRows, pastEtaReviewSummary, editableOrders,
     purchaseProgressSummary, refreshReplenishmentPlan, openPurchaseModal,
     closePurchaseModal, submitPurchaseDrafts, handleSelectedRowsChange
   } = state
+  const coverage = overview?.coverage
   const renderSuggestionFilterButton = (
     filter: SuggestionFilter,
     label: string,
@@ -40,6 +42,26 @@ export function ReplenishmentPlanWorkbench({ state }: {
       <span>{label}</span>
       <strong>{formatQuantity(count)}</strong>
       {suffix ? <span>{suffix}</span> : null}
+    </button>
+  )
+  const renderCoverageFilterButton = (
+    filter: ProductCoverageFilter,
+    label: string,
+    count: number
+  ) => (
+    <button
+      type="button"
+      className={coverageFilter === filter
+        ? 'replenishment-plan-summary-filter is-active'
+        : 'replenishment-plan-summary-filter'}
+      aria-pressed={coverageFilter === filter}
+      onClick={() => {
+        setCoverageFilter(filter)
+        setSuggestionFilter('all')
+      }}
+    >
+      <span>{label}</span>
+      <strong>{formatQuantity(count)}</strong>
     </button>
   )
 
@@ -98,6 +120,17 @@ export function ReplenishmentPlanWorkbench({ state }: {
             {renderSuggestionFilterButton('air', '空运', suggestionSummary.airSkuCount)}
             {renderSuggestionFilterButton('sea', '海运', suggestionSummary.seaSkuCount)}
           </div>
+          {coverage ? (
+            <div className="replenishment-plan-summary-bar replenishment-plan-coverage-summary">
+              {renderCoverageFilterButton('all', '全部商品', coverage.totalProductCount)}
+              {renderCoverageFilterButton('active', '在售商品', coverage.activeProductCount)}
+              {renderCoverageFilterButton('inactive', '已停用', coverage.inactiveProductCount)}
+              {renderCoverageFilterButton('unknown', '列表状态缺失', coverage.unknownProductCount)}
+              <span className="replenishment-plan-forecasted-count">
+                参与预测 <strong>{formatQuantity(coverage.forecastedProductCount)}</strong>
+              </span>
+            </div>
+          ) : null}
         </div>
         <div className="replenishment-plan-toolbar-actions">
           <Button size="small" icon={<ReloadOutlined />} loading={loading || ordersLoading} onClick={() => void refreshReplenishmentPlan()}>
@@ -118,6 +151,15 @@ export function ReplenishmentPlanWorkbench({ state }: {
       {renderPurchaseProgressSummary(purchaseProgressSummary)}
 
       {errorMessage ? <Alert type="error" showIcon message="补货计划加载失败" description={errorMessage} /> : null}
+      {coverage?.unknownProductCount ? (
+        <Alert
+          className="replenishment-plan-active-state-alert"
+          type="warning"
+          showIcon
+          message={`${coverage.unknownProductCount} 个商品缺少可识别的 Noon 列表状态`}
+          description="后续完整商品列表同步会直接更新状态：在售商品进入销量预测，已从完整列表移除的商品退出补货测算。"
+        />
+      ) : null}
       {blockedRows.length ? (
         <Alert
           className="replenishment-plan-calculation-blocked-alert"
@@ -136,12 +178,12 @@ export function ReplenishmentPlanWorkbench({ state }: {
           action={<Button size="small" onClick={openMissingEtaOverviewMaintenance}>维护在途 ETA</Button>}
         />
       ) : null}
-      {pastEtaReviewCount ? (
+      {pastEtaReviewSummary.batchCount ? (
         <Alert
           className="replenishment-plan-past-eta-alert"
           type="warning"
           showIcon
-          message={`${pastEtaReviewCount} 批在途 ETA 已过期，未计入覆盖，请复核实际到仓状态`}
+          message={`${pastEtaReviewSummary.batchCount} 批在途 ETA 已过期，影响 ${pastEtaReviewSummary.itemCount} 个商品，均未计入覆盖，请复核实际到仓状态`}
           action={<Button size="small" onClick={openMissingEtaOverviewMaintenance}>复核在途</Button>}
         />
       ) : null}

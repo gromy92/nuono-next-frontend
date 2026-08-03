@@ -1,12 +1,14 @@
 import { SearchOutlined } from '@ant-design/icons'
-import { Alert, Button, Empty, Input, InputNumber, Modal, Select, Space, Table, Typography } from 'antd'
+import { Alert, Button, Empty, Input, InputNumber, Modal, Space, Table, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { Dispatch, Key, SetStateAction } from 'react'
 import type {
+  OfficialWarehouseBatchProductSummary,
   OfficialWarehouseProductCandidate,
   OfficialWarehouseShippingBatchCandidate
 } from '../api'
-import { ShippingBatchLoadAlert } from '../ShippingBatchLoadAlert'
+import { OfficialWarehouseBatchSummaryPanel } from './OfficialWarehouseBatchSummaryPanel'
+import { OfficialWarehouseShippingBatchPicker } from './OfficialWarehouseShippingBatchPicker'
 import {
   displayPsku,
   officialWarehouseCandidateKey,
@@ -31,11 +33,16 @@ type Props = {
   submitting: boolean
   selectedAlreadyAppointedBatches: OfficialWarehouseShippingBatchCandidate[]
   shippingBatchLoadError?: string
-  loadShippingBatches: (keyword?: string, immediate?: boolean) => Promise<void>
+  loadShippingBatches: (keyword?: string, prepareProductMatches?: boolean, forceRefresh?: boolean) => Promise<void>
   shippingBatchKeyword: string
   shippingBatchLoading: boolean
   shippingBatches: OfficialWarehouseShippingBatchCandidate[]
   selectedShippingBatchIds: string[]
+  batchSummary?: OfficialWarehouseBatchProductSummary
+  batchSummaryLoading: boolean
+  batchSummaryError?: string
+  reloadBatchSummary: () => Promise<void>
+  batchSummaryBlocked: boolean
   setSelectedShippingBatchIds: Dispatch<SetStateAction<string[]>>
   shippingBatchOptions: Array<{ label: string; value: string }>
   handleShippingBatchSearch: (value: string) => void
@@ -66,6 +73,7 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
     selectedAlreadyAppointedBatches, shippingBatchLoadError, loadShippingBatches,
     shippingBatchKeyword, shippingBatchLoading, shippingBatches,
     selectedShippingBatchIds, setSelectedShippingBatchIds, shippingBatchOptions,
+    batchSummary, batchSummaryLoading, batchSummaryError, reloadBatchSummary, batchSummaryBlocked,
     handleShippingBatchSearch, clearCandidateSelection, setQuantityByCandidateKey,
     loadCandidates, candidateKeyword, setCandidateKeyword, candidateLoading,
     selectedCandidateKeys, candidateColumns, candidates, updateCandidateSelection,
@@ -86,7 +94,7 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
         onOk={() => void submitCreateAsn()}
         confirmLoading={submitting}
         okText="创建 ASN"
-        okButtonProps={{ disabled: Boolean(createSubmitFeedback?.problem?.partialSuccess) }}
+        okButtonProps={{ disabled: batchSummaryBlocked || Boolean(createSubmitFeedback?.problem?.partialSuccess) }}
         destroyOnClose
       >
         <div className="official-warehouse-modal-body">
@@ -117,34 +125,23 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
               description={`批次 ${selectedAlreadyAppointedBatches.map(shippingBatchDisplayNo).join('、')} 再次创建 ASN 前会要求确认，请核对本次商品和数量。`}
             />
           ) : null}
-          <div className="official-warehouse-shipping-picker">
-            <div className="official-warehouse-shipping-picker-header">
-              <div className="official-warehouse-stack">
-                <Text strong>物流批次号</Text>
-              </div>
-            </div>
-            <ShippingBatchLoadAlert error={shippingBatchLoadError} onRetry={() => void loadShippingBatches(shippingBatchKeyword, true)} />
-            <Select
-              mode="multiple"
-              allowClear
-              showSearch
-              placeholder="选择物流批次号"
-              loading={shippingBatchLoading}
-              disabled={shippingBatchLoading && !shippingBatches.length}
-              value={selectedShippingBatchIds}
-              options={shippingBatchOptions}
-              filterOption={false}
-              onSearch={handleShippingBatchSearch}
-              onChange={(value) => {
-                const nextBatchIds = Array.isArray(value) ? value : []
+          <OfficialWarehouseShippingBatchPicker
+            error={shippingBatchLoadError}
+            loadBatches={loadShippingBatches}
+            keyword={shippingBatchKeyword}
+            loading={shippingBatchLoading}
+            batches={shippingBatches}
+            selectedIds={selectedShippingBatchIds}
+            options={shippingBatchOptions}
+            onSearch={handleShippingBatchSearch}
+            onChange={(nextBatchIds) => {
                 setSelectedShippingBatchIds(nextBatchIds)
                 clearCandidateSelection()
                 setQuantityByCandidateKey({})
                 void loadCandidates(nextBatchIds, candidateKeyword)
-              }}
-              maxTagCount="responsive"
-            />
-          </div>
+            }}
+          />
+          <OfficialWarehouseBatchSummaryPanel selectedBatchCount={selectedShippingBatchIds.length} summary={batchSummary} loading={batchSummaryLoading} error={batchSummaryError} onRetry={() => void reloadBatchSummary()} />
           <div className="official-warehouse-toolbar official-warehouse-modal-toolbar">
             <div className="official-warehouse-toolbar-left">
               <Input.TextArea
