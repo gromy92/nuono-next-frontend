@@ -19,7 +19,8 @@ import {
 } from '../route-catalog/routePaths';
 import {
   resolveSessionAllowedMenuKeys,
-  resolveSessionLandingMenuKey
+  resolveSessionLandingMenuKey,
+  resolveSessionRenderMenuKey
 } from '../route-catalog/sessionAccessPolicy';
 import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery';
 
@@ -28,7 +29,7 @@ export function useShellSessionState() {
   const [currentPathname, setCurrentPathname] = useState<string>(() =>
     typeof window === 'undefined' ? PURCHASE_ORDER_PATH : currentAppPathname()
   );
-  const [activeMenuKey, setActiveMenuKey] = useState<AppMenuKey>(() => readInitialWorkspaceMenuKey());
+  const [requestedActiveMenuKey, setActiveMenuKey] = useState<AppMenuKey>(() => readInitialWorkspaceMenuKey());
 
   const shouldRenderProcurementRequirementConfirmation =
     isProcurementRequirementConfirmationPath(currentPathname);
@@ -43,6 +44,10 @@ export function useShellSessionState() {
     [shellSession, usingProcurementRequirementDemoSession]
   );
   const sessionAllowedMenuKeySet = useMemo(() => new Set(sessionAllowedMenuKeys), [sessionAllowedMenuKeys]);
+  const activeMenuKey = useMemo(
+    () => resolveSessionRenderMenuKey(shellSession, sessionAllowedMenuKeys, requestedActiveMenuKey),
+    [requestedActiveMenuKey, sessionAllowedMenuKeys, shellSession]
+  );
   const visibleWorkspaceMenuItems = useMemo(
     () => filterLegacyMenuItemsByAllowedKeys(workspaceMenuItems, sessionAllowedMenuKeySet),
     [sessionAllowedMenuKeySet]

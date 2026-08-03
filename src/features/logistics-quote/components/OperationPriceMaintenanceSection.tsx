@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Button, Card, Select, Space, Tabs, Tag } from 'antd'
+import { Alert, Button, Card, Select, Space, Tabs, Tag } from 'antd'
 import { fetchLogisticsQuoteOperationPriceItems } from '../api'
-import { buildMockOperationPriceItemsResponse } from '../operationQuoteMockData'
 import { buildOperationQuoteView } from '../operationQuoteModels'
+import { requireReadyOperationPriceItems } from '../operationPriceItemsDomain'
 import type {
   LogisticsQuoteOperationPriceItemDto,
   LogisticsQuoteOperationPriceItemsResponse
 } from '../types'
-import { OperationPriceAdjustmentModal } from './OperationPriceAdjustmentModal'
 import { OperationQuoteFeeItemTable } from './OperationQuoteFeeItemTable'
 import { OperationQuotePriceTierTable } from './OperationQuotePriceTierTable'
 
@@ -47,26 +46,26 @@ export function OperationPriceMaintenanceSection() {
   const [selectedForwarderKey, setSelectedForwarderKey] = useState<string>()
   const [selectedVersionKey, setSelectedVersionKey] = useState<string>()
   const [selectedTransportMode, setSelectedTransportMode] = useState<string>()
-  const [editingItem, setEditingItem] = useState<LogisticsQuoteOperationPriceItemDto | null>(null)
-  const [lastSaveMessage, setLastSaveMessage] = useState('')
 
   useEffect(() => {
     let cancelled = false
 
     const loadPriceItems = async () => {
       setState({ status: 'loading' })
+      setSelectedForwarderKey(undefined)
+      setSelectedVersionKey(undefined)
+      setSelectedTransportMode(undefined)
       try {
-        const data = await fetchLogisticsQuoteOperationPriceItems()
+        const data = requireReadyOperationPriceItems(
+          await fetchLogisticsQuoteOperationPriceItems()
+        )
         if (!cancelled) {
           setState({ status: 'success', data })
         }
       } catch (error) {
         if (!cancelled) {
           const message = error instanceof Error ? error.message : '运营报价维护列表加载失败'
-          setState({
-            status: 'success',
-            data: buildMockOperationPriceItemsResponse('ALL', message)
-          })
+          setState({ status: 'error', message })
         }
       }
     }
@@ -149,24 +148,35 @@ export function OperationPriceMaintenanceSection() {
       item.targetType === 'WAREHOUSE_PROCESSING_FEE')
   )
   const viewModel = buildOperationQuoteView(selectedItems)
-  const canAdjust = data?.mode === 'local-db'
   const loading = state.status === 'loading'
-  const emptyText = state.status === 'error' ? state.message : '当前没有可维护的报价明细'
+  const emptyText = state.status === 'error' ? state.message : '当前没有生效中的正式报价明细'
 
   return (
     <Card
-      title="货代报价维护"
+      title="货代正式报价"
       bordered={false}
       style={{ boxShadow: '0 12px 32px rgba(15, 23, 42, 0.06)' }}
       extra={
         <Space wrap size={8}>
-          {data?.mode === 'mock-demo' ? <Tag color="warning">样例数据</Tag> : null}
-          {lastSaveMessage ? <Tag color="success">{lastSaveMessage}</Tag> : null}
-          <Button onClick={() => setReloadKey((current) => current + 1)}>刷新</Button>
+          {data?.mode === 'local-db' ? <Tag color="success">当前生效版本</Tag> : null}
+          <Button loading={loading} onClick={() => setReloadKey((current) => current + 1)}>刷新</Button>
         </Space>
       }
     >
       <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        {state.status === 'error' ? (
+          <Alert
+            type="error"
+            showIcon
+            message="正式报价加载失败"
+            description={state.message}
+            action={(
+              <Button size="small" onClick={() => setReloadKey((current) => current + 1)}>
+                重新加载
+              </Button>
+            )}
+          />
+        ) : null}
         <Space wrap size={8}>
           <Select
             value={selectedForwarderKey}
@@ -212,9 +222,7 @@ export function OperationPriceMaintenanceSection() {
                 <OperationQuotePriceTierTable
                   rows={viewModel.priceTiers}
                   loading={loading}
-                  canAdjust={canAdjust}
                   emptyText={emptyText}
-                  onAdjust={setEditingItem}
                 />
               )
             },
@@ -225,23 +233,11 @@ export function OperationPriceMaintenanceSection() {
                 <OperationQuoteFeeItemTable
                   rows={viewModel.feeItems}
                   loading={loading}
-                  canAdjust={canAdjust}
                   emptyText={emptyText}
-                  onAdjust={setEditingItem}
                 />
               )
             }
           ]}
-        />
-
-        <OperationPriceAdjustmentModal
-          item={editingItem}
-          onCancel={() => setEditingItem(null)}
-          onSaved={(message) => {
-            setLastSaveMessage(message)
-            setEditingItem(null)
-            setReloadKey((current) => current + 1)
-          }}
         />
       </Space>
     </Card>

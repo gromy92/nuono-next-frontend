@@ -1,7 +1,17 @@
 import { message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { issueShippingBatch, loadShippingBatch } from './api'
+import { createLatestRequestGate } from '../../shared/latestRequestGate'
+import {
+  createShippingBatchFromDispatchPlan,
+  issueShippingBatch,
+  loadDispatchPlans,
+  loadShippingBatch
+} from './api'
 import { buildRouteGroups } from './dispatchPlanDomain'
+import {
+  requireCurrentShippingBatchForPlan,
+  requireShippingBatchForPlan
+} from './shippingBatchScopeDomain'
 import type { DispatchPlan, ShippingBatch } from './types'
 import { resolveShippingBatchOption } from './shippingCostDomain'
 
@@ -18,8 +28,11 @@ export function useShippingPlanWorkspace(
   const [costDrawerOpen, setCostDrawerOpen] = useState(false)
   const [costDetailOptionId, setCostDetailOptionId] = useState<string>()
   const [batchLoadingId, setBatchLoadingId] = useState<string>()
+  const [generatingPlanId, setGeneratingPlanId] = useState<string>()
   const [outboundSubmitting, setOutboundSubmitting] = useState(false)
-  const requestRef = useRef(0)
+  const batchRequestGateRef = useRef(createLatestRequestGate<string>())
+  const batchRequestScopeRef = useRef<string | undefined>(undefined)
+  const outboundSubmissionSequenceRef = useRef(0)
 
   const selectedPlan = useMemo(
     () => dispatchPlans.find((plan) => plan.id === selectedPlanId) || dispatchPlans[0],
@@ -38,13 +51,37 @@ export function useShippingPlanWorkspace(
     [costDetailOptionId, selectedOption, shippingBatch]
   )
 
+  function clearShippingBatchState() {
+    setShippingBatch(undefined)
+    setSelectedOptionId(undefined)
+    setCostDetailOptionId(undefined)
+    setCostDrawerOpen(false)
+  }
+
+  function cancelOutboundSubmission() {
+    outboundSubmissionSequenceRef.current += 1
+    setOutboundSubmitting(false)
+  }
+
   useEffect(() => {
     if (!dispatchPlans.length) {
+      batchRequestGateRef.current.invalidate()
+      batchRequestScopeRef.current = undefined
+      cancelOutboundSubmission()
       setSelectedPlanId(undefined)
     } else if (!selectedPlanId || !dispatchPlans.some((plan) => plan.id === selectedPlanId)) {
+      batchRequestGateRef.current.invalidate()
+      batchRequestScopeRef.current = dispatchPlans[0].id
+      cancelOutboundSubmission()
       setSelectedPlanId(dispatchPlans[0].id)
     }
   }, [dispatchPlans, selectedPlanId])
+
+  useEffect(() => () => {
+    batchRequestGateRef.current.invalidate()
+    batchRequestScopeRef.current = undefined
+    outboundSubmissionSequenceRef.current += 1
+  }, [])
 
   useEffect(() => {
     if (!routeGroups.length) {
@@ -56,12 +93,12 @@ export function useShippingPlanWorkspace(
 
   function selectPlan(planId: string) {
     const plan = dispatchPlans.find((candidate) => candidate.id === planId)
-    requestRef.current += 1
+    batchRequestGateRef.current.invalidate()
+    batchRequestScopeRef.current = planId
+    cancelOutboundSubmission()
     setBatchLoadingId(undefined)
-    setCostDrawerOpen(false)
-    setCostDetailOptionId(undefined)
-    setShippingBatch(undefined)
-    setSelectedOptionId(undefined)
+    setGeneratingPlanId(undefined)
+    clearShippingBatchState()
     setSelectedPlanId(planId)
     setDetailOpen(true)
     if (plan?.currentShippingBatch) void hydrateBatch(plan, 'detail')
@@ -70,12 +107,17 @@ export function useShippingPlanWorkspace(
   async function hydrateBatch(plan: DispatchPlan, purpose: 'detail' | 'cost') {
     const batch = plan.currentShippingBatch
     if (!batch) return
-    const requestId = requestRef.current + 1
-    requestRef.current = requestId
+    batchRequestScopeRef.current = plan.id
+    const requestIdentity = batchRequestGateRef.current.begin(plan.id)
+    const isCurrentRequest = () => batchRequestScopeRef.current !== undefined
+      && batchRequestGateRef.current.isCurrent(requestIdentity, batchRequestScopeRef.current)
+    setGeneratingPlanId(undefined)
     setBatchLoadingId(batch.id)
+    clearShippingBatchState()
     try {
       const detail = await loadShippingBatch(batch.id)
-      if (requestRef.current !== requestId) return
+      if (!isCurrentRequest()) return
+      requireShippingBatchForPlan(plan, detail)
       const option = resolveShippingBatchOption(detail)
       setShippingBatch(detail)
       setSelectedOptionId(option?.id)
@@ -88,11 +130,11 @@ export function useShippingPlanWorkspace(
         setCostDrawerOpen(true)
       }
     } catch (error) {
-      if (requestRef.current === requestId) {
+      if (isCurrentRequest()) {
         message.error(error instanceof Error ? error.message : '读取物流方案详情失败')
       }
     } finally {
-      if (requestRef.current === requestId) setBatchLoadingId(undefined)
+      if (isCurrentRequest()) setBatchLoadingId(undefined)
     }
   }
 
@@ -101,10 +143,40 @@ export function useShippingPlanWorkspace(
       message.warning('当前发货申请单还没有可对比的物流方案。')
       return
     }
+    cancelOutboundSubmission()
     setSelectedPlanId(plan.id)
     setCostDrawerOpen(false)
     setCostDetailOptionId(undefined)
     void hydrateBatch(plan, 'cost')
+  }
+
+  async function generateLogisticsPlan(plan: DispatchPlan) {
+    cancelOutboundSubmission()
+    batchRequestScopeRef.current = plan.id
+    const requestIdentity = batchRequestGateRef.current.begin(plan.id)
+    const isCurrentRequest = () => batchRequestScopeRef.current !== undefined
+      && batchRequestGateRef.current.isCurrent(requestIdentity, batchRequestScopeRef.current)
+    setBatchLoadingId(undefined)
+    setGeneratingPlanId(plan.id)
+    clearShippingBatchState()
+    try {
+      const batch = await createShippingBatchFromDispatchPlan(plan.id)
+      if (!isCurrentRequest()) return
+      requireShippingBatchForPlan(plan, batch)
+      const option = resolveShippingBatchOption(batch)
+      setSelectedPlanId(plan.id)
+      setShippingBatch(batch)
+      setSelectedOptionId(option?.id)
+      await refresh()
+      if (!isCurrentRequest()) return
+      message.success('物流计划已生成，请核对费用后选择方案下发。')
+    } catch (error) {
+      if (isCurrentRequest()) {
+        message.error(error instanceof Error ? error.message : '生成物流计划失败')
+      }
+    } finally {
+      if (isCurrentRequest()) setGeneratingPlanId(undefined)
+    }
   }
 
   function selectOptionFromComparison(optionId: string) {
@@ -121,18 +193,43 @@ export function useShippingPlanWorkspace(
       message.warning('请先选择物流方案。')
       return
     }
+    if (!selectedPlan) {
+      clearShippingBatchState()
+      message.error('当前发货申请单不存在，请刷新后重试。')
+      return
+    }
+    const batch = shippingBatch
+    const optionId = selectedOptionId
+    const planId = selectedPlan.id
+    batchRequestScopeRef.current = planId
+    const requestIdentity = batchRequestGateRef.current.begin(planId)
+    const submissionSequence = ++outboundSubmissionSequenceRef.current
+    const isCurrentRequest = () => batchRequestScopeRef.current !== undefined
+      && batchRequestGateRef.current.isCurrent(requestIdentity, batchRequestScopeRef.current)
     setOutboundSubmitting(true)
     try {
-      await issueShippingBatch(shippingBatch.id, selectedOptionId)
+      const currentPlans = await loadDispatchPlans()
+      if (!isCurrentRequest()) return
+      const currentPlan = currentPlans.find((plan) => String(plan.id) === String(planId))
+      if (!currentPlan) throw new Error('当前发货申请单不存在，请刷新后重试。')
+      requireCurrentShippingBatchForPlan(currentPlan, batch)
+      await issueShippingBatch(batch.id, optionId)
+      if (!isCurrentRequest()) return
       onIssued()
       await refresh()
+      if (!isCurrentRequest()) return
       setCostDrawerOpen(false)
       setDetailOpen(false)
       message.success('已下发发货单和装箱单，仓库可以开始装箱。')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '下发仓库单失败')
+      if (isCurrentRequest()) {
+        clearShippingBatchState()
+        message.error(error instanceof Error ? error.message : '下发仓库单失败')
+      }
     } finally {
-      setOutboundSubmitting(false)
+      if (submissionSequence === outboundSubmissionSequenceRef.current) {
+        setOutboundSubmitting(false)
+      }
     }
   }
 
@@ -153,9 +250,11 @@ export function useShippingPlanWorkspace(
     setCostDetailOptionId,
     costDetailOption,
     batchLoadingId,
+    generatingPlanId,
     outboundSubmitting,
     selectPlan,
     openCostComparison,
+    generateLogisticsPlan,
     selectOptionFromComparison,
     confirmOutbound
   }

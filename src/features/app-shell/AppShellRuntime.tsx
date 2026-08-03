@@ -114,6 +114,7 @@ function AppShellRuntimeContent({
     <WorkspaceOwnedTabsProvider controller={ownedTabsController}>
       <ShellFrame
         activeMenuKey={activeMenuKey}
+        allowedMenuKeySet={sessionAllowedMenuKeySet}
         activeMenuPathLabel={activeMenuPathLabel}
         activeSidebarOpenKeys={activeSidebarOpenKeys}
         activeSidebarRootKey={activeSidebarRootKey}
