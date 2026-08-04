@@ -4,6 +4,7 @@ import { ProductLogisticsCostsTable } from './ProductLogisticsCostsTable';
 import { ProductLogisticsCostsToolbar } from './ProductLogisticsCostsToolbar';
 import { useProductLogisticsCostData } from './useProductLogisticsCostData';
 import { useProductLogisticsCostMutations } from './useProductLogisticsCostMutations';
+import './ProductLogisticsCostsFilters.css';
 import './ProductLogisticsCostsPage.css';
 
 export function ProductLogisticsCostsPage({ session }: { session: AuthSession }) {

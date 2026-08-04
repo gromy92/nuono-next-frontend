@@ -9,7 +9,9 @@ const pageSource = fs
   .sort()
   .map((fileName) => fs.readFileSync(path.join(featureDir, fileName), 'utf8'))
   .join('\n')
-const pageCss = fs.readFileSync(path.join(featureDir, 'ProductLogisticsCostsPage.css'), 'utf8')
+const pageCss = ['ProductLogisticsCostsFilters.css', 'ProductLogisticsCostsPage.css']
+  .map((fileName) => fs.readFileSync(path.join(featureDir, fileName), 'utf8'))
+  .join('\n')
 
 assert(
   pageSource.includes('/api/product-logistics-costs/current/categories/batch'),
