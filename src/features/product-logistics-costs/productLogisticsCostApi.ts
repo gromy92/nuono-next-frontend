@@ -1,7 +1,11 @@
 import { apiFetch, readApiErrorMessage } from '../../shared/api';
 import type {
   CostFilters,
+  ForwarderEligibilityStatus,
+  ManualCurrentQuoteWithEligibilityResult,
   ProductLogisticsCostRow,
+  ProductLogisticsEligibilityListView,
+  ProductLogisticsEligibilityView,
   ProductLogisticsRateCardRow
 } from './productLogisticsCostModels';
 
@@ -94,6 +98,60 @@ export async function saveManualCurrentQuote(payload: {
     throw new Error(await readApiErrorMessage(response, '保存当前报价失败'));
   }
   return (await response.json()) as ProductLogisticsCostRow;
+}
+
+export async function fetchCurrentEligibility(payload: {
+  storeCode: string;
+  partnerSku: string;
+  siteCode: string;
+  forwarderCode: string;
+  transportMode: string;
+}) {
+  const query = new URLSearchParams(payload);
+  const response = await apiFetch(`/api/product-logistics-costs/eligibility/current?${query.toString()}`);
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, '读取货代承接状态失败'));
+  }
+  return (await response.json()) as ProductLogisticsEligibilityView;
+}
+
+export async function fetchCurrentEligibilityList(payload: {
+  storeCode: string;
+  siteCode: string;
+  forwarderCode: string;
+  transportMode: string;
+}) {
+  const query = new URLSearchParams(payload);
+  const response = await apiFetch(`/api/product-logistics-costs/eligibility/current-list?${query.toString()}`);
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, '读取货代承接状态失败'));
+  }
+  return (await response.json()) as ProductLogisticsEligibilityListView;
+}
+
+export async function saveManualCurrentQuoteWithEligibility(payload: {
+  storeCode: string;
+  partnerSku: string;
+  siteCode: string;
+  forwarderCode: string;
+  forwarderName: string;
+  transportMode: string;
+  eligibilityStatus: ForwarderEligibilityStatus;
+  cargoCategoryCode?: string;
+  cargoCategoryName?: string;
+  chargeUnit?: string;
+  unitCostCny?: number;
+  remark?: string;
+}) {
+  const response = await apiFetch('/api/product-logistics-costs/current/manual-with-eligibility', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, '保存当前报价和承接状态失败'));
+  }
+  return (await response.json()) as ManualCurrentQuoteWithEligibilityResult;
 }
 
 export async function saveBatchCategoryAssignment(payload: {

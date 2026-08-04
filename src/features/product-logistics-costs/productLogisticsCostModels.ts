@@ -49,6 +49,22 @@ export type ProductLogisticsRateCardRow = {
 
 export type CostDataStatus = 'ALL' | 'WITH_DATA' | 'MISSING_DATA';
 
+export type ForwarderEligibilityStatus = 'SUPPORTED' | 'INQUIRY_REQUIRED' | 'UNSUPPORTED';
+
+export type ProductLogisticsEligibilityView = {
+  partnerSku: string;
+  eligibilityStatus: ForwarderEligibilityStatus;
+};
+
+export type ProductLogisticsEligibilityListView = {
+  items: ProductLogisticsEligibilityView[];
+};
+
+export type ManualCurrentQuoteWithEligibilityResult = {
+  eligibilityStatus: ForwarderEligibilityStatus;
+  currentCost?: ProductLogisticsCostRow | null;
+};
+
 export type CostFilters = {
   searchText: string;
   siteCode: string;
@@ -62,13 +78,15 @@ export type ProductCostTableRow = {
   rowKey: string;
   product: ProductListRowPayload;
   partnerSku: string;
+  eligibilityStatus: ForwarderEligibilityStatus;
   currentCost?: ProductLogisticsCostRow;
   historyCosts: ProductLogisticsCostRow[];
 };
 
 export type ManualQuoteFormValues = {
-  unitCostCny: number;
-  chargeUnit: string;
+  eligibilityStatus: ForwarderEligibilityStatus;
+  unitCostCny?: number;
+  chargeUnit?: string;
   cargoCategoryCode?: string;
   remark?: string;
 };
@@ -112,6 +130,12 @@ export const CHARGE_UNIT_OPTIONS = [
   { label: 'KG', value: 'KG' },
   { label: 'PCS', value: 'PCS' },
   { label: 'BOX', value: 'BOX' }
+];
+
+export const FORWARDER_ELIGIBILITY_OPTIONS = [
+  { label: '可发', value: 'SUPPORTED' },
+  { label: '需询价', value: 'INQUIRY_REQUIRED' },
+  { label: '不接', value: 'UNSUPPORTED' }
 ];
 
 export const ALL_CATEGORY_FILTER = 'ALL';

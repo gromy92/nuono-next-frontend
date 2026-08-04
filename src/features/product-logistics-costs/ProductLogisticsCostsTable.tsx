@@ -1,7 +1,12 @@
-import { Alert, Modal, Table } from 'antd';
+import { Alert, Modal, Table, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useMemo } from 'react';
-import { HistoryQuotesCell, QuotePriceCell, RouteCell } from './ProductLogisticsCostCells';
+import {
+  EligibilityStatusCell,
+  HistoryQuotesCell,
+  QuotePriceCell,
+  RouteCell
+} from './ProductLogisticsCostCells';
 import type { ProductCostTableRow } from './productLogisticsCostModels';
 import { categoryLabel, categoryTitle } from './productLogisticsCostRouteDomain';
 import {
@@ -11,6 +16,8 @@ import {
 } from './productLogisticsCostProductDomain';
 import type { ProductLogisticsCostData } from './useProductLogisticsCostData';
 import type { ProductLogisticsCostMutations } from './useProductLogisticsCostMutations';
+
+const { Text } = Typography;
 
 export function ProductLogisticsCostsTable({
   data,
@@ -28,40 +35,42 @@ export function ProductLogisticsCostsTable({
       render: (_, row) => {
         const imageUrl = productImageUrl(row.product);
         const imageAvailable = !!imageUrl && !data.failedImageUrls.has(imageUrl);
-        const content = (
+        return (
           <div className="product-logistics-costs-page__product">
             {imageAvailable ? (
-              <img
-                className="product-logistics-costs-page__product-image"
-                src={imageUrl}
-                alt=""
-                onError={() => data.markImageFailed(imageUrl)}
-              />
+              <button
+                type="button"
+                className="product-logistics-costs-page__product-button"
+                aria-label={`预览 ${productTitle(row.product)} 商品图片`}
+                onClick={() => data.setImagePreview({ url: imageUrl, title: productTitle(row.product) })}
+              >
+                <img
+                  className="product-logistics-costs-page__product-image"
+                  src={imageUrl}
+                  alt=""
+                  onError={() => data.markImageFailed(imageUrl)}
+                />
+              </button>
             ) : (
               <div className="product-logistics-costs-page__product-image product-logistics-costs-page__product-image--empty" />
             )}
             <div className="product-logistics-costs-page__product-text">
               <span className="product-logistics-costs-page__product-title">{productTitle(row.product)}</span>
-              <span className="product-logistics-costs-page__subtext">{productSubtitle(row.product, row.partnerSku)}</span>
+              <Text
+                className="product-logistics-costs-page__product-psku"
+                copyable={{ text: row.partnerSku, tooltips: ['复制 PSKU', '已复制'] }}
+              >
+                {productSubtitle(row.product, row.partnerSku)}
+              </Text>
             </div>
           </div>
-        );
-        if (!imageAvailable) return content;
-        return (
-          <button
-            type="button"
-            className="product-logistics-costs-page__product-button"
-            onClick={() => data.setImagePreview({ url: imageUrl, title: productTitle(row.product) })}
-          >
-            {content}
-          </button>
         );
       }
     },
     {
       title: '站点 / 货代 / 方式',
       key: 'routeSummary',
-      width: 132,
+      width: 220,
       render: (_, row) => <RouteCell row={row} filters={data.appliedFilters} />
     },
     {
@@ -77,6 +86,13 @@ export function ProductLogisticsCostsTable({
           </span>
         );
       }
+    },
+    {
+      title: '可发状态',
+      key: 'eligibilityStatus',
+      width: 92,
+      align: 'center',
+      render: (_, row) => <EligibilityStatusCell status={row.eligibilityStatus} />
     },
     {
       title: '当前报价',
@@ -113,7 +129,7 @@ export function ProductLogisticsCostsTable({
         loading={data.loading}
         size="small"
         rowSelection={data.rowSelection}
-        scroll={{ x: 1320, y: 620 }}
+        scroll={{ x: 1500, y: 620 }}
         pagination={{
           current: data.pagination.current,
           pageSize: data.pagination.pageSize,

@@ -1,0 +1,153 @@
+.product-logistics-costs-page__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.product-logistics-costs-page__toolbar .ant-select {
+  min-width: 118px;
+}
+
+.product-logistics-costs-page__search {
+  min-width: 220px;
+  max-width: 320px;
+  flex: 0 1 320px;
+}
+
+.product-logistics-costs-page__filter-summary-row {
+  display: flex;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.product-logistics-costs-page__category-filters {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.product-logistics-costs-page__filter-label {
+  margin-right: 2px;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.product-logistics-costs-page__stats {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  color: #4b5563;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.product-logistics-costs-page__stat-button {
+  height: 28px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 26px;
+  padding: 0 10px;
+}
+
+.product-logistics-costs-page__stat-button--with-data {
+  border-color: #86d35f;
+  color: #389e0d;
+}
+
+.product-logistics-costs-page__stat-button--missing-data {
+  border-color: #ff9c93;
+  color: #cf1322;
+}
+
+.product-logistics-costs-page__stat-button--active {
+  background: #f3f4f6;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.product-logistics-costs-page__category-button {
+  flex: 0 0 auto;
+  max-width: 180px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-logistics-costs-page__category-button--tone-0 {
+  border-color: #91caff;
+  background: #e6f4ff;
+  color: #0958d9;
+}
+
+.product-logistics-costs-page__category-button--tone-1 {
+  border-color: #b7eb8f;
+  background: #f6ffed;
+  color: #389e0d;
+}
+
+.product-logistics-costs-page__category-button--tone-2 {
+  border-color: #ffd591;
+  background: #fff7e6;
+  color: #d46b08;
+}
+
+.product-logistics-costs-page__category-button--tone-3 {
+  border-color: #d3adf7;
+  background: #f9f0ff;
+  color: #722ed1;
+}
+
+.product-logistics-costs-page__category-button--tone-4 {
+  border-color: #87e8de;
+  background: #e6fffb;
+  color: #08979c;
+}
+
+.product-logistics-costs-page__category-button--tone-5 {
+  border-color: #ffadd2;
+  background: #fff0f6;
+  color: #c41d7f;
+}
+
+.product-logistics-costs-page__category-button--tone-6 {
+  border-color: #ffe58f;
+  background: #fffbe6;
+  color: #d48806;
+}
+
+.product-logistics-costs-page__category-button--empty {
+  border-color: #d1d5db;
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.product-logistics-costs-page__batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.product-logistics-costs-page__batch-count {
+  color: #4b5563;
+  font-size: 12px;
+}
+
+.product-logistics-costs-page__batch-modal,
+.product-logistics-costs-page__batch-modal-select {
+  width: 100%;
+}

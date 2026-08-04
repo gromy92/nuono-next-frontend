@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import type { ProductLogisticsRateCardRow } from './productLogisticsCostModels';
 import {
+  categoryFilterLabel,
   forwarderOptionsFromRateCards,
   routeOptionsFromRateCards,
   transportOptionsForForwarder
@@ -69,4 +70,10 @@ assert.deepEqual(
   transportOptionsForForwarder('YITE', routes).map((option) => option.value),
   ['SEA'],
   'existing forwarders should keep only their available transport modes'
+);
+
+assert.equal(
+  categoryFilterLabel('A', 32, rateCards[2]),
+  'A · ¥1,390/CBM · 32件',
+  'category filter labels should expose the route price and matching product count'
 );
