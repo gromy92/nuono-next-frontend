@@ -54,30 +54,6 @@ export function startAli1688OpenApiAuthorization(
     )
 }
 
-export function runInitialAli1688HistoricalOrderSync(): Promise<Ali1688HistoricalOrderWorkbench> {
-  return apiFetch('/api/procurement/ali1688-orders/sync-tasks/initial-backfill', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: '{}'
-  }).then((response) =>
-    parseApiResponse<Ali1688HistoricalOrderWorkbench>(response, '同步 1688 历史订单失败')
-  )
-}
-
-export function runManualAli1688HistoricalOrderRefresh(): Promise<Ali1688HistoricalOrderWorkbench> {
-  return apiFetch('/api/procurement/ali1688-orders/sync-tasks/manual-refresh', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: '{}'
-  }).then((response) =>
-    parseApiResponse<Ali1688HistoricalOrderWorkbench>(response, '刷新 1688 历史订单失败')
-  )
-}
-
 export function deleteAli1688HistoricalOrder(
   orderId: string,
   request: Ali1688HistoricalOrderDeleteRequest

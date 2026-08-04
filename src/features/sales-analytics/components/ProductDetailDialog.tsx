@@ -16,11 +16,11 @@ import {
   formatPercent,
   formatStockCoverDays,
   formatTrendDataRange,
-  healthTags,
-  lastCategoryLabel
+  lastCategoryLabel,
+  missingFieldTags
 } from '../presentation/formatters'
 import { SummaryStrip } from '../presentation/forecastPresentation'
-import { HistoryCoverageStatus, ProductForecastPanel } from './ProductForecastPanel'
+import { ProductForecastPanel } from './ProductForecastPanel'
 import { TrendLineChart } from './TrendLineChart'
 
 const { RangePicker } = DatePicker
@@ -37,9 +37,7 @@ export function ProductDetailDialog({
   forecastQuery,
   onClose,
   onDetailRangePresetChange,
-  onDetailDateRangeChange,
-  onHistoryBackfill,
-  historyBackfillLoading
+  onDetailDateRangeChange
 }: {
   open: boolean
   loading: boolean
@@ -52,8 +50,6 @@ export function ProductDetailDialog({
   onClose: () => void
   onDetailRangePresetChange: (preset: DetailRangePreset) => void
   onDetailDateRangeChange: (range: DateRangeValue) => void
-  onHistoryBackfill: () => void
-  historyBackfillLoading: boolean
 }) {
   const summary = detail?.summary
   const currentStock = row?.currentStock ?? detail?.currentStock
@@ -96,7 +92,7 @@ export function ProductDetailDialog({
             }
             extra={
               <Space wrap size={[4, 4]} align="center">
-                {healthTags(row || undefined)}
+                {missingFieldTags(row || undefined)}
                 <Tag style={{ marginInlineEnd: 0 }}>可售 {formatNumber(currentStock)}</Tag>
                 <Tag style={{ marginInlineEnd: 0 }}>覆盖 {formatStockCoverDays(stockCoverDays)}</Tag>
               </Space>
@@ -133,14 +129,6 @@ export function ProductDetailDialog({
           {loading ? <Text type="secondary">加载中</Text> : null}
         </div>
 
-        {activeDetailTab === 'sales' ? (
-          <HistoryCoverageStatus
-            coverage={detail?.historyCoverage}
-            loading={historyBackfillLoading}
-            onBackfill={onHistoryBackfill}
-          />
-        ) : null}
-
         <Tabs
           activeKey={activeDetailTab}
           onChange={(key) => setActiveDetailTab(key === 'forecast' ? 'forecast' : 'sales')}
@@ -162,7 +150,7 @@ export function ProductDetailDialog({
                       <Space direction="vertical" size={0}>
                         <Text strong>销量趋势</Text>
                         <Text type="secondary">
-                          {granularity === 'week' ? '当前粒度为周，商品级日明细接入后可切换到日。' : '使用当前可用真实销量事实。'}
+                          {granularity === 'week' ? '当前粒度为周，商品级日明细接入后可切换到日。' : '使用当前查询返回的销量事实。'}
                         </Text>
                       </Space>
                       <Text data-testid="sales-trend-data-range" type="secondary">{trendDataRange}</Text>

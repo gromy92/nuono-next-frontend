@@ -1,9 +1,6 @@
 import { App } from 'antd'
 import { useCallback, useState } from 'react'
-import {
-  fetchSalesProductDetail,
-  requestSalesHistoryBackfill
-} from '../api'
+import { fetchSalesProductDetail } from '../api'
 import type {
   SalesAnalyticsQuery,
   SalesProductDetail,
@@ -26,7 +23,6 @@ export function useSalesProductDetail(query: SalesAnalyticsQuery | null) {
     useState<DetailRangePreset>('month')
   const [detailDateRange, setDetailDateRange] =
     useState<DateRangeValue>(initialDateRange)
-  const [historyBackfillLoading, setHistoryBackfillLoading] = useState(false)
 
   const loadProductDetail = useCallback(async (
     row: SalesProductRow,
@@ -71,25 +67,6 @@ export function useSalesProductDetail(query: SalesAnalyticsQuery | null) {
     if (detailContext) void loadProductDetail(detailContext, range)
   }
 
-  const requestDetailHistoryBackfill = useCallback(async () => {
-    if (!query || !detailContext) return
-    setHistoryBackfillLoading(true)
-    try {
-      const result = await requestSalesHistoryBackfill({
-        storeCode: query.storeCode,
-        siteCode: query.siteCode,
-        dateFrom: detailDateRange[0].format('YYYY-MM-DD'),
-        dateTo: detailDateRange[1].format('YYYY-MM-DD')
-      })
-      message.success(result.message || '已提交历史补全任务')
-      await loadProductDetail(detailContext, detailDateRange)
-    } catch (error) {
-      message.error(error instanceof Error ? error.message : '历史补全提交失败')
-    } finally {
-      setHistoryBackfillLoading(false)
-    }
-  }, [detailContext, detailDateRange, loadProductDetail, message, query])
-
   return {
     detailLoading,
     detail,
@@ -98,10 +75,8 @@ export function useSalesProductDetail(query: SalesAnalyticsQuery | null) {
     detailContext,
     detailRangePreset,
     detailDateRange,
-    historyBackfillLoading,
     openDetail,
     changeDetailRangePreset,
-    changeDetailDateRange,
-    requestDetailHistoryBackfill
+    changeDetailDateRange
   }
 }

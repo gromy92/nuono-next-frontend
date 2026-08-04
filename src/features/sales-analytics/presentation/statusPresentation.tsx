@@ -1,7 +1,6 @@
 import { CalendarOutlined } from '@ant-design/icons'
 import { Button, Space, Tag, Typography } from 'antd'
-import type { SalesActivityWindow, SalesAnalyticsSummary } from '../types'
-import { syncStatusLabel } from './formatters'
+import type { SalesActivityWindow } from '../types'
 
 const { Text } = Typography
 
@@ -45,35 +44,29 @@ export function ActivityMarkerSummary({
   )
 }
 
-export const healthFilterOptions = [
-  { label: '销量就绪', value: 'sales_fact_ready' },
+export const missingFieldFilterOptions = [
   { label: '商品主档未匹配', value: 'product_dimension_missing' },
   { label: '品牌缺失', value: 'brand_missing' },
   { label: '后台类目缺失', value: 'backend_fulltype_missing' }
 ]
 
-export function DataStatus({
-  summary,
+export function SalesFactSummary({
   latestSalesDate,
   productCount,
   selectedCount
 }: {
-  summary: SalesAnalyticsSummary
   latestSalesDate?: string
   productCount: number
   selectedCount: number
 }) {
-  const statusState = summary.syncStatus?.state
-  const available = summary.businessMetricsAvailable !== false
   return (
     <div
-      data-testid="sales-data-status"
+      data-testid="sales-fact-summary"
       style={{ borderLeft: '3px solid #168553', background: '#f8fafc', padding: '10px 12px', borderRadius: 6 }}
     >
       <Space wrap>
-        <Text strong>数据状态：</Text>
+        <Text strong>当前事实：</Text>
         <Text>{productCount} 个商品 · 真实销量最新日 {latestSalesDate || '—'}</Text>
-        <Tag color={available ? 'green' : 'gold'}>{statusState ? syncStatusLabel(statusState) : 'ready'}</Tag>
         <Text type="secondary">已选 {selectedCount} 个</Text>
       </Space>
     </div>

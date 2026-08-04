@@ -1,6 +1,5 @@
 import { DownloadOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
-  Alert,
   Button,
   DatePicker,
   Input,
@@ -14,11 +13,10 @@ import type { useSalesAnalyticsDataset } from '../hooks/useSalesAnalyticsDataset
 import type { useSalesProductDetail } from '../hooks/useSalesProductDetail'
 import {
   classificationSelectOptions,
-  emptySalesDateRangeWarning,
   latestDateFromProducts
 } from '../presentation/formatters'
 import { productColumns } from '../presentation/productColumns'
-import { DataStatus, healthFilterOptions } from '../presentation/statusPresentation'
+import { SalesFactSummary, missingFieldFilterOptions } from '../presentation/statusPresentation'
 import { ComparisonDialog } from './ComparisonDialog'
 import { ProductDetailDialog } from './ProductDetailDialog'
 
@@ -34,16 +32,7 @@ export function SalesAnalyticsWorkbench({
   detail: ReturnType<typeof useSalesProductDetail>
   refreshActivities: () => Promise<void>
 }) {
-  const latestSalesDate = dataset.summary.syncStatus?.latestAvailableSalesDate
-    || latestDateFromProducts(dataset.products)
-    || dataset.query?.dateTo
-  const emptyDateRangeWarning = emptySalesDateRangeWarning(
-    dataset.query,
-    dataset.products,
-    dataset.summary,
-    latestSalesDate,
-    dataset.loading
-  )
+  const latestSalesDate = latestDateFromProducts(dataset.products)
 
   return (
     <div data-testid="sales-analytics-workbench" style={{ display: 'grid', gap: 12 }}>
@@ -116,10 +105,10 @@ export function SalesAnalyticsWorkbench({
           />
           <Select
             allowClear
-            data-testid="sales-health-filter"
-            placeholder="健康度标签"
+            data-testid="sales-product-field-filter"
+            placeholder="商品字段缺失"
             value={dataset.dataQualityCode}
-            options={healthFilterOptions}
+            options={missingFieldFilterOptions}
             onChange={(value) => dataset.setDataQualityCode(value)}
           />
           <RangePicker
@@ -131,8 +120,7 @@ export function SalesAnalyticsWorkbench({
           />
         </div>
 
-        <DataStatus
-          summary={dataset.summary}
+        <SalesFactSummary
           latestSalesDate={latestSalesDate}
           productCount={dataset.products.length}
           selectedCount={dataset.selectedProducts.length}
@@ -149,15 +137,6 @@ export function SalesAnalyticsWorkbench({
             {dataset.products.length} 个商品 · 真实销量最新日 {latestSalesDate || '—'}
           </Text>
         </div>
-        {emptyDateRangeWarning ? (
-          <Alert
-            data-testid="sales-empty-date-range-warning"
-            type="warning"
-            showIcon
-            message={emptyDateRangeWarning}
-            style={{ margin: 12 }}
-          />
-        ) : null}
         <Table<SalesProductRow>
           data-testid="sales-analytics-products"
           loading={dataset.loading}
@@ -190,8 +169,6 @@ export function SalesAnalyticsWorkbench({
         onClose={() => detail.setDetailOpen(false)}
         onDetailRangePresetChange={detail.changeDetailRangePreset}
         onDetailDateRangeChange={detail.changeDetailDateRange}
-        onHistoryBackfill={() => void detail.requestDetailHistoryBackfill()}
-        historyBackfillLoading={detail.historyBackfillLoading}
       />
     </div>
   )

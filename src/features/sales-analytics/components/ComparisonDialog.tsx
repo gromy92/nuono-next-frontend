@@ -1,7 +1,7 @@
 import { Modal, Space, Tabs, Typography } from 'antd'
 import { ProductBaselineIdentity } from '../../product-baseline'
 import type { SalesProductRow, SalesTrendBucket } from '../types'
-import { formatNumber, primaryHealthLabel } from '../presentation/formatters'
+import { formatNumber, missingFieldLabels } from '../presentation/formatters'
 
 const { Text } = Typography
 
@@ -40,9 +40,7 @@ export function ComparisonDialog({
                           { label: 'SKU', value: product.sku, copyText: product.sku }
                         ]}
                       />
-                      <Text>
-                        发货 {formatNumber(product.shippedUnits)} / PV {formatNumber(product.yourVisitors)} / 可售库存 {formatNumber(product.currentStock)} / {primaryHealthLabel(product)}
-                      </Text>
+                      <Text>{comparisonMetricText(product)}</Text>
                     </Space>
                   </div>
                 ))}
@@ -72,4 +70,10 @@ export function ComparisonDialog({
       />
     </Modal>
   )
+}
+
+function comparisonMetricText(product: SalesProductRow) {
+  const missingFields = missingFieldLabels(product)
+  const missingFieldSuffix = missingFields.length ? ` / ${missingFields.join(' / ')}` : ''
+  return `发货 ${formatNumber(product.shippedUnits)} / PV ${formatNumber(product.yourVisitors)} / 可售库存 ${formatNumber(product.currentStock)}${missingFieldSuffix}`
 }

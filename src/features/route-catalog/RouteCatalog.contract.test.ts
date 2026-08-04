@@ -47,9 +47,6 @@ const EXPECTED_MENU_KEYS = [
   'operations-product-keywords',
   'data-sales-analysis',
   'data-order-analysis',
-  'noon-call-store-data',
-  'system-report-noon-data-completeness',
-  'system-report-noon-data-gaps',
   'operations-config-versions',
   'data-activity-config',
   'user-account',
@@ -91,11 +88,6 @@ const EXPECTED_SECTION_MENU_KEYS = {
     'data-activity-config'
   ],
   data: ['data-sales-analysis', 'data-order-analysis'],
-  'system-reports': [
-    'noon-call-store-data',
-    'system-report-noon-data-completeness',
-    'system-report-noon-data-gaps'
-  ],
   user: ['user-account', 'user-role'],
   system: ['system-menu', 'system-role']
 }
@@ -123,13 +115,13 @@ function assertDeepFrozen(value: unknown, path: string) {
 }
 
 assert.deepEqual(ALL_WORKSPACE_MENU_KEYS, EXPECTED_MENU_KEYS)
-assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 34)
-assert.equal(WORKSPACE_SECTION_DEFINITIONS.length, 11)
-assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 28)
+assert.equal(Object.keys(WORKSPACE_MENU_DEFINITIONS).length, 31)
+assert.equal(WORKSPACE_SECTION_DEFINITIONS.length, 10)
+assert.equal(WORKSPACE_GRANTED_MENU_RULES.length, 27)
 const mountedDefinitions = Object.values(WORKSPACE_MENU_DEFINITIONS).filter(
   (definition) => typeof definition.workspaceMount === 'function'
 )
-assert.equal(mountedDefinitions.length, 34)
+assert.equal(mountedDefinitions.length, 31)
 for (const definition of Object.values(WORKSPACE_MENU_DEFINITIONS)) {
   assert.equal(typeof definition.workspaceMount, 'function', `${definition.key} must declare a workspace mount`)
   assert.equal('contentKind' in definition, false, `${definition.key} must not use Legacy dispatch`)

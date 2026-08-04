@@ -11,7 +11,6 @@ export type WorkspaceSectionKey =
   | 'operation-config'
   | 'task'
   | 'data'
-  | 'system-reports'
   | 'user'
   | 'ai-model'
   | 'system'

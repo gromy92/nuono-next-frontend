@@ -179,7 +179,6 @@ export type OfficialWarehouseStatisticsFilters = {
 export type OfficialWarehouseInventorySyncPayload = {
   storeCode: string
   siteCode: string
-  maxPages?: number
 }
 
 export type OfficialWarehouseInventorySyncResult = {

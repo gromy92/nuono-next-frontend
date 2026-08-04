@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { assignmentTargetOptions, authorizedWorkbench, clickAssignmentTarget, missingFieldDetail, missingFieldWorkbench, noAuthorizationWorkbench, partialSuccessWorkbench, mockAliHistoricalOrderDefaults, storeSyncOverview, syncedWorkbench } from './ali1688-historical-orders.fixtures';
+import { assignmentTargetOptions, authorizedWorkbench, clickAssignmentTarget, missingFieldDetail, missingFieldWorkbench, noAuthorizationWorkbench, mockAliHistoricalOrderDefaults, storeSyncOverview, syncedWorkbench } from './ali1688-historical-orders.fixtures';
 
 test.beforeEach(async ({ page }) => mockAliHistoricalOrderDefaults(page));
 
@@ -26,11 +26,6 @@ test('boss can soft-delete an unassigned historical order from the list', async 
     deletePayload = route.request().postDataJSON();
     workbench = {
       ...deletableWorkbench,
-      syncSummary: {
-        ...deletableWorkbench.syncSummary,
-        totalOrderCount: 0,
-        totalItemCount: 0
-      },
       orders: [],
       pagination: {
         page: 1,
@@ -259,30 +254,4 @@ test('boss cannot delete an order while it still has active consumable assignmen
   await expect.poll(() => deleteAttempted).toBe(true);
   await expect(dialog).toBeVisible();
   await expect(page.getByText('跨境B6复古五角星锁心本')).toBeVisible();
-});
-
-test('authorized operations manager can trigger manual refresh without authorization mutation', async ({ page }) => {
-  let refreshCalled = false;
-  await page.route('**/api/procurement/ali1688-orders/workbench**', async (route) => {
-    await route.fulfill({
-      json: {
-        ...syncedWorkbench,
-        roleCapabilities: {
-          canAuthorize: false,
-          canTriggerSync: true,
-          canViewOrders: true
-        }
-      }
-    });
-  });
-  await page.route('**/api/procurement/ali1688-orders/sync-tasks/manual-refresh', async (route) => {
-    refreshCalled = true;
-    await route.fulfill({ json: syncedWorkbench });
-  });
-
-  await page.goto('/purchase/ali1688-orders?devSession=1&devRole=operator-manager&grantAli1688HistoricalOrders=1');
-
-  await expect(page.getByRole('button', { name: '授权 1688' })).not.toBeVisible();
-  await page.getByRole('button', { name: '同步历史订单' }).click();
-  await expect.poll(() => refreshCalled).toBe(true);
 });

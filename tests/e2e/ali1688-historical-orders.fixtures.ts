@@ -21,17 +21,11 @@ export const noAuthorizationWorkbench = {
   mode: 'local-db',
   authorization: {
     status: 'not_authorized',
-    message: '老板授权后可同步 1688 历史订单'
+    message: '老板授权后系统会每日自动拉取 1688 历史订单'
   },
   roleCapabilities: {
     canAuthorize: true,
-    canTriggerSync: false,
     canViewOrders: true
-  },
-  syncSummary: {
-    latestTaskStatus: 'not_started',
-    totalOrderCount: 0,
-    totalItemCount: 0
   },
   orders: [],
   pagination: {
@@ -51,22 +45,12 @@ export const authorizedWorkbench = {
   },
   roleCapabilities: {
     canAuthorize: true,
-    canTriggerSync: true,
     canViewOrders: true
   }
 };
 
 export const syncedWorkbench = {
   ...authorizedWorkbench,
-  syncSummary: {
-    latestTaskStatus: 'success',
-    totalOrderCount: 1,
-    totalItemCount: 4,
-    processedCount: 1,
-    importedCount: 4,
-    failedCount: 0,
-    progressPercent: 100
-  },
   orders: [
     {
       id: '93001',
@@ -174,34 +158,8 @@ export const syncedWorkbench = {
   }
 };
 
-export const partialSuccessWorkbench = {
-  ...syncedWorkbench,
-  syncSummary: {
-    latestTaskStatus: 'partial_success',
-    totalOrderCount: 1,
-    totalItemCount: 1,
-    processedCount: 1,
-    importedCount: 1,
-    failedCount: 1,
-    progressPercent: 100,
-    failureCode: 'missing_fields',
-    failureMessage: '部分订单详情字段未返回。'
-  }
-};
-
 export const missingFieldWorkbench = {
   ...syncedWorkbench,
-  syncSummary: {
-    latestTaskStatus: 'partial_success',
-    totalOrderCount: 1,
-    totalItemCount: 1,
-    processedCount: 1,
-    importedCount: 1,
-    failedCount: 1,
-    progressPercent: 100,
-    failureCode: 'missing_fields',
-    failureMessage: '订单部分字段未返回，可稍后刷新。'
-  },
   orders: [
     {
       id: '93003',

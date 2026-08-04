@@ -42,7 +42,6 @@ const sectionIconMap: Record<WorkspaceSectionIconKey, ReactNode> = {
   'operation-config': <SettingOutlined />,
   task: <FileTextOutlined />,
   data: <BarChartOutlined />,
-  'system-reports': <BarChartOutlined />,
   user: <TeamOutlined />,
   'ai-model': <RobotOutlined />,
   system: <SettingOutlined />

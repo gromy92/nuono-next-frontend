@@ -3,38 +3,11 @@ import { allProductRows, formatDate, productImage } from './sales-analytics.fixt
 
 export async function mockSalesAnalyticsWorkbench(page: Page) {
   let exportRequested = false;
-  let lastProductsLifecycleCode: string | null = null;
-  let lastExportLifecycleCode: string | null = null;
   let lastExportDataQualityCode: string | null = null;
   let classificationOptionsRequested = false;
-  let summaryRequestDevUserId: string | undefined;
-  let historyBackfillRequested = false;
-  let historyBackfillPayload: any = null;
+  let productsRequestDevUserId: string | undefined;
   const detailRequestRanges: Array<{ dateFrom: string | null; dateTo: string | null }> = [];
 
-  await page.route('**/api/sales-data/analytics/summary?**', async (route) => {
-    summaryRequestDevUserId = route.request().headers()['x-nuono-dev-session-user-id'];
-    await route.fulfill({
-      json: {
-        netUnits: 17,
-        grossUnits: 18,
-        shippedUnits: 17,
-        cancelledUnits: 1,
-        revenueShipped: 762.71,
-        yourVisitors: 244,
-        totalVisitors: 870,
-        conversionVisitorsPercentage: 28.11,
-        buyBoxVisitorPercentage: 99.83,
-        businessMetricsAvailable: true,
-        syncStatus: {
-          state: 'ready',
-          label: 'ready',
-          latestAvailableSalesDate: '2026-05-19',
-          businessMetricsAllowed: true
-        }
-      }
-    });
-  });
   await page.route('**/api/sales-data/analytics/trends?**', async (route) => {
     await route.fulfill({
       json: [
@@ -45,8 +18,7 @@ export async function mockSalesAnalyticsWorkbench(page: Page) {
     });
   });
   await page.route('**/api/sales-data/analytics/products?**', async (route) => {
-    const searchParams = new URL(route.request().url()).searchParams;
-    lastProductsLifecycleCode = searchParams.get('lifecycleCode');
+    productsRequestDevUserId = route.request().headers()['x-nuono-dev-session-user-id'];
     await route.fulfill({ json: allProductRows });
   });
   await page.route('**/api/sales-data/analytics/product-detail?**', async (route) => {
@@ -57,7 +29,6 @@ export async function mockSalesAnalyticsWorkbench(page: Page) {
       dateFrom,
       dateTo
     });
-    const wantsHistoryBackfill = Boolean(dateFrom && dateFrom < '2026-04-01');
     await route.fulfill({
       json: {
         partnerSku: 'MILKYWAYA09',
@@ -95,51 +66,7 @@ export async function mockSalesAnalyticsWorkbench(page: Page) {
           state: 'ready',
           label: '订单价格已接入',
           message: '当前范围已使用真实订单行生成价格趋势。'
-        },
-        historyCoverage: wantsHistoryBackfill
-          ? {
-              requestedDateFrom: dateFrom,
-              requestedDateTo: dateTo,
-              salesFactDateFrom: '2026-05-01',
-              salesFactDateTo: '2026-05-19',
-              priceDateFrom: '2026-04-28',
-              priceDateTo: '2026-05-23',
-              salesFactsFullyCovered: false,
-              priceFactsFullyCovered: false,
-              backfill: historyBackfillRequested
-                ? {
-                    state: 'backfill_queued',
-                    label: '历史补全已排队',
-                    message: '历史补全任务已创建，等待调度执行。',
-                    actionAvailable: false,
-                    gapIds: [910001, 910002],
-                    taskIds: [10001, 10002],
-                    categories: ['SALES_PRODUCT_VIEWS', 'SALES_ORDER']
-                  }
-                : {
-                    state: 'needs_backfill',
-                    label: '需要历史补全',
-                    message: '当前选择范围早于已接入的真实数据，可提交历史补全任务。',
-                    actionAvailable: true,
-                    gapIds: [],
-                    taskIds: [],
-                    categories: []
-                  }
-            }
-          : null
-      }
-    });
-  });
-  await page.route('**/api/sales-data/analytics/history-backfill', async (route) => {
-    historyBackfillPayload = await route.request().postDataJSON();
-    historyBackfillRequested = true;
-    await route.fulfill({
-      json: {
-        plannedTaskCount: 2,
-        plannedTaskIds: [10001, 10002],
-        gapIds: [910001, 910002],
-        categories: ['SALES_PRODUCT_VIEWS', 'SALES_ORDER'],
-        message: '已提交历史补全任务。'
+        }
       }
     });
   });
@@ -243,7 +170,6 @@ export async function mockSalesAnalyticsWorkbench(page: Page) {
   });
   await page.route('**/api/sales-data/analytics/export?**', async (route) => {
     const searchParams = new URL(route.request().url()).searchParams;
-    lastExportLifecycleCode = searchParams.get('lifecycleCode');
     lastExportDataQualityCode = searchParams.get('dataQualityCode');
     exportRequested = true;
     await route.fulfill({
@@ -286,10 +212,7 @@ export async function mockSalesAnalyticsWorkbench(page: Page) {
     detailRequestRanges,
     get classificationOptionsRequested() { return classificationOptionsRequested; },
     get exportRequested() { return exportRequested; },
-    get historyBackfillPayload() { return historyBackfillPayload; },
     get lastExportDataQualityCode() { return lastExportDataQualityCode; },
-    get lastExportLifecycleCode() { return lastExportLifecycleCode; },
-    get lastProductsLifecycleCode() { return lastProductsLifecycleCode; },
-    get summaryRequestDevUserId() { return summaryRequestDevUserId; }
+    get productsRequestDevUserId() { return productsRequestDevUserId; }
   };
 }

@@ -8,13 +8,6 @@ export type SalesAnalyticsSummary = {
   totalVisitors: number
   conversionVisitorsPercentage?: number | null
   buyBoxVisitorPercentage?: number | null
-  syncStatus?: {
-    state?: string
-    label?: string
-    latestAvailableSalesDate?: string
-    businessMetricsAllowed?: boolean
-  } | null
-  businessMetricsAvailable?: boolean
 }
 
 export type SalesTrendBucket = Partial<SalesAnalyticsSummary> & {
@@ -80,44 +73,6 @@ export type SalesPriceTrendState = {
   message: string
 }
 
-export type SalesHistoryBackfillStatus = {
-  state:
-    | 'covered'
-    | 'needs_backfill'
-    | 'backfill_pending'
-    | 'backfill_queued'
-    | 'backfill_running'
-    | 'backfill_failed'
-    | 'retention_limited'
-    | 'manual_action'
-  label: string
-  message: string
-  actionAvailable: boolean
-  gapIds?: number[]
-  taskIds?: number[]
-  categories?: string[]
-}
-
-export type SalesHistoryCoverage = {
-  requestedDateFrom: string
-  requestedDateTo: string
-  salesFactDateFrom?: string | null
-  salesFactDateTo?: string | null
-  priceDateFrom?: string | null
-  priceDateTo?: string | null
-  salesFactsFullyCovered: boolean
-  priceFactsFullyCovered: boolean
-  backfill: SalesHistoryBackfillStatus
-}
-
-export type SalesHistoryBackfillResult = {
-  plannedTaskCount: number
-  plannedTaskIds: number[]
-  gapIds: number[]
-  categories: string[]
-  message: string
-}
-
 export type SalesProductDetail = {
   partnerSku: string
   sku: string
@@ -134,7 +89,6 @@ export type SalesProductDetail = {
   facts: DailySalesFact[]
   priceTrend?: SalesPriceTrendBucket[]
   priceTrendState?: SalesPriceTrendState | null
-  historyCoverage?: SalesHistoryCoverage | null
 }
 
 export type SalesAnalyticsQuery = {
