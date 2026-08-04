@@ -10,6 +10,7 @@ import {
 } from './components/ProductListColumnCells';
 import type { ProductListRowPayload, ProductListUiState, ProductOperationStageCode } from './types';
 import { getProductListRowIdentityKey } from '../product-domain/productIdentity';
+import { resolveProductListRowManagementStatus } from './utils/productListFilters';
 
 type ProductListColumnsParams = {
   deletingProductKey?: string;
@@ -57,6 +58,7 @@ export function createProductListColumns({
       render: (_: unknown, record) => (
         <ProductDetailsCell
           record={record}
+          managementStatus={resolveProductListRowManagementStatus(record, productListUiStates, usingMockProductList)}
           productSnapshotSubmitting={productSnapshotSubmitting}
           deleting={deletingProductKey === getProductListRowIdentityKey(record)}
           rebuilding={rebuildingProductKey === getProductListRowIdentityKey(record)}
