@@ -89,7 +89,7 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
       })
     ),
     closable: true,
-    sidebarOrder: 0
+    visibleInSidebar: false
   },
   'purchase-order': {
     key: 'purchase-order',
