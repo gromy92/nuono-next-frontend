@@ -21,6 +21,20 @@ type ProductCatalogFilterBarProps = {
   activeOwnerId?: number;
 };
 
+export function countActiveProductListAdvancedFilters(
+  filters: ProductListFilters,
+  sortKey: string
+) {
+  return [
+    filters.brandQuery.trim(),
+    filters.liveFilter !== 'all',
+    filters.issueFilter !== 'all',
+    filters.stockFilter !== 'all',
+    filters.operationStageFilter !== 'all',
+    sortKey !== 'lastSync'
+  ].filter(Boolean).length;
+}
+
 export function ProductCatalogFilterBar({ workspace, activeOwnerId }: ProductCatalogFilterBarProps) {
   const {
     selectedInitializationStoreCode,
@@ -36,14 +50,10 @@ export function ProductCatalogFilterBar({ workspace, activeOwnerId }: ProductCat
     resetProductListFilters
   } = workspace;
 
-  const activeAdvancedFilterCount = [
-    productListDraftFilters.brandQuery.trim(),
-    productListDraftFilters.liveFilter !== 'all',
-    productListDraftFilters.issueFilter !== 'all',
-    productListDraftFilters.stockFilter !== 'all',
-    productListDraftFilters.operationStageFilter !== 'all',
-    productListSortKey !== 'lastSync'
-  ].filter(Boolean).length;
+  const activeAdvancedFilterCount = countActiveProductListAdvancedFilters(
+    productListDraftFilters,
+    productListSortKey
+  );
 
   const updateProductListFilter = useCallback(
     (patch: Partial<ProductListFilters>) => {

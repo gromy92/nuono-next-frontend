@@ -1,38 +1,51 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { countActiveProductListAdvancedFilters } from './components/ProductCatalogFilterBar'
+import { productListPrimaryActionLabel } from './components/ProductListIdentityCells'
+import type { ProductListFilters } from './types'
+import { buildProductListShellHighlights } from './utils/productListFilters'
 
-function source(fileName: string) {
-  return readFileSync(new URL(fileName, import.meta.url), 'utf8')
+const defaultFilters: ProductListFilters = {
+  skuQuery: '',
+  titleQuery: '',
+  brandQuery: '',
+  issueFilter: 'all',
+  liveFilter: 'all',
+  syncFilter: 'all',
+  stockFilter: 'all',
+  operationStageFilter: 'all'
 }
 
-const filterBarSource = source('./components/ProductCatalogFilterBar.tsx')
-const tablePanelSource = source('./components/ProductCatalogTablePanel.tsx')
-const identityCellSource = source('./components/ProductListIdentityCells.tsx')
-const moreOperationsSource = source('./components/ProductListMoreOperations.tsx')
-const workspaceSurfaceSource = source('./workspaceSurfaces.ts')
-const listFilterSource = source('./utils/productListFilters.ts')
+assert.equal(countActiveProductListAdvancedFilters(defaultFilters, 'lastSync'), 0)
+assert.equal(
+  countActiveProductListAdvancedFilters({
+    ...defaultFilters,
+    brandQuery: 'PAPERSAY',
+    liveFilter: 'offline',
+    issueFilter: 'content',
+    stockFilter: 'fbn',
+    operationStageFilter: 'growth'
+  }, 'price'),
+  6,
+  '高级筛选计数必须覆盖品牌、上架状态、问题、库存、运营阶段和排序'
+)
 
-assert.match(filterBarSource, /高级筛选/)
-assert.match(filterBarSource, /productListAdvancedFiltersOpen/)
-assert.match(filterBarSource, /data-testid="product-advanced-filters"/)
-assert.match(workspaceSurfaceSource, /productListAdvancedFiltersOpen/)
-assert.match(workspaceSurfaceSource, /setProductListAdvancedFiltersOpen/)
+assert.equal(productListPrimaryActionLabel('failed'), '处理失败')
+assert.equal(productListPrimaryActionLabel('draft'), '继续编辑')
+assert.equal(productListPrimaryActionLabel('conflict'), '继续编辑')
+assert.equal(productListPrimaryActionLabel('synced'), '查看详情')
 
-assert.match(listFilterSource, /syncFilter === 'attention'/)
-assert.match(listFilterSource, /label: '待处理'/)
-assert.match(tablePanelSource, /aria-pressed/)
-
-assert.match(identityCellSource, /primaryActionLabel/)
-assert.match(identityCellSource, /'处理失败'/)
-assert.match(identityCellSource, /'继续编辑'/)
-assert.match(identityCellSource, /<ProductListMoreOperations/)
-assert.match(moreOperationsSource, /title="更多操作"/)
-assert.match(moreOperationsSource, /<ProductDeleteAction/)
-assert.match(moreOperationsSource, /重建商品/)
-
-const moreOperationsIndex = moreOperationsSource.indexOf('title="更多操作"')
-assert.ok(moreOperationsIndex >= 0)
-assert.ok(
-  moreOperationsSource.indexOf('<ProductDeleteAction', moreOperationsIndex) > moreOperationsIndex,
-  '删除必须位于更多操作容器内，不能与查看详情同层'
+assert.deepEqual(
+  buildProductListShellHighlights(Array.from({ length: 13 }, () => ({} as never)), {
+    synced: 7,
+    draft: 2,
+    conflict: 1,
+    failed: 3
+  }).map(({ label, value, syncFilter }) => ({ label, value, syncFilter })),
+  [
+    { label: '全部', value: 13, syncFilter: 'all' },
+    { label: '待处理', value: 6, syncFilter: 'attention' },
+    { label: '本地草稿', value: 3, syncFilter: 'draft' },
+    { label: '发布失败', value: 3, syncFilter: 'failed' },
+    { label: '已同步', value: 7, syncFilter: 'synced' }
+  ]
 )

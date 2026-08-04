@@ -14,6 +14,14 @@ const { Text } = Typography;
 
 type ProductListRowAction = (record: ProductListRowPayload) => void | Promise<void>;
 
+export function productListPrimaryActionLabel(managementStatus: ProductSyncStatus) {
+  return managementStatus === 'failed'
+    ? '处理失败'
+    : managementStatus === 'draft' || managementStatus === 'conflict'
+      ? '继续编辑'
+      : '查看详情';
+}
+
 export function ProductDetailsCell(props: {
   record: ProductListRowPayload;
   managementStatus: ProductSyncStatus;
@@ -52,11 +60,7 @@ export function ProductDetailsCell(props: {
   const summary = buildProductSummarySurfaceFromListItem(record);
   const galleryImages = mergeGalleryImageUrls(record.galleryImages, record.imageUrl);
   const noonProductUrl = buildNoonProductUrl(summary);
-  const primaryActionLabel = managementStatus === 'failed'
-    ? '处理失败'
-    : managementStatus === 'draft' || managementStatus === 'conflict'
-      ? '继续编辑'
-      : '查看详情';
+  const primaryActionLabel = productListPrimaryActionLabel(managementStatus);
 
   return (
     <ProductBaselineListCell
