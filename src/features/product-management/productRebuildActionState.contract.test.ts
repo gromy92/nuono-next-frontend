@@ -63,43 +63,43 @@ assert.deepEqual(
   'rebuild button should stay available when all rebuild prerequisites are present'
 );
 
-const productListIdentityCells = readFileSync(
-  join(productManagementDir, 'components/ProductListIdentityCells.tsx'),
+const productListMoreOperations = readFileSync(
+  join(productManagementDir, 'components/ProductListMoreOperations.tsx'),
   'utf8'
 );
 
 assert.match(
-  productListIdentityCells,
-  /className="product-rebuild-action-trigger"/,
+  productListMoreOperations,
+  /title=\{rebuildTooltip\}[\s\S]*aria-label=\{rebuildTooltip\}/,
   'disabled rebuild buttons must be wrapped by a hoverable trigger so users can see the disabled reason'
 );
 
 assert.match(
-  productListIdentityCells,
+  productListMoreOperations,
   /pointerEvents:\s*rebuildDisabled\s*\?\s*'none'\s*:\s*undefined/,
   'disabled rebuild button must pass pointer events through to the hoverable trigger'
 );
 
 assert.match(
-  productListIdentityCells,
+  productListMoreOperations,
   /title=\{rebuildTooltip\}[\s\S]*aria-label=\{rebuildTooltip\}/,
   'disabled rebuild trigger must expose the disabled reason through native title and aria-label'
 );
 
 assert.match(
-  productListIdentityCells,
+  productListMoreOperations,
   /open=\{rebuildConfirmOpen\}/,
   'enabled rebuild button must use a controlled confirmation modal instead of relying on table-cell Popconfirm triggering'
 );
 
 assert.match(
-  productListIdentityCells,
+  productListMoreOperations,
   /setRebuildBlockedReason\(rebuildTooltip\)/,
   'disabled rebuild trigger click must show the disabled reason instead of appearing unresponsive'
 );
 
 assert.match(
-  productListIdentityCells,
+  productListMoreOperations,
   /title="暂时不能重建"[\s\S]*open=\{Boolean\(rebuildBlockedReason\)\}/,
   'disabled rebuild reason must use a controlled modal so clicking disabled rebuild is visible'
 );
