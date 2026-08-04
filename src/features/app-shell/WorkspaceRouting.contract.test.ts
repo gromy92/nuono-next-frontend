@@ -114,7 +114,7 @@ assert.deepEqual(
 
 const purchaseSidebarMenu = workspaceMenuItems.find((section) => section.key === 'purchase')
 const purchaseSidebarLabels = purchaseSidebarMenu?.children?.map((item) => item.label) ?? []
-assert.equal(purchaseSidebarLabels.includes('商品上架'), true)
+assert.equal(purchaseSidebarLabels.includes('商品上架'), false)
 assert.equal(purchaseSidebarLabels.includes('选品池'), false)
 
 const deprecatedPlaceholderLabels = WORKSPACE_SECTION_DEFINITIONS.flatMap((section) =>
@@ -127,8 +127,8 @@ const purchaseMenuKeys: string[] =
   purchaseSection?.entries?.flatMap((entry) => (entry.type === 'workspace' ? [entry.key] : [])) ?? []
 assert.equal(
   purchaseMenuKeys.includes('purchase-listing'),
-  true,
-  '商品上架 should be exposed under the purchase sidebar menu'
+  false,
+  '商品上架 should only be entered from the manual-selection workflow'
 )
 assert.equal(
   purchaseMenuKeys.includes('purchase-pre-order-profit'),

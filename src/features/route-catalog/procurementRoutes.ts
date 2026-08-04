@@ -89,7 +89,8 @@ export const PROCUREMENT_ROUTE_DEFINITIONS = freezeCatalogMetadata({
       })
     ),
     closable: true,
-    sidebarOrder: 0
+    // New listings are source-driven from manual selection; keep the route for draft recovery only.
+    visibleInSidebar: false
   },
   'purchase-order': {
     key: 'purchase-order',

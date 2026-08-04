@@ -67,7 +67,6 @@ const EXPECTED_SECTION_MENU_KEYS = {
     'product-manual-selection'
   ],
   purchase: [
-    'purchase-listing',
     'purchase-profit',
     'purchase-ali1688-historical-orders',
     'purchase-ali1688-sku-purchase-history',
@@ -174,6 +173,8 @@ assert.equal(resolveWorkspaceMenuKeyFromLocation('/warehouse/shipping-orders'), 
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/warehouse/shipping-orders/legacy'), 'warehouse-dispatch')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/WAREHOUSE/FBN/'), 'official-warehouse')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/operation-config/holiday'), 'data-activity-config')
+assert.equal(workspaceMenuDefinition('purchase-listing').visibleInSidebar, false)
+assert.equal(resolveWorkspaceMenuKeyFromLocation('/purchase/listing'), 'purchase-listing')
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/operations/config/lifecycle-rules'), null)
 assert.equal(resolveWorkspaceMenuKeyFromLocation('/unknown'), null)
 
