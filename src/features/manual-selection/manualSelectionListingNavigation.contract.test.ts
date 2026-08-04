@@ -53,6 +53,14 @@ const pageSource = [
   './ManualSelectionPage.tsx',
   './hooks/useManualSelectionGroupActions.ts'
 ].map((fileName) => readFileSync(new URL(fileName, import.meta.url), 'utf8')).join('\n')
+const listingNavigationSource = readFileSync(new URL('./listingNavigation.ts', import.meta.url), 'utf8')
+
+if (!/import \{ withPublicBasePath \} from '\.\.\/\.\.\/runtimePaths'/.test(listingNavigationSource)) {
+  throw new Error('manual-selection listing navigation must use the shared public-base-path helper')
+}
+if (!/return withPublicBasePath\(\s*withCurrentWorkspaceDevQuery\(/.test(listingNavigationSource)) {
+  throw new Error('manual-selection listing target must preserve the deployed /ai public base path')
+}
 if (!/navigateManualSelectionGroupListingInCurrentTab\(project,\s*storeCode\)/.test(pageSource)) {
   throw new Error('formal manual-selection entry must navigate reliably with the same source store')
 }
