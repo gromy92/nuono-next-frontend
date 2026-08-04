@@ -1,3 +1,4 @@
+import { withPublicBasePath } from '../../runtimePaths'
 import { PURCHASE_LISTING_PATH } from '../route-catalog/routePaths'
 import { withCurrentWorkspaceDevQuery } from '../route-catalog/workspaceDevQuery'
 import {
@@ -21,7 +22,9 @@ export function buildManualSelectionGroupListingTarget(project: ManualSelectionA
   if (sourceStoreCode) {
     params.set('storeCode', sourceStoreCode)
   }
-  return withCurrentWorkspaceDevQuery(`${PURCHASE_LISTING_PATH}?${params.toString()}`)
+  return withPublicBasePath(
+    withCurrentWorkspaceDevQuery(`${PURCHASE_LISTING_PATH}?${params.toString()}`)
+  )
 }
 
 export function navigateManualSelectionGroupListingInCurrentTab(

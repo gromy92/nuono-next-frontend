@@ -79,6 +79,20 @@ assert.deepEqual(
   ['FAIL-001', 'REJECT-001', 'SYNC-FAIL-001']
 )
 
+const attentionItems = filterAndSortProductListItems({
+  filters: { ...filters, syncFilter: 'attention' },
+  sortKey: 'recent',
+  sourceItems: [...items, row('SYNCED-001', 'synced')],
+  uiStates: {},
+  usingMockProductList: false
+})
+
+assert.deepEqual(
+  attentionItems.map((item) => item.partnerSku),
+  ['FAIL-001', 'REJECT-001', 'VERIFY-001', 'DRAFT-001', 'SYNC-FAIL-001'],
+  '待处理组合筛选必须包含草稿、冲突/回读待处理和失败，并排除已同步商品'
+)
+
 const mutationSource = [
   './hooks/useProductListMutations.ts',
   './hooks/useApplyProductListSummary.ts'

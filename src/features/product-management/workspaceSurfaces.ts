@@ -33,6 +33,7 @@ const CATALOG_ACCESS_KEYS = [
 ] as const;
 
 const CATALOG_FILTER_KEYS = [
+  'productListAdvancedFiltersOpen',
   'productListDraftFilters',
   'productListIssueOptions',
   'productListSortKey',
@@ -41,7 +42,8 @@ const CATALOG_FILTER_KEYS = [
   'selectedInitializationStoreCode',
   'setProductListDraftFilters',
   'setProductListFilters',
-  'setProductListSortKey'
+  'setProductListSortKey',
+  'setProductListAdvancedFiltersOpen'
 ] as const;
 
 const CATALOG_TABLE_KEYS = [
