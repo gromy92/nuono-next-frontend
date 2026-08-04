@@ -21,11 +21,11 @@ export function productTitle(product: ProductListRowPayload) {
   const displayTitle = titleCn && !isPlaceholderProductTitle(titleCn)
     ? titleCn
     : title && !isPlaceholderProductTitle(title) ? title : '';
-  return displayTitle || textValue(product.partnerSku) || '未命名商品';
+  return displayTitle || '商品名称待补';
 }
 
-export function productSubtitle(product: ProductListRowPayload, partnerSku: string) {
-  return isPlaceholderProduct(product) ? '商品名称待补' : partnerSku || '-';
+export function productSubtitle(_product: ProductListRowPayload, partnerSku: string) {
+  return partnerSku || '-';
 }
 
 export function productSearchText(product: ProductListRowPayload) {
@@ -73,6 +73,21 @@ export function dataStatusButtonClass(current: CostDataStatus, target: CostDataS
   return [
     'product-logistics-costs-page__stat-button',
     `product-logistics-costs-page__stat-button--${target.toLowerCase().replace('_', '-')}`,
+    current === target ? 'product-logistics-costs-page__stat-button--active' : ''
+  ].filter(Boolean).join(' ');
+}
+
+export function categoryFilterButtonClass(
+  current: string,
+  target: string,
+  count: number,
+  toneIndex: number
+) {
+  return [
+    'product-logistics-costs-page__stat-button',
+    'product-logistics-costs-page__category-button',
+    `product-logistics-costs-page__category-button--tone-${toneIndex % 7}`,
+    count === 0 ? 'product-logistics-costs-page__category-button--empty' : '',
     current === target ? 'product-logistics-costs-page__stat-button--active' : ''
   ].filter(Boolean).join(' ');
 }

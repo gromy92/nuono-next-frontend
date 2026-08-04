@@ -43,7 +43,7 @@ assert(
 assert(
   pageSource.includes('categoryFilterOptionsFromRows') &&
     pageSource.includes('cargoCategoryCode') &&
-    pageSource.includes('aria-label="类别"'),
+    pageSource.includes('aria-label="类别筛选"'),
   'product logistics cost page should expose a route-linked category filter from loaded cost rows'
 )
 
@@ -151,8 +151,119 @@ assert(
 )
 
 assert(
-  pageCss.includes('.product-logistics-costs-page__category-filter') &&
-    pageCss.includes('width: 320px') &&
-    pageCss.includes('min-width: 320px'),
-  'category filter should be wide enough to show route category names and prices'
+  pageSource.includes('copyable={{') &&
+    pageSource.includes("tooltips: ['复制 PSKU', '已复制']"),
+  'product logistics cost rows should expose a one-click PSKU copy action'
+)
+
+assert(
+  pageSource.includes('product-logistics-costs-page__route-line') &&
+    !pageSource.includes('direction="vertical" size={0} className="product-logistics-costs-page__route-cell"'),
+  'site, forwarder and transport mode should render on one line'
+)
+
+const toolbarSource = pageSource.slice(
+  pageSource.indexOf('className="product-logistics-costs-page__toolbar"'),
+  pageSource.indexOf('className="product-logistics-costs-page__category-filters"')
+)
+assert(
+  toolbarSource.includes('assignableSelectedRows.length') &&
+    toolbarSource.includes('批量设类别'),
+  'selected count and batch category action should stay on the main search toolbar row'
+)
+
+assert(
+  pageSource.includes('className="product-logistics-costs-page__category-filters"') &&
+    pageSource.includes('categoryFilterButtonClass') &&
+    !pageSource.includes('className="product-logistics-costs-page__category-filter"'),
+  'category filters should render as compact result-style buttons instead of a select'
+)
+
+const filterSummaryRowStart = pageSource.indexOf(
+  'className="product-logistics-costs-page__filter-summary-row"'
+)
+const categoryFiltersStart = pageSource.indexOf(
+  'className="product-logistics-costs-page__category-filters"',
+  filterSummaryRowStart
+)
+const resultStatsStart = pageSource.indexOf(
+  'className="product-logistics-costs-page__stats"',
+  categoryFiltersStart
+)
+const resultStatsSource = pageSource.slice(
+  resultStatsStart,
+  pageSource.indexOf('</div>', resultStatsStart)
+)
+assert(
+  filterSummaryRowStart >= 0 &&
+    categoryFiltersStart > filterSummaryRowStart &&
+    resultStatsStart > categoryFiltersStart &&
+    pageCss.includes('.product-logistics-costs-page__filter-summary-row') &&
+    pageCss.includes('flex-wrap: nowrap'),
+  'category filters and result statistics should share one non-wrapping horizontal row'
+)
+
+assert(
+  !resultStatsSource.includes('查询结果') &&
+    resultStatsSource.includes('有数据') &&
+    resultStatsSource.includes('无数据') &&
+    resultStatsSource.includes("? 'ALL' : 'WITH_DATA'") &&
+    resultStatsSource.includes("? 'ALL' : 'MISSING_DATA'"),
+  'result statistics should only show the priced and missing toggles, with a second click restoring all rows'
+)
+
+const categoryFiltersCss = pageCss.slice(
+  pageCss.indexOf('.product-logistics-costs-page__category-filters'),
+  pageCss.indexOf('.product-logistics-costs-page__filter-label')
+)
+assert(
+  categoryFiltersCss.includes('flex-wrap: wrap') &&
+    !categoryFiltersCss.includes('overflow-x: auto'),
+  'category filter tags should wrap onto a second row instead of using a horizontal scrollbar'
+)
+
+assert(
+  pageSource.includes('categoryFilterLabel') &&
+    pageSource.includes('searchMatchedRows.filter((row) => rowMatchesCategory(row, option.value)).length') &&
+    pageSource.includes('全部类别 · ${searchMatchedRows.length}件'),
+  'each category filter should show its route price and matching product count'
+)
+
+assert(
+  pageSource.includes('option.count') &&
+    pageSource.includes('product-logistics-costs-page__category-button--empty') &&
+    pageCss.includes('.product-logistics-costs-page__category-button--tone-') &&
+    pageCss.includes('.product-logistics-costs-page__category-button--empty'),
+  'category filter tags should use distinct colors while zero-count categories stay gray'
+)
+
+assert(
+  pageSource.includes('/api/product-logistics-costs/eligibility/current') &&
+    pageSource.includes('/api/product-logistics-costs/current/manual-with-eligibility') &&
+    pageSource.includes('货代承接状态') &&
+    pageSource.includes('INQUIRY_REQUIRED') &&
+    pageSource.includes('UNSUPPORTED'),
+  'manual current quote should read and save the existing forwarder eligibility status'
+)
+
+assert(
+  pageCss.includes('max-width: 320px') && pageCss.includes('flex: 0 1 320px'),
+  'product logistics cost search should use a compact fixed maximum width'
+)
+
+assert(
+  pageSource.includes('/api/product-logistics-costs/eligibility/current-list') &&
+    pageSource.includes("title: '可发状态'") &&
+    pageSource.includes("SUPPORTED: { label: '可发'") &&
+    pageSource.includes("INQUIRY_REQUIRED: { label: '需询价'") &&
+    pageSource.includes("UNSUPPORTED: { label: '不接'"),
+  'product logistics cost rows should load and display the current forwarder eligibility status'
+)
+
+assert(
+  pageCss.includes('.product-logistics-costs-page__route-line .product-logistics-costs-page__subtext') &&
+    pageCss.includes('.product-logistics-costs-page__site-tag.ant-tag') &&
+    pageCss.includes('font-size: 14px') &&
+    pageCss.includes('.product-logistics-costs-page__category'),
+  'route summary and category text should use the larger list typography'
 )

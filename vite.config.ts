@@ -35,11 +35,11 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: apiTarget,
-        changeOrigin: true
+        changeOrigin: false
       },
       '/actuator': {
         target: apiTarget,
-        changeOrigin: true
+        changeOrigin: false
       }
     }
   },

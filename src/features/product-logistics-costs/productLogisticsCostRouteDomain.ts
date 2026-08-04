@@ -134,6 +134,17 @@ export function formatPrice(value?: number | null) {
     : value.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+export function categoryFilterLabel(
+  label: string,
+  count: number,
+  rateCard?: ProductLogisticsRateCardRow
+) {
+  const quote = rateCard
+    ? `¥${rateCard.unitCostCny.toLocaleString('zh-CN', { maximumFractionDigits: 2 })}/${rateCard.chargeUnit || '-'}`
+    : '未报价';
+  return `${label} · ${quote} · ${count}件`;
+}
+
 export function formatShortDate(value?: string | null) {
   if (!value) {
     return '-';
@@ -205,6 +216,13 @@ export function rateCardOptionsFromRows(rows: ProductLogisticsRateCardRow[]) {
     };
   }).filter((option) => !!option.value)
     .sort((left, right) => left.value.localeCompare(right.value, 'zh-CN', { numeric: true }));
+}
+
+export function rateCardFilterOptionsFromRows(rows: ProductLogisticsRateCardRow[]) {
+  return rateCardOptionsFromRows(rows).map((option) => ({
+    ...option,
+    label: option.label.split(' · ')[0]
+  }));
 }
 
 export function mergeCategoryOptions(base: CargoCategoryOption[], preferred: CargoCategoryOption[]) {

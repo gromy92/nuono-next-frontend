@@ -1,9 +1,10 @@
 import { Form, message } from 'antd';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { firstFormValidationMessage } from '../../shared/api';
 import {
+  fetchCurrentEligibility,
   saveBatchCategoryAssignment,
-  saveManualCurrentQuote,
+  saveManualCurrentQuoteWithEligibility,
   saveRouteRateCard
 } from './productLogisticsCostApi';
 import type {
@@ -23,6 +24,8 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
   const [savingManualQuote, setSavingManualQuote] = useState(false);
   const [savingBatchCategory, setSavingBatchCategory] = useState(false);
   const [savingRateCard, setSavingRateCard] = useState(false);
+  const [eligibilityLoading, setEligibilityLoading] = useState(false);
+  const [eligibilityError, setEligibilityError] = useState<string>();
   const [manualQuoteRow, setManualQuoteRow] = useState<ProductCostTableRow>();
   const [rateCardListModalOpen, setRateCardListModalOpen] = useState(false);
   const [rateCardModalOpen, setRateCardModalOpen] = useState(false);
@@ -30,6 +33,7 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
   const [batchCategoryCode, setBatchCategoryCode] = useState<string>();
   const [manualQuoteForm] = Form.useForm<ManualQuoteFormValues>();
   const [rateCardForm] = Form.useForm<RateCardFormValues>();
+  const eligibilityRequestId = useRef(0);
 
   const routePayload = {
     siteCode: data.appliedFilters.siteCode,
@@ -48,16 +52,38 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
     const code = normalizeCategoryFilterValue(sourceRow?.cargoCategoryCode || filterCategory);
     const rateCard = code ? data.rateCardMap.get(code) : undefined;
     setManualQuoteRow(row);
+    setEligibilityError(undefined);
+    setEligibilityLoading(true);
     manualQuoteForm.setFieldsValue({
+      eligibilityStatus: undefined,
       cargoCategoryCode: code || undefined,
       unitCostCny: sourceRow?.unitCostCny ?? rateCard?.unitCostCny ?? undefined,
       chargeUnit: sourceRow?.chargeUnit || rateCard?.chargeUnit || defaultUnit,
       remark: ''
     });
+    const requestId = ++eligibilityRequestId.current;
+    void fetchCurrentEligibility({
+      storeCode: data.storeCode,
+      partnerSku: row.partnerSku,
+      siteCode: data.appliedFilters.siteCode,
+      forwarderCode: data.appliedFilters.forwarderCode,
+      transportMode: data.appliedFilters.transportMode
+    }).then((view) => {
+      if (requestId !== eligibilityRequestId.current) return;
+      manualQuoteForm.setFieldValue('eligibilityStatus', view.eligibilityStatus);
+    }).catch((error) => {
+      if (requestId !== eligibilityRequestId.current) return;
+      setEligibilityError(error instanceof Error ? error.message : '读取货代承接状态失败');
+    }).finally(() => {
+      if (requestId === eligibilityRequestId.current) setEligibilityLoading(false);
+    });
   };
 
   const closeManualQuoteModal = () => {
+    eligibilityRequestId.current += 1;
     setManualQuoteRow(undefined);
+    setEligibilityLoading(false);
+    setEligibilityError(undefined);
     manualQuoteForm.resetFields();
   };
 
@@ -112,19 +138,25 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
   const submitManualQuote = async () => {
     if (!manualQuoteRow) return;
     try {
-      const values = await manualQuoteForm.validateFields();
+      const status = manualQuoteForm.getFieldValue('eligibilityStatus');
+      const values = status === 'UNSUPPORTED'
+        ? await manualQuoteForm.validateFields(['eligibilityStatus'])
+        : await manualQuoteForm.validateFields();
       setSavingManualQuote(true);
-      await saveManualCurrentQuote({
+      const result = await saveManualCurrentQuoteWithEligibility({
         storeCode: data.storeCode,
         partnerSku: manualQuoteRow.partnerSku,
         ...routePayload,
+        eligibilityStatus: values.eligibilityStatus,
         cargoCategoryCode: values.cargoCategoryCode,
         cargoCategoryName: categoryName(values.cargoCategoryCode),
         chargeUnit: values.chargeUnit,
         unitCostCny: values.unitCostCny,
         remark: values.remark?.trim()
       });
-      message.success('当前报价已保存');
+      message.success(result.eligibilityStatus === 'UNSUPPORTED'
+        ? '已保存为该货代不接'
+        : '当前报价和货代承接状态已保存');
       closeManualQuoteModal();
       await data.load(data.appliedFilters);
     } catch (error) {
@@ -209,7 +241,7 @@ export function useProductLogisticsCostMutations(data: ProductLogisticsCostData)
   };
 
   return {
-    savingManualQuote, savingBatchCategory, savingRateCard, manualQuoteRow,
+    savingManualQuote, savingBatchCategory, savingRateCard, eligibilityLoading, eligibilityError, manualQuoteRow,
     rateCardListModalOpen, rateCardModalOpen, batchCategoryModalOpen, batchCategoryCode, setBatchCategoryCode,
     manualQuoteForm, rateCardForm, openManualQuoteModal, closeManualQuoteModal,
     openBatchCategoryModal, closeBatchCategoryModal, openRateCardListModal, closeRateCardListModal,

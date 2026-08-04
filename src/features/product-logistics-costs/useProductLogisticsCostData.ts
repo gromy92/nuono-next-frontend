@@ -4,24 +4,28 @@ import type { TablePaginationConfig } from 'antd/es/table';
 import type { AuthSession } from '../auth/session';
 import { fetchProductListDataset } from '../product-domain/productListApi';
 import type { ProductListRowPayload } from '../product-domain/productListTypes';
-import { fetchCosts, fetchRateCards } from './productLogisticsCostApi';
+import { fetchCosts, fetchCurrentEligibilityList, fetchRateCards } from './productLogisticsCostApi';
 import type {
   CostDataStatus,
   CostFilters,
   ProductCostTableRow,
+  ProductLogisticsEligibilityView,
   ProductLogisticsCostRow,
   ProductLogisticsRateCardRow
 } from './productLogisticsCostModels';
 import { ALL_CATEGORY_FILTER } from './productLogisticsCostModels';
 import {
+  categoryFilterLabel,
   categoryFilterOptionsFromRows,
   categoryOptionsForRoute,
   defaultFiltersForSite,
   forwarderOptionsFromRateCards,
+  mergeCategoryOptions,
   normalizeRouteFilters,
   normalizeSite,
   optionLabel,
   rateCardByCategory,
+  rateCardFilterOptionsFromRows,
   rateCardOptionsFromRows,
   routeOptionsFromRateCards,
   textValue,
@@ -53,6 +57,7 @@ export function useProductLogisticsCostData(session: AuthSession) {
   const [historyRows, setHistoryRows] = useState<ProductLogisticsCostRow[]>([]);
   const [rateCards, setRateCards] = useState<ProductLogisticsRateCardRow[]>([]);
   const [availableRateCards, setAvailableRateCards] = useState<ProductLogisticsRateCardRow[]>([]);
+  const [eligibilityRows, setEligibilityRows] = useState<ProductLogisticsEligibilityView[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>();
   const [pagination, setPagination] = useState({ current: 1, pageSize: 50 });
@@ -67,23 +72,38 @@ export function useProductLogisticsCostData(session: AuthSession) {
       setHistoryRows([]);
       setRateCards([]);
       setAvailableRateCards([]);
+      setEligibilityRows([]);
       return;
     }
     setLoading(true);
     setErrorMessage(undefined);
     try {
-      const [productDataset, current, history, rateCardView, availableRateCardView] = await Promise.all([
+      const [
+        productDataset,
+        current,
+        history,
+        rateCardView,
+        availableRateCardView,
+        eligibilityView
+      ] = await Promise.all([
         fetchProductListDataset({ ownerUserId, storeCode }),
         fetchCosts('current', storeCode, nextFilters),
         fetchCosts('history', storeCode, nextFilters),
         fetchRateCards(nextFilters),
-        fetchRateCards({ siteCode: nextFilters.siteCode })
+        fetchRateCards({ siteCode: nextFilters.siteCode }),
+        fetchCurrentEligibilityList({
+          storeCode,
+          siteCode: nextFilters.siteCode,
+          forwarderCode: nextFilters.forwarderCode,
+          transportMode: nextFilters.transportMode
+        })
       ]);
       setProducts(productDataset.items || []);
       setCurrentRows(current.items || []);
       setHistoryRows(history.items || []);
       setRateCards(rateCardView.items || []);
       setAvailableRateCards(availableRateCardView.items || []);
+      setEligibilityRows(eligibilityView.items || []);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : '读取商品物流价格失败');
     } finally {
@@ -100,7 +120,11 @@ export function useProductLogisticsCostData(session: AuthSession) {
 
   const currentCostMap = useMemo(() => currentCostByPartnerSku(currentRows), [currentRows]);
   const historyCostMap = useMemo(() => groupHistoryByPartnerSku(historyRows), [historyRows]);
-  const baseTableRows = useMemo<ProductCostTableRow[]>(() => {
+  const eligibilityStatusMap = useMemo(
+    () => new Map(eligibilityRows.map((row) => [partnerSkuKey(row.partnerSku).toUpperCase(), row.eligibilityStatus])),
+    [eligibilityRows]
+  );
+  const searchMatchedRows = useMemo<ProductCostTableRow[]>(() => {
     const keyword = appliedFilters.searchText.trim().toLowerCase();
     const barcodeSkus = new Set(products.map((product) => textValue(product.barcode)).filter(Boolean));
     return products.filter((product) => {
@@ -113,18 +137,22 @@ export function useProductLogisticsCostData(session: AuthSession) {
         rowKey: `${storeCode}:${partnerSku || product.skuParent || product.title || 'product'}`,
         product,
         partnerSku,
+        eligibilityStatus: eligibilityStatusMap.get(partnerSku.toUpperCase()) || 'SUPPORTED',
         currentCost: partnerSku ? currentCostMap.get(partnerSku) : undefined,
         historyCosts: partnerSku ? historyCostMap.get(partnerSku) || [] : []
       };
-    }).filter((row) => rowMatchesCategory(row, appliedFilters.cargoCategoryCode))
-      .sort((left, right) => {
+    }).sort((left, right) => {
         const leftRank = left.currentCost ? 0 : left.historyCosts.length ? 1 : 2;
         const rightRank = right.currentCost ? 0 : right.historyCosts.length ? 1 : 2;
         return leftRank !== rightRank
           ? leftRank - rightRank
           : left.partnerSku.localeCompare(right.partnerSku, 'zh-CN');
       });
-  }, [appliedFilters.cargoCategoryCode, appliedFilters.searchText, currentCostMap, historyCostMap, products, storeCode]);
+  }, [appliedFilters.searchText, currentCostMap, eligibilityStatusMap, historyCostMap, products, storeCode]);
+  const baseTableRows = useMemo(
+    () => searchMatchedRows.filter((row) => rowMatchesCategory(row, appliedFilters.cargoCategoryCode)),
+    [appliedFilters.cargoCategoryCode, searchMatchedRows]
+  );
 
   const tableRows = useMemo(() => {
     if (appliedFilters.dataStatus === 'WITH_DATA') return baseTableRows.filter(hasCostData);
@@ -147,22 +175,38 @@ export function useProductLogisticsCostData(session: AuthSession) {
     () => transportOptionsForForwarder(filters.forwarderCode, routeOptions),
     [filters.forwarderCode, routeOptions]
   );
+  const rateCardMap = useMemo(() => rateCardByCategory(rateCards), [rateCards]);
   const activeCategoryOptions = useMemo(() => {
     const publishedOptions = rateCardOptionsFromRows(rateCards);
     return publishedOptions.length ? publishedOptions : categoryOptionsForRoute(appliedFilters);
   }, [appliedFilters, rateCards]);
   const categoryFilterSelectOptions = useMemo(() => {
-    const cards = rateCardOptionsFromRows(rateCards);
-    const options = cards.length ? cards : categoryFilterOptionsFromRows([...currentRows, ...historyRows]);
-    return [{ label: '全部类别', value: ALL_CATEGORY_FILTER }, ...options];
-  }, [currentRows, historyRows, rateCards]);
+    const cards = rateCardFilterOptionsFromRows(rateCards);
+    const options = mergeCategoryOptions(
+      cards,
+      categoryFilterOptionsFromRows([...currentRows, ...historyRows])
+    );
+    return [
+      {
+        label: `全部类别 · ${searchMatchedRows.length}件`,
+        value: ALL_CATEGORY_FILTER,
+        count: searchMatchedRows.length
+      },
+      ...options.map((option) => {
+        const count = searchMatchedRows.filter((row) => rowMatchesCategory(row, option.value)).length;
+        return {
+          ...option,
+          count,
+          label: categoryFilterLabel(option.label, count, rateCardMap.get(option.value))
+        };
+      })
+    ];
+  }, [currentRows, historyRows, rateCardMap, rateCards, searchMatchedRows]);
   const selectedRows = useMemo(() => {
     const keys = new Set(selectedRowKeys);
     return tableRows.filter((row) => keys.has(row.rowKey));
   }, [selectedRowKeys, tableRows]);
   const assignableSelectedRows = useMemo(() => selectedRows.filter(canAssignCategory), [selectedRows]);
-  const rateCardMap = useMemo(() => rateCardByCategory(rateCards), [rateCards]);
-
   useEffect(() => {
     setPagination((current) => ({ ...current, current: 1 }));
     setSelectedRowKeys([]);
@@ -216,7 +260,7 @@ export function useProductLogisticsCostData(session: AuthSession) {
     currentStore, storeCode, filters, setFilters, appliedFilters, products, currentRows, historyRows,
     loading, errorMessage, pagination, selectedRowKeys, setSelectedRowKeys, imagePreview, setImagePreview,
     failedImageUrls, tableRows, resultStats, activeTransportOptions, activeCategoryOptions,
-    rateCards, availableRateCards, routeOptions, forwarderOptions, categoryFilterSelectOptions,
+    rateCards, availableRateCards, eligibilityRows, routeOptions, forwarderOptions, categoryFilterSelectOptions,
     assignableSelectedRows, rateCardMap, routeLabel,
     routeHasNoCost: !loading && products.length > 0 && currentRows.length === 0 && historyRows.length === 0,
     load, applyFilters, applyRouteFilters, applyCategoryFilter, applyDataStatusFilter, handleTableChange,

@@ -1,5 +1,10 @@
 import { Space, Tag } from 'antd';
-import type { CostFilters, ProductCostTableRow, ProductLogisticsCostRow } from './productLogisticsCostModels';
+import type {
+  CostFilters,
+  ForwarderEligibilityStatus,
+  ProductCostTableRow,
+  ProductLogisticsCostRow
+} from './productLogisticsCostModels';
 import {
   formatPrice,
   formatShortDate,
@@ -47,14 +52,27 @@ export function RouteCell({ row, filters }: { row: ProductCostTableRow; filters:
     || filters.forwarderCode;
   const transportMode = sourceRow?.transportMode || filters.transportMode;
   return (
-    <Space direction="vertical" size={0} className="product-logistics-costs-page__route-cell">
-      <span>
-        <Tag className="product-logistics-costs-page__site-tag">{siteCode || '-'}</Tag>
-        <span>{forwarder || '-'}</span>
-      </span>
+    <span className="product-logistics-costs-page__route-line">
+      <Tag className="product-logistics-costs-page__site-tag">{siteCode || '-'}</Tag>
+      <span className="product-logistics-costs-page__route-forwarder">{forwarder || '-'}</span>
+      <span className="product-logistics-costs-page__route-separator">·</span>
       <span className="product-logistics-costs-page__subtext">{transportLabel(transportMode)}</span>
-    </Space>
+    </span>
   );
+}
+
+const ELIGIBILITY_STATUS_PRESENTATION: Record<
+  ForwarderEligibilityStatus,
+  { label: string; color: string }
+> = {
+  SUPPORTED: { label: '可发', color: 'green' },
+  INQUIRY_REQUIRED: { label: '需询价', color: 'orange' },
+  UNSUPPORTED: { label: '不接', color: 'red' }
+};
+
+export function EligibilityStatusCell({ status }: { status: ForwarderEligibilityStatus }) {
+  const presentation = ELIGIBILITY_STATUS_PRESENTATION[status];
+  return <Tag color={presentation.color}>{presentation.label}</Tag>;
 }
 
 export function HistoryQuotesCell({ rows }: { rows: ProductLogisticsCostRow[] }) {

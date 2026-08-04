@@ -15,23 +15,45 @@
   min-width: 118px;
 }
 
-.product-logistics-costs-page__category-filter {
-  width: 320px;
-  min-width: 320px;
+.product-logistics-costs-page__search {
+  min-width: 220px;
+  max-width: 320px;
+  flex: 0 1 320px;
 }
 
-.product-logistics-costs-page__search {
-  min-width: 280px;
-  max-width: 420px;
-  flex: 1 1 280px;
+.product-logistics-costs-page__filter-summary-row {
+  display: flex;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.product-logistics-costs-page__category-filters {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.product-logistics-costs-page__filter-label {
+  margin-right: 2px;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .product-logistics-costs-page__stats {
   display: flex;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
   color: #4b5563;
   font-size: 12px;
+  white-space: nowrap;
 }
 
 .product-logistics-costs-page__stat-button {
@@ -61,11 +83,69 @@
   box-shadow: inset 0 0 0 1px currentColor;
 }
 
+.product-logistics-costs-page__category-button {
+  flex: 0 0 auto;
+  max-width: 180px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-logistics-costs-page__category-button--tone-0 {
+  border-color: #91caff;
+  background: #e6f4ff;
+  color: #0958d9;
+}
+
+.product-logistics-costs-page__category-button--tone-1 {
+  border-color: #b7eb8f;
+  background: #f6ffed;
+  color: #389e0d;
+}
+
+.product-logistics-costs-page__category-button--tone-2 {
+  border-color: #ffd591;
+  background: #fff7e6;
+  color: #d46b08;
+}
+
+.product-logistics-costs-page__category-button--tone-3 {
+  border-color: #d3adf7;
+  background: #f9f0ff;
+  color: #722ed1;
+}
+
+.product-logistics-costs-page__category-button--tone-4 {
+  border-color: #87e8de;
+  background: #e6fffb;
+  color: #08979c;
+}
+
+.product-logistics-costs-page__category-button--tone-5 {
+  border-color: #ffadd2;
+  background: #fff0f6;
+  color: #c41d7f;
+}
+
+.product-logistics-costs-page__category-button--tone-6 {
+  border-color: #ffe58f;
+  background: #fffbe6;
+  color: #d48806;
+}
+
+.product-logistics-costs-page__category-button--empty {
+  border-color: #d1d5db;
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
 .product-logistics-costs-page__batch-actions {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .product-logistics-costs-page__batch-count {
@@ -110,17 +190,19 @@
 }
 
 .product-logistics-costs-page__product-button {
-  width: 100%;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
   border: 0;
   padding: 0;
   background: transparent;
   color: inherit;
   cursor: zoom-in;
-  text-align: left;
+  line-height: 0;
 }
 
-.product-logistics-costs-page__product-button:hover .product-logistics-costs-page__product-title {
-  color: #4f46e5;
+.product-logistics-costs-page__product-button:hover .product-logistics-costs-page__product-image {
+  box-shadow: 0 0 0 2px #a5b4fc;
 }
 
 .product-logistics-costs-page__product-image--empty {
@@ -139,6 +221,18 @@
   color: #111827;
   font-size: 13px;
   font-weight: 600;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-logistics-costs-page__product-psku.ant-typography {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: #6b7280;
+  font-size: 12px;
   line-height: 1.25;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -192,12 +286,34 @@
   font-size: 12px;
 }
 
-.product-logistics-costs-page__route-cell {
-  width: 100%;
+.product-logistics-costs-page__route-line {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  font-size: 14px;
+  line-height: 22px;
+  white-space: nowrap;
 }
 
-.product-logistics-costs-page__site-tag {
+.product-logistics-costs-page__site-tag.ant-tag {
   margin-inline-end: 6px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.product-logistics-costs-page__route-forwarder {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-logistics-costs-page__route-separator {
+  margin: 0 5px;
+  color: #c0c4cc;
+}
+
+.product-logistics-costs-page__route-line .product-logistics-costs-page__subtext {
+  font-size: 14px;
 }
 
 .product-logistics-costs-page__route {
@@ -214,6 +330,8 @@
   max-width: 44px;
   overflow: hidden;
   color: #374151;
+  font-size: 14px;
+  line-height: 22px;
   text-overflow: ellipsis;
   vertical-align: bottom;
   white-space: nowrap;

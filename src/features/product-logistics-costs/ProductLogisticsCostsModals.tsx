@@ -1,5 +1,5 @@
-import { Form, Input, InputNumber, Modal, Select, Space, Table } from 'antd';
-import { CHARGE_UNIT_OPTIONS } from './productLogisticsCostModels';
+import { Alert, Form, Input, InputNumber, Modal, Select, Space, Table } from 'antd';
+import { CHARGE_UNIT_OPTIONS, FORWARDER_ELIGIBILITY_OPTIONS } from './productLogisticsCostModels';
 import type { ProductLogisticsRateCardRow } from './productLogisticsCostModels';
 import { formatPrice, formatShortDate } from './productLogisticsCostRouteDomain';
 import type { ProductLogisticsCostData } from './useProductLogisticsCostData';
@@ -12,6 +12,9 @@ export function ProductLogisticsCostsModals({
   data: ProductLogisticsCostData;
   mutations: ProductLogisticsCostMutations;
 }) {
+  const eligibilityStatus = Form.useWatch('eligibilityStatus', mutations.manualQuoteForm);
+  const quoteFieldsVisible = eligibilityStatus !== 'UNSUPPORTED';
+
   return (
     <>
       <Modal
@@ -145,6 +148,9 @@ export function ProductLogisticsCostsModals({
         onCancel={mutations.closeManualQuoteModal}
         onOk={() => void mutations.submitManualQuote()}
         confirmLoading={mutations.savingManualQuote}
+        okButtonProps={{
+          disabled: mutations.eligibilityLoading || !!mutations.eligibilityError
+        }}
         okText="保存"
         cancelText="取消"
         destroyOnClose
@@ -154,18 +160,39 @@ export function ProductLogisticsCostsModals({
           <span className="product-logistics-costs-page__subtext">{data.routeLabel}</span>
         </Space>
         <Form form={mutations.manualQuoteForm} layout="vertical" className="product-logistics-costs-page__manual-form">
-          <Form.Item name="cargoCategoryCode" label="类别" rules={[{ required: true, message: '请选择类别' }]}>
-            <Select options={data.activeCategoryOptions} onChange={mutations.handleManualQuoteCategoryChange} />
+          {mutations.eligibilityError ? (
+            <Alert type="error" showIcon message={mutations.eligibilityError} />
+          ) : null}
+          <Form.Item
+            name="eligibilityStatus"
+            label="货代承接状态"
+            rules={[{ required: true, message: '请选择货代承接状态' }]}
+          >
+            <Select
+              loading={mutations.eligibilityLoading}
+              disabled={mutations.eligibilityLoading || !!mutations.eligibilityError}
+              options={FORWARDER_ELIGIBILITY_OPTIONS}
+            />
           </Form.Item>
-          <Form.Item name="unitCostCny" label="当前报价" rules={[{ required: true, message: '请输入当前报价' }]}>
-            <InputNumber min={0.01} precision={2} step={0.01} className="product-logistics-costs-page__manual-input" />
-          </Form.Item>
-          <Form.Item name="chargeUnit" label="计费单位" rules={[{ required: true, message: '请选择计费单位' }]}>
-            <Select options={CHARGE_UNIT_OPTIONS} />
-          </Form.Item>
-          <Form.Item name="remark" label="备注">
-            <Input.TextArea rows={3} maxLength={200} />
-          </Form.Item>
+          {eligibilityStatus === 'UNSUPPORTED' ? (
+            <Alert type="warning" showIcon message="保存后该货代将标记为不接，本次不会写入报价。" />
+          ) : null}
+          {quoteFieldsVisible ? (
+            <>
+              <Form.Item name="cargoCategoryCode" label="类别" rules={[{ required: true, message: '请选择类别' }]}>
+                <Select options={data.activeCategoryOptions} onChange={mutations.handleManualQuoteCategoryChange} />
+              </Form.Item>
+              <Form.Item name="unitCostCny" label="当前报价" rules={[{ required: true, message: '请输入当前报价' }]}>
+                <InputNumber min={0.01} precision={2} step={0.01} className="product-logistics-costs-page__manual-input" />
+              </Form.Item>
+              <Form.Item name="chargeUnit" label="计费单位" rules={[{ required: true, message: '请选择计费单位' }]}>
+                <Select options={CHARGE_UNIT_OPTIONS} />
+              </Form.Item>
+              <Form.Item name="remark" label="备注">
+                <Input.TextArea rows={3} maxLength={200} />
+              </Form.Item>
+            </>
+          ) : null}
         </Form>
       </Modal>
     </>
