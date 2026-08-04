@@ -29,7 +29,7 @@ export function ProductCatalogTablePanel({ workspace }: ProductCatalogTablePanel
     currentProductIdentityKey
   } = workspace;
   const catalogSummaryText = productListAvailable
-    ? `共 ${productListSourceItems.length} 个商品 · 当前显示 ${filteredProductListItems.length}`
+    ? `当前显示 ${filteredProductListItems.length} / ${productListSourceItems.length} 个商品`
     : productListDatasetState.status === 'error' || storeInitializationState.status === 'error'
       ? productListShellMeta.label
       : productListShellMeta.description;
@@ -66,8 +66,26 @@ export function ProductCatalogTablePanel({ workspace }: ProductCatalogTablePanel
             <Tag
               key={item.label}
               color={item.color}
+              role="button"
+              tabIndex={0}
+              aria-pressed={productListFilters.syncFilter === item.syncFilter}
               onClick={() => {
-                const nextSyncFilter = productListFilters.syncFilter === item.syncFilter ? 'all' : item.syncFilter;
+                const nextSyncFilter = item.syncFilter === 'all'
+                  ? 'all'
+                  : productListFilters.syncFilter === item.syncFilter
+                    ? 'all'
+                    : item.syncFilter;
+                setProductListDraftFilters((currentValue) => ({ ...currentValue, syncFilter: nextSyncFilter }));
+                setProductListFilters((currentValue) => ({ ...currentValue, syncFilter: nextSyncFilter }));
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                const nextSyncFilter = item.syncFilter === 'all'
+                  ? 'all'
+                  : productListFilters.syncFilter === item.syncFilter
+                    ? 'all'
+                    : item.syncFilter;
                 setProductListDraftFilters((currentValue) => ({ ...currentValue, syncFilter: nextSyncFilter }));
                 setProductListFilters((currentValue) => ({ ...currentValue, syncFilter: nextSyncFilter }));
               }}

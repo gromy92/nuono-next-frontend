@@ -70,6 +70,7 @@ export function filterAndSortProductListItems({
       (filters.liveFilter === 'offline' && !online);
     const matchesSync =
       filters.syncFilter === 'all' ||
+      (filters.syncFilter === 'attention' && rowSyncStatus !== 'synced') ||
       rowSyncStatus === filters.syncFilter ||
       (filters.syncFilter === 'draft' && rowSyncStatus === 'conflict');
     const matchesStock =
@@ -132,11 +133,14 @@ export function countProductListStatuses(
 
 export function buildProductListShellHighlights(sourceItems: ProductListRowPayload[], counts: ProductListStatusCounts) {
   const draftCount = counts.draft + counts.conflict;
+  const attentionCount = draftCount + counts.failed;
   return sourceItems.length
     ? [
-        { label: '已同步', value: counts.synced, color: 'success' as const, syncFilter: 'synced' },
+        { label: '全部', value: sourceItems.length, color: 'default' as const, syncFilter: 'all' },
+        { label: '待处理', value: attentionCount, color: 'warning' as const, syncFilter: 'attention' },
         { label: '本地草稿', value: draftCount, color: 'processing' as const, syncFilter: 'draft' },
-        { label: '发布失败', value: counts.failed, color: 'error' as const, syncFilter: 'failed' }
+        { label: '发布失败', value: counts.failed, color: 'error' as const, syncFilter: 'failed' },
+        { label: '已同步', value: counts.synced, color: 'success' as const, syncFilter: 'synced' }
       ]
     : [];
 }

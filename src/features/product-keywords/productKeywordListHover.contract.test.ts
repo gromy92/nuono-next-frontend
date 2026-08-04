@@ -7,10 +7,17 @@ const listCellSource = readFileSync(
   join(root, 'src/features/product-management/components/ProductListIdentityCells.tsx'),
   'utf8'
 )
+const moreOperationsSource = readFileSync(
+  join(root, 'src/features/product-management/components/ProductListMoreOperations.tsx'),
+  'utf8'
+)
 const hoverSource = readFileSync(join(root, 'src/features/product-keywords/ProductKeywordListHoverPopover.tsx'), 'utf8')
 
-assert.match(listCellSource, /ProductKeywordListHoverPopover/)
-assert.match(listCellSource, /partnerSku=\{record\.partnerSku\}/)
+assert.match(listCellSource, /ProductListMoreOperations/)
+assert.match(moreOperationsSource, /ProductKeywordListHoverPopover/)
+assert.match(moreOperationsSource, /storeCode=\{record\.referenceStoreCode\}/)
+assert.match(moreOperationsSource, /siteCode=\{keywordSiteCode\}/)
+assert.match(moreOperationsSource, /partnerSku=\{record\.partnerSku\}/)
 assert.match(hoverSource, /Popover/)
 assert.match(hoverSource, /fetchProductKeywordProduct/)
 assert.match(hoverSource, /onOpenChange/)
