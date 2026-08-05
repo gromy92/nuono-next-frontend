@@ -1,14 +1,13 @@
 import { Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { OfficialWarehouseAsnLine } from '../api'
+import {
+  asnLineBatchNumbers,
+  asnLineBatchReferenceText,
+  asnLineSourceTags
+} from '../asnLineSourcePresentation'
 
 const { Text } = Typography
-
-function batchNumbers(line: OfficialWarehouseAsnLine) {
-  return Array.from(new Set((line.shippingBatchLinks || []).map((link) =>
-    link.batchReferenceNo || link.trackingNo || link.externalShipmentNo || link.shippingBatchNo
-  ).filter(Boolean))).join('、')
-}
 
 const columns: ColumnsType<OfficialWarehouseAsnLine> = [
   {
@@ -27,18 +26,21 @@ const columns: ColumnsType<OfficialWarehouseAsnLine> = [
     width: 250,
     render: (_, line) => (
       <Space size={4} wrap>
-        {Number(line.shippingBatchQuantity || 0) > 0 ? (
-          <Tag color="blue">物流单 {Number(line.shippingBatchQuantity).toLocaleString()} 件</Tag>
-        ) : null}
-        {Number(line.manualQuantity || 0) > 0 ? (
-          <Tag color="gold">手工添加 {Number(line.manualQuantity).toLocaleString()} 件</Tag>
-        ) : null}
+        {asnLineSourceTags(line).map((tag) => (
+          <Tag key={`${tag.kind}:${tag.text}`} color={tag.kind === 'shipping' ? 'blue' : tag.kind === 'manual' ? 'gold' : undefined}>
+            {tag.text}
+          </Tag>
+        ))}
       </Space>
     )
   },
   {
     title: '物流单号',
-    render: (_, line) => batchNumbers(line) || <Text type="secondary">不关联物流单</Text>
+    render: (_, line) => (
+      <Text type={asnLineBatchNumbers(line) ? undefined : 'secondary'}>
+        {asnLineBatchReferenceText(line)}
+      </Text>
+    )
   }
 ]
 

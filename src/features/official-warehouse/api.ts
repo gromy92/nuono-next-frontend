@@ -61,7 +61,8 @@ export type OfficialWarehouseAsnLine = {
   quantity: number
   shippingBatchQuantity?: number
   manualQuantity?: number
-  sourceType?: 'SHIPPING_BATCH' | 'MANUAL' | 'MIXED'
+  unknownQuantity?: number
+  sourceType?: 'SHIPPING_BATCH' | 'MANUAL' | 'MIXED' | 'UNKNOWN'
   productLengthCm?: number
   productWidthCm?: number
   productHeightCm?: number

@@ -22,7 +22,7 @@ export function selectedAsnLineQuantities({
   return { quantity: batchQuantity + manualQuantity, manualQuantity }
 }
 
-type State = {
+export type AsnLineSelectionState = {
   mode: AsnCandidateSourceMode
   batchKeys: string[]
   manualKeys: string[]
@@ -32,7 +32,7 @@ type State = {
   batchLimitByKey: Record<string, number>
 }
 
-type Action =
+export type AsnLineSelectionAction =
   | { type: 'reset' }
   | { type: 'mode'; mode: AsnCandidateSourceMode }
   | { type: 'prepare'; mode: AsnCandidateSourceMode; rows: OfficialWarehouseProductCandidate[] }
@@ -41,7 +41,7 @@ type Action =
   | { type: 'clear-batch' }
   | { type: 'clear-all' }
 
-const initialState: State = {
+export const initialAsnLineSelectionState: AsnLineSelectionState = {
   mode: 'manual',
   batchKeys: [],
   manualKeys: [],
@@ -70,11 +70,14 @@ function retainedCandidates(
   return next
 }
 
-function reducer(state: State, action: Action): State {
-  if (action.type === 'reset') return initialState
+export function officialWarehouseAsnLineSelectionReducer(
+  state: AsnLineSelectionState,
+  action: AsnLineSelectionAction
+): AsnLineSelectionState {
+  if (action.type === 'reset') return initialAsnLineSelectionState
   if (action.type === 'mode') return { ...state, mode: action.mode }
   if (action.type === 'clear-all') {
-    return { ...state, batchKeys: [], manualKeys: [], selectedCandidateByKey: {} }
+    return { ...initialAsnLineSelectionState, mode: state.mode }
   }
   if (action.type === 'clear-batch') {
     const retainedKeys = new Set(state.manualKeys)
@@ -115,7 +118,10 @@ function reducer(state: State, action: Action): State {
 }
 
 export function useOfficialWarehouseAsnLineSelection() {
-  const [state, dispatch] = useReducer(reducer, initialState)
+  const [state, dispatch] = useReducer(
+    officialWarehouseAsnLineSelectionReducer,
+    initialAsnLineSelectionState
+  )
   const selectedCandidateKeys = useMemo(
     () => Array.from(new Set([...state.batchKeys, ...state.manualKeys])),
     [state.batchKeys, state.manualKeys]
