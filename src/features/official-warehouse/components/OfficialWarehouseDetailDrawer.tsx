@@ -20,6 +20,7 @@ import {
   type InboundDiscrepancyFilter
 } from '../officialWarehouseAsnPresentation'
 import { InboundReceiptMetric } from './OfficialWarehouseMetrics'
+import { OfficialWarehouseAsnLineSourceTable } from './OfficialWarehouseAsnLineSourceTable'
 
 const { Text } = Typography
 
@@ -96,6 +97,7 @@ export function OfficialWarehouseDetailDrawer({
                 </div>
               </div>
             ) : null}
+            {selectedAsn.lines?.length ? <OfficialWarehouseAsnLineSourceTable lines={selectedAsn.lines} /> : null}
             <div className="official-warehouse-inbound-receipt-section">
               <div className="official-warehouse-inbound-receipt-header">
                 <Text strong>入仓回执</Text>

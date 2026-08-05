@@ -8,6 +8,7 @@ import type {
   OfficialWarehouseShippingBatchCandidate
 } from '../api'
 import { OfficialWarehouseBatchSummaryPanel } from './OfficialWarehouseBatchSummaryPanel'
+import { OfficialWarehouseCandidateSourcePicker } from './OfficialWarehouseCandidateSourcePicker'
 import { OfficialWarehouseShippingBatchPicker } from './OfficialWarehouseShippingBatchPicker'
 import {
   displayPsku,
@@ -19,6 +20,7 @@ import type {
   CreateAsnConfirmation,
   CreateAsnSubmitFeedback
 } from '../officialWarehouseFormModel'
+import type { AsnCandidateSourceMode } from '../hooks/useOfficialWarehouseAsnLineSelection'
 
 const { Text } = Typography
 
@@ -38,6 +40,8 @@ type Props = {
   shippingBatchLoading: boolean
   shippingBatches: OfficialWarehouseShippingBatchCandidate[]
   selectedShippingBatchIds: string[]
+  candidateMode: AsnCandidateSourceMode
+  setCandidateMode: (mode: AsnCandidateSourceMode) => void
   batchSummary?: OfficialWarehouseBatchProductSummary
   batchSummaryLoading: boolean
   batchSummaryError?: string
@@ -46,13 +50,14 @@ type Props = {
   setSelectedShippingBatchIds: Dispatch<SetStateAction<string[]>>
   shippingBatchOptions: Array<{ label: string; value: string }>
   handleShippingBatchSearch: (value: string) => void
+  clearBatchCandidateSelection: () => void
   clearCandidateSelection: () => void
-  setQuantityByCandidateKey: Dispatch<SetStateAction<Record<string, number>>>
-  loadCandidates: (batchIds?: string[], keywordValue?: string) => Promise<void>
+  loadCandidates: (batchIds?: string[], keywordValue?: string, mode?: AsnCandidateSourceMode) => Promise<void>
   candidateKeyword: string
   setCandidateKeyword: Dispatch<SetStateAction<string>>
   candidateLoading: boolean
-  selectedCandidateKeys: Key[]
+  selectedCandidateKeys: Key[]; visibleSelectedCandidateKeys: Key[]
+  selectedBatchCandidateKeys: string[]; selectedManualCandidateKeys: string[]
   candidateColumns: ColumnsType<OfficialWarehouseProductCandidate>
   candidates: OfficialWarehouseProductCandidate[]
   updateCandidateSelection: (keys: Key[], rows: OfficialWarehouseProductCandidate[]) => void
@@ -72,11 +77,13 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
     createAsnConfirmation, setCreateAsnConfirmation, submitCreateAsn, submitting,
     selectedAlreadyAppointedBatches, shippingBatchLoadError, loadShippingBatches,
     shippingBatchKeyword, shippingBatchLoading, shippingBatches,
-    selectedShippingBatchIds, setSelectedShippingBatchIds, shippingBatchOptions,
+    selectedShippingBatchIds, candidateMode, setCandidateMode,
+    setSelectedShippingBatchIds, shippingBatchOptions,
     batchSummary, batchSummaryLoading, batchSummaryError, reloadBatchSummary, batchSummaryBlocked,
-    handleShippingBatchSearch, clearCandidateSelection, setQuantityByCandidateKey,
+    handleShippingBatchSearch, clearBatchCandidateSelection, clearCandidateSelection,
     loadCandidates, candidateKeyword, setCandidateKeyword, candidateLoading,
-    selectedCandidateKeys, candidateColumns, candidates, updateCandidateSelection,
+    selectedCandidateKeys, visibleSelectedCandidateKeys, selectedBatchCandidateKeys, selectedManualCandidateKeys,
+    candidateColumns, candidates, updateCandidateSelection,
     candidateEmptyDescription, confirmCreateAsn, specTarget, setSpecTarget,
     saveAli1688Spec, specSaving, specDraft, setSpecDraft
   } = props
@@ -136,12 +143,23 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
             onSearch={handleShippingBatchSearch}
             onChange={(nextBatchIds) => {
                 setSelectedShippingBatchIds(nextBatchIds)
-                clearCandidateSelection()
-                setQuantityByCandidateKey({})
-                void loadCandidates(nextBatchIds, candidateKeyword)
+                clearBatchCandidateSelection()
+                const nextMode: AsnCandidateSourceMode = nextBatchIds.length ? 'batch' : 'manual'
+                setCandidateMode(nextMode)
+                void loadCandidates(nextBatchIds, candidateKeyword, nextMode)
             }}
           />
           <OfficialWarehouseBatchSummaryPanel selectedBatchCount={selectedShippingBatchIds.length} summary={batchSummary} loading={batchSummaryLoading} error={batchSummaryError} onRetry={() => void reloadBatchSummary()} />
+          <OfficialWarehouseCandidateSourcePicker
+            mode={candidateMode}
+            shippingBatchSelected={Boolean(selectedShippingBatchIds.length)}
+            batchSelectedCount={selectedBatchCandidateKeys.length}
+            manualSelectedCount={selectedManualCandidateKeys.length}
+            onChange={(nextMode) => {
+              setCandidateMode(nextMode)
+              void loadCandidates(selectedShippingBatchIds, candidateKeyword, nextMode)
+            }}
+          />
           <div className="official-warehouse-toolbar official-warehouse-modal-toolbar">
             <div className="official-warehouse-toolbar-left">
               <Input.TextArea
@@ -154,7 +172,7 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
               />
               <Button
                 icon={<SearchOutlined />}
-                onClick={() => void loadCandidates(selectedShippingBatchIds, candidateKeyword)}
+                onClick={() => void loadCandidates(selectedShippingBatchIds, candidateKeyword, candidateMode)}
                 loading={candidateLoading}
               >
                 搜索
@@ -174,9 +192,9 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
             columns={candidateColumns}
             dataSource={candidates}
             pagination={{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true }}
-            scroll={{ x: 1160 }}
+            scroll={{ x: 1320 }}
             rowSelection={{
-              selectedRowKeys: selectedCandidateKeys,
+              selectedRowKeys: visibleSelectedCandidateKeys,
               preserveSelectedRowKeys: true,
               onChange: updateCandidateSelection,
               getCheckboxProps: (row) => ({
