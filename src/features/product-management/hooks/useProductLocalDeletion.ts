@@ -4,11 +4,18 @@ import { deleteLocalProduct, rebuildLocalProduct } from '../api';
 import type { ProductListDatasetState, ProductListRowPayload } from '../types';
 import { getProductCurrentZCode, getProductListRowIdentityKey } from '../../product-domain/productIdentity';
 import { normalizeProductSourceType } from '../../product-baseline';
+import type { LoadProductListDatasetOptions } from './useProductListDatasetLoader';
+import { recoverProductDeleteFailure } from '../utils/productDeleteFailureRecovery';
 
 type UseProductLocalDeletionParams = {
   activeOwnerId?: number;
   closeProductDetailTab: () => void;
   currentProductIdentityKey?: string;
+  loadProductListDataset: (
+    storeCode: string,
+    ownerUserId?: number,
+    options?: LoadProductListDatasetOptions
+  ) => Promise<void>;
   selectedInitializationStoreCode?: string;
   setProductListDatasetState: (state: ProductListDatasetState | ((current: ProductListDatasetState) => ProductListDatasetState)) => void;
 };
@@ -17,6 +24,7 @@ export function useProductLocalDeletion({
   activeOwnerId,
   closeProductDetailTab,
   currentProductIdentityKey,
+  loadProductListDataset,
   selectedInitializationStoreCode,
   setProductListDatasetState
 }: UseProductLocalDeletionParams) {
@@ -48,7 +56,13 @@ export function useProductLocalDeletion({
         }
         message.success(payload.message || '商品删除已提交后台处理，请在发布状态和历史中查看进度。');
       } catch (error) {
-        message.error(error instanceof Error ? error.message : '删除商品失败');
+        await recoverProductDeleteFailure({
+          error,
+          loadProductListDataset,
+          notify: (content) => message.error(content),
+          ownerUserId: activeOwnerId,
+          storeCode
+        });
       } finally {
         setDeletingProductKey(undefined);
       }
@@ -57,6 +71,7 @@ export function useProductLocalDeletion({
       activeOwnerId,
       closeProductDetailTab,
       currentProductIdentityKey,
+      loadProductListDataset,
       selectedInitializationStoreCode,
       setProductListDatasetState
     ]

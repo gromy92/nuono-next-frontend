@@ -15,6 +15,7 @@ export function useProductListOperations({
   activeOwnerId,
   closeProductDetailTab,
   currentProductIdentityKey,
+  loadProductListDataset,
   openProductHistoryModal,
   openProductListGallery,
   openProductSiteCompareModal,
@@ -30,6 +31,11 @@ export function useProductListOperations({
   activeOwnerId?: number;
   closeProductDetailTab: () => void;
   currentProductIdentityKey?: string;
+  loadProductListDataset: (
+    storeCode: string,
+    ownerUserId?: number,
+    options?: { force?: boolean }
+  ) => Promise<void>;
   openProductHistoryModal: ProductListColumnParams['openProductHistoryModal'];
   openProductListGallery: ProductListColumnParams['openProductListGallery'];
   openProductSiteCompareModal: ProductListColumnParams['openProductSiteCompareModal'];
@@ -46,6 +52,7 @@ export function useProductListOperations({
     activeOwnerId,
     closeProductDetailTab,
     currentProductIdentityKey,
+    loadProductListDataset,
     selectedInitializationStoreCode,
     setProductListDatasetState
   });
