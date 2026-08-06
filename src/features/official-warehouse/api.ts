@@ -59,6 +59,10 @@ export type OfficialWarehouseAsnLine = {
   brand?: string
   imageUrl?: string
   quantity: number
+  shippingBatchQuantity?: number
+  manualQuantity?: number
+  unknownQuantity?: number
+  sourceType?: 'SHIPPING_BATCH' | 'MANUAL' | 'MIXED' | 'UNKNOWN'
   productLengthCm?: number
   productWidthCm?: number
   productHeightCm?: number
@@ -237,6 +241,7 @@ export type CreateOfficialWarehouseAsnPayload = {
     productSiteOfferId?: number
     partnerSku?: string
     quantity: number
+    manualQuantity?: number
   }>
 }
 

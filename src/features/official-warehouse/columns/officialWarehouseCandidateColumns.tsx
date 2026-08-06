@@ -1,8 +1,8 @@
 import { EditOutlined } from '@ant-design/icons'
 import { Button, Image, InputNumber, Space, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import type { Dispatch, SetStateAction } from 'react'
 import type { OfficialWarehouseProductCandidate } from '../api'
+import type { AsnCandidateSourceMode } from '../hooks/useOfficialWarehouseAsnLineSelection'
 import {
   PRODUCT_IMAGE_FALLBACK,
   displayPsku,
@@ -14,13 +14,15 @@ const { Text } = Typography
 
 export function buildOfficialWarehouseCandidateColumns({
   selectedShippingBatchIds,
+  candidateMode,
   quantityByCandidateKey,
-  setQuantityByCandidateKey,
+  setCandidateQuantity,
   openSpecEditor
 }: {
   selectedShippingBatchIds: string[]
+  candidateMode: AsnCandidateSourceMode
   quantityByCandidateKey: Record<string, number>
-  setQuantityByCandidateKey: Dispatch<SetStateAction<Record<string, number>>>
+  setCandidateQuantity: (key: string, quantity: number) => void
   openSpecEditor: (row: OfficialWarehouseProductCandidate) => void
 }): ColumnsType<OfficialWarehouseProductCandidate> {
   return [
@@ -45,6 +47,13 @@ export function buildOfficialWarehouseCandidateColumns({
           </div>
         </div>
       )
+    },
+    {
+      title: '本次来源',
+      width: 150,
+      render: () => candidateMode === 'batch'
+        ? <Tag color="blue">所选物流单</Tag>
+        : <Tag color="gold">手工添加</Tag>
     },
     {
       title: 'Noon SKU',
@@ -77,11 +86,11 @@ export function buildOfficialWarehouseCandidateColumns({
       render: (value?: string) => <Tag>{value || 'standard'}</Tag>
     },
     {
-      title: '数量',
+      title: candidateMode === 'batch' ? '物流数量' : '手工数量',
       width: 120,
       render: (_, row) => {
         const batchLimit = selectedShippingBatchIds.length ? Number(row.batchAvailableQuantity || 0) : 0
-        const maxQuantity = batchLimit > 0 ? batchLimit : undefined
+        const maxQuantity = candidateMode === 'batch' && batchLimit > 0 ? batchLimit : undefined
         const candidateKey = officialWarehouseCandidateKey(row)
         const quantity = quantityByCandidateKey[candidateKey] || maxQuantity || 1
         return (
@@ -91,15 +100,10 @@ export function buildOfficialWarehouseCandidateColumns({
               max={maxQuantity}
               precision={0}
               value={quantity}
-              onChange={(value) =>
-                setQuantityByCandidateKey((current) => {
-                  const normalized = Math.max(1, Number(value || 0))
-                  return {
-                    ...current,
-                    [candidateKey]: maxQuantity ? Math.min(normalized, maxQuantity) : normalized
-                  }
-                })
-              }
+              onChange={(value) => {
+                const normalized = Math.max(1, Number(value || 0))
+                setCandidateQuantity(candidateKey, maxQuantity ? Math.min(normalized, maxQuantity) : normalized)
+              }}
             />
           </div>
         )

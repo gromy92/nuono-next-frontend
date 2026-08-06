@@ -1,5 +1,5 @@
 import { message } from 'antd'
-import { useEffect, useMemo, useState, type Key } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   createOfficialWarehouseAsn,
   loadOfficialWarehouseCandidates,
@@ -25,6 +25,11 @@ import type {
 import { isOfficialWarehouseBatchSummaryBlocked } from '../officialWarehouseBatchSummaryTypes'
 import { useShippingBatchSearch } from '../useShippingBatchSearch'
 import { useOfficialWarehouseBatchSummary } from './useOfficialWarehouseBatchSummary'
+import {
+  useOfficialWarehouseAsnLineSelection,
+  selectedAsnLineQuantities,
+  type AsnCandidateSourceMode
+} from './useOfficialWarehouseAsnLineSelection'
 
 export function useOfficialWarehouseCreateAsn({
   sessionUserId,
@@ -43,12 +48,18 @@ export function useOfficialWarehouseCreateAsn({
   const [candidates, setCandidates] = useState<OfficialWarehouseProductCandidate[]>([])
   const [shippingBatches, setShippingBatches] = useState<OfficialWarehouseShippingBatchCandidate[]>([])
   const [selectedShippingBatchIds, setSelectedShippingBatchIds] = useState<string[]>([])
-  const [selectedCandidateKeys, setSelectedCandidateKeys] = useState<Key[]>([])
-  const [selectedCandidateByKey, setSelectedCandidateByKey] = useState<Record<string, OfficialWarehouseProductCandidate>>({})
-  const [quantityByCandidateKey, setQuantityByCandidateKey] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
   const [createSubmitFeedback, setCreateSubmitFeedback] = useState<CreateAsnSubmitFeedback>()
   const [createAsnConfirmation, setCreateAsnConfirmation] = useState<CreateAsnConfirmation>()
+  const candidateRequestIdRef = useRef(0)
+  const lineSelection = useOfficialWarehouseAsnLineSelection()
+  const {
+    candidateMode, setCandidateMode, selectedBatchCandidateKeys, selectedManualCandidateKeys,
+    selectedCandidateKeys, visibleSelectedCandidateKeys, selectedCandidateByKey, selectedRows,
+    batchQuantityByCandidateKey, manualQuantityByCandidateKey, batchLimitByCandidateKey,
+    quantityByCandidateKey, prepareCandidates, updateCandidateSelection, setCandidateQuantity,
+    clearBatchCandidateSelection, clearCandidateSelection, resetCandidateSelection
+  } = lineSelection
 
   const {
     shippingBatchKeyword,
@@ -99,11 +110,13 @@ export function useOfficialWarehouseCreateAsn({
   const selectedShippingBatchesNoRemaining = selectedShippingBatchIds.length > 0 &&
     selectedShippingBatches.length > 0 &&
     selectedShippingBatches.every((batch) => !batch.alreadyAppointed && Number(batch.remainingQuantity ?? batch.storeSiteQuantity ?? 0) <= 0)
-  const candidateEmptyDescription = selectedShippingBatchIds.length
+  const candidateEmptyDescription = candidateMode === 'manual'
+    ? '当前店铺和站点没有可手工添加的商品'
+    : selectedShippingBatchIds.length
     ? selectedShippingBatchesNoRemaining
       ? '所选物流批次已无剩余待约仓商品'
       : '所选物流批次没有匹配当前站点商品'
-    : '暂无可创建 ASN 的商品'
+    : '请先选择物流批次'
 
 
   useEffect(() => {
@@ -113,10 +126,8 @@ export function useOfficialWarehouseCreateAsn({
       setCandidateKeyword('')
       resetShippingBatchSearch()
       setSelectedShippingBatchIds([])
-      setSelectedCandidateKeys([])
-      setSelectedCandidateByKey({})
-      setQuantityByCandidateKey({})
-      void loadCandidates([], '')
+      resetCandidateSelection()
+      void loadCandidates([], '', 'manual')
       void loadShippingBatches('', false)
     } else {
       resetShippingBatchSearch()
@@ -126,12 +137,14 @@ export function useOfficialWarehouseCreateAsn({
 
   async function loadCandidates(
     batchIds: string[] = selectedShippingBatchIds,
-    keywordValue: string = candidateKeyword
+    keywordValue: string = candidateKeyword,
+    mode: AsnCandidateSourceMode = candidateMode
   ) {
     if (!storeCode || !siteCode) {
       message.warning('请选择店铺和站点')
       return
     }
+    const requestId = ++candidateRequestIdRef.current
     setCandidateLoading(true)
     try {
       const search = parseCandidateSearch(keywordValue)
@@ -140,70 +153,45 @@ export function useOfficialWarehouseCreateAsn({
         siteCode,
         keyword: search.keyword,
         partnerSkus: search.partnerSkus,
-        shippingBatchIds: batchIds
+        shippingBatchIds: mode === 'batch' ? batchIds : []
       })
-      setCandidates(rows)
-      setQuantityByCandidateKey((current) =>
-        rows.reduce<Record<string, number>>((next, row) => {
-          const batchQuantity = Number(row.batchAvailableQuantity || 0)
-          const key = officialWarehouseCandidateKey(row)
-          if (next[key] == null) {
-            next[key] = batchIds.length && batchQuantity > 0 ? batchQuantity : 1
-          }
-          return next
-        }, { ...current })
-      )
+      if (candidateRequestIdRef.current === requestId) {
+        setCandidates(rows)
+        prepareCandidates(mode, rows)
+      }
     } catch (error) {
-      message.error(officialWarehouseError(error, '读取可创建 ASN 商品失败'))
+      if (candidateRequestIdRef.current === requestId) {
+        message.error(officialWarehouseError(error, '读取可创建 ASN 商品失败'))
+      }
     } finally {
-      setCandidateLoading(false)
+      if (candidateRequestIdRef.current === requestId) setCandidateLoading(false)
     }
   }
-
-  function updateCandidateSelection(keys: Key[], rows: OfficialWarehouseProductCandidate[]) {
-    const retainedKeys = new Set(keys.map(String))
-    setSelectedCandidateKeys(keys)
-    setSelectedCandidateByKey((current) => {
-      const next = { ...current }
-      Object.keys(next).forEach((key) => {
-        if (!retainedKeys.has(key)) delete next[key]
-      })
-      rows.forEach((row) => {
-        next[officialWarehouseCandidateKey(row)] = row
-      })
-      return next
-    })
-  }
-
-  function clearCandidateSelection() {
-    setSelectedCandidateKeys([])
-    setSelectedCandidateByKey({})
-  }
-
 
   async function submitCreateAsn() {
     if (batchSummaryBlocked) {
       message.warning('请等待物流批次商品汇总加载成功后再创建 ASN')
       return
     }
-    const selectedRows = selectedCandidateKeys
-      .map((key) => selectedCandidateByKey[String(key)])
-      .filter((row): row is OfficialWarehouseProductCandidate => Boolean(row))
     if (!selectedRows.length) {
       message.warning('请选择至少一个商品')
       return
     }
-    const invalid = selectedRows.find((row) => (quantityByCandidateKey[officialWarehouseCandidateKey(row)] || 0) <= 0)
-    if (invalid) {
-      message.warning(`${displayPsku(invalid)} 数量必须大于 0`)
+    if (selectedShippingBatchIds.length && !selectedBatchCandidateKeys.length) {
+      message.warning('已选择物流批次时，至少选择一个物流单内商品')
       return
     }
-    const overLimit = selectedRows.find((row) => {
-      const batchLimit = selectedShippingBatchIds.length ? Number(row.batchAvailableQuantity || 0) : 0
-      return batchLimit > 0 && (quantityByCandidateKey[officialWarehouseCandidateKey(row)] || 0) > batchLimit
-    })
-    if (overLimit) {
-      message.warning(`${displayPsku(overLimit)} 数量超过所选物流批次可用数量`)
+    const invalidBatchKey = selectedBatchCandidateKeys.find((key) => (batchQuantityByCandidateKey[key] || 0) <= 0)
+    const invalidManualKey = selectedManualCandidateKeys.find((key) => (manualQuantityByCandidateKey[key] || 0) <= 0)
+    const invalidKey = invalidBatchKey || invalidManualKey
+    if (invalidKey) {
+      message.warning(`${displayPsku(selectedCandidateByKey[invalidKey])} 数量必须大于 0`)
+      return
+    }
+    const overLimitKey = selectedBatchCandidateKeys.find((key) =>
+      (batchQuantityByCandidateKey[key] || 0) > (batchLimitByCandidateKey[key] || 0))
+    if (overLimitKey) {
+      message.warning(`${displayPsku(selectedCandidateByKey[overLimitKey])} 数量超过所选物流批次可用数量`)
       return
     }
     setSubmitting(true)
@@ -233,10 +221,16 @@ export function useOfficialWarehouseCreateAsn({
       shippingBatchIds: selectedShippingBatchIds,
       partialBatchConfirmed,
       lines: selectedRows.map((row) => ({
+        ...selectedAsnLineQuantities({
+          key: officialWarehouseCandidateKey(row),
+          batchKeys: selectedBatchCandidateKeys,
+          manualKeys: selectedManualCandidateKeys,
+          batchQuantities: batchQuantityByCandidateKey,
+          manualQuantities: manualQuantityByCandidateKey
+        }),
         productVariantId: Number(row.productVariantId),
         productSiteOfferId: toNumber(row.productSiteOfferId),
-        partnerSku: row.partnerSku,
-        quantity: quantityByCandidateKey[officialWarehouseCandidateKey(row)] || 1
+        partnerSku: row.partnerSku
       }))
     }
   }
@@ -284,13 +278,15 @@ export function useOfficialWarehouseCreateAsn({
   return {
     createOpen, setCreateOpen, candidateKeyword, setCandidateKeyword,
     candidateLoading, candidates, shippingBatches, selectedShippingBatchIds,
-    setSelectedShippingBatchIds, selectedCandidateKeys, quantityByCandidateKey,
-    setQuantityByCandidateKey, submitting, createSubmitFeedback,
+    setSelectedShippingBatchIds, candidateMode, setCandidateMode,
+    selectedCandidateKeys, visibleSelectedCandidateKeys,
+    selectedBatchCandidateKeys, selectedManualCandidateKeys, quantityByCandidateKey,
+    setCandidateQuantity, submitting, createSubmitFeedback,
     setCreateSubmitFeedback, createAsnConfirmation, setCreateAsnConfirmation,
     shippingBatchKeyword, shippingBatchLoading, shippingBatchLoadError,
     loadShippingBatches, handleShippingBatchSearch, shippingBatchOptions,
     selectedAlreadyAppointedBatches, candidateEmptyDescription, loadCandidates,
-    updateCandidateSelection, clearCandidateSelection, submitCreateAsn,
+    updateCandidateSelection, clearBatchCandidateSelection, clearCandidateSelection, submitCreateAsn,
     confirmCreateAsn, batchSummary, batchSummaryLoading, batchSummaryError,
     reloadBatchSummary, batchSummaryBlocked
   }

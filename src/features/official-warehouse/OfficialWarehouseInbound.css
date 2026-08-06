@@ -12,6 +12,17 @@
   width: 360px;
 }
 
+.official-warehouse-source-mode-picker {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.official-warehouse-source-mode-picker .ant-segmented {
+  align-self: flex-start;
+}
+
 .official-warehouse-shipping-picker {
   display: flex;
   min-width: 0;

@@ -31,13 +31,15 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
   const {
     createOpen, setCreateOpen, candidateKeyword, setCandidateKeyword,
     candidateLoading, candidates, shippingBatches, selectedShippingBatchIds,
-    setSelectedShippingBatchIds, selectedCandidateKeys, quantityByCandidateKey,
-    setQuantityByCandidateKey, submitting, createSubmitFeedback,
+    setSelectedShippingBatchIds, candidateMode, setCandidateMode,
+    selectedCandidateKeys, visibleSelectedCandidateKeys,
+    selectedBatchCandidateKeys, selectedManualCandidateKeys, quantityByCandidateKey,
+    setCandidateQuantity, submitting, createSubmitFeedback,
     setCreateSubmitFeedback, createAsnConfirmation, setCreateAsnConfirmation,
     shippingBatchKeyword, shippingBatchLoading, shippingBatchLoadError,
     loadShippingBatches, handleShippingBatchSearch, shippingBatchOptions,
     selectedAlreadyAppointedBatches, candidateEmptyDescription, loadCandidates,
-    updateCandidateSelection, clearCandidateSelection, submitCreateAsn,
+    updateCandidateSelection, clearBatchCandidateSelection, clearCandidateSelection, submitCreateAsn,
     confirmCreateAsn, batchSummary, batchSummaryLoading, batchSummaryError,
     reloadBatchSummary, batchSummaryBlocked
   } = useOfficialWarehouseCreateAsn({
@@ -126,8 +128,9 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
 
   const candidateColumns = buildOfficialWarehouseCandidateColumns({
     selectedShippingBatchIds,
+    candidateMode,
     quantityByCandidateKey,
-    setQuantityByCandidateKey,
+    setCandidateQuantity,
     openSpecEditor
   })
 
@@ -182,6 +185,8 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         shippingBatchLoading={shippingBatchLoading}
         shippingBatches={shippingBatches}
         selectedShippingBatchIds={selectedShippingBatchIds}
+        candidateMode={candidateMode}
+        setCandidateMode={setCandidateMode}
         batchSummary={batchSummary}
         batchSummaryLoading={batchSummaryLoading}
         batchSummaryError={batchSummaryError}
@@ -190,13 +195,16 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         setSelectedShippingBatchIds={setSelectedShippingBatchIds}
         shippingBatchOptions={shippingBatchOptions}
         handleShippingBatchSearch={handleShippingBatchSearch}
+        clearBatchCandidateSelection={clearBatchCandidateSelection}
         clearCandidateSelection={clearCandidateSelection}
-        setQuantityByCandidateKey={setQuantityByCandidateKey}
         loadCandidates={loadCandidates}
         candidateKeyword={candidateKeyword}
         setCandidateKeyword={setCandidateKeyword}
         candidateLoading={candidateLoading}
         selectedCandidateKeys={selectedCandidateKeys}
+        visibleSelectedCandidateKeys={visibleSelectedCandidateKeys}
+        selectedBatchCandidateKeys={selectedBatchCandidateKeys}
+        selectedManualCandidateKeys={selectedManualCandidateKeys}
         candidateColumns={candidateColumns}
         candidates={candidates}
         updateCandidateSelection={updateCandidateSelection}

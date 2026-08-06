@@ -13,6 +13,7 @@ export const officialWarehousePageContractSource = [
   read('officialWarehouseAsnPresentation.tsx'),
   read('officialWarehouseFormModel.ts'),
   read('hooks/useOfficialWarehouseBatchSummary.ts'),
+  read('hooks/useOfficialWarehouseAsnLineSelection.ts'),
   read('hooks/useOfficialWarehouseCreateAsn.ts'),
   read('hooks/useOfficialWarehouseSpecEditor.ts'),
   read('hooks/useOfficialWarehouseAppointmentForm.ts'),
@@ -26,11 +27,13 @@ export const officialWarehousePageContractSource = [
   read('columns/officialWarehouseInboundColumns.tsx'),
   read('components/OfficialWarehouseListPanel.tsx'),
   read('components/OfficialWarehouseBatchSummaryPanel.tsx'),
+  read('components/OfficialWarehouseCandidateSourcePicker.tsx'),
   read('components/OfficialWarehouseShippingBatchPicker.tsx'),
   read('components/OfficialWarehouseCreateAsnModals.tsx'),
   read('components/OfficialWarehouseAppointmentModal.tsx'),
   read('components/OfficialWarehouseCorrectionModal.tsx'),
   read('components/OfficialWarehouseDetailDrawer.tsx'),
+  read('components/OfficialWarehouseAsnLineSourceTable.tsx'),
   read('OfficialWarehousePage.tsx')
 ].join('\n')
 
