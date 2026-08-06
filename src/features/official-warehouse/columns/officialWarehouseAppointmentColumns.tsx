@@ -8,6 +8,7 @@ import {
   businessErrorText
 } from '../officialWarehouseAsnPresentation'
 import { officialWarehousePublicAsnNo } from '../domain'
+import { officialWarehouseAppointmentRequiresReconciliation } from '../officialWarehouseAppointmentLifecycle'
 
 const { Text } = Typography
 
@@ -34,7 +35,7 @@ export function buildOfficialWarehouseAppointmentColumns({
             >
               {asnNo}
             </Text>
-            {appointmentStatusTag(row.status)}
+            {appointmentStatusTag(row.status, row.failureType)}
           </div>
         )
       }
@@ -107,7 +108,7 @@ export function buildOfficialWarehouseAppointmentColumns({
       fixed: 'right',
       render: (_, row) => (
         <Button size="small" onClick={() => openCorrection(row)}>
-          订正
+          {officialWarehouseAppointmentRequiresReconciliation(row) ? '对账并订正' : '订正'}
         </Button>
       )
     }

@@ -39,6 +39,7 @@ export const ASN_APPOINTMENT_STATUS_FILTER_OPTIONS: Array<{
 }> = [
   { label: '未约仓', value: 'NOT_APPOINTED' },
   { label: '约仓中', value: 'APPOINTING' },
+  { label: '待 Noon 对账', value: 'RECONCILIATION_REQUIRED' },
   { label: '约仓成功', value: 'SCHEDULED' },
   { label: '约仓失败', value: 'FAILED' },
   { label: '已取消/过期', value: 'CANCELED' }
@@ -70,8 +71,8 @@ export function statusTag(status?: string) {
   return <Tag color={meta.color}>{meta.label}</Tag>
 }
 
-export function appointmentStatusTag(status?: string) {
-  const meta = appointmentStatusDisplayMeta(status)
+export function appointmentStatusTag(status?: string, failureType?: string) {
+  const meta = appointmentStatusDisplayMeta(status, failureType)
   return <Tag color={meta.color}>{meta.label}</Tag>
 }
 

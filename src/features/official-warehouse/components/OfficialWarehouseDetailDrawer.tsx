@@ -64,7 +64,10 @@ export function OfficialWarehouseDetailDrawer({
               <Descriptions.Item label="总件数">{selectedAsn.totalQuantity || 0}</Descriptions.Item>
               <Descriptions.Item label="约仓状态">
                 {selectedAsn.appointment
-                  ? appointmentStatusTag(selectedAsn.appointment.status)
+                  ? appointmentStatusTag(
+                      selectedAsn.appointment.status,
+                      selectedAsn.appointment.failureType
+                    )
                   : noonAsnStatusTag(selectedAsn.noonAsnStatus)}
               </Descriptions.Item>
               <Descriptions.Item label="约仓时间">

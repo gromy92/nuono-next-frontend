@@ -10,6 +10,11 @@ const apiSource = officialWarehouseApiContractSource
 assert.match(apiSource, /partnerSkus\?: string\[\]/, 'candidate API should accept exact batch PSKU search')
 assert.match(apiSource, /validateOfficialWarehouseAsn/, 'frontend should call the read-only ASN validation endpoint')
 assert.match(apiSource, /partialBatchConfirmed\?: boolean/, 'confirmed partial selection should be explicit on create')
+assert.match(
+  apiSource,
+  /reconciliationConfirmed\?: boolean/,
+  'appointment correction should explicitly confirm completed Noon reconciliation'
+)
 
 assert.match(
   pageSource,
@@ -73,4 +78,29 @@ assert.doesNotMatch(
   pageSource,
   /<Metric label="ASN批次"/,
   'ASN list should not render the removed summary card row above the table'
+)
+assert.match(
+  pageSource,
+  /officialWarehouseAppointmentCanRun/,
+  'appointment actions should follow the backend claim state machine'
+)
+assert.match(
+  pageSource,
+  /officialWarehouseAppointmentCanCancel/,
+  'appointment actions should follow the backend cancellation state machine'
+)
+assert.match(
+  pageSource,
+  /对账并订正/,
+  'quarantined appointments should expose a dedicated reconciliation action'
+)
+assert.match(
+  pageSource,
+  /我已在 Noon 后台核对该 ASN 当前约仓结果/,
+  'reconciliation correction should require an explicit operator confirmation'
+)
+assert.match(
+  pageSource,
+  /reconciliationConfirmed:\s*reconciliationRequired\s*\|\|\s*undefined/,
+  'reconciliation correction should send the explicit confirmation to the backend'
 )

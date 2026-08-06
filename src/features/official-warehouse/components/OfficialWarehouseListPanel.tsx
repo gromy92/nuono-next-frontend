@@ -56,6 +56,7 @@ type Props = {
     failed: number
     canceled: number
     noCapacity: number
+    reconciliationRequired: number
   }
   appointmentColumns: ColumnsType<OfficialWarehouseAppointment>
   appointments: OfficialWarehouseAppointment[]
@@ -196,6 +197,7 @@ export function OfficialWarehouseListPanel(props: Props) {
             <Metric label="约仓中" value={appointmentHistorySummary.pending} tone="blue" />
             <Metric label="成功" value={appointmentHistorySummary.scheduled} tone="green" />
             <Metric label="失败" value={appointmentHistorySummary.failed} tone="red" />
+            <Metric label="待 Noon 对账" value={appointmentHistorySummary.reconciliationRequired} tone="red" />
             <Metric label="已取消" value={appointmentHistorySummary.canceled} />
             <Metric label="无仓位" value={appointmentHistorySummary.noCapacity} tone="red" />
           </div>

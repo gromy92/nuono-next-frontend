@@ -22,6 +22,11 @@ import {
   statusTag
 } from '../officialWarehouseAsnPresentation'
 import { officialWarehousePublicAsnNo } from '../domain'
+import {
+  officialWarehouseAppointmentCanCancel,
+  officialWarehouseAppointmentCanRun,
+  officialWarehouseAppointmentRequiresReconciliation
+} from '../officialWarehouseAppointmentLifecycle'
 import type { AppointmentSubmitMode } from '../officialWarehouseFormModel'
 
 const { Text } = Typography
@@ -35,6 +40,7 @@ type Dependencies = {
   requestOpenAppointment: (row: OfficialWarehouseAsn, mode: AppointmentSubmitMode) => void
   runAppointmentNow: (appointment: OfficialWarehouseAppointment) => Promise<void>
   cancelAppointment: (appointment: OfficialWarehouseAppointment) => Promise<void>
+  openCorrection: (appointment: OfficialWarehouseAppointment) => void
 }
 
 export function buildOfficialWarehouseAsnColumns({
@@ -45,7 +51,8 @@ export function buildOfficialWarehouseAsnColumns({
   downloadFbnTransferPdf,
   requestOpenAppointment,
   runAppointmentNow,
-  cancelAppointment
+  cancelAppointment,
+  openCorrection
 }: Dependencies): ColumnsType<OfficialWarehouseAsn> {
   return [
     {
@@ -104,7 +111,7 @@ export function buildOfficialWarehouseAsnColumns({
         const shouldLabelDeliveryTime = appointment.status === 'SCHEDULED' && !asnHasInboundResult(row)
         return (
           <div className="official-warehouse-stack">
-            {appointmentStatusTag(appointment.status)}
+            {appointmentStatusTag(appointment.status, appointment.failureType)}
             {deliveryTimeText ? (
               shouldLabelDeliveryTime ? (
                 <Text className="official-warehouse-delivery-time">送仓时间：{deliveryTimeText}</Text>
@@ -155,6 +162,9 @@ export function buildOfficialWarehouseAsnColumns({
       fixed: 'right',
       render: (_, row) => {
         const inboundOnly = asnHasInboundResult(row)
+        const reconciliationRequired =
+          officialWarehouseAppointmentRequiresReconciliation(row.appointment)
+        const appointmentRunning = row.appointment?.status === 'RUNNING'
         return (
           <Space size={4} wrap className="official-warehouse-actions">
             <Button size="small" icon={<EyeOutlined />} onClick={() => void openDetail(row)}>
@@ -170,7 +180,7 @@ export function buildOfficialWarehouseAsnColumns({
                 下载 PDF
               </Button>
             ) : null}
-            {!inboundOnly && row.status === 'LINES_CREATED' ? (
+            {!inboundOnly && row.status === 'LINES_CREATED' && !reconciliationRequired ? (
               <Button
                 size="small"
                 icon={<ThunderboltOutlined />}
@@ -181,12 +191,26 @@ export function buildOfficialWarehouseAsnColumns({
                 手动约仓
               </Button>
             ) : null}
-            {!inboundOnly && row.status === 'LINES_CREATED' ? (
-              <Button size="small" icon={<CalendarOutlined />} onClick={() => requestOpenAppointment(row, 'auto')}>
+            {!inboundOnly &&
+            row.status === 'LINES_CREATED' &&
+            !reconciliationRequired &&
+            row.appointment?.status !== 'SCHEDULED' ? (
+              <Button
+                size="small"
+                icon={<CalendarOutlined />}
+                disabled={appointmentRunning}
+                title={appointmentRunning ? '约仓正在执行，请等待结果' : undefined}
+                onClick={() => requestOpenAppointment(row, 'auto')}
+              >
                 自动约仓
               </Button>
             ) : null}
-            {!inboundOnly && row.appointment && !['SCHEDULED', 'CANCELED'].includes(row.appointment.status) ? (
+            {!inboundOnly && row.appointment && reconciliationRequired ? (
+              <Button size="small" danger onClick={() => openCorrection(row.appointment!)}>
+                对账并订正
+              </Button>
+            ) : null}
+            {!inboundOnly && row.appointment && officialWarehouseAppointmentCanRun(row.appointment) ? (
               <Button
                 size="small"
                 icon={<ThunderboltOutlined />}
@@ -196,7 +220,7 @@ export function buildOfficialWarehouseAsnColumns({
                 执行一次
               </Button>
             ) : null}
-            {!inboundOnly && row.appointment && ['PENDING', 'RUNNING', 'FAILED'].includes(row.appointment.status) ? (
+            {!inboundOnly && row.appointment && officialWarehouseAppointmentCanCancel(row.appointment) ? (
               <Button
                 size="small"
                 danger

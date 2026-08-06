@@ -59,6 +59,7 @@ export type CorrectionFormState = {
   failureType: string
   errorStage: string
   errorMessage: string
+  reconciliationConfirmed: boolean
 }
 
 export function defaultAppointmentForm(): AppointmentFormState {
@@ -80,7 +81,8 @@ export function defaultCorrectionForm(): CorrectionFormState {
     appointmentTime: '',
     failureType: '',
     errorStage: 'MANUAL_CORRECTION',
-    errorMessage: ''
+    errorMessage: '',
+    reconciliationConfirmed: false
   }
 }
 
