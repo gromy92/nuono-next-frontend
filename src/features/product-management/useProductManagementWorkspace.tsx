@@ -263,6 +263,7 @@ export function useProductManagementWorkspace({
     activeOwnerId,
     closeProductDetailTab: navigation.closeProductDetailTab,
     currentProductIdentityKey,
+    loadProductListDataset,
     openProductHistoryModal,
     openProductListGallery,
     openProductSiteCompareModal,
