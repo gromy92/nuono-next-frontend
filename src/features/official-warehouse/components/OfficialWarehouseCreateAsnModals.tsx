@@ -1,79 +1,24 @@
 import { SearchOutlined } from '@ant-design/icons'
 import { Alert, Button, Empty, Input, InputNumber, Modal, Space, Table, Typography } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
-import type { Dispatch, Key, SetStateAction } from 'react'
-import type {
-  OfficialWarehouseBatchProductSummary,
-  OfficialWarehouseProductCandidate,
-  OfficialWarehouseShippingBatchCandidate
-} from '../api'
 import { OfficialWarehouseBatchSummaryPanel } from './OfficialWarehouseBatchSummaryPanel'
 import { OfficialWarehouseCandidateSourcePicker } from './OfficialWarehouseCandidateSourcePicker'
 import { OfficialWarehouseShippingBatchPicker } from './OfficialWarehouseShippingBatchPicker'
+import { OfficialWarehouseAsnPreflightFailureNotice } from './OfficialWarehouseAsnPreflightFailureNotice'
+import type { OfficialWarehouseCreateAsnModalsProps as Props } from './officialWarehouseCreateAsnModals.types'
 import {
   displayPsku,
   officialWarehouseCandidateKey,
   shippingBatchDisplayNo
 } from '../officialWarehouseCandidatePresentation'
-import type {
-  Ali1688SpecDraft,
-  CreateAsnConfirmation,
-  CreateAsnSubmitFeedback
-} from '../officialWarehouseFormModel'
+import type { Ali1688SpecDraft } from '../officialWarehouseFormModel'
 import type { AsnCandidateSourceMode } from '../hooks/useOfficialWarehouseAsnLineSelection'
+import { matchesAsnProductPreflightInvalidLine } from '../asnProductPreflightFailure'
 
 const { Text } = Typography
 
-type Props = {
-  createOpen: boolean
-  setCreateOpen: Dispatch<SetStateAction<boolean>>
-  createSubmitFeedback?: CreateAsnSubmitFeedback
-  setCreateSubmitFeedback: Dispatch<SetStateAction<CreateAsnSubmitFeedback | undefined>>
-  createAsnConfirmation?: CreateAsnConfirmation
-  setCreateAsnConfirmation: Dispatch<SetStateAction<CreateAsnConfirmation | undefined>>
-  submitCreateAsn: () => Promise<void>
-  submitting: boolean
-  selectedAlreadyAppointedBatches: OfficialWarehouseShippingBatchCandidate[]
-  shippingBatchLoadError?: string
-  loadShippingBatches: (keyword?: string, prepareProductMatches?: boolean, forceRefresh?: boolean) => Promise<void>
-  shippingBatchKeyword: string
-  shippingBatchLoading: boolean
-  shippingBatches: OfficialWarehouseShippingBatchCandidate[]
-  selectedShippingBatchIds: string[]
-  candidateMode: AsnCandidateSourceMode
-  setCandidateMode: (mode: AsnCandidateSourceMode) => void
-  batchSummary?: OfficialWarehouseBatchProductSummary
-  batchSummaryLoading: boolean
-  batchSummaryError?: string
-  reloadBatchSummary: () => Promise<void>
-  batchSummaryBlocked: boolean
-  setSelectedShippingBatchIds: Dispatch<SetStateAction<string[]>>
-  shippingBatchOptions: Array<{ label: string; value: string }>
-  handleShippingBatchSearch: (value: string) => void
-  clearBatchCandidateSelection: () => void
-  clearCandidateSelection: () => void
-  loadCandidates: (batchIds?: string[], keywordValue?: string, mode?: AsnCandidateSourceMode) => Promise<void>
-  candidateKeyword: string
-  setCandidateKeyword: Dispatch<SetStateAction<string>>
-  candidateLoading: boolean
-  selectedCandidateKeys: Key[]; visibleSelectedCandidateKeys: Key[]
-  selectedBatchCandidateKeys: string[]; selectedManualCandidateKeys: string[]
-  candidateColumns: ColumnsType<OfficialWarehouseProductCandidate>
-  candidates: OfficialWarehouseProductCandidate[]
-  updateCandidateSelection: (keys: Key[], rows: OfficialWarehouseProductCandidate[]) => void
-  candidateEmptyDescription: string
-  confirmCreateAsn: () => void
-  specTarget?: OfficialWarehouseProductCandidate
-  setSpecTarget: Dispatch<SetStateAction<OfficialWarehouseProductCandidate | undefined>>
-  saveAli1688Spec: () => Promise<void>
-  specSaving: boolean
-  specDraft: Ali1688SpecDraft
-  setSpecDraft: Dispatch<SetStateAction<Ali1688SpecDraft>>
-}
-
 export function OfficialWarehouseCreateAsnModals(props: Props) {
   const {
-    createOpen, setCreateOpen, createSubmitFeedback, setCreateSubmitFeedback,
+    createOpen, setCreateOpen, createSubmitFeedback, preflightInvalidLines, setCreateSubmitFeedback,
     createAsnConfirmation, setCreateAsnConfirmation, submitCreateAsn, submitting,
     selectedAlreadyAppointedBatches, shippingBatchLoadError, loadShippingBatches,
     shippingBatchKeyword, shippingBatchLoading, shippingBatches,
@@ -105,7 +50,9 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
         destroyOnClose
       >
         <div className="official-warehouse-modal-body">
-          {createSubmitFeedback ? (
+          {preflightInvalidLines.length ? (
+            <OfficialWarehouseAsnPreflightFailureNotice preflightInvalidLines={preflightInvalidLines} />
+          ) : createSubmitFeedback ? (
             <Alert
               type="error"
               showIcon
@@ -193,6 +140,11 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
             dataSource={candidates}
             pagination={{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true }}
             scroll={{ x: 1320 }}
+            rowClassName={(row) =>
+              preflightInvalidLines.some((line) => matchesAsnProductPreflightInvalidLine(row, line))
+                ? 'official-warehouse-candidate--preflight-failed'
+                : ''
+            }
             rowSelection={{
               selectedRowKeys: visibleSelectedCandidateKeys,
               preserveSelectedRowKeys: true,

@@ -15,6 +15,10 @@ import { useOfficialWarehouseAppointmentWorkflow } from './hooks/useOfficialWare
 import { useOfficialWarehouseAsnState } from './hooks/useOfficialWarehouseAsnState'
 import { useOfficialWarehouseCreateAsn } from './hooks/useOfficialWarehouseCreateAsn'
 import { useOfficialWarehouseSpecEditor } from './hooks/useOfficialWarehouseSpecEditor'
+import {
+  asnProductPreflightInvalidLines,
+  type AsnProductPreflightInvalidLine
+} from './asnProductPreflightFailure'
 import './OfficialWarehousePage.css'
 
 type OfficialWarehousePageProps = {
@@ -126,12 +130,15 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     openCorrection
   })
 
+  const preflightInvalidLines: AsnProductPreflightInvalidLine[] = asnProductPreflightInvalidLines(createSubmitFeedback?.problem)
+
   const candidateColumns = buildOfficialWarehouseCandidateColumns({
     selectedShippingBatchIds,
     candidateMode,
     quantityByCandidateKey,
     setCandidateQuantity,
-    openSpecEditor
+    openSpecEditor,
+    preflightInvalidLines
   })
 
   const inboundProductColumns = buildOfficialWarehouseInboundColumns()
@@ -173,6 +180,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         createOpen={createOpen}
         setCreateOpen={setCreateOpen}
         createSubmitFeedback={createSubmitFeedback}
+        preflightInvalidLines={preflightInvalidLines}
         setCreateSubmitFeedback={setCreateSubmitFeedback}
         createAsnConfirmation={createAsnConfirmation}
         setCreateAsnConfirmation={setCreateAsnConfirmation}

@@ -4,6 +4,18 @@
   gap: 12px;
 }
 
+.official-warehouse-asn-preflight-alert .ant-alert-description {
+  margin-top: 10px;
+}
+
+.official-warehouse-asn-preflight-table {
+  background: #ffffff;
+}
+
+.official-warehouse-candidate--preflight-failed > td {
+  background: #fff1f0 !important;
+}
+
 .official-warehouse-field {
   display: flex;
   min-width: 0;

@@ -54,6 +54,9 @@ assert.match(
   /rowKey=\{officialWarehouseCandidateKey\}/,
   'candidate table should use stable store + site + PSKU row keys'
 )
+assert.match(pageSource, /asnProductPreflightInvalidLines/, 'ASN preflight failures should retain invalid line details')
+assert.match(pageSource, /以下 \$\{preflightInvalidLines\.length\} 个商品未通过 Noon 预检/, 'ASN preflight failures should be visible in the modal')
+assert.match(candidateTableSource, /rowClassName=\{\(row\) =>/, 'failed SKU rows should be highlighted in the candidate table')
 
 assert.match(
   styleSource,

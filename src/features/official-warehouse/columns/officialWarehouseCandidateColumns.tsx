@@ -2,6 +2,10 @@ import { EditOutlined } from '@ant-design/icons'
 import { Button, Image, InputNumber, Space, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { OfficialWarehouseProductCandidate } from '../api'
+import {
+  matchesAsnProductPreflightInvalidLine,
+  type AsnProductPreflightInvalidLine
+} from '../asnProductPreflightFailure'
 import type { AsnCandidateSourceMode } from '../hooks/useOfficialWarehouseAsnLineSelection'
 import {
   PRODUCT_IMAGE_FALLBACK,
@@ -17,13 +21,15 @@ export function buildOfficialWarehouseCandidateColumns({
   candidateMode,
   quantityByCandidateKey,
   setCandidateQuantity,
-  openSpecEditor
+  openSpecEditor,
+  preflightInvalidLines
 }: {
   selectedShippingBatchIds: string[]
   candidateMode: AsnCandidateSourceMode
   quantityByCandidateKey: Record<string, number>
   setCandidateQuantity: (key: string, quantity: number) => void
   openSpecEditor: (row: OfficialWarehouseProductCandidate) => void
+  preflightInvalidLines: AsnProductPreflightInvalidLine[]
 }): ColumnsType<OfficialWarehouseProductCandidate> {
   return [
     {
@@ -114,8 +120,10 @@ export function buildOfficialWarehouseCandidateColumns({
       width: 160,
       render: (_, row) => {
         const canFillSpec = row.missingTags?.includes('缺尺寸')
+        const preflightFailed = preflightInvalidLines.some((line) => matchesAsnProductPreflightInvalidLine(row, line))
         return (
           <Space size={4} wrap>
+            {preflightFailed ? <Tag color="red">Noon 预检失败</Tag> : null}
             {row.missingTags?.length ? row.missingTags.map((tag) => <Tag key={tag} color="red">{tag}</Tag>) : <Tag color="green">可创建</Tag>}
             {canFillSpec ? (
               <Button size="small" icon={<EditOutlined />} onClick={() => openSpecEditor(row)}>
