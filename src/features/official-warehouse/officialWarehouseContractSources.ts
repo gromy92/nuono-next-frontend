@@ -10,6 +10,7 @@ function read(relativePath: string) {
 
 export const officialWarehousePageContractSource = [
   read('officialWarehouseCandidatePresentation.ts'),
+  read('asnProductPreflightFailure.ts'),
   read('officialWarehouseAsnPresentation.tsx'),
   read('officialWarehouseFormModel.ts'),
   read('hooks/useOfficialWarehouseBatchSummary.ts'),
