@@ -236,7 +236,7 @@ export function Ali1688HistoricalOrderActionModals({
           setAuthorizationErrorMessage(undefined)
           setAuthorizationModalOpen(false)
         }}
-        onConfirm={() => void confirmOpenApiAuthorization()}
+        onConfirm={(request) => void confirmOpenApiAuthorization(request)}
       />
       <Ali1688ExcelImportModal
         open={excelImportModalOpen}
