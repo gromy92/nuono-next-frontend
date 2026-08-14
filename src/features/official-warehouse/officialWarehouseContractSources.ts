@@ -30,6 +30,7 @@ export const officialWarehousePageContractSource = [
   read('components/OfficialWarehouseBatchSummaryPanel.tsx'),
   read('components/OfficialWarehouseCandidateSourcePicker.tsx'),
   read('components/OfficialWarehouseShippingBatchPicker.tsx'),
+  read('components/OfficialWarehouseAsnPreflightFailureNotice.tsx'),
   read('components/OfficialWarehouseCreateAsnModals.tsx'),
   read('components/OfficialWarehouseAppointmentModal.tsx'),
   read('components/OfficialWarehouseCorrectionModal.tsx'),
