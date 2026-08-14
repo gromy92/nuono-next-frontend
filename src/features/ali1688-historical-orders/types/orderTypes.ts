@@ -21,6 +21,14 @@ export type Ali1688OpenApiAuthorizationStart = {
   message?: string
 }
 
+export type Ali1688EnterpriseSelfUseTokenRequest = {
+  providerAccountId: string
+  accountLabel?: string
+  accessToken: string
+  storeCode?: string
+  siteCode?: string
+}
+
 export type Ali1688HistoricalOrderPagination = {
   page: number
   pageSize: number

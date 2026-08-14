@@ -6,6 +6,7 @@ import type {
   Ali1688HistoricalOrderDetail,
   Ali1688HistoricalOrderQuery,
   Ali1688HistoricalOrderWorkbench,
+  Ali1688EnterpriseSelfUseTokenRequest,
   Ali1688OpenApiAuthorizationStart
 } from '../types'
 
@@ -52,6 +53,20 @@ export function startAli1688OpenApiAuthorization(
     .then((response) =>
       parseApiResponse<Ali1688OpenApiAuthorizationStart>(response, '发起 1688 授权失败')
     )
+}
+
+export function saveAli1688EnterpriseSelfUseToken(
+  request: Ali1688EnterpriseSelfUseTokenRequest
+): Promise<void> {
+  return apiFetch('/api/procurement/ali1688-orders/authorizations/open-api/enterprise-self-use-token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(request)
+  }).then((response) =>
+    parseApiResponse<void>(response, '保存 1688 企业自用 Token 失败')
+  )
 }
 
 export function deleteAli1688HistoricalOrder(

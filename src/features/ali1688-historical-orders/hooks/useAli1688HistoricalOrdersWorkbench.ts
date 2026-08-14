@@ -2,9 +2,10 @@ import { message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   loadAli1688HistoricalOrderWorkbench,
-  startAli1688OpenApiAuthorization
+  saveAli1688EnterpriseSelfUseToken
 } from '../api'
 import type {
+  Ali1688EnterpriseSelfUseTokenRequest,
   Ali1688HistoricalOrderQuery,
   Ali1688HistoricalOrderWorkbench
 } from '../types'
@@ -172,25 +173,14 @@ export function useAli1688HistoricalOrdersWorkbench({
     }
   }
 
-  async function confirmOpenApiAuthorization() {
+  async function confirmOpenApiAuthorization(request: Ali1688EnterpriseSelfUseTokenRequest) {
     setAuthorizationSubmitting(true)
     setAuthorizationErrorMessage(undefined)
     try {
-      const start = await startAli1688OpenApiAuthorization()
-      if (!start.configured || !start.authorizationUrl) {
-        setAuthorizationErrorMessage(
-          start.message || '1688 OpenAPI 尚未配置，暂时不能发起真实授权'
-        )
-        return
-      }
-      const popup = window.open(
-        start.authorizationUrl,
-        '_blank',
-        'noopener,noreferrer'
-      )
-      if (!popup) window.location.assign(start.authorizationUrl)
+      await saveAli1688EnterpriseSelfUseToken(request)
       setAuthorizationModalOpen(false)
-      message.success('已打开 1688 授权页，完成授权后系统每日自动拉取历史订单')
+      await loadWorkbench({ ...query, page: 1 })
+      message.success('1688 企业自用 Token 已保存，系统每日自动拉取历史订单')
     } catch (error) {
       const text =
         error instanceof Error ? error.message : '授权 1688 历史订单失败'
