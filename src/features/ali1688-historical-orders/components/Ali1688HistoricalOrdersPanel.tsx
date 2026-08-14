@@ -64,7 +64,8 @@ export function Ali1688HistoricalOrdersPanel({
     paginationCurrent,
     paginationPageSize,
     paginationTotal,
-    loadWorkbench
+    loadWorkbench,
+    syncNow
   } = state
 
   return (
@@ -158,6 +159,11 @@ export function Ali1688HistoricalOrdersPanel({
               }}
             >
               授权 1688
+            </Button>
+          ) : null}
+          {showAuthorizeButton && workbench.authorization?.status === 'authorized' ? (
+            <Button onClick={() => void syncNow()} loading={loading}>
+              立即补拉
             </Button>
           ) : null}
           <Button

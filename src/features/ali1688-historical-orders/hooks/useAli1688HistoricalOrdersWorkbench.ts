@@ -2,7 +2,8 @@ import { message } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   loadAli1688HistoricalOrderWorkbench,
-  saveAli1688EnterpriseSelfUseToken
+  saveAli1688EnterpriseSelfUseToken,
+  syncAli1688HistoricalOrdersNow
 } from '../api'
 import type {
   Ali1688EnterpriseSelfUseTokenRequest,
@@ -191,6 +192,18 @@ export function useAli1688HistoricalOrdersWorkbench({
     }
   }
 
+  async function syncNow() {
+    setLoading(true)
+    try {
+      await syncAli1688HistoricalOrdersNow()
+      message.success('已开始补拉当前 1688 授权账号的历史订单，请稍后刷新查看。')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '立即补拉 1688 历史订单失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return {
     workbench, loading, filters, setFilters, query, authorizationModalOpen,
     setAuthorizationModalOpen, excelImportModalOpen, setExcelImportModalOpen,
@@ -200,6 +213,6 @@ export function useAli1688HistoricalOrdersWorkbench({
     assignmentTargetOptions, canMutateProductLinks,
     canBatchActOnSelectedLines, showAuthorizeButton,
     paginationCurrent, paginationPageSize, paginationTotal, loadWorkbench,
-    confirmOpenApiAuthorization
+    confirmOpenApiAuthorization, syncNow
   }
 }

@@ -69,6 +69,16 @@ export function saveAli1688EnterpriseSelfUseToken(
   )
 }
 
+export function syncAli1688HistoricalOrdersNow(): Promise<void> {
+  return apiFetch('/api/procurement/ali1688-orders/sync-now', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}'
+  }).then((response) =>
+    parseApiResponse<void>(response, '立即补拉 1688 历史订单失败')
+  )
+}
+
 export function deleteAli1688HistoricalOrder(
   orderId: string,
   request: Ali1688HistoricalOrderDeleteRequest
