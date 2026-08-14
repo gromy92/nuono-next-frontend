@@ -8,6 +8,12 @@ const USER_ADMINISTRATION_WORKSPACE_MOUNT = createLazyWorkspaceMount(() =>
   }))
 )
 
+const NOON_ACCOUNT_SESSION_WORKSPACE_MOUNT = createLazyWorkspaceMount(() =>
+  import('../noon-account-session/NoonAccountSessionWorkspace').then((module) => ({
+    default: module.NoonAccountSessionWorkspace
+  }))
+)
+
 export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
   'user-account': {
     key: 'user-account',
@@ -78,6 +84,18 @@ export const ADMINISTRATION_ROUTE_DEFINITIONS = freezeCatalogMetadata({
     closable: true,
     sidebarOrder: 0
   },
+  'noon-account-session': {
+    key: 'noon-account-session',
+    label: 'Noon 登录',
+    path: '/system/noon-account-session',
+    sectionKey: 'system',
+    pathLabel: '系统管理 / Noon 登录',
+    tabLabel: 'Noon 登录',
+    workspaceMount: NOON_ACCOUNT_SESSION_WORKSPACE_MOUNT,
+    closable: true,
+    accessKey: 'system-menu',
+    sidebarOrder: 2
+  },
   'system-role': {
     key: 'system-role',
     label: '角色管理',
@@ -106,5 +124,6 @@ export const ADMINISTRATION_IDENTITY_GRANT_RULES = freezeCatalogMetadata([
   { keys: ['user-account'], urlPaths: ['/api/user/manage'], menuNames: ['用户管理'] },
   { keys: ['user-role'], urlPaths: ['/api/user/role'], menuNames: ['角色分配'] },
   { keys: ['system-role'], urlPaths: ['/system/role'], menuNames: ['角色维护', '角色管理'] },
-  { keys: ['system-menu'], urlPaths: ['/system/menu'], menuNames: ['菜单维护'] }
+  { keys: ['system-menu'], urlPaths: ['/system/menu'], menuNames: ['菜单维护'] },
+  { keys: ['noon-account-session'], urlPaths: ['/api/noon/account-session'] }
 ] as const satisfies readonly WorkspaceGrantedMenuRuleBase[])

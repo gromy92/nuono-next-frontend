@@ -19,7 +19,7 @@ const systemAdmin: AuthSession = {
 
 assert.deepEqual(
   resolveSessionAllowedMenuKeys(systemAdmin),
-  ['user-account', 'system-role'],
+  ['user-account', 'noon-account-session', 'system-role'],
   'system administrators retain administration capabilities when grants are empty'
 )
 

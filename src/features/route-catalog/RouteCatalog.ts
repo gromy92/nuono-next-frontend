@@ -106,6 +106,7 @@ export const MANAGEMENT_MENU_KEYS = freezeCatalogMetadata<AppMenuKey[]>([
   'user-store-noon',
   'user-role',
   'system-menu',
+  'noon-account-session',
   'system-role'
 ])
 
