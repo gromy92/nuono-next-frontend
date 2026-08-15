@@ -151,6 +151,7 @@ export function resolveSessionAllowedMenuKeys(session: AuthSession | null) {
   if (isSystemAdminSession(session)) {
     keySet.add('user-account')
     keySet.add('system-role')
+    keySet.add('noon-account-session')
     keySet.delete('product-manual-selection')
     keySet.delete('user-role')
   } else if (isBossManagementSession(session)) {
