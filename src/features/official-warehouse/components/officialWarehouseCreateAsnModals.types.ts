@@ -5,6 +5,7 @@ import type {
   OfficialWarehouseProductCandidate,
   OfficialWarehouseShippingBatchCandidate
 } from '../api'
+import type { OfficialWarehouseShippingBatchDiagnostic } from '../shippingBatchDiagnosticTypes'
 import type { AsnProductPreflightInvalidLine } from '../asnProductPreflightFailure'
 import type {
   Ali1688SpecDraft,
@@ -25,6 +26,7 @@ export type OfficialWarehouseCreateAsnModalsProps = {
   submitting: boolean
   selectedAlreadyAppointedBatches: OfficialWarehouseShippingBatchCandidate[]
   shippingBatchLoadError?: string
+  shippingBatchDiagnostic?: OfficialWarehouseShippingBatchDiagnostic
   loadShippingBatches: (keyword?: string, prepareProductMatches?: boolean, forceRefresh?: boolean) => Promise<void>
   shippingBatchKeyword: string
   shippingBatchLoading: boolean
@@ -38,7 +40,7 @@ export type OfficialWarehouseCreateAsnModalsProps = {
   reloadBatchSummary: () => Promise<void>
   batchSummaryBlocked: boolean
   setSelectedShippingBatchIds: Dispatch<SetStateAction<string[]>>
-  shippingBatchOptions: Array<{ label: string; value: string }>
+  shippingBatchOptions: Array<{ label: string; value: string; disabled?: boolean }>
   handleShippingBatchSearch: (value: string) => void
   clearBatchCandidateSelection: () => void
   clearCandidateSelection: () => void

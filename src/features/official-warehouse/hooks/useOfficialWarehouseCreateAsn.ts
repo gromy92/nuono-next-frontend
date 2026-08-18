@@ -65,6 +65,7 @@ export function useOfficialWarehouseCreateAsn({
     shippingBatchKeyword,
     shippingBatchLoading,
     shippingBatchLoadError,
+    shippingBatchDiagnostic,
     loadShippingBatches,
     handleShippingBatchSearch,
     resetShippingBatchSearch
@@ -96,7 +97,13 @@ export function useOfficialWarehouseCreateAsn({
 
 
   const shippingBatchOptions = useMemo(
-    () => shippingBatches.map((batch) => ({ label: shippingBatchOptionText(batch), value: batch.id })),
+    () => shippingBatches.map((batch) => ({
+      label: shippingBatchOptionText(batch),
+      value: batch.id,
+      disabled: !batch.alreadyAppointed && Number(
+        batch.remainingQuantity ?? batch.storeSiteQuantity ?? batch.totalQuantity ?? 0
+      ) <= 0
+    })),
     [shippingBatches]
   )
   const selectedShippingBatches = useMemo(
@@ -283,7 +290,7 @@ export function useOfficialWarehouseCreateAsn({
     selectedBatchCandidateKeys, selectedManualCandidateKeys, quantityByCandidateKey,
     setCandidateQuantity, submitting, createSubmitFeedback,
     setCreateSubmitFeedback, createAsnConfirmation, setCreateAsnConfirmation,
-    shippingBatchKeyword, shippingBatchLoading, shippingBatchLoadError,
+    shippingBatchKeyword, shippingBatchLoading, shippingBatchLoadError, shippingBatchDiagnostic,
     loadShippingBatches, handleShippingBatchSearch, shippingBatchOptions,
     selectedAlreadyAppointedBatches, candidateEmptyDescription, loadCandidates,
     updateCandidateSelection, clearBatchCandidateSelection, clearCandidateSelection, submitCreateAsn,

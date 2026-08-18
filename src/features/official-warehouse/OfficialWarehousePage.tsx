@@ -40,7 +40,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
     selectedBatchCandidateKeys, selectedManualCandidateKeys, quantityByCandidateKey,
     setCandidateQuantity, submitting, createSubmitFeedback,
     setCreateSubmitFeedback, createAsnConfirmation, setCreateAsnConfirmation,
-    shippingBatchKeyword, shippingBatchLoading, shippingBatchLoadError,
+    shippingBatchKeyword, shippingBatchLoading, shippingBatchLoadError, shippingBatchDiagnostic,
     loadShippingBatches, handleShippingBatchSearch, shippingBatchOptions,
     selectedAlreadyAppointedBatches, candidateEmptyDescription, loadCandidates,
     updateCandidateSelection, clearBatchCandidateSelection, clearCandidateSelection, submitCreateAsn,
@@ -188,6 +188,7 @@ export function OfficialWarehousePage({ session }: OfficialWarehousePageProps) {
         submitting={submitting}
         selectedAlreadyAppointedBatches={selectedAlreadyAppointedBatches}
         shippingBatchLoadError={shippingBatchLoadError}
+        shippingBatchDiagnostic={shippingBatchDiagnostic}
         loadShippingBatches={loadShippingBatches}
         shippingBatchKeyword={shippingBatchKeyword}
         shippingBatchLoading={shippingBatchLoading}

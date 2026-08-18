@@ -1,23 +1,28 @@
 import { Button, Select, Typography } from 'antd'
 import type { OfficialWarehouseShippingBatchCandidate } from '../api'
 import { ShippingBatchLoadAlert } from '../ShippingBatchLoadAlert'
+import { ShippingBatchDiagnosticAlert } from '../ShippingBatchDiagnosticAlert'
+import { shippingBatchDiagnosticEmptyText } from '../shippingBatchDiagnosticPresentation'
+import type { OfficialWarehouseShippingBatchDiagnostic } from '../shippingBatchDiagnosticTypes'
 
 const { Text } = Typography
 
 type Props = {
   error?: string
+  diagnostic?: OfficialWarehouseShippingBatchDiagnostic
   loadBatches: (keyword?: string, prepareProductMatches?: boolean, forceRefresh?: boolean) => Promise<void>
   keyword: string
   loading: boolean
   batches: OfficialWarehouseShippingBatchCandidate[]
   selectedIds: string[]
-  options: Array<{ label: string; value: string }>
+  options: Array<{ label: string; value: string; disabled?: boolean }>
   onSearch: (value: string) => void
   onChange: (value: string[]) => void
 }
 
 export function OfficialWarehouseShippingBatchPicker({
   error,
+  diagnostic,
   loadBatches,
   keyword,
   loading,
@@ -44,6 +49,7 @@ export function OfficialWarehouseShippingBatchPicker({
         error={error}
         onRetry={() => void loadBatches(keyword, false, true)}
       />
+      <ShippingBatchDiagnosticAlert diagnostic={diagnostic} />
       <Select
         mode="multiple"
         allowClear
@@ -53,6 +59,7 @@ export function OfficialWarehouseShippingBatchPicker({
         disabled={loading && !batches.length}
         value={selectedIds}
         options={options}
+        notFoundContent={shippingBatchDiagnosticEmptyText(diagnostic, loading)}
         filterOption={false}
         onSearch={onSearch}
         onChange={(value) => onChange(Array.isArray(value) ? value : [])}

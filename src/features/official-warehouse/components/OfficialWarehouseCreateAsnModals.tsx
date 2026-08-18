@@ -20,7 +20,7 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
   const {
     createOpen, setCreateOpen, createSubmitFeedback, preflightInvalidLines, setCreateSubmitFeedback,
     createAsnConfirmation, setCreateAsnConfirmation, submitCreateAsn, submitting,
-    selectedAlreadyAppointedBatches, shippingBatchLoadError, loadShippingBatches,
+    selectedAlreadyAppointedBatches, shippingBatchLoadError, shippingBatchDiagnostic, loadShippingBatches,
     shippingBatchKeyword, shippingBatchLoading, shippingBatches,
     selectedShippingBatchIds, candidateMode, setCandidateMode,
     setSelectedShippingBatchIds, shippingBatchOptions,
@@ -81,6 +81,7 @@ export function OfficialWarehouseCreateAsnModals(props: Props) {
           ) : null}
           <OfficialWarehouseShippingBatchPicker
             error={shippingBatchLoadError}
+            diagnostic={shippingBatchDiagnostic}
             loadBatches={loadShippingBatches}
             keyword={shippingBatchKeyword}
             loading={shippingBatchLoading}
