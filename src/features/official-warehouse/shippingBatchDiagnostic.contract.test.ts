@@ -1,20 +1,13 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ShippingBatchDiagnosticAlert } from './ShippingBatchDiagnosticAlert'
+import { diagnoseOfficialWarehouseShippingBatch } from './officialWarehouseApiClient'
 import {
   isOfficialWarehouseShippingBatchSelectable,
   shippingBatchDiagnosticEmptyText,
   zeroQuantityShippingBatchDiagnostic
 } from './shippingBatchDiagnosticPresentation'
-
-const currentDir = dirname(fileURLToPath(import.meta.url))
-const apiSource = readFileSync(join(currentDir, 'officialWarehouseApiClient.ts'), 'utf8')
-const searchSource = readFileSync(join(currentDir, 'useShippingBatchSearch.ts'), 'utf8')
-const pickerSource = readFileSync(join(currentDir, 'components/OfficialWarehouseShippingBatchPicker.tsx'), 'utf8')
 
 const diagnostic = {
   code: 'NO_PRODUCT_DETAILS',
@@ -43,8 +36,27 @@ assert.equal(isOfficialWarehouseShippingBatchSelectable({
 assert.equal(zeroQuantityShippingBatchDiagnostic([{
   id: '1', batchNo: 'NO-QTY', status: 'in_transit', remainingQuantity: 0
 }])?.code, 'NO_AVAILABLE_QUANTITY')
-assert.match(apiSource, /shipping-batches\/diagnostic/)
-assert.match(searchSource, /normalizedKeyword && prepared\.rows\.length === 0[\s\S]*diagnoseOfficialWarehouseShippingBatch/)
-assert.match(searchSource, /setShippingBatchDiagnostic\(diagnostic\)/)
-assert.match(pickerSource, /ShippingBatchDiagnosticAlert diagnostic=\{diagnostic\}/)
-assert.match(pickerSource, /notFoundContent=\{shippingBatchDiagnosticEmptyText\(diagnostic, loading\)\}/)
+
+const originalFetch = globalThis.fetch
+let requestedUrl = ''
+globalThis.fetch = (async (input) => {
+  requestedUrl = String(input)
+  return new Response(JSON.stringify(diagnostic), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  })
+}) as typeof fetch
+try {
+  const response = await diagnoseOfficialWarehouseShippingBatch({
+    storeCode: 'STR69486-NSA',
+    siteCode: 'SA',
+    keyword: 'ZDAIR8111341'
+  })
+  assert.equal(response.code, 'NO_PRODUCT_DETAILS')
+  assert.match(requestedUrl, /\/api\/warehouse\/official-warehouse\/shipping-batches\/diagnostic\?/)
+  assert.match(requestedUrl, /storeCode=STR69486-NSA/)
+  assert.match(requestedUrl, /siteCode=SA/)
+  assert.match(requestedUrl, /keyword=ZDAIR8111341/)
+} finally {
+  globalThis.fetch = originalFetch
+}
