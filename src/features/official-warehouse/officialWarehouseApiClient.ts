@@ -16,6 +16,7 @@ import type {
   UpsertOfficialWarehouseAppointmentPayload
 } from './officialWarehouseAppointmentTypes'
 import type { OfficialWarehouseBatchProductSummary } from './officialWarehouseBatchSummaryTypes'
+import type { OfficialWarehouseShippingBatchDiagnostic } from './shippingBatchDiagnosticTypes'
 
 type AsnFilters = {
   storeCode?: string
@@ -86,6 +87,19 @@ export async function loadOfficialWarehouseShippingBatches(filters: CandidateFil
   appendParam(params, 'keyword', filters.keyword)
   const response = await apiFetch(`/api/warehouse/official-warehouse/shipping-batches?${params.toString()}`)
   return parseApiResponse<OfficialWarehouseShippingBatchCandidate[]>(response, '读取物流批次失败')
+}
+
+export async function diagnoseOfficialWarehouseShippingBatch(
+  filters: CandidateFilters & { keyword: string }
+) {
+  const params = new URLSearchParams()
+  appendParam(params, 'storeCode', filters.storeCode)
+  appendParam(params, 'siteCode', filters.siteCode)
+  appendParam(params, 'keyword', filters.keyword)
+  const response = await apiFetch(
+    `/api/warehouse/official-warehouse/shipping-batches/diagnostic?${params.toString()}`
+  )
+  return parseApiResponse<OfficialWarehouseShippingBatchDiagnostic>(response, '读取物流批次不可选原因失败')
 }
 
 export async function loadOfficialWarehouseBatchProductSummary(

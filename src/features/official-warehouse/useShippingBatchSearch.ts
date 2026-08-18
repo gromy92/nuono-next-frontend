@@ -2,9 +2,11 @@ import { message } from 'antd'
 import { useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import {
+  diagnoseOfficialWarehouseShippingBatch,
   loadOfficialWarehouseShippingBatches,
   officialWarehouseError,
-  type OfficialWarehouseShippingBatchCandidate
+  type OfficialWarehouseShippingBatchCandidate,
+  type OfficialWarehouseShippingBatchDiagnostic
 } from './api'
 import {
   readOfficialWarehouseShippingBatchCache,
@@ -12,6 +14,7 @@ import {
   writeOfficialWarehouseShippingBatchCache
 } from './officialWarehouseShippingBatchCache'
 import { loadPreparedOfficialWarehouseShippingBatches } from './productMatchPreparation'
+import { zeroQuantityShippingBatchDiagnostic } from './shippingBatchDiagnosticPresentation'
 
 type ShippingBatchSearchOptions = {
   sessionUserId: string
@@ -34,6 +37,7 @@ export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
   const [shippingBatchKeyword, setShippingBatchKeyword] = useState('')
   const [shippingBatchLoading, setShippingBatchLoading] = useState(false)
   const [shippingBatchLoadError, setShippingBatchLoadError] = useState<string>()
+  const [shippingBatchDiagnostic, setShippingBatchDiagnostic] = useState<OfficialWarehouseShippingBatchDiagnostic>()
   const searchTimerRef = useRef<number | undefined>(undefined)
   const requestRef = useRef(0)
   const activeScopeRef = useRef('')
@@ -41,6 +45,7 @@ export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
   function resetShippingBatchSearch() {
     setShippingBatchKeyword('')
     setShippingBatchLoadError(undefined)
+    setShippingBatchDiagnostic(undefined)
     requestRef.current += 1
     if (searchTimerRef.current != null) {
       window.clearTimeout(searchTimerRef.current)
@@ -87,6 +92,7 @@ export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
     requestRef.current = requestId
     setShippingBatchLoading(true)
     setShippingBatchLoadError(undefined)
+    setShippingBatchDiagnostic(undefined)
     try {
       const prepared = prepare
         ? await loadPreparedOfficialWarehouseShippingBatches({
@@ -103,6 +109,14 @@ export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
             preparationError: undefined
       }
       if (requestId !== requestRef.current) return
+      const diagnostic = normalizedKeyword && prepared.rows.length === 0
+        ? await diagnoseOfficialWarehouseShippingBatch({
+            storeCode,
+            siteCode,
+            keyword: normalizedKeyword
+          })
+        : zeroQuantityShippingBatchDiagnostic(prepared.rows)
+      if (requestId !== requestRef.current) return
       if (!normalizedKeyword) {
         writeOfficialWarehouseShippingBatchCache(sessionUserId, storeCode, siteCode, prepared.rows)
       }
@@ -110,6 +124,7 @@ export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
         const retained = prepare ? [] : current.filter((row) => selectedShippingBatchIds.includes(row.id))
         return Array.from(new Map([...retained, ...prepared.rows].map((row) => [row.id, row])).values())
       })
+      setShippingBatchDiagnostic(diagnostic)
       if (prepare) {
         setSelectedShippingBatchIds((current) => current.filter((id) => prepared.rows.some((row) => row.id === id)))
       }
@@ -119,6 +134,7 @@ export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
     } catch (error) {
       if (requestId !== requestRef.current) return
       const errorText = officialWarehouseError(error, '读取物流批次失败')
+      setShippingBatchDiagnostic(undefined)
       setShippingBatchLoadError(errorText)
       message.error(errorText)
     } finally {
@@ -143,6 +159,7 @@ export function useShippingBatchSearch(options: ShippingBatchSearchOptions) {
     shippingBatchKeyword,
     shippingBatchLoading,
     shippingBatchLoadError,
+    shippingBatchDiagnostic,
     loadShippingBatches,
     handleShippingBatchSearch,
     resetShippingBatchSearch
